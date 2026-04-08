@@ -3,9 +3,9 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  X, Calendar, Clock, AlertTriangle, CheckCircle, FileText,
+  X, Calendar, Clock, CheckCircle, FileText,
   Upload, Trash2, User, Info, Pen, Send,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -106,9 +106,9 @@ const SignaturePad = ({ onSign, onClear, value, label = 'Signature' }) => {
         onTouchEnd={endDraw}
       />
       <div className="lrf-signature-actions">
-        <button type="button" className="lrf-btn-clear" onClick={handleClear}>
+        <Button variant="ghost" type="button" className="lrf-btn-clear" onClick={handleClear}>
           <Trash2 size={12} /> Effacer
-        </button>
+        </Button>
         {value && (
           <span className="lrf-signature-ok">
             <CheckCircle size={12} /> Signé
@@ -127,7 +127,7 @@ const LeaveRequestForm = ({
   person = null,
   persons = [],
   isAdmin = false,
-  currentUser = null,
+  _currentUser = null,
   onClose,
   onCreated,
 }) => {
@@ -147,7 +147,7 @@ const LeaveRequestForm = ({
   const [exceptionalTypes, setExceptionalTypes] = useState({});
   const [calculation, setCalculation] = useState(null);
   const [balance, setBalance] = useState(null);
-  const [holidays, setHolidays] = useState([]);
+  const [_holidays, setHolidays] = useState([]);
 
   // State du justificatif
   const [justificationFile, setJustificationFile] = useState(null);
@@ -341,11 +341,11 @@ const LeaveRequestForm = ({
   };
 
   // Obtenir l'info du type sélectionné
-  const currentTypeInfo = leaveTypes[leaveType];
+  const _currentTypeInfo = leaveTypes[leaveType];
 
   return (
     <div className="lrf-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="lrf-modal" onClick={e => e.stopPropagation()}>
+      <div className="lrf-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Demande de congé">
         {/* En-tête */}
         <div className="lrf-header">
           <div className="lrf-header-title">
@@ -353,17 +353,16 @@ const LeaveRequestForm = ({
             <h2>Demande de congé</h2>
           </div>
           <div className="lrf-header-actions">
-            <button
-              type="button"
+            <Button variant="ghost"               type="button"
               className="lrf-btn-info"
               onClick={() => setShowLegalInfo(!showLegalInfo)}
               title="Informations légales"
             >
               <Info size={16} />
-            </button>
-            <button className="lrf-close-btn" onClick={onClose}>
+            </Button>
+            <Button variant="ghost" className="lrf-close-btn" onClick={onClose} aria-label="Fermer">
               <X size={20} />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -434,8 +433,7 @@ const LeaveRequestForm = ({
             </label>
             <div className="lrf-type-grid">
               {Object.entries(leaveTypes).map(([key, info]) => (
-                <button
-                  key={key}
+                <Button variant="ghost"                   key={key}
                   type="button"
                   className={`lrf-type-btn ${leaveType === key ? 'active' : ''}`}
                   onClick={() => { setLeaveType(key); setExceptionalType(''); }}
@@ -443,7 +441,7 @@ const LeaveRequestForm = ({
                 >
                   <span className="lrf-type-icon">{info.icon}</span>
                   <span className="lrf-type-label">{info.label}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -494,20 +492,18 @@ const LeaveRequestForm = ({
                 required
               />
               <div className="lrf-period-btns">
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   className={`lrf-period-btn ${startPeriod === 'AM' ? 'active' : ''}`}
                   onClick={() => setStartPeriod('AM')}
                 >
                   Matin
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button variant="ghost"                   type="button"
                   className={`lrf-period-btn ${startPeriod === 'PM' ? 'active' : ''}`}
                   onClick={() => setStartPeriod('PM')}
                 >
                   Après-midi
-                </button>
+                </Button>
               </div>
             </div>
             <div className="lrf-dates-arrow">→</div>
@@ -522,20 +518,18 @@ const LeaveRequestForm = ({
                 min={startDate}
               />
               <div className="lrf-period-btns">
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   className={`lrf-period-btn ${endPeriod === 'AM' ? 'active' : ''}`}
                   onClick={() => setEndPeriod('AM')}
                 >
                   Matin
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button variant="ghost"                   type="button"
                   className={`lrf-period-btn ${endPeriod === 'PM' ? 'active' : ''}`}
                   onClick={() => setEndPeriod('PM')}
                 >
                   Après-midi
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -627,19 +621,18 @@ const LeaveRequestForm = ({
                   <div className="lrf-upload-file">
                     <FileText size={14} />
                     <span>{justificationName}</span>
-                    <button type="button" onClick={() => { setJustificationFile(null); setJustificationName(''); }}>
+                    <Button variant="ghost" type="button" onClick={() => { setJustificationFile(null); setJustificationName(''); }}>
                       <Trash2 size={12} />
-                    </button>
+                    </Button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="lrf-upload-btn"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload size={16} />
                     <span>Choisir un fichier (PDF, image, max 5 Mo)</span>
-                  </button>
+                  </Button>
                 )}
                 <input
                   ref={fileInputRef}

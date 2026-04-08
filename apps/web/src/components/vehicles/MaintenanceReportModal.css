@@ -14,7 +14,7 @@
 
 .mr-modal {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 95vw;
   max-width: 1200px;
   max-height: 90vh;
@@ -37,7 +37,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
 }
 
@@ -47,7 +47,7 @@
   color: var(--theme-text-inverse);
   cursor: pointer;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   transition: background 0.2s;
 }
@@ -71,7 +71,7 @@
   display: flex;
   gap: 2px;
   background: var(--theme-border-medium);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 2px;
 }
 
@@ -79,9 +79,9 @@
   padding: 5px 12px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-text-gray);
   transition: all 0.15s;
@@ -104,7 +104,7 @@
 .mr-nav-btn {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 8px;
   cursor: pointer;
   display: flex;
@@ -121,10 +121,10 @@
 .mr-today-btn {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: var(--theme-text-body);
   transition: all 0.15s;
@@ -137,7 +137,7 @@
 }
 
 .mr-date-label {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-dark);
   min-width: 200px;
@@ -153,8 +153,8 @@
 .mr-type-select {
   padding: 5px 8px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   background: var(--theme-bg-card);
   cursor: pointer;
 }
@@ -165,10 +165,10 @@
   gap: 4px;
   padding: 5px 12px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-text-body);
   transition: all 0.15s;
@@ -202,7 +202,7 @@
   justify-content: center;
   padding: 48px;
   color: var(--theme-text-muted);
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .mr-table-wrapper {
@@ -212,7 +212,7 @@
 .mr-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .mr-table th {
@@ -248,7 +248,7 @@
 
 .mr-mono {
   font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-gray);
 }
 
@@ -269,8 +269,8 @@
 .mr-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 10px;
+  border-radius: var(--radius-md-lg);
+  font-size: var(--font-2xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -298,7 +298,7 @@
   padding: 12px 10px;
   border-top: 2px solid var(--theme-text-dark);
   margin-top: 8px;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-dark);
 }
@@ -328,6 +328,6 @@
 
   .mr-date-label {
     min-width: auto;
-    font-size: 12px;
+    font-size: var(--font-sm);
   }
 }

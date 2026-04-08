@@ -1,7 +1,9 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { Upload, FileText, CheckCircle, Download } from 'lucide-react';
 import { Button, ModalLayout, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
+import { STATUS } from '../../constants';
+
 import './ContactsCSVImportDialog.css';
 
 /**
@@ -58,7 +60,7 @@ function toBackendFormat(rows) {
   }));
 }
 
-export default function ContactsCSVImportDialog({ onClose, onSuccess, toast }) {
+export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) {
   const [step, setStep] = useState('upload'); // upload | preview | importing | done
   const [parsedRows, setParsedRows] = useState([]);
   const [preview, setPreview] = useState(null);
@@ -168,7 +170,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, toast }) {
             </Button>
           </>
         )}
-        {step === 'done' && (
+        {step === STATUS.DONE && (
           <Button variant="primary" onClick={onClose}>Fermer</Button>
         )}
       </>}
@@ -254,7 +256,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, toast }) {
           )}
 
           {/* ── ÉTAPE 4 : Résultat ── */}
-          {step === 'done' && result && (
+          {step === STATUS.DONE && result && (
             <div className="csv-result-zone">
               <CheckCircle size={40} className="result-icon success" />
               <h4>Import terminé</h4>

@@ -642,6 +642,12 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       const existing = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+
+      // Empêcher un admin d'approuver/modifier sa propre demande
+      if (existing.user_id === req.user.id) {
+        return res.status(403).json({ error: 'Vous ne pouvez pas traiter votre propre demande de congé' });
+      }
+
       if (existing.status !== 'pending') {
         return res.status(400).json({ error: 'Seules les demandes en attente peuvent être traitées' });
       }
@@ -892,6 +898,20 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Fichier requis (filename + data en base64)' });
       }
 
+      // [SECURITY] Valider l'extension du fichier
+      const ALLOWED_JUSTIFICATION_EXTS = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+      const MAX_JUSTIFICATION_SIZE = 10 * 1024 * 1024; // 10 Mo
+      const ext = path.extname(filename).toLowerCase();
+      if (!ALLOWED_JUSTIFICATION_EXTS.includes(ext)) {
+        return res.status(400).json({ error: 'Type de fichier non autorisé (PDF, JPG, PNG, WebP uniquement)' });
+      }
+
+      // [SECURITY] Décoder et vérifier la taille
+      const buffer = Buffer.from(data, 'base64');
+      if (buffer.length > MAX_JUSTIFICATION_SIZE) {
+        return res.status(400).json({ error: 'Fichier trop volumineux (max 10 Mo)' });
+      }
+
       // Créer le dossier de justificatifs
       const justificationsDir = path.join(__dirname, '..', '..', 'public', 'leave-justifications');
       if (!fs.existsSync(justificationsDir)) {
@@ -901,7 +921,6 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       // Sauvegarder le fichier
       const safeName = `${existing.id}_${Date.now()}_${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
       const filePath = path.join(justificationsDir, safeName);
-      const buffer = Buffer.from(data, 'base64');
       fs.writeFileSync(filePath, buffer);
 
       // Mettre à jour la demande

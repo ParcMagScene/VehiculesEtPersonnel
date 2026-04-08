@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  X, Clock, User, FileText, Calendar, Check, Loader, Save, Briefcase, Search, Link2, Unlink, MapPin, ExternalLink
+  X, Clock, User, FileText, Calendar, Loader, Save, Briefcase, Search, Link2, Unlink, MapPin, ExternalLink
 } from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import { useToast } from '../../hooks/useToast';
 import './TaskEditModal.css';
-import { Input, Textarea, Select, EntityCombobox } from '@/design-system';
+import { Button, EntityCombobox, Input, Select, Textarea } from '@/design-system';
 
 const SECTIONS = {
   rdv:                'Rendez-vous',
@@ -149,7 +149,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     }
   };
 
-  const personName = task.personFirstName
+  const _personName = task.personFirstName
     ? `${task.personFirstName} ${task.personLastName || ''}`
     : null;
 
@@ -159,7 +159,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         {/* Header */}
         <div className="tem-header">
           <h3><FileText size={18} /> Modifier la tâche</h3>
-          <button className="tem-close" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="tem-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Badges info */}
@@ -247,14 +247,13 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               <div className="tem-affaire-selected">
                 <AffaireBadge numero={form.affaireNum} type={selectedAffaire?.type} />
                 <span className="tem-affaire-client">{selectedAffaire?.client || ''}</span>
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   className="tem-affaire-clear"
                   onClick={() => update('affaireNum', '')}
                   title="Retirer l'affaire"
                 >
                   <Unlink size={12} />
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="tem-affaire-picker">
@@ -274,8 +273,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                     {filteredAffaires.length === 0 ? (
                       <div className="tem-affaire-empty">Aucune affaire trouvée</div>
                     ) : filteredAffaires.map(a => (
-                      <button
-                        key={a.numeroAffaire}
+                      <Button variant="ghost"                         key={a.numeroAffaire}
                         type="button"
                         className="tem-affaire-option"
                         onClick={() => {
@@ -287,7 +285,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                         <span className="tem-affaire-opt-num">{a.numeroAffaire}</span>
                         <span className="tem-affaire-opt-client">{a.client || a.nom || ''}</span>
                         {a.titre && <span className="tem-affaire-opt-titre">{a.titre}</span>}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -357,11 +355,11 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
 
         {/* Footer */}
         <div className="tem-footer">
-          <button className="tem-btn secondary" onClick={onClose}>Annuler</button>
-          <button className="tem-btn primary" onClick={handleSave} disabled={saving || !form.title.trim()}>
+          <Button variant="ghost" className="tem-btn secondary" onClick={onClose}>Annuler</Button>
+          <Button variant="ghost" className="tem-btn primary" onClick={handleSave} disabled={saving || !form.title.trim()}>
             {saving ? <Loader size={14} className="spin" /> : <Save size={14} />}
             Enregistrer
-          </button>
+          </Button>
         </div>
       </div>
     </div>

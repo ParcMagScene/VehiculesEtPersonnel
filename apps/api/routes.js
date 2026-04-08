@@ -1,6 +1,6 @@
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
-import { listCache, cacheMiddleware, invalidateEntity } from './cache.js';
+import { listCache, cacheMiddleware } from './cache.js';
 
 // ============ CLIENTS (DEPRECATED — utiliser /api/annuaire/clients) ============
 // Ces routes legacy redirigent vers les endpoints annuaire pour compatibilité.

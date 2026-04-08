@@ -99,3 +99,25 @@ scripts/_check-users.cjs
 scripts/_test-nvr-*.py
 scripts/_search-nvr-*.py
 scripts/parse-nmap-cameras.py
+
+# ═══════════════════════════════════════════════
+# Open Source — fichiers exclus pour publication
+# ═══════════════════════════════════════════════
+
+# Documents clients (PDFs, factures, BL réels)
+public/AFFAIRES LOCMAT/
+
+# Logos tiers (marques, copyright)
+public/Logos/*.jpeg
+public/Logos/*.jpg
+public/Logos/*.gif
+public/Logos/*.svg
+
+# Fichiers audio potentiellement protégés
+*.wav
+
+# Backups de configuration
+*.backup
+
+# Scripts internes de nettoyage
+scripts/_cleanup-*.cjs

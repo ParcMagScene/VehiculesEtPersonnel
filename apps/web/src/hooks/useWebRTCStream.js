@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../utils/api';
 
+import { STATUS, TIMING } from '../constants';
+
 export function useWebRTCStream(camera) {
   const [status, setStatus] = useState('idle'); // idle | connecting | streaming | error
   const [error, setError] = useState(null);
@@ -53,7 +55,7 @@ export function useWebRTCStream(camera) {
 
       pc.oniceconnectionstatechange = () => {
         const state = pc.iceConnectionState;
-        if (state === 'connected' || state === 'completed') {
+        if (state === 'connected' || state === STATUS.COMPLETED) {
           reconnectAttempts.current = 0;
           clearTimeout(reconnectTimer.current);
         } else if (state === 'disconnected') {
@@ -81,7 +83,7 @@ export function useWebRTCStream(camera) {
           }
         };
         pc.addEventListener('icegatheringstatechange', check);
-        setTimeout(resolve, 3000);
+        setTimeout(resolve, TIMING.STATUS_CLEAR);
       });
 
       const result = await api.whepNegotiate(camera.id, pc.localDescription.sdp);

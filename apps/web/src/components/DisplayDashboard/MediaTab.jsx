@@ -1,9 +1,10 @@
 // MediaTab — Galerie de médias (images/vidéos)
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Image, Film, Trash2, Download, Eye } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { Image, Film, Trash2, Eye } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
-import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
+import { Button, EmptyState, Tooltip } from '@/design-system';
 
 function formatFileSize(bytes) {
   if (!bytes) return '0 o';
@@ -13,13 +14,13 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
+function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all | image | video
   const [preview, setPreview] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadMedia = useCallback(async () => {
     try {
@@ -39,13 +40,12 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
   }, [loadMedia, refreshKey]);
 
   const handleDelete = useCallback((item) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer \xAB ${item.original_name} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayMedia(item.id);
           toast.success('M\xE9dia supprim\xE9');
@@ -55,7 +55,7 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
         }
       },
     });
-  }, [toast, onRefresh]);
+  }, [confirm, toast, onRefresh]);
 
   if (loading) return <div className="display-loading">Chargement des médias…</div>;
 
@@ -64,13 +64,12 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
       {/* Filtres */}
       <div className="media-filters">
         {['all', 'image', 'video'].map(f => (
-          <button
-            key={f}
+          <Button variant="ghost"             key={f}
             className={`filter-btn ${filter === f ? 'active' : ''}`}
             onClick={() => setFilter(f)}
           >
             {f === 'all' ? 'Tous' : f === 'image' ? '🖼 Images' : '🎬 Vidéos'}
-          </button>
+          </Button>
         ))}
         <span className="media-count">{media.length} fichier(s)</span>
       </div>
@@ -81,7 +80,7 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
         <div className="media-grid">
           {media.map(item => (
             <div key={item.id} className="media-card">
-              <div className="media-preview" onClick={() => setPreview(item)}>
+              <div className="media-preview" role="button" tabIndex={0} onClick={() => setPreview(item)}>
                 {item.media_type === 'video' ? (
                   <div className="media-video-thumb">
                     <Film size={32} />
@@ -117,27 +116,17 @@ function MediaTab({ currentUser, refreshKey, onUpload, onRefresh }) {
       {preview && (
         <div className="media-preview-overlay" onClick={() => setPreview(null)}>
           <div className="media-preview-content" onClick={e => e.stopPropagation()}>
-            <button className="media-preview-close" onClick={() => setPreview(null)}>✕</button>
+            <Button variant="ghost" className="media-preview-close" onClick={() => setPreview(null)}>✕</Button>
             {preview.media_type === 'video' ? (
               <video src={preview.file_path} controls autoPlay style={{ maxWidth: '100%', maxHeight: '80vh' }} />
             ) : (
-              <img src={preview.file_path} alt={preview.original_name} style={{ maxWidth: '100%', maxHeight: '80vh' }} />
+              <img src={preview.file_path} alt={preview.original_name} loading="lazy" style={{ maxWidth: '100%', maxHeight: '80vh' }} />
             )}
             <p className="preview-filename">{preview.original_name}</p>
           </div>
         </div>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

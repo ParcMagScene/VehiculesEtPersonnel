@@ -1,4 +1,3 @@
-import React from 'react';
 import { Check } from 'lucide-react';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import './VehiclePickerCards.css';
@@ -62,10 +61,11 @@ function VehiclePickerCards({
               <img
                 src={`/Photos/${vehicle.photo}`}
                 alt={vehicle.name}
+                loading="lazy"
                 onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
               />
             ) : (
-              <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
+              <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vehicle-avatar" />
             )}
           </div>
 

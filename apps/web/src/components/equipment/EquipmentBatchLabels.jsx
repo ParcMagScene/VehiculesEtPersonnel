@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Tag, CheckSquare, Square, Printer, Download, ChevronDown, ChevronRight } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './EquipmentBatchLabels.css';
-import { Input, SearchBar } from '@/design-system';
+import { Button, SearchBar } from '@/design-system';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -13,7 +13,7 @@ const APP_BASE_URL = window.location.origin;
 
 const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
+const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [search, setSearch] = useState('');
   const [showLogo, setShowLogo] = useState(true);
@@ -203,7 +203,7 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
       let labelSvg = '<g transform="translate(' + x + ',' + y + ')">';
       labelSvg += '<rect width="' + lw + '" height="' + lh + '" fill="none" stroke="#ccc" stroke-width="0.5" stroke-dasharray="2,2" />';
       
-      let textX = 10;
+      let _textX = 10;
       let textY = showLogo ? 30 : 15;
       
       if (showLogo) {
@@ -249,26 +249,26 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
       <div className="ebl-toolbar">
         <SearchBar value={search} onChange={setSearch} placeholder="Rechercher par référence, nom, UID..." size="sm" />
 
-        <button className="ebl-select-all" onClick={selectAll}>
+        <Button variant="ghost" className="ebl-select-all" onClick={selectAll}>
           {selectedIds.size === totalEquipment ? <CheckSquare size={14} /> : <Square size={14} />}
           {selectedIds.size === totalEquipment ? 'Tout désélectionner' : 'Tout sélectionner'}
-        </button>
+        </Button>
 
         <div className="ebl-logo-toggle">
           <span>Logo entreprise :</span>
-          <button className={`ebl-toggle-btn ${showLogo ? 'active' : ''}`} onClick={() => setShowLogo(true)}>Avec</button>
-          <button className={`ebl-toggle-btn ${!showLogo ? 'active' : ''}`} onClick={() => setShowLogo(false)}>Sans</button>
+          <Button variant="ghost" className={`ebl-toggle-btn ${showLogo ? 'active' : ''}`} onClick={() => setShowLogo(true)}>Avec</Button>
+          <Button variant="ghost" className={`ebl-toggle-btn ${!showLogo ? 'active' : ''}`} onClick={() => setShowLogo(false)}>Sans</Button>
         </div>
 
         <div className="ebl-toolbar-actions">
-          <button className="ebl-btn-export" onClick={handleExportBatchSVG} disabled={totalSelected === 0}>
+          <Button variant="ghost" className="ebl-btn-export" onClick={handleExportBatchSVG} disabled={totalSelected === 0}>
             <Download size={16} />
             Exporter (200 × 200 mm) {totalSelected > 0 ? `— ${totalSelected}` : ''}
-          </button>
-          <button className="ebl-btn-print" onClick={handlePrintBatch} disabled={totalSelected === 0}>
+          </Button>
+          <Button variant="ghost" className="ebl-btn-print" onClick={handlePrintBatch} disabled={totalSelected === 0}>
             <Printer size={16} />
             Imprimer (A4) {totalSelected > 0 ? `— ${totalSelected} étiquette${totalSelected > 1 ? 's' : ''}` : ''}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -290,16 +290,15 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
 
           return (
             <div key={ref} className="ebl-group">
-              <div className="ebl-group-header" onClick={() => toggleCollapse(ref)}>
-                <button className="ebl-collapse-btn">
+              <div className="ebl-group-header" role="button" tabIndex={0} onClick={() => toggleCollapse(ref)}>
+                <Button variant="ghost" className="ebl-collapse-btn">
                   {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                </button>
-                <button
-                  className={`ebl-checkbox ${allChecked ? 'checked' : someChecked ? 'partial' : ''}`}
+                </Button>
+                <Button variant="ghost"                   className={`ebl-checkbox ${allChecked ? 'checked' : someChecked ? 'partial' : ''}`}
                   onClick={(e) => { e.stopPropagation(); toggleRef(ref, items); }}
                 >
                   {allChecked ? <CheckSquare size={16} /> : <Square size={16} />}
-                </button>
+                </Button>
                 <span className="ebl-group-ref">{ref}</span>
                 <span className="ebl-group-count">{items.length} unité{items.length > 1 ? 's' : ''}</span>
               </div>
@@ -307,12 +306,11 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
                 <div className="ebl-group-items">
                   {items.map(eq => (
                     <div key={eq.id} className={`ebl-item ${selectedIds.has(eq.id) ? 'selected' : ''}`}>
-                      <button
-                        className={`ebl-checkbox ${selectedIds.has(eq.id) ? 'checked' : ''}`}
+                      <Button variant="ghost"                         className={`ebl-checkbox ${selectedIds.has(eq.id) ? 'checked' : ''}`}
                         onClick={() => toggleSingle(eq.id)}
                       >
                         {selectedIds.has(eq.id) ? <CheckSquare size={14} /> : <Square size={14} />}
-                      </button>
+                      </Button>
                       <div className="ebl-item-info">
                         {eq.uid && <span className="ebl-uid">UID: {eq.uid}</span>}
                         {(eq.serialNumber || eq.serial_number) && <span className="ebl-sn">S/N: {eq.serialNumber || eq.serial_number}</span>}
@@ -337,7 +335,6 @@ const EquipmentBatchLabels = ({ equipment = [], onPrintSingle }) => {
           );
         })}
       </div>
-
 
     </div>
   );

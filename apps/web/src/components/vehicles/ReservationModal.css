@@ -17,7 +17,7 @@
 
 .modal-content {
   background: var(--theme-bg-page);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   max-width: 900px !important;
   width: 100%;
   max-height: 90vh;
@@ -67,7 +67,7 @@
   color: var(--theme-text-inverse);
   padding: 0.25rem 0.75rem;
   border-radius: 0.375rem;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   font-weight: 600;
   border: 1px solid var(--close-btn-hover-bg);
 }
@@ -108,7 +108,7 @@
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   margin-bottom: 1.5rem;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -200,7 +200,7 @@
 
 .vehicle-picker-name-desktop {
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-bg-dark);
   white-space: nowrap;
   overflow: hidden;
@@ -273,7 +273,7 @@
   text-align: center;
   margin-top: 1rem;
   color: var(--theme-info-text-alt);
-  font-size: 0.875rem;
+  font-size: var(--font-base);
 }
 
 .multi-vehicle-preview strong {
@@ -298,7 +298,7 @@
   margin-bottom: 6px;
   font-weight: 600;
   color: var(--theme-text-muted);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -310,7 +310,7 @@
   padding: 8px 10px;
   border: 1px solid var(--theme-border);
   border-radius: 7px;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
   transition: border-color 0.15s;
@@ -333,7 +333,7 @@
 
 .date-display {
   margin-top: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   font-style: italic;
 }
@@ -433,7 +433,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   transition: all 0.2s;
 }
 
@@ -542,7 +542,7 @@
   border: none;
   border-radius: 0.5rem;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -560,7 +560,7 @@
   cursor: pointer;
   transition: all 0.15s;
   border-bottom: 1px solid var(--theme-bg-tertiary);
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   align-items: center;
 }
 
@@ -601,7 +601,7 @@
 }
 
 .event-dates {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   white-space: nowrap;
   font-family: monospace;
@@ -619,7 +619,7 @@
   font-weight: 600;
   color: var(--theme-purple-accent);
   text-align: center;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 .event-details {
@@ -647,7 +647,7 @@
   gap: 0.25rem;
   color: var(--theme-info);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   font-weight: 500;
   transition: color 0.2s;
 }
@@ -658,7 +658,7 @@
 }
 
 .location-address {
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   display: block;
 }
@@ -679,7 +679,7 @@
   color: var(--theme-text-inverse);
   padding: 0.375rem 0.625rem;
   border-radius: 0.375rem;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(124, 58, 237, 0.3);
 }
@@ -741,7 +741,7 @@
   color: var(--theme-text-inverse);
   border: none;
   border-radius: 0.375rem;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -1100,7 +1100,7 @@
   .dropdown-header,
   .custom-dropdown-item {
     grid-template-columns: 80px 1fr 60px;
-    font-size: 0.8rem;
+    font-size: var(--font-sm);
     padding: 0.5rem;
   }
 
@@ -1121,7 +1121,7 @@
   }
 
   .modal-header h2 {
-    font-size: 1rem;
+    font-size: var(--font-md);
   }
 
   .modal-form {
@@ -1256,4 +1256,214 @@
 [data-theme="dark"] .unlink-inner-btn:hover {
   color: var(--theme-primary);
   background: var(--violet-tint);
+}
+
+/* ─── Styles extraits des inline (Phase C) ─── */
+.reservation-header-subtitle {
+  font-size: var(--font-base);
+  color: var(--theme-text-inverse);
+  margin-top: 0.25rem;
+}
+
+.reservation-tournee-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  padding: 0.375rem 0.625rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 0.375rem;
+  font-size: var(--font-base);
+  white-space: nowrap;
+  margin-left: 0.75rem;
+  align-self: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.reservation-tournee-label {
+  font-weight: 500;
+  color: var(--theme-text-inverse);
+}
+
+.reservation-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.reservation-location-filter-wrap {
+  margin-bottom: 6px;
+}
+
+.reservation-location-filter-select {
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--theme-border);
+}
+
+.reservation-location-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.reservation-location-search-wrap {
+  min-width: 300px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.reservation-location-input-full {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.reservation-location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.reservation-location-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--theme-border-light);
+  font-size: 0.9rem;
+}
+
+.reservation-location-item:hover {
+  background-color: var(--theme-bg-hover);
+}
+
+.reservation-location-item-name {
+  font-weight: 500;
+}
+
+.reservation-location-item-address {
+  font-size: var(--font-sm);
+  color: var(--theme-text-gray);
+}
+
+.reservation-location-item-type {
+  font-size: 0.75rem;
+  color: var(--theme-text-muted);
+  font-style: italic;
+}
+
+.reservation-add-location-btn {
+  padding: 0 12px;
+  background-color: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  align-self: stretch;
+}
+
+.reservation-tournee-events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.reservation-event-date-xs {
+  font-size: 0.7rem;
+}
+
+.reservation-event-clickable {
+  cursor: pointer;
+  flex: 1;
+}
+
+.reservation-event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.reservation-event-date-badge {
+  font-size: 0.75rem;
+  color: var(--theme-text-gray);
+  font-weight: 500;
+}
+
+.reservation-event-affaire-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--theme-primary);
+  background-color: var(--theme-bg-indigo-lighter);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.reservation-event-title {
+  font-size: var(--font-base);
+  color: var(--theme-text-heading);
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+}
+
+.reservation-event-location {
+  font-size: 0.75rem;
+  color: var(--theme-text-gray);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.reservation-linked-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--theme-bg-secondary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--theme-border);
+}
+
+.reservation-linked-header {
+  font-weight: 600;
+  font-size: var(--font-base);
+  color: var(--theme-text-body);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reservation-linked-count {
+  font-weight: normal;
+  color: var(--theme-text-gray);
+  font-size: var(--font-sm);
+}
+
+.reservation-events-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.reservation-loading-fallback {
+  padding: 1rem;
+  text-align: center;
+  color: var(--theme-text-gray);
 }

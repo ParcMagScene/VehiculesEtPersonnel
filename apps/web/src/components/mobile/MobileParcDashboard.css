@@ -27,7 +27,7 @@
   padding: 6px;
   cursor: pointer;
   display: flex;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .mparc-back:active {
@@ -44,7 +44,7 @@
 
 .mparc-stat {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -85,7 +85,7 @@
 
 .mparc-nav-section h3 {
   margin: 0 0 12px;
-  font-size: 1rem;
+  font-size: var(--font-md);
   color: var(--theme-bg-dark);
   font-weight: 600;
 }
@@ -98,7 +98,7 @@
   padding: 14px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   margin-bottom: 8px;
   box-shadow: 0 2px 8px var(--shadow-inner);
   cursor: pointer;
@@ -113,7 +113,7 @@
 .mparc-nav-icon {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,7 +139,7 @@
 }
 
 .mparc-nav-desc {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 
@@ -155,14 +155,14 @@
 
 .mparc-upcoming h3 {
   margin: 0 0 12px;
-  font-size: 1rem;
+  font-size: var(--font-md);
   color: var(--theme-bg-dark);
   font-weight: 600;
 }
 
 .mparc-upcoming-list {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
@@ -185,7 +185,7 @@
   height: 36px;
   background: var(--theme-purple-bg);
   color: var(--theme-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -206,6 +206,6 @@
 }
 
 .mparc-upcoming-date {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }

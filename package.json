@@ -2,7 +2,7 @@
   "name": "emag",
   "version": "2.0.0",
   "private": true,
-  "description": "eM@g - Gestion du parc Mag Scène (monorepo)",
+  "description": "eM@g - Gestion de parc matériel et personnel (monorepo)",
   "type": "module",
   "workspaces": [
     "apps/web",
@@ -23,7 +23,7 @@
     "update-photos": "node scripts/generate-photo-list.js",
     "watch-photos": "node scripts/watch-photos.js",
     "smoke-test": "node scripts/smoke-test.js",
-    "test": "node --test tests/unit.test.js",
+    "test": "node --test --test-force-exit tests/unit.test.js tests/schemas.test.js tests/db-init.test.js",
     "test:api": "node --test tests/api-integration.test.js",
     "test:all": "node --test tests/"
   },

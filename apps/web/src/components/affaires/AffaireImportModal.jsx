@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import logger from "../../utils/logger";
-import api, { getApiUrl } from '../../utils/api';
+import api from '../../utils/api';
 import './AffaireImportModal.css';
-import { extractTextFromPDF, parseBonLivraison, parseDate, smartParse, batchParsePDFs, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
+import { extractTextFromPDF, smartParse, batchParsePDFs } from '../../utils/pdfParser';
 import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../../utils/indexedDB';
 import PhoneInput from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
@@ -13,9 +13,9 @@ const AffaireImportModal = ({
   isOpen, 
   onClose, 
   event,
-  onEventCreated,
+  _onEventCreated,
   onEventUpdated,
-  onRequestEditReservation
+  _onRequestEditReservation
 }) => {
   const toast = useToast();
   const [step, setStep] = useState('upload'); // 'choice', 'upload', 'form', 'edit-event', 'upload-additional'
@@ -36,7 +36,7 @@ const AffaireImportModal = ({
     titre: '',
     description: ''
   });
-  const [eventFormData, setEventFormData] = useState({
+  const [_eventFormData, setEventFormData] = useState({
     titre: '',
     description: '',
     dateDebut: '',
@@ -45,13 +45,13 @@ const AffaireImportModal = ({
   const [existingAffaires, setExistingAffaires] = useState([]);
   const [replaceConfirm, setReplaceConfirm] = useState(null);
   const [initialFormData, setInitialFormData] = useState(null);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [_hasChanges, setHasChanges] = useState(false);
   
   // ═══ Nouveaux états : aperçu PDF, détection type, batch ═══
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [detectedDocType, setDetectedDocType] = useState(null); // { docType, docTypeLabel, confidence }
-  const [extractedText, setExtractedText] = useState('');
+  const [_extractedText, setExtractedText] = useState('');
   const [batchMode, setBatchMode] = useState(false);
   const [batchResults, setBatchResults] = useState([]); // [{ file, docType, confidence, info, error }]
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
@@ -196,7 +196,7 @@ const AffaireImportModal = ({
     setHasChanges(hasChanged);
   }, [formData, initialFormData]);
 
-  const loadExistingAffaires = async () => {
+  const _loadExistingAffaires = async () => {
     if (!event?.id) return;
     
     try {
@@ -279,7 +279,7 @@ const AffaireImportModal = ({
     e.stopPropagation();
   };
 
-  const handleDrop = async (e) => {
+  const _handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -290,7 +290,7 @@ const AffaireImportModal = ({
     }
   };
 
-  const handleFileInput = async (e) => {
+  const _handleFileInput = async (e) => {
     const files = e.target.files;
     if (files.length > 0) {
       await handleFileSelection(files[0]);
@@ -421,22 +421,8 @@ const AffaireImportModal = ({
             
             // Sauvegarder aussi le PDF physiquement sur le serveur
             try {
-              const formData = new FormData();
-              formData.append('pdf', file);
-              formData.append('affaireId', affaireId);
-              
-              const response = await fetch(`${getApiUrl()}/upload-bl`, {
-                method: 'POST',
-                credentials: 'include',
-                body: formData
-              });
-              
-              if (response.ok) {
-                const result = await response.json();
-                pdfData.serverPath = result.path;
-              } else {
-                console.warn('⚠️ Échec sauvegarde serveur, PDF uniquement dans IndexedDB');
-              }
+              const result = await api.uploadBL(file, affaireId);
+              pdfData.serverPath = result.path;
             } catch (serverError) {
               console.warn('⚠️ Erreur sauvegarde serveur:', serverError);
             }
@@ -564,7 +550,7 @@ const AffaireImportModal = ({
     }
   };
 
-  const handleCreateWithoutPDF = () => {
+  const _handleCreateWithoutPDF = () => {
     setStep('form');
   };
 
@@ -692,45 +678,45 @@ const AffaireImportModal = ({
             <div className="choice-step">
               {workflow === 'new' && (
                 <>
-                  <button 
+                  <Button variant="ghost" 
                     className="choice-button"
                     onClick={() => setStep('upload')}
                   >
                     📄 Importer un BL pour cet événement
-                  </button>
+                  </Button>
                 </>
               )}
               
               {workflow === 'import-or-create' && (
                 <>
-                  <button 
+                  <Button variant="ghost" 
                     className="choice-button"
                     onClick={() => setStep('form')}
                   >
                     ✏️ Modifier les informations
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className="choice-button"
                     onClick={() => setStep('upload')}
                   >
                     📄 {existingAffaires.length > 0 ? 'Remplacer le BL' : 'Importer un BL'}
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className="choice-button"
                     onClick={() => setStep('upload-additional')}
                   >
                     📎 Ajouter un BL supplémentaire
-                  </button>
+                  </Button>
                 </>
               )}
               
               {workflow === 'update' && (
-                <button 
+                <Button variant="ghost" 
                   className="choice-button"
                   onClick={() => setStep('upload')}
                 >
                   📄 Importer/Remplacer le BL
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -762,13 +748,13 @@ const AffaireImportModal = ({
                 </p>
                 <p className="drop-zone-or">ou</p>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                  <button 
+                  <Button variant="ghost" 
                     className="browse-button"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     Parcourir
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className="browse-button batch-browse"
                     onClick={() => {
                       fileInputRef.current.multiple = true;
@@ -776,7 +762,7 @@ const AffaireImportModal = ({
                     }}
                   >
                     📦 Lot de PDFs
-                  </button>
+                  </Button>
                 </div>
                 <input
                   ref={fileInputRef}
@@ -936,13 +922,13 @@ const AffaireImportModal = ({
                 <div className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>✅ PDF analysé: {pdfFile.name}</span>
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
+                    <Button variant="ghost" 
                       className="btn-view-pdf"
                       onClick={() => setShowPreview(!showPreview)}
                     >
                       {showPreview ? '🔽 Masquer' : '👁️ Aperçu'}
-                    </button>
-                    <button 
+                    </Button>
+                    <Button variant="ghost" 
                       className="btn-view-pdf"
                       onClick={() => {
                         if (pdfPreviewUrl) {
@@ -958,7 +944,7 @@ const AffaireImportModal = ({
                       }}
                     >
                       🔗 Ouvrir
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -978,7 +964,7 @@ const AffaireImportModal = ({
               {!pdfFile && existingAffaires.length > 0 && existingAffaires[0].pdfData && (
                 <div className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>📄 BL principal: {existingAffaires[0].pdfFileName}</span>
-                  <button 
+                  <Button variant="ghost" 
                     className="btn-view-pdf"
                     onClick={() => {
                       const pdfData = existingAffaires[0].pdfData;
@@ -994,7 +980,7 @@ const AffaireImportModal = ({
                     }}
                   >
                     👁️ Voir le PDF
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -1006,7 +992,7 @@ const AffaireImportModal = ({
                     <div key={index} className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
                       <span>📎 {bl.fileName}</span>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
+                        <Button variant="ghost" 
                           className="btn-view-pdf"
                           onClick={() => {
                             const byteCharacters = atob(bl.data.split(',')[1]);
@@ -1021,15 +1007,15 @@ const AffaireImportModal = ({
                           }}
                         >
                           👁️ Voir
-                        </button>
-                        <button 
+                        </Button>
+                        <Button variant="ghost" 
                           className="btn-delete-pdf"
                           onClick={() => {
                             setAdditionalBLs(prev => prev.filter((_, i) => i !== index));
                           }}
                         >
                           🗑️
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}

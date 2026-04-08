@@ -1,7 +1,7 @@
 # 🏗️ Architecture Complète — eM@g
 
 > **Dernière mise à jour** : 11 mars 2026 (Phase 4 — Performance)
-> **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
+> **Branche** : `dev` — **Dépôt** : `your-org/emag`
 > **Domaine** : (configurable via .env)
 
 ---
@@ -422,7 +422,7 @@ Le frontend persiste les données dans IndexedDB (via `src/utils/indexedDB.js`) 
 Classe `ApiClient` avec architecture mixin (Phase 3). Le barrel `src/utils/api.js` (5 lignes) re-exporte le singleton — 0 changement dans les 96 fichiers consommateurs.
 
 Fonctionnalités :
-- Détection automatique de l'URL backend (DuckDNS / localhost / IP)
+- Détection automatique de l'URL backend (Dynamic DNS / localhost / IP)
 - Injection automatique du Bearer token JWT
 - Conversion `snake_case` ↔ `camelCase` transparente
 - Auto-logout sur erreur 401/403 (sauf endpoints d'auth)

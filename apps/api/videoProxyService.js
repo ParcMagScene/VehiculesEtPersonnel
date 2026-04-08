@@ -38,7 +38,19 @@ function getKeyBuffer() {
     }
   }
   if (!process.env.VIDEO_CIPHER_KEY) {
-    logger.warn('⚠️  VIDEO_CIPHER_KEY non défini — les mots de passe caméra seront perdus au redémarrage');
+    // [AUDIT FIX MED-B5] Générer et persister la clé pour éviter la perte au redémarrage
+    const generated = crypto.randomBytes(32).toString('hex');
+    const envPath = join(__dir, '.env');
+    try {
+      let content = '';
+      try { content = fs.readFileSync(envPath, 'utf8'); } catch {}
+      const line = `\nVIDEO_CIPHER_KEY=${generated}\n`;
+      fs.appendFileSync(envPath, line);
+      process.env.VIDEO_CIPHER_KEY = generated;
+      logger.info('🔑 VIDEO_CIPHER_KEY générée et sauvegardée dans .env');
+    } catch (writeErr) {
+      logger.warn('⚠️  VIDEO_CIPHER_KEY non défini et impossible d\'écrire dans .env — les mots de passe caméra seront perdus au redémarrage');
+    }
   }
   const key = process.env.VIDEO_CIPHER_KEY || crypto.randomBytes(32).toString('hex');
   logger.info(`🔑 Cipher key initialisée (source: ${process.env.VIDEO_CIPHER_KEY ? 'env' : 'random'})`);

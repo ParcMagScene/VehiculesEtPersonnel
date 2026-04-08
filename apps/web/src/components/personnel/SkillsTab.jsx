@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Plus, X, Save, Edit2, Trash2, Award } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
 import { SKILL_CATEGORIES } from './personnelConstants';
-import { Button, Dialog, Input, Select, EmptyState } from '@/design-system';
+import { Button, Input, Select, EmptyState } from '@/design-system';
 
 const SkillsTab = ({ skills, setSkills, currentUser }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showForm, setShowForm] = useState(false);
   const [editingSkill, setEditingSkill] = useState(null);
   const [form, setForm] = useState({ name: '', category: 'autre', description: '' });
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const groupedSkills = SKILL_CATEGORIES.map(cat => ({
     ...cat,
@@ -40,13 +41,12 @@ const SkillsTab = ({ skills, setSkills, currentUser }) => {
   };
 
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: 'Supprimer cette compétence ?',
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteSkill(id);
           setSkills(prev => prev.filter(s => s.id !== id));
@@ -73,7 +73,7 @@ const SkillsTab = ({ skills, setSkills, currentUser }) => {
           <form className="personnel-form compact" onSubmit={handleSubmit}>
             <div className="personnel-form-header">
               <h3>{editingSkill ? 'Modifier' : 'Nouvelle compétence'}</h3>
-              <button type="button" className="close-btn" onClick={resetForm}><X size={18} /></button>
+              <Button variant="ghost" type="button" className="close-btn" onClick={resetForm} aria-label="Fermer"><X size={18} /></Button>
             </div>
             <div className="personnel-form-grid">
               <div className="form-field">
@@ -115,10 +115,10 @@ const SkillsTab = ({ skills, setSkills, currentUser }) => {
                   {skill.description && <span className="skill-item-desc">{skill.description}</span>}
                   {currentUser?.isAdmin && (
                     <div className="skill-item-actions">
-                      <Button variant="ghost" size="sm" iconOnly onClick={() => { setForm({ name: skill.name, category: skill.category, description: skill.description || '' }); setEditingSkill(skill); setShowForm(true); }}>
+                      <Button variant="ghost" size="sm" iconOnly onClick={() => { setForm({ name: skill.name, category: skill.category, description: skill.description || '' }); setEditingSkill(skill); setShowForm(true); }} aria-label="Modifier">
                         <Edit2 size={12} />
                       </Button>
-                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(skill.id)}>
+                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(skill.id)} aria-label="Supprimer">
                         <Trash2 size={12} />
                       </Button>
                     </div>
@@ -132,17 +132,7 @@ const SkillsTab = ({ skills, setSkills, currentUser }) => {
           <EmptyState icon={<Award size={48} />} title="Aucune compétence enregistrée" />
         )}
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

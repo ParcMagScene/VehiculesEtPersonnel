@@ -42,9 +42,9 @@
   padding: 10px 16px;
   background: var(--theme-danger-bg);
   border: 1px solid var(--btn-danger-hover-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--theme-danger-dark);
-  font-size: 13px;
+  font-size: var(--font-base);
   margin-bottom: 12px;
 }
 
@@ -53,10 +53,10 @@
   background: var(--theme-danger-dark);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 12px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 /* ═══ Sous-onglets ═══ */
@@ -66,7 +66,7 @@
   gap: 4px;
   padding: 4px;
   background: var(--theme-border-light);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-bottom: 16px;
 }
 
@@ -78,10 +78,10 @@
   gap: 6px;
   padding: 8px 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--theme-text-secondary);
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -118,7 +118,7 @@
   gap: 8px;
   background: var(--theme-bg-page);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 6px 12px;
   flex: 1;
   min-width: 180px;
@@ -128,7 +128,7 @@
   border: none;
   background: transparent;
   outline: none;
-  font-size: 13px;
+  font-size: var(--font-base);
   width: 100%;
   color: var(--theme-text-dark);
 }
@@ -141,8 +141,8 @@
 .personnel-filter {
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   color: var(--theme-text-subtle);
   background: var(--theme-bg-card);
   cursor: pointer;
@@ -157,7 +157,7 @@
   color: var(--btn-primary-color);
   border: none;
   border-radius: var(--btn-radius);
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
@@ -172,7 +172,7 @@
 
 .personnel-add-btn.small {
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 /* ═══ Formulaire ═══ */
@@ -180,7 +180,7 @@
 .personnel-form-overlay {
   background: var(--theme-bg-page);
   border: 1px solid var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   margin-bottom: 16px;
 }
@@ -202,7 +202,7 @@
 .personnel-form-header .close-btn {
   background: none;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--theme-text-secondary);
   cursor: pointer;
   padding: 4px;
@@ -245,7 +245,7 @@
 }
 
 .form-field label {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-subtle);
   display: flex;
@@ -258,8 +258,8 @@
 .form-field textarea {
   padding: 7px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   color: var(--theme-text-primary);
   background: var(--theme-bg-card);
   transition: all 0.2s;
@@ -280,7 +280,7 @@
 /* Modal d'édition personnel (mode planning) */
 .personnel-edit-modal {
   background: var(--theme-bg-page);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 90%;
   max-width: 700px;
   max-height: 90vh;
@@ -352,7 +352,7 @@
 
 .personnel-edit-form-body .form-group label {
   display: block;
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--theme-text-muted);
   margin-bottom: 6px;
@@ -367,7 +367,7 @@
   padding: 8px 10px;
   border: 1px solid var(--theme-border);
   border-radius: 7px;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-family: inherit;
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
@@ -451,7 +451,7 @@
   color: var(--btn-secondary-color);
   border: var(--btn-secondary-border);
   border-radius: var(--btn-radius);
-  font-size: 13px;
+  font-size: var(--font-base);
   cursor: pointer;
   font-weight: var(--btn-font-weight);
   transition: var(--btn-transition);
@@ -463,7 +463,7 @@
 
 .cancel-btn.small {
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .save-btn {
@@ -475,7 +475,7 @@
   color: var(--btn-primary-color);
   border: none;
   border-radius: var(--btn-radius);
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
@@ -489,7 +489,7 @@
 
 .save-btn.small {
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .save-btn:disabled {
@@ -517,9 +517,9 @@
   gap: 4px;
   padding: 3px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   background: var(--theme-bg-card);
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.2s;
@@ -534,8 +534,8 @@
 .skill-level-select {
   padding: 2px 4px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
-  font-size: 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-2xs);
   background: var(--theme-bg-card);
   color: var(--theme-text-dark);
 }
@@ -565,7 +565,7 @@
 
 .pp-group-label {
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--theme-text-inverse);
@@ -590,10 +590,10 @@
 
 .pp-type-badge {
   display: inline-block;
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   text-transform: uppercase;
   letter-spacing: 0.3px;
   white-space: nowrap;
@@ -607,7 +607,7 @@
 
 .pp-phone-cell,
 .pp-email-cell {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   max-width: 160px;
   overflow: hidden;
@@ -626,7 +626,7 @@
 }
 
 .pp-status-dot {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -664,7 +664,7 @@
   overflow-y: auto;
   padding: 4px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-secondary);
 }
 
@@ -704,13 +704,13 @@
 }
 
 .personnel-empty p {
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .person-card {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   overflow: hidden;
   transition: box-shadow 0.2s;
 }
@@ -749,7 +749,7 @@
 }
 
 .person-name {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
   display: flex;
@@ -759,10 +759,10 @@
 }
 
 .person-type-badge {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -793,7 +793,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   margin-bottom: 6px;
 }
@@ -805,10 +805,10 @@
 }
 
 .person-status-badge {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 500;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .person-status-badge.inactive {
@@ -827,7 +827,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 
@@ -839,16 +839,16 @@
 }
 
 .skill-chip-mini {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 15%, var(--theme-bg-card));
   color: var(--chip-color, var(--theme-text-gray));
   font-weight: 500;
 }
 
 .skill-more {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-muted);
   padding: 2px 4px;
 }
@@ -865,7 +865,7 @@
   border: none;
   cursor: pointer;
   padding: 5px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--theme-text-muted);
   transition: all 0.15s;
 }
@@ -892,14 +892,14 @@
 }
 
 .person-notes {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   margin: 0 0 8px;
   font-style: italic;
 }
 
 .person-skills-detail strong {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-subtle);
 }
 
@@ -915,7 +915,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 10%, var(--theme-bg-card));
   border: 1px solid color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 25%, var(--theme-bg-card));
 }
@@ -946,7 +946,7 @@
 }
 
 .person-positions-more summary {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-primary);
   cursor: pointer;
   user-select: none;
@@ -963,17 +963,17 @@
 }
 
 .skill-detail-item .skill-name {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--chip-color, var(--theme-text-gray));
 }
 
 .skill-detail-item .skill-level {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-muted);
   background: var(--theme-bg-card);
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 /* ═══ Skills grid ═══ */
@@ -987,7 +987,7 @@
 .skill-group {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 14px;
 }
 
@@ -995,7 +995,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-dark);
   margin: 0 0 10px;
@@ -1019,19 +1019,19 @@
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-page);
   border-left: 3px solid var(--chip-color, var(--theme-text-gray));
 }
 
 .skill-item-name {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-dark);
 }
 
 .skill-item-desc {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
   flex: 1;
   text-align: right;
@@ -1068,7 +1068,7 @@
   overflow: hidden;
   min-height: 0;
   border: 1px solid var(--theme-border-medium);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 /* ── Planning Toolbar ── */
@@ -1088,7 +1088,7 @@
   gap: 6px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
   flex: 1;
   max-width: 280px;
@@ -1103,7 +1103,7 @@
   border: none;
   outline: none;
   background: transparent;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-primary);
   width: 100%;
 }
@@ -1133,8 +1133,8 @@
 .pp-planning-filter-select {
   padding: 4px 8px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
   cursor: pointer;
@@ -1150,9 +1150,9 @@
   gap: 4px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   cursor: pointer;
   white-space: nowrap;
@@ -1236,9 +1236,9 @@
   padding: 2px 7px;
   background: var(--close-btn-border);
   border: 1px solid var(--glass);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   color: var(--theme-text-inverse);
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -1256,7 +1256,7 @@
 }
 
 .pp-leave-badge-count {
-  font-size: 11px;
+  font-size: var(--font-xs);
 }
 
 .pp-leave-add-btn {
@@ -1290,7 +1290,7 @@
   color: var(--theme-text-inverse);
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 11px;
+  font-size: var(--font-xs);
 }
 
 .pp-person-add-btn:hover {
@@ -1367,9 +1367,9 @@
   color: var(--theme-text-inverse);
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1491,7 +1491,7 @@
 
 .pp-month-name {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .pp-day-name {
@@ -1554,7 +1554,7 @@
 }
 
 .pp-person-name {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-dark);
   white-space: nowrap;
@@ -1723,7 +1723,7 @@
   top: 1px;
   left: 0;
   bottom: 1px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1754,7 +1754,7 @@
   display: flex;
   pointer-events: none;
   z-index: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
@@ -1801,7 +1801,7 @@
 }
 
 .pp-assignment-title {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -1825,7 +1825,7 @@
   transform: translateY(-50%);
   width: 18px;
   height: 18px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: none;
   background: rgba(239, 68, 68, 0.9);
   color: var(--theme-text-inverse);
@@ -1847,7 +1847,7 @@
 /* ── Mission blocks ── */
 .pp-mission-block {
   flex: 1;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 8px;
   display: flex;
   flex-direction: column;
@@ -1864,7 +1864,7 @@
 }
 
 .pp-mission-title {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -1985,7 +1985,7 @@
   transition: opacity 0.2s, width 0.15s;
   pointer-events: auto;
   background: rgba(0, 0, 0, 0.35);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .pp-resize-handle-start {

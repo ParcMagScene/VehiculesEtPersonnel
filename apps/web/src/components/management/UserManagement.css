@@ -8,13 +8,13 @@
   padding: 40px;
   text-align: center;
   color: var(--theme-text-gray);
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 
 .user-management-section {
   background: var(--theme-bg-card);
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px var(--shadow-xs);
   margin-bottom: 1.5rem;
 }
@@ -39,7 +39,7 @@
 .request-card {
   background: var(--theme-bg-card);
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -122,7 +122,7 @@
 
 .user-management-section {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 24px;
   margin-bottom: 24px;
   box-shadow: var(--shadow-sm);
@@ -133,7 +133,7 @@
   align-items: center;
   gap: 10px;
   margin: 0 0 20px 0;
-  font-size: 18px;
+  font-size: var(--font-lg);
   color: var(--theme-bg-dark);
 }
 
@@ -147,8 +147,8 @@
   flex: 1;
   padding: 10px 14px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
 }
 
 .add-email-form button {
@@ -187,7 +187,7 @@
   background: var(--theme-bg-secondary);
   color: var(--theme-text-gray);
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   line-height: 1.2;
@@ -196,7 +196,7 @@
 .emails-list td, .users-list td, .requests-history td {
   padding: 2px 8px;
   border-top: 1px solid var(--theme-border-medium);
-  font-size: 13px;
+  font-size: var(--font-base);
   line-height: 1.2;
   vertical-align: middle;
 }
@@ -206,8 +206,8 @@
   align-items: center;
   gap: 3px;
   padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 11px;
+  border-radius: var(--radius-md-lg);
+  font-size: var(--font-xs);
   font-weight: 500;
   line-height: 1.3;
 }
@@ -227,8 +227,8 @@
   align-items: center;
   gap: 3px;
   padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 11px;
+  border-radius: var(--radius-md-lg);
+  font-size: var(--font-xs);
   font-weight: 500;
   line-height: 1.3;
 }
@@ -246,7 +246,7 @@
 .btn-icon {
   padding: 2px 4px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   transition: all 0.2s;
   background: transparent;
@@ -301,8 +301,8 @@
 .inline-form input {
   padding: 6px 10px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   width: 150px;
 }
 
@@ -311,7 +311,7 @@
   border: none;
   border-radius: var(--btn-radius);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: var(--btn-font-weight);
   transition: var(--btn-transition);
 }
@@ -338,7 +338,7 @@
   text-align: center;
   padding: 40px 20px;
   color: var(--theme-text-muted);
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .user-name-cell {
@@ -368,7 +368,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: var(--theme-text-body);
 }
@@ -399,13 +399,13 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: var(--theme-text-body);
 }
 
 .all-permissions-label {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-muted);
   font-style: italic;
 }
@@ -430,7 +430,7 @@
 
 .approve-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 90%;
   max-width: 480px;
   box-shadow: var(--shadow-modal);
@@ -460,7 +460,7 @@
 
 .approve-modal-info {
   background: var(--theme-bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   margin-bottom: 1.25rem;
   border-left: 4px solid var(--theme-success-alt);
@@ -474,7 +474,7 @@
 
 .approve-modal-user strong {
   color: var(--theme-text-heading);
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .approve-modal-user span {
@@ -494,7 +494,7 @@
   gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--theme-border-medium);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s;
   flex-wrap: wrap;
@@ -527,7 +527,7 @@
   width: 100%;
   margin-left: 28px;
   margin-top: 4px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
   font-weight: 400;
 }
@@ -547,12 +547,12 @@
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--btn-success-color);
   background: var(--theme-success-bg);
   border: 1px solid var(--btn-success-hover-bg);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
@@ -569,12 +569,12 @@
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: var(--theme-text-gray);
   background: var(--theme-bg-tertiary);
   border: 1px solid var(--theme-border-medium);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
 }
 .personnel-linked-badge svg {
@@ -596,7 +596,7 @@
 /* ===== Modal création personnel ===== */
 .create-personnel-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 480px;
   max-width: 95vw;
   box-shadow: var(--shadow-modal);
@@ -626,7 +626,7 @@
 
 .create-personnel-subtitle {
   margin: 0 0 1rem 0;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   line-height: 1.4;
 }
@@ -639,7 +639,7 @@
 }
 .create-personnel-field label {
   display: block;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-body);
   margin-bottom: 4px;
@@ -647,9 +647,9 @@
 .create-personnel-field input {
   width: 100%;
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: var(--font-base);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
@@ -664,7 +664,7 @@
 }
 .create-personnel-section-label {
   display: block;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-body);
   margin-bottom: 8px;
@@ -683,7 +683,7 @@
   padding: 14px 10px;
   background: var(--theme-bg-secondary);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -700,7 +700,7 @@
   font-size: 22px;
 }
 .personnel-type-label {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-body);
 }
@@ -717,8 +717,8 @@
   padding: 8px 12px;
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border-medium);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   color: var(--theme-text-body);
   cursor: pointer;
   transition: all 0.15s;

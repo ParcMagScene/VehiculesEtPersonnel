@@ -1,7 +1,10 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { format, addDays, startOfMonth, endOfMonth, startOfDay, addMonths, subMonths, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { STATUS } from '../../constants';
+
+import { Button } from '@/design-system';
 import './MobilePlanning.css';
 
 function MobilePlanning({ 
@@ -167,8 +170,8 @@ function MobilePlanning({
     return allElements;
   };
 
-  const getClient = (clientId) => clients.find(c => c.id === clientId);
-  const getDriver = (driverId) => drivers.find(d => d.id === driverId);
+  const _getClient = (clientId) => clients.find(c => c.id === clientId);
+  const _getDriver = (driverId) => drivers.find(d => d.id === driverId);
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -227,7 +230,7 @@ function MobilePlanning({
   }, [selectedMonth, monthDays]);
 
   // Debug - compter les réservations du mois
-  const monthReservationsCount = useMemo(() => {
+  const _monthReservationsCount = useMemo(() => {
     return reservations.filter(r => {
       const resDate = new Date(r.startDate);
       return resDate.getMonth() === selectedMonth.getMonth() && 
@@ -239,23 +242,23 @@ function MobilePlanning({
     <div className="mobile-planning">
       <div className="mobile-planning-header">
         <div className="month-navigation">
-          <button className="month-nav-btn" onClick={goToPreviousMonth}>
+          <Button variant="ghost" className="month-nav-btn" onClick={goToPreviousMonth}>
             <ChevronLeft size={20} />
-          </button>
+          </Button>
           <h2 onClick={goToCurrentMonth} style={{ cursor: 'pointer' }}>
             {format(selectedMonth, 'MMMM yyyy', { locale: fr })}
           </h2>
-          <button className="month-nav-btn" onClick={goToNextMonth}>
+          <Button variant="ghost" className="month-nav-btn" onClick={goToNextMonth}>
             <ChevronRight size={20} />
-          </button>
-          <button className="today-btn" onClick={scrollToToday} title="Aller à aujourd'hui">
+          </Button>
+          <Button variant="ghost" className="today-btn" onClick={scrollToToday} title="Aller à aujourd'hui">
             <CalendarDays size={18} />
             <span>Aujourd'hui</span>
-          </button>
+          </Button>
         </div>
-        <button className="close-button" onClick={onClose}>
+        <Button variant="ghost" className="close-button" onClick={onClose}>
           <X size={24} />
-        </button>
+        </Button>
       </div>
 
       <div className="mobile-planning-container">
@@ -287,7 +290,7 @@ function MobilePlanning({
                 // Calculer les rows pour ce véhicule
                 const vehicleElements = calculateRows(vehicle.id, monthDays);
                 const reservationsWithRows = vehicleElements.filter(e => e.type === 'reservation');
-                const maintenancesWithRows = vehicleElements.filter(e => e.type === 'maintenance');
+                const maintenancesWithRows = vehicleElements.filter(e => e.type === STATUS.MAINTENANCE);
                 
                 return (
                 <div key={vehicle.id} className="mobile-vehicle-row">

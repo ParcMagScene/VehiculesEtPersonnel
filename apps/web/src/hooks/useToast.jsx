@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useRef } from 'react';
+import { createContext, useContext } from 'react';
 
 /**
  * Context pour partager le système de toast à tous les composants enfants.

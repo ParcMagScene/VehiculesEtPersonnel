@@ -30,7 +30,7 @@
   padding: 6px;
   cursor: pointer;
   display: flex;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .mpers-back:active {
@@ -41,7 +41,7 @@
 .mpers-view-toggle {
   display: flex;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -60,7 +60,7 @@
 .mpers-view-toggle button.active {
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* Date navigation */
@@ -99,7 +99,7 @@
   text-transform: capitalize;
   cursor: pointer;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .mpers-date-label.today {
@@ -118,7 +118,7 @@
   border: none;
   background: var(--theme-primary-main);
   color: var(--theme-text-inverse);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   border-radius: 0 0 12px 12px;
   cursor: pointer;
@@ -252,7 +252,7 @@
   color: var(--theme-danger-text, var(--theme-danger));
   background: var(--theme-danger-bg, var(--theme-danger-bg));
   padding: 2px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 500;
 }
 
@@ -446,7 +446,7 @@
 /* Mission card dans cellule semaine */
 .mpers-cell-mission {
   border-left: 3px solid;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 3px 6px;
   background: linear-gradient(135deg, var(--theme-info-bg, var(--theme-info-bg)) 0%, var(--theme-info-bg) 100%);
   min-height: 0;
@@ -588,7 +588,7 @@
 .mpers-status-tag {
   font-size: 0.75rem;
   padding: 3px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-weight: 600;
 }
 
@@ -607,7 +607,7 @@
   color: var(--theme-text-secondary);
   background: var(--theme-bg-tertiary);
   padding: 3px 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 /* Sections */
@@ -666,8 +666,8 @@
   gap: 6px;
   padding: 6px 12px;
   background: var(--theme-purple-bg);
-  border-radius: 16px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--font-sm);
   color: var(--theme-info-text-alt);
   font-weight: 500;
 }
@@ -688,8 +688,8 @@
   padding: 5px 12px;
   background: var(--theme-info-bg-strong);
   color: var(--theme-info-dark);
-  border-radius: 12px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
@@ -766,7 +766,7 @@
 .mpers-my-unavail-card {
   background: var(--theme-error-bg);
   border-left: 3px solid var(--theme-error-main);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px;
   margin-bottom: 8px;
 }
@@ -790,7 +790,7 @@
 .mpers-my-mission-card {
   background: var(--theme-bg-card);
   border-left: 4px solid var(--theme-info);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px;
   margin-bottom: 8px;
   box-shadow: var(--shadow-sm);
@@ -827,7 +827,7 @@
 .mpers-my-task-card {
   background: var(--theme-bg-card);
   border-left: 4px solid var(--theme-warning);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px;
   margin-bottom: 8px;
   box-shadow: var(--shadow-sm);
@@ -879,7 +879,7 @@
   gap: 12px;
   padding: 10px 12px;
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s;
 }

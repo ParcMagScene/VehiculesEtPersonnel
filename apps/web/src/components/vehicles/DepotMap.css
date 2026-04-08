@@ -5,7 +5,7 @@
 .depot-map-container {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   margin-bottom: 1rem;
 }
@@ -35,7 +35,7 @@
   background: var(--theme-info)20;
   color: var(--theme-info);
   padding: 0.15rem 0.5rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .depot-map-unlocated {
@@ -44,7 +44,7 @@
   background: var(--theme-warning)20;
   color: var(--theme-warning);
   padding: 0.15rem 0.5rem;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .depot-floor-selector {
@@ -57,9 +57,9 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -112,7 +112,7 @@
   gap: 0.5rem;
   padding: 0.3rem 0.6rem;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary);
   min-width: 200px;
@@ -122,7 +122,7 @@
   flex: 1;
   border: none;
   outline: none;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   background: transparent;
   color: var(--theme-text-primary);
   min-width: 100px;
@@ -143,7 +143,7 @@
   padding: 0.3rem 0.6rem;
   font-size: 0.75rem;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
@@ -162,7 +162,7 @@
   align-items: center;
   gap: 0.2rem;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.15rem;
 }
 
@@ -170,7 +170,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -217,7 +217,7 @@
   position: absolute;
   background: var(--theme-text-primary);
   border: 1px solid var(--theme-text-dark);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0;
   min-width: 220px;
   max-width: 280px;
@@ -253,7 +253,7 @@
   color: var(--theme-warning);
   background: var(--theme-warning)20;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .depot-tooltip-codes {
@@ -338,7 +338,7 @@
   color: var(--theme-warning);
   background: var(--theme-warning)20;
   padding: 0 4px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 /* Zone hover/select transitions */
@@ -364,7 +364,7 @@
   border-top: 1px solid var(--theme-border);
   flex-wrap: wrap;
   color: var(--theme-text-secondary);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 .legend-label {
@@ -381,7 +381,7 @@
   padding: 0.2rem 0.5rem;
   font-size: 0.72rem;
   border: 1px solid var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -515,7 +515,7 @@
 /* Mobile: larger controls, compact header */
 @media (max-width: 768px) {
   .depot-map-container {
-    border-radius: 8px;
+    border-radius: var(--radius-md);
   }
   .depot-map-header {
     flex-wrap: wrap;
@@ -528,11 +528,11 @@
   .depot-floor-selector button {
     min-width: 36px;
     min-height: 36px;
-    font-size: 0.8rem;
+    font-size: var(--font-sm);
     padding: 4px 10px;
   }
   .depot-map-search input {
-    font-size: 16px; /* prevent iOS zoom on focus */
+    font-size: var(--font-md); /* prevent iOS zoom on focus */
     min-height: 36px;
   }
   .depot-zoom-controls button {

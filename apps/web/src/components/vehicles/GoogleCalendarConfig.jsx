@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Save, AlertCircle, LogOut, RefreshCw } from 'lucide-react';
 import api from '../../utils/api';
 import { saveToIndexedDB, loadFromIndexedDB } from '../../utils/indexedDB';
 import './GoogleCalendarConfig.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, FormField, Input, InlineAlert } from '@/design-system';
+import { Button, FormField, Input, InlineAlert } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 const GoogleCalendarConfig = () => {
   const toast = useToast();
@@ -13,7 +14,7 @@ const GoogleCalendarConfig = () => {
   const [mapsApiKey, setMapsApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   useEffect(() => {
     loadConfig();
@@ -68,13 +69,12 @@ const GoogleCalendarConfig = () => {
   };
 
   const handleRevokeOAuth = () => {
-    setConfirmDialog({
+    confirm({
       title: 'Déconnexion Google',
       message: '⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nVous devrez autoriser à nouveau l\'accès après cette action.',
       variant: 'warning',
       confirmLabel: 'Déconnecter',
       onConfirm: async () => {
-        setConfirmDialog(null);
         // Supprimer le token du backend
         try {
           await api.deleteGoogleToken();
@@ -146,7 +146,7 @@ const GoogleCalendarConfig = () => {
               <div className="uri-item">
                 <strong>Origines JavaScript autorisées :</strong>
                 <code className="selectable">{window.location.origin}</code>
-                <button 
+                <Button variant="ghost" 
                   type="button"
                   className="btn-copy-small"
                   onClick={() => {
@@ -155,12 +155,12 @@ const GoogleCalendarConfig = () => {
                   }}
                 >
                   📋 Copier
-                </button>
+                </Button>
               </div>
               <div className="uri-item">
                 <strong>URI de redirection autorisés :</strong>
                 <code className="selectable">{window.location.origin}</code>
-                <button 
+                <Button variant="ghost" 
                   type="button"
                   className="btn-copy-small"
                   onClick={() => {
@@ -169,7 +169,7 @@ const GoogleCalendarConfig = () => {
                   }}
                 >
                   📋 Copier
-                </button>
+                </Button>
               </div>
             </div>
             <small>
@@ -261,14 +261,14 @@ const GoogleCalendarConfig = () => {
       <div className="oauth-actions">
         <h4>🔐 Gestion OAuth</h4>
         <div className="oauth-buttons">
-          <button 
+          <Button variant="ghost" 
             type="button"
             className="btn-revoke"
             onClick={handleRevokeOAuth}
           >
             <LogOut size={18} />
             Déconnecter OAuth
-          </button>
+          </Button>
           <Button 
             variant="secondary"
             onClick={handleOpenGooglePermissions}
@@ -295,17 +295,7 @@ const GoogleCalendarConfig = () => {
           <li>Récupérez l'ID de votre calendrier dans Google Calendar (Paramètres → Calendrier)</li>
         </ol>
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

@@ -52,6 +52,37 @@
 
 ### 📝 06-Changelog
 - [SilentRefresh.md](06-Changelog/SilentRefresh.md) — Spec du Silent JWT Refresh (✅ implémenté)
+- [CHANGELOG_API.md](06-Changelog/CHANGELOG_API.md) — Changelog des endpoints API
+- [CHANGELOG_DB.md](06-Changelog/CHANGELOG_DB.md) — Changelog du schéma DB
+- [CHANGELOG_UI.md](06-Changelog/CHANGELOG_UI.md) — Changelog frontend/UI
+- [CHANGELOG_DOCS.md](06-Changelog/CHANGELOG_DOCS.md) — Changelog de la documentation
+
+---
+
+## 🆕 Documentation Technique (v1.0.0 — avril 2026)
+
+### 📡 API (~243 endpoints)
+- **[api/README.md](api/README.md)** — Index API (16 modules, middlewares)
+- auth · vehicles · personnel · equipment · affaires · orders · stock · planning · messaging · leaves · annuaire · video · display · attachments · supplier-catalog
+- → Voir tous les fichiers dans `docs/api/`
+
+### 🗄️ Base de données (87 tables, 21 domaines)
+- **[database/README.md](database/README.md)** — Vue d'ensemble schéma SQLite
+- **[database/SCHEMA.md](database/SCHEMA.md)** — Schéma détaillé par domaine
+
+### 🧩 Modules frontend (16 modules React)
+- **[modules/README.md](modules/README.md)** — Index modules (hooks, contexts, services)
+- auth · vehicles · personnel · equipment · affaires · orders · stock · planning · messaging · leaves · annuaire · video · display · inventory · mailing
+- → Voir tous les fichiers dans `docs/modules/`
+
+### ⚙️ Workflows
+- **[workflows/state-machines.md](workflows/state-machines.md)** — 9 machines d'état (commandes, SAV, missions, congés, etc.)
+
+### 📐 Règles métier
+- **[business-rules/rules.md](business-rules/rules.md)** — Règles consolidées (IDCC 3252, SIRET, mdp, uploads, rate limiting)
+
+### 📊 Index machine-readable
+- **[docs-index.json](docs-index.json)** — Index JSON de toute la documentation (40 fichiers)
 
 ---
 

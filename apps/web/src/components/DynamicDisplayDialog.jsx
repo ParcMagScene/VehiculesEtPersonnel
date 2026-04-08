@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Monitor, X, Save, Briefcase, MapPin, User, Clock, MessageSquare, Calendar, ExternalLink } from 'lucide-react';
 import api from '../utils/api';
 import { useToast } from '../hooks/useToast';
@@ -170,7 +170,7 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
             <Monitor size={20} />
             {isEdit ? 'Modifier l\'événement' : 'Nouvel événement d\'affichage'}
           </h3>
-          <button className="dialog-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="dialog-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -267,20 +267,18 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
           {/* Période Matin/Après-midi */}
           <FormField className="form-group" label="Période" style={{ marginBottom: 16 }}>
             <div className="period-toggle">
-              <button
-                type="button"
+              <Button variant="ghost"                 type="button"
                 className={`period-btn ${form.period === 'AM' ? 'selected' : ''}`}
                 onClick={() => updateField('period', 'AM')}
               >
                 🌅 Matin
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button variant="ghost"                 type="button"
                 className={`period-btn ${form.period === 'PM' ? 'selected' : ''}`}
                 onClick={() => updateField('period', 'PM')}
               >
                 ☀️ Après-midi
-              </button>
+              </Button>
             </div>
           </FormField>
 

@@ -28,18 +28,20 @@ import WeekSelector from '../WeekSelector';
 import YearSelector from '../YearSelector';
 import './PersonnelPanel.css';
 import '../equipment/EquipmentPanel.css';
-import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select, Table, Spinner, Avatar, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
+import { Button, FormField, ModalLayout, Input, Textarea, Select, Table, Spinner, Avatar, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import '../vehicles/Calendar.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import PersonnelAgenda from './PersonnelAgenda';
 import LeavesTab from '../leaves/LeavesTab';
 import SkillsTab from './SkillsTab';
 import PositionsTab from './PositionsTab';
+import { STATUS } from '../../constants';
+
 import {
-  PERSON_TYPES, CONTRACT_TYPES, SKILL_CATEGORIES, SKILL_LEVELS,
+  PERSON_TYPES, CONTRACT_TYPES, SKILL_LEVELS,
   POSITION_CATEGORIES, PERMANENT_TYPES, NON_PERMANENT_TYPES,
-  getCategoryColor, getPositionCategoryColor,
-} from './personnelConstants';
+  getCategoryColor, } from './personnelConstants';
 
 // ═══════════════════════════════════════
 // Composant principal
@@ -62,7 +64,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
   const [editForm, setEditForm] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     type: 'permanent', contractType: '', userId: null,
-    status: 'active', notes: '',
+    status: STATUS.ACTIVE, notes: '',
     skills: [],
     defaultPositions: [],
   });
@@ -97,7 +99,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     setEditForm({
       firstName: '', lastName: '', email: '', phone: '',
       type: 'permanent', contractType: '', userId: null,
-      status: 'active', notes: '',
+      status: STATUS.ACTIVE, notes: '',
       skills: [],
       defaultPositions: [],
     });
@@ -110,7 +112,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     setEditForm({
       firstName: '', lastName: '', email: '', phone: '',
       type: 'permanent', contractType: '', userId: null,
-      status: 'active', notes: '',
+      status: STATUS.ACTIVE, notes: '',
       skills: [],
       defaultPositions: [],
     });
@@ -223,7 +225,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
     return (
       <div className="personnel-panel personnel-panel--main">
         {error && (
-          <InlineAlert action={<button onClick={loadData}>Réessayer</button>}>{error}</InlineAlert>
+          <InlineAlert action={<Button variant="ghost" onClick={loadData}>Réessayer</Button>}>{error}</InlineAlert>
         )}
         <PlanningTab persons={persons} skills={skills} positions={positions} view={view} setView={setView} currentDate={currentDate} setCurrentDate={setCurrentDate} googleEvents={googleEvents} onPersonEdit={openEditDirect} onPersonCreate={openCreateDirect} navigateToPersonId={navigateToPersonId} onNavigateToPersonHandled={onNavigateToPersonHandled} quickAssignmentSlot={quickAssignmentSlot} onQuickAssignmentHandled={onQuickAssignmentHandled} currentUser={currentUser} />
         {editFormVisible && (
@@ -247,15 +249,15 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
               <form id="personnel-edit-form" className="personnel-edit-form-body" onSubmit={handleEditSubmit}>
                 <div className="form-row">
                   <FormField className="form-group" label="Prénom" required>
-                    <Input required value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} />
+                    <Input required maxLength={100} value={editForm.firstName} onChange={e => setEditForm({ ...editForm, firstName: e.target.value })} />
                   </FormField>
                   <FormField className="form-group" label="Nom" required>
-                    <Input required value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} />
+                    <Input required maxLength={100} value={editForm.lastName} onChange={e => setEditForm({ ...editForm, lastName: e.target.value })} />
                   </FormField>
                 </div>
                 <div className="form-row">
                   <FormField className="form-group" label="Email">
-                    <Input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
+                    <Input type="email" maxLength={254} value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
                   </FormField>
                   <FormField className="form-group" label="Téléphone">
                     <PhoneInput value={editForm.phone} onChange={(val) => setEditForm({ ...editForm, phone: val })} />
@@ -300,9 +302,9 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
                       const selected = editForm.skills.find(s => s.skillId === skill.id);
                       return (
                         <div key={skill.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                          <button type="button" className="skill-toggle" onClick={() => toggleEditSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
+                          <Button variant="ghost" type="button" className="skill-toggle" onClick={() => toggleEditSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
                             {selected && <Check size={12} />} {skill.name}
-                          </button>
+                          </Button>
                           {selected && (
                             <Select className="skill-level-select" value={selected.level} onChange={e => updateEditSkillLevel(skill.id, e.target.value)}>
                               {SKILL_LEVELS.map(l => (<option key={l.value} value={l.value}>{l.label}</option>))}
@@ -320,9 +322,9 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
                       const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || 'var(--theme-text-gray)';
                       return (
                         <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                          <button type="button" className="skill-toggle" onClick={() => setEditForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
+                          <Button variant="ghost" type="button" className="skill-toggle" onClick={() => setEditForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
                             {selected && <Check size={12} />} {pos.name}
-                          </button>
+                          </Button>
                         </div>
                       );
                     })}
@@ -339,22 +341,21 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
   return (
     <div className="personnel-panel">
       {error && (
-        <InlineAlert action={<button onClick={loadData}>Réessayer</button>}>{error}</InlineAlert>
+        <InlineAlert action={<Button variant="ghost" onClick={loadData}>Réessayer</Button>}>{error}</InlineAlert>
       )}
 
       {/* Sous-onglets */}
       {subTabs.length > 0 && (
       <div className="personnel-subtabs">
         {subTabs.map(tab => (
-          <button
-            key={tab.id}
+          <Button variant="ghost"             key={tab.id}
             className={`personnel-subtab ${subTab === tab.id ? 'active' : ''}`}
             onClick={() => setSubTab(tab.id)}
             style={{ '--tab-color': tab.color }}
           >
             <tab.icon size={16} />
             <span>{tab.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
       )}
@@ -435,7 +436,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
   const [editingPerson, setEditingPerson] = useState(null);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const filteredPersons = useMemo(() => persons.filter(p => {
     const matchSearch = `${p.firstName} ${p.lastName} ${p.email || ''} ${p.phone || ''}`
@@ -451,10 +452,10 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
   // Stats
   const stats = useMemo(() => {
     const total = persons.length;
-    const active = persons.filter(p => p.status === 'active').length;
+    const active = persons.filter(p => p.status === STATUS.ACTIVE).length;
     const permanent = persons.filter(p => PERMANENT_TYPES.includes(p.type)).length;
     const nonPermanent = persons.filter(p => NON_PERMANENT_TYPES.includes(p.type)).length;
-    const inactive = persons.filter(p => p.status === 'inactive').length;
+    const inactive = persons.filter(p => p.status === STATUS.INACTIVE).length;
     return { total, active, permanent, nonPermanent, inactive };
   }, [persons]);
 
@@ -493,7 +494,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
   };
 
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer cette personne',
       message: 'Supprimer cette personne ?',
       variant: 'danger',
@@ -554,7 +555,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
             <span className="eq-stat-value">{stats.total}</span>
             <span className="eq-stat-label">Total</span>
           </div>
-          <div role="button" tabIndex={0} className={`eq-stat eq-stat-available ${filterStatus === 'active' ? 'active' : ''}`} onClick={() => { setFilterStatus(filterStatus === 'active' ? '' : 'active'); setFilterType(''); }}>
+          <div role="button" tabIndex={0} className={`eq-stat eq-stat-available ${filterStatus === STATUS.ACTIVE ? 'active' : ''}`} onClick={() => { setFilterStatus(filterStatus === STATUS.ACTIVE ? '' : 'active'); setFilterType(''); }}>
             <CheckCircle size={16} />
             <span className="eq-stat-value">{stats.active}</span>
             <span className="eq-stat-label">Actifs</span>
@@ -570,7 +571,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
             <span className="eq-stat-label">Non-permanents</span>
           </div>
           {stats.inactive > 0 && (
-            <div role="button" tabIndex={0} className={`eq-stat eq-stat-tickets ${filterStatus === 'inactive' ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === 'inactive' ? '' : 'inactive')}>
+            <div role="button" tabIndex={0} className={`eq-stat eq-stat-tickets ${filterStatus === STATUS.INACTIVE ? 'active' : ''}`} onClick={() => setFilterStatus(filterStatus === STATUS.INACTIVE ? '' : 'inactive')}>
               <AlertTriangle size={16} />
               <span className="eq-stat-value">{stats.inactive}</span>
               <span className="eq-stat-label">Inactifs</span>
@@ -618,7 +619,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                     return (
                       <tr
                         key={person.id}
-                        className={`eq-table-row${selectedPerson?.id === person.id ? ' selected' : ''}${person.status === 'inactive' ? ' pp-row-inactive' : ''}`}
+                        className={`eq-table-row${selectedPerson?.id === person.id ? ' selected' : ''}${person.status === STATUS.INACTIVE ? ' pp-row-inactive' : ''}`}
                         onClick={() => setSelectedPerson(selectedPerson?.id === person.id ? null : person)}
                         onDoubleClick={() => openEdit(person)}
                       >
@@ -646,18 +647,18 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
                         </td>
                         <td>
                           <span className={`pp-status-dot ${person.status}`}>
-                            {person.status === 'active' ? '● Actif' : '○ Inactif'}
+                            {person.status === STATUS.ACTIVE ? '● Actif' : '○ Inactif'}
                           </span>
                         </td>
                         <td className="pp-actions-cell">
                           <Tooltip content="Modifier">
-                            <Button variant="ghost" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); openEdit(person); }}>
+                            <Button variant="ghost" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); openEdit(person); }} aria-label="Modifier">
                               <Edit2 size={14} />
                             </Button>
                           </Tooltip>
                           {currentUser?.isAdmin && (
                             <Tooltip content="Supprimer">
-                              <Button variant="danger" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); handleDelete(person.id); }}>
+                              <Button variant="danger" size="sm" iconOnly onClick={(e) => { e.stopPropagation(); handleDelete(person.id); }} aria-label="Supprimer">
                                 <Trash2 size={14} />
                               </Button>
                             </Tooltip>
@@ -732,15 +733,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </div>
   );
 };
@@ -827,15 +820,15 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
           <div className="eq-form-grid">
             <div className="eq-form-field">
               <label>Prénom *</label>
-              <Input type="text" required value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} autoFocus />
+              <Input type="text" required maxLength={100} value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} autoFocus />
             </div>
             <div className="eq-form-field">
               <label>Nom *</label>
-              <Input type="text" required value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
+              <Input type="text" required maxLength={100} value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
             </div>
             <div className="eq-form-field">
               <label>Email</label>
-              <Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              <Input type="email" maxLength={254} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
             </div>
             <div className="eq-form-field">
               <label>Téléphone</label>
@@ -888,9 +881,9 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
                   const selected = form.skills.find(s => s.skillId === skill.id);
                   return (
                     <div key={skill.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                      <button type="button" className="skill-toggle" onClick={() => toggleSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
+                      <Button variant="ghost" type="button" className="skill-toggle" onClick={() => toggleSkill(skill.id)} style={{ '--chip-color': getCategoryColor(skill.category) }}>
                         {selected && <Check size={12} />} {skill.name}
-                      </button>
+                      </Button>
                       {selected && (
                         <Select className="skill-level-select" value={selected.level} onChange={e => updateSkillLevel(skill.id, e.target.value)}>
                           {SKILL_LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
@@ -911,9 +904,9 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
                   const catColor = POSITION_CATEGORIES.find(c => c.value === pos.category)?.color || 'var(--theme-text-gray)';
                   return (
                     <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                      <button type="button" className="skill-toggle" onClick={() => setForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
+                      <Button variant="ghost" type="button" className="skill-toggle" onClick={() => setForm(prev => ({ ...prev, defaultPositions: selected ? prev.defaultPositions.filter(n => n !== pos.name) : [...prev.defaultPositions, pos.name] }))} style={{ '--chip-color': catColor }}>
                         {selected && <Check size={12} />} {pos.name}
-                      </button>
+                      </Button>
                     </div>
                   );
                 })}
@@ -1083,6 +1076,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       setPlanningData(data || { missions: [], availabilities: [], taskAssignments: [] });
     } catch (err) {
       console.error('Erreur chargement planning:', err);
+      toast.error('Erreur chargement du planning');
     }
   }, [days]);
 
@@ -1218,7 +1212,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
     const viewEnd = days[days.length - 1];
 
     (planningData.availabilities || []).forEach(avail => {
-      if (avail.status === 'rejected') return; // ignorer les refusées
+      if (avail.status === STATUS.REJECTED) return; // ignorer les refusées
       try {
         const aStart = parseISO(avail.start_date || avail.startDate);
         const aEnd = parseISO(avail.end_date || avail.endDate);
@@ -1424,7 +1418,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         api.updateMission(span.mission.id, {
           start_date: format(newStart, 'yyyy-MM-dd'),
           end_date: format(newEnd, 'yyyy-MM-dd'),
-        }).then(() => loadPlanning()).catch(err => console.error('Erreur déplacement:', err));
+        }).then(() => loadPlanning()).catch(err => { console.error('Erreur déplacement:', err); toast.error('Erreur déplacement de la mission'); loadPlanning(); });
       }
       setDragMove(null);
       return;
@@ -1443,7 +1437,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         api.updateMission(span.mission.id, {
           start_date: format(newStart, 'yyyy-MM-dd'),
           end_date: format(newEnd, 'yyyy-MM-dd'),
-        }).then(() => loadPlanning()).catch(err => console.error('Erreur resize:', err));
+        }).then(() => loadPlanning()).catch(err => { console.error('Erreur resize:', err); toast.error('Erreur modification de la mission'); loadPlanning(); });
       }
       setResizeState(null);
       return;
@@ -1518,6 +1512,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       loadPlanning();
     } catch (err) {
       console.error('Erreur suppression mission:', err);
+      toast.error('Erreur suppression de la mission');
       setDeleteMission(null);
     }
   };
@@ -1575,8 +1570,8 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           }
           const isOriginalBeingResized = spanHere && isResizing && spanHere.missionId === resizingSpanId;
 
-          const missionTitle = spanHere?.mission?.title || '';
-          const assignStatus = spanHere?.assignment?.status || '';
+          const _missionTitle = spanHere?.mission?.title || '';
+          const _assignStatus = spanHere?.assignment?.status || '';
           const isHovered = hoveredSlot?.personId === person.id && hoveredSlot?.slotIndex === slotIndex;
           const dayLabel = view === 'year'
             ? format(slot.day, 'MMMM yyyy', { locale: fr })
@@ -1591,7 +1586,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           const absenceColor = hasAbsence ? LEAVE_TYPE_COLORS[absence.type] || 'var(--theme-text-muted)' : null;
           const absenceLabel = hasAbsence ? LEAVE_TYPE_LABELS[absence.type] || '' : '';
           const absenceTooltip = hasAbsence
-            ? `${absenceLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === 'pending' ? ' (en attente)' : ''}`
+            ? `${absenceLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === STATUS.PENDING ? ' (en attente)' : ''}`
             : '';
 
           // Tâches assignées sur ce slot ?
@@ -1617,8 +1612,8 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               style={{
                 cursor: view !== 'year' && !isCovered && !hasAbsence ? 'crosshair' : 'default',
                 ...(hasAbsence ? {
-                  backgroundColor: absenceColor + (absence.status === 'pending' ? '30' : '40'),
-                  backgroundImage: absence.status === 'pending' ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)` : 'none',
+                  backgroundColor: absenceColor + (absence.status === STATUS.PENDING ? '30' : '40'),
+                  backgroundImage: absence.status === STATUS.PENDING ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)` : 'none',
                 } : {}),
               }}
             >
@@ -1714,8 +1709,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         </div>
         {!isGhost && (
           <>
-            <button
-              className="pp-assignment-delete"
+            <Button variant="ghost"               className="pp-assignment-delete"
               onClick={(e) => {
                 e.stopPropagation();
                 setDeleteMission({ mission: spanHere.mission, person });
@@ -1723,7 +1717,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               title="Supprimer cette mission"
             >
               <Trash2 size={12} />
-            </button>
+            </Button>
             {/* Poignées de resize */}
             {view !== 'year' && !spanHere.clippedLeft && (
               <div className="pp-resize-handle pp-resize-handle-start"
@@ -1742,7 +1736,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   };
 
   // Rendu d'un bloc de preview (drag-move ou resize)
-  const renderPreviewBlock = (span, person) => {
+  const renderPreviewBlock = (span, _person) => {
     const assignStatus = span.assignment?.status || '';
     const missionTitle = span.mission?.title || '';
     return (
@@ -1778,14 +1772,14 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         {setView && setCurrentDate && (
           <div className="cal-nav-toolbar pp-nav-toolbar">
             <div className="cal-nav-views">
-              <button className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</button>
-              <button className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</button>
-              <button className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</button>
+              <Button variant="ghost" className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</Button>
+              <Button variant="ghost" className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</Button>
+              <Button variant="ghost" className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</Button>
             </div>
             <div className="cal-nav-date">
-              <button className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></button>
-              <button className={`cal-nav-btn cal-nav-today ${ppShowTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</button>
-              <button className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></button>
+              <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious} aria-label="Mois précédent"><ChevronLeft size={18} /></Button>
+              <Button variant="ghost" className={`cal-nav-btn cal-nav-today ${ppShowTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
+              <Button variant="ghost" className="cal-nav-btn" onClick={goToNext} aria-label="Mois suivant"><ChevronRight size={18} /></Button>
               <span 
                 className="cal-nav-label clickable"
                 onClick={() => {
@@ -1812,14 +1806,13 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
             {PERSON_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </Select>
         </div>
-        <button
-          className={`pp-planning-fav-btn${sortByFavorites ? ' active' : ''}`}
+        <Button variant="ghost"           className={`pp-planning-fav-btn${sortByFavorites ? ' active' : ''}`}
           onClick={() => setSortByFavorites(v => !v)}
           title={sortByFavorites ? 'Tri par favoris actif' : 'Activer le tri par favoris'}
         >
           <Star size={14} fill={sortByFavorites ? 'currentColor' : 'none'} />
           Favoris
-        </button>
+        </Button>
       </div>
 
       {activePersons.length === 0 ? (
@@ -1827,9 +1820,9 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           icon={<CalendarDays size={48} />}
           title="Ajoutez du personnel pour afficher le planning"
           action={onPersonCreate && (
-            <button className="personnel-add-btn" onClick={onPersonCreate} style={{ marginTop: 12 }}>
+            <Button variant="ghost" className="personnel-add-btn" onClick={onPersonCreate} style={{ marginTop: 12 }}>
               <Plus size={16} /> Ajouter une personne
-            </button>
+            </Button>
           )}
         />
       ) : (
@@ -1841,22 +1834,20 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               <span>Permanents</span>
               <div className="pp-column-header-actions">
                 {pendingLeaveCount > 0 && (
-                  <button
-                    className="pp-leave-badge-btn"
+                  <Button variant="ghost"                     className="pp-leave-badge-btn"
                     onClick={() => setShowLeaveApproval(true)}
                     title="Demandes de congés en attente"
                   >
                     <Clock size={12} />
                     <span className="pp-leave-badge-count">{pendingLeaveCount}</span>
-                  </button>
+                  </Button>
                 )}
-                <button
-                  className="pp-section-toggle"
+                <Button variant="ghost"                   className="pp-section-toggle"
                   onClick={() => setCollapsedSections(prev => ({ ...prev, permanents: !prev.permanents }))}
                   title={collapsedSections.permanents ? 'Développer' : 'Rétracter'}
                 >
                   {collapsedSections.permanents ? '▼' : '▲'}
-                </button>
+                </Button>
               </div>
             </div>
             <div className="pp-headers-scroll" ref={headerScrollRef}>
@@ -1924,12 +1915,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               {nonPermanents.length > 0 && (
                 <div className="pp-section-header">
                   <span>Non-permanents</span>
-                  <button
-                    className="pp-section-toggle"
+                  <Button variant="ghost"                     className="pp-section-toggle"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, nonPermanents: !prev.nonPermanents }))}
                   >
                     {collapsedSections.nonPermanents ? '▼' : '▲'}
-                  </button>
+                  </Button>
                 </div>
               )}
               {!collapsedSections.nonPermanents && nonPermanents.map(person => (
@@ -1952,13 +1942,12 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                   }}
                   style={{ cursor: 'pointer' }}
                 >
-                  <button
-                    className={`pp-fav-star${favoriteIds.includes(person.id) ? ' active' : ''}`}
+                  <Button variant="ghost"                     className={`pp-fav-star${favoriteIds.includes(person.id) ? ' active' : ''}`}
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(person.id); }}
                     title={favoriteIds.includes(person.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                   >
                     <Star size={12} fill={favoriteIds.includes(person.id) ? 'currentColor' : 'none'} />
-                  </button>
+                  </Button>
                   <span className="pp-person-name">{person.firstName} {person.lastName || ''}</span>
                   <span className={`person-type-badge mini type-${person.type}`}>
                     {person.type === 'contractuel'
@@ -1978,12 +1967,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                 {nonPermanents.length > 0 && (
                   <div className="pp-section-separator" style={{ gridColumn: '1 / -1' }}>
                     <span>Non-permanents</span>
-                    <button
-                      className="pp-section-toggle"
+                    <Button variant="ghost"                       className="pp-section-toggle"
                       onClick={() => setCollapsedSections(prev => ({ ...prev, nonPermanents: !prev.nonPermanents }))}
                     >
                       {collapsedSections.nonPermanents ? '▼' : '▲'}
-                    </button>
+                    </Button>
                   </div>
                 )}
 

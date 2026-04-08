@@ -3,17 +3,19 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-  X, Calendar, Clock, CheckCircle, AlertTriangle,
-  Download, Trash2, ChevronDown,
+  X, Calendar, Clock, CheckCircle, Download, Trash2, ChevronDown,
   Send, RefreshCw,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
+import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
-import { DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './LeaveRequestsPanel.css';
 
 const LeaveRequestsPanel = ({
@@ -86,9 +88,8 @@ const LeaveRequestsPanel = ({
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = window.open('', '_blank');
-        win.document.write(data.html);
-        win.document.close();
+        const win = openSanitizedPrintWindow(data.html);
+        if (!win) { setError('Popup bloquée'); return; }
         setTimeout(() => win.print(), 500);
       }
     } catch (err) {
@@ -112,14 +113,14 @@ const LeaveRequestsPanel = ({
   // Stats rapides
   const stats = {
     total: requests.length,
-    pending: requests.filter(r => r.status === 'pending').length,
-    accepted: requests.filter(r => r.status === 'accepted' || r.status === 'modified').length,
-    refused: requests.filter(r => r.status === 'refused').length,
+    pending: requests.filter(r => r.status === STATUS.PENDING).length,
+    accepted: requests.filter(r => r.status === STATUS.ACCEPTED || r.status === 'modified').length,
+    refused: requests.filter(r => r.status === STATUS.REFUSED).length,
   };
 
   return (
     <div className="lrp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="lrp-panel" onClick={e => e.stopPropagation()}>
+      <div className="lrp-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Mes demandes de congés">
         {/* En-tête */}
         <div className="lrp-header">
           <div className="lrp-header-title">
@@ -127,17 +128,17 @@ const LeaveRequestsPanel = ({
             <h2>Mes demandes de congés</h2>
           </div>
           <div className="lrp-header-actions">
-            <Tooltip content="Rafraîchir"><button className="lrp-btn-refresh" onClick={loadRequests}>
+            <Tooltip content="Rafraîchir"><Button variant="ghost" className="lrp-btn-refresh" onClick={loadRequests}>
               <RefreshCw size={16} />
-            </button></Tooltip>
+            </Button></Tooltip>
             {onNewRequest && (
-              <button className="lrp-btn-new" onClick={onNewRequest}>
+              <Button variant="ghost" className="lrp-btn-new" onClick={onNewRequest}>
                 <Send size={14} /> Nouvelle demande
-              </button>
+              </Button>
             )}
-            <button className="lrp-close-btn" onClick={onClose}>
+            <Button variant="ghost" className="lrp-close-btn" onClick={onClose} aria-label="Fermer">
               <X size={20} />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -169,16 +170,16 @@ const LeaveRequestsPanel = ({
 
         {/* Stats rapides */}
         <div className="lrp-stats">
-          <span className="lrp-stat" data-active={filter === 'all'} onClick={() => setFilter('all')}>
+          <span className="lrp-stat" data-active={filter === 'all'} role="tab" tabIndex={0} onClick={() => setFilter('all')}>
             Toutes ({stats.total})
           </span>
-          <span className="lrp-stat pending" data-active={filter === 'pending'} onClick={() => setFilter('pending')}>
+          <span className="lrp-stat pending" data-active={filter === STATUS.PENDING} role="tab" tabIndex={0} onClick={() => setFilter('pending')}>
             En attente ({stats.pending})
           </span>
-          <span className="lrp-stat accepted" data-active={filter === 'accepted'} onClick={() => setFilter('accepted')}>
+          <span className="lrp-stat accepted" data-active={filter === STATUS.ACCEPTED} role="tab" tabIndex={0} onClick={() => setFilter('accepted')}>
             Acceptées ({stats.accepted})
           </span>
-          <span className="lrp-stat refused" data-active={filter === 'refused'} onClick={() => setFilter('refused')}>
+          <span className="lrp-stat refused" data-active={filter === STATUS.REFUSED} role="tab" tabIndex={0} onClick={() => setFilter('refused')}>
             Refusées ({stats.refused})
           </span>
         </div>
@@ -199,9 +200,9 @@ const LeaveRequestsPanel = ({
               icon={<Calendar size={32} />}
               title="Aucune demande de congé"
               action={onNewRequest && (
-                <button className="lrp-btn-new-empty" onClick={onNewRequest}>
+                <Button variant="ghost" className="lrp-btn-new-empty" onClick={onNewRequest}>
                   <Send size={14} /> Faire une demande
-                </button>
+                </Button>
               )}
             />
           ) : (
@@ -285,32 +286,30 @@ const LeaveRequestsPanel = ({
                       )}
 
                       <div className="lrp-card-actions">
-                        <button
-                          className="lrp-action-btn pdf"
+                        <Button variant="ghost"                           className="lrp-action-btn pdf"
                           onClick={() => handleDownloadPdf(req.id)}
                           title="Télécharger le PDF"
                         >
                           <Download size={14} /> PDF
-                        </button>
-                        {(req.status === 'pending' || req.status === 'accepted') && (
+                        </Button>
+                        {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) && (
                           cancellingId === req.id ? (
                             <div className="lrp-cancel-confirm">
                               <span>Confirmer l'annulation ?</span>
-                              <button className="lrp-action-btn cancel-yes" onClick={() => handleCancel(req.id)}>
+                              <Button variant="ghost" className="lrp-action-btn cancel-yes" onClick={() => handleCancel(req.id)}>
                                 Oui
-                              </button>
-                              <button className="lrp-action-btn cancel-no" onClick={() => setCancellingId(null)}>
+                              </Button>
+                              <Button variant="ghost" className="lrp-action-btn cancel-no" onClick={() => setCancellingId(null)}>
                                 Non
-                              </button>
+                              </Button>
                             </div>
                           ) : (
-                            <button
-                              className="lrp-action-btn cancel"
+                            <Button variant="ghost"                               className="lrp-action-btn cancel"
                               onClick={() => setCancellingId(req.id)}
                               title="Annuler"
                             >
                               <Trash2 size={14} /> Annuler
-                            </button>
+                            </Button>
                           )
                         )}
                       </div>

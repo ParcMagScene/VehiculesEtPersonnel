@@ -1,8 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle, X, Eye, Download, Link2, Search, AlertCircle as AlertInfo } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { Upload, FileText, CheckCircle, X, Eye, Download, Link2, Search, AlertCircle as AlertInfo } from 'lucide-react';
 import { Button, ModalLayout, Input, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
+import { STATUS } from '../../constants';
+import { formatDateSimple } from '../../utils/formatUtils';
+
 import '../equipment/EquipmentImportModal.css'; // réutilise le même CSS
+import './SavImportModal.css';
 
 // En-têtes CSV attendues (format Locmat Interventions)
 const HEADER_MAP = {
@@ -63,13 +67,6 @@ const STATUS_MAP = {
   closed: { label: 'Clôturée', color: 'var(--theme-text-gray)', icon: '✅' },
   in_progress: { label: 'En cours', color: '#f59e0b', icon: '🔧' },
   open: { label: 'Ouverte', color: '#ef4444', icon: '🔴' },
-};
-
-const formatDate = (d) => {
-  if (!d) return '—';
-  try {
-    return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR');
-  } catch { return d; }
 };
 
 const SavImportModal = ({ onClose, onImportDone }) => {
@@ -174,7 +171,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
             </Button>
           </>
         )}
-        {step === 'done' && (
+        {step === STATUS.DONE && (
           <Button variant="primary" onClick={() => { onImportDone(); onClose(); }}>
             <CheckCircle size={14} /> Terminé
           </Button>
@@ -240,20 +237,20 @@ const SavImportModal = ({ onClose, onImportDone }) => {
 
               {/* Option doublons */}
               {preview.duplicatesCount > 0 && (
-                <div className="eq-import-section" style={{ padding: '10px 14px', background: 'var(--theme-danger-bg)', borderRadius: 10, border: '1px solid var(--theme-danger-border, #fecaca)' }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--theme-danger-text)', margin: '0 0 8px' }}>
+                <div className="eq-import-section sav-import-dup-box">
+                  <p className="sav-import-dup-title">
                     🔁 {preview.duplicatesCount} doublon(s) détecté(s) (même N° d’intervention)
                   </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--theme-danger-text)' }}>
+                  <div className="sav-import-dup-options">
+                    <label className="sav-import-dup-label">
                       <input type="radio" name="dup-action" checked={duplicateAction === 'update'} onChange={() => setDuplicateAction('update')} />
                       Mettre à jour les tickets existants (statut → en cours, coût, lien équipement)
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--theme-danger-text)' }}>
+                    <label className="sav-import-dup-label">
                       <input type="radio" name="dup-action" checked={duplicateAction === 'skip'} onChange={() => setDuplicateAction('skip')} />
                       Ignorer les doublons
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--theme-danger-text)' }}>
+                    <label className="sav-import-dup-label">
                       <input type="radio" name="dup-action" checked={duplicateAction === 'create'} onChange={() => setDuplicateAction('create')} />
                       Créer quand même (doublons)
                     </label>
@@ -264,7 +261,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
               {/* Statuts */}
               <div className="eq-import-section">
                 <h4>📊 Répartition des statuts</h4>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div className="sav-import-status-list">
                   {Object.entries(preview.statusCounts || {}).map(([st, count]) => {
                     const info = STATUS_MAP[st] || STATUS_MAP.open;
                     return (
@@ -299,13 +296,13 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                       {(preview.sample || []).map((row, i) => (
                         <tr key={i} style={{ background: row.matched ? '' : 'var(--btn-warning-bg)' }}>
                           <td>{row.matched ? '✅' : '⚠️'}</td>
-                          <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{row.intervention} {row.isDuplicate && <span style={{ color: '#ef4444', fontSize: 10, fontWeight: 700 }}>🔁</span>}</td>
+                          <td className="sav-import-mono">{row.intervention} {row.isDuplicate && <span className="sav-import-dup-badge">🔁</span>}</td>
                           <td>{row.code_article}</td>
                           <td className="eq-import-name-cell">{row.nom_article}</td>
-                          <td style={{ fontSize: 11 }}>{row.parsedSerial || row.serial}</td>
+                          <td className="sav-import-small">{row.parsedSerial || row.serial}</td>
                           <td style={{ fontSize: 11, color: row.parsedUid ? '#3b82f6' : 'var(--theme-text-muted)', fontWeight: row.parsedUid ? 600 : 400 }}>{row.parsedUid || '—'}</td>
-                          <td>{formatDate(row.startDate)}</td>
-                          <td>{formatDate(row.endDate)}</td>
+                          <td>{formatDateSimple(row.startDate)}</td>
+                          <td>{formatDateSimple(row.endDate)}</td>
                           <td>{row.cost > 0 ? `${row.cost.toFixed(2)} €` : '—'}</td>
                           <td>
                             <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 10, fontWeight: 600, background: (STATUS_MAP[row.status]?.color || 'var(--theme-text-gray)') + '20', color: STATUS_MAP[row.status]?.color || 'var(--theme-text-gray)' }}>
@@ -322,10 +319,10 @@ const SavImportModal = ({ onClose, onImportDone }) => {
               {/* Interventions non liées — permettre liaison manuelle */}
               {(preview.unmatchedItems || []).length > 0 && (
                 <div className="eq-import-section">
-                  <h4 style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <h4 className="sav-import-unmatched-header">
                     <AlertInfo size={16} /> {preview.unmatchedItems.length} intervention(s) sans correspondance
                   </h4>
-                  <p style={{ fontSize: 12, color: 'var(--theme-text-secondary)', marginBottom: 12 }}>
+                  <p className="sav-import-unmatched-desc">
                     Ces interventions seront importées mais non liées à un équipement. Vous pouvez les lier manuellement ci-dessous ou plus tard depuis l'onglet SAV.
                   </p>
                   <div className="eq-import-table-wrap" style={{ maxHeight: 300 }}>
@@ -345,19 +342,18 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                           const linkedEquip = linked ? preview.equipmentList?.find(e => e.id === linked) : null;
                           return (
                             <tr key={item.index}>
-                              <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{item.intervention}</td>
+                              <td className="sav-import-mono">{item.intervention}</td>
                               <td>{item.code}</td>
                               <td className="eq-import-name-cell">{item.nom}</td>
-                              <td style={{ fontSize: 11 }}>{item.serial}</td>
+                              <td className="sav-import-small">{item.serial}</td>
                               <td>
                                 {linkedEquip ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>✅ {linkedEquip.name}</span>
-                                    <button
-                                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 2 }}
+                                  <div className="sav-import-linked">
+                                    <span className="sav-import-linked-name">✅ {linkedEquip.name}</span>
+                                    <Button variant="ghost"                                       className="sav-import-unlink-btn"
                                       onClick={() => { const next = { ...manualLinks }; delete next[item.index]; setManualLinks(next); }}
                                       title="Retirer le lien"
-                                    ><X size={12} /></button>
+                                    ><X size={12} /></Button>
                                   </div>
                                 ) : (
                                   <Button
@@ -381,53 +377,50 @@ const SavImportModal = ({ onClose, onImportDone }) => {
 
               {/* Popup de sélection d'équipement pour liaison manuelle */}
               {linkingIndex !== null && (
-                <div className="eq-modal-overlay" style={{ top: 0, zIndex: 2000, background: 'var(--theme-overlay)' }}
+                <div className="eq-modal-overlay sav-import-link-overlay"
                      onClick={(e) => { if (e.target === e.currentTarget) setLinkingIndex(null); }}>
-                  <div style={{ background: 'var(--theme-bg-card)', borderRadius: 12, padding: 20, maxWidth: 500, width: '90%', maxHeight: '60vh', display: 'flex', flexDirection: 'column', margin: 'auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <h4 style={{ margin: 0 }}>🔗 Lier à un équipement</h4>
-                      <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setLinkingIndex(null)}><X size={18} /></button>
+                  <div className="sav-import-link-modal">
+                    <div className="sav-import-link-header">
+                      <h4>🔗 Lier à un équipement</h4>
+                      <Button variant="ghost" className="sav-import-link-close" onClick={() => setLinkingIndex(null)}><X size={18} /></Button>
                     </div>
                     {(() => {
                       const item = preview.unmatchedItems?.find(u => u.index === linkingIndex);
                       return item ? (
-                        <div style={{ marginBottom: 12, padding: 8, background: 'var(--theme-bg-page)', borderRadius: 8, fontSize: 12 }}>
+                        <div className="sav-import-link-info">
                           <strong>{item.intervention}</strong> — {item.nom} {item.serial ? `(S/N: ${item.serial})` : ''}
                         </div>
                       ) : null;
                     })()}
-                    <div style={{ position: 'relative', marginBottom: 12 }}>
-                      <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--theme-text-muted)' }} />
+                    <div className="sav-import-link-search-wrap">
+                      <Search size={14} className="sav-import-link-search-icon" />
                       <Input
                         type="text"
                         value={linkSearch}
                         onChange={(e) => setLinkSearch(e.target.value)}
                         placeholder="Chercher par nom, référence ou N° série..."
-                        style={{ width: '100%', padding: '8px 8px 8px 32px', border: '1px solid var(--theme-border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
+                        className="sav-import-link-input"
                         autoFocus
                       />
                     </div>
-                    <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--theme-border)', borderRadius: 8 }}>
+                    <div className="sav-import-link-list">
                       {filteredEquipment.map(eq => (
                         <div
                           key={eq.id}
-                          style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--theme-border)', fontSize: 13, transition: 'background 0.1s' }}
-                          className="eq-link-option"
+                          className="sav-import-link-item"
                           onClick={() => {
                             setManualLinks(prev => ({ ...prev, [linkingIndex]: eq.id }));
                             setLinkingIndex(null);
                           }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = '#eff6ff'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = ''}
                         >
                           <strong>{eq.name}</strong>
-                          <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--theme-text-secondary)' }}>
+                          <span className="sav-import-link-ref">
                             {eq.reference ? `Réf: ${eq.reference}` : ''} {eq.serial_number ? `S/N: ${eq.serial_number}` : ''}
                           </span>
                         </div>
                       ))}
                       {filteredEquipment.length === 0 && (
-                        <div style={{ padding: 20, textAlign: 'center', color: 'var(--theme-text-muted)', fontSize: 13 }}>
+                        <div className="sav-import-link-empty">
                           {linkSearch ? 'Aucun résultat' : 'Tapez pour chercher...'}
                         </div>
                       )}
@@ -448,7 +441,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
           )}
 
           {/* Étape 4 : Résultat */}
-          {step === 'done' && result && (
+          {step === STATUS.DONE && result && (
             <div className="eq-import-result">
               <CheckCircle size={48} className="eq-import-success-icon" />
               <h4>Import terminé !</h4>
@@ -481,7 +474,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                 )}
               </div>
               {result.createdUnlinked > 0 && (
-                <p style={{ fontSize: 12, color: 'var(--theme-text-secondary)', marginTop: 12 }}>
+                <p className="sav-import-note">
                   Les interventions non liées sont accessibles depuis l'onglet SAV pour liaison manuelle.
                 </p>
               )}

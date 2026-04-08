@@ -1,7 +1,7 @@
 // API Client — Base class + auth methods
 // Détection automatique de l'URL du backend
 
-import { saveAuthToIDB, loadAuthFromIDB, clearAuthFromIDB } from '../indexedDB.js';
+import { saveAuthToIDB, loadAuthFromIDB, clearAllIndexedDB } from '../indexedDB.js';
 
 export const getApiUrl = () => {
   const port = window.location.port;
@@ -12,7 +12,9 @@ export const getApiUrl = () => {
   }
 
   // Sinon, construire l'URL du backend à partir du hostname courant
-  return `http://${window.location.hostname}:3002/api`;
+  // [PHASE 5] Port configurable via VITE_API_PORT (défaut : 3002)
+  const apiPort = import.meta.env.VITE_API_PORT || '3002';
+  return `http://${window.location.hostname}:${apiPort}/api`;
 };
 
 export const API_URL = getApiUrl();
@@ -89,7 +91,8 @@ export class ApiClient {
     this.user = null;
     localStorage.removeItem('auth_user');
     localStorage.removeItem('auth_token'); // nettoyage migration
-    clearAuthFromIDB().catch(() => {});
+    // [AUDIT FIX MED-F4] Vider tous les stores IndexedDB (PII)
+    clearAllIndexedDB().catch(() => {});
   }
 
   async request(endpoint, options = {}) {
@@ -101,18 +104,30 @@ export class ApiClient {
       ...options.headers,
     };
 
+    // Timeout 30s pour éviter les requêtes bloquées indéfiniment
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     let response;
     try {
       response = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers,
         credentials: 'include', // [AUDIT Phase 3] Envoie le cookie httpOnly automatiquement
+        signal: controller.signal,
       });
     } catch (networkError) {
+      clearTimeout(timeoutId);
+      if (networkError.name === 'AbortError') {
+        const error = new Error('Délai dépassé — le serveur ne répond pas');
+        error.isTimeoutError = true;
+        throw error;
+      }
       const error = new Error('Erreur réseau — vérifiez votre connexion');
       error.isNetworkError = true;
       throw error;
     }
+    clearTimeout(timeoutId);
 
     const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/force-login';
 
@@ -195,6 +210,63 @@ export class ApiClient {
     }
 
     this.clearAuth();
+  }
+
+  async getUsersPublic() {
+    return this.request('/auth/users-public');
+  }
+
+  async forceLogin(email, password) {
+    const data = await this.request('/auth/force-login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    this.setAuth(data.user);
+    return data;
+  }
+
+  async selfResetPassword(email, name) {
+    return this.request('/auth/self-reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, name }),
+    });
+  }
+
+  async selfResetPasswordWithNewPassword(email, name, newPassword) {
+    return this.request('/auth/self-reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, name, newPassword }),
+    });
+  }
+
+  async setNewPassword(email, resetToken, newPassword) {
+    const data = await this.request('/auth/set-new-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, resetToken, newPassword }),
+    });
+    this.setAuth(data.user);
+    return data;
+  }
+
+  async uploadAvatar(file, userId = null) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const endpoint = userId ? `/users/${userId}/avatar` : '/users/me/avatar';
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Erreur upload');
+    }
+    return response.json();
+  }
+
+  async deleteAvatar(userId = null) {
+    const endpoint = userId ? `/users/${userId}/avatar` : '/users/me/avatar';
+    return this.request(endpoint, { method: 'DELETE' });
   }
 
   isAuthenticated() {

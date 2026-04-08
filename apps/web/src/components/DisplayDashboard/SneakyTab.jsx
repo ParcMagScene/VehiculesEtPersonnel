@@ -3,7 +3,7 @@
 // Upload, statut, prévisualisation, désactivation
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Camera, Trash2, Clock, Upload } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -18,7 +18,7 @@ const DURATION_OPTIONS = [
   { value: 'endOfWeek', label: "Jusqu'à la fin de la semaine" },
 ];
 
-function SneakyTab({ currentUser, refreshKey }) {
+function SneakyTab({ _currentUser, refreshKey }) {
   const toast = useToast();
   const [status, setStatus] = useState({ active: false });
   const [duration, setDuration] = useState('60');

@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Smartphone, Link as LinkIcon, QrCode, Copy, Check, Printer, Truck, Users, MessageSquare, Package, ShoppingCart, Calendar, Settings, Wrench, LayoutGrid, Eye } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Link as LinkIcon, QrCode, Copy, Check, Printer } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './MobileAccess.css';
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 // Fonctionnalités mobiles à afficher sur l'affichette
 const MOBILE_FEATURES = [
@@ -221,9 +221,9 @@ function MobileAccess() {
           </label>
           <div className="url-input-group">
             <Input type="text" value={mobileUrl} readOnly onClick={(e) => e.target.select()} />
-            <button onClick={copyToClipboard} className="copy-button">
+            <Button variant="ghost" onClick={copyToClipboard} className="copy-button">
               {copied ? <Check size={20} /> : <Copy size={20} />}
-            </button>
+            </Button>
           </div>
           <p className="url-hint">Cliquez pour copier l'URL</p>
         </div>
@@ -258,13 +258,12 @@ function MobileAccess() {
                   { id: 'A4-paysage', label: 'A4 Paysage' },
                   { id: 'A5', label: 'A5' },
                 ].map(f => (
-                  <button
-                    key={f.id}
+                  <Button variant="ghost"                     key={f.id}
                     className={`poster-format-btn ${posterFormat === f.id ? 'active' : ''}`}
                     onClick={() => setPosterFormat(f.id)}
                   >
                     {f.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -281,10 +280,10 @@ function MobileAccess() {
             </div>
           </div>
 
-          <button className="poster-print-btn" onClick={handlePrintPoster}>
+          <Button variant="ghost" className="poster-print-btn" onClick={handlePrintPoster}>
             <Printer size={18} />
             Imprimer {posterCount} affichette{posterCount > 1 ? 's' : ''} ({posterFormat})
-          </button>
+          </Button>
         </div>
 
         <div className="access-info">

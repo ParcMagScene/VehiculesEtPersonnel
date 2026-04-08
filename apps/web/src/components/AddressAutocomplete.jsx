@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
 import api from '../utils/api';
+import { TIMING } from '../constants';
+
 import './AddressAutocomplete.css';
 
 /**
@@ -89,7 +91,7 @@ export default function AddressAutocomplete({
 
   useEffect(() => {
     // Petit délai pour que le DOM soit prêt
-    const timer = setTimeout(initAutocomplete, 200);
+    const timer = setTimeout(initAutocomplete, TIMING.DOUBLE_CLICK);
     return () => clearTimeout(timer);
   }, [initAutocomplete]);
 

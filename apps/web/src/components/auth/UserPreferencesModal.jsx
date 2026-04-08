@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Boxes, Sun, Moon, Radio } from 'lucide-react';
 import api from '../../utils/api';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, getVolume, SOUND_TYPES } from '../../utils/notificationSound';
+import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, SOUND_TYPES } from '../../utils/notificationSound';
 import { PALETTES } from '../../hooks/useTheme';
-import { Button, Dialog, Select, Checkbox, Toggle } from '@/design-system';
+import { Button, Dialog, Select, Toggle } from '@/design-system';
 import './UserPreferencesModal.css';
 import { useToast } from '../../hooks/useToast';
 
@@ -141,7 +141,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
       <div className="prefs-modal">
         <div className="prefs-header">
           <h3><Settings size={18} /> Préférences</h3>
-          <button onClick={handleSafeClose}><X size={18} /></button>
+          <Button variant="ghost" onClick={handleSafeClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         <div className="prefs-body">
@@ -211,30 +211,27 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                     </div>
                     <div className="prefs-tab-actions">
                       {!mod.locked && (
-                        <button
-                          className="prefs-tab-vis-btn"
+                        <Button variant="ghost"                           className="prefs-tab-vis-btn"
                           onClick={() => toggleTabVisibility(mod.id)}
                           title={isHidden ? 'Afficher' : 'Masquer'}
                         >
                           {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
+                        </Button>
                       )}
-                      <button
-                        className="prefs-tab-move-btn"
+                      <Button variant="ghost"                         className="prefs-tab-move-btn"
                         onClick={() => moveTab(mod.id, -1)}
                         disabled={idx === 0}
                         title="Monter"
                       >
                         <ChevronUp size={14} />
-                      </button>
-                      <button
-                        className="prefs-tab-move-btn"
+                      </Button>
+                      <Button variant="ghost"                         className="prefs-tab-move-btn"
                         onClick={() => moveTab(mod.id, 1)}
                         disabled={idx === orderedModules.length - 1}
                         title="Descendre"
                       >
                         <ChevronDown size={14} />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 );
@@ -267,8 +264,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                   const colors = isDark ? p.darkColors : p.colors;
                   const isActive = palette === p.id;
                   return (
-                    <button
-                      key={p.id}
+                    <Button variant="ghost"                       key={p.id}
                       className={`prefs-palette-card${isActive ? ' active' : ''}`}
                       onClick={() => onPaletteChange && onPaletteChange(p.id)}
                       title={p.description}
@@ -287,7 +283,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                         <span className="prefs-palette-name">{p.name}</span>
                         {isActive && <Check size={12} className="prefs-palette-check" />}
                       </div>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -345,23 +341,21 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                 <span className="prefs-field-label" style={{ marginBottom: 6 }}>Tester les sons :</span>
                 <div className="prefs-sound-btns">
                   {SOUND_TYPES.map(st => (
-                    <button
-                      key={st}
+                    <Button variant="ghost"                       key={st}
                       className="prefs-sound-btn"
                       onClick={() => { setVolume(prefs.soundVolume / 100); playSound(st); }}
                       title={st}
                     >
                       {st === 'notification' ? '🔔' : st === 'success' ? '✅' : st === 'error' ? '❌' : st === 'warning' ? '⚠️' : st === 'click' ? '👆' : '🗑️'}
                       <span>{st}</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
             )}
 
             <div className="prefs-field">
-              <button
-                className="prefs-test-btn"
+              <Button variant="ghost"                 className="prefs-test-btn"
                 onClick={async () => {
                   // Tester le son
                   setVolume(prefs.soundVolume / 100);
@@ -378,7 +372,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
                 }}
               >
                 <Volume2 size={14} /> Tester les notifications
-              </button>
+              </Button>
             </div>
           </div>
         </div>

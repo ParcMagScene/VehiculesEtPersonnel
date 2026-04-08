@@ -3,7 +3,7 @@
 // Remplace les <select> pour toute entité DB (fournisseurs, clients, etc.)
 // ============================================================
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import './EntityCombobox.css';
 
@@ -153,7 +153,7 @@ export default function EntityCombobox({
       className={`entity-combobox ${open ? 'open' : ''} ${disabled ? 'disabled' : ''} ${className}`}
     >
       {/* Champ affiché / saisie */}
-      <div className="ecb-control" onClick={handleToggle}>
+      <div className="ecb-control" role="button" tabIndex={0} onClick={handleToggle}>
         {open ? (
           <input
             ref={inputRef}

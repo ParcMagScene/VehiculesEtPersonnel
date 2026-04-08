@@ -1,7 +1,8 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { ClipboardList, Calendar, Tv2, Users } from 'lucide-react';
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
+import { Button } from '@/design-system';
 import './PlanningPanel.css';
 
 const PersonnelPanel = lazy(() => import('../personnel/PersonnelPanel'));
@@ -16,10 +17,10 @@ function PlanningPanel({
   navigateToPersonId, onNavigateToPersonHandled,
   quickAssignmentSlot, onQuickAssignmentHandled,
 }) {
-  const toast = useToast();
+  const _toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('personnel');
   const [stats, setStats] = useState(null);
-  const [displayRefreshKey, setDisplayRefreshKey] = useState(0);
+  const [displayRefreshKey, _setDisplayRefreshKey] = useState(0);
 
   // Auto-switch vers l'onglet Personnel quand navigation demandée
   useEffect(() => {
@@ -45,15 +46,14 @@ function PlanningPanel({
         {subTabs.map(tab => {
           const Icon = tab.icon;
           return (
-            <button
-              key={tab.id}
+            <Button variant="ghost"               key={tab.id}
               className={`sub-tab ${activeSubTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveSubTab(tab.id)}
             >
               <Icon size={16} />
               {tab.label}
               {tab.count > 0 && <span className="tab-count">{tab.count}</span>}
-            </button>
+            </Button>
           );
         })}
         {stats && activeSubTab !== 'personnel' && (

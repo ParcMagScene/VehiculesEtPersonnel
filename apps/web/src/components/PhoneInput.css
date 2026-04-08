@@ -20,7 +20,7 @@
   border-radius: 8px 0 0 8px;
   background: var(--theme-bg-secondary);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-base);
   height: 100%;
   white-space: nowrap;
   transition: background 0.15s, border-color 0.15s;
@@ -37,19 +37,19 @@
 }
 
 .phone-prefix-flag {
-  font-size: 16px;
+  font-size: var(--font-md);
   line-height: 1;
 }
 
 .phone-prefix-code {
   font-weight: 500;
   color: var(--theme-text-body);
-  font-size: 12px;
+  font-size: var(--font-sm);
   min-width: 32px;
 }
 
 .phone-prefix-arrow {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-muted);
   margin-left: 2px;
 }
@@ -60,7 +60,7 @@
   border: 1px solid var(--theme-border-muted);
   border-radius: 0 8px 8px 0;
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: var(--font-base);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -78,7 +78,7 @@
   z-index: var(--z-overlay);
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 10px 25px var(--shadow-xl);
   margin-top: 4px;
   min-width: 240px;
@@ -92,7 +92,7 @@
   padding: 8px 12px;
   border: none;
   border-bottom: 1px solid var(--theme-border-medium);
-  font-size: 13px;
+  font-size: var(--font-base);
   outline: none;
 }
 
@@ -115,7 +115,7 @@
   background: none;
   cursor: pointer;
   text-align: left;
-  font-size: 13px;
+  font-size: var(--font-base);
   transition: background 0.1s;
 }
 
@@ -129,7 +129,7 @@
 }
 
 .phone-dropdown-flag {
-  font-size: 16px;
+  font-size: var(--font-md);
   line-height: 1;
 }
 
@@ -140,7 +140,7 @@
 
 .phone-dropdown-code {
   color: var(--theme-text-gray);
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
@@ -206,7 +206,7 @@
 /* ===== Responsive ===== */
 @media (max-width: 600px) {
   .phone-prefix-code {
-    font-size: 11px;
+    font-size: var(--font-xs);
     min-width: 28px;
   }
   
@@ -215,7 +215,7 @@
   }
   
   .phone-local-input {
-    font-size: 13px;
+    font-size: var(--font-base);
     padding: 6px 10px;
   }
   

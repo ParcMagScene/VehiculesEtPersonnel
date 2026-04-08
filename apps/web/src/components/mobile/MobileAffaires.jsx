@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ArrowLeft, ChevronLeft, ChevronRight, Calendar, MapPin, User, Phone,
-  FileText, Truck, Clock, Package, Users, DollarSign, Briefcase,
+  FileText, Truck, Package, Users, DollarSign, Briefcase,
   ClipboardList, CheckCircle, AlertCircle,
 } from 'lucide-react';
 import { format, addDays, startOfDay, parseISO, isSameDay } from 'date-fns';
@@ -9,7 +9,9 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import './MobileAffaires.css';
-import { Input, Spinner, Avatar, SearchBar } from '@/design-system';
+import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
+
+import { STATUS } from '../../constants';
 
 // Statut temporel
 const getAffaireStatus = (a, todayStr) => {
@@ -79,8 +81,8 @@ function MobileAffaires({ onBack }) {
       .sort((a, b) => {
         const sa = getAffaireStatus(a, currentStr);
         const sb = getAffaireStatus(b, currentStr);
-        if (sa === 'active' && sb !== 'active') return -1;
-        if (sb === 'active' && sa !== 'active') return 1;
+        if (sa === STATUS.ACTIVE && sb !== STATUS.ACTIVE) return -1;
+        if (sb === STATUS.ACTIVE && sa !== STATUS.ACTIVE) return 1;
         return (a.dateDebut || '').localeCompare(b.dateDebut || '');
       });
   }, [affaires, currentDate, searchTerm, filterType]);
@@ -139,14 +141,14 @@ function MobileAffaires({ onBack }) {
     const a = selectedAffaire;
     const typeInfo = getTypeInfo(a.type);
     const status = getAffaireStatus(a, todayStr);
-    const statusLabel = status === 'active' ? 'En cours' : status === 'upcoming' ? 'À venir' : status === 'past' ? 'Terminée' : '';
+    const statusLabel = status === STATUS.ACTIVE ? 'En cours' : status === 'upcoming' ? 'À venir' : status === 'past' ? 'Terminée' : '';
 
     return (
       <div className="mobile-affaires">
         <div className="maff-header">
-          <button className="maff-back" onClick={() => { setSelectedAffaire(null); setDetailData(null); }}>
+          <Button variant="ghost" className="maff-back" onClick={() => { setSelectedAffaire(null); setDetailData(null); }}>
             <ArrowLeft size={20} />
-          </button>
+          </Button>
           <h2>{a.numeroAffaire || 'Affaire'}</h2>
         </div>
 
@@ -284,8 +286,8 @@ function MobileAffaires({ onBack }) {
               <div className="maff-tasks-list">
                 {detailData.tasks.map((t, i) => (
                   <div key={t.id || i} className="maff-task-card">
-                    <span className={`maff-task-status-icon ${t.status === 'done' ? 'done' : t.status === 'in_progress' ? 'progress' : ''}`}>
-                      {t.status === 'done' ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+                    <span className={`maff-task-status-icon ${t.status === STATUS.DONE ? 'done' : t.status === 'in_progress' ? 'progress' : ''}`}>
+                      {t.status === STATUS.DONE ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
                     </span>
                     <div className="maff-task-info">
                       <div className="maff-task-title">{t.title || t.description || 'Tâche'}</div>
@@ -321,14 +323,14 @@ function MobileAffaires({ onBack }) {
             <div className="maff-detail-section">
               <h4><Briefcase size={16} /> Affaires liées</h4>
               {detailData.links.parents.map(p => (
-                <div key={p.id} className="maff-linked-card" onClick={() => openDetail(p)}>
+                <div key={p.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(p)}>
                   <span className="maff-linked-label">Parent</span>
                   <span className="maff-linked-num">{p.numeroAffaire}</span>
                   <span className="maff-linked-name">{p.nom || p.client || ''}</span>
                 </div>
               ))}
               {detailData.links.children.map(c => (
-                <div key={c.id} className="maff-linked-card" onClick={() => openDetail(c)}>
+                <div key={c.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(c)}>
                   <span className="maff-linked-label">Enfant</span>
                   <span className="maff-linked-num">{c.numeroAffaire}</span>
                   <span className="maff-linked-name">{c.nom || c.client || ''}</span>
@@ -351,31 +353,30 @@ function MobileAffaires({ onBack }) {
   return (
     <div className="mobile-affaires">
       <div className="maff-header">
-        <button className="maff-back" onClick={onBack}>
+        <Button variant="ghost" className="maff-back" onClick={onBack}>
           <ArrowLeft size={20} />
-        </button>
+        </Button>
         <h2>Affaires</h2>
       </div>
 
       {/* Navigation date */}
       <div className="maff-date-nav">
-        <button className="maff-nav-btn" onClick={() => navigate(-1)}>
+        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(-1)}>
           <ChevronLeft size={20} />
-        </button>
-        <button
-          className={`maff-date-label ${isToday ? 'today' : ''}`}
+        </Button>
+        <Button variant="ghost"           className={`maff-date-label ${isToday ? 'today' : ''}`}
           onClick={() => setCurrentDate(startOfDay(new Date()))}
         >
           {format(currentDate, 'EEEE d MMMM', { locale: fr })}
-        </button>
-        <button className="maff-nav-btn" onClick={() => navigate(1)}>
+        </Button>
+        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(1)}>
           <ChevronRight size={20} />
-        </button>
+        </Button>
       </div>
       {!isToday && (
-        <button className="maff-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        <Button variant="ghost" className="maff-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
           Aujourd'hui
-        </button>
+        </Button>
       )}
 
       {/* Recherche */}
@@ -388,21 +389,19 @@ function MobileAffaires({ onBack }) {
 
       {/* Filtres par type */}
       <div className="maff-type-filters">
-        <button
-          className={`maff-filter-pill ${filterType === null ? 'active' : ''}`}
+        <Button variant="ghost"           className={`maff-filter-pill ${filterType === null ? 'active' : ''}`}
           onClick={() => setFilterType(null)}
         >
           Tous
-        </button>
+        </Button>
         {AFFAIRE_TYPES.map(t => (
-          <button
-            key={t.value}
+          <Button variant="ghost"             key={t.value}
             className={`maff-filter-pill ${filterType === t.value ? 'active' : ''}`}
             style={filterType === t.value ? { background: t.color, color: '#fff', borderColor: t.color } : {}}
             onClick={() => setFilterType(filterType === t.value ? null : t.value)}
           >
             {t.icon} {t.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -428,7 +427,7 @@ function MobileAffaires({ onBack }) {
             const currentStr = format(currentDate, 'yyyy-MM-dd');
             const status = getAffaireStatus(a, currentStr);
             const typeInfo = getTypeInfo(a.type);
-            const isActive = status === 'active';
+            const isActive = status === STATUS.ACTIVE;
             return (
               <div
                 key={a.id || a.numeroAffaire}

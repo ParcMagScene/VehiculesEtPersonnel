@@ -1,3 +1,4 @@
+import { STATUS } from '../constants';
 /**
  *Utilitaire pour les vérifications liées aux véhicules
  */
@@ -34,7 +35,7 @@ export const hasExpiredTechnicalControl = (vehicle, maintenances = []) => {
   const scheduledCTInterventions = maintenances.filter(m => 
     (m.vehicleId === vehicle.id || m.vehicle_id === vehicle.id) &&
     m.type === 'technical_inspection' &&
-    (m.status === 'scheduled' || m.status === 'in_progress') &&
+    (m.status === STATUS.SCHEDULED || m.status === 'in_progress') &&
     m.technicalControlType
   );
 
@@ -98,7 +99,7 @@ export const getExpiredTechnicalControls = (vehicle, maintenances = []) => {
   const scheduledCTInterventions = maintenances.filter(m => 
     (m.vehicleId === vehicle.id || m.vehicle_id === vehicle.id) &&
     m.type === 'technical_inspection' &&
-    (m.status === 'scheduled' || m.status === 'in_progress') &&
+    (m.status === STATUS.SCHEDULED || m.status === 'in_progress') &&
     m.technicalControlType
   );
 

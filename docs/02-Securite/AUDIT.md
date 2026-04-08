@@ -141,7 +141,7 @@ FRONTEND REACT : App.jsx → Header + 14 modules lazy-loaded
 | Base de données | SQLite (better-sqlite3) | WAL mode |
 | Authentification | JWT + bcrypt | SHA-256 hash en DB |
 | Déploiement | PM2 | Cron restart 6h |
-| Domaine | DuckDNS | (configurable via .env) |
+| Domaine | Dynamic DNS | (configurable via .env) |
 | Reverse proxy | Non documenté | HTTP → HTTPS supposé |
 
 ---
@@ -2184,15 +2184,15 @@ L'import CSV crée automatiquement la hiérarchie de catégories avec des icône
 **Fichiers** : `apps/api/backup-database.sh:4-5`, `apps/api/backup-on-stop.sh:4-5`, `apps/api/ecosystem.config.js:9`  
 **Impact** : ⚠️ **AUCUN BACKUP N'EST CRÉÉ** lors des redémarrages PM2
 
-Les scripts de sauvegarde pointent vers l'ancien chemin `/Users/reunion/eM@g/server/vehicules.db` alors que la DB est en `/Users/reunion/eM@g/apps/api/vehicules.db`. PM2 appelle ces scripts (`post_update`) mais ils échouent silencieusement.
+Les scripts de sauvegarde pointent vers l'ancien chemin `$REPO_ROOT/server/vehicules.db` alors que la DB est en `$REPO_ROOT/apps/api/vehicules.db`. PM2 appelle ces scripts (`post_update`) mais ils échouent silencieusement.
 
 **Root cause** : Migration en monorepo sans mise à jour des scripts de backup.
 
 ```diff
 --- a/apps/api/backup-database.sh
 +++ b/apps/api/backup-database.sh
--DB_FILE="/Users/reunion/eM@g/server/vehicules.db"
--BACKUP_DIR="/Users/reunion/eM@g/server/backups"
+-DB_FILE="$REPO_ROOT/server/vehicules.db"
+-BACKUP_DIR="$REPO_ROOT/server/backups"
 +SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 +DB_FILE="$SCRIPT_DIR/vehicules.db"
 +BACKUP_DIR="$SCRIPT_DIR/backups"
@@ -2201,8 +2201,8 @@ Les scripts de sauvegarde pointent vers l'ancien chemin `/Users/reunion/eM@g/ser
 ```diff
 --- a/apps/api/backup-on-stop.sh
 +++ b/apps/api/backup-on-stop.sh
--DB_FILE="/Users/reunion/eM@g/server/vehicules.db"
--BACKUP_DIR="/Users/reunion/eM@g/server/backups"
+-DB_FILE="$REPO_ROOT/server/vehicules.db"
+-BACKUP_DIR="$REPO_ROOT/server/backups"
 +SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 +DB_FILE="$SCRIPT_DIR/vehicules.db"
 +BACKUP_DIR="$SCRIPT_DIR/backups"
@@ -2777,7 +2777,7 @@ Validation par extension seule (`.jpg.php` passe).
 | LOW-09 | Domain production dans logs deploy | safe-deploy.sh:77 |
 | LOW-10 | PM2 chemins absolus user-specific | ecosystem.config.js:3-5 |
 | LOW-11 | Pas d'utilisateur système dédié | ecosystem.config.js |
-| LOW-12 | Exposition domaine DuckDNS | safe-deploy.sh |
+| LOW-12 | Exposition domaine Dynamic DNS | safe-deploy.sh |
 
 ---
 

@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, CheckCircle, Clock, Circle, XCircle, RefreshCw, Briefcase, MapPin, User } from 'lucide-react';
 import api from '../../utils/api';
-import { Accordion, ProgressBar } from '@/design-system';
+import { Accordion, Button, ProgressBar } from '@/design-system';
+import { ROLES, STATUS } from '../../constants';
+
 import './MobileTasks.css';
 
 const SECTIONS = {
@@ -73,7 +75,7 @@ function MobileTasks({ currentUser, onBack }) {
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
   const handleValidate = async (task) => {
-    const newStatus = task.status === 'done' ? 'pending' : 'done';
+    const newStatus = task.status === STATUS.DONE ? 'pending' : 'done';
     setUpdating(task.id);
     try {
       await api.updateTask(task.id, { status: newStatus });
@@ -101,18 +103,18 @@ function MobileTasks({ currentUser, onBack }) {
   });
 
   const activeSections = Object.keys(SECTIONS).filter(k => grouped[k]?.length > 0);
-  const doneCount = tasks.filter(t => t.status === 'done').length;
+  const doneCount = tasks.filter(t => t.status === STATUS.DONE).length;
   const totalCount = tasks.length;
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'manager';
+  const isAdmin = currentUser?.role === ROLES.ADMIN || currentUser?.role === ROLES.MANAGER;
 
   return (
     <div className="mobile-tasks">
       <div className="mobile-tasks-header">
-        <button className="mobile-back-btn" onClick={onBack}><ArrowLeft size={20} /></button>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ArrowLeft size={20} /></Button>
         <h2>Tâches du jour</h2>
-        <button className="mobile-tasks-refresh" onClick={loadTasks} disabled={loading}>
+        <Button variant="ghost" className="mobile-tasks-refresh" onClick={loadTasks} disabled={loading}>
           <RefreshCw size={18} className={loading ? 'spin' : ''} />
-        </button>
+        </Button>
       </div>
 
       {/* Barre de progression */}
@@ -123,12 +125,12 @@ function MobileTasks({ currentUser, onBack }) {
       {/* Toggle mes tâches / toutes (admin seulement) */}
       {isAdmin && personId && (
         <div className="mobile-tasks-toggle">
-          <button className={!showAllTasks ? 'active' : ''} onClick={() => setShowAllTasks(false)}>
+          <Button variant="ghost" className={!showAllTasks ? 'active' : ''} onClick={() => setShowAllTasks(false)}>
             <User size={14} /> Mes tâches
-          </button>
-          <button className={showAllTasks ? 'active' : ''} onClick={() => setShowAllTasks(true)}>
+          </Button>
+          <Button variant="ghost" className={showAllTasks ? 'active' : ''} onClick={() => setShowAllTasks(true)}>
             Toutes
-          </button>
+          </Button>
         </div>
       )}
 
@@ -150,7 +152,7 @@ function MobileTasks({ currentUser, onBack }) {
             const info = SECTIONS[sectionKey] || SECTIONS.manual;
             const sectionTasks = grouped[sectionKey];
             const collapsed = collapsedSections.has(sectionKey);
-            const sectionDone = sectionTasks.filter(t => t.status === 'done').length;
+            const sectionDone = sectionTasks.filter(t => t.status === STATUS.DONE).length;
 
             return (
               <div key={sectionKey} className="mobile-tasks-section">
@@ -163,19 +165,18 @@ function MobileTasks({ currentUser, onBack }) {
                   <div className="mobile-tasks-section-items">
                     {sectionTasks.map(task => {
                       const st = STATUS_INFO[task.status] || STATUS_INFO.pending;
-                      const isDone = task.status === 'done';
+                      const isDone = task.status === STATUS.DONE;
                       const isUpdating = updating === task.id;
 
                       return (
                         <div key={task.id} className={`mobile-task-card ${isDone ? 'done' : ''} ${isUpdating ? 'updating' : ''}`}>
-                          <button
-                            className={`mobile-task-status-btn ${task.status}`}
+                          <Button variant="ghost"                             className={`mobile-task-status-btn ${task.status}`}
                             onClick={() => handleValidate(task)}
                             disabled={isUpdating}
                             title={isDone ? 'Remettre à faire' : 'Valider'}
                           >
                             <st.icon size={22} />
-                          </button>
+                          </Button>
                           <div className="mobile-task-content">
                             <span className={`mobile-task-title ${isDone ? 'done' : ''}`}>{task.title || '—'}</span>
                             <div className="mobile-task-meta">

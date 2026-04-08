@@ -14,7 +14,7 @@
 
 .bl-loc-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 96%;
   max-width: 800px;
   max-height: 92vh;
@@ -54,7 +54,7 @@
   font-size: 0.7rem;
   font-weight: 600;
   padding: 3px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--close-btn-bg);
   color: var(--theme-text-inverse);
   white-space: nowrap;
@@ -97,7 +97,7 @@
   justify-content: center;
   padding: 40px 20px;
   border: 2px dashed var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--theme-bg-secondary);
   cursor: pointer;
   transition: all 0.2s;
@@ -137,7 +137,7 @@
   gap: 12px;
   padding: 12px 16px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-bottom: 16px;
   background: var(--theme-bg-secondary);
 }
@@ -148,7 +148,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--warning-tint-light);
   color: var(--theme-warning);
   flex-shrink: 0;
@@ -177,7 +177,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -197,7 +197,7 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -218,7 +218,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 12px;
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid var(--danger-tint-accent);
@@ -258,7 +258,7 @@
   margin-top: 12px;
   padding: 12px 16px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-secondary);
 }
 
@@ -276,7 +276,7 @@
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.88rem;
@@ -296,7 +296,7 @@
 .bl-loc-type-btn {
   flex: 1;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.88rem;
   border: 2px solid var(--theme-border);
   background: transparent;
@@ -422,7 +422,7 @@
 
 .bl-loc-section {
   border: 1px solid var(--sec-border, var(--theme-border));
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-bottom: 8px;
   overflow: hidden;
   background: var(--sec-bg, transparent);
@@ -444,7 +444,7 @@
 }
 
 .bl-loc-section-icon {
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .bl-loc-section-name {
@@ -457,7 +457,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--shadow-inner);
   color: var(--theme-text-secondary);
 }
@@ -473,7 +473,7 @@
 }
 
 .bl-loc-section-chevron {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
   transition: transform 0.2s;
   margin-left: 4px;
@@ -522,7 +522,7 @@
 .bl-loc-item-row.flat {
   padding: 6px 12px;
   background: var(--theme-bg-secondary);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   margin-bottom: 3px;
 }
 
@@ -589,7 +589,7 @@
 }
 
 .bl-loc-items-more {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   padding: 4px 12px;
   font-style: italic;
@@ -614,7 +614,7 @@
   margin-top: 8px;
   padding: 12px;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 0.78rem;
   color: var(--theme-text-secondary);
@@ -631,7 +631,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-top: 12px;
   background: rgba(245, 158, 11, 0.08);
   color: var(--theme-warning);
@@ -649,7 +649,7 @@
 }
 
 .bl-loc-footer-left {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 

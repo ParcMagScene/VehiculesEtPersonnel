@@ -11,7 +11,7 @@
 
 /* Override Google Maps pac-container dropdown styling */
 .pac-container {
-  z-index: 3001 !important;
+  z-index: var(--z-popover) !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 15px var(--shadow-xl) !important;
   border: 1px solid var(--theme-border-medium) !important;

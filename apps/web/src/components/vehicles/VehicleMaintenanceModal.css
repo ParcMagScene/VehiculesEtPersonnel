@@ -15,7 +15,7 @@
 
 .vehicle-maintenance-modal {
   background: var(--theme-bg-page);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 20px 60px var(--shadow-xl);
   max-width: 600px;
   width: 90%;
@@ -62,9 +62,9 @@
 
 .vehicle-maintenance-modal .modal-header .vehicle-type,
 .vehicle-maintenance-modal .modal-header .vehicle-registration {
-  font-size: 12px;
+  font-size: var(--font-sm);
   padding: 3px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--glass-light);
   color: var(--theme-text-inverse);
   font-weight: 500;
@@ -124,7 +124,7 @@
 }
 
 .form-section h3 {
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--theme-bg-dark);
   margin-bottom: 1rem;
@@ -139,7 +139,7 @@
 
 .vehicle-maintenance-modal .form-group label {
   display: block;
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--theme-text-muted);
   margin-bottom: 6px;
@@ -153,7 +153,7 @@
   padding: 8px 10px;
   border: 1px solid var(--theme-border);
   border-radius: 7px;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
   transition: border-color 0.15s;
@@ -172,15 +172,15 @@
   color: var(--theme-text-gray);
   background: var(--theme-bg-tertiary);
   padding: 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .deadline-status {
   margin-top: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   font-weight: 600;
   padding: 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--shadow-xs);
 }
 
@@ -201,8 +201,8 @@
   background: linear-gradient(135deg, var(--theme-success-alt) 0%, var(--theme-success-dark) 100%);
   color: var(--theme-text-inverse);
   padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -263,7 +263,7 @@
 .controle-item {
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border-medium);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 1rem;
 }
 
@@ -283,7 +283,7 @@
   background: var(--btn-danger-bg);
   color: var(--btn-danger-color);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0.4rem;
   cursor: pointer;
   display: flex;
@@ -321,10 +321,10 @@
 
 .controle-status {
   margin-top: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   font-weight: 600;
   padding: 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--shadow-xs);
   text-align: center;
 }
@@ -362,8 +362,8 @@
   background: var(--theme-info-bg-strong);
   color: var(--theme-info-dark);
   padding: 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   text-align: center;
 }
 
@@ -377,7 +377,7 @@
   .vehicle-maintenance-modal {
     width: 95%;
     max-height: 95vh;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
 
   .vehicle-maintenance-modal .modal-header {
@@ -385,7 +385,7 @@
   }
 
   .vehicle-maintenance-modal .modal-header h2 {
-    font-size: 1rem;
+    font-size: var(--font-md);
   }
 
   .vehicle-maintenance-modal .modal-body {

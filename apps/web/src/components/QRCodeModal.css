@@ -20,7 +20,7 @@
 
 .qr-modal {
   background: var(--theme-bg-page);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 20px 60px var(--shadow-xl);
   width: 90%;
   max-width: 600px;
@@ -84,14 +84,14 @@
 .qr-code-container {
   background: var(--theme-bg-card);
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 2px solid var(--theme-border-medium);
 }
 
 .qr-code-container canvas {
   display: block;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .qr-info {
@@ -101,7 +101,7 @@
 
 .qr-info h3 {
   margin: 0 0 8px 0;
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 600;
   color: var(--theme-text-heading);
 }
@@ -117,7 +117,7 @@
   margin: 20px 0;
   padding: 16px;
   background: var(--theme-bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border-medium);
 }
 
@@ -125,7 +125,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-gray);
   margin-bottom: 8px;
@@ -136,10 +136,10 @@
 .qr-url-display {
   padding: 10px 12px;
   background: var(--theme-bg-card);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border-muted);
   font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-info);
   word-break: break-all;
 }
@@ -148,14 +148,14 @@
   margin-top: 24px;
   padding: 20px;
   background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--theme-info-border);
   text-align: left;
 }
 
 .qr-legend h4 {
   margin: 0 0 12px 0;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--theme-info-dark);
   display: flex;
@@ -172,7 +172,7 @@
 .qr-legend li {
   padding: 6px 0;
   color: var(--theme-info-dark);
-  font-size: 14px;
+  font-size: var(--font-base);
   display: flex;
   align-items: center;
   gap: 8px;

@@ -8,7 +8,7 @@
 
 .prefs-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 90%;
   max-width: 460px;
   max-height: 85dvh;
@@ -95,7 +95,7 @@
 }
 
 .prefs-field-label {
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   color: var(--theme-text-subtle);
   display: flex;
   align-items: center;
@@ -109,8 +109,8 @@
 .prefs-select {
   padding: 6px 28px 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
   cursor: pointer;
@@ -146,7 +146,7 @@
   position: absolute;
   inset: 0;
   background: var(--theme-bg-muted);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   transition: all 0.25s;
 }
 
@@ -221,7 +221,7 @@
 }
 
 .prefs-saved-msg {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-success-alt);
   display: flex;
   align-items: center;
@@ -233,7 +233,7 @@
   .prefs-modal {
     width: 95%;
     max-height: 90vh;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
   .prefs-tab-row {
     padding: 8px 10px;
@@ -246,7 +246,7 @@
   flex-direction: column;
   gap: 2px;
   background: var(--theme-bg-page);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 4px;
   border: 1px solid var(--theme-border);
 }
@@ -256,7 +256,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: all 0.15s;
 }
 
@@ -301,7 +301,7 @@
   height: 28px;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--theme-text-muted);
   cursor: pointer;
   transition: all 0.12s;
@@ -326,10 +326,10 @@
   gap: 6px;
   padding: 8px 16px;
   border: 1px dashed var(--theme-purple-accent);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-purple-bg);
   color: var(--theme-purple-accent);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -410,7 +410,7 @@
   gap: 2px;
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-page);
   font-size: 0.7rem;
   color: var(--theme-text-secondary);
@@ -449,7 +449,7 @@
   display: flex;
   flex-direction: column;
   border: 2px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   overflow: hidden;
   background: var(--theme-bg-card);
   cursor: pointer;
@@ -491,7 +491,7 @@
 
 .prefs-palette-mini-card {
   background: var(--theme-bg-card);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--shadow-inner);
   padding: 4px;
   height: 24px;

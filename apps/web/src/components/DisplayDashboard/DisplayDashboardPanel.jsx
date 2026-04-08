@@ -3,7 +3,7 @@
 // Sous-module de Planning → onglet « Dashboard Écrans »
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
 import { Palette, MessageCircle, Tag, Film, Camera, Music, ExternalLink } from 'lucide-react';
 import './DisplayDashboardPanel.css';
 import { Tabs, TabList, Tab, TabPanel } from '@/design-system';
@@ -98,7 +98,7 @@ function DisplayDashboardPanel({ currentUser }) {
     setPreviewOverrides({});
   }, [activeTab]);
 
-  const handleRefresh = useCallback(() => {
+  const _handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
   }, []);
 

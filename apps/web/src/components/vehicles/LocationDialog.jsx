@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import logger from "../../utils/logger";
 import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
 import api from '../../utils/api';
@@ -403,7 +403,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         handleSafeClose();
       }
     }}>
-      <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="location-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="location-dialog-header">
           <h2>
             <MapPin size={24} />
@@ -415,9 +415,9 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
               </span>
             )}
           </h2>
-          <button className="close-button" onClick={handleSafeClose}>
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit}>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { getApiUrl } from '../utils/api';
 
 // Générer les initiales à partir du nom
@@ -54,6 +53,7 @@ const UserAvatar = ({ name, avatar, size = 40, gradient = true, style = {} }) =>
       <img
         src={`${baseUrl}${avatar}`}
         alt={name || 'Avatar'}
+        loading="lazy"
         style={{
           width: `${size}px`,
           height: `${size}px`,

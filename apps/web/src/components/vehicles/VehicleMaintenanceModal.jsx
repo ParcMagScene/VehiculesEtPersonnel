@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
 import { Button, Dialog, FormField, Input, Select } from '@/design-system';
 import './VehicleMaintenanceModal.css';
 import { useToast } from '../../hooks/useToast';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   const toast = useToast();
@@ -159,7 +160,14 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    const newKm = parseInt(kilometrage) || 0;
+    const currentKm = vehicle?.kilometrage || 0;
+    if (newKm > 0 && currentKm > 0 && newKm < currentKm) {
+      toast.warning(`Le kilométrage (${newKm.toLocaleString('fr-FR')} km) est inférieur au kilométrage actuel (${currentKm.toLocaleString('fr-FR')} km)`);
+      return;
+    }
+
     const updatedVehicle = {
       ...vehicle,
       kilometrage: parseInt(kilometrage) || 0,
@@ -199,7 +207,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
 
   return (
     <div className="vm-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
-      <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="vehicle-maintenance-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <div className="modal-header-title">
             <h2>🔧 Maintenance - {vehicle?.name}</h2>
@@ -210,9 +218,9 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
               </div>
             )}
           </div>
-          <button className="close-button" onClick={handleSafeClose}>
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="maintenance-form">
@@ -243,23 +251,23 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                     <div key={index} className="controle-item">
                       <div className="controle-header">
                         <strong>{typeConfig?.label || controle.type}</strong>
-                        <button 
+                        <Button variant="ghost" 
                           type="button" 
                           className="btn-remove"
                           onClick={() => handleRemoveControle(index)}
                           title="Supprimer ce contrôle"
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </Button>
                       </div>
                       <div className="controle-details">
                         <div>
                           <span className="label">Dernier contrôle :</span>
-                          <span>{new Date(controle.date).toLocaleDateString('fr-FR')}</span>
+                          <span>{formatDateSimple(controle.date)}</span>
                         </div>
                         <div>
                           <span className="label">Prochaine échéance :</span>
-                          <span>{new Date(controle.deadline).toLocaleDateString('fr-FR')}</span>
+                          <span>{formatDateSimple(controle.deadline)}</span>
                         </div>
                         {status && (
                           <div className="controle-status" style={{ color: status.color }}>

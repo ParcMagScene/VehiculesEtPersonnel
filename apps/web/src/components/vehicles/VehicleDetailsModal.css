@@ -16,7 +16,7 @@
 
 .vehicle-details-modal {
   background: var(--theme-bg-page);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 90%;
   max-width: 800px;
   max-height: 90vh;
@@ -50,7 +50,7 @@
 .vehicle-details-modal .vehicle-color-indicator {
   width: 12px;
   height: 48px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 2px 8px var(--shadow-xl), inset 0 1px 0 var(--close-btn-hover-bg);
   border: 1px solid var(--shadow-sm);
   transition: transform 0.2s ease;
@@ -63,7 +63,7 @@
 
 .vehicle-details-modal .header-info h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: var(--font-2xl);
   font-weight: 600;
 }
 
@@ -71,8 +71,8 @@
   display: inline-block;
   background: var(--glass-light);
   padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 13px;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-base);
   font-weight: 500;
 }
 
@@ -81,8 +81,8 @@
   background: var(--close-btn-bg);
   border: 1px solid var(--close-btn-hover-bg);
   padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 13px;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-base);
   font-weight: 600;
   letter-spacing: 1px;
   font-family: 'SF Mono', 'Fira Code', 'Monaco', monospace;
@@ -137,7 +137,7 @@
   gap: 20px;
   background: var(--theme-bg-card);
   padding: 14px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   border: 1px solid var(--theme-border);
   align-items: flex-start;
 }
@@ -145,7 +145,7 @@
 .vehicle-details-modal .vehicle-photo-container {
   flex-shrink: 0;
   width: 200px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
@@ -175,7 +175,7 @@
 }
 
 .vehicle-details-modal .info-label {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -183,7 +183,7 @@
 }
 
 .vehicle-details-modal .info-value {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-dark);
 }
 
@@ -192,7 +192,7 @@
   grid-column: 1 / -1;
   background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg-strong) 60%, var(--theme-bg-indigo-light) 100%);
   border: 1px solid var(--theme-info-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 14px 18px;
   margin-top: 4px;
 }
@@ -241,8 +241,8 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: var(--radius-2xl);
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
@@ -332,7 +332,7 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 12px 0;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-primary-dark);
   padding-bottom: 8px;
@@ -354,7 +354,7 @@
 .vehicle-details-modal .maintenance-item {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 16px;
   transition: all 0.2s;
   border-left: 4px solid var(--theme-border-medium);
@@ -444,8 +444,8 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
+  border-radius: var(--radius-2xl);
+  font-size: var(--font-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -487,33 +487,33 @@
 }
 
 .vehicle-details-modal .maintenance-date {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   font-weight: 500;
 }
 
 .vehicle-details-modal .maintenance-description {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-subtle);
   line-height: 1.5;
 }
 
 .vehicle-details-modal .maintenance-garage {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 
 .vehicle-details-modal .maintenance-cost {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 
 .vehicle-details-modal .maintenance-mileage {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-info);
   font-weight: 500;
 }
@@ -523,7 +523,7 @@
   padding: 40px 20px;
   color: var(--theme-text-muted);
   background: var(--theme-bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px dashed var(--theme-border-muted);
 }
 
@@ -542,7 +542,7 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 12px 0;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-primary-dark);
   padding-bottom: 8px;
@@ -564,7 +564,7 @@
 .vehicle-details-modal .deadline-item {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 16px;
   transition: all 0.2s;
   box-shadow: 0 1px 3px var(--shadow-xs);
@@ -593,8 +593,8 @@
 .vehicle-details-modal .deadline-badge {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 11px;
+  border-radius: var(--radius-2xl);
+  font-size: var(--font-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -645,13 +645,13 @@
 }
 
 .vehicle-details-modal .deadline-date-label {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   font-weight: 500;
 }
 
 .vehicle-details-modal .deadline-date-value {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-heading);
   font-weight: 600;
 }
@@ -664,14 +664,14 @@
   padding: 10px 12px;
   background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
   border: 1px solid var(--theme-info-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   line-height: 1.4;
   color: var(--theme-info-dark);
 }
 
 .vehicle-details-modal .ct-periodicity-icon {
-  font-size: 16px;
+  font-size: var(--font-md);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -688,7 +688,7 @@
   text-align: center;
   padding: 32px 20px;
   background: var(--theme-bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px dashed var(--theme-border-muted);
 }
 
@@ -733,7 +733,7 @@
   }
 
   .vehicle-details-modal .header-info h2 {
-    font-size: 20px;
+    font-size: var(--font-xl);
   }
 
   .vehicle-details-modal .modal-body {

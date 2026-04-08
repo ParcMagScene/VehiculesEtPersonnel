@@ -46,7 +46,7 @@
   width: 32px;
   height: 32px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   cursor: pointer;
@@ -63,7 +63,7 @@
   text-align: center;
   cursor: pointer;
   padding: 4px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .task-planning-panel .tp-date-nav .tp-current-date:hover {
@@ -76,7 +76,7 @@
   gap: 6px;
   padding: 8px 14px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-weight: 600;
@@ -202,7 +202,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-primary);
   color: var(--theme-bg-card);
   margin-right: auto;
@@ -301,7 +301,7 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--accent-tint-light);
   color: var(--theme-primary);
   font-size: 0.92rem;
@@ -329,7 +329,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -382,7 +382,7 @@
 .task-planning-panel .task-form-inline select {
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.85rem;
@@ -408,7 +408,7 @@
   width: 30px;
   height: 30px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -440,7 +440,7 @@
 .task-planning-panel .task-form-enriched .form-row > select {
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.85rem;
@@ -491,7 +491,7 @@
   overflow-y: auto;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px rgba(0,0,0,0.18);
   margin-top: 2px;
 }
@@ -533,7 +533,7 @@
 .task-planning-panel .affaire-autocomplete-empty {
   padding: 10px;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-tertiary);
 }
 .task-planning-panel .affaire-autocomplete-selected {
@@ -542,7 +542,7 @@
   gap: 6px;
   padding: 4px 8px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   min-height: 32px;
 }
@@ -563,7 +563,7 @@
   cursor: pointer;
   color: var(--theme-text-tertiary);
   padding: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .task-planning-panel .affaire-autocomplete-clear:hover {
   color: var(--theme-danger);
@@ -584,7 +584,7 @@
 .task-planning-panel .task-form-enriched .form-row-vehicle {
   background: var(--primary-tint-faint);
   border: 1px dashed var(--primary-tint-vivid);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 6px;
 }
 .task-planning-panel .task-form-enriched .form-field-reservation {
@@ -641,7 +641,7 @@
 .task-planning-panel .tp-view-toggle {
   display: flex;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -653,7 +653,7 @@
   border: none;
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -684,7 +684,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--accent-tint-light);
   flex-shrink: 0;
 }
@@ -713,7 +713,7 @@
 .task-planning-panel .date-badge {
   display: inline-block;
   padding: 2px 7px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--accent-tint);
   color: var(--theme-primary);
   font-size: 0.85rem;
@@ -727,7 +727,7 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--primary-tint);
   color: var(--theme-info);
   font-size: 0.82rem;
@@ -829,7 +829,7 @@
 /* ═══ RDV section ═══ */
 .task-planning-panel .rdv-section {
   border: 1px solid var(--accent-tint-vivid);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: rgba(99, 102, 241, 0.02);
 }
 
@@ -863,7 +863,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 1rem;
+  font-size: var(--font-md);
   padding: 0 8px;
   flex-shrink: 0;
 }
@@ -928,7 +928,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--theme-bg-tertiary, var(--shadow-sm));
   color: var(--theme-text-secondary);
 }
@@ -941,7 +941,7 @@
   font-weight: 600;
   padding: 1px 7px;
   margin-left: 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   border: 1px solid;
   white-space: nowrap;
   line-height: 1.5;
@@ -955,7 +955,7 @@
   font-weight: 600;
   padding: 1px 6px;
   margin-left: 4px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--primary-tint-light);
   color: var(--theme-info);
   border: 1px solid var(--primary-tint-strong);
@@ -971,7 +971,7 @@
   font-weight: 600;
   padding: 1px 6px;
   margin-left: 4px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: rgba(234, 67, 53, 0.08);
   color: #ea4335;
   border: 1px solid rgba(234, 67, 53, 0.25);
@@ -1027,7 +1027,7 @@
   justify-content: center;
   min-width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1.5px solid;
   background: transparent;
   font-size: 0.65rem;
@@ -1042,7 +1042,7 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--theme-info);
   color: var(--theme-text-inverse);
   font-size: 0.7rem;
@@ -1053,7 +1053,7 @@
 .task-planning-panel .affaire-tag {
   display: inline-block;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--accent-tint);
   color: var(--theme-primary);
   font-size: 0.78rem;
@@ -1082,7 +1082,7 @@
   width: 30px;
   height: 30px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -1101,7 +1101,7 @@
   padding: 10px 14px;
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -1140,7 +1140,7 @@
   width: 28px;
   height: 28px;
   border: 1px dashed var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-tertiary);
   cursor: pointer;
@@ -1156,7 +1156,7 @@
 .task-planning-panel .task-person.assigned {
   cursor: pointer;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 0.78rem;
   display: flex;
   align-items: center;
@@ -1180,7 +1180,7 @@
   overflow-y: auto;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 4px 12px var(--shadow-dropdown);
   padding: 6px 0;
   margin-top: 4px;
@@ -1262,7 +1262,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   padding: 2px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
 }
 
@@ -1304,7 +1304,7 @@
   border: none;
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
 }
@@ -1430,7 +1430,7 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--theme-border-color, var(--theme-border));
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-card-bg, var(--theme-bg-card));
   overflow: hidden;
   transition: flex 0.3s ease, min-width 0.3s ease;
@@ -1457,7 +1457,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 7px 10px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 700;
   text-transform: capitalize;
   background: var(--theme-bg-secondary, var(--theme-bg-page));
@@ -1537,7 +1537,7 @@
   color: var(--theme-text-muted, var(--theme-text-muted));
   text-align: center;
   padding: 12px 0;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 /* ── Vue étendue d'un jour (même présentation que vue jour) ── */
@@ -1807,11 +1807,11 @@
   gap: 6px;
   padding: 7px 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1864,10 +1864,10 @@
   gap: 4px;
   padding: 5px 12px;
   border: 1px solid var(--theme-primary);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--accent-tint-light);
   color: var(--theme-primary);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
 }
@@ -1880,7 +1880,7 @@
 .task-planning-panel .recurring-form {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px;
   margin-bottom: 10px;
   display: flex;
@@ -1897,7 +1897,7 @@
 .task-planning-panel .recurring-form-row select {
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.82rem;
@@ -1934,7 +1934,7 @@
   padding: 8px 12px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: background 0.1s;
 }
 .task-planning-panel .recurring-item:hover {
@@ -1965,7 +1965,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -2001,7 +2001,7 @@
   gap: 5px;
   background: var(--theme-bg-tertiary);
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
   font-size: 0.78rem;
   color: var(--theme-text-secondary);
@@ -2018,7 +2018,7 @@
   justify-content: center;
   background: none;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 6px;
   cursor: pointer;
   color: var(--theme-text-secondary);
@@ -2033,7 +2033,7 @@
 .task-planning-panel .ical-manager-panel {
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin: 0 10px 10px;
   padding: 10px;
 }
@@ -2058,7 +2058,7 @@
   background: var(--theme-accent);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 10px;
   font-size: 0.78rem;
   cursor: pointer;
@@ -2072,7 +2072,7 @@
   margin-bottom: 10px;
   padding: 8px;
   background: var(--theme-bg);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border);
 }
 .task-planning-panel .ical-form input[type="text"],
@@ -2080,7 +2080,7 @@
   width: 100%;
   padding: 5px 8px;
   border: 1px solid var(--theme-border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 0.82rem;
   background: var(--theme-bg-secondary);
   color: var(--theme-text);
@@ -2094,7 +2094,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   padding: 0;
 }
@@ -2105,7 +2105,7 @@
   gap: 4px;
 }
 .task-planning-panel .ical-empty {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-tertiary);
   text-align: center;
   padding: 8px;
@@ -2115,7 +2115,7 @@
   align-items: center;
   gap: 8px;
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg);
   font-size: 0.82rem;
 }
@@ -2144,7 +2144,7 @@
   color: var(--theme-text-secondary);
   cursor: pointer;
   padding: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .task-planning-panel .ical-cal-actions button:hover { background: var(--theme-bg-tertiary); }
 .task-planning-panel .ical-cal-actions button.delete:hover { color: var(--theme-danger); }
@@ -2210,7 +2210,7 @@
   transform: rotate(-90deg);
 }
 .task-planning-panel .section-collapsed .section-header {
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   border-bottom: 1px solid var(--theme-border);
 }
 
@@ -2218,7 +2218,7 @@
 .task-planning-panel .events-today-group {
   outline: 2px solid var(--theme-primary, var(--theme-info));
   outline-offset: -1px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--theme-primary, var(--theme-info)) 5%, transparent);
   position: relative;
   margin: 4px 0;
@@ -2246,7 +2246,7 @@
 /* ═══ Sous-groupes rétractables (événements précédents / suivants) ═══ */
 .task-planning-panel .events-subgroup {
   margin: 4px 0;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-secondary, var(--theme-bg-page));
   border: 1px solid var(--theme-border, var(--theme-border));
   overflow: hidden;
@@ -2292,7 +2292,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   padding: 1px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card, var(--theme-bg-card));
   border: 1px solid var(--theme-border, var(--theme-border));
 }
@@ -2308,7 +2308,7 @@
 .task-planning-panel .btn-link-affaire {
   background: none;
   border: 1.5px solid var(--theme-border, var(--theme-border));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 3px 6px;
   cursor: pointer;
   color: var(--theme-text-secondary, var(--theme-text-secondary));
@@ -2345,7 +2345,7 @@
   gap: 3px;
   font-size: 0.72rem;
   padding: 1px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: rgba(99, 102, 241, 0.10);
   color: var(--theme-text-secondary);
   white-space: nowrap;
@@ -2365,7 +2365,7 @@
   z-index: var(--z-dropdown);
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border, var(--theme-border));
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   box-shadow: 0 8px 24px var(--shadow-xl);
   min-width: 280px;
   max-width: 340px;
@@ -2394,7 +2394,7 @@
   cursor: pointer;
   color: var(--theme-text-secondary, var(--theme-text-secondary));
   padding: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .task-planning-panel .link-popover-close:hover {
   background: var(--shadow-sm);

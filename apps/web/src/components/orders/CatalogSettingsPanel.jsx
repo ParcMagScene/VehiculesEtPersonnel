@@ -2,12 +2,12 @@
 // CatalogSettingsPanel.jsx — Apprentissage parsers & normalisation taxonomie
 // ============================================================
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, Upload, AlertTriangle, CheckCircle2, BarChart3, Tags, ArrowRight, RefreshCw, Zap, Eye, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, BarChart3, Tags, ArrowRight, RefreshCw, Zap, Eye } from 'lucide-react';
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
 import { extractPDFMeta } from '../../utils/pdfParser';
 import { parseCatalog, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
-import { Select, Table, Checkbox, Tabs, TabList, Tab, TabPanel, Spinner, Tag, Accordion } from '@/design-system';
+import { Accordion, Button, Checkbox, Select, Spinner, Tab, TabList, TabPanel, Table, Tabs, Tag } from '@/design-system';
 
 // ═══════════════════════════════════════════════════════════
 // COMPOSANT PRINCIPAL — Onglets Parsers / Taxonomie
@@ -113,21 +113,20 @@ function ParserLearningTab() {
           </div>
         )}
         <div className="catalog-form-group">
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <label className="catalog-checkbox-label">
             <Checkbox checked={compareMode} onChange={e => setCompareMode(e.target.checked)} />
             Comparer tous les parsers
           </label>
         </div>
       </div>
 
-      <button
-        className="catalog-btn catalog-btn-primary"
+      <Button variant="ghost"         className="catalog-btn catalog-btn-primary"
         onClick={handleAnalyze}
         disabled={!file || analyzing}
         style={{ marginTop: '0.5rem' }}
       >
         {analyzing ? <><RefreshCw size={16} className="spin" /> Analyse en cours…</> : <><BarChart3 size={16} /> Lancer l'analyse</>}
-      </button>
+      </Button>
 
       {/* ── Résultat mono-parser ── */}
       {report && <SingleParserReport report={report} />}
@@ -142,7 +141,6 @@ function ParserLearningTab() {
 function SingleParserReport({ report }) {
   const { result, analysis, parserLabel } = report;
   const m = analysis?.metrics;
-
 
   if (!m) return null;
 
@@ -186,7 +184,7 @@ function SingleParserReport({ report }) {
                   <tr key={i}>
                     <td>{fp.supplierRef || '—'}</td>
                     <td>{fp.designation || '—'}</td>
-                    <td style={{ textAlign: 'right' }}>{fp.priceHt != null ? `${fp.priceHt} €` : '—'}</td>
+                    <td className="text-right">{fp.priceHt != null ? `${fp.priceHt} €` : '—'}</td>
                     <td>
                       {fp.issues?.map((issue, j) => (
                         <Tag key={j} color="warning" size="sm" style={{ marginRight: 4 }}>
@@ -221,7 +219,7 @@ function SingleParserReport({ report }) {
           <h5>Aperçu des 10 premiers articles</h5>
           <Table className="catalog-table">
             <thead>
-              <tr><th>Réf.</th><th>Désignation</th><th>Marque</th><th>Famille</th><th style={{ textAlign: 'right' }}>Prix HT</th></tr>
+              <tr><th>Réf.</th><th>Désignation</th><th>Marque</th><th>Famille</th><th className="text-right">Prix HT</th></tr>
             </thead>
             <tbody>
               {result.items.slice(0, 10).map((a, i) => (
@@ -230,7 +228,7 @@ function SingleParserReport({ report }) {
                   <td>{a.designation || '—'}</td>
                   <td>{a.brand || ''}</td>
                   <td>{a.family || ''}</td>
-                  <td style={{ textAlign: 'right' }}>{a.price_ht != null ? `${a.price_ht} €` : '—'}</td>
+                  <td className="text-right">{a.price_ht != null ? `${a.price_ht} €` : '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -252,11 +250,11 @@ function MultiParserComparison({ reports }) {
         <thead>
           <tr>
             <th>Parser</th>
-            <th style={{ textAlign: 'right' }}>Articles</th>
-            <th style={{ textAlign: 'right' }}>Taux</th>
-            <th style={{ textAlign: 'right' }}>Avec réf.</th>
-            <th style={{ textAlign: 'right' }}>Avec prix</th>
-            <th style={{ textAlign: 'right' }}>Faux pos.</th>
+            <th className="text-right">Articles</th>
+            <th className="text-right">Taux</th>
+            <th className="text-right">Avec réf.</th>
+            <th className="text-right">Avec prix</th>
+            <th className="text-right">Faux pos.</th>
             <th>Qualité</th>
             <th></th>
           </tr>
@@ -267,7 +265,7 @@ function MultiParserComparison({ reports }) {
             if (!m) return (
               <tr key={i} style={{ opacity: 0.5 }}>
                 <td>{r.label}</td>
-                <td colSpan={6} style={{ textAlign: 'center' }}>Erreur ou aucun résultat</td>
+                <td colSpan={6} className="text-center">Erreur ou aucun résultat</td>
               </tr>
             );
 
@@ -278,27 +276,26 @@ function MultiParserComparison({ reports }) {
               <React.Fragment key={i}>
                 <tr className={best ? 'parser-best-row' : ''}>
                   <td>
-                    {best && <CheckCircle2 size={14} style={{ color: 'var(--theme-success)', marginRight: 4 }} />}
+                    {best && <CheckCircle2 size={14} className="icon-success" style={{ marginRight: 4 }} />}
                     {r.label}
                   </td>
-                  <td style={{ textAlign: 'right' }}><strong>{m.parsedCount}</strong></td>
-                  <td style={{ textAlign: 'right' }}>{m.parseRate}%</td>
-                  <td style={{ textAlign: 'right' }}>{m.refRate}%</td>
-                  <td style={{ textAlign: 'right' }}>{m.priceRate}%</td>
-                  <td style={{ textAlign: 'right' }}>{r.analysis.falsePositiveCount}</td>
+                  <td className="text-right"><strong>{m.parsedCount}</strong></td>
+                  <td className="text-right">{m.parseRate}%</td>
+                  <td className="text-right">{m.refRate}%</td>
+                  <td className="text-right">{m.priceRate}%</td>
+                  <td className="text-right">{r.analysis.falsePositiveCount}</td>
                   <td>
                     <div className="parser-quality-bar" title={`Score: ${score}/100`}>
                       <div className="parser-quality-fill" style={{ width: `${score}%`, background: score > 70 ? 'var(--theme-success)' : score > 40 ? 'var(--theme-warning)' : 'var(--theme-error)' }} />
                     </div>
                   </td>
                   <td>
-                    <button
-                      className="catalog-btn catalog-btn-secondary"
+                    <Button variant="ghost"                       className="catalog-btn catalog-btn-secondary"
                       style={{ padding: '2px 8px', fontSize: '0.75rem' }}
                       onClick={() => setExpandedParser(expandedParser === i ? null : i)}
                     >
                       {expandedParser === i ? 'Masquer' : 'Détails'}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
                 {expandedParser === i && (
@@ -392,26 +389,24 @@ function TaxonomyTab() {
       </div>
 
       {/* Onglets famille/catégorie */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button
-          className={`catalog-btn ${activeSection === 'families' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+      <div className="catalog-toggle-tabs">
+        <Button variant="ghost"           className={`catalog-btn ${activeSection === 'families' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
           onClick={() => setActiveSection('families')}
         >
           Familles ({taxonomy.families?.length || 0})
-        </button>
-        <button
-          className={`catalog-btn ${activeSection === 'categories' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+        </Button>
+        <Button variant="ghost"           className={`catalog-btn ${activeSection === 'categories' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
           onClick={() => setActiveSection('categories')}
         >
           Catégories ({taxonomy.categories?.length || 0})
-        </button>
+        </Button>
       </div>
 
       {/* Suggestions de regroupement */}
       {groups?.length > 0 ? (
         <div className="taxonomy-suggestions">
           <h4>
-            <AlertTriangle size={16} style={{ color: 'var(--theme-warning)' }} />
+            <AlertTriangle size={16} className="icon-warning" />
             {groups.length} regroupement{groups.length > 1 ? 's' : ''} suggéré{groups.length > 1 ? 's' : ''}
           </h4>
           {groups.map((group, gi) => (
@@ -426,7 +421,7 @@ function TaxonomyTab() {
         </div>
       ) : (
         <div className="catalog-import-empty" style={{ padding: '2rem', textAlign: 'center' }}>
-          <CheckCircle2 size={36} style={{ color: 'var(--theme-success)' }} />
+          <CheckCircle2 size={36} className="icon-success" />
           <p>Aucun regroupement suggéré — la taxonomie semble propre !</p>
         </div>
       )}
@@ -436,13 +431,13 @@ function TaxonomyTab() {
         <summary>Voir toutes les {activeSection === 'families' ? 'familles' : 'catégories'} ({items?.length || 0})</summary>
         <Table className="catalog-table" style={{ marginTop: 8 }}>
           <thead>
-            <tr><th>Nom</th><th style={{ textAlign: 'right' }}>Articles</th><th>Fournisseurs</th></tr>
+            <tr><th>Nom</th><th className="text-right">Articles</th><th>Fournisseurs</th></tr>
           </thead>
           <tbody>
             {items?.map((item, i) => (
               <tr key={i}>
                 <td>{item.name}</td>
-                <td style={{ textAlign: 'right' }}>{item.count}</td>
+                <td className="text-right">{item.count}</td>
                 <td><small>{item.suppliers}</small></td>
               </tr>
             ))}
@@ -454,13 +449,12 @@ function TaxonomyTab() {
       {selectedRules.length > 0 && (
         <div className="taxonomy-apply-bar">
           <span>{selectedRules.length} règle{selectedRules.length > 1 ? 's' : ''} sélectionnée{selectedRules.length > 1 ? 's' : ''}</span>
-          <button
-            className="catalog-btn catalog-btn-primary"
+          <Button variant="ghost"             className="catalog-btn catalog-btn-primary"
             onClick={handleApply}
             disabled={applying}
           >
             {applying ? <><RefreshCw size={16} className="spin" /> Application…</> : <><CheckCircle2 size={16} /> Appliquer les regroupements</>}
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -482,7 +476,7 @@ function TaxonomyGroup({ group, type, selectedRules, onToggle }) {
           return (
             <div key={mi} className={`taxonomy-member ${isCanonical ? 'taxonomy-member-canonical' : ''}`}>
               {!isCanonical ? (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <label className="taxonomy-member-label">
                   <Checkbox
                     checked={isSelected}
                     onChange={() => onToggle(type, member.name, group.canonical)}
@@ -493,8 +487,8 @@ function TaxonomyGroup({ group, type, selectedRules, onToggle }) {
                   <Tag color="neutral" size="sm" style={{ marginLeft: 'auto' }}>{member.count}</Tag>
                 </label>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle2 size={14} style={{ color: 'var(--theme-success)' }} />
+                <div className="taxonomy-canonical-content">
+                  <CheckCircle2 size={14} className="icon-success" />
                   <span className="taxonomy-member-name"><strong>{member.name}</strong> (référence)</span>
                   <Tag color="neutral" size="sm" style={{ marginLeft: 'auto' }}>{member.count}</Tag>
                 </div>

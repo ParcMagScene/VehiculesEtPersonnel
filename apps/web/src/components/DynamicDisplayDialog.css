@@ -44,7 +44,7 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -79,7 +79,7 @@
 }
 
 .display-dialog .form-group label {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-secondary);
   text-transform: uppercase;
@@ -97,7 +97,7 @@
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.9rem;
@@ -131,7 +131,7 @@
   gap: 4px;
   padding: 6px 12px;
   border: 2px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   font-size: 0.82rem;
@@ -159,7 +159,7 @@
 .display-dialog .cat-pill {
   padding: 6px 14px;
   border: 2px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   font-size: 0.82rem;
@@ -191,7 +191,7 @@
   gap: 6px;
   padding: 10px 16px;
   border: 2px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   font-size: 0.85rem;
@@ -222,7 +222,7 @@
   right: 0;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   max-height: 160px;
   overflow-y: auto;
   z-index: var(--z-dropdown);
@@ -248,7 +248,7 @@
 .display-dialog .affaire-suggestion .affaire-name {
   color: var(--theme-text-secondary);
   margin-left: 8px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 /* Footer */
@@ -264,7 +264,7 @@
 .display-dialog .btn-cancel {
   padding: 8px 20px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   font-weight: 600;
@@ -283,7 +283,7 @@
   gap: 6px;
   padding: 8px 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   font-weight: 600;
@@ -305,7 +305,7 @@
   .display-dialog {
     width: 98%;
     max-height: 95vh;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
 
   .display-dialog .form-row {

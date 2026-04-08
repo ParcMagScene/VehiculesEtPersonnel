@@ -47,7 +47,7 @@
   margin-bottom: 1rem;
   padding: 0.75rem 1rem;
   background: var(--theme-border-light);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   flex-shrink: 0;
 }
 
@@ -55,8 +55,8 @@
 .catalog-toolbar select {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   min-width: 160px;
@@ -81,7 +81,7 @@
   gap: 0.4rem;
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -124,7 +124,7 @@
 .catalog-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
 }
 
 .catalog-table th {
@@ -133,7 +133,7 @@
   text-align: left;
   font-weight: 600;
   color: var(--theme-text-secondary);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   white-space: nowrap;
@@ -160,7 +160,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.2rem 0.6rem;
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   font-size: 0.75rem;
   font-weight: 600;
   background: var(--theme-purple-bg);
@@ -253,7 +253,7 @@
   width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
@@ -282,7 +282,7 @@
   padding: 0.75rem 1rem;
   background: var(--theme-danger-bg);
   color: var(--theme-danger-dark);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 1rem;
   font-size: 0.85rem;
   font-weight: 600;
@@ -291,7 +291,7 @@
 .catalog-import-file-info {
   display: block;
   margin-top: 0.35rem;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 
@@ -309,7 +309,7 @@
   gap: 0.5rem;
   padding: 0.35rem 0.5rem;
   background: var(--theme-border-light);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
 }
 
@@ -332,7 +332,7 @@
   color: var(--theme-text-muted);
   cursor: pointer;
   padding: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
 }
@@ -372,7 +372,7 @@
 }
 
 .catalog-import-hint {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
 }
 
@@ -382,7 +382,7 @@
   gap: 1rem 2rem;
   padding: 0.75rem 1rem;
   background: var(--theme-border-light);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-bottom: 1rem;
   font-size: 0.85rem;
 }
@@ -408,12 +408,12 @@
   max-height: 400px;
   overflow-y: auto;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .catalog-import-ref {
   font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-primary);
   font-weight: 600;
 }
@@ -422,7 +422,7 @@
 .supplier-stat-card {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
 }
 
@@ -523,7 +523,7 @@
 
 .parser-metric-card {
   background: var(--theme-border-light);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 0.75rem 1rem;
   text-align: center;
 }
@@ -545,7 +545,7 @@
   margin-top: 1.5rem;
   padding: 1.25rem;
   background: var(--theme-border-light);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .parser-report h4 {
@@ -582,7 +582,7 @@
   font-size: 0.78rem;
   font-family: monospace;
   background: var(--theme-bg-secondary, #f8f8f8);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.75rem;
 }
 
@@ -614,19 +614,19 @@
   width: 80px;
   height: 8px;
   background: var(--theme-border-light);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .parser-quality-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: width 0.3s ease;
 }
 
 /* ─── Taxonomy ─── */
 .taxonomy-suggestions h4 {
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 700;
   margin: 0 0 1rem;
   display: flex;
@@ -637,7 +637,7 @@
 
 .taxonomy-group {
   background: var(--theme-border-light);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-bottom: 0.75rem;
   overflow: hidden;
 }
@@ -735,3 +735,36 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ─── Utility classes (CatalogSettingsPanel) ─── */
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+
+.catalog-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.catalog-toggle-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.taxonomy-member-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.taxonomy-canonical-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-success { color: var(--theme-success); }
+.icon-warning { color: var(--theme-warning); }

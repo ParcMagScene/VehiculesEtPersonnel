@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Plus, Edit2, Trash2, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import LocationDialog from '../vehicles/LocationDialog';
-import { Button, Dialog, Input, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
+import { Button, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
 import { useToast } from '../../hooks/useToast';
 
@@ -16,7 +17,7 @@ function LocationsTab({ currentUser }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [companyAddress, setCompanyAddress] = useState('');
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const loadLocations = useCallback(async () => {
     try {
@@ -59,7 +60,7 @@ function LocationsTab({ currentUser }) {
   };
 
   const handleDelete = (loc) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le lieu',
       message: `Voulez-vous vraiment supprimer « ${loc.name} » ?`,
       onConfirm: async () => {
@@ -70,9 +71,7 @@ function LocationsTab({ currentUser }) {
         } catch (err) {
           toast.error(`Erreur: ${err.message}`);
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -147,7 +146,7 @@ function LocationsTab({ currentUser }) {
                         <td>
                           {!loc.isCompanyLocation && (
                             <div className="actions-cell">
-                              <Tooltip content="Modifier"><button onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></button></Tooltip>
+                              <Tooltip content="Modifier"><Button variant="ghost" onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></Button></Tooltip>
                               {currentUser?.isAdmin && (
                                 <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(loc)}><Trash2 size={14} /></Button></Tooltip>
                               )}
@@ -176,17 +175,7 @@ function LocationsTab({ currentUser }) {
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </>
   );
 }

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { QrCode, Printer, Link as LinkIcon, Download } from 'lucide-react';
-import { ModalLayout } from '@/design-system';
+import { Button, ModalLayout } from '@/design-system';
 import './QRCodeModal.css';
 
 function QRCodeModal({ onClose }) {
@@ -233,7 +233,7 @@ function QRCodeModal({ onClose }) {
     }, 'image/jpeg', 0.95);
   };
 
-  const handleOverlayClick = (e) => {
+  const _handleOverlayClick = (e) => {
     if (e.target.classList.contains('qr-modal-overlay')) {
       onClose();
     }
@@ -249,14 +249,14 @@ function QRCodeModal({ onClose }) {
       className="qr-modal"
       footer={
         <>
-          <button className="print-button" onClick={handlePrint}>
+          <Button variant="ghost" className="print-button" onClick={handlePrint}>
             <Printer size={20} />
             Imprimer
-          </button>
-          <button className="print-button" onClick={handleDownloadJPG}>
+          </Button>
+          <Button variant="ghost" className="print-button" onClick={handleDownloadJPG}>
             <Download size={20} />
             Télécharger JPG
-          </button>
+          </Button>
         </>
       }
     >

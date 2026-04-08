@@ -1,7 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle, X, ChevronDown, ChevronRight, Eye, Download } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { Upload, FileText, CheckCircle, ChevronDown, ChevronRight, Eye, Download } from 'lucide-react';
 import { Button, ModalLayout, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
+import { STATUS } from '../../constants';
+
 import './EquipmentImportModal.css';
 
 // Colonnes CSV attendues (séparateur ;)
@@ -51,9 +53,9 @@ function parseCSV(text, separator = ';') {
 
 const EquipmentImportModal = ({ onClose, onImportDone }) => {
   const [step, setStep] = useState('upload'); // upload | preview | importing | done
-  const [file, setFile] = useState(null);
+  const [_file, setFile] = useState(null);
   const [csvData, setCsvData] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [_preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -113,7 +115,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
     }
   }, [handleFileSelect]);
 
-  const handlePreview = async () => {
+  const _handlePreview = async () => {
     try {
       setLoading(true);
       const result = await api.importEquipmentCsv(csvData.rows, 'preview');
@@ -172,7 +174,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
             </Button>
           </>
         )}
-        {step === 'done' && (
+        {step === STATUS.DONE && (
           <Button variant="primary" onClick={() => { onImportDone(); onClose(); }}>
             <CheckCircle size={14} /> Terminé
           </Button>
@@ -241,7 +243,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
                 <div className="eq-import-tree">
                   {hierarchy && [...hierarchy.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([family, subfamilies]) => (
                     <div key={family} className="eq-tree-family">
-                      <div className="eq-tree-item eq-tree-level-1" onClick={() => toggleFamily(family)}>
+                      <div className="eq-tree-item eq-tree-level-1" role="button" tabIndex={0} onClick={() => toggleFamily(family)}>
                         {expandedFamilies.has(family) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         <strong>{family}</strong>
                         <span className="eq-tree-count">{subfamilies.size} sous-familles</span>
@@ -318,7 +320,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
           )}
 
           {/* Étape 4 : Résultat */}
-          {step === 'done' && result && (
+          {step === STATUS.DONE && result && (
             <div className="eq-import-result">
               <CheckCircle size={48} className="eq-import-success-icon" />
               <h4>Import terminé avec succès !</h4>

@@ -29,7 +29,7 @@ Tu dois te comporter comme si tu avais accès à **100 % du dépôt** (frontend,
 - Backend : Express 4, ~18 fichiers de routes, ~20k+ lignes, middlewares, cache, rate limiting.
 - Base de données : SQLite via better-sqlite3, ~90+ tables, WAL, migrations, contraintes FK.
 - Authentification : JWT, sessions actives, rôles, permissions.
-- Déploiement : Raspberry Pi, PM2, domaine DuckDNS, tentative HTTPS/Certbot, dashboard TV en plein écran.
+- Déploiement : Raspberry Pi, PM2, domaine Dynamic DNS, tentative HTTPS/Certbot, dashboard TV en plein écran.
 - Modules métier : véhicules, réservations, personnel, congés, affaires, BL/BP, catalogue, équipements, stock, commandes, communication, mailing, messagerie, annuaire, TV client, mobile.
 
 Tu dois respecter cette architecture et ne **rien casser**.
@@ -203,7 +203,7 @@ Causes possibles : CORS, JWT, cookies, URL backend, proxy, ports, erreurs silenc
 
 Tu dois lister les hypothèses, les tests à faire, et les correctifs.
 
-HTTPS / Certbot / DuckDNS
+HTTPS / Certbot / Dynamic DNS
 
 Vérifier conceptuellement :
 
@@ -215,7 +215,7 @@ reverse proxy (ou non) en place
 
 configuration Certbot (standalone / webroot)
 
-DNS DuckDNS pointant vers la bonne IP
+DNS Dynamic DNS pointant vers la bonne IP
 
 Proposer un plan de sécurisation HTTPS :
 

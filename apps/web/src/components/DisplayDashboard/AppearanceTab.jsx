@@ -3,8 +3,8 @@
 // (couleurs, police, météo, défilement automatique, Sonos IP)
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Palette, Sun, Music, Eye, Save, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { Palette, Sun, Music, Eye, Save } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { Button, Input, Select, Checkbox, SectionHeader } from '@/design-system';
@@ -17,7 +17,7 @@ const FONT_OPTIONS = [
   { value: "'Segoe UI', sans-serif", label: 'Segoe UI' },
 ];
 
-function AppearanceTab({ currentUser, refreshKey, onPreviewChange }) {
+function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
   const toast = useToast();
   const [config, setConfig] = useState({
     primaryColor: '#00e1ff',

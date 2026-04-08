@@ -1,14 +1,16 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, format, addMonths, subMonths,
-  isSameMonth, isSameDay, isWeekend, isBefore, isAfter, parseISO
+  isSameMonth, isSameDay, isWeekend, isBefore, isAfter
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, X, AlertTriangle, Check, Clock, CalendarPlus, Briefcase, User } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Input, Checkbox, InlineAlert } from '@/design-system';
 import { PERIOD_MENU_ITEMS } from '../personnel/PersonnelContextMenu';
+import { STATUS } from '../../constants';
+
 import './PeriodCalendarModal.css';
 
 // Jours ouvrés entre deux dates
@@ -106,7 +108,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
       const data = await api.getAvailabilities({ personId: person.id, startDate: startStr, endDate: endStr });
       const existing = Array.isArray(data) ? data : (data.availabilities || []);
       // Filtrer les conflits (pas les rejetés)
-      const activeConflicts = existing.filter(a => a.status !== 'rejected');
+      const activeConflicts = existing.filter(a => a.status !== STATUS.REJECTED);
       setConflicts(activeConflicts);
     } catch {
       // Pas bloquant
@@ -225,24 +227,24 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
               <div className="pcm-header-person">{person.firstName} {person.lastName || ''}</div>
             </div>
           </div>
-          <button className="pcm-close" onClick={onClose}>
+          <Button variant="ghost" className="pcm-close" onClick={onClose} aria-label="Fermer">
             <X size={18} />
-          </button>
+          </Button>
         </div>
 
         {/* Calendrier */}
         <div className="pcm-body">
           <div className="pcm-calendar">
             <div className="pcm-cal-nav">
-              <button onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="pcm-nav-btn">
+              <Button variant="ghost" onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="pcm-nav-btn">
                 <ChevronLeft size={18} />
-              </button>
+              </Button>
               <span className="pcm-cal-month">
                 {format(currentMonth, 'MMMM yyyy', { locale: fr })}
               </span>
-              <button onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="pcm-nav-btn">
+              <Button variant="ghost" onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="pcm-nav-btn">
                 <ChevronRight size={18} />
-              </button>
+              </Button>
             </div>
 
             <div className="pcm-cal-grid">
@@ -262,8 +264,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                 );
 
                 return (
-                  <button
-                    key={i}
+                  <Button variant="ghost"                     key={i}
                     className={[
                       'pcm-cal-day',
                       !inMonth && 'other-month',
@@ -282,7 +283,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                     onMouseLeave={() => setHoverDate(null)}
                   >
                     {format(day, 'd')}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -318,18 +319,16 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                   <div className="pcm-option-row pcm-rdv-category">
                     <label>Type :</label>
                     <div className="pcm-category-toggle">
-                      <button
-                        className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
+                      <Button variant="ghost"                         className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
                         onClick={() => setRdvCategory('pro')}
                       >
                         <Briefcase size={14} /> Pro
-                      </button>
-                      <button
-                        className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
+                      </Button>
+                      <Button variant="ghost"                         className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
                         onClick={() => setRdvCategory('perso')}
                       >
                         <User size={14} /> Perso
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -353,24 +352,24 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                   <div className="pcm-option-row">
                     <label>Début :</label>
                     <div className="pcm-period-toggle">
-                      <button className={startPeriod === 'AM' ? 'active' : ''} onClick={() => setStartPeriod('AM')}>
+                      <Button variant="ghost" className={startPeriod === 'AM' ? 'active' : ''} onClick={() => setStartPeriod('AM')}>
                         Matin
-                      </button>
-                      <button className={startPeriod === 'PM' ? 'active' : ''} onClick={() => setStartPeriod('PM')}>
+                      </Button>
+                      <Button variant="ghost" className={startPeriod === 'PM' ? 'active' : ''} onClick={() => setStartPeriod('PM')}>
                         Après-midi
-                      </button>
+                      </Button>
                     </div>
                     <span className="pcm-date-display">{format(startDate, 'dd MMM yyyy', { locale: fr })}</span>
                   </div>
                   <div className="pcm-option-row">
                     <label>Fin :</label>
                     <div className="pcm-period-toggle">
-                      <button className={endPeriod === 'AM' ? 'active' : ''} onClick={() => setEndPeriod('AM')}>
+                      <Button variant="ghost" className={endPeriod === 'AM' ? 'active' : ''} onClick={() => setEndPeriod('AM')}>
                         Matin
-                      </button>
-                      <button className={endPeriod === 'PM' ? 'active' : ''} onClick={() => setEndPeriod('PM')}>
+                      </Button>
+                      <Button variant="ghost" className={endPeriod === 'PM' ? 'active' : ''} onClick={() => setEndPeriod('PM')}>
                         Journée entière
-                      </button>
+                      </Button>
                     </div>
                     <span className="pcm-date-display">
                       {endDate ? format(endDate, 'dd MMM yyyy', { locale: fr }) : format(startDate, 'dd MMM yyyy', { locale: fr })}

@@ -2,7 +2,8 @@
 // En production : seuls warn/error/info essentiels (pas de debug)
 // En développement : tout est affiché avec timestamps
 
-const isDev = process.env.NODE_ENV !== 'production';
+// [PHASE 5] Aligné avec env.js — seul 'development' explicite active le mode debug
+const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 
 const timestamp = () => new Date().toISOString().slice(11, 23);
 

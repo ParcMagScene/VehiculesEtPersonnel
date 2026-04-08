@@ -203,7 +203,7 @@
   left: 50%;
   top: 2px;
   transform: translateX(-50%);
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--drag-handle-color, rgba(120, 120, 120, 0.4));
   pointer-events: none;
   letter-spacing: 2px;

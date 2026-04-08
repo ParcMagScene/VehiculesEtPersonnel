@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react';
 import useWindowWidth from '../../hooks/useWindowWidth';
+import { formatDateSimple } from '../../utils/formatUtils';
 import {
   startOfWeek,
   endOfWeek,
@@ -22,6 +23,7 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Link, Link2, MapPin, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import api from '../../utils/api';
 import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../../utils/dateUtils';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../../utils/vehicleUtils';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
@@ -32,7 +34,10 @@ import YearSelector from '../YearSelector';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
-import { Dialog } from '@/design-system';
+import { Button } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+import { STATUS, TIMING } from '../../constants';
 
 // Fonction pour obtenir les initiales d'un utilisateur
 const getUserInitials = (userId, currentUser, users = []) => {
@@ -63,7 +68,7 @@ const getDriveLinksCount = (block) => {
 };
 
 // Composant Tooltip pour les réservations
-const ReservationTooltip = ({ block, currentUser, users = [] }) => {
+const _ReservationTooltip = ({ block, currentUser, users = [] }) => {
   let creatorName = `Utilisateur ${block.createdBy}`;
   
   if (currentUser && block.createdBy === currentUser.id) {
@@ -108,11 +113,11 @@ const ReservationTooltip = ({ block, currentUser, users = [] }) => {
           </div>
           <div className="tooltip-row">
             <span className="tooltip-label">Début:</span>
-            <span className="tooltip-value">{block.startDate || block.date ? `${new Date(block.startDate || block.date).toLocaleDateString('fr-FR')} ${(block.startPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
+            <span className="tooltip-value">{block.startDate || block.date ? `${formatDateSimple(block.startDate || block.date)} ${(block.startPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
           </div>
           <div className="tooltip-row">
             <span className="tooltip-label">Fin:</span>
-            <span className="tooltip-value">{block.endDate || block.date ? `${new Date(block.endDate || block.date).toLocaleDateString('fr-FR')} ${(block.endPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
+            <span className="tooltip-value">{block.endDate || block.date ? `${formatDateSimple(block.endDate || block.date)} ${(block.endPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
           </div>
         </>
       )}
@@ -136,19 +141,9 @@ const unlinkTripDirectly = async (reservationId, eventId, btn, onLinked) => {
   try {
     if (!reservationId) return;
     if (btn) btn.classList.add('linking');
-    const response = await fetch('/api/trip-details/unlink', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ reservationId, eventId })
-    });
-    if (response.ok) {
-      if (btn) btn.classList.remove('linking');
-      if (onLinked) onLinked();
-    } else {
-      if (btn) btn.classList.remove('linking');
-      console.error('Erreur déliaison trajet');
-    }
+    await api.unlinkTrip({ reservationId, eventId });
+    if (btn) btn.classList.remove('linking');
+    if (onLinked) onLinked();
   } catch (err) {
     if (btn) btn.classList.remove('linking');
     console.error('Erreur déliaison trajet:', err);
@@ -159,19 +154,9 @@ const linkTripsDirectly = async (reservationId, eventId1, eventId2, btn, onLinke
   try {
     if (!reservationId) return;
     if (btn) btn.classList.add('linking');
-    const response = await fetch('/api/trip-details/link', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ reservationId, eventId1, eventId2 })
-    });
-    if (response.ok) {
-      if (btn) { btn.classList.remove('linking'); btn.classList.add('linked'); }
-      if (onLinked) onLinked();
-    } else {
-      if (btn) btn.classList.remove('linking');
-      console.error('Erreur liaison trajets');
-    }
+    await api.linkTrips({ reservationId, eventId1, eventId2 });
+    if (btn) { btn.classList.remove('linking'); btn.classList.add('linked'); }
+    if (onLinked) onLinked();
   } catch (err) {
     if (btn) btn.classList.remove('linking');
     console.error('Erreur liaison trajets:', err);
@@ -384,8 +369,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
             // Si dans le même groupe, bouton "délier"
             if (seg.type === 'group' && !isFirstInSeg) {
               gridElements.push(
-                <button
-                  key={`linked-sep-${segIdx}-${itemIdx}`}
+                <Button variant="ghost"                   key={`linked-sep-${segIdx}-${itemIdx}`}
                   className="tournee-link-btn linked"
                   style={{ gridColumn: `${linkCol} / span 1` }}
                   title="Délier les trajets"
@@ -396,13 +380,12 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                   }}
                 >
                   <Link size={12} />
-                </button>
+                </Button>
               );
             } else {
               // Bouton "dé-lié" (pas encore liés) - icône Link2
               gridElements.push(
-                <button
-                  key={`link-${segIdx}-${itemIdx}`}
+                <Button variant="ghost"                   key={`link-${segIdx}-${itemIdx}`}
                   className="tournee-link-btn"
                   style={{ gridColumn: `${linkCol} / span 1` }}
                   title="Lier les trajets"
@@ -413,7 +396,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                   }}
                 >
                   <Link2 size={12} />
-                </button>
+                </Button>
               );
             }
           }
@@ -427,8 +410,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
               }}>
                 <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
                 {onOpenTrip && (
-                  <button
-                    className="tournee-trip-btn"
+                  <Button variant="ghost"                     className="tournee-trip-btn"
                     title="Détails du trajet"
                     onMouseDown={(e) => {
                       e.stopPropagation();
@@ -437,7 +419,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                     }}
                   >
                     <MapPin size={10} />
-                  </button>
+                  </Button>
                 )}
               </span>
             );
@@ -450,8 +432,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
               }}>
                 <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
                 {isLastInSeg && onOpenTrip && (
-                  <button
-                    className="tournee-trip-btn combined"
+                  <Button variant="ghost"                     className="tournee-trip-btn combined"
                     title={`Trajet combiné (${seg.items.length} événements)`}
                     onMouseDown={(e) => {
                       e.stopPropagation();
@@ -460,7 +441,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                     }}
                   >
                     <MapPin size={10} />
-                  </button>
+                  </Button>
                 )}
               </span>
             );
@@ -521,13 +502,12 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
       <div className="reservation-affaire">
         <span className="reservation-affaire-text">{affaires[0]}{affaires.length > 1 && <span className="affaire-plus"> +{affaires.length - 1}</span>}</span>
         {singleEventId && onOpenTrip && (
-          <button
-            className="reservation-trip-btn"
+          <Button variant="ghost"             className="reservation-trip-btn"
             title="Voir le trajet"
             onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
           >
             <MapPin size={10} />
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -537,13 +517,12 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
   if (singleEventId && onOpenTrip && !block.isTournee) {
     return (
       <div className="reservation-affaire">
-        <button
-          className="reservation-trip-btn solo"
+        <Button variant="ghost"           className="reservation-trip-btn solo"
           title="Voir le trajet"
           onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
         >
           <MapPin size={10} />
-        </button>
+        </Button>
       </div>
     );
   }
@@ -554,7 +533,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
 // Couleurs des interventions selon le statut
 const getMaintenanceStatusStyle = (status, hasConflict) => {
   // Les interventions terminées ou annulées ne montrent pas les conflits
-  if (hasConflict && status !== 'completed' && status !== 'cancelled') {
+  if (hasConflict && status !== STATUS.COMPLETED && status !== STATUS.CANCELLED) {
     return { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger-dark)', icon: '⚠️' };
   }
   const styles = {
@@ -580,7 +559,7 @@ const Calendar = ({
   maintenances = [],
   onAddReservation,
   onUpdateReservation,
-  onUpdateMaintenance,
+  _onUpdateMaintenance,
   onDeleteReservation,
   clients,
   drivers,
@@ -623,7 +602,7 @@ const Calendar = ({
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Fonctions de navigation (startTransition pour ne pas bloquer l'UI)
   const goToPrevious = useCallback(() => {
@@ -693,15 +672,10 @@ const Calendar = ({
   const fetchTripData = useCallback(async (reservationId) => {
     if (calendarTripCache[reservationId]) return calendarTripCache[reservationId];
     try {
-      const response = await fetch(`/api/trip-details/${reservationId}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const trips = Array.isArray(data) ? data : (data.tripDetails || []);
-        setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
-        return trips;
-      }
+      const data = await api.getTripDetails(reservationId);
+      const trips = Array.isArray(data) ? data : (data.tripDetails || []);
+      setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
+      return trips;
     } catch (err) {
       console.error('Erreur fetch trip data:', err);
     }
@@ -765,27 +739,19 @@ const Calendar = ({
   const handleSaveTripFromCalendar = useCallback(async (tripFormData) => {
     if (!calendarTripModal) return null;
     try {
-      const response = await fetch('/api/trip-details', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          reservationId: calendarTripModal.reservation.id,
-          eventId: calendarTripModal.event.id,
-          eventOrder: 0,
-          ...tripFormData
-        })
+      const savedData = await api.saveTripDetails({
+        reservationId: calendarTripModal.reservation.id,
+        eventId: calendarTripModal.event.id,
+        eventOrder: 0,
+        ...tripFormData
       });
-      if (response.ok) {
-        const savedData = await response.json();
-        // Invalider le cache pour cette réservation
-        setCalendarTripCache(prev => {
-          const updated = { ...prev };
-          delete updated[calendarTripModal.reservation.id];
-          return updated;
-        });
-        return savedData;
-      }
+      // Invalider le cache pour cette réservation
+      setCalendarTripCache(prev => {
+        const updated = { ...prev };
+        delete updated[calendarTripModal.reservation.id];
+        return updated;
+      });
+      return savedData;
     } catch (err) {
       console.error('Erreur sauvegarde trip:', err);
     }
@@ -801,9 +767,7 @@ const Calendar = ({
       return u;
     });
     // Re-fetcher immédiatement
-    fetch(`/api/trip-details/${reservationId}`, {
-      credentials: 'include'
-    }).then(r => r.ok ? r.json() : []).then(data => {
+    api.getTripDetails(reservationId).then(data => {
       const trips = Array.isArray(data) ? data : (data.tripDetails || []);
       setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
     }).catch(() => {});
@@ -819,7 +783,7 @@ const Calendar = ({
   // Pré-charger les trip data pour les réservations tournée visibles
   useEffect(() => {
     if (!reservations || !Array.isArray(reservations)) return;
-    const controller = new AbortController();
+    let aborted = false;
     const tourneeIds = reservations
       .filter(r => (r.isTournee || r.is_tournee) && r.id && !calendarTripCache[r.id])
       .map(r => r.id);
@@ -832,13 +796,12 @@ const Calendar = ({
     const loadBatch = async (ids) => {
       const BATCH_SIZE = 5;
       for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-        if (controller.signal.aborted) return;
+        if (aborted) return;
         const batch = ids.slice(i, i + BATCH_SIZE);
         await Promise.allSettled(batch.map(id =>
-          fetch(`/api/trip-details/${id}`, { credentials: 'include', signal: controller.signal })
-            .then(r => r.ok ? r.json() : [])
+          api.getTripDetails(id)
             .then(data => {
-              if (controller.signal.aborted) return;
+              if (aborted) return;
               const trips = Array.isArray(data) ? data : (data.tripDetails || []);
               setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
             })
@@ -848,7 +811,7 @@ const Calendar = ({
       }
     };
     if (allIds.length > 0) loadBatch(allIds);
-    return () => controller.abort();
+    return () => { aborted = true; };
   }, [reservations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ouvrir le modal automatiquement quand une réservation doit être éditée depuis l'extérieur
@@ -960,7 +923,7 @@ const Calendar = ({
       // Essayer plusieurs fois pour s'assurer que le DOM est prêt
       timeouts.push(setTimeout(scrollToPosition, 50));
       timeouts.push(setTimeout(scrollToPosition, 150));
-      timeouts.push(setTimeout(scrollToPosition, 300));
+      timeouts.push(setTimeout(scrollToPosition, TIMING.DEBOUNCE_SEARCH));
 
       return () => {
         timeouts.forEach(timeout => clearTimeout(timeout));
@@ -1037,8 +1000,8 @@ const Calendar = ({
 
     // Exécuter la synchronisation plusieurs fois pour s'assurer qu'elle prend effet
     const timer1 = setTimeout(syncRowHeights, 50);
-    const timer2 = setTimeout(syncRowHeights, 200);
-    const timer3 = setTimeout(syncRowHeights, 500);
+    const timer2 = setTimeout(syncRowHeights, TIMING.DOUBLE_CLICK);
+    const timer3 = setTimeout(syncRowHeights, TIMING.PRINT_DELAY);
     
     window.addEventListener('resize', syncRowHeights);
 
@@ -1116,7 +1079,7 @@ const Calendar = ({
   }, [view, currentDate]);
 
   // Heures pour la vue jour (référence future si granularité horaire ajoutée)
-  const dayHours = useMemo(() => {
+  const _dayHours = useMemo(() => {
     if (view !== 'day') return [];
     return Array.from({ length: 16 }, (_, i) => i + 6); // 6h à 21h
   }, [view]);
@@ -1206,7 +1169,7 @@ const Calendar = ({
       // Vérifier s'il y a une maintenance active aujourd'hui
       const hasMaintenance = maintenances.some(m => {
         if (m.vehicleId !== vehicleId) return false;
-        if (m.status === 'completed') return false;
+        if (m.status === STATUS.COMPLETED) return false;
         const start = m.startDate?.slice(0, 10) || m.date?.slice(0, 10) || '';
         const end = m.endDate?.slice(0, 10) || start;
         return start <= today && today <= end;
@@ -1690,7 +1653,7 @@ const Calendar = ({
   const handleBlockDragEnd = () => {
     if (!blockDragState) return;
     
-    const { block, vehicle, targetVehicle, currentStart, currentEnd, originalStart, originalEnd, hasConflict } = blockDragState;
+    const { block, vehicle, targetVehicle, currentStart, currentEnd, originalStart, _originalEnd, hasConflict } = blockDragState;
     
     // Vérifier si la position a changé
     const hasMoved = !isSameDay(originalStart.date, currentStart.date) || originalStart.period !== currentStart.period;
@@ -1783,7 +1746,7 @@ const Calendar = ({
   }, [reservationLookup]);
 
   // Grouper les réservations consécutives pour affichage continu
-  const getReservationBlocks = (vehicleId, days, period) => {
+  const _getReservationBlocks = (vehicleId, days, period) => {
     const blocks = [];
     let currentBlock = null;
 
@@ -1826,7 +1789,7 @@ const Calendar = ({
     return blocks;
   };
 
-  const findBlockForCell = (blocks, dayIndex) => {
+  const _findBlockForCell = (blocks, dayIndex) => {
     return blocks.find(block => block.indices.includes(dayIndex));
   };
 
@@ -1885,7 +1848,7 @@ const Calendar = ({
   }, [view, days.length, windowWidth]);
 
   // Gestionnaire de mouvement global pour le redimensionnement avec throttle
-  const throttleTimeoutRef = React.useRef(null);
+  const _throttleTimeoutRef = React.useRef(null);
   const lastPositionRef = React.useRef({ dayIndex: null, period: null });
   
   const handleGlobalMouseMove = (e) => {
@@ -1946,15 +1909,15 @@ const Calendar = ({
       {/* Toolbar de navigation */}
       <div className="cal-nav-toolbar">
         <div className="cal-nav-views">
-          <button className={`cal-nav-view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => setView('day')}>Jour</button>
-          <button className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</button>
-          <button className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</button>
-          <button className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</button>
+          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => setView('day')}>Jour</Button>
+          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</Button>
+          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</Button>
+          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</Button>
         </div>
         <div className="cal-nav-date">
-          <button className="cal-nav-btn" onClick={goToPrevious}><ChevronLeft size={18} /></button>
-          <button className={`cal-nav-btn cal-nav-today ${showTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</button>
-          <button className="cal-nav-btn" onClick={goToNext}><ChevronRight size={18} /></button>
+          <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious} aria-label="Période précédente"><ChevronLeft size={18} /></Button>
+          <Button variant="ghost" className={`cal-nav-btn cal-nav-today ${showTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
+          <Button variant="ghost" className="cal-nav-btn" onClick={goToNext} aria-label="Période suivante"><ChevronRight size={18} /></Button>
           <span 
             className="cal-nav-label clickable"
             onClick={() => {
@@ -1977,13 +1940,13 @@ const Calendar = ({
             <span className="vehicle-availability-badge" title="Véhicules disponibles aujourd'hui (hors locations)">
               {availabilityCount.company.available}/{availabilityCount.company.total}
             </span>
-            <button 
+            <Button variant="ghost" 
               className="section-toggle-button" 
               onClick={() => setCollapsedSections(prev => ({ ...prev, company: !prev.company }))}
               title={collapsedSections.company ? 'Développer' : 'Rétracter'}
             >
               {collapsedSections.company ? '▼' : '▲'}
-            </button>
+            </Button>
           </div>
           <div className="calendar-headers-scroll-area">
             <div className={`calendar-grid-headers ${view}-view`} style={{ gridTemplateColumns: gridColumns }}>
@@ -2099,7 +2062,7 @@ const Calendar = ({
                   const hasBreakdown = maintenances.some(m => 
                     m.vehicleId === vehicle.id && 
                     (m.status === 'reported' || m.type === 'breakdown') &&
-                    m.status !== 'completed'
+                    m.status !== STATUS.COMPLETED
                   );
 
                   // Vérifier si le véhicule a un contrôle technique expiré
@@ -2158,19 +2121,19 @@ const Calendar = ({
                   <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
                     {availabilityCount.location.available}/{availabilityCount.location.total}
                   </span>
-                  <button 
+                  <Button variant="ghost" 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
                   >
                     {collapsedSections.location ? '▼' : '▲'}
-                  </button>
+                  </Button>
                 </div>
                 {!collapsedSections.location && vehicleGroups.locationVehicles.map((vehicle) => {
                   // Vérifier si le véhicule a une panne signalée
                   const hasBreakdown = maintenances.some(m => 
                     m.vehicleId === vehicle.id && 
                     (m.status === 'reported' || m.type === 'breakdown') &&
-                    m.status !== 'completed'
+                    m.status !== STATUS.COMPLETED
                   );
 
                   // Vérifier si le véhicule a un contrôle technique expiré
@@ -2236,7 +2199,7 @@ const Calendar = ({
                   const isInBlock = blocks.some(b => slotIndex > b.startIndex && slotIndex < b.startIndex + b.span);
                   
                   // Vérifier si cette cellule fait partie de la prévisualisation
-                  const cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
+                  const _cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
                   
                   // Vérifier si cette cellule est dans un bloc en cours de redimensionnement
                   const inResizingBlock = blocks.some(b => {
@@ -2345,15 +2308,14 @@ const Calendar = ({
                             </div>
                           </div>
                           {!block.isMaintenance && onDeleteReservation && (
-                            <button
-                              className="reservation-delete-btn"
+                            <Button variant="ghost"                               className="reservation-delete-btn"
                               title="Supprimer cette réservation"
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDialog({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); confirm({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                             >
                               <Trash2 size={12} />
-                            </button>
+                            </Button>
                           )}
                           {view !== 'year' && !isBeingResized && (
                             <>
@@ -2407,12 +2369,12 @@ const Calendar = ({
                   <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
                     {availabilityCount.location.available}/{availabilityCount.location.total}
                   </span>
-                  <button 
+                  <Button variant="ghost" 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
                   >
                     {collapsedSections.location ? '▼' : '▲'}
-                  </button>
+                  </Button>
                 </div>
               )}
               
@@ -2429,7 +2391,7 @@ const Calendar = ({
                   const isInBlock = blocks.some(b => slotIndex > b.startIndex && slotIndex < b.startIndex + b.span);
                   
                   // Vérifier si cette cellule fait partie de la prévisualisation
-                  const cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
+                  const _cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
                   
                   // Vérifier si cette cellule est dans un bloc en cours de redimensionnement
                   const inResizingBlock = blocks.some(b => {
@@ -2538,15 +2500,14 @@ const Calendar = ({
                             </div>
                           </div>
                           {!block.isMaintenance && onDeleteReservation && (
-                            <button
-                              className="reservation-delete-btn"
+                            <Button variant="ghost"                               className="reservation-delete-btn"
                               title="Supprimer cette réservation"
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDialog({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); confirm({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                             >
                               <Trash2 size={12} />
-                            </button>
+                            </Button>
                           )}
                           {view !== 'year' && !isBeingResized && (
                             <>
@@ -2691,11 +2652,11 @@ const Calendar = ({
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Début:</span>
-                <span className="tooltip-value">{tooltipState.block.startDate || tooltipState.block.date ? `${new Date(tooltipState.block.startDate || tooltipState.block.date).toLocaleDateString('fr-FR')} ${(tooltipState.block.startPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
+                <span className="tooltip-value">{tooltipState.block.startDate || tooltipState.block.date ? `${formatDateSimple(tooltipState.block.startDate || tooltipState.block.date)} ${(tooltipState.block.startPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Fin:</span>
-                <span className="tooltip-value">{tooltipState.block.endDate || tooltipState.block.date ? `${new Date(tooltipState.block.endDate || tooltipState.block.date).toLocaleDateString('fr-FR')} ${(tooltipState.block.endPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
+                <span className="tooltip-value">{tooltipState.block.endDate || tooltipState.block.date ? `${formatDateSimple(tooltipState.block.endDate || tooltipState.block.date)} ${(tooltipState.block.endPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
               </div>
             </>
           )}
@@ -2747,16 +2708,7 @@ const Calendar = ({
           onClose={() => setShowYearSelector(false)}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        confirmLabel={confirmDialog?.confirmLabel}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-04-07",
+  "sections": {
+    "api": {
+      "path": "docs/api/",
+      "index": "docs/api/README.md",
+      "files": [
+        "docs/api/auth.md",
+        "docs/api/vehicles.md",
+        "docs/api/personnel.md",
+        "docs/api/equipment.md",
+        "docs/api/affaires.md",
+        "docs/api/orders.md",
+        "docs/api/stock.md",
+        "docs/api/planning.md",
+        "docs/api/messaging.md",
+        "docs/api/leaves.md",
+        "docs/api/annuaire.md",
+        "docs/api/video.md",
+        "docs/api/display.md",
+        "docs/api/attachments.md",
+        "docs/api/supplier-catalog.md",
+        "docs/api/inventory.md",
+        "docs/api/mailing.md"
+      ]
+    },
+    "database": {
+      "path": "docs/database/",
+      "index": "docs/database/README.md",
+      "files": [
+        "docs/database/SCHEMA.md"
+      ]
+    },
+    "workflows": {
+      "path": "docs/workflows/",
+      "files": [
+        "docs/workflows/state-machines.md"
+      ]
+    },
+    "business-rules": {
+      "path": "docs/business-rules/",
+      "files": [
+        "docs/business-rules/rules.md"
+      ]
+    },
+    "changelogs": {
+      "path": "docs/06-Changelog/",
+      "files": [
+        "docs/06-Changelog/CHANGELOG_API.md",
+        "docs/06-Changelog/CHANGELOG_DB.md",
+        "docs/06-Changelog/CHANGELOG_UI.md",
+        "docs/06-Changelog/CHANGELOG_DOCS.md"
+      ]
+    }
+  },
+  "totalFiles": 28,
+  "totalEndpoints": 243,
+  "totalTables": 87,
+  "totalModules": 16
+}

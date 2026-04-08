@@ -3,17 +3,20 @@ import { ShoppingCart, FileText, Plus, Filter, Edit2, Trash2, ArrowLeft,
   Users as UsersIcon, Package, Send, Check, X, ArrowRight, 
   Building2, Phone, Mail, MapPin, Euro, Hash, FileCheck,
   ClipboardList, Bell, Eye, CheckCircle, Clock, Archive, 
-  FileDown, Receipt, Layers, ChevronRight, Globe, BookOpen } from 'lucide-react';
+  FileDown, Receipt, Layers, BookOpen } from 'lucide-react';
 
 const SupplierCatalogPanel = lazy(() => import('./SupplierCatalogPanel'));
 import api from '../../utils/api';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
-import { Button, Dialog, Input, Textarea, Select, Table, Checkbox, EntityCombobox, Spinner, Tag, StatusBadge, ProgressBar, SearchBar, Tooltip } from '@/design-system';
+import { Button, Input, Textarea, Select, Table, Checkbox, EntityCombobox, Spinner, Tag, StatusBadge, ProgressBar, SearchBar, Tooltip } from '@/design-system';
 import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
 import './OrdersPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import AffaireBadge from '../AffaireBadge';
+
+import { STATUS } from '../../constants';
 
 // Helper : grouper les articles par demandeur (affaire ou personne physique)
 function groupItemsByRequester(items) {
@@ -87,6 +90,7 @@ const DOC_TYPES = {
 // ═══ Composant Principal ═══
 function OrdersPanel({ currentUser, isMobile }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const isSimpleUser = isMobile && !currentUser?.isAdmin;
   const [activeTab, setActiveTab] = useState(isSimpleUser ? 'requests' : 'orders');
   const [orders, setOrders] = useState([]);
@@ -112,7 +116,6 @@ function OrdersPanel({ currentUser, isMobile }) {
   const [editingOrder, setEditingOrder] = useState(null);
   const [editingQuote, setEditingQuote] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
   const clickTimerRef = useRef(null);
 
   // Demandes de matériel
@@ -225,7 +228,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleDeleteOrder = (order) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la commande',
       message: `Supprimer la commande ${order.reference} ? Cette action est irréversible.`,
       onConfirm: async () => {
@@ -234,9 +237,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedOrder(null);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -279,7 +280,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleDeleteQuote = (quote) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le devis',
       message: `Supprimer le devis ${quote.reference} ? Cette action est irréversible.`,
       onConfirm: async () => {
@@ -288,9 +289,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedQuote(null);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -317,7 +316,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleConvertQuote = (quote) => {
-    setConfirmDialog({
+    confirm({
       title: 'Convertir en commande',
       message: `Convertir le devis ${quote.reference} en bon de commande ?`,
       onConfirm: async () => {
@@ -326,9 +325,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedQuote(null);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -349,7 +346,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleDeleteSupplier = (supplier) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le fournisseur',
       message: `Supprimer ${supplier.name} ? ${supplier.order_count > 0 ? `Attention: ${supplier.order_count} commande(s) liée(s).` : ''}`,
       onConfirm: async () => {
@@ -357,9 +354,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           await api.deleteSupplier(supplier.id);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -387,7 +382,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   const handleValidateRequest = async (request, action, reason = null) => {
     try {
       const result = await api.validateMaterialRequest(request.id, action, reason);
-      if (result.action === 'approved') {
+      if (result.action === STATUS.APPROVED) {
         toast.success(`Demande approuvée → commande ${result.order?.orderRef || ''}`);
       } else {
         toast.success('Demande refusée');
@@ -397,7 +392,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   };
 
   const handleDeleteRequest = (request) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la demande',
       message: `Supprimer la demande "${request.article}" ?`,
       onConfirm: async () => {
@@ -405,9 +400,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           await api.deleteMaterialRequest(request.id);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -482,7 +475,7 @@ function OrdersPanel({ currentUser, isMobile }) {
             {completionAlerts.slice(0, 3).map(alert => (
               <div key={alert.id} className="alert-preview-item">
                 <span>{alert.message}</span>
-                <button onClick={() => handleMarkAlertRead(alert.id)}><Check size={12} /></button>
+                <Button variant="ghost" onClick={() => handleMarkAlertRead(alert.id)}><Check size={12} /></Button>
               </div>
             ))}
           </div>
@@ -494,33 +487,33 @@ function OrdersPanel({ currentUser, isMobile }) {
       <div className="orders-tabs">
         {isSimpleUser ? (
           <>
-            <button className={`orders-tab ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => { setActiveTab('requests'); setStatusFilter(''); }}>
+            <Button variant="ghost" className={`orders-tab ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => { setActiveTab('requests'); setStatusFilter(''); }}>
               <ClipboardList size={16} /> Mes demandes
               {requestStats?.pending > 0 && <span className="tab-badge">{requestStats.pending}</span>}
-            </button>
-            <button className={`orders-tab ${activeTab === 'tracking' ? 'active' : ''}`} onClick={() => { setActiveTab('tracking'); setStatusFilter(''); }}>
+            </Button>
+            <Button variant="ghost" className={`orders-tab ${activeTab === 'tracking' ? 'active' : ''}`} onClick={() => { setActiveTab('tracking'); setStatusFilter(''); }}>
               <Package size={16} /> Suivi commandes
               {myLinkedOrders.length > 0 && <span className="tab-badge">{myLinkedOrders.length}</span>}
-            </button>
+            </Button>
           </>
         ) : (
           <>
-        <button className={`orders-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => { setActiveTab('orders'); setStatusFilter(''); }}>
+        <Button variant="ghost" className={`orders-tab ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => { setActiveTab('orders'); setStatusFilter(''); }}>
           <ShoppingCart size={16} /> Commandes
-        </button>
-        <button className={`orders-tab ${activeTab === 'quotes' ? 'active' : ''}`} onClick={() => { setActiveTab('quotes'); setStatusFilter(''); }}>
+        </Button>
+        <Button variant="ghost" className={`orders-tab ${activeTab === 'quotes' ? 'active' : ''}`} onClick={() => { setActiveTab('quotes'); setStatusFilter(''); }}>
           <FileText size={16} /> Devis
-        </button>
-        <button className={`orders-tab ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => { setActiveTab('requests'); setStatusFilter(''); }}>
+        </Button>
+        <Button variant="ghost" className={`orders-tab ${activeTab === 'requests' ? 'active' : ''}`} onClick={() => { setActiveTab('requests'); setStatusFilter(''); }}>
           <ClipboardList size={16} /> Demandes
           {requestStats?.pending > 0 && <span className="tab-badge">{requestStats.pending}</span>}
-        </button>
-        <button className={`orders-tab ${activeTab === 'suppliers' ? 'active' : ''}`} onClick={() => { setActiveTab('suppliers'); setStatusFilter(''); }}>
+        </Button>
+        <Button variant="ghost" className={`orders-tab ${activeTab === 'suppliers' ? 'active' : ''}`} onClick={() => { setActiveTab('suppliers'); setStatusFilter(''); }}>
           <Building2 size={16} /> Fournisseurs
-        </button>
-        <button className={`orders-tab ${activeTab === 'catalog' ? 'active' : ''}`} onClick={() => { setActiveTab('catalog'); setStatusFilter(''); }}>
+        </Button>
+        <Button variant="ghost" className={`orders-tab ${activeTab === 'catalog' ? 'active' : ''}`} onClick={() => { setActiveTab('catalog'); setStatusFilter(''); }}>
           <BookOpen size={16} /> Catalogue
-        </button>
+        </Button>
           </>
         )}
 
@@ -531,7 +524,7 @@ function OrdersPanel({ currentUser, isMobile }) {
             <span className="stat-badge"><FileText size={13} /> {stats.quotes?.total || 0}</span>
             <span className="stat-badge highlight"><Euro size={13} /> {formatCurrency(stats.orders?.total_ht || 0)}</span>
             {completionAlerts.length > 0 && (
-              <span className="stat-badge alert" onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
+              <span className="stat-badge alert" role="button" tabIndex={0} onClick={() => setActiveTab('requests')}><Bell size={13} /> {completionAlerts.length}</span>
             )}
           </div>
         )}
@@ -576,12 +569,12 @@ function OrdersPanel({ currentUser, isMobile }) {
         )}
         {isSimpleUser ? (
           activeTab === 'requests' && (
-            <button className="orders-add-btn" onClick={() => setShowRequestModal(true)}>
+            <Button variant="ghost" className="orders-add-btn" onClick={() => setShowRequestModal(true)}>
               <Plus size={16} /> Nouvelle demande
-            </button>
+            </Button>
           )
         ) : (
-        <button className="orders-add-btn" onClick={() => {
+        <Button variant="ghost" className="orders-add-btn" onClick={() => {
           if (activeTab === 'orders') { setEditingOrder(null); setShowOrderForm(true); }
           else if (activeTab === 'quotes') { setEditingQuote(null); setShowQuoteForm(true); }
           else if (activeTab === 'requests') { setShowRequestModal(true); }
@@ -589,7 +582,7 @@ function OrdersPanel({ currentUser, isMobile }) {
         }}>
           <Plus size={16} />
           {activeTab === 'orders' ? 'Nouvelle commande' : activeTab === 'quotes' ? 'Nouveau devis' : activeTab === 'requests' ? 'Nouvelle demande' : 'Nouveau fournisseur'}
-        </button>
+        </Button>
         )}
       </div>}
 
@@ -784,17 +777,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           currentUser={currentUser}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }
@@ -881,7 +864,7 @@ const QuotesList = React.memo(({ quotes, onView, onDoubleClick, onEdit, onDelete
                 </td>
                 <td className="amount">{formatCurrency(quote.total_ht)}</td>
                 <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
-                  {quote.status === 'accepted' && !quote.converted_to_order_id && (
+                  {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
                     <Tooltip content="Convertir en commande"><Button variant="success" size="sm" iconOnly onClick={() => onConvert(quote)}><ArrowRight size={14} /></Button></Tooltip>
                   )}
                   <Tooltip content="Modifier"><Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(quote)}><Edit2 size={14} /></Button></Tooltip>
@@ -897,7 +880,7 @@ const QuotesList = React.memo(({ quotes, onView, onDoubleClick, onEdit, onDelete
 });
 
 // ═══ Liste des fournisseurs ═══
-const SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
+const _SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
   if (!suppliers.length) return <div className="orders-empty">Aucun fournisseur</div>;
   return (
     <div className="orders-suppliers-grid">
@@ -927,7 +910,7 @@ const SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
 });
 
 // ═══ Détail Commande ═══
-const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChange }) => {
+const _OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChange }) => {
   const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
   const items = order.items || [];
 
@@ -958,7 +941,7 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
   return (
     <div className="order-detail">
       <div className="order-detail-header">
-        <button className="back-btn" onClick={onBack}><ArrowLeft size={18} /> Retour</button>
+        <Button variant="ghost" className="back-btn" onClick={onBack}><ArrowLeft size={18} /> Retour</Button>
         <div className="order-detail-title">
           <h2>{order.reference}</h2>
           <StatusBadge color={status.color}>
@@ -967,11 +950,11 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
           {groupedItems && <Tag color="info" size="sm">Commande groupée</Tag>}
         </div>
         <div className="order-detail-actions">
-          {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
-          {order.status === 'sent' && <button className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</button>}
-          {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
-          <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
-          <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+          {order.status === 'draft' && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</Button>}
+          {order.status === 'sent' && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</Button>}
+          {order.status === STATUS.CONFIRMED && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</Button>}
+          <Button variant="ghost" className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</Button>
+          <Button variant="ghost" className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</Button>
         </div>
       </div>
 
@@ -1056,13 +1039,13 @@ const OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChang
 });
 
 // ═══ Détail Devis ═══
-const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, onStatusChange }) => {
+const _QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, onStatusChange }) => {
   const status = QUOTE_STATUS[quote.status] || QUOTE_STATUS.draft;
   const items = quote.items || [];
   return (
     <div className="order-detail">
       <div className="order-detail-header">
-        <button className="back-btn" onClick={onBack}><ArrowLeft size={18} /> Retour</button>
+        <Button variant="ghost" className="back-btn" onClick={onBack}><ArrowLeft size={18} /> Retour</Button>
         <div className="order-detail-title">
           <h2>{quote.reference}</h2>
           <StatusBadge color={status.color}>
@@ -1071,18 +1054,18 @@ const QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, on
           {quote.converted_to_order_id && <Tag color="success" size="sm"><FileCheck size={14} /> Converti en commande</Tag>}
         </div>
         <div className="order-detail-actions">
-          {quote.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
+          {quote.status === 'draft' && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</Button>}
           {quote.status === 'sent' && (
             <>
-              <button className="action-btn success" onClick={() => onStatusChange('accepted')}><Check size={14} /> Accepter</button>
-              <button className="action-btn danger" onClick={() => onStatusChange('refused')}><X size={14} /> Refuser</button>
+              <Button variant="ghost" className="action-btn success" onClick={() => onStatusChange('accepted')}><Check size={14} /> Accepter</Button>
+              <Button variant="ghost" className="action-btn danger" onClick={() => onStatusChange('refused')}><X size={14} /> Refuser</Button>
             </>
           )}
-          {quote.status === 'accepted' && !quote.converted_to_order_id && (
-            <button className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir en commande</button>
+          {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
+            <Button variant="ghost" className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir en commande</Button>
           )}
-          <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
-          <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+          <Button variant="ghost" className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</Button>
+          <Button variant="ghost" className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</Button>
         </div>
       </div>
 
@@ -1169,10 +1152,10 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
 
   return (
     <div className="orders-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="order-form-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="order-form-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2>{order ? `Modifier ${order.reference}` : 'Nouvelle commande'}</h2>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="modal-body">
           <div className="form-grid">
@@ -1214,7 +1197,7 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
           <div className="form-items-section">
             <div className="items-header">
               <h3>Lignes de commande</h3>
-              <button type="button" className="add-item-btn" onClick={addItem}><Plus size={14} /> Ajouter une ligne</button>
+              <Button variant="ghost" type="button" className="add-item-btn" onClick={addItem}><Plus size={14} /> Ajouter une ligne</Button>
             </div>
             {form.items.map((item, idx) => (
               <div key={item._key} className="item-row">
@@ -1227,7 +1210,7 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
                 <span className="item-total">{formatCurrency((item.quantity || 0) * (item.unit_price_ht || 0))}</span>
                 <Input type="text" placeholder="Affaire / Demandeur" value={item.source_affaire_id || ''} onChange={(e) => updateItem(idx, 'source_affaire_id', e.target.value)} className="item-source" title="Affaire ou demandeur source" />
                 {form.items.length > 1 && (
-                  <button type="button" className="remove-item-btn" onClick={() => removeItem(idx)}><X size={14} /></button>
+                  <Button variant="ghost" type="button" className="remove-item-btn" onClick={() => removeItem(idx)}><X size={14} /></Button>
                 )}
               </div>
             ))}
@@ -1290,10 +1273,10 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
 
   return (
     <div className="orders-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="order-form-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="order-form-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2>{quote ? `Modifier ${quote.reference}` : 'Nouveau devis'}</h2>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="modal-body">
           <div className="form-grid">
@@ -1341,7 +1324,7 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
           <div className="form-items-section">
             <div className="items-header">
               <h3>Lignes du devis</h3>
-              <button type="button" className="add-item-btn" onClick={addItem}><Plus size={14} /> Ajouter une ligne</button>
+              <Button variant="ghost" type="button" className="add-item-btn" onClick={addItem}><Plus size={14} /> Ajouter une ligne</Button>
             </div>
             {form.items.map((item, idx) => (
               <div key={item._key} className="item-row">
@@ -1353,7 +1336,7 @@ const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => 
                 <Input type="number" placeholder="P.U. HT" value={item.unit_price_ht} onChange={(e) => updateItem(idx, 'unit_price_ht', parseFloat(e.target.value) || 0)} step="0.01" className="item-price" />
                 <span className="item-total">{formatCurrency((item.quantity || 0) * (item.unit_price_ht || 0))}</span>
                 {form.items.length > 1 && (
-                  <button type="button" className="remove-item-btn" onClick={() => removeItem(idx)}><X size={14} /></button>
+                  <Button variant="ghost" type="button" className="remove-item-btn" onClick={() => removeItem(idx)}><X size={14} /></Button>
                 )}
               </div>
             ))}
@@ -1393,10 +1376,10 @@ const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
 
   return (
     <div className="orders-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="supplier-form-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="supplier-form-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2>{supplier ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</h2>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="modal-body">
           <div className="form-grid">
@@ -1502,7 +1485,7 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
           const status = REQUEST_STATUS[req.status] || REQUEST_STATUS.pending;
           const priority = REQUEST_PRIORITY[req.priority] || REQUEST_PRIORITY.normal;
           return (
-            <div key={req.id} onClick={() => onClick?.(req)}
+            <div key={req.id} role="button" tabIndex={0} onClick={() => onClick?.(req)}
               style={{ background: 'var(--theme-bg-card, #fff)', border: `1px solid ${selectedId === req.id ? 'var(--theme-accent, #2563eb)' : 'var(--theme-border)'}`, borderRadius: 10, padding: '0.8rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1574,7 +1557,7 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
                     {req.order_id && <span className="order-link-small">→ Cmd #{req.order_id}</span>}
                   </td>
                   <td className="actions-cell" onClick={e => e.stopPropagation()}>
-                    {isAdmin && req.status === 'pending' && (
+                    {isAdmin && req.status === STATUS.PENDING && (
                       <>
                         <Tooltip content="Approuver"><Button variant="success" size="sm" iconOnly onClick={() => onValidate(req, 'approve')}><Check size={14} /></Button></Tooltip>
                         <Tooltip content="Refuser"><Button variant="danger" size="sm" iconOnly onClick={() => setRejectingId(req.id)}><X size={14} /></Button></Tooltip>
@@ -1587,7 +1570,7 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
                   <tr className="reject-reason-row">
                     <td colSpan={8}>
                       <div className="reject-input-row">
-                        <Input type="text" placeholder="Raison du refus (optionnel)" value={rejectReason}
+                        <Input type="text" placeholder="Raison du refus (optionnel)" aria-label="Raison du refus" value={rejectReason}
                           onChange={e => setRejectReason(e.target.value)} className="reject-reason-input" />
                         <Button variant="danger" size="sm" onClick={() => { onValidate(req, 'reject', rejectReason); setRejectingId(null); setRejectReason(''); }}>Confirmer refus</Button>
                         <Button variant="ghost" size="sm" onClick={() => { setRejectingId(null); setRejectReason(''); }}>Annuler</Button>
@@ -1667,10 +1650,10 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
 
   return (
     <div className="catalog-picker-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="catalog-picker-modal" onClick={e => e.stopPropagation()}>
+      <div className="catalog-picker-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="catalog-picker-header">
           <h2><BookOpen size={20} /> Sélection depuis les catalogues</h2>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         <div className="catalog-picker-filters">
@@ -1745,9 +1728,9 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
                         <td>{art.family || '—'}</td>
                         <td className="catalog-picker-price">{art.price_ht ? `${Number(art.price_ht).toFixed(2)} €` : '—'}</td>
                         <td>
-                          <button className="catalog-picker-select-btn" onClick={() => onSelect(art)} title="Sélectionner cet article">
+                          <Button variant="ghost" className="catalog-picker-select-btn" onClick={() => onSelect(art)} title="Sélectionner cet article">
                             <Check size={14} /> Choisir
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -1761,9 +1744,9 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
 
         {totalPages > 1 && (
           <div className="catalog-picker-pagination">
-            <button disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Précédent</button>
+            <Button variant="ghost" disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Précédent</Button>
             <span>Page {page + 1} / {totalPages} ({total} résultat{total > 1 ? 's' : ''})</span>
-            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Suivant →</button>
+            <Button variant="ghost" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Suivant →</Button>
           </div>
         )}
       </div>
@@ -1799,10 +1782,10 @@ const MaterialRequestModal = React.memo(({ request, suppliers, onSave, onClose }
 
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="order-form-modal material-request-modal" onClick={e => e.stopPropagation()}>
+      <div className="order-form-modal material-request-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2><ClipboardList size={20} /> {isEditing ? 'Modifier la demande' : 'Nouvelle demande de matériel'}</h2>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="modal-body">
           <div className="form-grid">
@@ -1811,9 +1794,9 @@ const MaterialRequestModal = React.memo(({ request, suppliers, onSave, onClose }
               <div className="article-input-group">
                 <Input type="text" value={form.article} onChange={e => setForm(f => ({ ...f, article: e.target.value }))} 
                   placeholder="Nom de l'article" />
-                <button type="button" className="catalog-search-btn" onClick={() => setShowCatalogPicker(true)} title="Chercher dans les catalogues fournisseurs">
+                <Button variant="ghost" type="button" className="catalog-search-btn" onClick={() => setShowCatalogPicker(true)} title="Chercher dans les catalogues fournisseurs">
                   <Layers size={14} /> Catalogue
-                </button>
+                </Button>
               </div>
             </div>
             <div className="form-field">
@@ -1930,15 +1913,15 @@ const EnhancedSuppliersList = React.memo(({ suppliers, onEdit, onDelete, onClick
 });
 
 // ═══ Volet fournisseur (clic simple) ═══
-const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder }) => {
+const _SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder }) => {
   return (
     <div className="supplier-slide-panel">
       <div className="slide-panel-header">
-        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h2><Building2 size={20} /> {supplier.name}</h2>
-        <button className="action-btn" onClick={() => { onClose(); onViewDetail(supplier); }}>
+        <Button variant="ghost" className="action-btn" onClick={() => { onClose(); onViewDetail(supplier); }}>
           <Eye size={14} /> Détail complet
-        </button>
+        </Button>
       </div>
       <div className="slide-panel-body">
         <h3>Commandes en cours ({supplier.orders?.length || 0})</h3>
@@ -1950,7 +1933,7 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
               const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
               const completion = order.item_count > 0 ? Math.round((order.completed_items / order.item_count) * 100) : 0;
               return (
-                <div key={order.id} className="supplier-order-card" onClick={() => { onClose(); onViewOrder(order); }}>
+                <div key={order.id} className="supplier-order-card" role="button" tabIndex={0} onClick={() => { onClose(); onViewOrder(order); }}>
                   <div className="order-card-top">
                     <span className="order-ref"><Hash size={14} /> {order.reference}</span>
                     <StatusBadge color={status.color} size="sm">
@@ -1986,7 +1969,7 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
               );
             })}
           </div>
-        )}}
+        )}
       </div>
     </div>
   );
@@ -1996,7 +1979,7 @@ const SupplierPanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder
 const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, currentUser }) => {
   const { supplier, orders, documents, catalogs, workflow } = data;
   const [activeSection, setActiveSection] = useState('workflow');
-  const [uploadingDoc, setUploadingDoc] = useState(null);
+  const [_uploadingDoc, setUploadingDoc] = useState(null);
   const toast = useToast();
 
   const handleUploadDoc = async (orderId, docType) => {
@@ -2015,25 +1998,25 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
 
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="supplier-detail-modal" onClick={e => e.stopPropagation()}>
+      <div className="supplier-detail-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <h2><Building2 size={20} /> {supplier.name} — Détail complet</h2>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
         <div className="supplier-detail-tabs">
-          <button className={activeSection === 'workflow' ? 'active' : ''} onClick={() => setActiveSection('workflow')}>
+          <Button variant="ghost" className={activeSection === 'workflow' ? 'active' : ''} onClick={() => setActiveSection('workflow')}>
             <Layers size={14} /> Workflow
-          </button>
-          <button className={activeSection === 'orders' ? 'active' : ''} onClick={() => setActiveSection('orders')}>
+          </Button>
+          <Button variant="ghost" className={activeSection === 'orders' ? 'active' : ''} onClick={() => setActiveSection('orders')}>
             <ShoppingCart size={14} /> Commandes ({orders.length})
-          </button>
-          <button className={activeSection === 'documents' ? 'active' : ''} onClick={() => setActiveSection('documents')}>
+          </Button>
+          <Button variant="ghost" className={activeSection === 'documents' ? 'active' : ''} onClick={() => setActiveSection('documents')}>
             <FileText size={14} /> Documents ({documents.length})
-          </button>
+          </Button>
           {catalogs?.length > 0 && (
-            <button className={activeSection === 'catalogs' ? 'active' : ''} onClick={() => setActiveSection('catalogs')}>
+            <Button variant="ghost" className={activeSection === 'catalogs' ? 'active' : ''} onClick={() => setActiveSection('catalogs')}>
               <BookOpen size={14} /> Catalogues ({catalogs.length})
-            </button>
+            </Button>
           )}
         </div>
 
@@ -2081,10 +2064,10 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                   {/* Import buttons */}
                   {currentUser?.isAdmin && (
                     <div className="workflow-actions">
-                      {!w.steps.quote && <button className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'quote')}><FileDown size={12} /> Devis</button>}
-                      {!w.steps.acknowledgment && <button className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'acknowledgment')}><Receipt size={12} /> Accusé</button>}
-                      {!w.steps.delivery_note && <button className="doc-upload-btn accent" onClick={() => handleUploadDoc(w.order_id, 'delivery_note')}><Package size={12} /> BL fournisseur</button>}
-                      {!w.steps.invoice && <button className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'invoice')}><FileText size={12} /> Facture</button>}
+                      {!w.steps.quote && <Button variant="ghost" className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'quote')}><FileDown size={12} /> Devis</Button>}
+                      {!w.steps.acknowledgment && <Button variant="ghost" className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'acknowledgment')}><Receipt size={12} /> Accusé</Button>}
+                      {!w.steps.delivery_note && <Button variant="ghost" className="doc-upload-btn accent" onClick={() => handleUploadDoc(w.order_id, 'delivery_note')}><Package size={12} /> BL fournisseur</Button>}
+                      {!w.steps.invoice && <Button variant="ghost" className="doc-upload-btn" onClick={() => handleUploadDoc(w.order_id, 'invoice')}><FileText size={12} /> Facture</Button>}
                     </div>
                   )}
                 </div>
@@ -2101,7 +2084,7 @@ const SupplierDetailModal = React.memo(({ data, onClose, onViewOrder, onReload, 
                 return (
                   <div key={order.id} className="supplier-order-detail-card">
                     <div className="order-card-top">
-                      <span className="order-ref clickable" onClick={() => { onClose(); onViewOrder(order); }}>
+                      <span className="order-ref clickable" role="button" tabIndex={0} onClick={() => { onClose(); onViewOrder(order); }}>
                         <Hash size={14} /> {order.reference}
                       </span>
                       <StatusBadge color={status.color} size="sm">
@@ -2193,9 +2176,9 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
   return (
     <div className="orders-slide-panel open">
       <div className="slide-panel-header">
-        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{order.reference}</h3>
-        <button className="action-btn small" onClick={() => onOpenDialog(order)} title="Ouvrir en détail"><Eye size={14} /></button>
+        <Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(order)} title="Ouvrir en détail"><Eye size={14} /></Button>
       </div>
       <div className="slide-panel-body">
         <StatusBadge color={status.color}>
@@ -2236,12 +2219,12 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
         )}
         {order.notes && <div className="slide-notes"><h4>Notes</h4><p>{order.notes}</p></div>}
         <div className="slide-actions">
-          {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
-          {order.status === 'sent' && <button className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</button>}
-          {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
-          <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
-          <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
-          <button className="action-btn" onClick={onClose}><X size={14} /> Fermer</button>
+          {order.status === 'draft' && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</Button>}
+          {order.status === 'sent' && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</Button>}
+          {order.status === STATUS.CONFIRMED && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</Button>}
+          <Button variant="ghost" className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</Button>
+          <Button variant="ghost" className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</Button>
+          <Button variant="ghost" className="action-btn" onClick={onClose}><X size={14} /> Fermer</Button>
         </div>
       </div>
     </div>
@@ -2256,9 +2239,9 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
   return (
     <div className="orders-slide-panel open">
       <div className="slide-panel-header">
-        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{quote.reference}</h3>
-        <button className="action-btn small" onClick={() => onOpenDialog(quote)} title="Ouvrir en détail"><Eye size={14} /></button>
+        <Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(quote)} title="Ouvrir en détail"><Eye size={14} /></Button>
       </div>
       <div className="slide-panel-body">
         <StatusBadge color={status.color}>
@@ -2292,11 +2275,11 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
         )}
         {quote.notes && <div className="slide-notes"><h4>Notes</h4><p>{quote.notes}</p></div>}
         <div className="slide-actions">
-          {quote.status === 'accepted' && !quote.converted_to_order_id && (
-            <button className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir</button>
+          {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
+            <Button variant="ghost" className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir</Button>
           )}
-          <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
-          <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
+          <Button variant="ghost" className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</Button>
+          <Button variant="ghost" className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</Button>
         </div>
       </div>
     </div>
@@ -2311,11 +2294,11 @@ const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin,
   return (
     <div className="orders-slide-panel open">
       <div className="slide-panel-header">
-        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{request.article}</h3>
         <div style={{ display: 'flex', gap: 4 }}>
-          <button className="action-btn small" onClick={() => onEdit(request)} title="Modifier"><Edit2 size={14} /></button>
-          <button className="action-btn small" onClick={() => onOpenDialog(request)} title="Ouvrir en détail"><Eye size={14} /></button>
+          <Button variant="ghost" className="action-btn small" onClick={() => onEdit(request)} title="Modifier"><Edit2 size={14} /></Button>
+          <Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(request)} title="Ouvrir en détail"><Eye size={14} /></Button>
         </div>
       </div>
       <div className="slide-panel-body">
@@ -2333,10 +2316,10 @@ const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin,
           {request.order_id && <div className="slide-field"><span>Commande</span><strong>#{request.order_id}</strong></div>}
         </div>
         {request.notes && <div className="slide-notes"><h4>Notes</h4><p>{request.notes}</p></div>}
-        {isAdmin && request.status === 'pending' && (
+        {isAdmin && request.status === STATUS.PENDING && (
           <div className="slide-actions">
-            <button className="action-btn success" onClick={() => onValidate(request, 'approve')}><Check size={14} /> Approuver</button>
-            <button className="action-btn danger" onClick={() => onValidate(request, 'reject')}><X size={14} /> Refuser</button>
+            <Button variant="ghost" className="action-btn success" onClick={() => onValidate(request, 'approve')}><Check size={14} /> Approuver</Button>
+            <Button variant="ghost" className="action-btn danger" onClick={() => onValidate(request, 'reject')}><X size={14} /> Refuser</Button>
           </div>
         )}
       </div>
@@ -2350,9 +2333,9 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
   return (
     <div className="orders-slide-panel open">
       <div className="slide-panel-header">
-        <button className="back-btn" onClick={onClose}><X size={18} /></button>
+        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3><Building2 size={16} /> {supplier.name}</h3>
-        <button className="action-btn small" onClick={() => { onClose(); onViewDetail(supplier); }} title="Détail complet"><Eye size={14} /></button>
+        <Button variant="ghost" className="action-btn small" onClick={() => { onClose(); onViewDetail(supplier); }} title="Détail complet"><Eye size={14} /></Button>
       </div>
       <div className="slide-panel-body">
         <div className="slide-fields">
@@ -2383,7 +2366,7 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
               const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
               const completion = order.item_count > 0 ? Math.round((order.completed_items / order.item_count) * 100) : 0;
               return (
-                <div key={order.id} className="supplier-order-card" onClick={() => onViewOrder(order)}>
+                <div key={order.id} className="supplier-order-card" role="button" tabIndex={0} onClick={() => onViewOrder(order)}>
                   <div className="order-card-top">
                     <span className="order-ref"><Hash size={14} /> {order.reference}</span>
                     <StatusBadge color={status.color} size="sm">
@@ -2414,7 +2397,7 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
   const items = order.items || [];
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="order-detail-dialog" onClick={e => e.stopPropagation()}>
+      <div className="order-detail-dialog" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2>{order.reference}</h2>
@@ -2423,12 +2406,12 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
             </StatusBadge>
           </div>
           <div className="order-detail-actions">
-            {order.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
-            {order.status === 'sent' && <button className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</button>}
-            {order.status === 'confirmed' && <button className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</button>}
-            <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
-            <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
-            <button className="close-btn" onClick={onClose}><X size={20} /></button>
+            {order.status === 'draft' && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</Button>}
+            {order.status === 'sent' && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('confirmed')}><Check size={14} /> Confirmer</Button>}
+            {order.status === STATUS.CONFIRMED && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('received')}><Package size={14} /> Réceptionner</Button>}
+            <Button variant="ghost" className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</Button>
+            <Button variant="ghost" className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</Button>
+            <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
           </div>
         </div>
         <div className="order-detail-grid">
@@ -2494,7 +2477,7 @@ const OrderDetailDialog = React.memo(({ order, onClose, onEdit, onDelete, onStat
           ) : <p className="no-items">Aucune ligne</p>}
         </div>
         <div className="dialog-footer">
-          <button className="action-btn" onClick={onClose}><X size={14} /> Fermer</button>
+          <Button variant="ghost" className="action-btn" onClick={onClose}><X size={14} /> Fermer</Button>
         </div>
       </div>
     </div>
@@ -2507,7 +2490,7 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
   const items = quote.items || [];
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="order-detail-dialog" onClick={e => e.stopPropagation()}>
+      <div className="order-detail-dialog" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2>{quote.reference}</h2>
@@ -2517,19 +2500,19 @@ const QuoteDetailDialog = React.memo(({ quote, onClose, onEdit, onDelete, onConv
             {quote.converted_to_order_id && <Tag color="success" size="sm"><FileCheck size={14} /> Converti en commande</Tag>}
           </div>
           <div className="order-detail-actions">
-            {quote.status === 'draft' && <button className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</button>}
+            {quote.status === 'draft' && <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}><Send size={14} /> Envoyer</Button>}
             {quote.status === 'sent' && (
               <>
-                <button className="action-btn success" onClick={() => onStatusChange('accepted')}><Check size={14} /> Accepter</button>
-                <button className="action-btn danger" onClick={() => onStatusChange('refused')}><X size={14} /> Refuser</button>
+                <Button variant="ghost" className="action-btn success" onClick={() => onStatusChange('accepted')}><Check size={14} /> Accepter</Button>
+                <Button variant="ghost" className="action-btn danger" onClick={() => onStatusChange('refused')}><X size={14} /> Refuser</Button>
               </>
             )}
-            {quote.status === 'accepted' && !quote.converted_to_order_id && (
-              <button className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir</button>
+            {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
+              <Button variant="ghost" className="action-btn success" onClick={onConvert}><ArrowRight size={14} /> Convertir</Button>
             )}
-            <button className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</button>
-            <button className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</button>
-            <button className="close-btn" onClick={onClose}><X size={20} /></button>
+            <Button variant="ghost" className="action-btn" onClick={onEdit}><Edit2 size={14} /> Modifier</Button>
+            <Button variant="ghost" className="action-btn danger" onClick={onDelete}><Trash2 size={14} /> Supprimer</Button>
+            <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
           </div>
         </div>
         <div className="order-detail-grid">
@@ -2583,7 +2566,7 @@ const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate,
   const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
   return (
     <div className="orders-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-      <div className="order-detail-dialog request-detail-dialog" onClick={e => e.stopPropagation()}>
+      <div className="order-detail-dialog request-detail-dialog" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="order-detail-header">
           <div className="order-detail-title">
             <h2><ClipboardList size={20} /> {request.article}</h2>
@@ -2593,15 +2576,15 @@ const RequestDetailDialog = React.memo(({ request, onClose, isAdmin, onValidate,
             <span className="priority-badge" style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
           </div>
           <div className="order-detail-actions">
-            {isAdmin && request.status === 'pending' && (
+            {isAdmin && request.status === STATUS.PENDING && (
               <>
-                <button className="action-btn success" onClick={() => { onValidate(request, 'approve'); onClose(); }}><Check size={14} /> Approuver</button>
-                <button className="action-btn danger" onClick={() => { onValidate(request, 'reject'); onClose(); }}><X size={14} /> Refuser</button>
+                <Button variant="ghost" className="action-btn success" onClick={() => { onValidate(request, 'approve'); onClose(); }}><Check size={14} /> Approuver</Button>
+                <Button variant="ghost" className="action-btn danger" onClick={() => { onValidate(request, 'reject'); onClose(); }}><X size={14} /> Refuser</Button>
               </>
             )}
-            <button className="action-btn" onClick={() => onEdit(request)}><Edit2 size={14} /> Modifier</button>
-            <button className="action-btn danger" onClick={() => { onDelete(request); onClose(); }}><Trash2 size={14} /> Supprimer</button>
-            <button className="close-btn" onClick={onClose}><X size={20} /></button>
+            <Button variant="ghost" className="action-btn" onClick={() => onEdit(request)}><Edit2 size={14} /> Modifier</Button>
+            <Button variant="ghost" className="action-btn danger" onClick={() => { onDelete(request); onClose(); }}><Trash2 size={14} /> Supprimer</Button>
+            <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
           </div>
         </div>
         <div className="order-detail-grid">

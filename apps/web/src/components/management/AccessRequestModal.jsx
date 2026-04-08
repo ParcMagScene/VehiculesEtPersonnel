@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, User, Send, Lock, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
 import { Button, ModalLayout, Input, InlineAlert, FormField } from '@/design-system';
-import { getApiUrl } from '../../utils/api';
 import api from '../../utils/api';
+import { STATUS } from '../../constants';
+
 import './AccessRequestModal.css';
 
 function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
@@ -25,13 +26,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
 
   const checkEmailAuthorization = async (email) => {
     try {
-      const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/access-requests/check-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
+      const data = await api.checkEmailAccessRequest(email);
       if (data.authorized) {
         if (data.name) {
           setFormData(prev => ({ ...prev, name: prev.name || data.name }));
@@ -58,18 +53,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
     setError('');
 
     try {
-      const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/access-requests`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la demande');
-      }
+      const data = await api.createAccessRequest(formData);
 
       if (data.autoApproved) {
         setStep('create-password');
@@ -92,8 +76,8 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
+    if (password.length < 10) {
+      setError('Le mot de passe doit contenir au moins 10 caractères (1 majuscule, 1 chiffre, 1 spécial)');
       return;
     }
 
@@ -152,6 +136,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   required
                   placeholder="Votre nom et prénom"
                   autoComplete="name"
+                  maxLength={100}
                 />
               </FormField>
 
@@ -165,6 +150,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   required
                   placeholder="votre.email@example.com"
                   autoComplete="email"
+                  maxLength={254}
                 />
               </FormField>
 
@@ -190,7 +176,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
               <ArrowLeft size={18} />
               Retour
             </Button>
-            <Button variant="primary" type="submit" form="ar-create-form" disabled={loading || password.length < 6}>
+            <Button variant="primary" type="submit" form="ar-create-form" disabled={loading || password.length < 10}>
               <CheckCircle size={18} />
               {loading ? 'Création...' : 'Créer mon compte'}
             </Button>
@@ -219,6 +205,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   required
                   placeholder="Votre nom et prénom"
                   autoComplete="name"
+                  maxLength={100}
                 />
               </FormField>
 
@@ -238,8 +225,8 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   required
-                  placeholder="Minimum 6 caractères"
-                  minLength={6}
+                  placeholder="Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial"
+                  minLength={10}
                   autoFocus
                   autoComplete="new-password"
                 />
@@ -253,7 +240,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
                   required
                   placeholder="Retapez votre mot de passe"
-                  minLength={6}
+                  minLength={10}
                   autoComplete="new-password"
                 />
               </FormField>
@@ -265,7 +252,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   }
 
   // ===== ÉTAPE 2B : DEMANDE EN ATTENTE DE VALIDATION =====
-  if (step === 'pending') {
+  if (step === STATUS.PENDING) {
     return (
       <ModalLayout
         open

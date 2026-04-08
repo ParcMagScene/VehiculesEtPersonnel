@@ -4,7 +4,7 @@
   gap: 1.5rem;
   padding: 0.75rem 1rem;
   background: linear-gradient(135deg, var(--theme-purple-bg), var(--theme-info-bg-strong));
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-bottom: 1rem;
   flex-wrap: wrap;
 }
@@ -42,7 +42,7 @@
   padding: 0.6rem 0.75rem;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: all 0.15s ease;
 }
 
@@ -62,7 +62,7 @@
 }
 
 .reservation-equipment-item .eq-ref {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   font-family: monospace;
 }
@@ -70,14 +70,14 @@
 .reservation-equipment-item .eq-qty {
   background: var(--theme-border-light);
   padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-weight: 700;
   font-size: 0.85rem;
   color: var(--theme-primary);
 }
 
 .reservation-equipment-item .eq-fc {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--btn-success-color);
   display: flex;
   align-items: center;

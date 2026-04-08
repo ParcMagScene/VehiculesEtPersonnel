@@ -13,7 +13,7 @@
 
 .mailing-panel {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 95%;
   max-width: 780px;
   max-height: 90dvh;
@@ -48,7 +48,7 @@
   color: var(--glass-bright);
   cursor: pointer;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
 .mailing-close:hover { color: var(--theme-text-inverse); background: var(--close-btn-bg); }
@@ -106,7 +106,7 @@
   padding: 10px 14px;
   background: var(--theme-warning-bg);
   color: var(--theme-warning-text);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
   margin-bottom: 16px;
 }
@@ -130,7 +130,7 @@
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
   transition: border-color 0.15s;
   box-sizing: border-box;
@@ -164,7 +164,7 @@
   padding: 3px 8px 3px 10px;
   background: var(--theme-purple-bg);
   color: var(--theme-purple-text);
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   font-size: 0.78rem;
 }
 .mailing-recipient-tag button {
@@ -172,7 +172,7 @@
   border: none;
   color: var(--theme-secondary);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: var(--font-md);
   line-height: 1;
   padding: 0 2px;
 }
@@ -186,7 +186,7 @@
   flex: 1;
   padding: 6px 10px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
 }
 .mailing-add-recipient input:focus {
@@ -198,7 +198,7 @@
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
 }
 .mailing-add-recipient button:disabled {
@@ -210,7 +210,7 @@
 .mailing-contacts-dropdown {
   margin-top: 8px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   max-height: 180px;
   overflow: hidden;
 }
@@ -253,7 +253,7 @@
 .mailing-contact-type {
   font-size: 0.65rem;
   padding: 1px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   text-transform: uppercase;
   font-weight: 600;
 }
@@ -267,7 +267,7 @@
   width: 100%;
   padding: 10px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 0.78rem;
   line-height: 1.5;
@@ -296,15 +296,15 @@
   color: var(--theme-primary);
   background: var(--theme-purple-bg);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .mailing-var-field input {
   flex: 1;
   padding: 4px 8px;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 6px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
 }
 
 .mailing-vars-insert {
@@ -315,7 +315,7 @@
 .mailing-var-btn {
   padding: 4px 10px;
   border: 1px dashed var(--theme-purple-accent);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-purple-bg);
   color: var(--theme-purple-accent);
   font-family: monospace;
@@ -343,7 +343,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
@@ -367,7 +367,7 @@
 .mailing-send-result {
   margin-top: 12px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
 }
 .mailing-send-result.all-sent { background: var(--theme-success-bg-strong); color: var(--theme-success-text-alt); }
@@ -385,7 +385,7 @@
 }
 .mailing-preview-modal {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 90%;
   max-width: 640px;
   max-height: 80vh;
@@ -427,7 +427,7 @@
   justify-content: space-between;
   padding: 12px 14px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-bottom: 8px;
   transition: border-color 0.15s;
 }
@@ -444,7 +444,7 @@
   margin-top: 4px;
   font-size: 0.65rem;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-weight: 600;
   text-transform: uppercase;
   width: fit-content;
@@ -462,7 +462,7 @@
   padding: 6px;
   border: none;
   background: var(--theme-border-light);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--theme-text-subtle);
   transition: all 0.15s;
@@ -473,7 +473,7 @@
 /* Template editor */
 .mailing-tpl-editor {
   border: 1px solid var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   background: var(--theme-bg-secondary);
 }
@@ -496,7 +496,7 @@
 .mailing-history-item {
   padding: 10px 14px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-bottom: 8px;
 }
 .mailing-hist-main {
@@ -527,7 +527,7 @@
   padding: 6px 10px;
   background: var(--theme-danger-bg);
   color: var(--theme-danger-text);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
 }
 
@@ -553,7 +553,7 @@
   gap: 8px;
   margin-top: 12px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
 }
 .mailing-config-result.success { background: var(--theme-success-bg-strong); color: var(--theme-success-text-alt); }

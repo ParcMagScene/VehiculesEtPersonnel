@@ -6,6 +6,23 @@
 
 const API_BASE = window.location.origin;
 
+// Token TV : lu depuis le paramètre URL ?token= ou depuis localStorage
+const TV_TOKEN = (() => {
+  const urlToken = new URLSearchParams(window.location.search).get('token');
+  if (urlToken) {
+    localStorage.setItem('tv-token', urlToken);
+    return urlToken;
+  }
+  return localStorage.getItem('tv-token') || '';
+})();
+
+/** Fetch wrapper qui inclut le header X-TV-Token */
+function tvFetch(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (TV_TOKEN) headers['X-TV-Token'] = TV_TOKEN;
+  return fetch(url, { ...options, headers });
+}
+
 // État global
 let colorRules = [];
 let locationIconRules = [];
@@ -117,7 +134,7 @@ function updateDateTime() {
 // ===============================================
 async function loadTVState() {
   try {
-    const response = await fetch(`${API_BASE}/api/display/tv-public-state`);
+    const response = await tvFetch(`${API_BASE}/api/display/tv-public-state`);
     const state = await response.json();
 
     // Appliquer la config (variables CSS)
@@ -335,7 +352,7 @@ async function toggleEventComplete(eventId, li) {
     : '/api/display/tv/complete-event';
 
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const response = await tvFetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventId: strEventId })
@@ -390,7 +407,7 @@ async function loadWeather() {
       return;
     }
 
-    const response = await fetch(`${API_BASE}/api/display/weather`);
+    const response = await tvFetch(`${API_BASE}/api/display/weather`);
     const data = await response.json();
     const weatherEl = document.getElementById('weather');
 
@@ -428,7 +445,7 @@ function getWeatherIcon(iconCode) {
 // ===============================================
 async function loadSonosNowPlaying() {
   try {
-    const response = await fetch(`${API_BASE}/api/display/sonos-now-playing`);
+    const response = await tvFetch(`${API_BASE}/api/display/sonos-now-playing`);
     const data = await response.json();
     updateSonosWidget(data);
   } catch (error) {

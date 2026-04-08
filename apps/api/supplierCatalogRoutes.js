@@ -6,7 +6,7 @@
 
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
-import { normalizeBrand, enrichArticle, resolveUnifiedFamily, linkBrandIds, applyUnifiedFamilyBatch, invalidateBrandCache, listBrandsWithStats } from './brandHelpers.js';
+import { normalizeBrand, enrichArticle, linkBrandIds, applyUnifiedFamilyBatch, invalidateBrandCache, listBrandsWithStats } from './brandHelpers.js';
 
 // ============ ARTICLES FOURNISSEURS ============
 

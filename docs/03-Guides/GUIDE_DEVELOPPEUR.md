@@ -29,7 +29,7 @@
 | **Base de données** | SQLite | via better-sqlite3 (WAL mode) |
 | **Authentification** | JWT | httpOnly cookie + silent refresh |
 | **Process manager** | PM2 | — |
-| **Domaine** | DuckDNS | (configurable via .env) |
+| **Domaine** | Dynamic DNS | (configurable via .env) |
 
 ---
 
@@ -44,7 +44,7 @@
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
+git clone https://github.com/your-org/emag.git
 cd "eM@g"
 
 # Installer toutes les dépendances (racine + apps)

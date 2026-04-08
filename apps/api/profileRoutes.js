@@ -75,8 +75,9 @@ app.delete('/api/users/me/avatar', authenticateToken, (req, res) => {
   try {
     const user = db.prepare('SELECT avatar FROM users WHERE id = ?').get(req.user.id);
     if (user?.avatar) {
-      const filePath = path.join(__dirname, '..', '..', 'public', user.avatar);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      const publicDir = path.resolve(__dirname, '..', '..', 'public');
+      const filePath = path.resolve(publicDir, user.avatar.replace(/^\//, ''));
+      if (filePath.startsWith(publicDir + path.sep) && fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
     db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(req.user.id);
     res.json({ success: true });
@@ -163,8 +164,9 @@ app.delete('/api/users/:id/avatar', authenticateToken, requireAdmin, (req, res) 
     if (!target) return res.status(404).json({ error: 'Utilisateur non trouvé' });
 
     if (target.avatar) {
-      const filePath = path.join(__dirname, '..', '..', 'public', target.avatar);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      const publicDir = path.resolve(__dirname, '..', '..', 'public');
+      const filePath = path.resolve(publicDir, target.avatar.replace(/^\//, ''));
+      if (filePath.startsWith(publicDir + path.sep) && fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
     db.prepare('UPDATE users SET avatar = NULL WHERE id = ?').run(id);
     logger.info(`🗑️ Admin ${req.user.id} a supprimé l'avatar de user ${id}`);

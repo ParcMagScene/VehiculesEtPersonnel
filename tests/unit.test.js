@@ -127,7 +127,6 @@ describe('CORS allowedOrigins (logique)', () => {
   function buildAllowedOrigins(envOverride, isDev) {
     let defaults = [
       'http://localhost:4173',
-      'http://localhost:4174',
       'http://127.0.0.1:4173',
     ];
     if (isDev) {

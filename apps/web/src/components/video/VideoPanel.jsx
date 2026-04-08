@@ -2,7 +2,7 @@
 // VideoPanel.jsx — Module principal de surveillance vidéo
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { useCameraList } from '../../hooks/useCameraList';
 import { usePTZ } from '../../hooks/usePTZ';
 import CameraGrid from './CameraGrid';
@@ -11,7 +11,10 @@ import PlaybackPanel from './PlaybackPanel';
 import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight, Film } from 'lucide-react';
 import api from '../../utils/api';
 import './VideoPanel.css';
-import { Button, Dialog, Table, Spinner, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
+import { Button, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+import { ROLES } from '../../constants';
 
 const GRID_LAYOUTS = [
   { id: 1, label: '1', cols: 1 },
@@ -36,7 +39,7 @@ const VideoPanel = ({ currentUser }) => {
   const [gridSize, setGridSize] = useState(4);
   const [gridPage, setGridPage] = useState(0);
   const [isRotating, setIsRotating] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const rotateTimer = useRef(null);
 
   // PTZ clavier
@@ -50,7 +53,7 @@ const VideoPanel = ({ currentUser }) => {
       .catch(() => setProxyAvailable(false));
   }, []);
 
-  const isAdmin = currentUser?.role === 'admin';
+  const isAdmin = currentUser?.role === ROLES.ADMIN;
   const enabledCameras = cameras.filter(c => c.enabled);
   const totalPages = Math.ceil(enabledCameras.length / gridSize);
 
@@ -121,13 +124,12 @@ const VideoPanel = ({ currentUser }) => {
   }, [editingCamera, updateCamera, createCamera]);
 
   const handleDeleteCamera = useCallback((id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: 'Supprimer cette caméra ?',
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         await deleteCamera(id);
         setEditingCamera(null);
         setShowSettings(false);
@@ -160,19 +162,19 @@ const VideoPanel = ({ currentUser }) => {
         <div className="video-panel__actions">
           {/* Vues */}
           <div className="video-panel__view-toggle">
-            <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} title="Vue grille">
+            <Button variant="ghost" className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} title="Vue grille">
               <Grid size={18} />
-            </button>
-            <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste">
+            </Button>
+            <Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste">
               <List size={18} />
-            </button>
-            <button className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements">
+            </Button>
+            <Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements">
               <Film size={18} />
-            </button>
+            </Button>
             {isAdmin && (
-              <button className={viewMode === 'admin' ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
+              <Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
                 <Settings size={18} />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -182,28 +184,27 @@ const VideoPanel = ({ currentUser }) => {
               <Divider orientation="vertical" />
               <div className="video-panel__layout-btns">
                 {GRID_LAYOUTS.map(l => (
-                  <button
-                    key={l.id}
+                  <Button variant="ghost"                     key={l.id}
                     className={`video-panel__layout-btn ${gridSize === l.id ? 'active' : ''}`}
                     onClick={() => { setGridSize(l.id); setGridPage(0); }}
                     title={`Grille ${l.label} caméras`}
                   >
                     {l.label === '1' ? <Maximize2 size={14} /> : <LayoutGrid size={14} />}
                     <span>{l.label}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="video-panel__page-controls">
-                  <Tooltip content="Page précédente"><button onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
+                  <Tooltip content="Page précédente"><Button variant="ghost" onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
                     <ChevronLeft size={16} />
-                  </button></Tooltip>
+                  </Button></Tooltip>
                   <span className="video-panel__page-info">{gridPage + 1}/{totalPages}</span>
-                  <Tooltip content="Page suivante"><button onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
+                  <Tooltip content="Page suivante"><Button variant="ghost" onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
                     <ChevronRight size={16} />
-                  </button></Tooltip>
+                  </Button></Tooltip>
                 </div>
               )}
 
@@ -323,7 +324,7 @@ const VideoPanel = ({ currentUser }) => {
         </div>
       )}
 
-      {viewMode === 'admin' && isAdmin && (
+      {viewMode === ROLES.ADMIN && isAdmin && (
         <div className="video-panel__admin">
           <div className="video-panel__admin-section">
             <h3><Shield size={18} /> Administration des caméras</h3>
@@ -394,17 +395,7 @@ const VideoPanel = ({ currentUser }) => {
           />
         </Suspense>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

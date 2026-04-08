@@ -34,11 +34,11 @@
   font-weight: 600;
 }
 .video-panel__count {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   opacity: 0.6;
   background: var(--bg-accent, var(--theme-bg-selected));
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .video-panel__actions {
@@ -91,7 +91,7 @@
   align-items: center;
   padding: 4px 6px;
   border: 1px solid var(--border-color, var(--theme-border));
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--bg-secondary, var(--theme-bg-card));
   cursor: pointer;
   color: var(--text-secondary, var(--theme-text-secondary));
@@ -104,7 +104,7 @@
   padding: 4px 16px;
   background: var(--bg-accent, var(--theme-bg-selected));
   border-bottom: 1px solid var(--border-color, var(--theme-border));
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--color-primary, var(--theme-primary));
   display: flex;
   align-items: center;
@@ -205,7 +205,7 @@
 }
 .video-panel__table code {
   font-family: 'Fira Code', monospace;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   background: var(--bg-accent, var(--theme-border-light));
   padding: 1px 4px;
   border-radius: 3px;
@@ -226,7 +226,7 @@
   align-items: center;
   gap: 6px;
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 .video-panel__admin-actions {
   display: flex;
@@ -281,7 +281,7 @@
   border-radius: var(--radius-sm, 4px);
   background: var(--bg-secondary, var(--theme-bg-card));
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   transition: all 0.15s;
 }
 .camera-grid__layout-btn.active {
@@ -298,17 +298,17 @@
 .camera-grid__page-btn {
   padding: 4px 8px;
   border: 1px solid var(--border-color, var(--theme-border));
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--bg-secondary, var(--theme-bg-card));
   cursor: pointer;
 }
 .camera-grid__page-btn:disabled { opacity: 0.3; cursor: default; }
-.camera-grid__page-info { font-size: 0.8rem; opacity: 0.7; }
+.camera-grid__page-info { font-size: var(--font-sm); opacity: 0.7; }
 
 .camera-grid__rotate-btn {
   padding: 4px 8px;
   border: 1px solid var(--border-color, var(--theme-border));
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--bg-secondary, var(--theme-bg-card));
   cursor: pointer;
 }
@@ -432,7 +432,7 @@
 .camera-player__retry-btn {
   padding: 6px 16px;
   border: 1px solid var(--close-btn-hover-bg);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--glass-subtle);
   color: var(--theme-bg-card);
   cursor: pointer;
@@ -441,7 +441,7 @@
 .camera-player__play-btn {
   padding: 10px 24px;
   border: 1px solid var(--close-btn-hover-bg);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--glass-subtle);
   color: var(--theme-bg-card);
   cursor: pointer;
@@ -532,7 +532,7 @@
   gap: 4px;
 }
 .camera-settings-form .form-group label {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--text-secondary, var(--theme-text-secondary));
 }
@@ -552,7 +552,7 @@
 
 .camera-test-result {
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-size: 0.85rem;
 }
 .camera-test-result--ok { background: var(--theme-success-bg); color: var(--theme-success-dark); border: 1px solid var(--theme-success-border); }

@@ -88,7 +88,7 @@
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   padding: 1px 7px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -124,7 +124,7 @@
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-secondary);
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 /* ── Stats bar ── */
@@ -154,7 +154,7 @@
   margin-left: auto;
   display: flex;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -186,7 +186,7 @@
   flex: 1;
   padding: 8px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   font-size: 0.82rem;
   font-weight: 600;
@@ -233,7 +233,7 @@
   width: 36px;
   height: 36px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   display: flex;
@@ -264,7 +264,7 @@
   gap: 12px;
   padding: 12px 14px;
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.15s;
   box-shadow: 0 1px 4px var(--shadow-xs);
@@ -282,7 +282,7 @@
 .mloc-zone-color {
   width: 12px;
   height: 40px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
@@ -343,7 +343,7 @@
 
 .mloc-panel-header h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-primary);
 }
@@ -420,7 +420,7 @@
 
 .mloc-eq-status {
   padding: 3px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.7rem;
   font-weight: 600;
   flex-shrink: 0;

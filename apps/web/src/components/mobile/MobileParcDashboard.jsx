@@ -1,7 +1,9 @@
-import React from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ArrowLeft, Car, Calendar, Settings, AlertCircle, ChevronRight, LayoutGrid, CheckCircle } from 'lucide-react';
+import { STATUS } from '../../constants';
+
+import { Button } from '@/design-system';
 import './MobileParcDashboard.css';
 
 function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate, onBack, onCreateReservation, onCreateMaintenance }) {
@@ -13,32 +15,32 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
       r.vehicleId === v.id && new Date(r.endDate) >= now && new Date(r.date) <= now
     );
     const hasMaintenance = maintenances.some(m =>
-      m.vehicleId === v.id && m.status !== 'completed' && m.startDate && new Date(m.endDate || m.startDate) >= now
+      m.vehicleId === v.id && m.status !== STATUS.COMPLETED && m.startDate && new Date(m.endDate || m.startDate) >= now
     );
     return !hasReservation && !hasMaintenance;
   }).length;
 
   const activeReservations = reservations.filter(r => new Date(r.endDate) >= now).length;
-  const pendingMaintenances = maintenances.filter(m => m.status === 'pending').length;
+  const pendingMaintenances = maintenances.filter(m => m.status === STATUS.PENDING).length;
   const inProgressMaintenances = maintenances.filter(m => m.status === 'in_progress').length;
 
   return (
     <div className="mobile-parc-dashboard">
       <div className="mparc-header">
-        <button className="mparc-back" onClick={onBack}>
+        <Button variant="ghost" className="mparc-back" onClick={onBack}>
           <ArrowLeft size={20} />
-        </button>
+        </Button>
         <h2>Parc véhicules</h2>
       </div>
 
       {/* Statistiques */}
       <div className="mparc-stats">
-        <div className="mparc-stat green" onClick={() => onNavigate('availability')}>
+        <div className="mparc-stat green" role="button" tabIndex={0} onClick={() => onNavigate('availability')}>
           <Car size={24} />
           <span className="mparc-stat-val">{availableVehicles}</span>
           <span className="mparc-stat-label">Disponibles</span>
         </div>
-        <div className="mparc-stat blue" onClick={() => onNavigate('planning')}>
+        <div className="mparc-stat blue" role="button" tabIndex={0} onClick={() => onNavigate('planning')}>
           <Calendar size={24} />
           <span className="mparc-stat-val">{activeReservations}</span>
           <span className="mparc-stat-label">Réservations</span>
@@ -59,7 +61,7 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
       <div className="mparc-nav-section">
         <h3>Accès rapide</h3>
 
-        <button className="mparc-nav-card" onClick={() => onNavigate('planning')}>
+        <Button variant="ghost" className="mparc-nav-card" onClick={() => onNavigate('planning')}>
           <div className="mparc-nav-icon blue">
             <LayoutGrid size={22} />
           </div>
@@ -68,9 +70,9 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
             <span className="mparc-nav-desc">Vue mensuelle du planning</span>
           </div>
           <ChevronRight size={18} className="mparc-nav-chevron" />
-        </button>
+        </Button>
 
-        <button className="mparc-nav-card" onClick={() => onNavigate('availability')}>
+        <Button variant="ghost" className="mparc-nav-card" onClick={() => onNavigate('availability')}>
           <div className="mparc-nav-icon green">
             <CheckCircle size={22} />
           </div>
@@ -79,9 +81,9 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
             <span className="mparc-nav-desc">Véhicules disponibles par jour</span>
           </div>
           <ChevronRight size={18} className="mparc-nav-chevron" />
-        </button>
+        </Button>
 
-        <button className="mparc-nav-card" onClick={() => {
+        <Button variant="ghost" className="mparc-nav-card" onClick={() => {
           onNavigate('reservations');
           setTimeout(() => onCreateReservation?.(), 100);
         }}>
@@ -93,9 +95,9 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
             <span className="mparc-nav-desc">Créer ou consulter une réservation</span>
           </div>
           <ChevronRight size={18} className="mparc-nav-chevron" />
-        </button>
+        </Button>
 
-        <button className="mparc-nav-card" onClick={() => {
+        <Button variant="ghost" className="mparc-nav-card" onClick={() => {
           onNavigate('maintenances');
           setTimeout(() => onCreateMaintenance?.(), 100);
         }}>
@@ -107,7 +109,7 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
             <span className="mparc-nav-desc">Signaler un problème ou programmer</span>
           </div>
           <ChevronRight size={18} className="mparc-nav-chevron" />
-        </button>
+        </Button>
       </div>
 
       {/* Prochaines réservations */}

@@ -3,17 +3,20 @@ import {
   ClipboardList, Plus, ChevronLeft, ChevronRight, ChevronDown, Check, X, Clock,
   User, Edit2, Trash2, FileDown, Briefcase, MapPin, AlertCircle,
   CalendarDays, LayoutList, Monitor, Calendar, UserPlus, Eye, EyeOff, Settings,
-  Repeat, SkipForward, Link, RefreshCw, Palette, Truck, CheckCheck, Search, Unlink
+  Repeat, SkipForward, Link, RefreshCw, Truck, CheckCheck
 } from 'lucide-react';
 import api from '../../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 import AffaireBadge from '../AffaireBadge';
 import { formatDateFr } from '../../utils/formatUtils';
-import { Accordion, Button, DetailRow, Dialog, Divider, Input, Select, Tooltip } from '@/design-system';
+import { Accordion, Button, DetailRow, Divider, Input, Select, Tooltip } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import EventTaskModal from './EventTaskModal';
 import TaskEditModal from './TaskEditModal';
 import AddTaskModal from './AddTaskModal';
+import { STATUS } from '../../constants';
+
 import './TaskPlanningPanel.css';
 
 const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
@@ -83,7 +86,7 @@ const mapAffaireToSection = (affaire) => {
   return info ? info.section : 'manual';
 };
 
-const STATUS_ORDER = ['pending', 'in_progress', 'done', 'cancelled'];
+const _STATUS_ORDER = ['pending', 'in_progress', 'done', 'cancelled'];
 
 const todayStr = () => {
   const d = new Date();
@@ -118,8 +121,9 @@ const getWeekDays = (dateStr) => {
 };
 
 // ═══ Composant Principal ═══
-function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavigateToEntity }) {
+function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavigateToEntity }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [tasks, setTasks] = useState([]);
   const [persons, setPersons] = useState([]);
   const [affaires, setAffaires] = useState([]);
@@ -130,10 +134,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [wkSplitRatio, setWkSplitRatio] = useState(50); // % height for events section
   const wkSplitDragging = useRef(false);
   const wkSplitContentRef = useRef(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Inline add form
-  const [addingSection, setAddingSection] = useState(null);
+  const [_addingSection, setAddingSection] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPerson, setNewTaskPerson] = useState('');
   const [newTaskAffaire, setNewTaskAffaire] = useState('');
@@ -146,7 +149,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   const [newTaskVehicle, setNewTaskVehicle] = useState(''); // vehicle ID (for new reservation)
   // Affaire autocomplete (inline add)
   const [affaireInlineSearch, setAffaireInlineSearch] = useState('');
-  const [affaireInlineOpen, setAffaireInlineOpen] = useState(false);
+  const [_affaireInlineOpen, setAffaireInlineOpen] = useState(false);
   const [allAffaires, setAllAffaires] = useState([]);
   const affaireInlineRef = useRef(null);
   const [showPdfExport, setShowPdfExport] = useState(false);
@@ -238,7 +241,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       const data = await api.getPersons();
       // Filtrer pour ne garder que les permanents actifs
       const permanents = (Array.isArray(data) ? data : []).filter(
-        p => p.type === 'permanent' && p.status !== 'inactive'
+        p => p.type === 'permanent' && p.status !== STATUS.INACTIVE
       );
       setPersons(permanents);
     } catch {
@@ -266,7 +269,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   }, []);
 
   // Filtrer les affaires pour l'autocomplete inline
-  const filteredInlineAffaires = useMemo(() => {
+  const _filteredInlineAffaires = useMemo(() => {
     if (!affaireInlineSearch.trim()) return allAffaires.slice(0, 30);
     const q = affaireInlineSearch.toLowerCase();
     return allAffaires.filter(a =>
@@ -276,7 +279,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     ).slice(0, 30);
   }, [allAffaires, affaireInlineSearch]);
 
-  const selectedInlineAffaire = useMemo(() => {
+  const _selectedInlineAffaire = useMemo(() => {
     if (!newTaskAffaire) return null;
     return allAffaires.find(a => a.numeroAffaire === newTaskAffaire) || null;
   }, [allAffaires, newTaskAffaire]);
@@ -384,15 +387,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   const handleDeleteRecurring = async (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la tâche récurrente',
       message: 'Supprimer cette tâche récurrente ?',
       onConfirm: async () => {
         try { await api.deleteRecurringTask(id); toast.success('Supprimée'); loadRecurringTasks(); }
         catch { toast.error('Erreur suppression'); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -414,7 +415,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   const handleDeleteIcal = async (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le calendrier',
       message: 'Supprimer ce calendrier iCal ?',
       onConfirm: async () => {
@@ -424,9 +425,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           await loadIcalCalendars();
           loadIcalEvents();
         } catch { toast.error('Erreur suppression'); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -439,7 +438,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   const handleRollover = async () => {
-    setConfirmDialog({
+    confirm({
       title: 'Reporter les tâches',
       message: `Reporter les tâches non terminées du ${formatDateFr(selectedDate)} au lendemain ?`,
       onConfirm: async () => {
@@ -448,9 +447,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           toast.success(`${res.rolled || 0} tâche(s) reportée(s)`);
           loadTasks(true);
         } catch { toast.error('Erreur report'); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -490,7 +487,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     [displayEvents, linkedEventIds]
   );
 
-  const eventsBySection = useMemo(() => {
+  const _eventsBySection = useMemo(() => {
     const groups = {};
     Object.keys(SECTIONS).forEach(k => { groups[k] = []; });
     unlinkedEvents.forEach(ev => {
@@ -761,7 +758,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   }, [viewMode, weekDays, tasks, unlinkedEvents, enrichedAffaires, filteredWeekGoogleEvents, icalEvents]);
 
   // Index des display events par affaire_id (pour affectation personnel sur les lignes affaire)
-  const displayEventByAffaire = useMemo(() => {
+  const _displayEventByAffaire = useMemo(() => {
     const map = new Map();
     displayEvents.forEach(ev => {
       if (ev.affaireId) {
@@ -829,13 +826,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       <div className="event-assign-container">
         <div className="multi-assign-chips">
           {assignments.map(a => (
-            <span key={a.id} className="task-person assigned" onClick={() => setAssigningEntity(isOpen ? null : key)}>
+            <span key={a.id} className="task-person assigned" role="button" tabIndex={0} onClick={() => setAssigningEntity(isOpen ? null : key)}>
               <User size={11} />
               {a.firstName} {a.lastName?.charAt(0)}.
             </span>
           ))}
           <Tooltip content="Affecter du personnel">
-            <Button variant="primary" size="sm" iconOnly className="btn-assign" onClick={() => setAssigningEntity(isOpen ? null : key)}>
+            <Button variant="primary" size="sm" iconOnly className="btn-assign" onClick={() => setAssigningEntity(isOpen ? null : key)} aria-label="Affecter">
               <UserPlus size={13} />
             </Button>
           </Tooltip>
@@ -846,7 +843,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             {persons.map(p => {
               const isAssigned = assignments.some(a => a.personId === p.id);
               return (
-                <div key={p.id} className={`assign-option ${isAssigned ? 'selected' : ''}`} onClick={() => handleToggleAssignment(entityType, entityId, p.id)}>
+                <div key={p.id} className={`assign-option ${isAssigned ? 'selected' : ''}`} role="button" tabIndex={0} onClick={() => handleToggleAssignment(entityType, entityId, p.id)}>
                   <span className={`assign-check ${isAssigned ? 'on' : ''}`}>{isAssigned ? <Check size={12} /> : null}</span>
                   {p.firstName || p.prenom} {p.lastName || p.nom}
                 </div>
@@ -857,8 +854,6 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       </div>
     );
   };
-
-
 
   // Toggle task status
   const cycleStatus = async (task) => {
@@ -879,7 +874,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
   // Delete task
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la tâche',
       message: 'Voulez-vous supprimer cette tâche ?',
       onConfirm: async () => {
@@ -890,15 +885,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         } catch (err) {
           toast.error('Erreur suppression');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
   // Retirer un événement d'affichage de la planification
   const handleDeleteDisplayEvent = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Retirer de la planification',
       message: 'Supprimer cet événement d\'affichage ?',
       onConfirm: async () => {
@@ -909,14 +902,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         } catch (err) {
           toast.error('Erreur suppression');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
   // Add task inline
-  const handleAddTask = async (section) => {
+  const _handleAddTask = async (section) => {
     if (!newTaskTitle.trim()) {
       toast.warning('Titre requis');
       return;
@@ -983,7 +974,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         section: effectiveSection,
         title: finalTitle,
         person_id: newTaskPerson || null,
-        status: 'pending',
+        status: STATUS.PENDING,
         source_type: selectedGoogEvent ? (selectedGoogEvent._source === 'ical' ? 'ical_event' : 'google_event') : selectedAffaire ? 'affaire' : 'manual',
         source_id: selectedGoogEvent?.id || null,
         google_event_title: selectedGoogEvent?.summary || selectedGoogEvent?.title || null,
@@ -1023,7 +1014,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   const renderTaskRow = (task) => {
-    const isDone = task.status === 'done';
+    const isDone = task.status === STATUS.DONE;
     const isProgress = task.status === 'in_progress';
     const isGoogle = task.sourceType === 'google_event';
     const isHidden = task.visible === 0;
@@ -1147,14 +1138,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
     return (
       <div key={task.id} className={`task-row event-row-cols ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
-        <button
-          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+        <Button variant="ghost"           className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           onClick={() => cycleStatus(task)}
           title={`Statut: ${task.status} — cliquer pour changer`}
         >
           {isDone && <Check size={14} />}
           {isProgress && <Clock size={12} />}
-        </button>
+        </Button>
 
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAffaire?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
@@ -1196,34 +1186,31 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {renderMultiAssign('task', task.id)}
           {/* Lier à une affaire (seulement si pas déjà liée) */}
           {!affaireNum && (
-            <button
-              className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
+            <Button variant="ghost"               className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
               title="Lier à une affaire"
               onClick={(e) => { e.stopPropagation(); setLinkingTaskId(linkingTaskId === task.id ? null : task.id); setLinkTaskSearchQuery(''); }}
             >
               <Link size={13} />
-            </button>
+            </Button>
           )}
           <Tooltip content={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}>
-            <button
-              className={`toggle-visible ${isHidden ? 'off' : ''}`}
+            <Button variant="ghost"               className={`toggle-visible ${isHidden ? 'off' : ''}`}
               onClick={() => handleToggleTaskVisible(task)}
             >
               {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Modifier cette tâche">
-            <button
-              className="edit"
+            <Button variant="ghost"               className="edit"
               onClick={() => setEditingTask(task)}
             >
               <Edit2 size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Supprimer">
-            <button className="delete" onClick={() => handleDelete(task.id)}>
+            <Button variant="ghost" className="delete" onClick={() => handleDelete(task.id)}>
               <Trash2 size={14} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
         {/* Popover de liaison manuelle tâche → affaire */}
@@ -1254,9 +1241,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
               <div className="link-popover-header">
                 <span>🔗 Lier à une affaire</span>
-                <button className="link-popover-close" onClick={() => { setLinkingTaskId(null); setLinkTaskSearchQuery(''); }}>
+                <Button variant="ghost" className="link-popover-close" onClick={() => { setLinkingTaskId(null); setLinkTaskSearchQuery(''); }}>
                   <X size={14} />
-                </button>
+                </Button>
               </div>
               <Input
                 type="text"
@@ -1268,27 +1255,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                 onKeyDown={(e) => { if (e.key === 'Escape') { setLinkingTaskId(null); setLinkTaskSearchQuery(''); } }}
               />
               {linkTaskSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && !affaires.some(a => (a.numeroAffaire || '').toUpperCase() === linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim()) && (
-                <button
-                  className="link-option link-option-create"
+                <Button variant="ghost"                   className="link-option link-option-create"
                   onClick={() => {
                     const num = linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
                     handleLinkTaskToAffaire(task.id, num);
                   }}
                 >
                   ➕ Lier à <strong>{linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
-                </button>
+                </Button>
               )}
               {linkableAff.length > 0 ? (
                 <div className="link-options-list">
                   {linkableAff.map(a => (
-                    <button
-                      key={a.id || a.numeroAffaire}
+                    <Button variant="ghost"                       key={a.id || a.numeroAffaire}
                       className="link-option"
                       onClick={() => handleLinkTaskToAffaire(task.id, a.numeroAffaire)}
                     >
                       <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                       <span className="link-option-client">{a.client || a.titre || 'Sans client'}</span>
-                    </button>
+                    </Button>
                   ))}
                   {filtered.length > 10 && <div className="link-no-results" style={{ fontSize: '0.7rem', opacity: 0.6 }}>+{filtered.length - 10} autres…</div>}
                 </div>
@@ -1302,9 +1287,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     );
   };
 
-  const renderDisplayEventRow = (event) => {
+  const _renderDisplayEventRow = (event) => {
     const typeInfo = EVENT_TYPES[event.type] || { label: event.type, emoji: '📌', color: 'var(--theme-text-secondary)' };
-    const isPrep = event.type === 'preparation';
+    const _isPrep = event.type === 'preparation';
     const isHidden = event.visible === 0;
 
     // Le type est redondant si on est dans une section affaireOnly (le bandeau dit déjà "Préparations X", "Chargement", etc.)
@@ -1327,19 +1312,18 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
       : `${typeInfo.label}${event.affaireId && !affaireNum ? ' (' + event.affaireId + ')' : ''}`;
     const displayName = affaireNom || fallbackName;
 
-    const isDone = event.status === 'done';
+    const isDone = event.status === STATUS.DONE;
     const isProgress = event.status === 'in_progress';
 
     return (
       <div key={`de-${event.id}`} className={`task-row event-row-cols display-event-row ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}>
-        <button
-          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+        <Button variant="ghost"           className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           onClick={() => handleCycleDisplayEventStatus(event)}
           title={`Statut: ${event.status || 'pending'} — cliquer pour changer`}
         >
           {isDone && <Check size={14} />}
           {isProgress && <Clock size={12} />}
-        </button>
+        </Button>
 
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={affaireTypeResolved} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
@@ -1361,17 +1345,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {/* Multi-affectation personnel */}
           {renderMultiAssign('display_event', event.id)}
           <Tooltip content={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}>
-            <button
-              className={`toggle-visible ${isHidden ? 'off' : ''}`}
+            <Button variant="ghost"               className={`toggle-visible ${isHidden ? 'off' : ''}`}
               onClick={() => handleToggleDisplayEventVisible(event)}
             >
               {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Retirer">
-            <button className="delete" onClick={() => handleDeleteDisplayEvent(event.id)}>
+            <Button variant="ghost" className="delete" onClick={() => handleDeleteDisplayEvent(event.id)}>
               <Trash2 size={14} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
       </div>
@@ -1380,7 +1363,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
   // Masquer une affaire de la planification
   const handleHideAffaire = (affaire) => {
-    setConfirmDialog({
+    confirm({
       title: 'Retirer de la planification',
       message: `Masquer l'affaire ${affaire.numeroAffaire} de la planification ?`,
       onConfirm: async () => {
@@ -1391,18 +1374,16 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         } catch (err) {
           toast.error('Erreur masquage affaire');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
   // Carte affaire dans une section — layout colonnes aligné
-  const renderAffaireRow = (affaire) => {
+  const _renderAffaireRow = (affaire) => {
     const typeInfo = AFFAIRE_TYPE_INFO[affaire.type] || { label: affaire.type || 'Affaire', emoji: '📋', color: 'var(--theme-text-secondary)' };
     const isExpanded = expandedRdv === affaire.numeroAffaire;
     const planningStatus = affaire.planningStatus || eventStatuses.get(`rdv:${affaire.numeroAffaire}`) || 'pending';
-    const isDone = planningStatus === 'done';
+    const isDone = planningStatus === STATUS.DONE;
     const isProgress = planningStatus === 'in_progress';
     const displayNom = affaire.nom || affaire.event_name || affaire.titre || affaire.client || typeInfo.label;
     const displayClient = affaire.client || '';
@@ -1424,20 +1405,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         className={`task-row event-row-cols affaire-row ${isDone ? 'task-done-row' : ''} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
         style={{ flexWrap: 'wrap' }}
       >
-        <button
-          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+        <Button variant="ghost"           className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           title={`Statut: ${planningStatus} — cliquer pour changer`}
           onClick={(e) => { e.stopPropagation(); handleCycleAffaireStatus(affaire.numeroAffaire); }}
         >
           {isDone && <Check size={14} />}
           {isProgress && <Clock size={12} />}
-        </button>
+        </Button>
 
         <span className="ev-col ev-col-affaire">
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { onNavigateToEntity('affaire', { numero: num }); } : undefined} />
         </span>
 
-        <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
           {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
         </span>
@@ -1453,19 +1433,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {/* Multi-affectation personnel directe sur l'affaire */}
           {renderMultiAssign('affaire', affaire.numeroAffaire)}
           <Tooltip content="Voir détails">
-            <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
+            <Button variant="ghost" className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
               <Eye size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Définir les tâches pour cette affaire">
-            <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
+            <Button variant="ghost" className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
               <Plus size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Retirer de la planification">
-            <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
+            <Button variant="ghost" className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
               <X size={14} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
 
@@ -1491,7 +1471,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const timeStr = startDT.includes('T')
       ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
       : 'Journée';
-    const dayStr = startDT.includes('T')
+    const _dayStr = startDT.includes('T')
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const location = event.location || '';
@@ -1527,7 +1507,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[displayNom, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={[displayNom, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -1536,20 +1516,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
             {isProcessed ? '✓' : '⚙'}
           </span>
-          <button
-            className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+          <Button variant="ghost"             className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
             title="Lier à une affaire"
             style={affaireNum ? { visibility: 'hidden' } : {}}
             onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
           >
             <Link size={13} />
-          </button>
+          </Button>
         </div>
         {/* Mini-badges des tâches créées depuis cet événement */}
         {linkedTasks.length > 0 && (
           <div className="event-linked-tasks">
             {linkedTasks.map(t => {
-              const isDone = t.status === 'done';
+              const isDone = t.status === STATUS.DONE;
               const label = (t.title || '').replace(/\s*—.*$/, '').replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '').trim();
               const emoji = (t.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+/u)?.[0] || '📋';
               return (
@@ -1566,9 +1545,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
             <div className="link-popover-header">
               <span>🔗 Lier à une affaire</span>
-              <button className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
+              <Button variant="ghost" className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
                 <X size={14} />
-              </button>
+              </Button>
             </div>
             <Input
               type="text"
@@ -1581,27 +1560,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             />
             {/* Saisie directe d'un numéro AF */}
             {linkSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
-              <button
-                className="link-option link-option-create"
+              <Button variant="ghost"                 className="link-option link-option-create"
                 onClick={() => {
                   const num = linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
                   handleManualLink(event, num);
                 }}
               >
                 ➕ Créer & lier <strong>{linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
-              </button>
+              </Button>
             )}
             {linkableAffaires.length > 0 && (
               <div className="link-options-list">
                 {linkableAffaires.map(a => (
-                  <button
-                    key={a.id || a.numeroAffaire}
+                  <Button variant="ghost"                     key={a.id || a.numeroAffaire}
                     className="link-option"
                     onClick={() => handleManualLink(event, a.numeroAffaire)}
                   >
                     <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                     <span className="link-option-client">{a.client || 'Sans client'}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -1638,7 +1615,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
         </span>
 
-        <span className="ev-col ev-col-nom" title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
           {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
         </span>
@@ -1652,19 +1629,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
 
         <div className="task-actions rdv-actions">
           <Tooltip content="Voir détails">
-            <button className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
+            <Button variant="ghost" className="btn-rdv-view" onClick={() => setExpandedRdv(isExpanded ? null : affaire.numeroAffaire)}>
               <Eye size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Définir les tâches pour cette affaire">
-            <button className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
+            <Button variant="ghost" className="task-status-btn" onClick={(e) => { e.stopPropagation(); openAffaireTaskModal(affaire); }}>
               <Plus size={14} />
-            </button>
+            </Button>
           </Tooltip>
           <Tooltip content="Retirer de la planification">
-            <button className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
+            <Button variant="ghost" className="delete" onClick={(e) => { e.stopPropagation(); handleHideAffaire(affaire); }}>
               <X size={14} />
-            </button>
+            </Button>
           </Tooltip>
         </div>
 
@@ -1706,7 +1683,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const timeStr = startDT.includes('T')
       ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
       : 'Journée';
-    const dayStr = startDT.includes('T')
+    const _dayStr = startDT.includes('T')
       ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
       : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
     const isProcessed = processedGoogleIds.has(event.id);
@@ -1740,7 +1717,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" title={[displayNom, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={[displayNom, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -1751,20 +1728,19 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
             {isProcessed ? '✓' : '⚙'}
           </span>
-          <button
-            className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+          <Button variant="ghost"             className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
             title="Lier à une affaire"
             style={affaireNum ? { visibility: 'hidden' } : {}}
             onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
           >
             <Link size={13} />
-          </button>
+          </Button>
         </div>
         {/* Mini-badges des tâches créées depuis cet événement iCal */}
         {linkedTasks.length > 0 && (
           <div className="event-linked-tasks">
             {linkedTasks.map(t => {
-              const isDone = t.status === 'done';
+              const isDone = t.status === STATUS.DONE;
               const label = (t.title || '').replace(/\s*—.*$/, '').replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '').trim();
               const emoji = (t.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+/u)?.[0] || '📋';
               return (
@@ -1780,9 +1756,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
             <div className="link-popover-header">
               <span>🔗 Lier à une affaire</span>
-              <button className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
+              <Button variant="ghost" className="link-popover-close" onClick={() => { setLinkingEvent(null); setLinkSearchQuery(''); }}>
                 <X size={14} />
-              </button>
+              </Button>
             </div>
             <Input
               type="text"
@@ -1794,27 +1770,25 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               onKeyDown={(e) => { if (e.key === 'Escape') { setLinkingEvent(null); setLinkSearchQuery(''); } }}
             />
             {linkSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) && (
-              <button
-                className="link-option link-option-create"
+              <Button variant="ghost"                 className="link-option link-option-create"
                 onClick={() => {
                   const num = linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
                   handleManualLink(event, num);
                 }}
               >
                 ➕ Créer & lier <strong>{linkSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}</strong>
-              </button>
+              </Button>
             )}
             {linkableAffaires.length > 0 && (
               <div className="link-options-list">
                 {linkableAffaires.map(a => (
-                  <button
-                    key={a.id || a.numeroAffaire}
+                  <Button variant="ghost"                     key={a.id || a.numeroAffaire}
                     className="link-option"
                     onClick={() => handleManualLink(event, a.numeroAffaire)}
                   >
                     <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                     <span className="link-option-client">{a.client || 'Sans client'}</span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -1830,7 +1804,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   // ── Rendu compact d'une mini-carte pour la vue semaine ──
   const renderWeekMiniCard = (item, type) => {
     if (type === 'task') {
-      const isDone = item.status === 'done';
+      const isDone = item.status === STATUS.DONE;
       const isProgress = item.status === 'in_progress';
       const sectionInfo = SECTIONS[normalizeSection(item.section || 'manual')] || SECTIONS.manual;
       return (
@@ -1839,13 +1813,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           className={`wk-card wk-task ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''} ${item.visible === 0 ? 'hidden-display' : ''}`}
           style={{ borderLeftColor: sectionInfo.color }}
         >
-          <button
-            className={`wk-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+          <Button variant="ghost"             className={`wk-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
             onClick={() => cycleStatus(item)}
           >
             {isDone && <Check size={10} />}
             {isProgress && <Clock size={10} />}
-          </button>
+          </Button>
           {(() => {
             const an = item.affaireNum || extractAffaireNum(item.title) || extractAffaireNum(item.googleEventTitle);
             return an ? <AffaireBadge numero={an} type={affaireByNum.get(an.toUpperCase())?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null;
@@ -1872,15 +1845,15 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             <span className="wk-person">{item.personFirstName?.charAt(0)}{item.personLastName?.charAt(0)}</span>
           )}
           <div className="wk-actions">
-            <button onClick={() => setEditingTask(item)} title="Modifier">
+            <Button variant="ghost" onClick={() => setEditingTask(item)} title="Modifier">
               <Edit2 size={10} />
-            </button>
-            <button onClick={() => handleToggleTaskVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
+            </Button>
+            <Button variant="ghost" onClick={() => handleToggleTaskVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
               {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
-            </button>
-            <button className="del" onClick={() => handleDelete(item.id)} title="Supprimer">
+            </Button>
+            <Button variant="ghost" className="del" onClick={() => handleDelete(item.id)} title="Supprimer">
               <Trash2 size={10} />
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -1898,12 +1871,12 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
             {typeInfo.emoji} {item.client || typeInfo.label}
           </span>
           <div className="wk-actions">
-            <button onClick={() => handleToggleDisplayEventVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
+            <Button variant="ghost" onClick={() => handleToggleDisplayEventVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
               {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
-            </button>
-            <button className="del" onClick={() => handleDeleteDisplayEvent(item.id)} title="Retirer">
+            </Button>
+            <Button variant="ghost" className="del" onClick={() => handleDeleteDisplayEvent(item.id)} title="Retirer">
               <Trash2 size={10} />
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -1928,9 +1901,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           {item._linkedGoogleEvent && <span className="wk-google-badge" title="Lié Google">G</span>}
           {isProcessed && <span className="wk-status-dot done">✓</span>}
           <div className="wk-actions">
-            <button className="del" onClick={(e) => { e.stopPropagation(); handleHideAffaire(item); }} title="Retirer">
+            <Button variant="ghost" className="del" onClick={(e) => { e.stopPropagation(); handleHideAffaire(item); }} title="Retirer">
               <X size={10} />
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -2043,6 +2016,9 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     const affaireCount = isRdv ? sectionAffaires.length : 0;
     const totalCount = sectionTasks.length + affaireCount + googleRdvCount + mergedCount;
 
+    // Masquer les sections opérationnelles vides
+    if (!isRdv && !isEvenements && totalCount === 0) return null;
+
     const isCollapsible = isEvenements;
     const isCollapsed = isCollapsible && collapsedSections[sectionKey];
 
@@ -2061,13 +2037,13 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
           <span className="section-count" style={{ background: info.color }}>{totalCount}</span>
           {isEvenements && (
             <div className="ical-header-actions" onClick={e => e.stopPropagation()}>
-              <button className="ical-manage-btn" onClick={() => setShowIcalManager(v => !v)}>
+              <Button variant="ghost" className="ical-manage-btn" onClick={() => setShowIcalManager(v => !v)}>
                 <Link size={13} /> iCal ({icalCalendars.length})
-              </button>
+              </Button>
               <Tooltip content="Rafraîchir les événements iCal">
-                <button className="ical-refresh-btn" onClick={() => { loadIcalCalendars(); loadIcalEvents(); }}>
+                <Button variant="ghost" className="ical-refresh-btn" onClick={() => { loadIcalCalendars(); loadIcalEvents(); }}>
                   <RefreshCw size={13} className={icalLoading ? 'spinning' : ''} />
-                </button>
+                </Button>
               </Tooltip>
             </div>
           )}
@@ -2154,7 +2130,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   const totalTasks = tasks.length;
-  const doneTasks = tasks.filter(t => t.status === 'done').length;
+  const doneTasks = tasks.filter(t => t.status === STATUS.DONE).length;
 
   // Toggle la visibilité d'une tâche sur l'affichage dynamique
   const handleToggleTaskVisible = async (task) => {
@@ -2194,7 +2170,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
     }
   };
 
-  const handleCyclePlanningEventStatus = async (eventType, eventId) => {
+  const _handleCyclePlanningEventStatus = async (eventType, eventId) => {
     try {
       await api.cyclePlanningEventStatus(eventType, eventId);
       loadTasks(true);
@@ -2204,7 +2180,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
   };
 
   // Format date court pour le mode semaine
-  const getDateBadge = (dateStr) => {
+  const _getDateBadge = (dateStr) => {
     if (viewMode !== 'week' || !dateStr) return null;
     const d = new Date(dateStr + 'T00:00:00');
     return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
@@ -2217,34 +2193,32 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         <div className="tp-toolbar-left">
           {/* Toggle vue Jour / Semaine */}
           <div className="tp-view-toggle">
-            <button
-              className={viewMode === 'day' ? 'active' : ''}
+            <Button variant="ghost"               className={viewMode === 'day' ? 'active' : ''}
               onClick={() => setViewMode('day')}
               title="Vue jour"
             >
               <LayoutList size={15} /> Jour
-            </button>
-            <button
-              className={viewMode === 'week' ? 'active' : ''}
+            </Button>
+            <Button variant="ghost"               className={viewMode === 'week' ? 'active' : ''}
               onClick={() => setViewMode('week')}
               title="Vue semaine"
             >
               <CalendarDays size={15} /> Semaine
-            </button>
+            </Button>
           </div>
 
           <div className="tp-date-nav">
-            <button onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? -7 : -1))}>
+            <Button variant="ghost" onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? -7 : -1))}>
               <ChevronLeft size={16} />
-            </button>
-            <span className="tp-current-date" onClick={() => setSelectedDate(todayStr())} title="Aujourd'hui">
+            </Button>
+            <span className="tp-current-date" role="button" tabIndex={0} onClick={() => setSelectedDate(todayStr())} title="Aujourd'hui">
               {viewMode === 'week'
                 ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
                 : formatDateFr(selectedDate)}
             </span>
-            <button onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? 7 : 1))}>
+            <Button variant="ghost" onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? 7 : 1))}>
               <ChevronRight size={16} />
-            </button>
+            </Button>
           </div>
           {totalTasks > 0 && (
             <span style={{ fontSize: '0.82rem', color: 'var(--theme-text-secondary)' }}>
@@ -2320,8 +2294,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               <div className="recurring-form-row">
                 <Input type="text" placeholder="Notes (optionnel)" value={recurringForm.notes || ''} onChange={e => setRecurringForm(f => ({ ...f, notes: e.target.value }))} />
                 <div className="form-actions">
-                  <Button variant="success" size="sm" iconOnly onClick={handleSaveRecurring}><Check size={14} /></Button>
-                  <Button variant="ghost" size="sm" iconOnly onClick={() => setRecurringForm(null)}><X size={14} /></Button>
+                  <Button variant="success" size="sm" iconOnly onClick={handleSaveRecurring} aria-label="Enregistrer"><Check size={14} /></Button>
+                  <Button variant="ghost" size="sm" iconOnly onClick={() => setRecurringForm(null)} aria-label="Annuler"><X size={14} /></Button>
                 </div>
               </div>
             </div>
@@ -2345,8 +2319,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                   </span>
                 </div>
                 <div className="recurring-item-actions">
-                  <Tooltip content="Modifier"><button onClick={() => setRecurringForm({ ...rt })}><Edit2 size={14} /></button></Tooltip>
-                  <Tooltip content="Supprimer"><button className="delete" onClick={() => handleDeleteRecurring(rt.id)}><Trash2 size={14} /></button></Tooltip>
+                  <Tooltip content="Modifier"><Button variant="ghost" onClick={() => setRecurringForm({ ...rt })}><Edit2 size={14} /></Button></Tooltip>
+                  <Tooltip content="Supprimer"><Button variant="ghost" className="delete" onClick={() => handleDeleteRecurring(rt.id)}><Trash2 size={14} /></Button></Tooltip>
                 </div>
               </div>
             ))}
@@ -2374,7 +2348,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
               const dayData = weekGroupedByDay?.[d] || { tasks: [], events: [], affaires: [], googleEvents: [] };
               const evCount = dayData.googleEvents.length + dayData.affaires.length + dayData.events.length;
               const taskCount = dayData.tasks.length;
-              const total = evCount + taskCount;
+              const _total = evCount + taskCount;
 
               return (
                 <div key={d} className={`wk-day-col ${isToday ? 'today' : ''} ${isExpanded ? 'expanded' : ''}`}>
@@ -2505,8 +2479,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                     <div className="ical-form-row">
                       <input type="color" value={icalForm.color || '#3b82f6'} onChange={e => setIcalForm(f => ({ ...f, color: e.target.value }))} title="Couleur" />
                       <div className="form-actions">
-                        <Button variant="success" size="sm" iconOnly onClick={handleSaveIcal}><Check size={14} /></Button>
-                        <Button variant="ghost" size="sm" iconOnly onClick={() => setIcalForm(null)}><X size={14} /></Button>
+                        <Button variant="success" size="sm" iconOnly onClick={handleSaveIcal} aria-label="Enregistrer"><Check size={14} /></Button>
+                        <Button variant="ghost" size="sm" iconOnly onClick={() => setIcalForm(null)} aria-label="Annuler"><X size={14} /></Button>
                       </div>
                     </div>
                   </div>
@@ -2527,8 +2501,8 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
                         )}
                       </div>
                       <div className="ical-cal-actions">
-                        <Tooltip content="Modifier"><button onClick={() => setIcalForm({ ...cal })}><Edit2 size={13} /></button></Tooltip>
-                        <Tooltip content="Supprimer"><button className="delete" onClick={() => handleDeleteIcal(cal.id)}><Trash2 size={13} /></button></Tooltip>
+                        <Tooltip content="Modifier"><Button variant="ghost" onClick={() => setIcalForm({ ...cal })}><Edit2 size={13} /></Button></Tooltip>
+                        <Tooltip content="Supprimer"><Button variant="ghost" className="delete" onClick={() => handleDeleteIcal(cal.id)}><Trash2 size={13} /></Button></Tooltip>
                       </div>
                     </div>
                   ))}
@@ -2549,17 +2523,7 @@ function TaskPlanningPanel({ currentUser, refreshKey, googleEvents = [], onNavig
         </div>
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
       {showPdfExport && (
         <Suspense fallback={null}>
           <TaskPDFExportModal

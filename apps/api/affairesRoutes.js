@@ -1,6 +1,7 @@
 import db from './database.js';
 import logger from './logger.js';
 import { listCache, cacheMiddleware, invalidateEntity } from './cache.js';
+import { validate, affaireSchema } from './schemas/imports.js';
 
 export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
 
@@ -166,12 +167,9 @@ app.get('/api/affaires/personnel-counts', authenticateToken, (req, res) => {
 });
 
 // POST /api/affaires — Créer ou mettre à jour une affaire (upsert par numero_affaire)
-app.post('/api/affaires', authenticateToken, (req, res) => {
+app.post('/api/affaires', authenticateToken, validate(affaireSchema), (req, res) => {
   try {
     const a = req.body;
-    if (!a.numero_affaire) {
-      return res.status(400).json({ error: 'Le numéro d\'affaire est requis' });
-    }
 
     // Vérifier si l'affaire existe déjà
     const existing = db.prepare('SELECT id FROM affaires WHERE numero_affaire = ?').get(a.numero_affaire);

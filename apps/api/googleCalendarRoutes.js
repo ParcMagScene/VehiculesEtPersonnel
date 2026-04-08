@@ -5,6 +5,14 @@ import logger from './logger.js';
 
 const GOOGLE_API_BASE = 'https://www.googleapis.com/calendar/v3';
 
+// Wrapper async pour garantir qu'une erreur non catchée renvoie 502 au client
+const gcalRoute = (fn) => async (req, res) => {
+  try { await fn(req, res); } catch (err) {
+    logger.error('Google Calendar route error:', err.message);
+    if (!res.headersSent) res.status(502).json({ error: 'google_unavailable', message: 'Service Google Calendar indisponible' });
+  }
+};
+
 // ── Helpers ──
 
 function getGoogleToken(userId) {
@@ -104,17 +112,17 @@ export function setupGoogleCalendarRoutes(app, authenticateToken) {
   });
 
   // ── Liste des calendriers ──
-  app.get('/api/google-calendar/calendars', authenticateToken, async (req, res) => {
+  app.get('/api/google-calendar/calendars', authenticateToken, gcalRoute(async (req, res) => {
     await googleProxy(req, res, 'GET', `${GOOGLE_API_BASE}/users/me/calendarList`);
-  });
+  }));
 
   // ── Ajouter un calendrier à la liste ──
-  app.post('/api/google-calendar/calendars', authenticateToken, async (req, res) => {
+  app.post('/api/google-calendar/calendars', authenticateToken, gcalRoute(async (req, res) => {
     await googleProxy(req, res, 'POST', `${GOOGLE_API_BASE}/users/me/calendarList`, req.body);
-  });
+  }));
 
   // ── Lister les événements ──
-  app.get('/api/google-calendar/events', authenticateToken, async (req, res) => {
+  app.get('/api/google-calendar/events', authenticateToken, gcalRoute(async (req, res) => {
     const calendarId = getCalendarId(req);
     const params = new URLSearchParams();
     // Relayer les paramètres de requête Google Calendar
@@ -123,33 +131,33 @@ export function setupGoogleCalendarRoutes(app, authenticateToken) {
     }
     const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`;
     await googleProxy(req, res, 'GET', url);
-  });
+  }));
 
   // ── Obtenir un événement ──
-  app.get('/api/google-calendar/events/:eventId', authenticateToken, async (req, res) => {
+  app.get('/api/google-calendar/events/:eventId', authenticateToken, gcalRoute(async (req, res) => {
     const calendarId = getCalendarId(req);
     const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(req.params.eventId)}`;
     await googleProxy(req, res, 'GET', url);
-  });
+  }));
 
   // ── Créer un événement ──
-  app.post('/api/google-calendar/events', authenticateToken, async (req, res) => {
+  app.post('/api/google-calendar/events', authenticateToken, gcalRoute(async (req, res) => {
     const calendarId = getCalendarId(req);
     const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events`;
     await googleProxy(req, res, 'POST', url, req.body);
-  });
+  }));
 
   // ── Mettre à jour un événement ──
-  app.patch('/api/google-calendar/events/:eventId', authenticateToken, async (req, res) => {
+  app.patch('/api/google-calendar/events/:eventId', authenticateToken, gcalRoute(async (req, res) => {
     const calendarId = getCalendarId(req);
     const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(req.params.eventId)}`;
     await googleProxy(req, res, 'PATCH', url, req.body);
-  });
+  }));
 
   // ── Supprimer un événement ──
-  app.delete('/api/google-calendar/events/:eventId', authenticateToken, async (req, res) => {
+  app.delete('/api/google-calendar/events/:eventId', authenticateToken, gcalRoute(async (req, res) => {
     const calendarId = getCalendarId(req);
     const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(req.params.eventId)}`;
     await googleProxy(req, res, 'DELETE', url);
-  });
+  }));
 }

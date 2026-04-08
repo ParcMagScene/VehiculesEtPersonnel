@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  X, Check, Plus, Search, Unlink, MapPin, Clock, User, Briefcase, Truck, ChevronDown
+  X, Plus, Search, Unlink, MapPin, Clock, User, Briefcase, Truck, ChevronDown
 } from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
 import { Button, Input, Select } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './AddTaskModal.css';
 
 // ═══ Constantes (miroir de TaskPlanningPanel) ═══
@@ -238,7 +240,7 @@ export default function AddTaskModal({
         section: effectiveSection,
         title: finalTitle,
         person_id: personId || null,
-        status: 'pending',
+        status: STATUS.PENDING,
         source_type: sourceType,
         source_id: selectedGoogEvent?.id || null,
         google_event_title: selectedGoogEvent?.summary || selectedGoogEvent?.title || null,
@@ -282,11 +284,11 @@ export default function AddTaskModal({
 
   return (
     <div className="atm-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="atm-modal">
+      <div className="atm-modal" role="dialog" aria-modal="true">
         {/* Header */}
         <div className="atm-header">
           <h3><Plus size={18} /> Nouvelle tâche</h3>
-          <button className="atm-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="atm-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -351,9 +353,9 @@ export default function AddTaskModal({
               <div className="atm-affaire-selected">
                 <AffaireBadge numero={affaireNum} type={selectedAffaire?.type} />
                 <span className="atm-affaire-client">{selectedAffaire?.client || ''}</span>
-                <button type="button" className="atm-affaire-clear" onClick={() => { setAffaireNum(''); setClient(''); setAffaireSearch(''); }}>
+                <Button variant="ghost" type="button" className="atm-affaire-clear" onClick={() => { setAffaireNum(''); setClient(''); setAffaireSearch(''); }}>
                   <Unlink size={12} />
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="atm-affaire-wrap">
@@ -371,8 +373,7 @@ export default function AddTaskModal({
                     {filteredAffaires.length === 0 ? (
                       <div className="atm-affaire-empty">Aucune affaire trouvée</div>
                     ) : filteredAffaires.map(a => (
-                      <button
-                        key={a.numeroAffaire}
+                      <Button variant="ghost"                         key={a.numeroAffaire}
                         type="button"
                         className="atm-affaire-option"
                         onClick={() => {
@@ -386,7 +387,7 @@ export default function AddTaskModal({
                       >
                         <span className="atm-affaire-opt-num">{a.numeroAffaire}</span>
                         <span className="atm-affaire-opt-client">{a.client || a.nom || ''}</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -437,19 +438,17 @@ export default function AddTaskModal({
                 className="atm-location-input"
               />
               {locationSuggestions.length > 0 && (
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   className="atm-location-toggle"
                   onClick={() => setLocationDropdownOpen(v => !v)}
                 >
                   <MapPin size={12} /> Lieux enregistrés <ChevronDown size={12} />
-                </button>
+                </Button>
               )}
               {locationDropdownOpen && filteredLocationSuggestions.length > 0 && (
                 <div className="atm-location-dropdown">
                   {filteredLocationSuggestions.map((s, i) => (
-                    <button
-                      key={i}
+                    <Button variant="ghost"                       key={i}
                       type="button"
                       className="atm-location-option"
                       onClick={() => {
@@ -461,7 +460,7 @@ export default function AddTaskModal({
                       {s.address && s.address !== s.name && (
                         <span className="atm-location-addr"> — {s.address}</span>
                       )}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}

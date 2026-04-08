@@ -17,7 +17,7 @@
 
 .maintenance-dialog {
   background: var(--theme-bg-page);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 100%;
   max-width: 900px;
   max-height: 90vh;
@@ -42,7 +42,7 @@
 
 .maintenance-dialog-title h2 {
   margin: 0 0 8px 0;
-  font-size: 24px;
+  font-size: var(--font-2xl);
   color: var(--modal-header-color);
 }
 
@@ -54,9 +54,9 @@
 
 .maintenance-dialog-header .vehicle-type,
 .maintenance-dialog-header .vehicle-registration {
-  font-size: 13px;
+  font-size: var(--font-base);
   padding: 4px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--glass-light);
   color: var(--theme-text-inverse);
   font-weight: 500;
@@ -72,7 +72,7 @@
 .close-button {
   background: var(--close-btn-bg);
   border: 1px solid var(--close-btn-border);
-  font-size: 24px;
+  font-size: var(--font-2xl);
   color: var(--close-btn-color);
   cursor: pointer;
   padding: 4px 8px;
@@ -100,7 +100,7 @@
   background: none;
   border: none;
   padding: 12px 20px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-gray);
   cursor: pointer;
@@ -171,7 +171,7 @@
 }
 
 .maintenance-dialog .form-group label {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--theme-text-muted);
   text-transform: uppercase;
@@ -184,7 +184,7 @@
   padding: 8px 10px;
   border: 1px solid var(--theme-border);
   border-radius: 7px;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-family: inherit;
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
@@ -344,7 +344,7 @@
   gap: 16px;
   padding: 16px;
   background: var(--theme-bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 20px;
 }
 
@@ -356,7 +356,7 @@
   padding: 12px;
   background: var(--theme-bg-card);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -379,7 +379,7 @@
   padding: 12px 16px;
   background: var(--theme-danger-bg);
   border: 2px solid var(--btn-danger-hover-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 20px;
 }
 
@@ -399,7 +399,7 @@
 .immobilized-label {
   color: var(--theme-danger-dark);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .full-width {
@@ -421,7 +421,7 @@
 }
 
 .empty-state p {
-  font-size: 16px;
+  font-size: var(--font-md);
   margin-bottom: 20px;
 }
 
@@ -452,7 +452,7 @@
 .maintenance-card {
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border-medium);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 20px;
   transition: all 0.2s;
   border-left: 4px solid var(--theme-border-medium);
@@ -509,12 +509,12 @@
 
 .maintenance-card-title h3 {
   margin: 0 0 4px 0;
-  font-size: 16px;
+  font-size: var(--font-md);
   color: var(--theme-text-heading);
 }
 
 .maintenance-date {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 
@@ -527,8 +527,8 @@
 .status-select {
   padding: 6px 12px;
   border: 1.5px solid;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -541,8 +541,8 @@
 
 .status-badge {
   padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   font-weight: 600;
   border: 2px solid;
   display: inline-flex;
@@ -554,7 +554,7 @@
 .delete-maintenance-button {
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: var(--font-lg);
   cursor: pointer;
   padding: 4px 8px;
   opacity: 0.6;
@@ -574,7 +574,7 @@
 }
 
 .maintenance-description {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-body);
   margin: 0;
   font-weight: 500;
@@ -589,7 +589,7 @@
 .detail-item {
   display: flex;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--font-base);
 }
 
 .detail-label {
@@ -605,9 +605,9 @@
 .maintenance-notes {
   background: var(--theme-bg-card);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border-left: 3px solid var(--theme-info);
-  font-size: 13px;
+  font-size: var(--font-base);
 }
 
 .maintenance-notes strong {
@@ -686,7 +686,7 @@
 
 .conflict-warning-dialog {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 600px;
   box-shadow: 0 20px 60px var(--overlay-light);
@@ -711,7 +711,7 @@
 
 .conflict-warning-header h3 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--font-xl);
   color: var(--theme-warning);
   display: flex;
   align-items: center;
@@ -732,7 +732,7 @@
 .conflict-list {
   background: var(--theme-warning-bg);
   border: 1px solid var(--theme-warning);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 12px;
   margin-bottom: 20px;
   max-height: 200px;
@@ -742,7 +742,7 @@
 .conflict-item {
   padding: 10px;
   background: var(--theme-bg-card);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   margin-bottom: 8px;
 }
 
@@ -751,14 +751,14 @@
 }
 
 .conflict-dates {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-bg-dark);
   font-weight: 500;
   margin-bottom: 4px;
 }
 
 .conflict-prestation {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 
@@ -783,8 +783,8 @@
   height: 40px;
   padding: 0 20px;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -827,8 +827,8 @@
 .status-btn {
   padding: 5px 10px;
   border: 2px solid transparent;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -852,7 +852,7 @@
   padding: 12px;
   background: var(--theme-bg-page);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   animation: slideDown 0.2s ease;
 }
 
@@ -863,7 +863,7 @@
 
 .status-reason-field label {
   display: block;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   margin-bottom: 6px;
   color: var(--theme-text-dark);
@@ -873,8 +873,8 @@
   width: 100%;
   padding: 8px 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   resize: vertical;
   font-family: inherit;
   transition: border-color 0.2s;
@@ -890,7 +890,7 @@
 .intervention-details-card {
   background: linear-gradient(135deg, var(--theme-bg-page) 0%, var(--theme-border-light) 100%);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   padding: 16px;
   margin-bottom: 16px;
 }
@@ -918,14 +918,14 @@
   align-items: center;
   gap: 6px;
   padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 13px;
+  border-radius: var(--radius-2xl);
+  font-size: var(--font-base);
   font-weight: 600;
   border: 1.5px solid;
 }
 
 .intervention-type-label {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-body);
 }
@@ -943,14 +943,14 @@
   padding: 10px 12px;
   background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
   border: 1px solid var(--theme-info-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   line-height: 1.4;
   color: var(--theme-info-dark);
 }
 
 .ct-periodicity-icon {
-  font-size: 16px;
+  font-size: var(--font-md);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -964,7 +964,7 @@
 }
 
 .status-changed-indicator {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
   font-style: italic;
   text-decoration: line-through;
@@ -980,7 +980,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-subtle);
   padding: 4px 0;
 }
@@ -1014,8 +1014,8 @@
   padding: 1px 6px;
   background: var(--theme-bg-indigo-light);
   color: var(--theme-info-text-alt);
-  border-radius: 4px;
-  font-size: 11px;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-xs);
   font-weight: 500;
 }
 

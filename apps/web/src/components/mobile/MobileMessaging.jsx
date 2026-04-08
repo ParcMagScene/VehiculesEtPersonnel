@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Send, Paperclip, Plus, MessageSquare, File, Image, Download, Users } from 'lucide-react';
-import { ModalLayout, Input, Spinner } from '@/design-system';
+import { Button, Input, ModalLayout, Spinner } from '@/design-system';
 import api, { getApiUrl } from '../../utils/api';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -202,9 +202,9 @@ function MobileMessaging({ currentUser, onBack }) {
     return (
       <div className="mobile-messaging-chat">
         <div className="mmsg-chat-header">
-          <button className="mmsg-back" onClick={() => { setActiveConversation(null); setMessages([]); }}>
+          <Button variant="ghost" className="mmsg-back" onClick={() => { setActiveConversation(null); setMessages([]); }}>
             <ArrowLeft size={20} />
-          </button>
+          </Button>
           <div className="mmsg-chat-avatar" style={{ background: getAvatarColor(getConversationName(activeConversation)) }}>
             {activeConversation.type === 'group' ? <Users size={14} /> : getInitials(getConversationName(activeConversation))}
           </div>
@@ -232,6 +232,7 @@ function MobileMessaging({ currentUser, onBack }) {
                     <img
                       src={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
                       alt={item.attachments[0].original_name}
+                      loading="lazy"
                       className="mmsg-img"
                       onClick={() => window.open(`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`, '_blank')}
                     />
@@ -257,9 +258,9 @@ function MobileMessaging({ currentUser, onBack }) {
         </div>
 
         <div className="mmsg-input-area">
-          <button className="mmsg-attach" onClick={() => fileInputRef.current?.click()}>
+          <Button variant="ghost" className="mmsg-attach" onClick={() => fileInputRef.current?.click()}>
             <Paperclip size={20} />
-          </button>
+          </Button>
           <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
           <Input
             className="mmsg-input"
@@ -268,9 +269,9 @@ function MobileMessaging({ currentUser, onBack }) {
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
             placeholder="Écrire un message…"
           />
-          <button className="mmsg-send" onClick={handleSend} disabled={!inputText.trim()}>
+          <Button variant="ghost" className="mmsg-send" onClick={handleSend} disabled={!inputText.trim()}>
             <Send size={18} />
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -280,13 +281,13 @@ function MobileMessaging({ currentUser, onBack }) {
   return (
     <div className="mobile-messaging">
       <div className="mmsg-header">
-        <button className="mmsg-back" onClick={onBack}>
+        <Button variant="ghost" className="mmsg-back" onClick={onBack}>
           <ArrowLeft size={20} />
-        </button>
+        </Button>
         <h2>Messages {totalUnread > 0 && <span className="mmsg-total-badge">{totalUnread}</span>}</h2>
-        <button className="mmsg-new-btn" onClick={openNewConvModal}>
+        <Button variant="ghost" className="mmsg-new-btn" onClick={openNewConvModal}>
           <Plus size={20} />
-        </button>
+        </Button>
       </div>
 
       {loading ? (
@@ -298,9 +299,9 @@ function MobileMessaging({ currentUser, onBack }) {
         <div className="mmsg-empty">
           <MessageSquare size={48} />
           <p>Aucune conversation</p>
-          <button className="mmsg-start-btn" onClick={openNewConvModal}>
+          <Button variant="ghost" className="mmsg-start-btn" onClick={openNewConvModal}>
             Nouveau message
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="mmsg-conv-list">
@@ -345,8 +346,8 @@ function MobileMessaging({ currentUser, onBack }) {
           size="sm"
           footer={
             <>
-              <button className="mmsg-cancel" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</button>
-              <button className="mmsg-confirm" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</button>
+              <Button variant="ghost" className="mmsg-cancel" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</Button>
+              <Button variant="ghost" className="mmsg-confirm" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</Button>
             </>
           }
         >

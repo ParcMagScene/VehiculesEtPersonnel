@@ -1621,7 +1621,7 @@ select.edit-input {
   border: 1px solid var(--theme-border-medium);
   border-radius: var(--radius-md);
   box-shadow: 0 8px 20px var(--shadow-dropdown);
-  z-index: 20;
+  z-index: var(--z-dropdown);
   max-height: 240px;
   overflow-y: auto;
   margin-top: 4px;

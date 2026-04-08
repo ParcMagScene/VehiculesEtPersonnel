@@ -139,7 +139,7 @@
   box-shadow: var(--shadow-lg);
   max-height: 200px;
   overflow-y: auto;
-  z-index: 20;
+  z-index: var(--z-dropdown);
   margin-top: 2px;
 }
 .atm-location-option {
@@ -186,7 +186,7 @@
   box-shadow: var(--shadow-lg);
   max-height: 200px;
   overflow-y: auto;
-  z-index: 20;
+  z-index: var(--z-dropdown);
   margin-top: 4px;
 }
 .atm-affaire-option {

@@ -79,7 +79,7 @@
   border-bottom: 1px solid var(--theme-border-medium);
   position: sticky;
   top: 72px;
-  z-index: 9;
+  z-index: var(--z-sticky);
   box-shadow: 0 2px 8px var(--shadow-xs);
   padding: 0.5rem 0;
 }

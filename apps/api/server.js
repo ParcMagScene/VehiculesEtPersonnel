@@ -116,8 +116,10 @@ app.use('/api/auth/set-new-password', authLimiter);
 app.use('/api/auth/self-reset-password', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
-// [AUDIT FIX MED-B4/B6] Rate limiters sur endpoints sensibles
-app.use('/api/access-requests', sensitiveEndpointLimiter);
+// [AUDIT FIX MED-B4/B6] Rate limiters sur endpoints sensibles (POST publics uniquement)
+// Les GET /api/access-requests/* sont protégés par authenticateToken+requireAdmin
+app.post('/api/access-requests', sensitiveEndpointLimiter);
+app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);
 app.use('/api/admin/reset-password', sensitiveEndpointLimiter);
 
 // Créer le middleware d'authentification avec le secret JWT

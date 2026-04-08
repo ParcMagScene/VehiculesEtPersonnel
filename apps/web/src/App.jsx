@@ -420,6 +420,7 @@ function AppContent() {
       )}
       
       {activeModule === 'vehicles' && (
+      <Suspense fallback={null}>
       <GoogleCalendarBanner 
         calendarConfig={data.calendarConfig} 
         view={view}
@@ -485,6 +486,7 @@ function AppContent() {
           }
         }}
       />
+      </Suspense>
       )}
 
       <main id="main-content">
@@ -492,6 +494,7 @@ function AppContent() {
       {activeModule === 'vehicles' && (
         <>
           {view === 'planning' ? (
+            <Suspense fallback={<LoadingOverlay label="Chargement du planning..." />}>
             <PlanningView
               vehicles={data.vehicles}
               reservations={data.reservations}
@@ -508,6 +511,7 @@ function AppContent() {
               drivers={data.drivers}
               persons={data.persons}
             />
+            </Suspense>
           ) : (
             <div className="calendar-with-vehicle-panel">
               <ErrorBoundary moduleName="Calendrier">
@@ -765,6 +769,7 @@ function AppContent() {
       )}
 
       {vehicleForDialog && (
+        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
         <VehicleDetailsModal
           vehicle={vehicleForDialog}
           maintenances={data.maintenances}
@@ -780,6 +785,7 @@ function AppContent() {
             setVehicleForDialog(null);
           }}
         />
+        </Suspense>
       )}
 
       {selectedVehicleForKilometrageControl && (

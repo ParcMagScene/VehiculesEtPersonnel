@@ -27,6 +27,7 @@ import './App.css';
 import './styles/draggable-modals.css';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
+const PresetDetachedView = lazy(() => import('./components/video/PresetDetachedView'));
 
 // Code splitting - Lazy loading des composants lourds
 const Calendar = lazy(() => import('./components/vehicles/Calendar'));
@@ -881,6 +882,18 @@ function AppContent() {
 
 
 function App() {
+  // Fenêtre détachée preset vidéo
+  const detachedPresetId = new URLSearchParams(window.location.search).get('detached-preset');
+  if (detachedPresetId) {
+    return (
+      <AuthProvider>
+        <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>Chargement...</div>}>
+          <PresetDetachedView presetId={detachedPresetId} />
+        </Suspense>
+      </AuthProvider>
+    );
+  }
+
   return (
     <AuthProvider>
       <AppContent />

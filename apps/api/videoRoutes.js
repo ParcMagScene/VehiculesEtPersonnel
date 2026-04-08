@@ -589,4 +589,83 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       }
     })();
   });
+
+  // ═══════════════════════════════════════════════════════════════
+  //  PRESETS — Vues multi-caméras (4 max)
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /api/video/presets — Tous les presets (partagés + perso)
+  app.get('/api/video/presets', authenticateToken, (_req, res) => {
+    try {
+      const presets = db.prepare(`
+        SELECT id, name, camera_ids, user_id, is_shared, created_at, updated_at
+        FROM camera_presets
+        ORDER BY name
+      `).all();
+      res.json(presets.map(p => ({ ...p, camera_ids: JSON.parse(p.camera_ids || '[]') })));
+    } catch (error) {
+      logger.error('GET /api/video/presets:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/video/presets — Créer un preset
+  app.post('/api/video/presets', authenticateToken, (req, res) => {
+    try {
+      const { name, camera_ids } = req.body;
+      if (!name?.trim()) return res.status(400).json({ error: 'Nom requis' });
+      if (!Array.isArray(camera_ids) || camera_ids.length === 0 || camera_ids.length > 4) {
+        return res.status(400).json({ error: 'Sélectionnez 1 à 4 caméras' });
+      }
+      const result = db.prepare(`
+        INSERT INTO camera_presets (name, camera_ids, user_id, is_shared)
+        VALUES (?, ?, ?, 1)
+      `).run(name.trim(), JSON.stringify(camera_ids), req.user.id);
+      const preset = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(result.lastInsertRowid);
+      res.status(201).json({ ...preset, camera_ids: JSON.parse(preset.camera_ids) });
+    } catch (error) {
+      logger.error('POST /api/video/presets:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // PUT /api/video/presets/:id — Modifier un preset
+  app.put('/api/video/presets/:id', authenticateToken, (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+      const existing = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
+      if (!existing) return res.status(404).json({ error: 'Preset introuvable' });
+      const { name, camera_ids } = req.body;
+      if (camera_ids && (!Array.isArray(camera_ids) || camera_ids.length > 4)) {
+        return res.status(400).json({ error: 'Maximum 4 caméras' });
+      }
+      db.prepare(`
+        UPDATE camera_presets SET name = ?, camera_ids = ?, updated_at = datetime('now') WHERE id = ?
+      `).run(
+        (name?.trim()) || existing.name,
+        camera_ids ? JSON.stringify(camera_ids) : existing.camera_ids,
+        id
+      );
+      const updated = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
+      res.json({ ...updated, camera_ids: JSON.parse(updated.camera_ids) });
+    } catch (error) {
+      logger.error('PUT /api/video/presets/:id:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // DELETE /api/video/presets/:id — Supprimer un preset
+  app.delete('/api/video/presets/:id', authenticateToken, (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+      const result = db.prepare('DELETE FROM camera_presets WHERE id = ?').run(id);
+      if (result.changes === 0) return res.status(404).json({ error: 'Preset introuvable' });
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('DELETE /api/video/presets/:id:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
 }

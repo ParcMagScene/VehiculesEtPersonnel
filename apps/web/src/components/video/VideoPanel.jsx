@@ -8,7 +8,8 @@ import { usePTZ } from '../../hooks/usePTZ';
 import CameraGrid from './CameraGrid';
 import CameraPTZControls from './CameraPTZControls';
 import PlaybackPanel from './PlaybackPanel';
-import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight, Film } from 'lucide-react';
+import PresetPanel from './PresetPanel';
+import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight, Film, Monitor } from 'lucide-react';
 import api from '../../utils/api';
 import './VideoPanel.css';
 import { Button, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
@@ -142,6 +143,11 @@ const VideoPanel = ({ currentUser }) => {
     try { await testAll(); } finally { setTestingAll(false); }
   }, [testAll]);
 
+  const handleDetachPreset = useCallback((presetId) => {
+    const url = `${window.location.origin}?detached-preset=${presetId}`;
+    window.open(url, `preset-${presetId}`, 'width=960,height=720,menubar=no,toolbar=no,location=no,status=no');
+  }, []);
+
   if (loading) {
     return (
       <div className="video-panel">
@@ -170,6 +176,9 @@ const VideoPanel = ({ currentUser }) => {
             </Button>
             <Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements" aria-label="Enregistrements">
               <Film size={18} />
+            </Button>
+            <Button variant="ghost" className={viewMode === 'preset' ? 'active' : ''} onClick={() => setViewMode('preset')} title="Presets multi-caméras" aria-label="Presets multi-caméras">
+              <Monitor size={18} />
             </Button>
             {isAdmin && (
               <Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration" aria-label="Administration">
@@ -281,6 +290,16 @@ const VideoPanel = ({ currentUser }) => {
 
       {viewMode === 'playback' && (
         <PlaybackPanel cameras={cameras} initialCameraId={playbackCameraId} />
+      )}
+
+      {viewMode === 'preset' && (
+        <div className="video-panel__content">
+          <PresetPanel
+            cameras={cameras}
+            proxyAvailable={proxyAvailable}
+            onDetach={handleDetachPreset}
+          />
+        </div>
       )}
 
       {viewMode === 'list' && (

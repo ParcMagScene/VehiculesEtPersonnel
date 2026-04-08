@@ -460,9 +460,51 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       };
       
       if (mode === 'preview') {
-        // Mode aperçu : retourner les stats sans rien insérer
+        // Mode aperçu : retourner les stats ET l'analyse par item
+        const findExisting = db.prepare(`
+          SELECT id, name, reference, serial_number FROM equipment
+          WHERE (reference = ? AND reference IS NOT NULL AND reference != '')
+             OR (serial_number = ? AND serial_number IS NOT NULL AND serial_number != '')
+          LIMIT 1
+        `);
+
+        let toCreate = 0, toUpdate = 0, toSkip = 0;
+        const collisions = [];
+
+        for (let i = 0; i < data.length; i++) {
+          const row = data[i];
+          const nom = (row.nom || '').trim();
+          if (!nom) { toSkip++; continue; }
+
+          const reference = (row.code_libre || '').trim() || null;
+          const serialNumber = (row.numero_serie || '').trim() || null;
+          const existing = (reference || serialNumber) ? findExisting.get(reference, serialNumber) : null;
+
+          if (existing) {
+            toUpdate++;
+            collisions.push({
+              index: i,
+              csvName: nom,
+              csvRef: reference,
+              csvSerial: serialNumber,
+              existingId: existing.id,
+              existingName: existing.name,
+              existingRef: existing.reference,
+              existingSerial: existing.serial_number,
+              action: 'update',
+              matchedBy: existing.reference === reference ? 'reference' : 'serial_number',
+            });
+          } else {
+            toCreate++;
+          }
+        }
+
         return res.json({
           totalRows: data.length,
+          toCreate,
+          toUpdate,
+          toSkip,
+          collisions,
           families: [...familiesSet.values()],
           subfamilies: [...subfamiliesSet.values()].map(v => v.name),
           categories: [...categoriesSet.values()].map(v => v.name),
@@ -581,7 +623,11 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
       importAll();
 
-      addToHistory('equipment', null, 'import_csv', { created, updated, skipped, familiesCreated, subfamiliesCreated, categoriesCreated }, req.user.id, req.user.name);
+      addToHistory('equipment', null, 'import_csv', {
+        created, updated, skipped,
+        familiesCreated, subfamiliesCreated, categoriesCreated,
+        total: data.length,
+      }, req.user.id, req.user.name);
       
       res.json({
         success: true,

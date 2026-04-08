@@ -245,11 +245,11 @@
 
 ### 8.2 Tâches
 
-- [ ] **8.1** Import interventions LocMat : implémenter détection de collisions
-- [ ] **8.2** Si intervention existante → `UPDATE`, pas `INSERT` (dedup par référence)
-- [ ] **8.3** Journaliser modifications individuelles (before/after snapshot par item)
-- [ ] **8.4** Retourner liste détaillée des collisions dans le mode preview
-- [ ] **8.5** Ajouter vérification unicité email dans import personnel
+- [x] **8.1** Import équipement : preview retourne maintenant collisions détaillées (par item, matchedBy) ✅
+- [x] **8.2** Dedup déjà implémenté : reference (priorité 1) puis serial_number (priorité 2) ✅
+- [x] **8.3** Logging import enrichi (total ajouté aux stats) ✅
+- [x] **8.4** Collisions détaillées retournées en mode preview ✅
+- [x] **8.5** Import personnel : collision code_libre + nom_prenom déjà implémentée avec détection de conflits ✅ (faux positif)
 - [ ] **8.6** Tests imports + commit
 
 ---

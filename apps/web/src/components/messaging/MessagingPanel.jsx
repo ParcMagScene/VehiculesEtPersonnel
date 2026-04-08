@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, MessageSquare, Send, Paperclip, ArrowLeft, Plus, File, Image, Download, Users, Smile } from 'lucide-react';
 import api, { getApiUrl } from '../../utils/api';
+import { useToast } from '../../hooks/useToast';
 import { Button, Textarea, EmptyState, Tooltip } from '@/design-system';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -57,6 +58,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [loading, setLoading] = useState(false);
   const [showNewConv, setShowNewConv] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
@@ -66,14 +68,19 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   const pollRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiCategory, setEmojiCategory] = useState(0);
+  const toast = useToast();
 
   // Charger les conversations
   const loadConversations = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await api.getConversations();
       setConversations(data);
     } catch (err) {
       console.error('Erreur chargement conversations:', err);
+      toast.error('Erreur chargement des conversations');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -90,6 +97,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       ));
     } catch (err) {
       console.error('Erreur chargement messages:', err);
+      toast.error('Erreur chargement des messages');
     }
   }, []);
 
@@ -147,6 +155,8 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       ));
     } catch (err) {
       console.error('Erreur envoi message:', err);
+      toast.error('Erreur envoi du message');
+      setInputText(text);
     }
   };
 
@@ -171,6 +181,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       reader.readAsDataURL(file);
     } catch (err) {
       console.error('Erreur envoi fichier:', err);
+      toast.error('Erreur envoi du fichier');
     }
   };
 
@@ -190,6 +201,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       }
     } catch (err) {
       console.error('Erreur création conversation:', err);
+      toast.error('Erreur création de la conversation');
     }
   };
 
@@ -201,6 +213,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       setShowNewConv(true);
     } catch (err) {
       console.error('Erreur chargement utilisateurs:', err);
+      toast.error('Erreur chargement des utilisateurs');
     }
   };
 

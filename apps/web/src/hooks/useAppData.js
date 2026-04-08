@@ -309,8 +309,9 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       setMaintenances(data);
     } catch (error) {
       console.error('Erreur lors du rechargement des maintenances:', error);
+      toast.error('Erreur rechargement maintenances');
     }
-  }, []);
+  }, [toast]);
 
   const handleMaintenanceSave = useCallback(async (maintenance) => {
     try {

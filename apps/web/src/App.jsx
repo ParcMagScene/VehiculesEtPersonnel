@@ -476,6 +476,7 @@ function AppContent() {
             setActiveModule('affaires');
           } catch (err) {
             console.error('Erreur création affaire:', err);
+            toast.error('Erreur lors de la création de l\'affaire');
           }
         }}
       />

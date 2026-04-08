@@ -1076,6 +1076,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       setPlanningData(data || { missions: [], availabilities: [], taskAssignments: [] });
     } catch (err) {
       console.error('Erreur chargement planning:', err);
+      toast.error('Erreur chargement du planning');
     }
   }, [days]);
 
@@ -1417,7 +1418,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         api.updateMission(span.mission.id, {
           start_date: format(newStart, 'yyyy-MM-dd'),
           end_date: format(newEnd, 'yyyy-MM-dd'),
-        }).then(() => loadPlanning()).catch(err => console.error('Erreur déplacement:', err));
+        }).then(() => loadPlanning()).catch(err => { console.error('Erreur déplacement:', err); toast.error('Erreur déplacement de la mission'); loadPlanning(); });
       }
       setDragMove(null);
       return;
@@ -1436,7 +1437,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         api.updateMission(span.mission.id, {
           start_date: format(newStart, 'yyyy-MM-dd'),
           end_date: format(newEnd, 'yyyy-MM-dd'),
-        }).then(() => loadPlanning()).catch(err => console.error('Erreur resize:', err));
+        }).then(() => loadPlanning()).catch(err => { console.error('Erreur resize:', err); toast.error('Erreur modification de la mission'); loadPlanning(); });
       }
       setResizeState(null);
       return;
@@ -1511,6 +1512,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       loadPlanning();
     } catch (err) {
       console.error('Erreur suppression mission:', err);
+      toast.error('Erreur suppression de la mission');
       setDeleteMission(null);
     }
   };

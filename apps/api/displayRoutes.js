@@ -1235,7 +1235,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const apiKey = apiKeyRow ? JSON.parse(apiKeyRow.value) : '';
       const city = cityRow ? JSON.parse(cityRow.value) : 'Saint-Denis,RE,FR';
 
-      if (!apiKey) return res.json({ error: 'Clé API météo non configurée' });
+      if (!apiKey) return res.status(503).json({ error: 'Clé API météo non configurée' });
 
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=fr`;
       const response = await fetch(url);
@@ -2058,7 +2058,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const cityRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherCity'").get();
       const apiKey = apiKeyRow ? JSON.parse(apiKeyRow.value) : '';
       const city = cityRow ? JSON.parse(cityRow.value) : 'Saint-Denis,RE,FR';
-      if (!apiKey) return res.json({ error: 'Clé API météo non configurée' });
+      if (!apiKey) return res.status(503).json({ error: 'Clé API météo non configurée' });
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=fr`;
       const response = await fetch(url);
       const data = await response.json();

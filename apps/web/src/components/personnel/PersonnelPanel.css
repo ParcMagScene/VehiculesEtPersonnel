@@ -669,7 +669,7 @@
 }
 
 /* Table responsive */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .pp-table th:nth-child(5),
   .pp-table td:nth-child(5),
   .pp-table th:nth-child(6),
@@ -678,7 +678,7 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .pp-table th:nth-child(7),
   .pp-table td:nth-child(7) {
     display: none;

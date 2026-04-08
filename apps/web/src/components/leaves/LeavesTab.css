@@ -687,7 +687,7 @@
    Responsif
    ═══════════════════════════════════════ */
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .lt-kpi-row {
     grid-template-columns: repeat(2, 1fr);
   }

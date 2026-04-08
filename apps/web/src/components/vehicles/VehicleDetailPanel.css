@@ -470,14 +470,14 @@
 }
 
 /* ═══ Responsive ═══ */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .vehicle-slide-panel.open {
     width: 340px;
     min-width: 340px;
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .vehicle-slide-panel.open {
     width: 100%;
     min-width: 100%;

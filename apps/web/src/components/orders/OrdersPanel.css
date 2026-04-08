@@ -1417,7 +1417,7 @@
 }
 .orders-empty svg { opacity: 0.4; }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .supplier-detail-modal { width: 98vw; max-height: 95vh; }
   .workflow-steps { gap: 2px; }
   .workflow-step { min-width: 50px; padding: 4px 6px; }

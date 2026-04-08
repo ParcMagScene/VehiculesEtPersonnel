@@ -271,7 +271,7 @@
   box-shadow: 0 4px 12px var(--danger-tint-medium);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .overdue-intervention-modal {
     width: 95%;
     max-height: 90vh;

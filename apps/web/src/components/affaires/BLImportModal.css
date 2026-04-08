@@ -452,7 +452,7 @@
   line-height: 1.5;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .bl-import-modal {
     width: 98%;
     max-height: 95vh;

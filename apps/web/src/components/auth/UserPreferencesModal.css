@@ -528,7 +528,7 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .prefs-palette-grid {
     grid-template-columns: repeat(2, 1fr);
   }

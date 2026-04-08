@@ -427,7 +427,7 @@
    Responsif
    ═══════════════════════════════════════ */
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .rp-container {
     padding: 12px;
   }

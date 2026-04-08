@@ -418,7 +418,7 @@
 }
 
 /* ── Mobile ── */
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .pcm-modal {
     width: 100%;
     max-width: 100%;

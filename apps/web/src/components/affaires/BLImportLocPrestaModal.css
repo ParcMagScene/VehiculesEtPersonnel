@@ -743,7 +743,7 @@
 }
 
 /* ─── Responsive ─── */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .bl-loc-modal {
     width: 98%;
     max-height: 95vh;

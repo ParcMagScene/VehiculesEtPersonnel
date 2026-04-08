@@ -259,7 +259,7 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .gen-orders-modal {
     width: 98vw;
     max-height: 92vh;

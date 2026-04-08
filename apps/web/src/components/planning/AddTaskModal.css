@@ -293,7 +293,7 @@
 .atm-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ═══ Responsive ═══ */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .atm-modal { width: 98vw; max-height: 92vh; }
   .atm-section-grid { grid-template-columns: repeat(2, 1fr); }
   .atm-row { flex-direction: column; gap: 14px; }

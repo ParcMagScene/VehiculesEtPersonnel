@@ -307,7 +307,7 @@
 }
 
 /* Mobile */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .etm-modal {
     max-width: 100%;
     max-height: 95vh;

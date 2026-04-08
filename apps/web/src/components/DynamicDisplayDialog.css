@@ -301,7 +301,7 @@
   cursor: not-allowed;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .display-dialog {
     width: 98%;
     max-height: 95vh;

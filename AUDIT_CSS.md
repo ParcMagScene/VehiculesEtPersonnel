@@ -474,7 +474,7 @@
 | U3 — Breakpoints unification | ✅ DONE | `23c4ccc` |
 | U4 — Modals unification | ✅ DONE | `e7ed615` |
 | U5 — Toolbars/Headers | ✅ DONE | `24ae834` |
-| U6 — Border-radius tokens | ⬜ TODO | — |
+| U6 — Border-radius tokens | ✅ DONE | `bba14a0` |
 | U7 — Font-size tokens | ⬜ TODO | — |
 | U8 — Couleurs tokens | ⬜ TODO | — |
 | U9 — Inline styles extraction | ⬜ TODO | — |

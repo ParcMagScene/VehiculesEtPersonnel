@@ -41,7 +41,7 @@
 | 5 | CSS / Design System | `audit/css` | `AUDIT_CSS.md` | P2 | 5 fixés, 10 backlog ✅ | C ✅ |
 | 6 | UI / UX | `audit/ui` | `AUDIT_UI.md` | P1 | 10 fixés, 2 backlog ✅ | C ✅ |
 | 7 | Vidéo | `audit/video` | `AUDIT_VIDEO.md` | P1 | 5 fixés (1 CRIT), 3 backlog ✅ | D ✅ |
-| 8 | Tests / CI | `audit/tests` | `AUDIT_TESTS.md` | P2 | Roadmap v2.1.0 | E |
+| 8 | Tests / CI | `audit/tests` | `AUDIT_TESTS.md` | P2 | 3 fixés (85 tests), 3 backlog ✅ | E ✅ |
 
 ---
 

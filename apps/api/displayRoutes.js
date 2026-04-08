@@ -1282,7 +1282,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
 
   // Logos locaux connus (évite la recherche favicon pour ces radios)
   const KNOWN_RADIO_LOGOS = {
-    'radiomeuh': '/Logos/RadioMeuh.png',
+    'radiomeuh': '/display-logo/logo.png',
   };
 
   async function getRadioFavicon(streamUrl) {

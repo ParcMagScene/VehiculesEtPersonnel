@@ -472,8 +472,19 @@ function updateSonosWidget(data) {
   if (data && data.playing && data.title) {
     widget.style.display = 'flex';
     if (albumArt) {
-      albumArt.src = data.albumArtURI || data.albumArt || '/display-logo/logo.png';
-      albumArt.onerror = () => { albumArt.onerror = null; albumArt.src = '/display-logo/logo.png'; };
+      const artUrl = data.albumArtURI || data.albumArt || '/display-logo/logo.png';
+      // Éviter de re-tenter les URLs en 404 (ex: RadioMeuh.png manquant)
+      if (albumArt._failedUrls && albumArt._failedUrls.has(artUrl)) {
+        albumArt.src = '/display-logo/logo.png';
+      } else if (albumArt.src !== artUrl) {
+        albumArt.onerror = () => {
+          albumArt.onerror = null;
+          if (!albumArt._failedUrls) albumArt._failedUrls = new Set();
+          albumArt._failedUrls.add(artUrl);
+          albumArt.src = '/display-logo/logo.png';
+        };
+        albumArt.src = artUrl;
+      }
     }
 
     // Radio : Sonos met souvent "Artiste - Titre" dans le champ title, avec artist vide

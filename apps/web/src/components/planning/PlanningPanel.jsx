@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useTransition, lazy, Suspense } from 'react';
 import { ClipboardList, Calendar, Tv2, Users } from 'lucide-react';
 import api from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
@@ -19,6 +19,7 @@ function PlanningPanel({
 }) {
   const _toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('personnel');
+  const [isPending, startTransition] = useTransition();
   const [stats, setStats] = useState(null);
   const [displayRefreshKey, _setDisplayRefreshKey] = useState(0);
 
@@ -48,7 +49,7 @@ function PlanningPanel({
           return (
             <Button variant="ghost"               key={tab.id}
               className={`sub-tab ${activeSubTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveSubTab(tab.id)}
+              onClick={() => startTransition(() => setActiveSubTab(tab.id))}
             >
               <Icon size={16} />
               {tab.label}

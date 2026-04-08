@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef, useTransition } from 'react';
 import { format } from 'date-fns';
 import Header from './components/Header';
 const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
@@ -98,7 +98,11 @@ function AppContent() {
   const [isMobile, setIsMobile] = useState(() => detectMobile());
   const [view, setView] = useState('week');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeModule, setActiveModule] = useState('vehicles');
+  const [activeModule, _setActiveModule] = useState('vehicles');
+  const [, startModuleTransition] = useTransition();
+  const setActiveModule = useCallback((mod) => {
+    startModuleTransition(() => _setActiveModule(mod));
+  }, []);
   const [showManagement, setShowManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showEquipmentManagement, setShowEquipmentManagement] = useState(false);

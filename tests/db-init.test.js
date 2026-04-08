@@ -26,6 +26,11 @@ const CRITICAL_TABLES = [
   'bp_items',
   'sav_tickets',
   'modification_history',
+  // [AUDIT FIX T2] Tables vidéo
+  'cameras',
+  'camera_presets',
+  'video_sessions',
+  'video_access_logs',
 ];
 
 describe('Database initialization', () => {

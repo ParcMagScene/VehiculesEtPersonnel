@@ -37,6 +37,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   const [suppliers, setSuppliers] = useState([]);
   const [movements, setMovements] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [lowStockFilter, setLowStockFilter] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -53,13 +54,20 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
 
   const isAdmin = currentUser?.isAdmin === true;
   const clickTimerRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  // Debounce search (300ms)
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchTerm]);
 
   // ═══ Chargement des données ═══
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const params = { stock_type: stockType };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (categoryFilter) params.category_id = categoryFilter;
       if (lowStockFilter) params.low_stock = 'true';
 
@@ -79,10 +87,11 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
       setAllDepotZones(allZonesData);
     } catch (error) {
       console.error('Erreur chargement stock:', error);
+      toast.error('Erreur de chargement du stock');
     } finally {
       setLoading(false);
     }
-  }, [stockType, searchTerm, categoryFilter, lowStockFilter]);
+  }, [stockType, debouncedSearch, categoryFilter, lowStockFilter]);
 
   const loadMovements = useCallback(async (itemId) => {
     try {

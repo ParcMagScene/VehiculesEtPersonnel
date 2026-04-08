@@ -21,6 +21,8 @@ import LeaveRequestsPanel from './LeaveRequestsPanel';
 import LeaveValidationPanel from './LeaveValidationPanel';
 import './LeavesTab.css';
 import { Button, Card, DetailRow, EmptyState, InlineAlert, Tooltip, SectionHeader } from '@/design-system';
+import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 import { STATUS } from '../../constants';
 
@@ -46,6 +48,8 @@ const fmtShortDate = (d) => {
 
 const LeavesTab = ({ persons = [], currentUser }) => {
   const isAdmin = !!currentUser?.isAdmin;
+  const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Data state
   const [myRequests, setMyRequests] = useState([]);
@@ -163,14 +167,23 @@ const LeavesTab = ({ persons = [], currentUser }) => {
   // Handlers
   // ═══════════════════════════════════════
 
-  const handleCancel = async (id) => {
-    try {
-      await api.cancelLeave(id);
-      setCancellingId(null);
-      loadData();
-    } catch (err) {
-      setError(err.error || err.message || 'Erreur lors de l\'annulation');
-    }
+  const handleCancel = (id) => {
+    confirm({
+      title: 'Annuler la demande',
+      message: 'Annuler cette demande de congé ?',
+      variant: 'danger',
+      confirmLabel: 'Annuler le congé',
+      onConfirm: async () => {
+        try {
+          await api.cancelLeave(id);
+          setCancellingId(null);
+          loadData();
+          toast.success('Demande annulée');
+        } catch (err) {
+          setError(err.error || err.message || 'Erreur lors de l\'annulation');
+        }
+      },
+    });
   };
 
   const handleDownloadPdf = async (id) => {
@@ -622,6 +635,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
         />
       )}
 
+      {ConfirmDialogRenderer}
       {showHistoryPanel && (
         <LeaveRequestsPanel
           personId={showHistoryPanel.personId}

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { X, Camera, User, Save, Trash2 } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Input, Avatar, InlineAlert } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import './ProfileEditModal.css';
 
 // targetUser: si fourni (mode admin), on édite cet utilisateur via les endpoints admin
@@ -9,6 +10,7 @@ import './ProfileEditModal.css';
 const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) => {
   const editedUser = targetUser || currentUser;
   const isAdminMode = !!targetUser;
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const [name, setName] = useState(editedUser?.name || '');
   const [saving, setSaving] = useState(false);
@@ -74,22 +76,31 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
     }
   };
 
-  const handleDeleteAvatar = async () => {
-    setUploading(true);
-    setError('');
-    try {
-      await api.deleteAvatar(isAdminMode ? editedUser.id : null);
-      onUserUpdate({ ...editedUser, avatar: null });
-      setPreviewUrl(null);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUploading(false);
-    }
+  const handleDeleteAvatar = () => {
+    confirm({
+      title: 'Supprimer la photo',
+      message: 'Supprimer la photo de profil ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setUploading(true);
+        setError('');
+        try {
+          await api.deleteAvatar(isAdminMode ? editedUser.id : null);
+          onUserUpdate({ ...editedUser, avatar: null });
+          setPreviewUrl(null);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setUploading(false);
+        }
+      },
+    });
   };
 
   return (
     <div className="profile-edit-overlay">
+      {ConfirmDialogRenderer}
       <div className="profile-edit-modal">
         {/* Header */}
         <div className="theme-modal-header">

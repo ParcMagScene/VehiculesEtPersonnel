@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import { useInventory } from '../../hooks/useInventory';
+import { useToast } from '../../hooks/useToast';
 import { formatDateSimple } from '../../utils/formatUtils';
 import './InventoryPanel.css';
 import { Button, Card, Input, Select, Spinner, Tab, TabList, TabPanel, Table, Tabs, Tooltip } from '@/design-system';
@@ -580,12 +581,7 @@ const TABS = [
 
 export default function InventoryPanel({ _currentUser }) {
   
-  // Fabrication d'un toast minimaliste si pas injecté
-  const toast = useMemo(() => ({
-    success: () => {},
-    error: () => {},
-    info: () => {},
-  }), []);
+  const toast = useToast();
 
   const inv = useInventory({ isAuthenticated: true, toast });
 

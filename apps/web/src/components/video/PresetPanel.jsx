@@ -7,8 +7,12 @@ import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 import { Plus, Trash2, Save, Edit2, ExternalLink, X } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Tooltip } from '@/design-system';
+import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
+  const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [presets, setPresets] = useState([]);
   const [activePresetId, setActivePresetId] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -51,21 +55,33 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
       await loadPresets();
       setEditing(false);
       setCreating(false);
+      toast.success(creating ? 'Preset créé' : 'Preset mis à jour');
     } catch (err) {
       console.error('Erreur sauvegarde preset:', err);
+      toast.error('Erreur lors de la sauvegarde');
     }
   }, [editName, editCameraIds, creating, activePresetId, loadPresets]);
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = useCallback(() => {
     if (!activePresetId) return;
-    try {
-      await api.deleteVideoPreset(activePresetId);
-      setActivePresetId(null);
-      await loadPresets();
-    } catch (err) {
-      console.error('Erreur suppression preset:', err);
-    }
-  }, [activePresetId, loadPresets]);
+    confirm({
+      title: 'Supprimer le preset',
+      message: 'Supprimer ce preset vidéo ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteVideoPreset(activePresetId);
+          setActivePresetId(null);
+          await loadPresets();
+          toast.success('Preset supprimé');
+        } catch (err) {
+          console.error('Erreur suppression preset:', err);
+          toast.error('Erreur lors de la suppression');
+        }
+      },
+    });
+  }, [activePresetId, loadPresets, confirm, toast]);
 
   const startCreate = () => {
     setEditName('');
@@ -145,6 +161,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   if (presets.length === 0) {
     return (
       <div className="preset-panel">
+        {ConfirmDialogRenderer}
         <div className="preset-panel__empty">
           <p>Aucun preset configuré</p>
           <Button variant="primary" size="sm" onClick={startCreate}>
@@ -158,6 +175,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   // Affichage normal
   return (
     <div className="preset-panel">
+      {ConfirmDialogRenderer}
       {/* Barre de sélection / actions */}
       <div className="preset-panel__bar">
         <select

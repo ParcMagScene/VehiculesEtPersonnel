@@ -14,6 +14,7 @@ import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
 import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import { useToast } from '../../hooks/useToast';
 import { STATUS } from '../../constants';
 
 import './LeaveRequestsPanel.css';
@@ -32,6 +33,7 @@ const LeaveRequestsPanel = ({
   const [cancellingId, setCancellingId] = useState(null);
   const [balance, setBalance] = useState(null);
   const [error, setError] = useState('');
+  const toast = useToast();
 
   // Charger les demandes
   const loadRequests = useCallback(async () => {
@@ -62,6 +64,7 @@ const LeaveRequestsPanel = ({
       setBalance(data);
     } catch (err) {
       console.error('Erreur chargement solde:', err);
+      toast.error('Impossible de charger le solde de congés');
     }
   }, [personId]);
 

@@ -781,34 +781,47 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
     }
   };
 
-  const handleDeleteEquipment = async (id) => {
-    if (!window.confirm('Supprimer cet équipement et tout son historique ?')) return;
-    try {
-      await api.deleteEquipment(id);
-      setSelectedEquipment(null);
-      setDialogEquipment(null);
-      loadData();
-    } catch (err) {
-      toast.error('Erreur: ' + err.message);
-    }
+  const handleDeleteEquipment = (id) => {
+    confirm({
+      title: 'Supprimer l\u2019équipement',
+      message: 'Supprimer cet équipement et tout son historique ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteEquipment(id);
+          setSelectedEquipment(null);
+          setDialogEquipment(null);
+          loadData();
+        } catch (err) {
+          toast.error('Erreur: ' + err.message);
+        }
+      },
+    });
   };
 
-  const handleSerializeEquipment = async (eq) => {
+  const handleSerializeEquipment = (eq) => {
     const qty = eq.stockQuantity || eq.stock_quantity || 1;
     if (eq.uid && qty <= 1) return toast.warning('Cet équipement possède déjà un UID.');
     const msg = qty > 1
       ? `Sérialiser "${eq.name}" en ${qty} entités individuelles ?\n\nChaque exemplaire recevra son propre UID (EMAG-XXXXX).\nL'article original sera remplacé par ${qty} fiches individuelles.`
       : `Attribuer un UID unique (EMAG-XXXXX) à "${eq.name}" ?`;
-    if (!window.confirm(msg)) return;
-    try {
-      const result = await api.serializeEquipment(eq.id);
-      toast.success(`${result.message} — UID : ${result.created.map(c => c.uid).join(', ')}`);
-      setSelectedEquipment(null);
-      setDialogEquipment(null);
-      loadData();
-    } catch (err) {
-      toast.error('Erreur sérialisation: ' + err.message);
-    }
+    confirm({
+      title: 'Sérialisation',
+      message: msg,
+      confirmLabel: 'Sérialiser',
+      onConfirm: async () => {
+        try {
+          const result = await api.serializeEquipment(eq.id);
+          toast.success(`${result.message} — UID : ${result.created.map(c => c.uid).join(', ')}`);
+          setSelectedEquipment(null);
+          setDialogEquipment(null);
+          loadData();
+        } catch (err) {
+          toast.error('Erreur sérialisation: ' + err.message);
+        }
+      },
+    });
   };
 
   const handleSaveSavTicket = async (data) => {
@@ -1074,12 +1087,19 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
               setDialogTicket(t);
             }}
             onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
-            onDelete={async (id) => {
-              if (!window.confirm('Supprimer ce ticket ?')) return;
-              try {
-                await api.deleteSavTicket(id);
-                loadData();
-              } catch (err) { toast.error('Erreur: ' + err.message); }
+            onDelete={(id) => {
+              confirm({
+                title: 'Supprimer le ticket',
+                message: 'Supprimer ce ticket ?',
+                variant: 'danger',
+                confirmLabel: 'Supprimer',
+                onConfirm: async () => {
+                  try {
+                    await api.deleteSavTicket(id);
+                    loadData();
+                  } catch (err) { toast.error('Erreur: ' + err.message); }
+                },
+              });
             }}
           />
           )}
@@ -1115,13 +1135,20 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
             persons={persons}
             onClose={() => setSelectedTicket(null)}
             onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
-            onDelete={async (id) => {
-              if (!window.confirm('Supprimer ce ticket ?')) return;
-              try {
-                await api.deleteSavTicket(id);
-                setSelectedTicket(null);
-                loadData();
-              } catch (err) { toast.error('Erreur: ' + err.message); }
+            onDelete={(id) => {
+              confirm({
+                title: 'Supprimer le ticket',
+                message: 'Supprimer ce ticket ?',
+                variant: 'danger',
+                confirmLabel: 'Supprimer',
+                onConfirm: async () => {
+                  try {
+                    await api.deleteSavTicket(id);
+                    setSelectedTicket(null);
+                    loadData();
+                  } catch (err) { toast.error('Erreur: ' + err.message); }
+                },
+              });
             }}
             onOpenDialog={(t) => { setSelectedTicket(null); setDialogTicket(t); }}
             onOpenEquipmentDialog={(eq) => { setSelectedTicket(null); setDialogEquipment(eq); }}
@@ -1160,13 +1187,20 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
         isAdmin={isAdmin}
         onClose={() => setDialogTicket(null)}
         onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
-        onDelete={async (id) => {
-          if (!window.confirm('Supprimer ce ticket ?')) return;
-          try {
-            await api.deleteSavTicket(id);
-            setDialogTicket(null);
-            loadData();
-          } catch (err) { toast.error('Erreur: ' + err.message); }
+        onDelete={(id) => {
+          confirm({
+            title: 'Supprimer le ticket',
+            message: 'Supprimer ce ticket ?',
+            variant: 'danger',
+            confirmLabel: 'Supprimer',
+            onConfirm: async () => {
+              try {
+                await api.deleteSavTicket(id);
+                setDialogTicket(null);
+                loadData();
+              } catch (err) { toast.error('Erreur: ' + err.message); }
+            },
+          });
         }}
         onOpenEquipmentDialog={(eq) => { setDialogTicket(null); setDialogEquipment(eq); }}
       />

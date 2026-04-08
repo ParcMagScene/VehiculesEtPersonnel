@@ -89,22 +89,22 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
       vehicle.status || 'available',
       vehicle.notes || '',
       vehicle.photo || '',
-      vehicle.lastMaintenanceDate || null,
-      vehicle.lastMaintenanceKm || null,
-      vehicle.controlesTechniques || null,
+      vehicle.last_maintenance_date || null,
+      vehicle.last_maintenance_km || null,
+      vehicle.controles_techniques || null,
       vehicle.kilometrage || null,
-      vehicle.mileageHistory || null,
+      vehicle.mileage_history || null,
       vehicle.assigned_to || null,
       vehicle.pupitre || null,
-      vehicle.isInsured ? 1 : 0,
-      vehicle.insuranceCompany || '',
-      vehicle.insuranceNumber || '',
-      vehicle.insuranceExpiry || null,
-      vehicle.isLocation ? 1 : 0,
-      vehicle.orderIndex || 0,
+      vehicle.is_insured ? 1 : 0,
+      vehicle.insurance_company || '',
+      vehicle.insurance_number || '',
+      vehicle.insurance_expiry || null,
+      vehicle.is_location ? 1 : 0,
+      vehicle.order_index || 0,
       vehicle.latitude || null,
       vehicle.longitude || null,
-      vehicle.locationUpdatedAt || null,
+      vehicle.location_updated_at || null,
       req.user.id,
       req.user.id
     );
@@ -112,7 +112,8 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
     addToHistory('vehicle', vehicle.id, 'created', vehicle, req.user.id, req.user.name);
     invalidateEntity('vehicles');
     
-    res.json(vehicle);
+    const saved = db.prepare('SELECT * FROM vehicles WHERE id = ?').get(vehicle.id);
+    res.json(saved);
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
@@ -159,22 +160,22 @@ app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
       vehicle.status || 'available',
       vehicle.notes || '',
       vehicle.photo || '',
-      vehicle.lastMaintenanceDate || null,
-      vehicle.lastMaintenanceKm || null,
-      vehicle.controlesTechniques || null,
+      vehicle.last_maintenance_date || null,
+      vehicle.last_maintenance_km || null,
+      vehicle.controles_techniques || null,
       vehicle.kilometrage || null,
-      vehicle.mileageHistory || null,
+      vehicle.mileage_history || null,
       vehicle.assigned_to || null,
       vehicle.pupitre || null,
-      vehicle.isInsured ? 1 : 0,
-      vehicle.insuranceCompany || '',
-      vehicle.insuranceNumber || '',
-      vehicle.insuranceExpiry || null,
-      vehicle.isLocation ? 1 : 0,
-      vehicle.orderIndex || 0,
+      vehicle.is_insured ? 1 : 0,
+      vehicle.insurance_company || '',
+      vehicle.insurance_number || '',
+      vehicle.insurance_expiry || null,
+      vehicle.is_location ? 1 : 0,
+      vehicle.order_index || 0,
       vehicle.latitude || null,
       vehicle.longitude || null,
-      vehicle.locationUpdatedAt || null,
+      vehicle.location_updated_at || null,
       req.user.id,
       req.params.id
     );
@@ -182,7 +183,8 @@ app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
     addToHistory('vehicle', req.params.id, 'updated', vehicle, req.user.id, req.user.name);
     invalidateEntity('vehicles');
     
-    res.json(vehicle);
+    const saved = db.prepare('SELECT * FROM vehicles WHERE id = ?').get(req.params.id);
+    res.json(saved);
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });

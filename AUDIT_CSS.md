@@ -477,7 +477,7 @@
 | U6 — Border-radius tokens | ✅ DONE | `bba14a0` |
 | U7 — Font-size tokens | ✅ DONE | `04cf7b5` |
 | U8 — Couleurs tokens | ✅ DONE | `154c6c3` |
-| U9 — Inline styles extraction | ⬜ TODO | — |
+| U9 — Inline styles extraction | ⏭️ SKIP | — analysé, refactoring JSX P3 |
 | U10 — Collisions namespacing | ⬜ TODO | — |
 | U11 — Mobile tokens | ⬜ TODO | — |
 | U12 — TV-client isolation | ⬜ TODO | — |

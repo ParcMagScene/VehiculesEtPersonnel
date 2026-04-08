@@ -39,6 +39,7 @@ function MobileApp({ onSwitchToDesktop }) {
   const [showThemePanel, setShowThemePanel] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const isAdmin = !!currentUser?.isAdmin;
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [msgToast, setMsgToast] = useState(null);
@@ -352,36 +353,42 @@ function MobileApp({ onSwitchToDesktop }) {
             </Button>
 
             <div className="menu-section-label">Gestion</div>
+            {(isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance) && (
             <Button variant="ghost"               className={currentScreen === 'equipment' ? 'active' : ''}
               onClick={() => { setCurrentScreen('equipment'); setMenuOpen(false); }}
             >
               <Package size={20} />
               <span>Matériel & SAV</span>
             </Button>
+            )}
             <Button variant="ghost"               className={currentScreen === 'location' ? 'active' : ''}
               onClick={() => { setCurrentScreen('location'); setMenuOpen(false); }}
             >
               <MapPin size={20} />
               <span>Localisation</span>
             </Button>
+            {(isAdmin || currentUser?.permissions?.can_manage_catalog) && (
             <Button variant="ghost"               className={currentScreen === 'orders' ? 'active' : ''}
               onClick={() => { setCurrentScreen('orders'); setMenuOpen(false); }}
             >
               <ShoppingCart size={20} />
               <span>Commandes</span>
             </Button>
+            )}
             <Button variant="ghost"               className={currentScreen === 'leaves' ? 'active' : ''}
               onClick={() => { setCurrentScreen('leaves'); setMenuOpen(false); }}
             >
               <Palmtree size={20} />
               <span>Congés</span>
             </Button>
+            {(isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance) && (
             <Button variant="ghost"               className={currentScreen === 'inventory' ? 'active' : ''}
               onClick={() => { setCurrentScreen('inventory'); setMenuOpen(false); }}
             >
               <ClipboardCheck size={20} />
               <span>Inventaire</span>
             </Button>
+            )}
 
             {/* ── Thème ── */}
             <div className="menu-section-label">Apparence</div>

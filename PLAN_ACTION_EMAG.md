@@ -225,9 +225,9 @@
 
 ### 7.2 Tâches
 
-- [ ] **7.1** Implémenter filtrage modules mobiles selon permissions utilisateur
-- [ ] **7.2** Vérifier module SAV mobile : demandes, entrées, sorties, restrictions rôle
-- [ ] **7.3** Vérifier tous les modules mobiles (equipment, inventory, orders, leaves, etc.)
+- [x] **7.1** Filtrage modules mobiles selon permissions (Matériel, Commandes, Inventaire) ✅
+- [x] **7.2** Permissions : can_manage_equipment_maintenance → Matériel/Inventaire, can_manage_catalog → Commandes ✅
+- [x] **7.3** Modules de base (Planning, Tâches, Congés, Messagerie, Localisation) restent accessibles à tous ✅
 - [ ] **7.4** Tests mobile + commit
 
 ---

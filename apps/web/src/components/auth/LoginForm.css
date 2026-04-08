@@ -208,7 +208,7 @@
 }
 
 .session-conflict-modal .modal-header {
-  padding: 24px 24px 16px;
+  padding: var(--space-5) var(--space-5) var(--space-3);
   border-bottom: none;
   background: var(--theme-danger-gradient);
   border-radius: 16px 16px 0 0;
@@ -221,7 +221,7 @@
 }
 
 .session-conflict-modal .modal-body {
-  padding: 24px;
+  padding: var(--space-5);
 }
 
 .modal-actions {

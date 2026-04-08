@@ -38,11 +38,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px;
+  padding: var(--space-5);
   border-bottom: none;
   background: var(--modal-header-bg);
   color: var(--modal-header-color);
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--modal-header-border-radius);
 }
 
 .qr-modal-header h2 {
@@ -179,7 +179,7 @@
 }
 
 .qr-modal-footer {
-  padding: 20px 24px;
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--theme-border-medium);
   display: flex;
   justify-content: center;

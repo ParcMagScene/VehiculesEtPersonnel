@@ -16,7 +16,7 @@
 
 .month-selector-modal {
   background: var(--theme-bg-card);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-modal);
   max-width: 900px;
   width: 90%;

@@ -8,7 +8,7 @@
 
 .display-dialog {
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   width: 92%;
   max-width: 580px;
   max-height: 90vh;

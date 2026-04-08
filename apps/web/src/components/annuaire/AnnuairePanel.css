@@ -615,7 +615,7 @@
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 620px;
-  box-shadow: 0 20px 60px var(--shadow-xl);
+  box-shadow: var(--shadow-modal);
   animation: slideUp 0.2s ease;
 }
 
@@ -632,7 +632,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border-color, var(--theme-border));
 }
 
@@ -653,7 +653,7 @@
 .btn-close:hover { background: var(--theme-bg-hover); color: var(--theme-text-primary); }
 
 .annuaire-form {
-  padding: 20px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: 14px;

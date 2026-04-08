@@ -16,7 +16,7 @@
 .vehicle-maintenance-modal {
   background: var(--theme-bg-page);
   border-radius: var(--radius-xl);
-  box-shadow: 0 20px 60px var(--shadow-xl);
+  box-shadow: var(--shadow-modal);
   max-width: 600px;
   width: 90%;
   max-height: 90vh;
@@ -34,7 +34,7 @@
 }
 
 .vehicle-maintenance-modal .modal-header {
-  padding: 1.5rem;
+  padding: var(--space-5);
   border-bottom: none;
   display: flex;
   justify-content: space-between;
@@ -95,7 +95,7 @@
 }
 
 .maintenance-form {
-  padding: 1.5rem;
+  padding: var(--space-5);
   overflow-y: auto;
   flex: 1;
 }

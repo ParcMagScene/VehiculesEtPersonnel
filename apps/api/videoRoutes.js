@@ -55,7 +55,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     try {
       const cameras = db.prepare(`
         SELECT id, name, brand, model, ip, rtsp_url, rtsp_port, http_port, ptz_supported,
-               location, affaire_id, zone, enabled, stream_profile, status,
+               location, affaire_id, zone, enabled, stream_profile, channel, status,
                sort_order, notes, last_seen, created_at, updated_at
         FROM cameras ORDER BY sort_order, name
       `).all();
@@ -80,7 +80,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const camera = db.prepare(`
         SELECT id, name, brand, model, ip, rtsp_url, rtsp_port, http_port,
                username, ptz_supported, location, affaire_id, zone, enabled,
-               stream_profile, snapshot_path, status, sort_order, notes,
+               stream_profile, snapshot_path, channel, status, sort_order, notes,
                last_seen, created_at, updated_at
         FROM cameras WHERE id = ?
       `).get(id);
@@ -99,7 +99,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { name, brand, model, ip, rtsp_url, rtsp_port, http_port,
               username, password, ptz_supported, location, affaire_id,
-              zone, enabled, stream_profile, snapshot_path, notes } = req.body;
+              zone, enabled, stream_profile, snapshot_path, notes, channel } = req.body;
 
       if (!name || !ip) return res.status(400).json({ error: 'name et ip sont requis' });
 
@@ -113,14 +113,15 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const result = db.prepare(`
         INSERT INTO cameras (name, brand, model, ip, rtsp_url, rtsp_port, http_port,
           username, password_encrypted, ptz_supported, location, affaire_id, zone,
-          enabled, stream_profile, snapshot_path, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          enabled, stream_profile, snapshot_path, notes, channel)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         name, brand || 'generic', model || null, ip, rtsp_url || null,
         rtsp_port || 554, http_port || 80, username || 'admin',
         passwordEncrypted, ptz_supported ? 1 : 0, location || null,
         affaire_id || null, zone || null, enabled !== false ? 1 : 0,
-        stream_profile || 'main', snapshot_path || null, notes || null
+        stream_profile || 'main', snapshot_path || null, notes || null,
+        channel || 1
       );
 
       const camera = db.prepare('SELECT * FROM cameras WHERE id = ?').get(result.lastInsertRowid);
@@ -150,7 +151,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
 
       const { name, brand, model, ip, rtsp_url, rtsp_port, http_port,
               username, password, ptz_supported, location, affaire_id,
-              zone, enabled, stream_profile, snapshot_path, notes, sort_order } = req.body;
+              zone, enabled, stream_profile, snapshot_path, notes, sort_order, channel } = req.body;
 
       // Chiffrer le nouveau mot de passe seulement s'il est fourni
       let passwordEncrypted = existing.password_encrypted;
@@ -163,7 +164,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
           name = ?, brand = ?, model = ?, ip = ?, rtsp_url = ?, rtsp_port = ?,
           http_port = ?, username = ?, password_encrypted = ?, ptz_supported = ?,
           location = ?, affaire_id = ?, zone = ?, enabled = ?, stream_profile = ?,
-          snapshot_path = ?, notes = ?, sort_order = ?, updated_at = datetime('now')
+          snapshot_path = ?, notes = ?, sort_order = ?, channel = ?, updated_at = datetime('now')
         WHERE id = ?
       `).run(
         name ?? existing.name, brand ?? existing.brand, model ?? existing.model,
@@ -173,7 +174,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         location ?? existing.location, affaire_id ?? existing.affaire_id,
         zone ?? existing.zone, enabled !== undefined ? (enabled ? 1 : 0) : existing.enabled,
         stream_profile ?? existing.stream_profile, snapshot_path ?? existing.snapshot_path,
-        notes ?? existing.notes, sort_order ?? existing.sort_order, id
+        notes ?? existing.notes, sort_order ?? existing.sort_order,
+        channel ?? existing.channel ?? 1, id
       );
 
       // Re-enregistrer dans le proxy

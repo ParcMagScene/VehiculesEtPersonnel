@@ -89,7 +89,15 @@ export function runVideoMigrations(db) {
     logger.warn('Migration video index:', e.message);
   }
 
-  // ─── 5. Nettoyage sessions expirées (> 24h) ───
+  // ─── 5. Colonne channel (multi-channel par caméra) ───
+  try {
+    db.exec(`ALTER TABLE cameras ADD COLUMN channel INTEGER DEFAULT 1`);
+    logger.info('  ✅ Migration video: colonne channel ajoutée');
+  } catch (e) {
+    if (!e.message.includes('duplicate column')) { /* déjà présente, OK */ }
+  }
+
+  // ─── 6. Nettoyage sessions expirées (> 24h) ───
   try {
     db.exec(`DELETE FROM video_sessions WHERE status != 'active' AND started_at < datetime('now', '-1 day')`);
   } catch (_) { /* ignore */ }

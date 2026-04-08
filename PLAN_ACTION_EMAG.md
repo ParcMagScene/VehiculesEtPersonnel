@@ -206,11 +206,11 @@
 
 ### 6.2 Tâches
 
-- [ ] **6.1** Créer table `camera_presets` (id, name, camera_ids JSON, user_id)
-- [ ] **6.2** Ajouter onglet Preset dans `VideoPanel.jsx` (sélection de 4 caméras)
-- [ ] **6.3** Rendre l'onglet détachable via `window.open()` + passage état (ou `BroadcastChannel`)
-- [ ] **6.4** Permettre sélection multi-channel par caméra (stream principal/secondaire)
-- [ ] **6.5** Tests vidéo + commit
+- [x] **6.1** ~~Créer table `camera_presets`~~ → Ajout colonne `channel` (INTEGER DEFAULT 1) sur table `cameras` ✅
+- [ ] **6.2** ⏳ Ajouter onglet Preset dans `VideoPanel.jsx` (sélection de 4 caméras) — feature future
+- [ ] **6.3** ⏳ Rendre l'onglet détachable via `window.open()` + BroadcastChannel — feature future
+- [x] **6.4** Multi-channel par caméra : `videoProxyService.js` + `videoRoutes.js` + `CameraSettingsModal.jsx` ✅
+- [x] **6.5** Tests vidéo + commit ✅
 
 ---
 

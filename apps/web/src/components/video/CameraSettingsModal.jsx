@@ -13,7 +13,7 @@ const BRANDS = [
 const CameraSettingsModal = ({ camera, onSave, onDelete, onTest, onClose }) => {
   const [form, setForm] = useState({
     name: '', brand: 'generic', model: '', ip: '', rtspUrl: '',
-    rtspPort: 554, httpPort: 80, username: 'admin', password: '',
+    rtspPort: 554, httpPort: 80, channel: 1, username: 'admin', password: '',
     ptzSupported: false, location: '', affaireId: '', zone: '',
     enabled: true, streamProfile: 'main', snapshotPath: '', notes: '',
   });
@@ -31,6 +31,7 @@ const CameraSettingsModal = ({ camera, onSave, onDelete, onTest, onClose }) => {
         rtspUrl: camera.rtspUrl || '',
         rtspPort: camera.rtspPort || 554,
         httpPort: camera.httpPort || 80,
+        channel: camera.channel || 1,
         username: camera.username || 'admin',
         password: '', // Ne jamais pré-remplir le mot de passe
         ptzSupported: !!camera.ptzSupported,
@@ -126,6 +127,9 @@ const CameraSettingsModal = ({ camera, onSave, onDelete, onTest, onClose }) => {
             </FormField>
             <FormField className="form-group" label="Port HTTP">
               <Input type="number" value={form.httpPort} onChange={e => handleChange('httpPort', parseInt(e.target.value, 10) || 80)} />
+            </FormField>
+            <FormField className="form-group" label="Channel">
+              <Input type="number" min={1} max={64} value={form.channel} onChange={e => handleChange('channel', parseInt(e.target.value, 10) || 1)} />
             </FormField>
             <FormField className="form-group" label="Profil flux">
               <Select value={form.streamProfile} onChange={e => handleChange('streamProfile', e.target.value)}>

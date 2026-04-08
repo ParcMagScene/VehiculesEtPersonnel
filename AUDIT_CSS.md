@@ -478,6 +478,6 @@
 | U7 — Font-size tokens | ✅ DONE | `04cf7b5` |
 | U8 — Couleurs tokens | ✅ DONE | `154c6c3` |
 | U9 — Inline styles extraction | ⏭️ SKIP | — analysé, refactoring JSX P3 |
-| U10 — Collisions namespacing | ⬜ TODO | — |
+| U10 — Collisions namespacing | ✅ DONE | `dcc27e9` |
 | U11 — Mobile tokens | ⬜ TODO | — |
 | U12 — TV-client isolation | ⬜ TODO | — |

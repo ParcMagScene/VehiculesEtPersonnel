@@ -302,12 +302,12 @@
 
 ### 10.2 Tâches
 
-- [ ] **10.1** Aligner `VERSION.md` avec `package.json`
-- [ ] **10.2** Documenter les 5 variables .env manquantes
-- [ ] **10.3** Fixer log port dev dans `server.js`
-- [ ] **10.4** Documenter PM2 dans guide développeur et checklist prod
-- [ ] **10.5** Créer workflow CI GitHub Actions (`.github/workflows/ci.yml`) : lint + test + build
-- [ ] **10.6** Produire rapport comparatif DEV = PROD
+- [x] **10.1** Aligner `VERSION.md` avec `package.json` ✅ (commit `7af38e2`)
+- [x] **10.2** Documenter les 5 variables .env manquantes ✅ (commit `7af38e2`)
+- [x] **10.3** Fixer log port dev dans `server.js` ✅ (commit `3f89572`)
+- [x] **10.4** PM2 déjà documenté dans GUIDE_DEVELOPPEUR + CHECKLIST_PRODUCTION ✅ (faux positif)
+- [x] **10.5** CI GitHub Actions créée (`.github/workflows/ci.yml`) ✅
+- [x] **10.6** Rapport : tous les écarts identifiés ont été corrigés (10.1–10.5) ✅
 - [ ] **10.7** Commit & push
 
 ---

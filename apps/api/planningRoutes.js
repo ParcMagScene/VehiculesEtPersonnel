@@ -289,6 +289,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       // Fallback : utiliser pd.numero si affaire_id non fourni
       let linkedAffaireId = affaire_id || pd?.numero || null;
       let affaireCreated = false;
+      let finalId, updated = false, bpItemsCount = 0;
+
+      // [PHASE 4] Transaction atomique : affaire + bl_import + bp_items
+      const atomicImport = db.transaction(() => {
+
       if (linkedAffaireId) {
         const existingAffaire = db.prepare('SELECT id, numero_affaire FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
         if (!existingAffaire) {
@@ -354,9 +359,6 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         ? db.prepare('SELECT id FROM bl_imports WHERE affaire_id = ? AND filename = ?').get(linkedAffaireId, existingFilename)
         : null;
 
-      let finalId;
-      let updated = false;
-
       if (existingImport) {
         // ── UPDATE : mettre à jour l'import existant ──
         finalId = existingImport.id;
@@ -412,13 +414,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         );
       }
 
-      // Copier le PDF en pièce jointe de l'affaire
-      if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
-
-      const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(finalId);
-
       // ═══ Auto-persist BP items with equipment matching ═══
-      let bpItemsCount = 0;
       if (pd && Array.isArray(pd.items) && pd.items.length > 0) {
         try {
           const insertItem = db.prepare(`
@@ -503,6 +499,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         }
       }
 
+      }); // fin atomicImport
+      atomicImport();
+
+      // Copier le PDF en pièce jointe de l'affaire (opération fichier, hors transaction)
+      if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
+
+      const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(finalId);
       res.status(updated ? 200 : 201).json({ ...created, affaire_created: affaireCreated, bp_items_count: bpItemsCount, updated });
     } catch (error) {
       logger.error('POST /api/planning/bl-imports error:', error);
@@ -590,6 +593,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           let linkedAffaireId = affaire_id || pd?.numero || null;
           let affaireCreated = false;
           let affaireUpdated = false;
+          let finalId;
+          let updated = false;
+          let bpItemsCount = 0;
+          const existingFilename = file ? file.originalname : `text-import-${i}`;
+
+          // [PHASE 4] Transaction atomique par item : affaire + bl_import + bp_items
+          const atomicItem = db.transaction(() => {
 
           if (linkedAffaireId) {
             const existingAffaire = db.prepare('SELECT id, numero_affaire FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
@@ -671,13 +681,10 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           }
 
           // Dédoublonnage BL import
-          const existingFilename = file ? file.originalname : `text-import-${i}`;
           const existingImport = linkedAffaireId
             ? db.prepare('SELECT id FROM bl_imports WHERE affaire_id = ? AND filename = ?').get(linkedAffaireId, existingFilename)
             : null;
 
-          let finalId;
-          let updated = false;
           const enrichedDataStr = pd ? JSON.stringify(pd) : null;
 
           if (existingImport) {
@@ -710,11 +717,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
             );
           }
 
-          // Copier le PDF en pièce jointe de l'affaire
-          if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
-
           // Auto-persist BP items with equipment matching
-          let bpItemsCount = 0;
           if (pd?.items?.length > 0) {
             try {
               const insertMany = db.transaction((bpItems) => {
@@ -742,6 +745,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               logger.error('Erreur bp_items batch:', bpErr.message);
             }
           }
+
+          }); // fin atomicItem
+          atomicItem();
+
+          // Copier le PDF en pièce jointe de l'affaire (opération fichier, hors transaction)
+          if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
 
           results.push({
             index: i,

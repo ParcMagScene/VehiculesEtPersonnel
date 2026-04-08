@@ -37,6 +37,9 @@ db.pragma('synchronous = FULL');
 // Configurer le checkpoint automatique (tous les 1000 pages)
 db.pragma('wal_autocheckpoint = 1000');
 
+// [PHASE 4] Timeout 5s si la DB est verrouillée par un autre writer
+db.pragma('busy_timeout = 5000');
+
 // Créer les tables
 // [AUDIT FIX P1-12] Les clauses ON DELETE des FOREIGN KEY ne s'appliquent qu'aux nouvelles bases.
 // Pour les bases existantes, SQLite ne permet pas de modifier les FK via ALTER TABLE.

@@ -472,7 +472,7 @@
 | U1 — DS tokens purge | ✅ DONE | `4839820` |
 | U2 — Z-index migration | ✅ DONE | `d723ec4` |
 | U3 — Breakpoints unification | ✅ DONE | `23c4ccc` |
-| U4 — Modals unification | ⬜ TODO | — |
+| U4 — Modals unification | ✅ DONE | `e7ed615` |
 | U5 — Toolbars/Headers | ⬜ TODO | — |
 | U6 — Border-radius tokens | ⬜ TODO | — |
 | U7 — Font-size tokens | ⬜ TODO | — |

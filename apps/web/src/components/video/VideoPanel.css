@@ -16,11 +16,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   background: var(--bg-secondary, var(--theme-bg-card));
   border-bottom: 1px solid var(--border-color, var(--theme-border));
   flex-shrink: 0;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .video-panel__title {
@@ -263,8 +263,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
-  gap: 8px;
+  padding: var(--space-2) 0;
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 

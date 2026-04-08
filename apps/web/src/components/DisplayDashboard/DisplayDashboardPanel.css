@@ -71,11 +71,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
   flex-shrink: 0;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .display-subtabs {
@@ -154,7 +154,7 @@
 .screens-toolbar {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .display-grid {

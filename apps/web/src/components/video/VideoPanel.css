@@ -772,5 +772,5 @@
 }
 
 .preset-detached__error {
-  color: var(--theme-danger, #ef4444);
+  color: var(--theme-danger, var(--theme-danger));
 }

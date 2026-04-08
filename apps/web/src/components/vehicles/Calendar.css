@@ -1164,7 +1164,7 @@
 }
 
 .tournee-link-btn:active {
-  background: #4338ca;
+  background: var(--theme-info-text-alt);
   transform: scale(0.9);
 }
 

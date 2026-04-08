@@ -39,7 +39,7 @@
 
 /* --- Section non liées --- */
 .sav-import-unmatched-header {
-  color: #f59e0b;
+  color: var(--theme-warning);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -58,7 +58,7 @@
 }
 
 .sav-import-dup-badge {
-  color: #ef4444;
+  color: var(--theme-danger);
   font-size: var(--font-2xs);
   font-weight: 700;
 }
@@ -76,7 +76,7 @@
 
 .sav-import-linked-name {
   font-size: var(--font-sm);
-  color: #10b981;
+  color: var(--theme-success-alt);
   font-weight: 600;
 }
 
@@ -84,7 +84,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #ef4444;
+  color: var(--theme-danger);
   padding: 2px;
 }
 
@@ -169,7 +169,7 @@
 }
 
 .sav-import-link-item:hover {
-  background: #eff6ff;
+  background: var(--theme-info-bg);
 }
 
 .sav-import-link-ref {

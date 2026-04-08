@@ -363,7 +363,7 @@
 }
 
 .login-reset-header {
-  background: var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), #d97706));
+  background: var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), var(--theme-warning-dark)));
 }
 
 .login-form-field-spacing {

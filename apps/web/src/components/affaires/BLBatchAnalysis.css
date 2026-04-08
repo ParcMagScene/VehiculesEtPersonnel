@@ -175,7 +175,7 @@
 }
 
 .bl-batch-result-error-text {
-  color: #ef4444;
+  color: var(--theme-danger);
   font-size: var(--font-sm);
 }
 
@@ -232,7 +232,7 @@
   padding: 6px 12px 10px;
   border-top: 1px solid var(--theme-border);
   font-size: 0.78rem;
-  color: #ef4444;
+  color: var(--theme-danger);
 }
 
 /* --- État vide --- */

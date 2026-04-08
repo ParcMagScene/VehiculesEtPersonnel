@@ -473,7 +473,7 @@
 | U2 — Z-index migration | ✅ DONE | `d723ec4` |
 | U3 — Breakpoints unification | ✅ DONE | `23c4ccc` |
 | U4 — Modals unification | ✅ DONE | `e7ed615` |
-| U5 — Toolbars/Headers | ⬜ TODO | — |
+| U5 — Toolbars/Headers | ✅ DONE | `24ae834` |
 | U6 — Border-radius tokens | ⬜ TODO | — |
 | U7 — Font-size tokens | ⬜ TODO | — |
 | U8 — Couleurs tokens | ⬜ TODO | — |

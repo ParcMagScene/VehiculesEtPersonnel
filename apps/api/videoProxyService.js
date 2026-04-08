@@ -104,7 +104,17 @@ export function generateSessionToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+const MAX_ACTIVE_SESSIONS = 500;
+
 export function storeSession(token, data) {
+  // [AUDIT FIX V4] Purger les sessions les plus anciennes si cap atteint
+  if (activeSessions.size >= MAX_ACTIVE_SESSIONS) {
+    let oldest = null, oldestKey = null;
+    for (const [k, v] of activeSessions) {
+      if (!oldest || v.createdAt < oldest) { oldest = v.createdAt; oldestKey = k; }
+    }
+    if (oldestKey) activeSessions.delete(oldestKey);
+  }
   activeSessions.set(token, { ...data, createdAt: Date.now() });
   // Auto-expiration après 4h
   setTimeout(() => activeSessions.delete(token), 4 * 60 * 60 * 1000);

@@ -265,6 +265,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const { token } = req.params;
       const session = getSession(token);
       if (session) {
+        // [AUDIT FIX V3] Libérer le stream WHEP dans MediaMTX
+        if (session.location) whepDelete(session.location);
         removeSession(token);
         db.prepare(`UPDATE video_sessions SET status = 'closed', ended_at = datetime('now') WHERE session_token = ?`).run(token);
         logVideoAccess(req.user.id, req.user.name, session.cameraId, null, 'stop_stream', req.ip);
@@ -570,7 +572,11 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
 
   // POST /api/video/tv/cameras/:id/whep — WHEP authentifié par token TV
   app.post('/api/video/tv/cameras/:id/whep', verifyTvToken, (req, res) => {
-    const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(req.params.id);
+    // [AUDIT FIX V5] parseInt + rate limit TV
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+    if (!checkStreamRate(`tv_${id}`)) return res.status(429).json({ error: 'Trop de requêtes vidéo' });
+    const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
     if (!camera) return res.status(404).json({ error: 'Caméra introuvable' });
 
     (async () => {
@@ -596,14 +602,16 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   //  PRESETS — Vues multi-caméras (4 max)
   // ═══════════════════════════════════════════════════════════════
 
-  // GET /api/video/presets — Tous les presets (partagés + perso)
-  app.get('/api/video/presets', authenticateToken, (_req, res) => {
+  // GET /api/video/presets — Presets partagés + perso de l'utilisateur
+  // [AUDIT FIX V2] Filtrer par is_shared OU user_id
+  app.get('/api/video/presets', authenticateToken, (req, res) => {
     try {
       const presets = db.prepare(`
         SELECT id, name, camera_ids, user_id, is_shared, created_at, updated_at
         FROM camera_presets
+        WHERE is_shared = 1 OR user_id = ?
         ORDER BY name
-      `).all();
+      `).all(req.user.id);
       res.json(presets.map(p => ({ ...p, camera_ids: JSON.parse(p.camera_ids || '[]') })));
     } catch (error) {
       logger.error('GET /api/video/presets:', error);
@@ -632,12 +640,16 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/video/presets/:id — Modifier un preset
+  // [AUDIT FIX V2] Vérifier propriétaire ou admin
   app.put('/api/video/presets/:id', authenticateToken, (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
       const existing = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
       if (!existing) return res.status(404).json({ error: 'Preset introuvable' });
+      if (existing.user_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres presets' });
+      }
       const { name, camera_ids } = req.body;
       if (camera_ids && (!Array.isArray(camera_ids) || camera_ids.length > 4)) {
         return res.status(400).json({ error: 'Maximum 4 caméras' });
@@ -658,12 +670,17 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // DELETE /api/video/presets/:id — Supprimer un preset
+  // [AUDIT FIX V2] Vérifier propriétaire ou admin
   app.delete('/api/video/presets/:id', authenticateToken, (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
-      const result = db.prepare('DELETE FROM camera_presets WHERE id = ?').run(id);
-      if (result.changes === 0) return res.status(404).json({ error: 'Preset introuvable' });
+      const existing = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
+      if (!existing) return res.status(404).json({ error: 'Preset introuvable' });
+      if (existing.user_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Vous ne pouvez supprimer que vos propres presets' });
+      }
+      db.prepare('DELETE FROM camera_presets WHERE id = ?').run(id);
       res.json({ success: true });
     } catch (error) {
       logger.error('DELETE /api/video/presets/:id:', error);

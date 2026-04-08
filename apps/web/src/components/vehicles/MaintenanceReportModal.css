@@ -3,7 +3,7 @@
 .mr-overlay {
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay);
-  z-index: 1200;
+  z-index: var(--z-modal-nested);
   animation: mr-fadeIn 0.2s ease;
 }
 

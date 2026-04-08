@@ -609,17 +609,6 @@
 .status-badge.partial { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
 
 /* ═══ Form Modal ═══ */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--overlay-light);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: var(--z-overlay);
-  padding: 40px 20px;
-  overflow-y: auto;
-}
 
 .annuaire-form-modal {
   background: var(--bg-primary, var(--theme-bg-card));

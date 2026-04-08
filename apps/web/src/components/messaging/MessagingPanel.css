@@ -477,7 +477,7 @@
   position: fixed;
   inset: 0;
   background: var(--shadow-modal);
-  z-index: 2100;
+  z-index: var(--z-modal-nested);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -574,7 +574,7 @@
   position: fixed;
   inset: 0;
   background: var(--shadow-sm);
-  z-index: 1999;
+  z-index: var(--z-overlay);
 }
 
 /* ═══ Séparateur date ═══ */

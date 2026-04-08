@@ -2231,7 +2231,7 @@
   border-color: var(--theme-border);
 }
 [data-theme="dark"] .eq-hier-cat {
-  background: #451a03;
+  background: var(--theme-warning-bg);
   color: var(--btn-warning-hover-bg);
   border-color: var(--theme-warning-text);
 }
@@ -2268,7 +2268,7 @@
 
 [data-theme="dark"] .eq-cat-children {
   border-color: var(--theme-border);
-  background: #1a2332;
+  background: var(--theme-bg-tertiary);
 }
 
 [data-theme="dark"] .eq-cat-leaves {

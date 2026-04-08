@@ -378,7 +378,7 @@
   position: fixed;
   inset: 0;
   background: var(--overlay-light);
-  z-index: 2100;
+  z-index: var(--z-modal-nested);
   display: flex;
   align-items: center;
   justify-content: center;

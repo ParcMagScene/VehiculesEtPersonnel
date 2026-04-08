@@ -21,12 +21,12 @@
   opacity: 0.92;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35) !important;
   transition: none !important;
-  z-index: 100001 !important;
+  z-index: var(--z-draggable) !important;
 }
 
 .modal-resizing {
   transition: none !important;
-  z-index: 100001 !important;
+  z-index: var(--z-draggable) !important;
 }
 
 /* --- Enhanced modal base ----------------------------------------- */

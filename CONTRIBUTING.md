@@ -37,9 +37,10 @@ docs/         # Documentation technique
 2. Créez une **branche** depuis `dev` : `git checkout -b feature/ma-feature`
 3. Faites vos modifications
 4. **Testez** localement : `npm run dev:start`
-5. **Committez** avec un message clair : `git commit -m "feat: description courte"`
-6. **Poussez** votre branche : `git push origin feature/ma-feature`
-7. Ouvrez une **Pull Request** vers `dev`
+5. **Lancez les tests** : `npm test` (56 tests doivent passer)
+6. **Committez** avec un message clair : `git commit -m "feat: description courte"`
+7. **Poussez** votre branche : `git push origin feature/ma-feature`
+8. Ouvrez une **Pull Request** vers `dev`
 
 ## Conventions
 

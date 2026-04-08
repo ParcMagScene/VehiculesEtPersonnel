@@ -61,11 +61,13 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 - **Guard production** : le serveur refuse de démarrer si `JWT_SECRET` est la valeur par défaut en production
 
 ✅ **Rate Limiting**
-- Auth : 20 requêtes / 15 minutes
-- API : 200 requêtes / minute
+- Auth : 5 requêtes / 15 minutes (prod), 50 en dev (skipSuccessfulRequests)
+- Endpoints sensibles : 10 / 15 min (reset password, access requests)
+- Global : 600 requêtes / minute
 - Implémenté via `express-rate-limit`
 
 ✅ **Validation des Entrées**
+- **Zod** : schémas de validation sur 4 endpoints import (`schemas/imports.js` + middleware `validate()`)
 - Validation des types de données sur toutes les routes POST/PUT
 - Regex sur IDs (format attendu)
 - Validation des emails
@@ -90,14 +92,11 @@ Nous suivons activement les vulnérabilités de nos dépendances via `npm audit`
 - Aucune injection HTML brute non sanitisée
 
 ✅ **Stockage Tokens**
-- JWT stocké en localStorage (acceptable pour usage LAN interne)
+- JWT dans cookie `httpOnly` + `SameSite=lax` (migré depuis localStorage)
+- Flag `Secure` activé en production
+- Silent refresh (token renouvelé toutes les 12h)
 - Auto-logout sur erreur 401/403 (sauf endpoints d'auth)
-- Pas de refresh token persisté
 - Toutes les écritures token passent par `api.setAuth()` (LoginForm, MobileLogin)
-
-⚠️ **Limitation connue**
-- LocalStorage vulnérable aux attaques XSS. Acceptable en réseau local privé.
-- Pour exposition internet publique : migrer vers httpOnly cookies.
 
 ### Réseau
 

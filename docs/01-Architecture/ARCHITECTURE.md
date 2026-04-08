@@ -1,7 +1,7 @@
 # 🏗️ Architecture Complète — eM@g
 
-> **Dernière mise à jour** : 11 mars 2026 (Phase 4 — Performance)
-> **Branche** : `dev` — **Dépôt** : `your-org/emag`
+> **Dernière mise à jour** : 8 avril 2026 (Audit qualité 6 phases + tests)
+> **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
 > **Domaine** : (configurable via .env)
 
 ---
@@ -161,7 +161,7 @@ eM@g/
 │       ├── pdfParser.js            # Parsing PDF (pdfjs-dist)
 │       └── ...
 │
-├── server/                         # ══ CODE SOURCE BACKEND ══
+├── apps/api/                       # ══ CODE SOURCE BACKEND ══
 │   ├── server.js                   # Point d'entrée Express (~317 lignes — refactoré Phase 3)
 │   ├── cache.js                    # Cache LRU/TTL en mémoire (auth, stats, listes, iCal, config)
 │   ├── db-helpers.js               # addToHistory, getHistory (extrait de database.js)
@@ -173,7 +173,10 @@ eM@g/
 │   ├── config/                     # ══ CONFIGURATION (Phase 3) ══
 │   │   ├── helmet.js               # Headers sécurité HTTP (helmetConditional)
 │   │   ├── cors.js                 # Configuration CORS (corsMiddleware)
-│   │   └── rateLimiter.js          # Rate limiters (authLimiter, generalLimiter)
+│   │   └── rateLimiter.js          # Rate limiters (authLimiter, sensitiveEndpointLimiter, generalLimiter)
+│   │
+│   ├── schemas/                  # ══ VALIDATION ZOD (Phase 3) ══
+│   │   └── imports.js            # Schémas Zod + middleware validate() (equipment, personnel, SAV, affaires)
 │   │
 │   ├── middleware/                  # ══ MIDDLEWARES (Phase 3) ══
 │   │   ├── authenticate.js         # JWT auth middleware (createAuthenticateToken)
@@ -344,7 +347,9 @@ Client HTTP
 | **config/** | | |
 | `helmet.js` | — | Headers de sécurité HTTP (helmetConditional) |
 | `cors.js` | — | Configuration CORS (corsMiddleware) |
-| `rateLimiter.js` | — | Rate limiters (authLimiter, generalLimiter) |
+| `rateLimiter.js` | — | Rate limiters (authLimiter, sensitiveEndpointLimiter, generalLimiter) |
+| **schemas/** | | |
+| `imports.js` | — | Schémas Zod + middleware validate() (4 schémas : equipment, personnel, SAV, affaires) |
 
 ### Variables d'environnement (`apps/api/.env`)
 
@@ -870,10 +875,10 @@ Le module **Catalogue & Équipements** étend l'application avec :
 ### Structure des fichiers
 
 ```
-server/
+apps/api/
   catalogRoutes.js          ← Routes API (CRUD catalogue, FC, camions, résa-équip.)
   equipmentRoutes.js        ← Routes API (CRUD équipements individuels, SAV, zones)
-src/
+apps/web/src/
   components/
     CataloguePanel.jsx      ← Catalogue (familles, catégories, localisation)
     EquipmentPanel.jsx       ← Équipements individualisés (UID, SAV, dépôt)
@@ -1123,15 +1128,16 @@ node scripts/sync_inventory_to_catalog.js chemin/vers/inventaire.xlsx
 | Composant | Commande | Port |
 |-----------|----------|------|
 | Frontend | `npm run dev` | 5174 |
-| Backend | `cd server && npm start` | 3003 |
+| Backend | `cd apps/api && npm start` | 3003 |
+| Tests | `npm test` | — |
 
 Le proxy Vite en dev redirige `/api` → `http://localhost:3003`.
 
 ### Backup
 
-- Script : `server/backup-database.sh`
+- Script : `scripts/backup-databases.sh`
 - Cron PM2 : toutes les 6 heures
-- Dossier : `server/backups/`
+- Dossier : `apps/api/backups/`
 
 ---
 
@@ -1169,7 +1175,7 @@ Le fichier central `theme.css` définit toutes les variables CSS (custom propert
 
 ---
 
-## 16. Cache Backend (`server/cache.js`)
+## 16. Cache Backend (`apps/api/cache.js`)
 
 Module de cache LRU (Least Recently Used) en mémoire avec TTL (Time To Live).
 

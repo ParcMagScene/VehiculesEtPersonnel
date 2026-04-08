@@ -121,8 +121,8 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/your-org/emag.git
-cd emag
+git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
+cd VehiculesEtPersonnel
 
 # Installer toutes les dépendances (monorepo)
 npm install
@@ -188,15 +188,20 @@ eM@g/
 │   └── utils/
 │       ├── api/            # Client API modulaire (15 modules, ~375 méthodes)
 │       └── ...             # dates, indexedDB, pdfParser, deepLinking
-├── server/
-│   ├── server.js           # Point d'entrée Express (~317 lignes)
-│   ├── database.js         # SQLite 92 tables + 15 index perf (~2855 lignes)
-│   ├── config/             # Helmet, CORS, rate limiters
-│   ├── middleware/          # Auth JWT, authorize, sanitize, upload, errorHandler
-│   ├── 18 fichiers routes  # ~19 593 lignes de routes API
-│   ├── cache.js            # Cache LRU/TTL (5 instances)
-│   ├── emailService.js     # Service d'envoi d'emails
-│   └── migrations/         # 17 fichiers SQL
+├── apps/
+│   ├── api/                # ══ BACKEND EXPRESS ══
+│   │   ├── server.js       # Point d'entrée Express (health endpoint, middlewares)
+│   │   ├── database.js     # SQLite 92 tables + 15 index perf
+│   │   ├── schemas/        # Validation Zod (imports CSV/JSON)
+│   │   ├── config/         # Helmet, CORS, rate limiters
+│   │   ├── middleware/     # Auth JWT, authorize, sanitize, upload, errorHandler
+│   │   ├── *Routes.js      # 18+ fichiers de routes API
+│   │   ├── cache.js        # Cache LRU/TTL (5 instances)
+│   │   ├── emailService.js # Service d'envoi d'emails
+│   │   └── migrations/     # 17 fichiers SQL
+│   ├── web/                # ══ FRONTEND REACT ══
+│   └── tv-client/          # ══ CLIENT TV ══
+├── tests/                  # 56 tests (unit, schemas Zod, DB init)
 ├── public/
 │   ├── depot-zones.json    # Plan dépôt 1 (Événementiel)
 │   ├── depot2-zones.json   # Plan dépôt 2 (Structure)
@@ -239,6 +244,7 @@ npm run preview      # Prévisualiser le build
 npm run deploy       # Build + déploiement PM2
 npm run lint         # Vérification du code (ESLint)
 npm run dev:start    # Démarre backend + frontend en dev
+npm test             # Lance les 56 tests (unit + schemas + DB)
 ```
 
 ---

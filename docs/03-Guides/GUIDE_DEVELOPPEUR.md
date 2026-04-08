@@ -44,13 +44,11 @@
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/your-org/emag.git
+git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
 cd "eM@g"
 
-# Installer toutes les dépendances (racine + apps)
+# Installer toutes les dépendances (racine + workspaces)
 npm install
-cd apps/api && npm install && cd ../..
-cd apps/web && npm install && cd ../..
 ```
 
 ---
@@ -106,7 +104,7 @@ eM@g/                           # Monorepo
 ├── apps/
 │   ├── api/                    # ══ BACKEND EXPRESS ══
 │   │   ├── server.js           # Point d'entrée Express
-│   │   ├── database.js         # SQLite ~83 tables + index
+│   │   ├── database.js         # SQLite ~92 tables + index
 │   │   ├── config/             # Helmet, CORS, rate limiters
 │   │   ├── middleware/         # Auth JWT, authorize, sanitize, upload, errorHandler
 │   │   ├── *Routes.js          # ~15 fichiers de routes API
@@ -157,6 +155,7 @@ npm run preview      # Prévisualiser le build
 npm run deploy       # Build + déploiement PM2
 npm run lint         # Vérification du code (ESLint)
 npm run dev:start    # Démarre backend + frontend en dev
+npm test             # Lance les 56 tests (unit + Zod + DB init)
 ```
 
 ---

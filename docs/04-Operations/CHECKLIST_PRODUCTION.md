@@ -4,7 +4,7 @@
 
 ## 1. Tests automatisés
 
-- [ ] **Tests unitaires** : `npm test` — 21/21 ✅
+- [ ] **Tests unitaires** : `npm test` — 56/56 ✅ (9 suites, 3 fichiers)
 - [ ] **Tests intégration API** : `npm run test:api` — 15/15 ✅ (backend dev en cours)
 - [ ] **Tests intégration authentifiée** : `TEST_EMAIL=xxx TEST_PASSWORD=xxx npm run test:api` (vérifie login, session, logout, accès protégés)
 - [ ] **Smoke test** : `SMOKE_EMAIL=xxx SMOKE_PASSWORD=xxx npm run smoke-test`
@@ -54,7 +54,7 @@
 
 - [ ] Vérifier l'accès depuis le domaine public (configuré dans .env)
 - [ ] Tester le login d'au moins 2 utilisateurs
-- [ ] Vérifier que les zones dépôt en `server/data/` persistent correctement après redémarrage
+- [ ] Vérifier que les zones dépôt dans `public/` persistent correctement après redémarrage
 - [ ] Monitorer les logs pendant 30 min pour détecter des erreurs silencieuses
 
 ---

@@ -3,7 +3,7 @@
 > Référence exhaustive de toute la documentation interne du projet eM@g.
 > Équivalent d'une API Reference (type Swagger) pour la documentation.
 >
-> **Dernière mise à jour** : Juillet 2025
+> **Dernière mise à jour** : Avril 2026
 > **Fichiers indexés** : 16 fichiers Markdown dans `docs/`
 
 ---
@@ -98,6 +98,7 @@
 | Google Calendar | `/api/google-calendar` | — | `googleCalendarRoutes.js` |
 | Fournisseurs | `/api/supplier-catalog` | — | `supplierCatalogRoutes.js` |
 | Profil | `/api/profile` | — | `profileRoutes.js` |
+| Santé | `/api/health` | 1 | `server.js` (GET — vérifie DB, uptime, retourne 503 si erreur) |
 
 → Codes d'erreur : `400` Bad Request, `401` Unauthorized, `403` Forbidden, `404` Not Found, `409` Conflict, `500` Internal Server Error
 

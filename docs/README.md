@@ -61,7 +61,12 @@
 
 ## 🆕 Documentation Technique (v1.0.0 — avril 2026)
 
-### 📡 API (~243 endpoints)
+### 🧪 Tests & Qualité
+- **56 tests** automatisés (21 unit + 17 Zod + 18 DB init) — `npm test`
+- **Validation Zod** sur 4 endpoints import CSV/JSON (`apps/api/schemas/imports.js`)
+- **Health check** : `GET /api/health` (uptime + état DB)
+
+### 📡 API (~431 endpoints)
 - **[api/README.md](api/README.md)** — Index API (16 modules, middlewares)
 - auth · vehicles · personnel · equipment · affaires · orders · stock · planning · messaging · leaves · annuaire · video · display · attachments · supplier-catalog
 - → Voir tous les fichiers dans `docs/api/`

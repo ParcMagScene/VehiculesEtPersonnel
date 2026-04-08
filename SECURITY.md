@@ -1,8 +1,8 @@
 # SECURITY.md — Politique de Sécurité eM@g
 
 > **Version de sécurité** : 1.0.0  
-> **Date** : 7 avril 2026  
-> **Branche** : `oss-preparation`
+> **Date** : 8 avril 2026  
+> **Branche** : `dev`
 
 ## Signaler une vulnérabilité
 
@@ -62,8 +62,20 @@ Nous nous engageons à :
 
 ### Rate limiting
 - Global : 600 req/min par IP
-- Login : 30 tentatives/15 min
-- API sensibles : rate limiters dédiés
+- Login : 5 tentatives/15 min (prod), 50 en dev
+- Endpoints sensibles : 10 req/15 min (reset password, access requests)
+
+### Validation des entrées
+- **Zod** sur les imports CSV/JSON (equipment, personnel, SAV, affaires)
+- Regex sur IDs, validation email, sanitisation XSS globale
+
+### Health check
+- `GET /api/health` — vérifie la connexion DB, retourne uptime (503 si erreur DB)
+- Smoke test post-déploiement dans `safe-deploy.sh`
+
+### Tests automatisés
+- 56 tests : 21 unit + 17 schémas Zod + 18 DB init
+- CI GitHub Actions : `npm test` avant build (`protect-prod.yml`)
 
 ## Vulnérabilités connues
 

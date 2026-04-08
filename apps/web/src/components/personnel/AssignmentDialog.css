@@ -135,7 +135,7 @@
   font-weight: 400;
   color: var(--theme-text-muted);
   text-transform: none;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 /* ── Personne ── */
@@ -186,7 +186,7 @@
   padding: 0.5rem 0.8rem;
   border: none;
   border-bottom: 1px solid var(--theme-border-medium);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   outline: none;
   background: var(--theme-bg-secondary);
   box-sizing: border-box;
@@ -203,7 +203,7 @@
   gap: 0.5rem;
   padding: 0.5rem 0.8rem;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   transition: background 0.1s;
 }
 .asd-person-option:hover {
@@ -301,7 +301,7 @@
 
 .asd-affaire-numero {
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-success-text-alt);
 }
 
@@ -315,7 +315,7 @@
 }
 
 .asd-affaire-client {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
 }
 
@@ -353,7 +353,7 @@
   padding: 0.55rem 0.75rem;
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-md);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
@@ -473,7 +473,7 @@
 }
 
 .asd-field label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-gray);
 }
@@ -508,7 +508,7 @@
   margin-left: auto;
   font-weight: 500;
   color: var(--theme-success-alt);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   text-transform: none;
 }
 
@@ -586,7 +586,7 @@
 }
 
 .asd-day-num {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-text-body);
 }
@@ -668,7 +668,7 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: var(--radius-md);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   cursor: pointer;
   border: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
@@ -790,7 +790,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 1.2rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: var(--btn-font-weight);
   border: none;
   border-radius: var(--btn-radius);
@@ -890,7 +890,7 @@
 
 .asd-position-placeholder {
   color: var(--theme-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .asd-position-chevron {
@@ -915,7 +915,7 @@
   gap: 3px;
   padding: 2px 8px;
   border-radius: var(--radius-lg);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   border: 1.5px solid;
   background: var(--theme-bg-card);
@@ -924,7 +924,7 @@
 
 .asd-position-tag-remove {
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   line-height: 1;
   opacity: 0.6;
   margin-left: 2px;
@@ -959,7 +959,7 @@
   border: none;
   outline: none;
   flex: 1;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-heading);
   background: transparent;
 }
@@ -1037,7 +1037,7 @@
   padding: 16px;
   text-align: center;
   color: var(--theme-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 /* ── Multi-affectation ── */

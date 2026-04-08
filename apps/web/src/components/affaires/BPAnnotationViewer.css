@@ -93,7 +93,7 @@
 }
 
 .bp-filename {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary, var(--theme-text-muted));
   background: var(--theme-bg-hover, var(--theme-text-dark));
   padding: 0.15rem 0.5rem;
@@ -145,7 +145,7 @@
 
 .bp-zoom-label,
 .bp-page-label {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary, var(--theme-text-muted));
   min-width: 3.5rem;
   text-align: center;
@@ -273,7 +273,7 @@
   padding: 0.5rem 1rem;
   border-radius: var(--radius-md);
   color: var(--theme-text-secondary, var(--theme-text-muted));
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   z-index: var(--z-base);
 }
 
@@ -285,7 +285,7 @@
   gap: 1.5rem;
   padding: 0.5rem 1rem;
   border-top: 1px solid var(--theme-border, var(--theme-text-dark));
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary, var(--theme-text-muted));
   background: var(--theme-bg-card, var(--theme-text-primary));
   flex-shrink: 0;

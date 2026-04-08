@@ -101,7 +101,7 @@
 }
 .lt-btn-sm {
   padding: 4px 10px;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 .lt-btn-link {
   background: none;
@@ -133,7 +133,7 @@
   background: none;
   border: none;
   color: var(--theme-danger-dark);
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
   cursor: pointer;
 }
 
@@ -189,14 +189,14 @@
   color: var(--theme-text-secondary, var(--theme-text-secondary));
 }
 .lt-kpi-detail {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
 }
 .lt-kpi-action {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-info);
   margin-top: 4px;
   font-weight: 500;
@@ -261,7 +261,7 @@
   align-items: center;
   gap: 8px;
   color: var(--theme-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   padding: 8px 0;
 }
 
@@ -282,7 +282,7 @@
 }
 .lt-pending-person {
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-primary, var(--theme-text-primary));
   min-width: 140px;
 }
@@ -374,11 +374,11 @@
 }
 .lt-stat-count {
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   color: var(--theme-text-primary, var(--theme-text-primary));
 }
 .lt-stat-label {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary, var(--theme-text-secondary));
 }
 
@@ -427,7 +427,7 @@
   grid-template-columns: 1fr 80px 80px 80px;
   gap: 8px;
   padding: 8px 12px;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   text-transform: uppercase;
   color: var(--theme-text-muted);
@@ -539,7 +539,7 @@
   gap: 4px;
 }
 .lt-card-person {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
 }
 .lt-card-center {
@@ -565,7 +565,7 @@
   gap: 4px;
   padding: 3px 10px;
   border-radius: var(--radius-lg);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -617,7 +617,7 @@
   border: 1px solid var(--theme-border, var(--theme-border));
   background: var(--theme-bg-card, white);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -679,7 +679,7 @@
   background: var(--theme-warning-bg);
   color: var(--theme-warning-text);
   border-radius: var(--radius-xl);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 500;
 }
 

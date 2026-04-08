@@ -37,7 +37,7 @@
   border: none;
   background: transparent;
   color: var(--theme-text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 500;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -123,7 +123,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
   margin: 0;
@@ -192,7 +192,7 @@
   min-width: 0;
 }
 .dd-rdv-title {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-primary);
   display: flex;
@@ -215,7 +215,7 @@
 .dd-rdv-meta {
   display: flex;
   gap: 10px;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary, var(--theme-text-secondary));
   margin-top: 2px;
   flex-wrap: wrap;
@@ -260,7 +260,7 @@
   font-weight: 700;
 }
 .dd-google-status {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--radius-lg);
@@ -314,7 +314,7 @@
   opacity: 0.6;
 }
 .dd-lt-status {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   flex-shrink: 0;
 }
 .dd-lt-status.done { color: var(--theme-success-alt); }
@@ -414,7 +414,7 @@
 
 .dynamic-display-panel .date-nav .current-date {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   min-width: 160px;
   text-align: center;
   cursor: pointer;
@@ -442,7 +442,7 @@
   border: none;
   background: transparent;
   outline: none;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-primary);
   width: 100%;
 }
@@ -457,7 +457,7 @@
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -523,7 +523,7 @@
 }
 
 .dynamic-display-panel .events-empty p {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 /* Period groups */
@@ -535,7 +535,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-secondary);
   text-transform: uppercase;
@@ -588,7 +588,7 @@
   gap: 4px;
   padding: 2px 10px;
   border-radius: var(--radius-lg);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -600,7 +600,7 @@
 }
 
 .dynamic-display-panel .event-card .event-category {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   background: var(--theme-bg-tertiary);
   padding: 2px 8px;
@@ -715,13 +715,13 @@
 .task-planning-placeholder h3,
 .bl-import-placeholder h3 {
   margin: 0 0 8px 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   color: var(--theme-text-primary);
 }
 
 .task-planning-placeholder p,
 .bl-import-placeholder p {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   max-width: 400px;
 }
 
@@ -867,7 +867,7 @@
   border-left: 3px solid;
   border-radius: var(--radius-xs);
   background: var(--theme-bg-tertiary);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   transition: background 0.1s;
 }
 
@@ -884,7 +884,7 @@
 
 .dd-week-type {
   font-weight: 700;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
 }
 
 .dd-week-del {
@@ -1024,7 +1024,7 @@
   gap: 3px;
   padding: 2px 8px;
   border-radius: var(--radius-md-lg);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 500;
 }
 

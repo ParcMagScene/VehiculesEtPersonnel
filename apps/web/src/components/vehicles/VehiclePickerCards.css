@@ -72,7 +72,7 @@
 
 .vehicle-picker-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-bg-dark);
   white-space: nowrap;
   overflow: hidden;
@@ -88,7 +88,7 @@
 }
 
 .vehicle-picker-brand {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   font-weight: 500;
 }
@@ -102,7 +102,7 @@
 }
 
 .vehicle-picker-reg {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-primary);
   font-weight: 600;
   margin-top: 0.15rem;
@@ -200,7 +200,7 @@
 
 .vehicle-picker-name-desktop {
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-bg-dark);
   white-space: nowrap;
   overflow: hidden;

@@ -129,7 +129,7 @@
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -480,7 +480,7 @@
 
 .notifications-popup-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   color: var(--theme-text-heading);
   display: flex;
   align-items: center;
@@ -598,7 +598,7 @@
 }
 
 .notification-status {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   padding: 4px 8px;
   border-radius: var(--radius-xs);
   font-weight: 600;
@@ -794,7 +794,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   margin-top: 4px;
   font-style: italic;
@@ -876,7 +876,7 @@
   border: 1px solid var(--btn-danger-hover-bg);
   border-left: 3px solid var(--theme-danger);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 .request-conflicts-title {
@@ -947,7 +947,7 @@
 
 .notification-date {
   display: inline-block;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-info-dark);
   font-weight: 600;
   background: var(--theme-info-bg);
@@ -965,7 +965,7 @@
 .notification-registration {
   display: inline-block;
   font-family: monospace;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-primary-light);
   font-weight: 600;
   background: var(--theme-bg-tertiary);
@@ -1199,7 +1199,7 @@
   cursor: pointer;
   z-index: var(--z-toast);
   animation: toast-slide-in 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 500;
   max-width: 340px;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -1234,7 +1234,7 @@
   background: none;
   border: none;
   color: var(--glass-opaque);
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
   cursor: pointer;
   padding: 0 2px;
   line-height: 1;
@@ -1255,7 +1255,7 @@
   padding: 8px 16px;
   background: var(--theme-gradient-alt);
   color: var(--theme-text-inverse);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   animation: slideDown 0.3s ease;
 }
 
@@ -1551,7 +1551,7 @@
   }
 
   .header-title-container .module-tab {
-    font-size: 0.9rem;
+    font-size: var(--font-base);
     padding: 0.5rem 1rem;
   }
 
@@ -1607,7 +1607,7 @@
   }
 
   .header-title-container .module-tab {
-    font-size: 0.85rem;
+    font-size: var(--font-base);
     padding: 0.45rem 0.875rem;
   }
 
@@ -1621,7 +1621,7 @@
   }
 
   .notification-badge {
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
     padding: 0.4rem 0.75rem;
   }
 
@@ -1746,7 +1746,7 @@
   }
 
   .current-date {
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
   }
 
   .nav-button {
@@ -1879,7 +1879,7 @@
   border: none;
   background: transparent;
   color: var(--theme-text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 500;
   border-radius: var(--radius-md);
   cursor: pointer;

@@ -23,7 +23,7 @@
 
 .mobile-header h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 600;
 }
 
@@ -163,7 +163,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   flex-shrink: 0;
 }
 
@@ -213,7 +213,7 @@
 .mobile-sheet-title {
   margin: 0;
   padding: 4px 20px 12px;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-primary);
   border-bottom: 1px solid var(--theme-border-light);
@@ -240,7 +240,7 @@
 .mobile-sheet-form .form-group label {
   font-weight: 600;
   color: var(--theme-text-body);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .mobile-sheet-form .form-group input {
@@ -342,7 +342,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   font-weight: 600;
 }
 
@@ -425,7 +425,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   cursor: pointer;
 }
@@ -525,7 +525,7 @@
 }
 
 .mobile-module-header h2 {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-primary);
   margin: 0;
@@ -980,7 +980,7 @@
 /* Texte plus grand et plus lisible sur petit écran */
 @media (max-width: 380px) {
   .mobile-header h1 {
-    font-size: 1.1rem;
+    font-size: var(--font-lg);
   }
   
   .mobile-content {

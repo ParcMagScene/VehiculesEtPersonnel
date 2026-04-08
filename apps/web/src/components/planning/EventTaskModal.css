@@ -43,7 +43,7 @@
 
 .etm-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -52,7 +52,7 @@
 
 .etm-event-title {
   margin: 0.25rem 0 0;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   font-weight: 500;
 }
@@ -193,7 +193,7 @@
 }
 
 .etm-field label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   text-transform: uppercase;

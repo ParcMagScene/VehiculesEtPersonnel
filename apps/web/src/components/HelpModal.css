@@ -43,7 +43,7 @@
 
 .help-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-inverse);
   display: flex;
@@ -151,7 +151,7 @@
   background: none;
   outline: none;
   width: 100%;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-primary);
 }
 
@@ -183,7 +183,7 @@
   text-align: center;
   padding: 2rem 1rem;
   color: var(--theme-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-style: italic;
 }
 
@@ -208,7 +208,7 @@
 .help-section:last-child { margin-bottom: 0; }
 
 .help-section-title {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 600;
   margin-bottom: 10px;
   display: flex;
@@ -235,7 +235,7 @@
 }
 
 .help-card h4 {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-dark);
   margin-bottom: 3px;
@@ -328,7 +328,7 @@
   border: none;
   background: var(--theme-bg-page);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-primary);
   text-align: left;
@@ -364,7 +364,7 @@
 /* ═══ Version ═══ */
 .help-version {
   text-align: center;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
   padding-top: 16px;
   margin-top: 20px;

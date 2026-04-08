@@ -16,7 +16,7 @@
   border: 2px dashed var(--theme-border);
   border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   flex: 1;
   justify-content: center;
@@ -28,7 +28,7 @@
   border: none;
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
 }
@@ -131,7 +131,7 @@
 }
 
 .bl-batch-field-pct {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   width: 35px;
   text-align: right;
   font-weight: 600;
@@ -140,7 +140,7 @@
 /* --- Résultats par fichier --- */
 .bl-batch-detail-title {
   margin: 0 0 8px;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .bl-batch-result-card {
@@ -176,7 +176,7 @@
 
 .bl-batch-result-error-text {
   color: #ef4444;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 .bl-batch-result-doctype {
@@ -189,7 +189,7 @@
 }
 
 .bl-batch-result-fields {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 
@@ -244,7 +244,7 @@
 
 .bl-batch-empty-text {
   margin-top: 8px;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .bl-batch-empty-hint {
@@ -266,6 +266,6 @@
 }
 
 .bl-batch-kpi-label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }

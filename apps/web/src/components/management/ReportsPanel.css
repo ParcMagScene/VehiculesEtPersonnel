@@ -60,7 +60,7 @@
 }
 .rp-btn-sm {
   padding: 5px 10px;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 .rp-btn-print {
   background: var(--theme-text-primary);
@@ -88,7 +88,7 @@
   border: none;
   color: var(--theme-danger-dark);
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
 }
 
 /* Period filter */
@@ -126,7 +126,7 @@
   border: 1px solid var(--theme-border, var(--theme-border));
   background: var(--theme-bg-secondary, var(--theme-bg-page));
   border-radius: var(--radius-xl);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary, var(--theme-text-secondary));
   cursor: pointer;
   transition: all 0.15s;
@@ -178,7 +178,7 @@
   gap: 10px;
   padding: 40px;
   color: var(--theme-text-secondary, var(--theme-text-secondary));
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 .rp-spin {
   animation: rp-spin 1s linear infinite;
@@ -235,15 +235,15 @@
   gap: 2px;
 }
 .rp-kpi-val {
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   font-weight: 700;
   color: var(--theme-text-primary, var(--theme-text-primary));
 }
 .rp-kpi.cost .rp-kpi-val {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
 }
 .rp-kpi-lbl {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary, var(--theme-text-muted));
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -256,7 +256,7 @@
 }
 .rp-breakdown h4 {
   margin: 0 0 10px;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary, var(--theme-text-dark));
 }
@@ -308,7 +308,7 @@
 }
 .rp-table-section h4 {
   margin: 0 0 10px;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
 }
 .rp-table-wrapper {
@@ -356,7 +356,7 @@
 }
 .rp-extra-stats h4 {
   margin: 0 0 10px;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
 }
 .rp-stat-chips {
@@ -371,7 +371,7 @@
   background: var(--theme-bg-secondary, var(--theme-bg-page));
   border: 1px solid var(--theme-border, var(--theme-border));
   border-radius: var(--radius-md);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary, var(--theme-text-secondary));
 }
 .rp-stat-chip strong {
@@ -382,7 +382,7 @@
 /* Export grid */
 .rp-export-desc {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary, var(--theme-text-secondary));
   line-height: 1.5;
 }
@@ -413,14 +413,14 @@
 }
 .rp-export-title {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-primary, var(--theme-text-dark));
 }
 .rp-export-card:hover .rp-export-title {
   color: var(--theme-info);
 }
 .rp-export-count {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
 }
 
 /* ═══════════════════════════════════════

@@ -254,7 +254,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-align: left;
   border-bottom: 1px solid var(--glass-light);
   display: flex;
@@ -303,7 +303,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
@@ -357,7 +357,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
@@ -443,12 +443,12 @@
 }
 
 .day-view-header .day-name {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
 }
 
 .day-view-header .day-number {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-transform: capitalize;
   opacity: 0.7;
 }
@@ -481,7 +481,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 700;
   text-transform: capitalize;
   min-height: 5.5rem;
@@ -545,7 +545,7 @@
 }
 
 .calendar-header-cell.day-header {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   padding: 0.5rem 0.5rem;
   height: 3.5rem;
   position: static;
@@ -555,7 +555,7 @@
 }
 
 .calendar-header-cell.day-header .day-name {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-transform: capitalize;
   font-weight: 600;
 }
@@ -686,7 +686,7 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   z-index: var(--z-dropdown);
   width: 20px;
   height: 20px;
@@ -700,7 +700,7 @@
 .vehicle-cell .vehicle-name {
   display: block;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-bg-dark);
 }
 
@@ -729,7 +729,7 @@
   right: -2px;
   background: var(--theme-danger-dark);
   color: var(--theme-text-inverse);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   width: 18px;
   height: 18px;
   display: flex;
@@ -757,7 +757,7 @@
 
 .vehicle-cell .vehicle-type {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-gray);
   background: none;
@@ -767,7 +767,7 @@
 
 .vehicle-cell .vehicle-registration {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 900;
   color: var(--theme-primary-light);
   font-family: monospace;
@@ -779,7 +779,7 @@
 
 .vehicle-cell .vehicle-brand {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-muted);
 }
@@ -988,7 +988,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-bg-dark);
   text-align: center;
   align-items: center;
@@ -1001,7 +1001,7 @@
 
 .reservation-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1010,7 +1010,7 @@
 
 .reservation-location {
   font-weight: 400;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   white-space: nowrap;
   overflow: hidden;
@@ -1065,13 +1065,13 @@
 
 .client-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   text-align: center;
   width: 100%;
 }
 
 .location-name {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   opacity: 0.9;
   text-align: center;
   width: 100%;
@@ -1345,12 +1345,12 @@
   }
 
   .time-slot {
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
     padding: 0.25rem;
   }
 
   .calendar-grid-headers .calendar-header {
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
   }
 }
 

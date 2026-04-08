@@ -47,7 +47,7 @@
 .m-eq-qr-error h2 {
   color: var(--theme-danger);
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 700;
 }
 
@@ -96,7 +96,7 @@
 
 .m-eq-qr-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -120,7 +120,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: var(--font-2xl);
   flex-shrink: 0;
   box-shadow: 0 2px 8px var(--shadow-dropdown);
 }

@@ -37,7 +37,7 @@
 
 .mobile-login .login-header h1 {
   margin: 0 0 0.5rem;
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   color: var(--theme-bg-dark);
 }
 
@@ -207,5 +207,5 @@
 .login-footer p {
   margin: 0;
   color: var(--theme-text-muted);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }

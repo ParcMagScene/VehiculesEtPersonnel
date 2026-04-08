@@ -40,7 +40,7 @@
 
 .week-selector-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 700;
   text-transform: capitalize;
 }

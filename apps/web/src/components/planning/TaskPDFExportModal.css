@@ -135,7 +135,7 @@
 }
 
 .selection-count {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   font-weight: 500;
 }
@@ -178,7 +178,7 @@
 }
 
 .section-cb-emoji {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .section-cb-label {
@@ -189,7 +189,7 @@
 }
 
 .section-cb-count {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 700;
 }
 
@@ -237,7 +237,7 @@
 }
 
 .task-cb-status {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   flex-shrink: 0;
   width: 14px;
   text-align: center;
@@ -366,7 +366,7 @@
   justify-content: center;
   height: 200px;
   color: var(--theme-text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 /* ── Aperçu PDF (droite) ── */
@@ -410,7 +410,7 @@
   gap: 12px;
   color: var(--theme-text-muted);
   text-align: center;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   line-height: 1.5;
 }
 

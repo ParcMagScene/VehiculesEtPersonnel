@@ -24,7 +24,7 @@
 .maff-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
 }
 
 .maff-back {
@@ -65,7 +65,7 @@
 .maff-date-label {
   border: none;
   background: none;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-body);
   text-transform: capitalize;
@@ -195,7 +195,7 @@
 .maff-count {
   background: var(--theme-primary-main);
   color: var(--theme-text-inverse);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 700;
   padding: 1px 7px;
   border-radius: var(--radius-md-lg);
@@ -268,20 +268,20 @@
   width: 26px;
   height: 26px;
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-inverse);
   flex-shrink: 0;
 }
 
 .maff-card-num {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-heading);
 }
 
 .maff-card-status {
   margin-left: auto;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--radius-md-lg);
@@ -310,7 +310,7 @@
 }
 
 .maff-card-client {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-muted);
   margin-bottom: 6px;
 }
@@ -348,7 +348,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   background: var(--theme-bg-tertiary);
@@ -437,7 +437,7 @@
 
 .maff-detail-row.muted {
   color: var(--theme-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .maff-client {
@@ -453,7 +453,7 @@
 }
 
 .maff-detail-desc {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-body);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -470,7 +470,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-body);
   padding: 6px 10px;
   background: var(--theme-bg-tertiary);
@@ -500,7 +500,7 @@
 }
 
 .maff-linked-label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   padding: 1px 6px;
   border-radius: var(--radius-xs);
   background: var(--theme-primary-main);
@@ -515,7 +515,7 @@
 }
 
 .maff-linked-name {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-muted);
 }
 
@@ -658,7 +658,7 @@
 }
 
 .maff-person-name {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-heading);
 }

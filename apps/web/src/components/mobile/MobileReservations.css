@@ -33,7 +33,7 @@
 .mobile-reservations .screen-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--theme-text-primary);
 }

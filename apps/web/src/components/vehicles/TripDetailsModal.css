@@ -120,7 +120,7 @@
 .help-text {
   display: block;
   margin-top: 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   font-style: italic;
 }
@@ -128,7 +128,7 @@
 .trip-section h3 {
   margin: 0 0 1rem 0;
   color: var(--theme-text-heading);
-  font-size: 1.125rem;
+  font-size: var(--font-lg);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -359,7 +359,7 @@
   background: var(--close-btn-bg);
   color: var(--glass-bright);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -469,7 +469,7 @@
 }
 
 .timeline-step-icon {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   z-index: var(--z-base);
   background: var(--theme-bg-card);
   width: 2rem;
@@ -560,7 +560,7 @@
 .timeline-step--transfer .timeline-step-label { color: var(--theme-warning-text-alt); }
 .timeline-step--return-departure .timeline-step-label { color: var(--theme-success-text); }
 .timeline-step--final-arrival .timeline-step-label { color: var(--theme-success-text); }
-.timeline-step--pause .timeline-step-label { color: var(--theme-text-gray); font-weight: 500; font-size: 0.75rem; }
+.timeline-step--pause .timeline-step-label { color: var(--theme-text-gray); font-weight: 500; font-size: var(--font-sm); }
 
 .timeline-step-affaire {
   font-size: 0.65rem;
@@ -573,7 +573,7 @@
 
 .timeline-loc {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   white-space: nowrap;
   overflow: hidden;
@@ -643,7 +643,7 @@
 }
 
 .combined-edit-label {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   font-weight: 600;
   margin-right: 0.375rem;
@@ -660,7 +660,7 @@
   background: var(--theme-bg-card);
   color: var(--theme-text-gray);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   transition: all 0.2s ease;
   white-space: nowrap;

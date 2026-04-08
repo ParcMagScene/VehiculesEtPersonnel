@@ -53,19 +53,19 @@
 
 .request-name {
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   color: var(--theme-text-heading);
   margin-bottom: 0.25rem;
 }
 
 .request-email {
   color: var(--theme-primary);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   margin-bottom: 0.25rem;
 }
 
 .request-date {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 
@@ -85,7 +85,7 @@
   align-items: center;
   gap: 0.5rem;
   transition: var(--btn-transition);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .btn-approve {
@@ -449,7 +449,7 @@
 
 .approve-modal-header h3 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--theme-text-inverse);
 }
@@ -479,7 +479,7 @@
 
 .approve-modal-user span {
   color: var(--theme-text-gray);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .approve-modal-options {
@@ -615,7 +615,7 @@
 }
 .create-personnel-modal-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-inverse);
 }

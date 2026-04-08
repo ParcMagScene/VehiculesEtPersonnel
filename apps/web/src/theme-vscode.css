@@ -365,7 +365,7 @@
 [data-palette^="vscode"] .vsc-statusbar {
   background: var(--vscode-statusbar-bg);
   color: var(--vscode-statusbar-fg);
-  font-size: 12px;
+  font-size: var(--font-sm);
   padding: 2px 10px;
   display: flex;
   align-items: center;
@@ -406,7 +406,7 @@
 [data-palette^="vscode"] .vsc-badge {
   background: var(--vscode-badge-bg);
   color: var(--vscode-badge-fg);
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   min-width: 18px;
   height: 18px;
@@ -425,7 +425,7 @@
 }
 [data-palette^="vscode"] .vsc-tab {
   padding: 8px 16px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   cursor: pointer;
   border: none;
   background: transparent;
@@ -448,7 +448,7 @@
   color: var(--vscode-input-fg);
   border: 1px solid var(--vscode-input-border);
   padding: 4px 8px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-family: inherit;
   outline: none;
   transition: border-color 0.15s;
@@ -473,7 +473,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
   background: var(--vscode-tab-active-bg);
   border-bottom: 1px solid var(--vscode-panel-border);
@@ -564,7 +564,7 @@
 
   /* Typographie monospace compacte */
   font-family: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
-  font-size: 13px;
+  font-size: var(--font-sm);
   --font-2xs: 10px;
   --font-xs: 11px;
   --font-sm: 12px;
@@ -586,7 +586,7 @@
   /* Boutons compacts et plats */
   --btn-padding: 4px 14px;
   --btn-height: 28px;
-  --btn-font-size: 13px;
+  --btn-font-size: var(--font-sm);
   --btn-font-weight: 400;
   --close-btn-size: 28px;
 
@@ -626,7 +626,7 @@
    ───────────────────────────────────────── */
 [data-palette^="vscode"] body {
   font-family: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
-  font-size: 13px;
+  font-size: var(--font-sm);
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
@@ -677,7 +677,7 @@
 
 [data-palette^="vscode"] .header-title-container .module-tab {
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 400;
   color: var(--theme-text-muted);
   border-bottom: 2px solid transparent;
@@ -705,7 +705,7 @@
   background: transparent;
   border: none;
   padding: 4px 6px;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-muted);
   transition: color 0.1s;
 }
@@ -722,7 +722,7 @@
    ───────────────────────────────────────── */
 [data-palette^="vscode"] .notification-badge {
   padding: 3px 8px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 400;
   animation: none;
   border: 1px solid var(--theme-border);
@@ -735,7 +735,7 @@
 }
 
 [data-palette^="vscode"] .notification-count {
-  font-size: 10px;
+  font-size: var(--font-xs);
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
@@ -757,7 +757,7 @@
 [data-palette^="vscode"] .notification-item {
   padding: 4px 12px;
   border-bottom: 1px solid var(--theme-border-light);
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 [data-palette^="vscode"] .notification-item:hover {
   background: var(--theme-bg-hover);
@@ -793,7 +793,7 @@
 [data-palette^="vscode"] [class*="modal-header"] h3,
 [data-palette^="vscode"] [class*="dialog-header"] h2,
 [data-palette^="vscode"] [class*="dialog-header"] h3 {
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 400;
   color: var(--theme-text-primary);
 }
@@ -825,7 +825,7 @@
 [data-palette^="vscode"] .theme-btn-danger,
 [data-palette^="vscode"] .theme-btn-success {
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 400;
   padding: 4px 14px;
   min-height: 26px;
@@ -883,7 +883,7 @@
   border: 1px solid var(--vscode-input-border, var(--theme-border));
   padding: 3px 8px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--font-sm);
   outline: none;
   transition: border-color 0.1s;
 }
@@ -909,7 +909,7 @@
 [data-palette^="vscode"] table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 [data-palette^="vscode"] thead th,
@@ -917,7 +917,7 @@
   background: var(--theme-bg-secondary);
   color: var(--theme-text-secondary);
   font-weight: 600;
-  font-size: 11px;
+  font-size: var(--font-xs);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 4px 8px;
@@ -929,7 +929,7 @@
   padding: 3px 8px;
   border-bottom: 1px solid var(--theme-border-light);
   color: var(--theme-text-primary);
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 [data-palette^="vscode"] tbody tr:hover {
@@ -1013,7 +1013,7 @@
   background: var(--theme-primary);
   color: #fff;
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 /* Disable pulse/bounce animations sur les badges */
@@ -1047,14 +1047,14 @@
 [data-palette^="vscode"] [class*="calendar"] th,
 [data-palette^="vscode"] [class*="Calendar"] th {
   padding: 2px 4px;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
 }
 
 [data-palette^="vscode"] [class*="calendar"] td,
 [data-palette^="vscode"] [class*="Calendar"] td {
   padding: 1px 2px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 
@@ -1079,14 +1079,14 @@
 [data-palette^="vscode"] [class*="Menu"] {
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 [data-palette^="vscode"] [class*="dropdown"] [class*="item"],
 [data-palette^="vscode"] [class*="menu"] [class*="item"],
 [data-palette^="vscode"] [class*="Menu"] [class*="item"] {
   padding: 4px 12px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   cursor: pointer;
 }
 [data-palette^="vscode"] [class*="dropdown"] [class*="item"]:hover,
@@ -1120,7 +1120,7 @@
 [data-palette^="vscode"] [class*="Badge"],
 [data-palette^="vscode"] [class*="chip"],
 [data-palette^="vscode"] [class*="Chip"] {
-  font-size: 11px;
+  font-size: var(--font-xs);
   padding: 1px 6px;
   border: 1px solid var(--theme-border);
   font-weight: 400;
@@ -1137,7 +1137,7 @@
   background: var(--vscode-input-bg);
   border: 1px solid var(--vscode-input-border, var(--theme-border));
   color: var(--theme-text-primary);
-  font-size: 13px;
+  font-size: var(--font-sm);
   padding: 3px 8px;
 }
 
@@ -1153,7 +1153,7 @@
   height: 22px;
   background: var(--vscode-statusbar-bg);
   color: var(--vscode-statusbar-fg);
-  font-size: 12px;
+  font-size: var(--font-sm);
   padding: 0 10px;
   display: flex;
   align-items: center;
@@ -1178,7 +1178,7 @@
 
   [data-palette^="vscode"] .header-title-container .module-tab {
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: var(--font-sm);
   }
 
   [data-palette^="vscode"] .header-logo {

@@ -39,7 +39,7 @@
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-inverse);
 }
@@ -96,7 +96,7 @@
 }
 
 .bl-multi-import-modal .drop-zone .drop-text {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   margin-bottom: 8px;
 }
@@ -163,7 +163,7 @@
 }
 .batch-global-type-hint {
   font-weight: 400;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
 }
 .type-pills.global {
@@ -176,7 +176,7 @@
   padding: 5px 14px;
 }
 .type-badge-mini {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   flex-shrink: 0;
 }
 
@@ -198,7 +198,7 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: var(--radius-md-lg);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 .batch-summary .badge.success { background: var(--success-tint); color: var(--theme-success-alt, var(--theme-success-alt)); }
@@ -232,12 +232,12 @@
 }
 .result-stat .result-num {
   display: block;
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   font-weight: 700;
   color: var(--theme-primary);
 }
 .result-stat span:last-child {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 .result-stat.created .result-num { color: var(--theme-success-alt, var(--theme-success-alt)); }
@@ -318,7 +318,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-primary);
   background: var(--primary-tint-light);
@@ -398,7 +398,7 @@
   border: 1px solid var(--theme-border);
   background: transparent;
   color: var(--theme-text-secondary);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -460,7 +460,7 @@
 .detail-parsed-field .field-label {
   min-width: 80px;
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 .detail-parsed-field .field-input {
@@ -515,7 +515,7 @@
   gap: 6px;
   padding: 5px 8px;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   transition: background 0.1s;
 }
 .detail-section-header:hover { opacity: 0.85; }
@@ -551,7 +551,7 @@
   align-items: center;
   gap: 8px;
   padding: 2px 0;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 .detail-section-item-row .item-ref {
@@ -605,7 +605,7 @@
   align-items: center;
   gap: 6px;
   padding: 2px 0;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 .detail-article-row .item-qty {
@@ -637,7 +637,7 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 .detail-fourn-label {
   color: var(--theme-text-secondary);
@@ -660,7 +660,7 @@
   background: none;
   border: none;
   color: var(--theme-text-muted);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   cursor: pointer;
   padding: 2px 0;
 }
@@ -724,7 +724,7 @@
   gap: 4px;
   padding: 3px 10px;
   border-radius: var(--radius-md-lg);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 .bl-multi-import-modal .status-badge.success {

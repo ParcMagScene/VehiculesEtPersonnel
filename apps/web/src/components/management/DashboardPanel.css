@@ -177,7 +177,7 @@
 
 .empty-text {
   color: var(--theme-text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-align: center;
   padding: 16px 0;
 }
@@ -232,7 +232,7 @@
 }
 
 .res-period {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   text-align: right;
   font-weight: 500;
@@ -270,7 +270,7 @@
 }
 
 .maint-type {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 
@@ -297,7 +297,7 @@
 }
 
 .overdue-badge {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 /* Stock alerts */
@@ -330,7 +330,7 @@
 .stock-alert-qty.danger { color: var(--theme-danger-dark); }
 
 .stock-alert-threshold {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 
@@ -342,7 +342,7 @@
   padding: 12px;
   background: var(--theme-warning-bg);
   border-radius: var(--radius-md);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-warning-text);
 }
 

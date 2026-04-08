@@ -50,7 +50,7 @@
 
 .vehicle-maintenance-modal .modal-header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 600;
 }
 
@@ -168,7 +168,7 @@
 
 .form-note {
   margin-top: 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   background: var(--theme-bg-tertiary);
   padding: 0.5rem;
@@ -276,7 +276,7 @@
 
 .controle-header strong {
   color: var(--theme-bg-dark);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .btn-remove {
@@ -306,7 +306,7 @@
 .controle-details > div {
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .controle-details .label {
@@ -393,12 +393,12 @@
   }
 
   .vehicle-maintenance-modal .form-group label {
-    font-size: 0.85rem;
+    font-size: var(--font-base);
   }
 
   .vehicle-maintenance-modal .form-group input,
   .vehicle-maintenance-modal .form-group select,
   .vehicle-maintenance-modal .form-group textarea {
-    font-size: 0.85rem;
+    font-size: var(--font-base);
   }
 }

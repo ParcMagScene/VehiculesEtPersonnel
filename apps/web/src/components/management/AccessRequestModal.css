@@ -31,7 +31,7 @@
 
 .access-request-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   font-weight: 700;
 }
 
@@ -92,7 +92,7 @@
   padding: 0.75rem;
   border-radius: var(--radius-md);
   margin-bottom: 1rem;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   border-left: 4px solid var(--theme-danger-dark);
 }
 
@@ -171,7 +171,7 @@
 
 .success-banner p {
   margin: 4px 0 0;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-success-text);
 }
 
@@ -189,7 +189,7 @@
 .pending-banner h3 {
   color: var(--theme-text-heading);
   margin: 0 0 0.75rem;
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
 }
 
 .pending-banner p {

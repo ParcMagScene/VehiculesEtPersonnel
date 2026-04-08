@@ -15,7 +15,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
   margin-bottom: 0.5rem;
@@ -51,7 +51,7 @@
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   box-sizing: border-box;

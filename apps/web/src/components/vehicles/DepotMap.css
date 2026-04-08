@@ -30,7 +30,7 @@
 }
 
 .depot-map-count {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   background: var(--theme-info)20;
   color: var(--theme-info);
@@ -39,7 +39,7 @@
 }
 
 .depot-map-unlocated {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   background: var(--theme-warning)20;
   color: var(--theme-warning);
@@ -141,7 +141,7 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.3rem 0.6rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -191,7 +191,7 @@
 }
 
 .depot-zoom-level {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   min-width: 36px;
@@ -248,7 +248,7 @@
 }
 
 .depot-tooltip-count {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-warning);
   background: var(--theme-warning)20;
@@ -275,7 +275,7 @@
 
 .depot-tooltip-loading {
   padding: 8px 12px;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   font-style: italic;
 }
@@ -290,7 +290,7 @@
   display: flex;
   gap: 8px;
   padding: 4px 12px;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   transition: background 0.1s;
 }
 
@@ -322,7 +322,7 @@
 
 .depot-tooltip-empty {
   padding: 8px 12px;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-subtle);
 }
 
@@ -369,7 +369,7 @@
 
 .legend-label {
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -379,7 +379,7 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.2rem 0.5rem;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-lg);
   background: transparent;
@@ -523,7 +523,7 @@
     padding: 8px 10px;
   }
   .depot-map-title {
-    font-size: 0.85rem;
+    font-size: var(--font-base);
   }
   .depot-floor-selector button {
     min-width: 36px;
@@ -538,7 +538,7 @@
   .depot-zoom-controls button {
     min-width: 40px;
     min-height: 40px;
-    font-size: 1.1rem;
+    font-size: var(--font-lg);
   }
   .depot-map-svg {
     max-height: 50vh;

@@ -17,7 +17,7 @@
 .mparc-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
 }
 
 .mparc-back {
@@ -73,7 +73,7 @@
 }
 
 .mparc-stat-label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   font-weight: 500;
 }
@@ -202,7 +202,7 @@
 .mparc-upcoming-name {
   font-weight: 600;
   color: var(--theme-bg-dark);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .mparc-upcoming-date {

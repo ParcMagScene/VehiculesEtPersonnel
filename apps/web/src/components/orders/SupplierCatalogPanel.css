@@ -82,7 +82,7 @@
   padding: 0.5rem 1rem;
   border: none;
   border-radius: var(--radius-md);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -161,7 +161,7 @@
   gap: 0.25rem;
   padding: 0.2rem 0.6rem;
   border-radius: var(--radius-2xl);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   background: var(--theme-purple-bg);
   color: var(--theme-purple-accent);
@@ -211,7 +211,7 @@
 }
 
 .catalog-modal-header h3 {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   margin: 0;
   display: flex;
@@ -241,7 +241,7 @@
 
 .catalog-form-group label {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-secondary);
   margin-bottom: 0.3rem;
@@ -254,7 +254,7 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   box-sizing: border-box;
@@ -284,7 +284,7 @@
   color: var(--theme-danger-dark);
   border-radius: var(--radius-md);
   margin-bottom: 1rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
 }
 
@@ -310,7 +310,7 @@
   padding: 0.35rem 0.5rem;
   background: var(--theme-border-light);
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .catalog-import-file-item span:first-of-type {
@@ -354,7 +354,7 @@
   padding: 0.5rem 0;
   margin-bottom: 0.5rem;
   border-bottom: 2px solid var(--theme-primary);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .catalog-import-file-header .catalog-import-hint {
@@ -384,11 +384,11 @@
   background: var(--theme-border-light);
   border-radius: var(--radius-md-lg);
   margin-bottom: 1rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .catalog-import-count {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-primary);
 }
@@ -427,7 +427,7 @@
 }
 
 .supplier-stat-card h3 {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-secondary);
   margin: 0 0 0.75rem;
@@ -436,13 +436,13 @@
 }
 
 .supplier-stat-number {
-  font-size: 2rem;
+  font-size: var(--font-3xl);
   font-weight: 800;
   color: var(--theme-primary);
 }
 
 .supplier-stat-label {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
 }
 
@@ -507,7 +507,7 @@
 }
 
 .catalog-settings-desc {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   margin: 0 0 1.25rem;
   line-height: 1.5;
@@ -529,13 +529,13 @@
 }
 
 .parser-metric-value {
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   font-weight: 800;
   color: var(--theme-text-primary);
 }
 
 .parser-metric-label {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   margin-top: 2px;
 }
@@ -560,7 +560,7 @@
 }
 
 .parser-section h5 {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 600;
   margin: 0 0 0.5rem;
   display: flex;
@@ -689,7 +689,7 @@
 
 .taxonomy-full-list summary {
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-secondary);
   padding: 0.5rem 0;

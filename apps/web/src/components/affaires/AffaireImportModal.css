@@ -53,7 +53,7 @@
 
 .affaire-modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   font-weight: 600;
   color: var(--modal-header-color);
 }
@@ -61,7 +61,7 @@
 .close-button {
   background: var(--close-btn-bg);
   border: 1px solid var(--close-btn-border);
-  font-size: 2rem;
+  font-size: var(--font-3xl);
   color: var(--close-btn-color);
   cursor: pointer;
   padding: 0;
@@ -97,7 +97,7 @@
   color: var(--btn-primary-color);
   border: none;
   border-radius: var(--btn-radius);
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
@@ -144,14 +144,14 @@
 }
 
 .drop-zone-text {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   color: var(--theme-text-subtle);
   margin: 0;
 }
 
 .drop-zone-or {
   color: var(--theme-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   margin: 8px 0;
 }
 
@@ -188,7 +188,7 @@
   color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--btn-radius);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
@@ -205,7 +205,7 @@
   color: var(--btn-danger-filled-color);
   border: none;
   border-radius: var(--btn-radius);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   cursor: pointer;
   transition: var(--btn-transition);
 }
@@ -397,7 +397,7 @@
   }
 
   .affaire-modal-header h2 {
-    font-size: 1.25rem;
+    font-size: var(--font-xl);
   }
 
   .affaire-modal-body {

@@ -41,7 +41,7 @@
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-inverse);
 }
@@ -116,7 +116,7 @@
 }
 
 .bl-loc-drop-text {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   margin-bottom: 8px;
 }
@@ -198,7 +198,7 @@
   gap: 4px;
   padding: 3px 10px;
   border-radius: var(--radius-md-lg);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 
@@ -325,14 +325,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   margin: 0 0 12px;
   color: var(--theme-text-primary);
 }
 
 .bl-loc-results-meta {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   font-weight: 400;
 }
@@ -348,7 +348,7 @@
   gap: 6px;
   padding: 5px 0;
   border-bottom: 1px solid var(--theme-border);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .bl-loc-conf-dot {
@@ -407,7 +407,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   margin: 0 0 10px;
   color: var(--theme-text-primary);
   font-weight: 700;
@@ -415,7 +415,7 @@
 
 .bl-loc-sections-total {
   margin-left: auto;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 400;
   color: var(--theme-text-secondary);
 }
@@ -449,12 +449,12 @@
 
 .bl-loc-section-name {
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--sec-text, var(--theme-text-primary));
 }
 
 .bl-loc-section-count {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
@@ -467,7 +467,7 @@
   align-items: center;
   gap: 4px;
   margin-left: auto;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   white-space: nowrap;
 }
@@ -542,7 +542,7 @@
 .bl-loc-col-ref {
   width: 90px;
   flex-shrink: 0;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   font-family: 'SF Mono', 'Fira Code', monospace;
 }
@@ -569,7 +569,7 @@
   width: 50px;
   flex-shrink: 0;
   text-align: right;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 
@@ -635,7 +635,7 @@
   margin-top: 12px;
   background: rgba(245, 158, 11, 0.08);
   color: var(--theme-warning);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 /* ─── Footer ─── */

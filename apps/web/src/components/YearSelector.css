@@ -40,7 +40,7 @@
 
 .year-selector-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 700;
 }
 
@@ -92,7 +92,7 @@
 }
 
 .year-number {
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 600;
   color: inherit;
 }
@@ -130,7 +130,7 @@
   }
   
   .year-number {
-    font-size: 1.1rem;
+    font-size: var(--font-lg);
   }
 }
 

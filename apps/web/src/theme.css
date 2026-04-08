@@ -137,7 +137,7 @@
   
   /* ─── Boutons — Standard global ─── */
   --btn-radius: 8px;
-  --btn-font-size: 14px;
+  --btn-font-size: var(--font-base);
   --btn-font-weight: 600;
   --btn-padding: 10px 20px;
   --btn-height: 40px;
@@ -621,11 +621,11 @@
 }
 
 .theme-modal-header h2 {
-  font-size: 20px;
+  font-size: var(--font-xl);
 }
 
 .theme-modal-header h3 {
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 
 /* Bouton close standard */
@@ -839,7 +839,7 @@
 .theme-btn-warning.theme-btn-sm,
 .theme-btn-ghost.theme-btn-sm {
   padding: 6px 12px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   height: 32px;
   gap: 5px;
 }
@@ -850,7 +850,7 @@
 .theme-btn-danger.theme-btn-xs,
 .theme-btn-ghost.theme-btn-xs {
   padding: 4px 8px;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   height: 26px;
   gap: 4px;
 }
@@ -903,7 +903,7 @@
   color: white;
   padding: 10px 14px;
   border-radius: var(--radius-md);
-  font-size: 12px;
+  font-size: var(--font-sm);
   line-height: 1.5;
   min-width: 180px;
   max-width: 320px;
@@ -968,7 +968,7 @@
   transform: translateX(-50%);
   background: rgba(17, 24, 39, 0.95);
   color: white;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   white-space: nowrap;
   padding: 5px 10px;
@@ -1180,7 +1180,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--theme-primary-dark);
   margin: 0 0 12px 0;

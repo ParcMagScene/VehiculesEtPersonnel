@@ -196,7 +196,7 @@
   --btn-padding-sm: 8px 16px;
   --btn-padding-lg: 16px 32px;
 
-  --btn-font-size: 16px;
+  --btn-font-size: var(--font-md);
   --btn-font-size-sm: 14px;
   --btn-font-size-lg: 18px;
   --btn-radius: 4px;

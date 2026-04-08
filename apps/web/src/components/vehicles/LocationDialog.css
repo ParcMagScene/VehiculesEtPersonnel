@@ -82,7 +82,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   font-weight: 600;
   flex-wrap: wrap;
 }
@@ -95,7 +95,7 @@
   color: var(--theme-success-alt);
   padding: 0.25rem 0.75rem;
   border-radius: var(--radius-2xl);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   border: 2px solid var(--theme-success-alt);
 }
@@ -129,7 +129,7 @@
 
 .coordinates-badge small {
   color: var(--btn-success-color);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-family: 'Courier New', monospace;
 }
 
@@ -193,7 +193,7 @@
 
 .success-banner strong {
   display: block;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   color: var(--theme-success-text);
 }
 
@@ -220,14 +220,14 @@
 
 .error-banner strong {
   display: block;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   margin-bottom: 0.75rem;
   color: var(--theme-danger-text);
 }
 
 .error-banner p {
   margin: 0.5rem 0;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   line-height: 1.6;
   white-space: pre-line;
 }
@@ -235,7 +235,7 @@
 .error-banner small {
   display: block;
   margin-top: 1rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-danger-text);
 }
 
@@ -254,7 +254,7 @@
 
 .form-section h3 {
   margin: 0 0 1.5rem 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   color: var(--theme-text-body);
   display: flex;
   align-items: center;
@@ -385,7 +385,7 @@
   display: block;
   margin-top: 0.5rem;
   color: var(--theme-text-gray);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-style: italic;
 }
 
@@ -422,7 +422,7 @@
 
 .coordinates-info p {
   margin: 0.5rem 0;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-info-text);
   font-weight: 500;
 }
@@ -431,7 +431,7 @@
   display: flex;
   justify-content: space-between;
   padding: 0.5rem 0;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-body);
 }
 
@@ -465,7 +465,7 @@
   gap: 0.75rem;
   padding: 0.5rem 0;
   color: var(--theme-text-body);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .route-detail svg,
@@ -602,7 +602,7 @@
   }
 
   .location-dialog-header h2 {
-    font-size: 1.25rem;
+    font-size: var(--font-xl);
   }
 
   .form-section,
@@ -619,7 +619,7 @@
   .location-dialog-footer button,
   .form-actions button {
     padding: 0.75rem 1.5rem;
-    font-size: 0.9rem;
+    font-size: var(--font-base);
   }
 }
 
@@ -638,7 +638,7 @@
   }
 
   .location-dialog-header h2 {
-    font-size: 1.1rem;
+    font-size: var(--font-lg);
   }
 
   .form-section,
@@ -655,7 +655,7 @@
   .location-dialog-footer button,
   .form-actions button {
     padding: 0.65rem 1rem;
-    font-size: 0.85rem;
+    font-size: var(--font-base);
     width: 100%;
   }
 

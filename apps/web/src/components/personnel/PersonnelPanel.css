@@ -194,7 +194,7 @@
 
 .personnel-form-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--theme-text-primary);
 }
@@ -306,7 +306,7 @@
 
 .personnel-edit-modal .modal-header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -1205,7 +1205,7 @@
   flex-shrink: 0;
   padding: 0 1rem;
   background: var(--theme-gradient);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-inverse);
   display: flex;
@@ -1306,7 +1306,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
@@ -1337,7 +1337,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
@@ -1440,7 +1440,7 @@
 
 /* Cellule jour */
 .pp-header-cell.day-header {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   padding: 0.5rem 0.5rem;
   height: 3.5rem;
   background: linear-gradient(135deg, var(--theme-bg-indigo-light) 0%, var(--theme-purple-bg-strong) 100%);
@@ -1483,7 +1483,7 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.75rem 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 700;
   text-transform: capitalize;
   min-height: 3.5rem;
@@ -1495,7 +1495,7 @@
 }
 
 .pp-day-name {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-transform: capitalize;
   font-weight: 600;
 }
@@ -1959,7 +1959,7 @@
   }
 
   .pp-column-header {
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
     padding: 0 0.5rem;
   }
 }

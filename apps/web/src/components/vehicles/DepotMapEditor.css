@@ -159,7 +159,7 @@
 .dep-ed-floor-btn {
   flex: 1;
   padding: 0.3rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
   border-radius: var(--radius-xs);
   background: transparent;
@@ -190,7 +190,7 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
   border-radius: var(--radius-xs);
   background: transparent;
@@ -243,7 +243,7 @@
 .dep-ed-dim-inputs input {
   width: 70px;
   padding: 0.2rem 0.35rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-text-subtle);
   border-radius: var(--radius-xs);
   background: var(--theme-text-primary);
@@ -280,7 +280,7 @@
 .dep-ed-field select {
   flex: 1;
   padding: 0.25rem 0.4rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-text-subtle);
   border-radius: var(--radius-xs);
   background: var(--theme-text-primary);
@@ -318,7 +318,7 @@
 }
 
 .dep-ed-cat-label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-bg-muted);
   flex: 1;
 }
@@ -436,7 +436,7 @@
   gap: 0.35rem;
   width: 100%;
   padding: 0.2rem 0.4rem;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   border: 1px solid transparent;
   border-radius: var(--radius-xs);
   background: transparent;
@@ -596,7 +596,7 @@
 }
 .dep-ed-subtract-dialog-inner p {
   margin: 0 0 0.75rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary, var(--theme-text-muted));
 }
 .dep-ed-subtract-choices {

@@ -797,7 +797,7 @@ section h3 {
 .event-details-modal .btn-close {
   background: none;
   border: none;
-  font-size: 28px;
+  font-size: var(--font-2xl);
   line-height: 1;
   cursor: pointer;
   color: var(--theme-text-gray);

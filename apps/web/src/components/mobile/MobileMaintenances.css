@@ -49,7 +49,7 @@
 }
 
 .type-title {
-  font-size: 1.125rem;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--theme-bg-dark);
   margin-bottom: 0.5rem;
@@ -80,7 +80,7 @@
 .mobile-maintenances .screen-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   color: var(--theme-bg-dark);
 }
 
@@ -188,7 +188,7 @@
 .mobile-maintenances .status-badge {
   padding: 4px 12px;
   border-radius: var(--radius-2xl);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   display: inline-block;
   text-transform: none;

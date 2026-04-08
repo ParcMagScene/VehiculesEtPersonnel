@@ -73,7 +73,7 @@
   --btn-padding-md: 6px 14px;
   --btn-padding-lg: 8px 18px;
 
-  --btn-font-size: 13px;
+  --btn-font-size: var(--font-sm);
   --btn-font-size-xs: 10px;
   --btn-font-size-sm: 11px;
   --btn-font-size-md: 13px;
@@ -92,7 +92,7 @@
 [data-density="compact"] {
   --table-header-padding: 4px 8px;
   --table-cell-padding: 4px 8px;
-  --table-header-font-size: 11px;
+  --table-header-font-size: var(--font-xs);
 }
 
 /* ─────────────────────────────────────────
@@ -167,12 +167,12 @@
 /* Tags/Badges compacts */
 [data-density="compact"] .ui-tag {
   padding: 1px 6px;
-  font-size: 10px;
+  font-size: var(--font-xs);
 }
 
 [data-density="compact"] .ui-badge {
   padding: 0 5px;
-  font-size: 10px;
+  font-size: var(--font-xs);
   min-width: 16px;
   height: 16px;
 }

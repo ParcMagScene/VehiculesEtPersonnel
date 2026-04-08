@@ -27,7 +27,7 @@
 }
 
 .home-grid-item > span {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   text-align: center;
@@ -169,7 +169,7 @@
 
 .module-info h3 {
   margin: 0 0 4px;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   color: var(--theme-bg-dark);
   font-weight: 700;
 }

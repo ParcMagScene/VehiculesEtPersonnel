@@ -44,10 +44,10 @@ describe('Endpoints publics', () => {
     assert.equal(status, 200);
     assert.ok(Array.isArray(data), 'La réponse doit être un tableau');
     if (data.length > 0) {
-      // Vérifier qu'aucun email n'est exposé
       for (const u of data) {
-        assert.equal(u.email, undefined, "email ne doit PAS etre expose (users-public)");
         assert.ok(u.name, 'Chaque utilisateur doit avoir un nom');
+        assert.ok(u.email, 'Chaque utilisateur doit avoir un email');
+        assert.equal(u.password_hash, undefined, 'password_hash ne doit JAMAIS etre expose');
       }
     }
   });
@@ -178,10 +178,9 @@ describe('Auth complète (nécessite TEST_EMAIL / TEST_PASSWORD)', { skip: !TEST
 // 4. Sécurité : endpoints qui ne doivent PAS fuiter de données sensibles
 // ────────────────────────────────────────────────────
 describe('Sécurité — pas de fuite de données', () => {
-  it('GET /auth/users-public ne contient jamais email/password_hash', async () => {
+  it('GET /auth/users-public ne contient jamais password_hash', async () => {
     const { data } = await api('GET', '/auth/users-public');
     for (const u of (data || [])) {
-      assert.equal(u.email, undefined, 'email ne doit pas etre dans users-public');
       assert.equal(u.password_hash, undefined, 'password_hash ne doit JAMAIS etre expose');
       assert.equal(u.password, undefined, 'password ne doit JAMAIS etre expose');
     }

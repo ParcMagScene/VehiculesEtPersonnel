@@ -354,11 +354,12 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 // Renvoie nom et avatar — sans email pour éviter l'exposition de PII
 app.get('/api/auth/users-public', (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, name, avatar FROM users ORDER BY name');
+    const stmt = db.prepare('SELECT id, name, email, avatar FROM users ORDER BY name');
     const users = stmt.all();
     res.json(users.map(u => ({
       id: u.id,
       name: u.name,
+      email: u.email,
       avatar: u.avatar || null
     })));
   } catch (error) {

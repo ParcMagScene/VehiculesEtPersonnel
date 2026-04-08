@@ -20,7 +20,9 @@
         "docs/api/video.md",
         "docs/api/display.md",
         "docs/api/attachments.md",
-        "docs/api/supplier-catalog.md"
+        "docs/api/supplier-catalog.md",
+        "docs/api/inventory.md",
+        "docs/api/mailing.md"
       ]
     },
     "database": {
@@ -28,27 +30,6 @@
       "index": "docs/database/README.md",
       "files": [
         "docs/database/SCHEMA.md"
-      ]
-    },
-    "modules": {
-      "path": "docs/modules/",
-      "index": "docs/modules/README.md",
-      "files": [
-        "docs/modules/auth.md",
-        "docs/modules/vehicles.md",
-        "docs/modules/personnel.md",
-        "docs/modules/equipment.md",
-        "docs/modules/affaires.md",
-        "docs/modules/orders.md",
-        "docs/modules/stock.md",
-        "docs/modules/planning.md",
-        "docs/modules/messaging.md",
-        "docs/modules/leaves.md",
-        "docs/modules/annuaire.md",
-        "docs/modules/video.md",
-        "docs/modules/display.md",
-        "docs/modules/inventory.md",
-        "docs/modules/mailing.md"
       ]
     },
     "workflows": {
@@ -73,7 +54,7 @@
       ]
     }
   },
-  "totalFiles": 41,
+  "totalFiles": 28,
   "totalEndpoints": 243,
   "totalTables": 87,
   "totalModules": 16

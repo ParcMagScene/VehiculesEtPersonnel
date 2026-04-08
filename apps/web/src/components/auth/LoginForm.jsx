@@ -53,8 +53,7 @@ const LoginForm = ({ onLogin }) => {
 
   const handleUserSelect = (user) => {
     setSelectedUser(user);
-    // [AUDIT FIX HIGH-1] Email n'est plus exposé dans users-public
-    // L'utilisateur doit saisir son email manuellement
+    setEmail(user.email || '');
     setShowUserList(false);
   };
 
@@ -199,17 +198,16 @@ const LoginForm = ({ onLogin }) => {
             </FormField>
           )}
 
-          {!users.length && (
-            <FormField className="form-group" label="Email">
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="email@exemple.com"
-              />
-            </FormField>
-          )}
+          <FormField className="form-group" label="Email">
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="email@exemple.com"
+              autoComplete="username"
+            />
+          </FormField>
 
           <FormField className="form-group" label="Mot de passe">
             <Input

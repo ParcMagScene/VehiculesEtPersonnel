@@ -5,6 +5,13 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.1.0] — 2026-04-08
+
+### Added
+- Colonne `channel` (INTEGER DEFAULT 1) sur table `cameras` — support multi-channel par caméra
+
+---
+
 ## [1.0.0] — 2026-04-07
 
 ### Initial

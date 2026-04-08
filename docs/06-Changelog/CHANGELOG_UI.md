@@ -5,6 +5,25 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.2.0] — 2026-04-08
+
+### Added
+- Hook `useDirtyForm` — détection modifications non sauvegardées avec confirmation fermeture
+- Catégorie "Dépôt" (🏠) dans le planning (TaskPlanningPanel + TaskEditModal)
+- Champ "Channel" (1-64) dans CameraSettingsModal
+- RBAC mobile : filtrage modules selon permissions (Matériel, Commandes, Inventaire)
+
+### Fixed
+- `EventTaskModal.jsx` : guard `isNaN` sur parsing dates Google Calendar (Invalid Date)
+- `AnnuairePanel.css` : toolbar référentiels aligné (flex-end → align-items center + gap)
+- `tv-client/main.js` : sections vides masquées (display:none) au lieu du message "Aucune tâche"
+
+### Changed
+- `Button.jsx` : auto `aria-label` depuis `title` quand `iconOnly`
+- `VideoPanel.jsx` : aria-labels sur boutons vue (grid, list, playback, admin)
+
+---
+
 ## [2.1.8] — 2026-04-07
 
 ### Changed

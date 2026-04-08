@@ -5,6 +5,22 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.1.0] — 2026-04-08
+
+### Security
+- Rate limiter `sensitiveEndpointLimiter` sur `/api/auth/check-reset`
+- Réponse anti-énumération sur check-reset (masque l'existence du compte)
+- Blocage SSRF IPv6 dans `videoProxyService.js`
+- Validation base64 des signatures dans `sanitize.js`
+- Whitelist SQL champs dynamiques dans `planningRoutes.js`
+
+### Changed
+- Import équipement preview : retourne détail collisions par item (toCreate/toUpdate/toSkip)
+- Routes vidéo : champ `channel` ajouté dans SELECT/INSERT/UPDATE caméras
+- Channel caméra configurable (1-64) au lieu de hardcodé à 1
+
+---
+
 ## [1.0.0] — 2026-04-07
 
 ### Initial

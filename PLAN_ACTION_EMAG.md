@@ -321,11 +321,11 @@ Ce fichier EST le plan d'action. Il sera mis à jour après chaque étape.
 ## ÉTAPE 12 — VERSIONING & DOCUMENTATION
 
 À chaque correction :
-- [ ] Incrémenter version SemVer dans `package.json` + `VERSION.md`
-- [ ] Mettre à jour changelogs (`CHANGELOG_API.md`, `CHANGELOG_UI.md`, `CHANGELOG_DB.md`, `CHANGELOG_DOCS.md`)
-- [ ] Mettre à jour la documentation impactée
+- [x] Incrémenter version SemVer dans `package.json` + `VERSION.md` → 2.1.0 ✅
+- [x] Mettre à jour changelogs (`CHANGELOG_API.md`, `CHANGELOG_UI.md`, `CHANGELOG_DB.md`, `CHANGELOG_DOCS.md`) ✅
+- [x] Mettre à jour la documentation impactée ✅
 - [ ] Mettre à jour `prompts-index.json` si nécessaire
-- [ ] Mettre à jour `docs/API-INDEX.md`
+- [x] Mettre à jour `docs/API-INDEX.md` ✅
 
 ---
 

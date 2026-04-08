@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.2.0] — 2026-04-08
+
+### Changed
+- `VERSION.md` — Version bump 2.0.0 → 2.1.0
+- `PLAN_ACTION_EMAG.md` — 10 étapes exécutées, tâches cochées, faux positifs annotés
+- `CHANGELOG_API.md` — Entrée [1.1.0] (sécurité + vidéo + imports)
+- `CHANGELOG_UI.md` — Entrée [2.2.0] (useDirtyForm, RBAC mobile, planning, a11y, TV-client)
+- `CHANGELOG_DB.md` — Entrée [1.1.0] (colonne channel cameras)
+- `.github/workflows/ci.yml` créé (lint + test + build sur push/PR dev)
+
+---
+
 ## [1.1.0] — 2026-04-08
 
 ### Added

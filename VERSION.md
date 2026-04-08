@@ -1,6 +1,6 @@
 # eM@g — Version
 
-**Version courante** : `2.0.0`  
+**Version courante** : `2.1.0`  
 **Date** : 8 avril 2026  
 **Branche** : `dev`
 
@@ -10,7 +10,7 @@
 
 | Composant | Version | Package |
 |-----------|---------|---------|
-| **Application globale** | 2.0.0 | `package.json` |
+| **Application globale** | 2.1.0 | `package.json` |
 | **API Backend** | 1.0.0 | `apps/api/package.json` |
 | **Web Frontend** | 2.0.0 | `apps/web/package.json` |
 | **Documentation** | 1.0.0 | `docs/docs-index.json` |

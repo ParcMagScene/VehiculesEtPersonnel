@@ -228,9 +228,12 @@ function renderEvents(events) {
   const recurrentList = document.getElementById('recurrent-events-list');
 
   if (regularList) {
+    const regularSection = regularList.closest('.events-section') || regularList.parentElement;
     if (regular.length === 0) {
-      regularList.innerHTML = '<li>Aucune tâche planifiée aujourd\'hui</li>';
+      regularList.innerHTML = '';
+      if (regularSection) regularSection.style.display = 'none';
     } else {
+      if (regularSection) regularSection.style.display = '';
       regularList.innerHTML = '';
       regular.forEach(event => {
         const li = createEventElement(event);
@@ -240,9 +243,12 @@ function renderEvents(events) {
   }
 
   if (recurrentList) {
+    const recurrentSection = recurrentList.closest('.events-section') || recurrentList.parentElement;
     if (recurrent.length === 0) {
-      recurrentList.innerHTML = '<li>Aucune tâche récurrente</li>';
+      recurrentList.innerHTML = '';
+      if (recurrentSection) recurrentSection.style.display = 'none';
     } else {
+      if (recurrentSection) recurrentSection.style.display = '';
       recurrentList.innerHTML = '';
       recurrent.forEach(event => {
         const li = createEventElement(event);

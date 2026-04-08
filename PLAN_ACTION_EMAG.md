@@ -142,8 +142,8 @@
 
 ### 3.2 Tâches
 
-- [ ] **3.1** Vérifier accessibilité `magsav.duckdns.org:3003/tv` (DNS, firewall, port forwarding)
-- [ ] **3.2** Masquer sections sans tâches (`display: none` si `tasks.length === 0`)
+- [ ] **3.1** Vérifier accessibilité `magsav.duckdns.org:3003/tv` (DNS, firewall, port forwarding) — infra
+- [x] **3.2** Masquer sections sans tâches (display: none si tasks.length === 0) ✅
 - [ ] **3.3** Tests TV-Client + commit
 
 ---

@@ -233,6 +233,7 @@ function MobileLogin({ onLogin }) {
                     placeholder="••••••••"
                     required
                     minLength={6}
+                    autoComplete="new-password"
                   />
                 </FormField>
 
@@ -245,6 +246,7 @@ function MobileLogin({ onLogin }) {
                     placeholder="••••••••"
                     required
                     minLength={6}
+                    autoComplete="new-password"
                   />
                 </FormField>
 

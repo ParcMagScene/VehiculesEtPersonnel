@@ -628,7 +628,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                 </div>
                 <div className="mailing-form-group">
                   <label>Mot de passe :</label>
-                  <Input type="password" value={configForm.smtp_pass || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_pass: e.target.value }))} placeholder="••••••••" />
+                  <Input type="password" value={configForm.smtp_pass || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_pass: e.target.value }))} placeholder="••••••••" autoComplete="off" />
                 </div>
                 <div className="mailing-form-group">
                   <label>Nom expéditeur :</label>

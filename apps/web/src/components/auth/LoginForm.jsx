@@ -219,6 +219,7 @@ const LoginForm = ({ onLogin }) => {
               required
               placeholder="••••••••"
               minLength={6}
+              autoComplete="current-password"
             />
           </FormField>
 
@@ -377,6 +378,7 @@ const LoginForm = ({ onLogin }) => {
                       minLength={10}
                       required
                       className="login-reset-input"
+                      autoComplete="new-password"
                     />
                   </FormField>
 
@@ -390,6 +392,7 @@ const LoginForm = ({ onLogin }) => {
                       minLength={10}
                       required
                       className="login-reset-input"
+                      autoComplete="new-password"
                     />
                   </FormField>
 

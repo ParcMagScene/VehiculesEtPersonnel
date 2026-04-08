@@ -36,8 +36,8 @@
 |---|-----|---------|---------------|----------|----------|-------|
 | 1 | Robustesse | `audit/robustesse` | `AUDIT_ROBUSTESSE.md` | P2 | 6 fixés ✅ | A ✅ |
 | 2 | Planning / GCal | `audit/planning` | `AUDIT_PLANNING.md` | P1 | 7 fixés, 1 reporté ✅ | A ✅ |
-| 3 | Sécurité API | `audit/securite` | `AUDIT_SECURITE.md` | P0 | 10 (2 CRIT) | B |
-| 4 | Imports | `audit/imports` | `AUDIT_IMPORTS.md` | P1 | 3 HIGH | B |
+| 3 | Sécurité API | `audit/securite` | `AUDIT_SECURITE.md` | P0 | 10 fixés ✅ | B ✅ |
+| 4 | Imports | `audit/imports` | `AUDIT_IMPORTS.md` | P1 | 8 fixés ✅ | B ✅ |
 | 5 | CSS / Design System | `audit/css` | `AUDIT_CSS.md` | P2 | Scan à faire | C |
 | 6 | UI / UX | `audit/ui` | `AUDIT_UI.md` | P1 | 10 (2 CRIT) | C |
 | 7 | Vidéo | `audit/video` | `AUDIT_VIDEO.md` | P1 | 5 (1 CRIT) | D |
@@ -81,7 +81,7 @@ Phase E              : audit/tests
 | Phase | Status |
 |-------|--------|
 | A — Robustesse + Planning | ✅ DONE (merge `e1c6b91` + `a25df74`) |
-| B — Sécurité + Imports | ⬜ TODO |
+| B — Sécurité + Imports | ✅ DONE (merge `40fc034` + `537fe60`) |
 | C — CSS + UI | ⬜ TODO |
 | D — Vidéo | ⬜ TODO |
 | E — Tests/CI | ⬜ TODO |

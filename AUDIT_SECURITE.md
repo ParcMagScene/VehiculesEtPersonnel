@@ -1,6 +1,7 @@
 # AUDIT_SECURITE.md — Sécurité API
 
-> **Branche** : `audit/securite` | **Phase** : B | **Priorité** : P0
+> **Branche** : `audit/securite` | **Phase** : B ✅ TERMINÉ | **Priorité** : P0
+> **Commit** : `40fc034` | **Merge dev** : 8 avril 2026
 
 ---
 

@@ -1,6 +1,7 @@
 # AUDIT_IMPORTS.md — Validation Imports CSV/JSON
 
-> **Branche** : `audit/imports` | **Phase** : B | **Priorité** : P1
+> **Branche** : `audit/imports` | **Phase** : B ✅ TERMINÉ | **Priorité** : P1
+> **Commit** : `537fe60` | **Merge dev** : 8 avril 2026
 
 ---
 

@@ -480,7 +480,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         VALUES (?, ?, ?, ?, ?, ?, ?, 'available', ?)
       `);
 
-      let created = 0, skipped = 0, familiesCreated = 0, subfamiliesCreated = 0, categoriesCreated = 0;
+      let created = 0, updated = 0, skipped = 0, familiesCreated = 0, subfamiliesCreated = 0, categoriesCreated = 0;
 
       const importAll = db.transaction(() => {
         // Phase 1 : Créer les familles
@@ -532,7 +532,18 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           }
         }
 
-        // Phase 4 : Insérer les équipements
+        // Phase 4 : Insérer ou mettre à jour les équipements
+        const findExisting = db.prepare(`
+          SELECT id FROM equipment
+          WHERE (reference = ? AND reference IS NOT NULL AND reference != '')
+             OR (serial_number = ? AND serial_number IS NOT NULL AND serial_number != '')
+          LIMIT 1
+        `);
+        const updateEquip = db.prepare(`
+          UPDATE equipment SET name = ?, category_id = ?, brand = ?, stock_quantity = ?, location = ?, modified_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `);
+
         for (const row of data) {
           const nom = (row.nom || '').trim();
           if (!nom) { skipped++; continue; }
@@ -548,27 +559,38 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           const stock = parseInt(row.stock) || 1;
           const zone = (row.zone || '').trim() || null;
 
-          insertEquip.run(nom, reference, serialNumber, categoryId, resolved.brand, stock, zone, req.user.id);
-          // Link brand_id if resolved
-          if (resolved.brand_id) {
-            db.prepare('UPDATE equipment SET brand_id = ? WHERE id = last_insert_rowid()').run(resolved.brand_id);
+          // Détecter un équipement existant par référence ou numéro de série
+          const existing = (reference || serialNumber) ? findExisting.get(reference, serialNumber) : null;
+
+          if (existing) {
+            updateEquip.run(nom, categoryId, resolved.brand, stock, zone, existing.id);
+            if (resolved.brand_id) {
+              db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(resolved.brand_id, existing.id);
+            }
+            updated++;
+          } else {
+            insertEquip.run(nom, reference, serialNumber, categoryId, resolved.brand, stock, zone, req.user.id);
+            if (resolved.brand_id) {
+              db.prepare('UPDATE equipment SET brand_id = ? WHERE id = last_insert_rowid()').run(resolved.brand_id);
+            }
+            created++;
           }
-          created++;
         }
       });
 
       importAll();
 
-      addToHistory('equipment', null, 'import_csv', { created, skipped, familiesCreated, subfamiliesCreated, categoriesCreated }, req.user.id, req.user.name);
+      addToHistory('equipment', null, 'import_csv', { created, updated, skipped, familiesCreated, subfamiliesCreated, categoriesCreated }, req.user.id, req.user.name);
       
       res.json({
         success: true,
         created,
+        updated,
         skipped,
         familiesCreated,
         subfamiliesCreated,
         categoriesCreated,
-        message: `Import terminé : ${created} équipement(s) créé(s), ${skipped} ignoré(s), ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
+        message: `Import terminé : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s), ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
       });
     } catch (error) {
       logger.error('Erreur import CSV:', error);

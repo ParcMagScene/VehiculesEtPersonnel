@@ -160,7 +160,14 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    const newKm = parseInt(kilometrage) || 0;
+    const currentKm = vehicle?.kilometrage || 0;
+    if (newKm > 0 && currentKm > 0 && newKm < currentKm) {
+      toast.warning(`Le kilométrage (${newKm.toLocaleString('fr-FR')} km) est inférieur au kilométrage actuel (${currentKm.toLocaleString('fr-FR')} km)`);
+      return;
+    }
+
     const updatedVehicle = {
       ...vehicle,
       kilometrage: parseInt(kilometrage) || 0,

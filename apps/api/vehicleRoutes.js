@@ -122,6 +122,19 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
 app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
     const vehicle = req.body;
+
+    // Validation kilométrage : doit être >= au kilométrage actuel
+    if (vehicle.kilometrage != null) {
+      const current = db.prepare('SELECT kilometrage FROM vehicles WHERE id = ?').get(req.params.id);
+      const currentKm = current?.kilometrage || 0;
+      const newKm = parseInt(vehicle.kilometrage) || 0;
+      if (newKm > 0 && currentKm > 0 && newKm < currentKm) {
+        return res.status(400).json({
+          error: `Le kilométrage (${newKm} km) ne peut pas être inférieur au kilométrage actuel (${currentKm} km)`
+        });
+      }
+    }
+
     const stmt = db.prepare(`
       UPDATE vehicles SET name = ?, type = ?, category = ?, registration = ?, brand = ?, model = ?, year = ?,
         color = ?, vin = ?, status = ?, notes = ?, photo = ?,

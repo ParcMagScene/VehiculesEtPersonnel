@@ -2016,6 +2016,9 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     const affaireCount = isRdv ? sectionAffaires.length : 0;
     const totalCount = sectionTasks.length + affaireCount + googleRdvCount + mergedCount;
 
+    // Masquer les sections opérationnelles vides
+    if (!isRdv && !isEvenements && totalCount === 0) return null;
+
     const isCollapsible = isEvenements;
     const isCollapsed = isCollapsible && collapsedSections[sectionKey];
 

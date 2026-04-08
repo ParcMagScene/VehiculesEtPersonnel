@@ -40,6 +40,7 @@ const SECTIONS = {
   installation:       { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
   montage:            { label: 'Montage',              emoji: '🔩', color: '#0891b2', affaireOnly: true },
   demontage:          { label: 'Démontage',            emoji: '🔧', color: '#dc2626', affaireOnly: true },
+  depot:              { label: 'Dépôt',                emoji: '🏠', color: '#6366f1' },
   // — En bas —
   taches_secondaires: { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
   manual:             { label: 'Autres',               emoji: '📋', color: 'var(--theme-text-secondary)' },

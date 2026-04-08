@@ -116,16 +116,16 @@
 
 ### 2.2 Tâches
 
-- [ ] **2.1** Ajouter horaires par défaut 9h-12h / 14h-18h dans `AssignmentDialog.jsx`
-- [ ] **2.2** Ajouter options « Journée entière », « Demi-journée AM », « Demi-journée PM » dans le dialog d'affectation
-- [ ] **2.3** Corriger "Invalid Date" dans `EventTaskModal.jsx` (guard `isNaN`)
-- [ ] **2.4** Ajouter catégorie "Dépôt" dans `TaskPlanningPanel.jsx` SECTIONS
+- [x] **2.1** Horaires par défaut AM 08:00-13:00, PM 14:00-19:00 déjà implémentés dans AssignmentDialog ✅ (faux positif)
+- [x] **2.2** Options AM/PM déjà présentes dans AssignmentDialog + TaskPlanningPanel ✅ (faux positif)
+- [x] **2.3** Corriger "Invalid Date" dans `EventTaskModal.jsx` (guard `isNaN`) ✅
+- [x] **2.4** Ajouter catégorie "Dépôt" dans TaskPlanningPanel + TaskEditModal SECTIONS ✅
 - [ ] **2.5** Afficher AM/PM dans les indisponibilités
 - [ ] **2.6** Implémenter clic droit → créer indisponibilité sur cellule planning
 - [ ] **2.7** Badge affaire Google → deep link vers affaire eM@g
 - [ ] **2.8** Corriger création événement depuis banner Google
-- [ ] **2.9** Implémenter sync bidirectionnelle eM@g ↔ Google Calendar
-- [ ] **2.10** Rendre connexion Google persistante (token refresh auto)
+- [ ] **2.9** ⏳ Sync bidirectionnelle eM@g ↔ Google Calendar (feature majeure — différé)
+- [ ] **2.10** ⏳ Token Google persistent (feature majeure — différé)
 - [ ] **2.11** Tests planning + commit
 
 ---

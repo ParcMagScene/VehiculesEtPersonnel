@@ -43,11 +43,13 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     const startDT = event?.start?.dateTime || event?.start?.date || '';
     const endDT = event?.end?.dateTime || event?.end?.date || '';
     const startDate = startDT.slice(0, 10);
-    const startTime = startDT.includes('T')
-      ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const parsedStart = startDT.includes('T') ? new Date(startDT) : null;
+    const parsedEnd = endDT.includes('T') ? new Date(endDT) : null;
+    const startTime = parsedStart && !isNaN(parsedStart)
+      ? parsedStart.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       : '';
-    const endTime = endDT.includes('T')
-      ? new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const endTime = parsedEnd && !isNaN(parsedEnd)
+      ? parsedEnd.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       : '';
     const location = event?.location || '';
     const description = event?.description || '';

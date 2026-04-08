@@ -12,6 +12,7 @@ import multer from 'multer';
 import logger from './logger.js';
 import { normalizeBrand } from './brandHelpers.js';
 import PDFDocument from 'pdfkit';
+import { validate, equipmentImportSchema, savImportSchema } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -411,7 +412,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/equipment/import-csv — Import CSV Locmat
-  app.post('/api/equipment/import-csv', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/equipment/import-csv', authenticateToken, requireAdmin, validate(equipmentImportSchema), (req, res) => {
     try {
       const { data, mode } = req.body;
       // data = tableau d'objets [{code_libre, nom, famille, sous_famille, categorie, zone, stock, marque, numero_serie}, ...]
@@ -930,7 +931,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
   });
 
   // POST /api/sav-tickets/import-csv — Import CSV Interventions Locmat
-  app.post('/api/sav-tickets/import-csv', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/sav-tickets/import-csv', authenticateToken, requireAdmin, validate(savImportSchema), (req, res) => {
     try {
       const { data, mode, manualLinks } = req.body;
       // data = [{intervention, code_article, nom_article, numero_de_serie, debut, fin, cout, a}, ...]

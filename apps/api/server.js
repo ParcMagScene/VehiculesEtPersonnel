@@ -334,25 +334,33 @@ function cleanExpiredSessions() {
  * Nettoyage des fichiers temporaires > 24h dans /attachments/TEMP/
  */
 function cleanTempFiles() {
-  const tempDir = path.join(__dirname, '..', '..', 'public', 'attachments', 'TEMP');
-  try {
-    if (!fs.existsSync(tempDir)) return;
-    const files = fs.readdirSync(tempDir);
-    const maxAge = 24 * 60 * 60 * 1000; // 24h
-    let removed = 0;
-    for (const file of files) {
-      const filePath = path.join(tempDir, file);
-      try {
-        const stat = fs.statSync(filePath);
-        if (Date.now() - stat.mtimeMs > maxAge) {
-          fs.unlinkSync(filePath);
-          removed++;
-        }
-      } catch { /* ignore */ }
+  const publicDir = path.join(__dirname, '..', '..', 'public');
+  // Répertoires à nettoyer avec durée max de rétention
+  const targets = [
+    { dir: path.join(publicDir, 'attachments', 'TEMP'), maxAge: 24 * 60 * 60 * 1000, label: 'TEMP' },              // 24h
+    { dir: path.join(publicDir, 'bl-imports'),           maxAge: 7 * 24 * 60 * 60 * 1000, label: 'bl-imports' },     // 7 jours
+    { dir: path.join(publicDir, 'imports'),              maxAge: 7 * 24 * 60 * 60 * 1000, label: 'imports' },        // 7 jours
+  ];
+
+  for (const { dir, maxAge, label } of targets) {
+    try {
+      if (!fs.existsSync(dir)) continue;
+      const files = fs.readdirSync(dir);
+      let removed = 0;
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        try {
+          const stat = fs.statSync(filePath);
+          if (stat.isFile() && Date.now() - stat.mtimeMs > maxAge) {
+            fs.unlinkSync(filePath);
+            removed++;
+          }
+        } catch { /* ignore */ }
+      }
+      if (removed > 0) logger.info(`🧹 ${label} cleanup: ${removed} fichier(s) supprimé(s)`);
+    } catch (err) {
+      logger.error(`Erreur nettoyage ${label}:`, err.message);
     }
-    if (removed > 0) logger.info(`🧹 TEMP cleanup: ${removed} fichier(s) supprimé(s)`);
-  } catch (err) {
-    logger.error('Erreur nettoyage TEMP:', err.message);
   }
 }
 

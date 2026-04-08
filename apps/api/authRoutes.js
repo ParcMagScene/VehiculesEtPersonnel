@@ -351,7 +351,8 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
 });
 
 // Liste publique des utilisateurs (pour le sélecteur de connexion)
-// Renvoie nom et avatar — sans email pour éviter l'exposition de PII
+// ⚠️  DESIGN DECISION: email exposé volontairement pour le pré-remplissage du champ login
+// Protégé par le generalLimiter (600 req/min). Pas de password_hash ni données sensibles.
 app.get('/api/auth/users-public', (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, name, email, avatar FROM users ORDER BY name');

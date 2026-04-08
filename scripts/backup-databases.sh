@@ -112,6 +112,8 @@ backup_db() {
 
   echo "✅ [$label] $dest"
   echo "   Source: ${src_mb} MB → Backup: ${dest_mb} MB"
+  # [PHASE 3 SEC] Permissions restrictives — seul le propriétaire peut lire/écrire
+  chmod 600 "$dest"
   CREATED=$((CREATED + 1))
 }
 
@@ -142,6 +144,15 @@ echo "Backups existants:"
 ls -lhtr "$BACKUP_DIR"/*.db 2>/dev/null | tail -10 | while read -r line; do
   echo "   $line"
 done
+
+# [PHASE 3 SEC] Rétention automatique — suppression des backups > 30 jours
+RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+OLD_COUNT=$(find "$BACKUP_DIR" -name "*.db" -mtime +${RETENTION_DAYS} 2>/dev/null | wc -l | tr -d ' ')
+if [ "$OLD_COUNT" -gt 0 ]; then
+  echo ""
+  echo "🧹 Nettoyage: suppression de $OLD_COUNT backup(s) de plus de ${RETENTION_DAYS} jours"
+  find "$BACKUP_DIR" -name "*.db" -mtime +${RETENTION_DAYS} -delete
+fi
 
 if [ "$ERRORS" -gt 0 ]; then
   echo ""

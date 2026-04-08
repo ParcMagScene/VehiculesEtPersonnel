@@ -13,7 +13,7 @@ export const helmetMiddleware = helmet({
       imgSrc: ["'self'", 'data:', 'blob:'],
       connectSrc: ["'self'"],
       frameSrc: ["'self'", 'blob:'],
-      objectSrc: ["'self'", 'blob:'],
+      objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
     },
@@ -26,6 +26,7 @@ export const helmetMiddleware = helmet({
 
 /**
  * CSP allégée pour le client TV / display (pas de bypass total)
+ * imgSrc: '*' nécessaire pour les pochettes Sonos (URLs dynamiques)
  */
 const tvHelmetMiddleware = helmet({
   contentSecurityPolicy: {
@@ -37,8 +38,8 @@ const tvHelmetMiddleware = helmet({
       imgSrc: ["'self'", 'data:', 'blob:', '*'],
       connectSrc: ["'self'"],
       frameSrc: ["'self'", 'blob:'],
-      mediaSrc: ["'self'", 'blob:', '*'],
-      objectSrc: ["'self'", 'blob:'],
+      mediaSrc: ["'self'", 'blob:'],
+      objectSrc: ["'none'"],
     },
   },
   crossOriginEmbedderPolicy: false,

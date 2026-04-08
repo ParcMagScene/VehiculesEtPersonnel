@@ -115,6 +115,7 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/set-new-password', authLimiter);
 app.use('/api/auth/self-reset-password', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
 // [AUDIT FIX MED-B4/B6] Rate limiters sur endpoints sensibles
 app.use('/api/access-requests', sensitiveEndpointLimiter);
 app.use('/api/admin/reset-password', sensitiveEndpointLimiter);

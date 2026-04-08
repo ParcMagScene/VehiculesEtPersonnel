@@ -619,6 +619,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
                 }
                 // Mettre à jour les champs vides de l'affaire existante
                 const aff = db.prepare('SELECT * FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
+                // [SEC] Whitelist des champs autorisés pour l'UPDATE dynamique
+                const ALLOWED_AFFAIRE_FIELDS = new Set([
+                  'client', 'interlocuteur', 'tel', 'fax', 'devis',
+                  'adresse_livraison', 'titre', 'type', 'date_debut', 'date_fin',
+                  'modified_by', 'modified_at'
+                ]);
                 const updates = [];
                 const params = [];
                 if (!aff.client && pd?.client) { updates.push('client = ?'); params.push(pd.client); }
@@ -636,6 +642,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
                   updates.push("modified_by = ?", "modified_at = datetime('now')");
                   params.push(req.user.id);
                   params.push(linkedAffaireId);
+                  // [SEC] Vérifier que tous les champs sont dans la whitelist
+                  const allValid = updates.every(u => {
+                    const field = u.split(/\s*=\s*/)[0];
+                    return ALLOWED_AFFAIRE_FIELDS.has(field);
+                  });
+                  if (!allValid) throw new Error('Champ non autorisé dans UPDATE affaire');
                   db.prepare(`UPDATE affaires SET ${updates.join(', ')} WHERE numero_affaire = ?`).run(...params);
                   affaireUpdated = true;
                 }

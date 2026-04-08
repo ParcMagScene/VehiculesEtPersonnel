@@ -13,8 +13,14 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 
 // ── Protection SSRF — bloquer les IPs internes sauf le LAN local ──
 const BLOCKED_RANGES = [/^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^169\.254\./, /^0\./, /^255\./];
+// [SEC FIX] Bloque aussi IPv6 loopback et link-local
+const BLOCKED_IPV6 = ['::1', '::ffff:127.0.0.1', 'fe80::', 'fc00::', 'fd00::'];
 function isBlockedIP(ip) {
-  if (!ip || !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return true;
+  if (!ip) return true;
+  // Bloquer IPv6 dangereuses
+  if (ip.includes(':')) return BLOCKED_IPV6.some(prefix => ip.startsWith(prefix));
+  // IPv4 : vérifier format + ranges
+  if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return true;
   return BLOCKED_RANGES.some(r => r.test(ip));
 }
 

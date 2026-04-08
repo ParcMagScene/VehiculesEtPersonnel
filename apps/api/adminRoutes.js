@@ -463,20 +463,26 @@ app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req,
 });
 
 // Vérifier si un compte nécessite une réinitialisation
+// [SEC FIX] Ne renvoie que le strict nécessaire (pas id/name) pour limiter l'info leak
 app.post('/api/auth/check-reset', async (req, res) => {
   try {
     const { email } = req.body;
     
-    const stmt = db.prepare('SELECT id, email, name, password_reset_required FROM users WHERE email = ?');
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+    
+    const stmt = db.prepare('SELECT id, name, password_reset_required FROM users WHERE email = ?');
     const user = stmt.get(email);
     
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      // [SEC] Réponse uniforme pour éviter l'énumération d'emails
+      return res.json({ resetRequired: false });
     }
     
     res.json({ 
       resetRequired: user.password_reset_required === 1,
-      user: { id: user.id, email: user.email, name: user.name }
+      user: { name: user.name }
     });
   } catch (error) {
     logger.error('Erreur check reset:', error);

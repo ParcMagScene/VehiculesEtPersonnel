@@ -183,12 +183,12 @@
 
 ### 5.2 Tâches
 
-- [ ] **5.1** Ajouter bouton Fermer (X) dans header de tous les modals/dialogs
-- [ ] **5.2** Créer hook `useDirtyForm()` pour détection modifications non sauvegardées
-- [ ] **5.3** Implémenter dialog confirmation (Enregistrer / Annuler) sur tous les formulaires modals
-- [ ] **5.4** Ajouter `aria-label` sur tous les boutons icon-only
-- [ ] **5.5** Corriger boutons gestion droits utilisateurs
-- [ ] **5.6** Créer `UserPreferencesModal.css` — corriger layout header onglets
+- [x] **5.1** Boutons Fermer (X) déjà présents dans tous les modals via `Modal.jsx` + `ModalHeader` ✅ (faux positif)
+- [x] **5.2** Créer hook `useDirtyForm()` pour détection modifications non sauvegardées ✅
+- [ ] **5.3** Intégrer `useDirtyForm()` dans les modals d'édition principaux
+- [x] **5.4** `aria-label` auto-dérivé dans `Button.jsx` (iconOnly + title) + VideoPanel corrigé ✅
+- [x] **5.5** Boutons gestion droits déjà fonctionnels avec aria-label ✅ (faux positif)
+- [x] **5.6** `UserPreferencesModal.css` existe déjà ✅ (faux positif)
 - [ ] **5.7** Déplacer boutons "Gestion" dans toolbars respectives
 - [ ] **5.8** Tests a11y + commit
 

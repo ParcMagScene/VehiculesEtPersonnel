@@ -5,6 +5,7 @@ import {
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import { useToast } from '../../hooks/useToast';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import './TaskEditModal.css';
 import { Button, EntityCombobox, Input, Select, Textarea } from '@/design-system';
 
@@ -99,6 +100,9 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     });
   }, [task]);
 
+  const { isDirty, guardClose } = useDirtyForm(form);
+  const safeClose = guardClose(onClose);
+
   // Filtrer les affaires selon la recherche
   const filteredAffaires = useMemo(() => {
     if (!affaireSearch.trim()) return affaires.slice(0, 30);
@@ -154,12 +158,12 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     : null;
 
   return (
-    <div className="tem-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="tem-overlay" onMouseDown={(e) => e.target === e.currentTarget && safeClose()}>
       <div className="tem-modal">
         {/* Header */}
         <div className="tem-header">
           <h3><FileText size={18} /> Modifier la tâche</h3>
-          <Button variant="ghost" className="tem-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
+          <Button variant="ghost" className="tem-close" onClick={safeClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Badges info */}

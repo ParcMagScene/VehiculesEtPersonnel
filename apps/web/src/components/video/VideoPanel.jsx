@@ -162,17 +162,17 @@ const VideoPanel = ({ currentUser }) => {
         <div className="video-panel__actions">
           {/* Vues */}
           <div className="video-panel__view-toggle">
-            <Button variant="ghost" className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} title="Vue grille">
+            <Button variant="ghost" className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} title="Vue grille" aria-label="Vue grille">
               <Grid size={18} />
             </Button>
-            <Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste">
+            <Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste" aria-label="Vue liste">
               <List size={18} />
             </Button>
-            <Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements">
+            <Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements" aria-label="Enregistrements">
               <Film size={18} />
             </Button>
             {isAdmin && (
-              <Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
+              <Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration" aria-label="Administration">
                 <Settings size={18} />
               </Button>
             )}
@@ -312,7 +312,7 @@ const VideoPanel = ({ currentUser }) => {
                   <td>{cam.lastSeen ? new Date(cam.lastSeen).toLocaleString('fr-FR') : '—'}</td>
                   {isAdmin && (
                     <td>
-                      <Button variant="ghost" size="xs" iconOnly onClick={() => { setEditingCamera(cam); setShowSettings(true); }}>
+                      <Button variant="ghost" size="xs" iconOnly onClick={() => { setEditingCamera(cam); setShowSettings(true); }} title="Configurer la caméra">
                         <Settings size={14} />
                       </Button>
                     </td>

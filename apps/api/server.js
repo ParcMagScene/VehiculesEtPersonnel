@@ -97,6 +97,18 @@ app.use(xssSanitize);
 
 // Rate limiting
 app.use('/api/', generalLimiter);
+
+// [PHASE 6] Health check — pas d'auth, utilisé par PM2/monitoring
+const startedAt = Date.now();
+app.get('/api/health', (req, res) => {
+  try {
+    db.prepare('SELECT 1').get();
+    res.json({ ok: true, uptime: Math.floor((Date.now() - startedAt) / 1000), db: 'connected' });
+  } catch (err) {
+    res.status(503).json({ ok: false, db: 'error', error: err.message });
+  }
+});
+
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);

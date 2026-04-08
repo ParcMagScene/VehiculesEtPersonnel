@@ -101,7 +101,7 @@ function onDragStart(e) {
   if (!overlay) return;
 
   // Ignorer les éléments à ne pas traiter
-  const classes = modal.className.toLowerCase();
+  const classes = (typeof modal.className === 'string' ? modal.className : modal.className?.baseVal || '').toLowerCase();
   if (IGNORE_CLASSES.some(c => classes.includes(c))) return;
 
   e.preventDefault();
@@ -337,7 +337,7 @@ function enhanceModal(modal) {
   if (modal.matches(HEADER_SELECTORS)) return;
 
   // Vérifier qu'il ne faut pas ignorer
-  const classes = modal.className ? modal.className.toLowerCase() : '';
+  const classes = (typeof modal.className === 'string' ? modal.className : modal.className?.baseVal || '').toLowerCase();
   if (IGNORE_CLASSES.some(c => classes.includes(c))) return;
 
   // Exclure les sous-parties (body, footer, close, actions, title, name)

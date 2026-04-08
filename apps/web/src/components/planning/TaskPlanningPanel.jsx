@@ -9,6 +9,7 @@ import api from '../../utils/api';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 import AffaireBadge from '../AffaireBadge';
 import { formatDateFr } from '../../utils/formatUtils';
+import { safeParseDate } from '../../utils/dateUtils';
 import { Accordion, Button, DetailRow, Divider, Input, Select, Tooltip } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -593,8 +594,8 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         return {
           ...a,
           _linkedGoogleEvent: gev,
-          _googleTime: startDT.includes('T') ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
-          _googleEndTime: endDT.includes('T') ? new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+          _googleTime: startDT.includes('T') ? (safeParseDate(startDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || '') : '',
+          _googleEndTime: endDT.includes('T') ? (safeParseDate(endDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || '') : '',
           _googleLocation: gev.location || '',
           _googleId: gev.id,
         };
@@ -1470,11 +1471,11 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     const startDT = event.start?.dateTime || event.start?.date || '';
     const endDT = event.end?.dateTime || event.end?.date || '';
     const timeStr = startDT.includes('T')
-      ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
+      ? `${safeParseDate(startDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || '?'}${endDT ? ' → ' + (safeParseDate(endDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || '') : ''}`
       : 'Journée';
     const _dayStr = startDT.includes('T')
-      ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
-      : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+      ? safeParseDate(startDT)?.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) || ''
+      : startDT ? safeParseDate(startDT + 'T00:00:00')?.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) || '' : '';
     const location = event.location || '';
     const affaireMatch = summary.match(/\bAF\s*\d{4,}/i);
     const affaireNum = affaireMatch ? affaireMatch[0].toUpperCase().replace(/\s+/g, '') : '';
@@ -1682,11 +1683,11 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     const startDT = event.start || '';
     const endDT = event.end || '';
     const timeStr = startDT.includes('T')
-      ? `${new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${endDT ? ' → ' + new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}`
+      ? `${safeParseDate(startDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || '?'}${endDT ? ' → ' + (safeParseDate(endDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || '') : ''}`
       : 'Journée';
     const _dayStr = startDT.includes('T')
-      ? new Date(startDT).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
-      : startDT ? new Date(startDT + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+      ? safeParseDate(startDT)?.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) || ''
+      : startDT ? safeParseDate(startDT + 'T00:00:00')?.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) || '' : '';
     const isProcessed = processedGoogleIds.has(event.id);
     const linkedTasks = tasksBySourceId.get(event.id) || [];
     const icalAffaireMatch = (event.summary || '').match(/\bAF\s*\d{4,}/i);
@@ -1914,7 +1915,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       const isProcessed = processedGoogleIds.has(item.id);
       const startDT = typeof item.start === 'string' ? item.start : (item.start?.dateTime || item.start?.date || '');
       const timeStr = startDT.includes('T')
-        ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        ? safeParseDate(startDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || ''
         : '';
       return (
         <div

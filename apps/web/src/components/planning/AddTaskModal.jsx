@@ -6,6 +6,7 @@ import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
+import { safeParseDate } from '../../utils/dateUtils';
 import { Button, Input, Select } from '@/design-system';
 import { STATUS } from '../../constants';
 
@@ -411,9 +412,11 @@ export default function AddTaskModal({
                       setTitle(ev.summary || ev.title || '');
                       const startDT = ev._source === 'ical' ? (ev.start || '') : (ev.start?.dateTime || '');
                       if (startDT && startDT.includes('T')) {
-                        const d = new Date(startDT);
-                        setTime(d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
-                        setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
+                        const d = safeParseDate(startDT);
+                        if (d) {
+                          setTime(d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+                          setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
+                        }
                       }
                     }
                   }

@@ -293,6 +293,18 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Un fichier ou du texte extrait est requis' });
       }
 
+      // [AUDIT FIX I3] Valider parsed_data si présent
+      if (parsed_data) {
+        try {
+          const test = typeof parsed_data === 'string' ? JSON.parse(parsed_data) : parsed_data;
+          if (test && typeof test !== 'object') {
+            return res.status(400).json({ error: 'parsed_data doit être un objet JSON' });
+          }
+        } catch {
+          return res.status(400).json({ error: 'parsed_data n\'est pas du JSON valide' });
+        }
+      }
+
       const id = crypto.randomUUID().replace(/-/g, '');
 
       // Extraire les métadonnées enrichies du parsed_data
@@ -577,6 +589,26 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
 
       if (!req.files?.length && !items.length) {
         return res.status(400).json({ error: 'Aucun fichier ou métadonnées fourni' });
+      }
+
+      // [AUDIT FIX I4] Valider que items est un tableau d'objets avec des champs attendus
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ error: 'items doit être un tableau JSON' });
+      }
+      if (items.length > 50) {
+        return res.status(400).json({ error: 'Maximum 50 items par batch' });
+      }
+      for (const item of items) {
+        if (item.parsed_data) {
+          try {
+            const pd = typeof item.parsed_data === 'string' ? JSON.parse(item.parsed_data) : item.parsed_data;
+            if (pd && typeof pd !== 'object') {
+              return res.status(400).json({ error: 'parsed_data doit être un objet JSON' });
+            }
+          } catch {
+            return res.status(400).json({ error: 'parsed_data invalide dans un des items' });
+          }
+        }
       }
 
       const results = [];

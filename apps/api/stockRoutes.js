@@ -1,5 +1,6 @@
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
+import { stockImportSchema, validate } from './schemas/imports.js';
 
 // ═══════════════════════════════════════════════════════════════
 // Catégories Stock
@@ -504,15 +505,10 @@ export function setupStockImportRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // Import en masse
-  app.post('/api/stock/import', authenticateToken, requireAdmin, (req, res) => {
+  // [AUDIT FIX I5] Validation Zod mandatory
+  app.post('/api/stock/import', authenticateToken, requireAdmin, validate(stockImportSchema), (req, res) => {
     try {
       const { items, mode = 'upsert' } = req.body;
-      if (!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ error: 'Aucun article à importer' });
-      }
-      if (items.length > 5000) {
-        return res.status(400).json({ error: 'Maximum 5000 articles par import' });
-      }
 
       // Build category lookup: name (lowercase) → id
       const allCats = db.prepare('SELECT id, name, parent_id FROM stock_categories').all();

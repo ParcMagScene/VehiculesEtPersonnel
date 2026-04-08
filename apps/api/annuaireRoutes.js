@@ -3,6 +3,7 @@ import logger from './logger.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { contactsImportSchema, validate } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -897,13 +898,10 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
   });
 
   // ─── POST /api/annuaire/import/contacts-csv — Import contacts depuis données CSV uploadées ───
-  app.post('/api/annuaire/import/contacts-csv', authenticateToken, requireAdmin, (req, res) => {
+  // [AUDIT FIX I2] Validation Zod mandatory
+  app.post('/api/annuaire/import/contacts-csv', authenticateToken, requireAdmin, validate(contactsImportSchema), (req, res) => {
     try {
       const { data, mode = 'import' } = req.body;
-
-      if (!data || !Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ error: 'Données CSV manquantes ou vides' });
-      }
 
       /**
        * Parse un nom "NOM Prénom" en { lastName, firstName }.

@@ -7,6 +7,7 @@
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { normalizeBrand, enrichArticle, linkBrandIds, applyUnifiedFamilyBatch, invalidateBrandCache, listBrandsWithStats } from './brandHelpers.js';
+import { supplierImportSchema, validate } from './schemas/imports.js';
 
 // ============ ARTICLES FOURNISSEURS ============
 
@@ -284,12 +285,10 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   });
 
   // POST /api/supplier-articles/import — Import bulk depuis parsing PDF frontend
-  app.post('/api/supplier-articles/import', authenticateToken, requireWriteAccess, (req, res) => {
+  // [AUDIT FIX I1] Validation Zod mandatory
+  app.post('/api/supplier-articles/import', authenticateToken, requireWriteAccess, validate(supplierImportSchema), (req, res) => {
     try {
       const { supplier_id, filename, file_size, page_count, articles } = req.body;
-      if (!supplier_id || !filename || !articles?.length) {
-        return res.status(400).json({ error: 'supplier_id, filename et articles requis' });
-      }
 
       // Créer l'entrée d'import
       const importResult = db.prepare(`

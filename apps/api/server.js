@@ -92,7 +92,8 @@ app.use(compression({ threshold: 1024 }));
 app.use(helmetConditional);
 app.use(corsMiddleware);
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
+// [AUDIT FIX H3] Limite body JSON réduite (les imports volumineux utilisent multer)
+app.use(express.json({ limit: '1mb' }));
 app.use(xssSanitize);
 
 // Rate limiting

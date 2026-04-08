@@ -281,7 +281,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // ════════════════════════════════════════
 
   // POST /api/video/cameras/:id/ptz — Commande PTZ
-  app.post('/api/video/cameras/:id/ptz', authenticateToken, (req, res) => {
+  // [AUDIT FIX H4] PTZ = opération sensible → requireAdmin
+  app.post('/api/video/cameras/:id/ptz', authenticateToken, requireAdmin, (req, res) => {
     (async () => {
       try {
         const id = parseInt(req.params.id, 10);
@@ -481,7 +482,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         res.json({ cameraId: id, date, recordings });
       } catch (error) {
         logger.error('GET recordings:', error);
-        res.status(500).json({ error: 'Erreur recherche enregistrements', detail: error.message });
+        // [AUDIT FIX H1] Ne pas exposer error.message au client
+        res.status(500).json({ error: 'Erreur recherche enregistrements' });
       }
     })();
   });

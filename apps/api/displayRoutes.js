@@ -13,6 +13,7 @@ import db from './database.js';
 import logger from './logger.js';
 import { randomBytes } from 'node:crypto';
 import { uploadMedia } from './middleware/upload.js';
+import { validateFileType } from './middleware/validateFileType.js';
 import rateLimit from 'express-rate-limit';
 
 // Rate limiter dédié pour les endpoints TV publics (écriture)
@@ -73,7 +74,11 @@ function cleanTvTitle(t) {
 // ── Multer : upload GIF icônes ────────────────────────────────
 const gifStorage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, gifsDir),
-  filename: (_req, file, cb) => cb(null, file.originalname),
+  // [AUDIT FIX I6] Sanitiser le nom de fichier — empêche path traversal
+  filename: (_req, file, cb) => {
+    const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_{2,}/g, '_');
+    cb(null, safe);
+  },
 });
 const uploadGif = multer({
   storage: gifStorage,
@@ -501,8 +506,13 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // [AUDIT FIX C1] MIME réels pour médias display
+  const DISPLAY_MEDIA_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+  const DISPLAY_GIF_MIMES = ['image/gif', 'image/png'];
+  const DISPLAY_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
   // POST /api/display/media — Upload média
-  app.post('/api/display/media', authenticateToken, uploadMedia.single('file'), (req, res) => {
+  app.post('/api/display/media', authenticateToken, uploadMedia.single('file'), validateFileType(DISPLAY_MEDIA_MIMES), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Aucun fichier fourni' });
 
@@ -1021,7 +1031,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/location-gifs — Upload d'un GIF
-  app.post('/api/display/location-gifs', authenticateToken, requireAdmin, uploadGif.single('gif'), (req, res) => {
+  app.post('/api/display/location-gifs', authenticateToken, requireAdmin, uploadGif.single('gif'), validateFileType(DISPLAY_GIF_MIMES), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Fichier requis' });
       logAction(null, 'gif_uploaded', { filename: req.file.filename }, req.user.id);
@@ -1085,7 +1095,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────── LOGO ────────────────────────────────────
 
   // POST /api/display/logo — Upload du logo
-  app.post('/api/display/logo', authenticateToken, requireAdmin, uploadLogo.single('logo'), (req, res) => {
+  app.post('/api/display/logo', authenticateToken, requireAdmin, uploadLogo.single('logo'), validateFileType(DISPLAY_IMAGE_MIMES), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Fichier requis' });
       // Stocker le chemin dans la config
@@ -1126,7 +1136,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────── PHOTO FURTIVE ────────────────────────────────
 
   // POST /api/display/sneaky-photo — Activer une photo furtive
-  app.post('/api/display/sneaky-photo', authenticateToken, requireAdmin, uploadSneaky.single('photo'), (req, res) => {
+  app.post('/api/display/sneaky-photo', authenticateToken, requireAdmin, uploadSneaky.single('photo'), validateFileType(DISPLAY_IMAGE_MIMES), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Photo requise' });
       const duration = req.body.duration || '60';

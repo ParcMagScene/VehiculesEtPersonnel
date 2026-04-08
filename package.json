@@ -29,5 +29,8 @@
   },
   "devDependencies": {
     "md-to-pdf": "^5.2.5"
+  },
+  "dependencies": {
+    "file-type": "^19.6.0"
   }
 }

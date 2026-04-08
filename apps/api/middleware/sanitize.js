@@ -45,5 +45,16 @@ export function xssSanitize(req, _res, next) {
       }
     }
   }
+  // [AUDIT FIX M3] Sanitiser aussi req.query et req.params
+  if (req.query && typeof req.query === 'object') {
+    for (const [key, value] of Object.entries(req.query)) {
+      req.query[key] = sanitizeValue(value);
+    }
+  }
+  if (req.params && typeof req.params === 'object') {
+    for (const [key, value] of Object.entries(req.params)) {
+      req.params[key] = sanitizeValue(value);
+    }
+  }
   next();
 }

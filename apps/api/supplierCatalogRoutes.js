@@ -374,8 +374,9 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       logger.info(`📦 Import catalogue: ${filename} — ${inserted} insérés, ${updated} mis à jour, ${skipped} ignorés`);
       res.json({ importId, inserted, updated, skipped, total: articles.length });
     } catch (error) {
-      logger.error('Erreur POST supplier-articles/import:', error.message);
-      res.status(500).json({ error: 'Erreur import: ' + error.message });
+      logger.error('Erreur POST supplier-articles/import:', error);
+      // [AUDIT FIX H1] Ne pas exposer error.message au client
+      res.status(500).json({ error: 'Erreur lors de l\'import du catalogue' });
     }
   });
 
@@ -566,8 +567,9 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
         categories: Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
       });
     } catch (error) {
-      logger.error('Erreur POST supplier-articles/analyze:', error.message);
-      res.status(500).json({ error: 'Erreur analyse: ' + error.message });
+      logger.error('Erreur POST supplier-articles/analyze:', error);
+      // [AUDIT FIX H1] Ne pas exposer error.message au client
+      res.status(500).json({ error: 'Erreur lors de l\'analyse du catalogue' });
     }
   });
 

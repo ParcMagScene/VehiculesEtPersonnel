@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import db from './database.js';
 import logger from './logger.js';
+import { validateFileType } from './middleware/validateFileType.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,10 +28,12 @@ const uploadAvatar = multer({
   storage: avatarStorage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
-    if (file.mimetype.startsWith('image/')) {
+    // [AUDIT FIX C2] Whitelist explicite — SVG exclu (vecteur XSS)
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Seules les images sont acceptées'));
+      cb(new Error('Seules les images JPEG, PNG, WebP et GIF sont acceptées'));
     }
   }
 });
@@ -52,8 +55,11 @@ app.patch('/api/users/me', authenticateToken, (req, res) => {
   }
 });
 
+// [AUDIT FIX C1] MIME réels autorisés pour avatars (magic bytes)
+const AVATAR_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
 // Upload d'avatar
-app.post('/api/users/me/avatar', authenticateToken, uploadAvatar.single('avatar'), (req, res) => {
+app.post('/api/users/me/avatar', authenticateToken, uploadAvatar.single('avatar'), validateFileType(AVATAR_MIMES), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier envoyé' });
@@ -136,7 +142,7 @@ app.patch('/api/users/:id/profile', authenticateToken, requireAdmin, (req, res) 
 });
 
 // Upload d'avatar pour un utilisateur (admin)
-app.post('/api/users/:id/avatar', authenticateToken, requireAdmin, uploadAvatar.single('avatar'), (req, res) => {
+app.post('/api/users/:id/avatar', authenticateToken, requireAdmin, uploadAvatar.single('avatar'), validateFileType(AVATAR_MIMES), (req, res) => {
   try {
     const { id } = req.params;
     if (!req.file) return res.status(400).json({ error: 'Aucun fichier envoyé' });

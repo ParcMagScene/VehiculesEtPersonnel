@@ -618,7 +618,8 @@ export function setupStockImportRoutes(app, authenticateToken, requireAdmin) {
       res.json({ inserted, updated, skipped, errors: errors.slice(0, 20), total: items.length });
     } catch (error) {
       logger.error('Erreur import stock:', error);
-      res.status(500).json({ error: 'Erreur import: ' + error.message });
+      // [AUDIT FIX H1] Ne pas exposer error.message au client
+      res.status(500).json({ error: 'Erreur lors de l\'import du stock' });
     }
   });
 }

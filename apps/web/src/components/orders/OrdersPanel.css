@@ -578,7 +578,7 @@
 }
 .order-form-modal { max-width: 800px; }
 .supplier-form-modal { max-width: 500px; }
-.modal-header {
+.orders-panel .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -587,7 +587,7 @@
   color: var(--modal-header-color);
   border-radius: var(--modal-header-border-radius);
 }
-.modal-header h2 { margin: 0; font-size: var(--font-lg); color: var(--theme-text-inverse); font-weight: 700; }
+.orders-panel .modal-header h2 { margin: 0; font-size: var(--font-lg); color: var(--theme-text-inverse); font-weight: 700; }
 .close-btn {
   display: flex;
   align-items: center;
@@ -603,8 +603,8 @@
   transition: all var(--transition-fast);
 }
 .close-btn:hover { background: var(--close-btn-hover-bg); border-color: var(--close-btn-hover-border); }
-.modal-body { padding: var(--space-5); overflow-y: auto; flex: 1; min-height: 0; }
-.modal-footer {
+.orders-panel .modal-body { padding: var(--space-5); overflow-y: auto; flex: 1; min-height: 0; }
+.orders-panel .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;

@@ -628,7 +628,7 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-.modal-header {
+.annuaire-panel .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -636,7 +636,7 @@
   border-bottom: 1px solid var(--border-color, var(--theme-border));
 }
 
-.modal-header h3 {
+.annuaire-panel .modal-header h3 {
   margin: 0;
   font-size: var(--font-md);
 }
@@ -666,24 +666,24 @@
   gap: 12px;
 }
 
-.form-group {
+.annuaire-panel .form-group {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.form-group.flex-2 { flex: 2; }
+.annuaire-panel .form-group.flex-2 { flex: 2; }
 
-.form-group label {
+.annuaire-panel .form-group label {
   font-size: var(--font-sm);
   font-weight: 600;
   color: var(--text-secondary, var(--theme-text-secondary));
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.annuaire-panel .form-group input,
+.annuaire-panel .form-group select,
+.annuaire-panel .form-group textarea {
   padding: 7px 10px;
   border: 1px solid var(--border-color, var(--theme-border-muted));
   border-radius: var(--radius-sm);
@@ -694,14 +694,14 @@
   transition: border-color 0.15s;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.annuaire-panel .form-group input:focus,
+.annuaire-panel .form-group select:focus,
+.annuaire-panel .form-group textarea:focus {
   border-color: var(--theme-info);
   box-shadow: var(--focus-ring);
 }
 
-.form-group textarea {
+.annuaire-panel .form-group textarea {
   resize: vertical;
 }
 

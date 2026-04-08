@@ -37,7 +37,7 @@
   padding: var(--space-5);
 }
 
-.modal-header {
+.reservation-modal .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -1080,11 +1080,11 @@
     padding: 0.5rem;
   }
 
-  .modal-header {
+  .reservation-modal .modal-header {
     padding: 1rem;
   }
 
-  .modal-header h2 {
+  .reservation-modal .modal-header h2 {
     font-size: var(--font-xl);
   }
 
@@ -1104,13 +1104,13 @@
     padding: 0.5rem;
   }
 
-  .form-group label {
+  .reservation-modal .form-group label {
     font-size: var(--font-base);
   }
 
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
+  .reservation-modal .form-group input,
+  .reservation-modal .form-group select,
+  .reservation-modal .form-group textarea {
     font-size: var(--font-base);
   }
 }
@@ -1120,7 +1120,7 @@
     border-radius: var(--radius-md);
   }
 
-  .modal-header h2 {
+  .reservation-modal .modal-header h2 {
     font-size: var(--font-md);
   }
 

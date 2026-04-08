@@ -218,8 +218,8 @@
   100% { opacity: 0; transform: translateY(-50%) scale(0.9); }
 }
 
-.btn-primary,
-.btn-secondary {
+.vehicle-maintenance-modal .btn-primary,
+.vehicle-maintenance-modal .btn-secondary {
   padding: var(--btn-padding);
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);

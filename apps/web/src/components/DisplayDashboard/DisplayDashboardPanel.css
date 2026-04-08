@@ -954,7 +954,7 @@
 .modal-container.modal-md { max-width: 500px; width: 90%; }
 .modal-container.modal-lg { max-width: 700px; width: 90%; }
 
-.modal-header {
+.display-dashboard .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -965,8 +965,8 @@
   gap: var(--space-2);
 }
 
-.modal-header h2,
-.modal-header h3 {
+.display-dashboard .modal-header h2,
+.display-dashboard .modal-header h3 {
   margin: 0;
   font-weight: 700;
   color: var(--modal-header-color);
@@ -975,8 +975,8 @@
   gap: 8px;
 }
 
-.modal-header h2 { font-size: var(--font-lg); }
-.modal-header h3 { font-size: var(--font-md); }
+.display-dashboard .modal-header h2 { font-size: var(--font-lg); }
+.display-dashboard .modal-header h3 { font-size: var(--font-md); }
 
 .modal-close {
   display: flex;
@@ -999,14 +999,14 @@
   border-color: var(--close-btn-hover-border);
 }
 
-.modal-body {
+.display-dashboard .modal-body {
   padding: var(--space-4) var(--space-5);
   overflow-y: auto;
   flex: 1;
   min-height: 0;
 }
 
-.modal-footer {
+.display-dashboard .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
@@ -1016,22 +1016,22 @@
 }
 
 /* ─── Formulaires modales ─── */
-.form-group {
+.display-dashboard .form-group {
   display: flex;
   flex-direction: column;
   gap: 5px;
   margin-bottom: 14px;
 }
 
-.form-group label {
+.display-dashboard .form-group label {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--theme-text-secondary);
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
+.display-dashboard .form-group input,
+.display-dashboard .form-group select,
+.display-dashboard .form-group textarea {
   padding: 8px 12px;
   border: 1px solid var(--theme-border);
   border-radius: var(--btn-radius);
@@ -1041,9 +1041,9 @@
   transition: border-color var(--transition-fast);
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
+.display-dashboard .form-group input:focus,
+.display-dashboard .form-group select:focus,
+.display-dashboard .form-group textarea:focus {
   outline: none;
   border-color: var(--focus-border);
   box-shadow: var(--focus-ring);
@@ -1062,7 +1062,7 @@
 }
 
 /* ─── Boutons modales ─── */
-.btn-primary {
+.display-dashboard .btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1079,12 +1079,12 @@
   white-space: nowrap;
 }
 
-.btn-primary:hover:not(:disabled) {
+.display-dashboard .btn-primary:hover:not(:disabled) {
   box-shadow: var(--btn-primary-hover-shadow);
   transform: translateY(-1px);
 }
 
-.btn-primary:disabled {
+.display-dashboard .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

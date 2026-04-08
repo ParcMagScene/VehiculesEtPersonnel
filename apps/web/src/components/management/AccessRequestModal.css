@@ -105,8 +105,8 @@
   border-top: 1px solid var(--theme-border);
 }
 
-.btn-primary,
-.btn-secondary {
+.access-request-modal .btn-primary,
+.access-request-modal .btn-secondary {
   padding: var(--btn-padding);
   border: none;
   border-radius: var(--btn-radius);

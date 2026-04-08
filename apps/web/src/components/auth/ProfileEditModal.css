@@ -22,7 +22,7 @@
 }
 
 .profile-edit-modal .theme-modal-header {
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .profile-edit-header-title {
@@ -53,7 +53,7 @@
 .profile-edit-avatar-preview {
   width: 100px;
   height: 100px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   border: 3px solid var(--theme-primary);
 }
@@ -64,7 +64,7 @@
   right: 0;
   width: 34px;
   height: 34px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   border: 3px solid var(--theme-bg-card);

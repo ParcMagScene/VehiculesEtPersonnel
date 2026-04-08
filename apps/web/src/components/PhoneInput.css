@@ -17,7 +17,7 @@
   padding: 8px 8px 8px 10px;
   border: 1px solid var(--theme-border-muted);
   border-right: none;
-  border-radius: 8px 0 0 8px;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: var(--theme-bg-secondary);
   cursor: pointer;
   font-size: var(--font-base);
@@ -58,7 +58,7 @@
   flex: 1;
   min-width: 0;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   padding: 8px 12px;
   font-size: var(--font-base);
   outline: none;

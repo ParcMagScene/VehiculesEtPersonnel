@@ -33,7 +33,7 @@
 .pdp-slide-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--glass-light);
   display: flex;
   align-items: center;
@@ -95,7 +95,7 @@
 }
 .pdp-slide-body::-webkit-scrollbar-thumb {
   background: var(--theme-bg-muted);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 /* ═══ Sections de contenu ═══ */
@@ -119,7 +119,7 @@
 .pdp-avatar-large {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-gradient);
   display: flex;
   align-items: center;
@@ -226,7 +226,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-xs);
   font-weight: 600;
   background: color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 12%, var(--theme-bg-card));
@@ -311,7 +311,7 @@
   margin-left: auto;
   background: none;
   border: 1px solid var(--theme-border);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   width: 22px;
   height: 22px;
   display: flex;
@@ -345,7 +345,7 @@
 .pdp-absence-item {
   padding: 6px 10px;
   border-left: 3px solid var(--theme-text-muted);
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--theme-bg-page);
   font-size: var(--font-sm);
 }

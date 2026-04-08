@@ -211,7 +211,7 @@
   padding: var(--space-5) var(--space-5) var(--space-3);
   border-bottom: none;
   background: var(--theme-danger-gradient);
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .session-conflict-modal .modal-header h3 {

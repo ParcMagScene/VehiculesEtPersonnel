@@ -183,7 +183,7 @@
 .maintenance-dialog .form-group textarea {
   padding: 8px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   font-size: var(--font-base);
   font-family: inherit;
   color: var(--theme-text-dark);
@@ -212,7 +212,7 @@
   padding: 14px 24px;
   border-top: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   flex-shrink: 0;
 }
 
@@ -776,7 +776,7 @@
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
 .conflict-button {

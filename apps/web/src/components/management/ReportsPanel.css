@@ -125,7 +125,7 @@
   padding: 4px 10px;
   border: 1px solid var(--theme-border, var(--theme-border));
   background: var(--theme-bg-secondary, var(--theme-bg-page));
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: 0.72rem;
   color: var(--theme-text-secondary, var(--theme-text-secondary));
   cursor: pointer;

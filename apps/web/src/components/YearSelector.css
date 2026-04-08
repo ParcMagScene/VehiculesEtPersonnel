@@ -54,7 +54,7 @@
 .year-item {
   background: var(--theme-bg-secondary);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem 1rem;
   cursor: pointer;
   display: flex;
@@ -107,7 +107,7 @@
   width: 8px;
   height: 8px;
   background: var(--theme-success-alt);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   box-shadow: 0 0 0 2px var(--success-tint-vivid);
   animation: pulse 2s infinite;
 }

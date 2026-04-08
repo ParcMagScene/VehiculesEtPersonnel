@@ -62,7 +62,7 @@
   z-index: var(--z-popover) !important;
   background: var(--theme-bg-card) !important;
   border: 1px solid var(--theme-border) !important;
-  border-radius: 4px !important;
+  border-radius: var(--radius-xs) !important;
   box-shadow: 0 4px 6px var(--shadow-sm) !important;
 }
 
@@ -355,7 +355,7 @@
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   font-size: var(--font-base);
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
@@ -629,7 +629,7 @@
   }
 
   .location-dialog {
-    border-radius: 0.75rem;
+    border-radius: var(--radius-lg);
     max-height: 100dvh;
   }
 

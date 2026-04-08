@@ -507,7 +507,7 @@
 }
 [data-palette^="vscode"] ::-webkit-scrollbar-thumb {
   background: var(--vscode-scrollbar);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 [data-palette^="vscode"] ::-webkit-scrollbar-thumb:hover {
   background: var(--vscode-scrollbar-hover);

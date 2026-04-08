@@ -124,7 +124,7 @@
   /* ─── Modal header (texte blanc sur gradient) ─── */
   --modal-header-bg: var(--theme-gradient);
   --modal-header-color: white;
-  --modal-header-border-radius: 16px 16px 0 0;
+  --modal-header-border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   
   /* ─── Close button (semi-transparent sur header gradient) ─── */
   --close-btn-bg: rgba(255, 255, 255, 0.15);
@@ -668,7 +668,7 @@
 /* Container de modal standard */
 .theme-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-modal);
   max-height: 90vh;
   display: flex;
@@ -902,7 +902,7 @@
   background: rgba(17, 24, 39, 0.95);
   color: white;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 12px;
   line-height: 1.5;
   min-width: 180px;
@@ -972,7 +972,7 @@
   font-weight: 600;
   white-space: nowrap;
   padding: 5px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   z-index: var(--z-dropdown);
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -1079,7 +1079,7 @@
               border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.3s ease;
   opacity: 0;
-  border-radius: 10px 0 0 10px;
+  border-radius: var(--radius-md-lg) 0 0 var(--radius-md-lg);
 }
 
 .shared-slide-panel > *,

@@ -222,7 +222,7 @@
   width: 16px;
   height: 16px;
   border: 1.5px solid var(--theme-border);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -290,7 +290,7 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-primary, var(--theme-info));
   color: var(--theme-bg-card);
   font-size: 0.55rem;
@@ -310,7 +310,7 @@
   color: var(--theme-purple-accent, var(--theme-primary-hover));
   background: rgba(124, 58, 237, 0.08);
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
   white-space: nowrap;
   max-width: 80px;
@@ -323,7 +323,7 @@
   font-size: 0.6rem;
   font-weight: 600;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   border: 1px solid;
   flex-shrink: 0;
   white-space: nowrap;

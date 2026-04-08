@@ -39,7 +39,7 @@
 
 .bp-annotation-modal {
   background: var(--theme-bg-card, var(--theme-text-primary));
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   width: 95vw;
   height: 92dvh;
   display: flex;

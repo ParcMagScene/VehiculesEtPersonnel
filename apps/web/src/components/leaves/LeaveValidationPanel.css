@@ -229,14 +229,14 @@
 .lvp-person-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
 }
 
 .lvp-person-avatar-placeholder {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-border);
   display: flex;
   align-items: center;

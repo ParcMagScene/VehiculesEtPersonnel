@@ -270,7 +270,7 @@
   background: var(--theme-text-dark);
   color: var(--theme-text-secondary);
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .depot-tooltip-loading {
@@ -398,7 +398,7 @@
 .legend-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 

@@ -282,7 +282,7 @@
   padding: 0.25rem 0.4rem;
   font-size: 0.75rem;
   border: 1px solid var(--theme-text-subtle);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--theme-text-primary);
   color: var(--theme-border-light);
 }
@@ -362,7 +362,7 @@
 .dep-ed-palette-sm .dep-ed-swatch {
   width: 18px;
   height: 18px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .dep-ed-coords {
@@ -438,7 +438,7 @@
   padding: 0.2rem 0.4rem;
   font-size: 0.72rem;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;

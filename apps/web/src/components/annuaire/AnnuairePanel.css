@@ -734,7 +734,7 @@
   gap: 4px;
   font-size: 0.72rem;
   padding: 4px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   cursor: pointer;
   border: 1px solid var(--border-color, var(--theme-border-muted));
   background: var(--bg-primary, var(--theme-bg-card));

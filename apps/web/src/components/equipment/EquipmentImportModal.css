@@ -78,7 +78,7 @@
 .eq-import-hint code {
   background: var(--theme-border-medium);
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   font-weight: 600;
 }
 .eq-import-dropzone input[type="file"] {

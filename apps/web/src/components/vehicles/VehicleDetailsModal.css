@@ -112,13 +112,13 @@
 
 .vehicle-details-modal .modal-body::-webkit-scrollbar-track {
   background: var(--theme-border-light);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   margin: 8px 0;
 }
 
 .vehicle-details-modal .modal-body::-webkit-scrollbar-thumb {
   background: var(--theme-bg-muted);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .vehicle-details-modal .modal-body::-webkit-scrollbar-thumb:hover {

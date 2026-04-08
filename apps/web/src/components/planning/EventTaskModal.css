@@ -149,7 +149,7 @@
 .etm-step-check {
   width: 20px;
   height: 20px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   border: 2px solid var(--theme-border-secondary, #ccc);
   display: flex;
   align-items: center;
@@ -265,7 +265,7 @@
   align-items: center;
   gap: 6px;
   padding: 7px 16px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   border: none;
   font-size: 0.82rem;
   font-weight: 600;
@@ -311,7 +311,7 @@
   .etm-modal {
     max-width: 100%;
     max-height: 95vh;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
   .etm-step-fields {

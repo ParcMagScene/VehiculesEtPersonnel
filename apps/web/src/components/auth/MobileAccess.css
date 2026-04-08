@@ -12,7 +12,7 @@
   width: 80px;
   height: 80px;
   background: var(--theme-bg-card);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,7 +46,7 @@
 
 .qr-section {
   background: var(--theme-bg-card);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 2rem;
   text-align: center;
   box-shadow: var(--shadow-sm);
@@ -58,7 +58,7 @@
   padding: 1rem;
   background: var(--theme-bg-card);
   border: 2px solid var(--theme-border);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   margin-bottom: 1rem;
 }
 
@@ -79,7 +79,7 @@
 
 .url-section {
   background: var(--theme-bg-card);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--theme-border);
@@ -103,7 +103,7 @@
   flex: 1;
   padding: 0.75rem;
   border: 2px solid var(--theme-border);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   font-size: var(--font-base);
   font-family: monospace;
   background: var(--theme-bg-secondary);
@@ -121,7 +121,7 @@
   background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: transform 0.2s;
   display: flex;
@@ -146,7 +146,7 @@
 /* ─── Fonctionnalités grille ─── */
 .features-section {
   background: var(--theme-bg-card);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--theme-border);
@@ -206,7 +206,7 @@
 /* ─── Section impression affichettes ─── */
 .poster-section {
   background: var(--theme-bg-card);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
   border: 2px solid var(--accent-tint-vivid);
@@ -323,7 +323,7 @@
 .access-info {
   background: rgba(251, 191, 36, 0.1);
   border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1rem;
 }
 

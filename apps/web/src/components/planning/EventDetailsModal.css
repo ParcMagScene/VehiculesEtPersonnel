@@ -97,13 +97,13 @@
 
 .event-details-modal .event-details-body::-webkit-scrollbar-track {
   background: var(--theme-border-light);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   margin: 8px 0;
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb {
   background: var(--theme-bg-muted);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb:hover {
@@ -527,7 +527,7 @@ section h3 {
 .event-details-modal .empty-state code {
   background: var(--theme-border-medium);
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   font-family: 'Monaco', 'Courier New', monospace;
   font-size: var(--font-xs);
 }
@@ -602,7 +602,7 @@ section h3 {
   padding: var(--space-4) var(--space-5);
   border-top: 2px solid var(--theme-border-medium);
   background: var(--theme-bg-secondary);
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
 .event-details-modal .footer-actions {
@@ -874,7 +874,7 @@ section h3 {
   align-items: center;
   background: var(--theme-gradient);
   color: var(--theme-text-inverse);
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .event-details-modal .folder-header h3 {
@@ -1006,7 +1006,7 @@ section h3 {
   justify-content: space-between;
   align-items: center;
   background: var(--theme-bg-card);
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .event-details-modal .folder-footer span {

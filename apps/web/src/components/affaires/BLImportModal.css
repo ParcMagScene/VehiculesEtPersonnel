@@ -466,6 +466,6 @@
 
 .bl-import-modal .bl-address-input {
   padding: 3px 8px !important;
-  border-radius: 5px !important;
+  border-radius: var(--radius-sm) !important;
   font-size: 0.82rem !important;
 }

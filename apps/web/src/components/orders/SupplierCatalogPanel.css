@@ -186,7 +186,7 @@
 
 .catalog-modal {
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   width: 90%;
   max-width: 600px;
   max-height: 85dvh;
@@ -702,7 +702,7 @@
   padding: 1rem 1.25rem;
   background: var(--theme-bg-primary, var(--theme-bg-card));
   border-top: 2px solid var(--theme-primary);
-  border-radius: 10px 10px 0 0;
+  border-radius: var(--radius-md-lg) var(--radius-md-lg) 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;

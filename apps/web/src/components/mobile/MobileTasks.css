@@ -175,7 +175,7 @@
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-bg-tertiary, var(--theme-border-light));
   cursor: pointer;
   transition: all 0.15s;

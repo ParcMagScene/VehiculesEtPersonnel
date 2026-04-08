@@ -150,7 +150,7 @@
   padding: 2px;
   display: flex;
   align-items: center;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transition: all 0.2s;
 }
 
@@ -223,7 +223,7 @@
 .affaires-tb-view-btn {
   padding: 4px 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary);
   font-size: var(--font-sm);
@@ -484,7 +484,7 @@
   position: absolute;
   top: 4px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   opacity: 0.55;
   transition: opacity 0.15s, box-shadow 0.15s;
   min-width: 3px;
@@ -517,7 +517,7 @@
   width: 8px;
   height: 8px;
   background: var(--theme-danger);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 /* Curseur déplaçable */
@@ -544,7 +544,7 @@
   height: 14px;
   background: var(--theme-primary);
   border: 2px solid var(--theme-bg-card);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   margin-top: -2px;
   box-shadow: 0 1px 4px var(--btn-primary-hover-shadow);
   pointer-events: auto;
@@ -570,7 +570,7 @@
   margin-top: 1px;
   background: var(--theme-bg-card);
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   box-shadow: var(--shadow-sm);
   line-height: 1.4;
 }
@@ -774,7 +774,7 @@
 .status-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: inline-block;
 }
 
@@ -1105,7 +1105,7 @@
   right: 24px;
   width: 52px;
   height: 52px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-gradient-alt);
   color: var(--theme-text-inverse);
   border: none;

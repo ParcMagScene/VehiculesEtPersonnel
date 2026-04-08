@@ -440,7 +440,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-success-alt);
   opacity: 0.4;
 }

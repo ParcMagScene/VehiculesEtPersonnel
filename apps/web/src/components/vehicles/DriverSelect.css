@@ -82,13 +82,13 @@
 
 /* Avatar styles */
 .driver-select-avatar-img {
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .driver-select-avatar-initials {
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;

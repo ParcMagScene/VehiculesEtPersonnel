@@ -28,7 +28,7 @@
 .type-icon {
   width: 64px;
   height: 64px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   margin: 0 auto 1rem;
   display: flex;
   align-items: center;
@@ -118,7 +118,7 @@
   width: 100%;
   padding: 14px 16px;
   border: 2px solid var(--theme-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-md);
   font-family: inherit;
   box-shadow: none;
@@ -146,7 +146,7 @@
   flex: 1;
   padding: 14px;
   border: none;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-weight: 700;
   cursor: pointer;
   font-size: var(--font-md);
@@ -245,7 +245,7 @@
   margin-top: 0.75rem;
   padding: 0.75rem;
   background: var(--theme-bg-secondary);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   font-size: var(--font-base);
   color: var(--theme-text-subtle);
   line-height: normal;

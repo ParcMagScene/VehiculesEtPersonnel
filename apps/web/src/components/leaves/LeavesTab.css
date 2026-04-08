@@ -405,7 +405,7 @@
 .lt-month-bar-fill {
   width: 100%;
   background: linear-gradient(to top, var(--theme-info), var(--theme-info));
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
   min-height: 2px;
   transition: height 0.3s ease;
 }
@@ -678,7 +678,7 @@
   padding: 4px 10px;
   background: var(--theme-warning-bg);
   color: var(--theme-warning-text);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: 0.72rem;
   font-weight: 500;
 }

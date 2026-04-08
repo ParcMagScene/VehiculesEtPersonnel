@@ -59,7 +59,7 @@
   color: var(--theme-text-inverse);
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   font-size: var(--font-lg);
   display: flex;
@@ -168,7 +168,7 @@
   left: 3px;
   bottom: 3px;
   background-color: var(--theme-bg-card);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transition: 0.3s;
 }
 

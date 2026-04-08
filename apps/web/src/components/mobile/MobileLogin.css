@@ -28,7 +28,7 @@
   height: 64px;
   background: var(--theme-gradient);
   color: var(--theme-text-inverse);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,7 +68,7 @@
 .mobile-login .form-group input {
   padding: 14px 16px;
   border: 2px solid var(--theme-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-md);
   transition: border-color 0.2s;
   box-shadow: none;
@@ -96,7 +96,7 @@
   background: var(--theme-gradient);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-md);
   font-weight: 700;
   cursor: pointer;
@@ -118,7 +118,7 @@
   background: transparent;
   color: var(--theme-primary);
   border: 2px solid var(--theme-primary);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-base);
   font-weight: 700;
   cursor: pointer;
@@ -136,7 +136,7 @@
   background: transparent;
   color: var(--theme-text-gray);
   border: 1px solid var(--theme-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-base);
   cursor: pointer;
   transition: all 0.2s;
@@ -159,7 +159,7 @@
   background: transparent;
   color: var(--theme-warning-dark);
   border: 1px solid var(--btn-warning-hover-bg);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-base);
   cursor: pointer;
   transition: all 0.2s;
@@ -186,13 +186,13 @@
 .mobile-login .access-request-modal {
   width: 100%;
   max-width: 100%;
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   max-height: 85vh;
   animation: sheet-slide-up 0.25s ease;
 }
 
 .mobile-login .access-request-header {
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .mobile-login .access-request-content {

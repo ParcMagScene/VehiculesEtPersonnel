@@ -18,7 +18,7 @@
 /* ─── Panel principal ─── */
 .mep-panel {
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   width: 100%;
   max-width: 780px;
   max-height: 90vh;

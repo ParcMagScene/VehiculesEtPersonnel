@@ -80,13 +80,13 @@
   font-size: var(--font-sm);
   color: var(--theme-text-muted);
   background: var(--theme-bg-secondary);
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
 .location-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 

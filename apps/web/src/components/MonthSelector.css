@@ -47,7 +47,7 @@
 .close-button {
   background: var(--glass-light);
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   color: var(--theme-text-inverse);
   cursor: pointer;
   padding: 0.5rem;
@@ -71,7 +71,7 @@
 .month-selector-item {
   background: var(--theme-bg-secondary);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -129,7 +129,7 @@
 .day-dot {
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 

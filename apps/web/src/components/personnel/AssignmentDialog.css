@@ -483,7 +483,7 @@
 .asd-field textarea {
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
   outline: none;
   transition: border-color 0.15s;
@@ -829,7 +829,7 @@
   height: 14px;
   border: 2px solid var(--close-btn-hover-bg);
   border-top-color: var(--theme-text-inverse);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: ad-spin 0.6s linear infinite;
 }
 
@@ -842,7 +842,7 @@
   .assignment-dialog {
     max-width: 100%;
     height: 95vh;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     margin-top: auto;
   }
 
@@ -1025,7 +1025,7 @@
 .asd-position-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
@@ -1063,7 +1063,7 @@
   width: 20px;
   height: 20px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-danger-bg, var(--theme-danger-bg));
   color: var(--theme-danger, var(--theme-danger));
   cursor: pointer;

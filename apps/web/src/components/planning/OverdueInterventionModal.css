@@ -131,7 +131,7 @@
   padding: 16px 24px;
   border-top: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-secondary);
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   flex-shrink: 0;
 }
 
@@ -233,7 +233,7 @@
   padding: 16px 24px;
   border-top: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-secondary);
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   flex-shrink: 0;
 }
 

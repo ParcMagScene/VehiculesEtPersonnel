@@ -174,7 +174,7 @@
   background: var(--close-btn-bg);
   border: 1px solid var(--glass-medium);
   color: var(--theme-text-inverse);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.72rem;
   font-weight: 600;
@@ -237,7 +237,7 @@
   gap: 0.25rem;
   background: var(--close-btn-bg);
   border: 1px solid var(--glass-medium);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   padding: 0.2rem 0.4rem;
   width: 100%;
   transition: border-color 0.2s;
@@ -276,7 +276,7 @@
   color: var(--theme-text-inverse);
   width: 16px;
   height: 16px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -294,7 +294,7 @@
   font-size: 0.6rem;
   background: var(--close-btn-border);
   padding: 0.1rem 0.35rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
@@ -315,7 +315,7 @@
   padding: 0.2rem 0.5rem;
   background: var(--close-btn-bg);
   border: 1px solid var(--glass-medium);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   color: var(--theme-bg-card-translucent);
   font-size: 0.65rem;
   font-weight: 500;
@@ -346,7 +346,7 @@
   color: var(--theme-text-inverse);
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   font-size: var(--font-sm);
   display: flex;
@@ -542,7 +542,7 @@
   color: var(--theme-purple-accent);
   background: var(--theme-bg-card-translucent);
   padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-xs);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -562,7 +562,7 @@
   width: 16px;
   height: 16px;
   background: var(--theme-bg-card-translucent);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   color: var(--theme-success-alt);
   flex-shrink: 0;
   pointer-events: none;

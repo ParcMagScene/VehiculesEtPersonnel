@@ -21,14 +21,14 @@
 .affaire-badge-unified.sm {
   font-size: 0.6rem;
   padding: 0px 4px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   gap: 2px;
 }
 
 .affaire-badge-unified.lg {
   font-size: var(--font-sm);
   padding: 2px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   gap: 4px;
 }
 

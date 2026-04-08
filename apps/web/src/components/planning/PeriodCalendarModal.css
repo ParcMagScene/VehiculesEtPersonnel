@@ -183,14 +183,14 @@
   background: var(--range-color, var(--theme-info));
   color: var(--theme-text-inverse);
   font-weight: 700;
-  border-radius: 8px 0 0 8px;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
 .pcm-cal-day.range-end {
   background: var(--range-color, var(--theme-info));
   color: var(--theme-text-inverse);
   font-weight: 700;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .pcm-cal-day.range-start.range-end {
@@ -212,7 +212,7 @@
   transform: translateX(-50%);
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--range-color, var(--theme-info));
   opacity: 0.7;
 }

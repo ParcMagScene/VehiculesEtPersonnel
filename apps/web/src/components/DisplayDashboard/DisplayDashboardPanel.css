@@ -520,7 +520,7 @@
   right: 16px;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: none;
   background: var(--close-btn-bg);
   color: var(--theme-text-inverse);
@@ -557,11 +557,11 @@
 }
 
 .display-logs-table thead th:first-child {
-  border-radius: 8px 0 0 0;
+  border-radius: var(--radius-md) 0 0 0;
 }
 
 .display-logs-table thead th:last-child {
-  border-radius: 0 8px 0 0;
+  border-radius: 0 var(--radius-md) 0 0;
 }
 
 .display-logs-table tbody td {
@@ -843,7 +843,7 @@
   height: 18px;
   border: 2px solid var(--theme-border);
   border-top-color: var(--theme-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: display-spin 0.6s linear infinite;
 }
 
@@ -1404,12 +1404,12 @@
 
 .dtv-color-input input[type="color"]::-webkit-color-swatch {
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 
 .dtv-color-input input[type="color"]::-moz-color-swatch {
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
 }
 
 .dtv-color-input input[type="color"]:hover {
@@ -1635,12 +1635,12 @@
 
 .dtv-rule-color::-webkit-color-swatch {
   border: none;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .dtv-rule-color::-moz-color-swatch {
   border: none;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .dtv-rule-color:hover {
@@ -1714,7 +1714,7 @@
   width: 22px;
   height: 22px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--btn-danger-bg);
   color: var(--btn-danger-color);
   cursor: pointer;
@@ -2684,7 +2684,7 @@
   border: none;
   background: none;
   padding: 3px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--theme-text-muted);
   transition: all 0.15s;
@@ -2892,7 +2892,7 @@
   align-items: flex-start;
   gap: 6px;
   padding: 4px 6px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   border-left: 3px solid transparent;
   transition: background 0.15s;
 }
@@ -2954,7 +2954,7 @@
   width: 16px;
   height: 16px;
   min-width: 16px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 1.5px solid var(--theme-border);
   display: flex;
   align-items: center;

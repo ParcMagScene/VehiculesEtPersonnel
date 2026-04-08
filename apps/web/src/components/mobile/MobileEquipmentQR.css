@@ -326,7 +326,7 @@
 
 .m-eq-qr-fiche-grid > div {
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 12px 14px;
   border: 1px solid var(--theme-border);
   box-shadow: 0 1px 4px var(--overlay-subtle);
@@ -358,7 +358,7 @@
 
 .m-eq-qr-notes {
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 14px 16px;
   border: 1px solid var(--theme-border);
   margin-bottom: 16px;
@@ -394,7 +394,7 @@
   gap: 4px;
   padding: 12px 16px;
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--theme-border);
   margin-bottom: 8px;
   box-shadow: 0 1px 4px var(--overlay-subtle);
@@ -406,7 +406,7 @@
 .m-eq-qr-ticket {
   padding: 14px 16px;
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--theme-border);
   margin-bottom: 8px;
   box-shadow: 0 1px 4px var(--overlay-subtle);
@@ -443,7 +443,7 @@
 .m-eq-qr-eq-label {
   background: var(--theme-bg-card);
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-base);
   margin-bottom: 20px;
   border: 1px solid var(--theme-border);
@@ -485,7 +485,7 @@
 .m-eq-qr-form select {
   width: 100%;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   border: 1.5px solid var(--theme-border);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);

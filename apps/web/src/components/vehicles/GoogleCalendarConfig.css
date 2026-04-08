@@ -192,7 +192,7 @@
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   font-size: var(--font-base);
   font-family: 'Courier New', monospace;
   color: var(--theme-text-dark);

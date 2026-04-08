@@ -256,13 +256,13 @@
   width: 100px;
   height: 6px;
   background: var(--theme-border);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .alert-bar-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   transition: width 0.3s;
 }
 
@@ -1220,7 +1220,7 @@
 .color-pick {
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 3px solid transparent;
   cursor: pointer;
   transition: all 0.15s;

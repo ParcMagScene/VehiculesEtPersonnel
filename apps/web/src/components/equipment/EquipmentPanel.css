@@ -23,7 +23,7 @@
   height: 20px;
   border: 2px solid var(--theme-border);
   border-top-color: var(--theme-primary, var(--theme-primary));
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: eq-spin 0.6s linear infinite;
 }
 
@@ -141,7 +141,7 @@
   font-weight: 700;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,7 +447,7 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-bg-hover);
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -599,7 +599,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-size: var(--font-sm);
   font-weight: 600;
 }
@@ -1321,7 +1321,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 .eq-ticket-title-cell {
@@ -1368,7 +1368,7 @@
 
 /* SAV columns — ref/uid/serial */
 .sav-col-ref, .sav-col-uid, .sav-col-serial { white-space: nowrap; font-size: var(--font-xs); }
-.sav-col-uid code { font-size: var(--font-2xs); background: var(--theme-bg-page); padding: 1px 4px; border-radius: 3px; }
+.sav-col-uid code { font-size: var(--font-2xs); background: var(--theme-bg-page); padding: 1px 4px; border-radius: var(--radius-xs); }
 .sav-col-date { white-space: nowrap; }
 .sav-col-cost { white-space: nowrap; text-align: right; }
 
@@ -1597,7 +1597,7 @@
   border-top: 1px solid var(--theme-border);
   padding: 12px 24px;
   background: var(--theme-bg-card);
-  border-radius: 0 0 16px 16px;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
 /* ── Bouton plan dans le formulaire ── */
@@ -2047,7 +2047,7 @@
 .eq-cat-leaf-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-bg-muted);
   flex-shrink: 0;
 }
@@ -2553,7 +2553,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   color: var(--theme-text-inverse);
   font-size: var(--font-xs);
   font-weight: 700;
@@ -3021,7 +3021,7 @@
   cursor: pointer;
   padding: 2px;
   color: var(--theme-text-muted);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
 }
 
@@ -3292,7 +3292,7 @@
   justify-content: center;
   background: var(--close-btn-bg);
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   color: var(--theme-text-inverse);
   cursor: pointer;
   transition: background 0.2s;
@@ -3488,7 +3488,7 @@
   max-width: 100%;
   width: 100%;
   margin: 0;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   position: fixed;
   bottom: 0;
   left: 0;

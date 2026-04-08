@@ -180,7 +180,7 @@
   width: 22px;
   height: 22px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-muted);
   cursor: pointer;
@@ -360,7 +360,7 @@
   .tem-modal {
     max-width: 100%;
     max-height: 95vh;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
   .tem-row {
     grid-template-columns: 1fr;

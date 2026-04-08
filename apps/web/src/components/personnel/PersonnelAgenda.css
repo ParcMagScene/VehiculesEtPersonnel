@@ -80,7 +80,7 @@
 .agenda-person-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--theme-info), var(--theme-primary-light));
   color: var(--theme-text-inverse);
   display: flex;
@@ -132,7 +132,7 @@
 .legend-dot {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 
@@ -233,7 +233,7 @@
 .agenda-view-toggle button {
   padding: 6px 14px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: transparent;
   font-size: var(--font-base);
   font-weight: 500;
@@ -319,7 +319,7 @@
 .today-badge {
   background: var(--theme-info);
   color: var(--theme-text-inverse) !important;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   width: 28px;
   height: 28px;
   display: inline-flex;
@@ -506,7 +506,7 @@
   align-items: center;
   gap: 4px;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
@@ -626,7 +626,7 @@
   .month-event-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     padding: 0;
   }
 }

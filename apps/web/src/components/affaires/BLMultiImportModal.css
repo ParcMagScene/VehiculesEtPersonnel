@@ -132,14 +132,14 @@
   flex: 1;
   height: 6px;
   background: var(--theme-bg-tertiary);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 .batch-progress-fill {
   height: 100%;
   background: var(--theme-primary);
   transition: width 0.3s ease;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 .batch-progress-label {
   font-size: 0.78rem;
@@ -323,7 +323,7 @@
   color: var(--theme-primary);
   background: var(--primary-tint-light);
   padding: 2px 7px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
@@ -380,7 +380,7 @@
 .batch-file-details .detail-row input {
   flex: 1;
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
@@ -394,7 +394,7 @@
 }
 .type-pills button {
   padding: 3px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border);
   background: transparent;
   color: var(--theme-text-secondary);
@@ -615,7 +615,7 @@
   color: var(--theme-text-primary);
   background: var(--theme-bg-tertiary);
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   font-size: 0.68rem;
 }
 .detail-article-row .item-desc { flex: 1; }
@@ -625,7 +625,7 @@
   font-size: 0.6rem;
   background: var(--theme-info-bg, #164e63);
   color: var(--theme-info-text, var(--theme-cyan-border));
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   padding: 1px 5px;
   white-space: nowrap;
   flex-shrink: 0;

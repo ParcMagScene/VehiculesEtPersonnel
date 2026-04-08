@@ -120,13 +120,13 @@
   flex: 1;
   height: 6px;
   background: var(--theme-border);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .bl-batch-field-bar-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   transition: width 0.3s;
 }
 

@@ -367,7 +367,7 @@
 .bl-loc-field-input {
   flex: 1;
   padding: 3px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   font-size: 0.82rem;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-secondary);
@@ -394,7 +394,7 @@
 
 .bl-loc-address-input input {
   padding: 3px 8px !important;
-  border-radius: 5px !important;
+  border-radius: var(--radius-sm) !important;
   font-size: 0.82rem !important;
 }
 

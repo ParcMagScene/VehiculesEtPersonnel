@@ -162,7 +162,7 @@
   width: 22px;
   height: 22px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-border-light);
   color: var(--theme-text-muted);
   cursor: pointer;
@@ -256,7 +256,7 @@
   font-family: 'SF Mono', Monaco, 'Courier New', monospace;
   background: var(--theme-border);
   color: var(--theme-text-subtle);
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border);
   box-shadow: var(--shadow-xs);
   margin: 0 2px;

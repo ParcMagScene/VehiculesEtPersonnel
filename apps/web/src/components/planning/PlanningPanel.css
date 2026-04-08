@@ -133,7 +133,7 @@
   color: var(--theme-bg-card);
   font-size: 0.65rem;
   font-weight: 700;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   width: 20px;
   height: 20px;
   display: flex;
@@ -306,7 +306,7 @@
   gap: 6px;
   padding: 3px 8px;
   border-left: 2px solid var(--theme-border);
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   font-size: 0.78rem;
   background: var(--theme-bg-card, var(--theme-bg-card));
 }
@@ -894,7 +894,7 @@
   width: 16px;
   height: 16px;
   border: none;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--theme-text-muted);
   cursor: pointer;
@@ -926,7 +926,7 @@
   width: 16px;
   height: 16px;
   border: none;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--theme-text-muted);
   cursor: pointer;
@@ -1070,7 +1070,7 @@
   align-items: center;
   justify-content: center;
   width: 18px; height: 18px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-info);
   color: var(--theme-bg-card);
   font-size: 0.65rem;

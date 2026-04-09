@@ -283,66 +283,74 @@ function AnnuairePanel({ currentUser }) {
   // ═══ RENDU ═══
   return (
     <div className="annuaire-panel">
-      {/* Header — unified tabs + stats */}
-      <div className="annuaire-header">
-        <div className="annuaire-tabs">
-          {ENTITY_TABS.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <Button variant="ghost"                 key={tab.id}
-                className={`annuaire-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => handleTabChange(tab.id)}
-              >
-                <Icon size={16} />
-                <span>{tab.label}</span>
-              </Button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      {activeTab !== 'referentiels' && activeTab !== 'lieux' && (
-        <div className="annuaire-toolbar">
-          <SearchBar
-            value={searchTerm}
-            onChange={val => { setSearchTerm(val); setPage(1); }}
-            placeholder="Rechercher..."
-          />
-
-          <div className="annuaire-toolbar-actions">
-            {(activeTab === 'clients' || activeTab === 'suppliers') && (
-              <Button variant="ghost" size="sm" iconOnly aria-label="Filtres" onClick={() => setShowFilters(!showFilters)}>
-                <Filter size={15} />
-              </Button>
-            )}
-            {activeTab === 'clients' && currentUser?.isAdmin && (
- <Tooltip content="Import CSV Clients Locmat" position="bottom">
-   <Button variant="secondary" onClick={() => handleImportCSV('clients')}>
-                <Upload size={15} /> CSV
-              </Button>
- </Tooltip>
-            )}
-            {activeTab === 'suppliers' && currentUser?.isAdmin && (
- <Tooltip content="Import CSV Fournisseurs Locmat" position="bottom">
-   <Button variant="secondary" onClick={() => handleImportCSV('suppliers')}>
-                <Upload size={15} /> CSV
-              </Button>
- </Tooltip>
-            )}
-            {activeTab === 'contacts' && currentUser?.isAdmin && (
- <Tooltip content="Import CSV Contacts Locmat" position="bottom">
-   <Button variant="secondary" onClick={() => setShowContactsImport(true)}>
-                <Upload size={15} /> CSV
-              </Button>
- </Tooltip>
-            )}
-            <Button variant="primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
-              <Plus size={15} /> Nouveau
-            </Button>
+      {/* Toolbar unifiée : onglets + stats + recherche + actions */}
+      <div className="annuaire-toolbar">
+        <div className="annuaire-toolbar-top">
+          <div className="annuaire-tabs">
+            {ENTITY_TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <Button variant="ghost" key={tab.id}
+                  className={`annuaire-tab ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => handleTabChange(tab.id)}
+                >
+                  <Icon size={16} />
+                  <span>{tab.label}</span>
+                </Button>
+              );
+            })}
           </div>
+          {stats && activeTab !== 'lieux' && (
+            <div className="annuaire-header-stats">
+              <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
+              <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
+              <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
+              <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
+            </div>
+          )}
         </div>
-      )}
+
+        {activeTab !== 'referentiels' && activeTab !== 'lieux' && (
+          <div className="annuaire-toolbar-actions-row">
+            <SearchBar
+              value={searchTerm}
+              onChange={val => { setSearchTerm(val); setPage(1); }}
+              placeholder="Rechercher..."
+            />
+            <div className="annuaire-toolbar-actions">
+              {(activeTab === 'clients' || activeTab === 'suppliers') && (
+                <Button variant="ghost" size="sm" iconOnly aria-label="Filtres" onClick={() => setShowFilters(!showFilters)}>
+                  <Filter size={15} />
+                </Button>
+              )}
+              {activeTab === 'clients' && currentUser?.isAdmin && (
+                <Tooltip content="Import CSV Clients Locmat" position="bottom">
+                  <Button variant="secondary" onClick={() => handleImportCSV('clients')}>
+                    <Upload size={15} /> CSV
+                  </Button>
+                </Tooltip>
+              )}
+              {activeTab === 'suppliers' && currentUser?.isAdmin && (
+                <Tooltip content="Import CSV Fournisseurs Locmat" position="bottom">
+                  <Button variant="secondary" onClick={() => handleImportCSV('suppliers')}>
+                    <Upload size={15} /> CSV
+                  </Button>
+                </Tooltip>
+              )}
+              {activeTab === 'contacts' && currentUser?.isAdmin && (
+                <Tooltip content="Import CSV Contacts Locmat" position="bottom">
+                  <Button variant="secondary" onClick={() => setShowContactsImport(true)}>
+                    <Upload size={15} /> CSV
+                  </Button>
+                </Tooltip>
+              )}
+              <Button variant="primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
+                <Plus size={15} /> Nouveau
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Filters bar */}
       {showFilters && activeTab !== 'referentiels' && activeTab !== 'contacts' && activeTab !== 'lieux' && (
@@ -363,16 +371,6 @@ function AnnuairePanel({ currentUser }) {
             <option value="">Tous les secteurs</option>
             {(lookups.activity_sectors || []).map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
           </Select>
-        </div>
-      )}
-
-      {/* Stats */}
-      {stats && activeTab !== 'lieux' && (
-        <div className="annuaire-header-stats">
-          <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
-          <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
-          <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
-          <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
         </div>
       )}
 
@@ -980,15 +978,14 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
 function ReferentielsView({ refTab, setRefTab, refData, _loading, currentUser, onAdd, onEdit, onDelete }) {
   return (
     <div className="referentiels-view">
-      <div className="ref-tabs">
-        {REFERENTIEL_TABS.map(t => (
-          <Button variant="ghost" key={t.slug} className={`ref-tab ${refTab === t.slug ? 'active' : ''}`} onClick={() => setRefTab(t.slug)}>
-            {t.label}
-          </Button>
-        ))}
-      </div>
-
       <div className="ref-toolbar">
+        <div className="ref-tabs">
+          {REFERENTIEL_TABS.map(t => (
+            <Button variant="ghost" key={t.slug} className={`ref-tab ${refTab === t.slug ? 'active' : ''}`} onClick={() => setRefTab(t.slug)}>
+              {t.label}
+            </Button>
+          ))}
+        </div>
         {currentUser?.isAdmin && (
           <Button variant="primary" onClick={onAdd}><Plus size={15} /> Ajouter</Button>
         )}

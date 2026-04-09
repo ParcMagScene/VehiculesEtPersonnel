@@ -11,15 +11,11 @@
   overflow: hidden;
 }
 
-/* ═══ Header ═══ */
-.annuaire-header {
+/* ═══ Toolbar-top (tabs + stats) ═══ */
+.annuaire-toolbar-top {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 24px;
-  border-bottom: 1px solid var(--border-color, var(--theme-border));
-  background: var(--bg-secondary, var(--theme-bg-page));
-  flex-shrink: 0;
+  gap: var(--space-2);
   overflow-x: auto;
 }
 
@@ -80,10 +76,18 @@
 /* ═══ Toolbar ═══ */
 .annuaire-toolbar {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  border-bottom: 1px solid var(--border-color, var(--theme-border));
+  background: var(--bg-secondary, var(--theme-bg-page));
+  flex-shrink: 0;
+}
+
+.annuaire-toolbar-actions-row {
+  display: flex;
   align-items: center;
   gap: var(--space-2-5);
-  padding: var(--space-2-5) var(--space-5);
-  border-bottom: 1px solid var(--border-color, var(--theme-border));
   flex-wrap: wrap;
 }
 
@@ -257,10 +261,9 @@
   text-decoration: underline;
 }
 
-.entity-cell {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
+.entity-cell .entity-tag {
+  display: inline-block;
+  margin: 1px 2px;
 }
 
 .entity-tag {
@@ -300,9 +303,13 @@
 }
 
 .actions-cell {
-  display: flex;
-  gap: 4px;
   white-space: nowrap;
+}
+
+.actions-cell > * {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-right: 2px;
 }
 
 .actions-cell button {
@@ -809,7 +816,6 @@
 .ref-tabs {
   display: flex;
   gap: 6px;
-  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
@@ -839,6 +845,11 @@
   align-items: center;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.ref-toolbar > .btn-primary {
+  margin-left: auto;
 }
 
 .empty-cell {
@@ -850,7 +861,7 @@
 
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
-  .annuaire-header { padding: 8px 16px; flex-wrap: wrap; }
+  .annuaire-toolbar-top { flex-wrap: wrap; }
   .annuaire-header-stats { margin-left: 0; width: 100%; justify-content: flex-start; }
   .annuaire-toolbar { padding: 8px 12px; }
   .annuaire-filters { padding: 6px 12px; flex-wrap: wrap; }
@@ -858,8 +869,6 @@
   .detail-grid { grid-template-columns: 1fr; }
   .contacts-grid { grid-template-columns: 1fr; }
   .form-row { flex-direction: column; gap: 10px; }
-  .annuaire-header { padding: 8px 16px; flex-wrap: wrap; }
-  .annuaire-header-stats { margin-left: 0; width: 100%; justify-content: flex-start; }
   .annuaire-tab span { display: none; }
   .annuaire-tab { padding: 8px 12px; }
 }

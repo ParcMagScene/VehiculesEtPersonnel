@@ -36,9 +36,7 @@
 /* ═══ TOOLBAR ═══ */
 .eq-toolbar {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
   padding: var(--space-2) var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
@@ -49,7 +47,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  flex-wrap: wrap;
+  width: 100%;
 }
 
 .eq-management-btn {
@@ -67,6 +65,7 @@
   gap: 3px;
   flex-wrap: wrap;
   align-items: center;
+  width: 100%;
 }
 
 .eq-stat-btn {
@@ -162,7 +161,7 @@
   align-items: center;
   gap: var(--space-2);
   flex-wrap: wrap;
-  flex: 1;
+  width: 100%;
 }
 
 .eq-filter-check {

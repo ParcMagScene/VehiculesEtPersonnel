@@ -196,25 +196,6 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   // ═══ Rendu ═══
   return (
     <div className="stock-panel">
-      {/* Header — stats uniquement (plus de tabs) */}
-      <div className="stock-header">
-        <div className="stock-header-title">
-          <Package size={18} />
-          <span>{stockType === 'sav' ? 'Stock SAV (pièces)' : 'Stock Vente'}</span>
-        </div>
-        {stats && (
-          <div className="stock-header-stats">
-            <span className="stat-badge"><Package size={14} /> {stats.totalItems || 0} articles</span>
-            {stats.lowStockCount > 0 && <span className="stat-badge warning"><AlertTriangle size={14} /> {stats.lowStockCount} stock bas</span>}
-          </div>
-        )}
-        {onOpenManagement && (
-          <Button variant="ghost" className="stock-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion des catégories">
-            <Layers size={16} /> Gestion
-          </Button>
-        )}
-      </div>
-
       {/* Content wrapper — table + slide panel côte à côte */}
       <div className="stock-content-wrapper">
         <div className="stock-content-inner">
@@ -248,6 +229,8 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
                 lowStockFilter={lowStockFilter}
                 onLowStockChange={setLowStockFilter}
                 selectedItemId={selectedItem?.id}
+                stats={stats}
+                onOpenManagement={onOpenManagement}
                 onSelect={(item) => {
                   clearTimeout(clickTimerRef.current);
                   clickTimerRef.current = setTimeout(() => {
@@ -572,7 +555,7 @@ function _DashboardView({ stats, _items, onSelectItem }) {
 // ═══════════════════════════════════════════════════════════════
 // Liste des Articles
 // ═══════════════════════════════════════════════════════════════
-function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, selectedItemId, onSelect, onDoubleClick, onAdd, onImport, _isAdmin }) {
+function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, selectedItemId, onSelect, onDoubleClick, onAdd, onImport, _isAdmin, stats, onOpenManagement }) {
   return (
     <div className="stock-items-view">
       {/* Toolbar */}
@@ -596,6 +579,12 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
           </Button>
           </Tooltip>
         </div>
+        {stats && (
+          <div className="stock-header-stats">
+            <span className="stat-badge"><Package size={14} /> {stats.totalItems || 0} articles</span>
+            {stats.lowStockCount > 0 && <span className="stat-badge warning"><AlertTriangle size={14} /> {stats.lowStockCount} stock bas</span>}
+          </div>
+        )}
  <Tooltip content="Importer un inventaire CSV" position="bottom">
    <Button variant="ghost" className="stock-add-btn" onClick={onImport}>
           <Upload size={16} />
@@ -606,6 +595,11 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
           <Plus size={16} />
           <span>Nouvel article</span>
         </Button>
+        {onOpenManagement && (
+          <Button variant="ghost" className="stock-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion des catégories">
+            <Layers size={16} /> Gestion
+          </Button>
+        )}
       </div>
 
       {/* Table */}

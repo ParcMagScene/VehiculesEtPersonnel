@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
-import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './planning/OverdueInterventionModal';
 import ProfileEditModal from './auth/ProfileEditModal';
 import { useToast } from '../hooks/useToast';
@@ -20,7 +19,6 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
-  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
   const [showRequestsPopup, setShowRequestsPopup] = useState(false);
@@ -965,10 +963,6 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
               </Button>
             )}
 
-            <Button variant="ghost" className="qr-button" onClick={() => setShowQRCodeModal(true)} aria-label="Afficher le QR code mobile">
-              <QrCode size={20} />
-            </Button>
-
             <Button variant="ghost" 
               className="settings-button" 
               onClick={onOpenSettings} 
@@ -1089,10 +1083,6 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
         </div>
       </div>
     </div>
-
-    {showQRCodeModal && (
-      <QRCodeModal onClose={() => setShowQRCodeModal(false)} />
-    )}
 
     {selectedOverdueIntervention && (
       <OverdueInterventionModal

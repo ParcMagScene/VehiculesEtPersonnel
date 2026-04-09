@@ -1019,7 +1019,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         quantity || 1,
         priority || 'normal',
         affaire_id || null,
-        destination || 'Stock Mag Scène',
+        destination || 'Stock',
         destination_other || null,
         notes || null,
         ref_code || null,

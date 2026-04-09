@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, Phone, Mail, Star, Shield, Truck, User, Calendar } from 'lucide-react';
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, isWithinInterval, startOfDay, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import './MobilePersonnel.css';
-import { Spinner, Avatar } from '@/design-system';
+import { Avatar, Button, Spinner } from '@/design-system';
+
+import { STATUS } from '../../constants';
 
 const skillIcon = (skillName) => {
   if (!skillName) return <Star size={12} />;
@@ -41,7 +43,7 @@ function MobilePersonnel({ onBack, currentUser }) {
 
   // Personnes permanentes actives uniquement
   const permanentPersons = useMemo(
-    () => persons.filter(p => p.status === 'active' && p.type === 'permanent'),
+    () => persons.filter(p => p.status === STATUS.ACTIVE && p.type === 'permanent'),
     [persons]
   );
 
@@ -106,7 +108,7 @@ function MobilePersonnel({ onBack, currentUser }) {
     return planning.missions.filter(m => {
       const hasAssignment = m.assignments?.some(a => a.personId === personId || a.person_id === personId);
       if (!hasAssignment) return false;
-      if (m.status === 'cancelled') return false;
+      if (m.status === STATUS.CANCELLED) return false;
       try {
         const mStart = startOfDay(parseISO(m.startDate || m.start_date));
         const mEnd = startOfDay(parseISO(m.endDate || m.end_date));
@@ -148,22 +150,22 @@ function MobilePersonnel({ onBack, currentUser }) {
     return (
       <div className="mobile-personnel">
         <div className="mpers-header">
-          <button className="mpers-back" onClick={() => setSelectedPerson(null)}>
+          <Button variant="ghost" className="mpers-back" onClick={() => setSelectedPerson(null)}>
             <ArrowLeft size={20} />
-          </button>
+          </Button>
           <h2>{fullName || `Personnel #${p.id}`}</h2>
         </div>
 
         <div className="mpers-detail">
           <div className="mpers-detail-top">
             {p.photo ? (
-              <img src={`/avatars/${p.photo}`} alt="" className="mpers-detail-photo" />
+              <img src={`/avatars/${p.photo}`} alt="" loading="lazy" className="mpers-detail-photo" />
             ) : (
               <Avatar name={fullName} size="xl" />
             )}
             <h3>{fullName}</h3>
-            <span className={`mpers-status-tag ${p.status === 'active' ? 'active' : 'inactive'}`}>
-              {p.status === 'active' ? 'Actif' : 'Inactif'}
+            <span className={`mpers-status-tag ${p.status === STATUS.ACTIVE ? 'active' : 'inactive'}`}>
+              {p.status === STATUS.ACTIVE ? 'Actif' : 'Inactif'}
             </span>
             {p.contractType && (
               <span className="mpers-contract">{p.contractType}</span>
@@ -238,35 +240,35 @@ function MobilePersonnel({ onBack, currentUser }) {
   return (
     <div className="mobile-personnel">
       <div className="mpers-header">
-        <button className="mpers-back" onClick={onBack}>
+        <Button variant="ghost" className="mpers-back" onClick={onBack}>
           <ArrowLeft size={20} />
-        </button>
+        </Button>
         <h2>{isSimpleUser ? 'Mon planning' : 'Personnel'}</h2>
         <div className="mpers-view-toggle">
-          <button className={viewMode === 'day' ? 'active' : ''} onClick={() => setViewMode('day')}>Jour</button>
-          <button className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Semaine</button>
+          <Button variant="ghost" className={viewMode === 'day' ? 'active' : ''} onClick={() => setViewMode('day')}>Jour</Button>
+          <Button variant="ghost" className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Semaine</Button>
         </div>
       </div>
 
       {/* Navigation date */}
       <div className="mpers-date-nav">
-        <button className="mpers-nav-btn" onClick={() => navigate(-1)}>
+        <Button variant="ghost" className="mpers-nav-btn" onClick={() => navigate(-1)}>
           <ChevronLeft size={20} />
-        </button>
-        <button className={`mpers-date-label ${isToday ? 'today' : ''}`} onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        </Button>
+        <Button variant="ghost" className={`mpers-date-label ${isToday ? 'today' : ''}`} onClick={() => setCurrentDate(startOfDay(new Date()))}>
           {viewMode === 'day'
             ? format(currentDate, 'EEEE d MMMM', { locale: fr })
             : `${format(dateRange.start, 'd MMM', { locale: fr })} — ${format(dateRange.end, 'd MMM', { locale: fr })}`
           }
-        </button>
-        <button className="mpers-nav-btn" onClick={() => navigate(1)}>
+        </Button>
+        <Button variant="ghost" className="mpers-nav-btn" onClick={() => navigate(1)}>
           <ChevronRight size={20} />
-        </button>
+        </Button>
       </div>
       {!isToday && (
-        <button className="mpers-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        <Button variant="ghost" className="mpers-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
           Aujourd'hui
-        </button>
+        </Button>
       )}
 
       {loading ? (
@@ -299,7 +301,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                 {/* En-tête profil */}
                 <div className="mpers-my-profile">
                   {myPerson.photo ? (
-                    <img src={`/avatars/${myPerson.photo}`} alt="" className="mpers-my-avatar-img" />
+                    <img src={`/avatars/${myPerson.photo}`} alt="" loading="lazy" className="mpers-my-avatar-img" />
                   ) : (
                     <Avatar name={fullName} size={48} />
                   )}
@@ -376,7 +378,7 @@ function MobilePersonnel({ onBack, currentUser }) {
             <div className="mpers-my-planning">
               <div className="mpers-my-profile">
                 {myPerson.photo ? (
-                  <img src={`/avatars/${myPerson.photo}`} alt="" className="mpers-my-avatar-img" />
+                  <img src={`/avatars/${myPerson.photo}`} alt="" loading="lazy" className="mpers-my-avatar-img" />
                 ) : (
                   <Avatar name={fullName} size={48} />
                 )}
@@ -443,7 +445,7 @@ function MobilePersonnel({ onBack, currentUser }) {
             const tasks = getTasksForPersonDay(p.id, currentDate);
             const isUnavailable = unavail.length > 0;
             return (
-              <div key={p.id} className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`} onClick={() => setSelectedPerson(p)}>
+              <div key={p.id} className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`} role="button" tabIndex={0} onClick={() => setSelectedPerson(p)}>
                 {p.photo ? (
                   <img src={`/avatars/${p.photo}`} alt="" className="mpers-avatar-img" loading="lazy" />
                 ) : (
@@ -490,9 +492,9 @@ function MobilePersonnel({ onBack, currentUser }) {
               {permanentPersons.map(p => {
                 const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
                 return (
-                  <div key={p.id} className="mpers-week-person" onClick={() => setSelectedPerson(p)}>
+                  <div key={p.id} className="mpers-week-person" role="button" tabIndex={0} onClick={() => setSelectedPerson(p)}>
                     {p.photo ? (
-                      <img src={`/avatars/${p.photo}`} alt="" className="mpers-week-avatar-img" />
+                      <img src={`/avatars/${p.photo}`} alt="" loading="lazy" className="mpers-week-avatar-img" />
                     ) : (
                       <Avatar name={fullName} size={30} />
                     )}

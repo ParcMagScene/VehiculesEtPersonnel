@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Plus, Edit2, Trash2, Filter, X, Check, ChevronDown, ChevronRight,
-  Building2, Users2, UserCheck, Phone, Mail, Globe, MapPin, FileText,
-  Upload, Download, BarChart3, BookOpen, Contact, Eye, EyeOff,
-  Building, Hash, Tag, ArrowLeft, Briefcase, Star, RefreshCw
+  Plus, Edit2, Trash2, Filter, X, Check, Building2, UserCheck, Phone, Mail, Globe, MapPin, Upload, BookOpen, Contact, Eye, Building, ArrowLeft, Star
 } from 'lucide-react';
 import api from '../../utils/api';
-import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, SearchBar, Tooltip, SectionHeader } from '@/design-system';
+import { Button, FormField, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner, SearchBar, Tooltip, SectionHeader } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import './AnnuairePanel.css';
 import { useToast } from '../../hooks/useToast';
@@ -54,7 +52,7 @@ function AnnuairePanel({ currentUser }) {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [typeFilter, setTypeFilter] = useState('');
   const [sectorFilter, setSectorFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -207,7 +205,7 @@ function AnnuairePanel({ currentUser }) {
   };
 
   const handleDelete = (item) => {
-    setConfirmDialog({
+    confirm({
       title: 'Confirmer la suppression',
       message: `Supprimer ${item.name || item.last_name} ?`,
       onConfirm: async () => {
@@ -224,9 +222,7 @@ function AnnuairePanel({ currentUser }) {
         } catch (e) {
           toast?.error(e.message || 'Erreur');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -259,7 +255,7 @@ function AnnuairePanel({ currentUser }) {
   };
 
   const handleRefDelete = (item) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer « ${item.name} » ?`,
       onConfirm: async () => {
@@ -271,9 +267,7 @@ function AnnuairePanel({ currentUser }) {
         } catch (e) {
           toast?.error('Erreur');
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -289,61 +283,75 @@ function AnnuairePanel({ currentUser }) {
   // ═══ RENDU ═══
   return (
     <div className="annuaire-panel">
-      {/* Header — unified tabs + stats */}
-      <div className="annuaire-header">
-        <div className="annuaire-tabs">
-          {ENTITY_TABS.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                className={`annuaire-tab ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => handleTabChange(tab.id)}
-              >
-                <Icon size={16} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      {activeTab !== 'referentiels' && activeTab !== 'lieux' && (
-        <div className="annuaire-toolbar">
-          <SearchBar
-            value={searchTerm}
-            onChange={val => { setSearchTerm(val); setPage(1); }}
-            placeholder="Rechercher..."
-          />
-
-          <div className="annuaire-toolbar-actions">
-            {(activeTab === 'clients' || activeTab === 'suppliers') && (
-              <Button variant="ghost" size="sm" iconOnly onClick={() => setShowFilters(!showFilters)}>
-                <Filter size={15} />
-              </Button>
-            )}
-            {activeTab === 'clients' && currentUser?.isAdmin && (
-              <Button variant="secondary" onClick={() => handleImportCSV('clients')} title="Import CSV Clients Locmat">
-                <Upload size={15} /> CSV
-              </Button>
-            )}
-            {activeTab === 'suppliers' && currentUser?.isAdmin && (
-              <Button variant="secondary" onClick={() => handleImportCSV('suppliers')} title="Import CSV Fournisseurs Locmat">
-                <Upload size={15} /> CSV
-              </Button>
-            )}
-            {activeTab === 'contacts' && currentUser?.isAdmin && (
-              <Button variant="secondary" onClick={() => setShowContactsImport(true)} title="Import CSV Contacts Locmat">
-                <Upload size={15} /> CSV
-              </Button>
-            )}
-            <Button variant="primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
-              <Plus size={15} /> Nouveau
-            </Button>
+      {/* Toolbar unifiée : onglets + stats + recherche + actions */}
+      <div className="annuaire-toolbar">
+        <div className="annuaire-toolbar-top">
+          <div className="annuaire-tabs">
+            {ENTITY_TABS.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <Button variant="ghost" key={tab.id}
+                  className={`annuaire-tab ${activeTab === tab.id ? 'active' : ''}`}
+                  onClick={() => handleTabChange(tab.id)}
+                >
+                  <Icon size={16} />
+                  <span>{tab.label}</span>
+                </Button>
+              );
+            })}
           </div>
+          {stats && (
+            <div className="annuaire-header-stats">
+              <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
+              <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
+              <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
+              <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
+              <span className="stat-badge location">{stats.locations?.total || 0} lieux</span>
+            </div>
+          )}
         </div>
-      )}
+
+        {activeTab !== 'referentiels' && activeTab !== 'lieux' && (
+          <div className="annuaire-toolbar-actions-row">
+            <SearchBar
+              value={searchTerm}
+              onChange={val => { setSearchTerm(val); setPage(1); }}
+              placeholder="Rechercher..."
+            />
+            <div className="annuaire-toolbar-actions">
+              {(activeTab === 'clients' || activeTab === 'suppliers') && (
+                <Button variant="ghost" size="sm" iconOnly aria-label="Filtres" onClick={() => setShowFilters(!showFilters)}>
+                  <Filter size={15} />
+                </Button>
+              )}
+              {activeTab === 'clients' && currentUser?.isAdmin && (
+                <Tooltip content="Import CSV Clients Locmat" position="bottom">
+                  <Button variant="secondary" onClick={() => handleImportCSV('clients')}>
+                    <Upload size={15} /> CSV
+                  </Button>
+                </Tooltip>
+              )}
+              {activeTab === 'suppliers' && currentUser?.isAdmin && (
+                <Tooltip content="Import CSV Fournisseurs Locmat" position="bottom">
+                  <Button variant="secondary" onClick={() => handleImportCSV('suppliers')}>
+                    <Upload size={15} /> CSV
+                  </Button>
+                </Tooltip>
+              )}
+              {activeTab === 'contacts' && currentUser?.isAdmin && (
+                <Tooltip content="Import CSV Contacts Locmat" position="bottom">
+                  <Button variant="secondary" onClick={() => setShowContactsImport(true)}>
+                    <Upload size={15} /> CSV
+                  </Button>
+                </Tooltip>
+              )}
+              <Button variant="primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
+                <Plus size={15} /> Nouveau
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Filters bar */}
       {showFilters && activeTab !== 'referentiels' && activeTab !== 'contacts' && activeTab !== 'lieux' && (
@@ -364,16 +372,6 @@ function AnnuairePanel({ currentUser }) {
             <option value="">Tous les secteurs</option>
             {(lookups.activity_sectors || []).map(s => <option key={s.code} value={s.code}>{s.name}</option>)}
           </Select>
-        </div>
-      )}
-
-      {/* Stats */}
-      {stats && activeTab !== 'lieux' && (
-        <div className="annuaire-header-stats">
-          <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
-          <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
-          <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
-          <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
         </div>
       )}
 
@@ -428,9 +426,9 @@ function AnnuairePanel({ currentUser }) {
             />
             {totalPages > 1 && (
               <div className="annuaire-pagination">
-                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Précédent</button>
+                <Button variant="ghost" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Précédent</Button>
                 <span>Page {page} / {totalPages} ({total} résultats)</span>
-                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Suivant →</button>
+                <Button variant="ghost" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Suivant →</Button>
               </div>
             )}
           </>
@@ -459,17 +457,7 @@ function AnnuairePanel({ currentUser }) {
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
 
       {showContactsImport && (
         <ContactsCSVImportDialog
@@ -488,7 +476,7 @@ function AnnuairePanel({ currentUser }) {
 // ═══════════════════════════════════════════════════════════════
 // ENTITY TABLE
 // ═══════════════════════════════════════════════════════════════
-function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, onEdit, onDelete }) {
+function EntityTable({ data, entityType, currentUser, _getLookupName, onSelect, onEdit, onDelete }) {
   if (!data.length) {
     return <div className="annuaire-empty"><p>Aucun enregistrement trouvé</p></div>;
   }
@@ -523,7 +511,7 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
                 <td>{c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : '—'}</td>
                 <td>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : '—'}</td>
                 <td className="actions-cell">
-                  <Tooltip content="Modifier"><button onClick={() => onEdit(c)}><Edit2 size={14} /></button></Tooltip>
+                  <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(c)}><Edit2 size={14} /></Button></Tooltip>
                   {currentUser?.isAdmin && <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(c)}><Trash2 size={14} /></Button></Tooltip>}
                 </td>
               </tr>
@@ -570,8 +558,8 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
               )}
               <td className="count-cell">{item.contact_count || 0}</td>
               <td className="actions-cell">
-                <Tooltip content="Voir"><button onClick={() => onSelect(item)}><Eye size={14} /></button></Tooltip>
-                <Tooltip content="Modifier"><button onClick={() => onEdit(item)}><Edit2 size={14} /></button></Tooltip>
+                <Tooltip content="Voir"><Button variant="ghost" onClick={() => onSelect(item)}><Eye size={14} /></Button></Tooltip>
+                <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(item)}><Edit2 size={14} /></Button></Tooltip>
                 {currentUser?.isAdmin && <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(item)}><Trash2 size={14} /></Button></Tooltip>}
               </td>
             </tr>
@@ -585,7 +573,7 @@ function EntityTable({ data, entityType, currentUser, getLookupName, onSelect, o
 // ═══════════════════════════════════════════════════════════════
 // DETAIL VIEW
 // ═══════════════════════════════════════════════════════════════
-function DetailView({ item, entityType, lookups, getLookupName, currentUser, onBack, onEdit, onAddContact, toast }) {
+function DetailView({ item, entityType, _lookups, getLookupName, _currentUser, onBack, onEdit, onAddContact, toast }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -832,15 +820,15 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
             <>
               <div className="form-row">
                 <FormField className="form-group" label="Prénom">
-                  <Input value={form.first_name || ''} onChange={e => handleChange('first_name', e.target.value)} />
+                  <Input maxLength={100} value={form.first_name || ''} onChange={e => handleChange('first_name', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Nom" required>
-                  <Input value={form.last_name || ''} onChange={e => handleChange('last_name', e.target.value)} required />
+                  <Input maxLength={100} value={form.last_name || ''} onChange={e => handleChange('last_name', e.target.value)} required />
                 </FormField>
               </div>
               <div className="form-row">
                 <FormField className="form-group" label="Fonction">
-                  <Input value={form.job_title || ''} onChange={e => handleChange('job_title', e.target.value)} />
+                  <Input maxLength={100} value={form.job_title || ''} onChange={e => handleChange('job_title', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Catégorie">
                   <Select value={form.category || ''} onChange={e => handleChange('category', e.target.value)}>
@@ -851,14 +839,14 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
               </div>
               <div className="form-row">
                 <FormField className="form-group" label="Téléphone">
-                  <Input value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
+                  <Input maxLength={20} value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Tél. 2">
-                  <Input value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
+                  <Input maxLength={20} value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
                 </FormField>
               </div>
               <FormField className="form-group" label="Email">
-                <Input type="email" value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
+                <Input type="email" maxLength={254} value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
               </FormField>
               <div className="form-group">
                 <label className="checkbox-label">
@@ -875,10 +863,10 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
             <>
               <div className="form-row">
                 <FormField className="form-group flex-2" label="Nom" required>
-                  <Input value={form.name} onChange={e => handleChange('name', e.target.value)} required />
+                  <Input maxLength={200} value={form.name} onChange={e => handleChange('name', e.target.value)} required />
                 </FormField>
                 <FormField className="form-group" label="Code libre">
-                  <Input value={form.code_libre || ''} onChange={e => handleChange('code_libre', e.target.value)} />
+                  <Input maxLength={50} value={form.code_libre || ''} onChange={e => handleChange('code_libre', e.target.value)} />
                 </FormField>
               </div>
 
@@ -910,47 +898,47 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
 
               <div className="form-row">
                 <FormField className="form-group" label="SIRET">
-                  <Input value={form.siret || ''} onChange={e => handleChange('siret', e.target.value)} />
+                  <Input maxLength={17} value={form.siret || ''} onChange={e => handleChange('siret', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="TVA Intra.">
-                  <Input value={form.tva_intra || ''} onChange={e => handleChange('tva_intra', e.target.value)} />
+                  <Input maxLength={20} value={form.tva_intra || ''} onChange={e => handleChange('tva_intra', e.target.value)} />
                 </FormField>
               </div>
 
               <FormField className="form-group" label="Adresse">
-                <Input value={form.address || ''} onChange={e => handleChange('address', e.target.value)} />
+                <Input maxLength={500} value={form.address || ''} onChange={e => handleChange('address', e.target.value)} />
               </FormField>
 
               <div className="form-row">
                 <FormField className="form-group" label="Code postal">
-                  <Input value={form.postal_code || ''} onChange={e => handleChange('postal_code', e.target.value)} />
+                  <Input maxLength={10} value={form.postal_code || ''} onChange={e => handleChange('postal_code', e.target.value)} />
                 </FormField>
                 <FormField className="form-group flex-2" label="Ville">
-                  <Input value={form.city || ''} onChange={e => handleChange('city', e.target.value)} />
+                  <Input maxLength={100} value={form.city || ''} onChange={e => handleChange('city', e.target.value)} />
                 </FormField>
               </div>
 
               <div className="form-row">
                 <FormField className="form-group" label="Téléphone">
-                  <Input value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
+                  <Input maxLength={20} value={form.phone || ''} onChange={e => handleChange('phone', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Tél. 2">
-                  <Input value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
+                  <Input maxLength={20} value={form.phone2 || ''} onChange={e => handleChange('phone2', e.target.value)} />
                 </FormField>
               </div>
 
               <div className="form-row">
                 <FormField className="form-group" label="Email">
-                  <Input type="email" value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
+                  <Input type="email" maxLength={254} value={form.email || ''} onChange={e => handleChange('email', e.target.value)} />
                 </FormField>
                 <FormField className="form-group" label="Site web">
-                  <Input value={form.website || ''} onChange={e => handleChange('website', e.target.value)} />
+                  <Input maxLength={500} value={form.website || ''} onChange={e => handleChange('website', e.target.value)} />
                 </FormField>
               </div>
 
               {entityType === 'suppliers' && (
                 <FormField className="form-group" label="Nom du contact">
-                  <Input value={form.contact_name || ''} onChange={e => handleChange('contact_name', e.target.value)} />
+                  <Input maxLength={100} value={form.contact_name || ''} onChange={e => handleChange('contact_name', e.target.value)} />
                 </FormField>
               )}
 
@@ -988,18 +976,17 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
 // ═══════════════════════════════════════════════════════════════
 // REFERENTIELS VIEW
 // ═══════════════════════════════════════════════════════════════
-function ReferentielsView({ refTab, setRefTab, refData, loading, currentUser, onAdd, onEdit, onDelete }) {
+function ReferentielsView({ refTab, setRefTab, refData, _loading, currentUser, onAdd, onEdit, onDelete }) {
   return (
     <div className="referentiels-view">
-      <div className="ref-tabs">
-        {REFERENTIEL_TABS.map(t => (
-          <button key={t.slug} className={`ref-tab ${refTab === t.slug ? 'active' : ''}`} onClick={() => setRefTab(t.slug)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       <div className="ref-toolbar">
+        <div className="ref-tabs">
+          {REFERENTIEL_TABS.map(t => (
+            <Button variant="ghost" key={t.slug} className={`ref-tab ${refTab === t.slug ? 'active' : ''}`} onClick={() => setRefTab(t.slug)}>
+              {t.label}
+            </Button>
+          ))}
+        </div>
         {currentUser?.isAdmin && (
           <Button variant="primary" onClick={onAdd}><Plus size={15} /> Ajouter</Button>
         )}
@@ -1025,7 +1012,7 @@ function ReferentielsView({ refTab, setRefTab, refData, loading, currentUser, on
                 <td>{item.is_active ? <Check size={14} className="text-success" /> : <X size={14} className="text-muted" />}</td>
                 {currentUser?.isAdmin && (
                   <td className="actions-cell">
-                    <Tooltip content="Modifier"><button onClick={() => onEdit(item)}><Edit2 size={14} /></button></Tooltip>
+                    <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(item)}><Edit2 size={14} /></Button></Tooltip>
                     <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(item)}><Trash2 size={14} /></Button></Tooltip>
                   </td>
                 )}
@@ -1074,10 +1061,10 @@ function RefFormModal({ item, onSave, onClose }) {
         <form id="ref-form" onSubmit={handleSubmit} className="annuaire-form">
           <div className="form-row">
             <FormField className="form-group" label="Code" required>
-              <Input value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} required />
+              <Input maxLength={50} value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} required />
             </FormField>
             <FormField className="form-group flex-2" label="Libellé" required>
-              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
+              <Input maxLength={200} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
             </FormField>
           </div>
           <div className="form-row">

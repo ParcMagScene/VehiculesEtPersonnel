@@ -16,7 +16,7 @@
 
 .week-selector-modal {
   background: var(--theme-bg-card);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-modal);
   max-width: 700px;
   position: relative;
@@ -40,7 +40,7 @@
 
 .week-selector-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 700;
   text-transform: capitalize;
 }
@@ -59,7 +59,7 @@
 .weekday-name {
   text-align: center;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   padding: 0.5rem;
 }
@@ -75,7 +75,7 @@
   aspect-ratio: 1;
   background: var(--theme-bg-secondary);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -127,12 +127,12 @@
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   padding: 0.1rem 0.3rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-xs);
   font-weight: 600;
 }
 
 .day-number {
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--theme-bg-dark);
 }
@@ -148,7 +148,7 @@
 .day-dot {
   width: 5px;
   height: 5px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
@@ -160,7 +160,7 @@
 .week-selector-list h4 {
   margin: 0 0 1rem 0;
   color: var(--theme-bg-dark);
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 700;
 }
 
@@ -173,7 +173,7 @@
 .week-item {
   background: var(--theme-bg-secondary);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   cursor: pointer;
   display: flex;
@@ -202,7 +202,7 @@
 }
 
 .week-dates {
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 

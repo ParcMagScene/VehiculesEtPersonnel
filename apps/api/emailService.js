@@ -4,6 +4,7 @@
  */
 import nodemailer from 'nodemailer';
 import logger from './logger.js';
+import { decryptPassword } from './videoProxyService.js';
 
 /** Échappe les caractères HTML pour prévenir XSS dans les emails */
 function escapeHtml(str) {
@@ -44,7 +45,7 @@ export function initEmailTransporter(db) {
       secure: config.smtp_secure === 1,
       auth: {
         user: config.smtp_user,
-        pass: config.smtp_pass,
+        pass: decryptPassword(config.smtp_pass) || config.smtp_pass,
       },
     });
 

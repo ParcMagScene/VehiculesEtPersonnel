@@ -5,8 +5,8 @@
 .mobile-reservations .screen-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
 .mobile-reservations .back-button,
@@ -15,7 +15,7 @@
   border: none;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,7 +33,7 @@
 .mobile-reservations .screen-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--theme-text-primary);
 }
@@ -47,8 +47,8 @@
 /* ═══ FORMULAIRE ═══ */
 .mobile-reservations .reservation-form {
   background: var(--theme-bg-card);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
@@ -60,21 +60,21 @@
 .mobile-reservations .form-group label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 700;
   color: var(--theme-text-body);
-  font-size: 0.875rem;
-  margin-bottom: 8px;
+  font-size: var(--font-base);
+  margin-bottom: var(--space-2);
 }
 
 .mobile-reservations .form-group input,
 .mobile-reservations .form-group select,
 .mobile-reservations .form-group textarea {
   width: 100%;
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   border: 2px solid var(--theme-border);
-  border-radius: 14px;
-  font-size: 1rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--font-md);
   font-family: inherit;
   box-shadow: none;
   background: var(--theme-bg-card);
@@ -94,24 +94,24 @@
 .mobile-reservations .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .mobile-reservations .form-error {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   background: var(--theme-danger-bg);
   color: var(--theme-danger-dark);
-  border-radius: 12px;
-  font-size: 0.875rem;
-  margin-bottom: 16px;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-base);
+  margin-bottom: var(--space-4);
   border: 1px solid var(--btn-danger-hover-bg);
   font-weight: 500;
 }
 
 .mobile-reservations .form-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 20px;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
 }
 
 .mobile-reservations .btn-cancel,
@@ -119,10 +119,10 @@
   flex: 1;
   padding: 14px;
   border: none;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-weight: 700;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: var(--font-md);
   transition: transform 0.15s;
 }
 
@@ -153,9 +153,9 @@
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border: 2px solid var(--theme-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: var(--theme-bg-card);
   cursor: pointer;
   font-family: inherit;
@@ -184,7 +184,7 @@
 .vehicle-picker-thumb {
   width: 44px;
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   overflow: hidden;
   flex-shrink: 0;
   background: var(--theme-border-light);
@@ -199,19 +199,19 @@
 .vehicle-picker-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
   flex: 1;
   min-width: 0;
 }
 
 .vehicle-picker-name {
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-primary);
 }
 
 .vehicle-picker-reg {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   font-family: 'Monaco', 'Courier New', monospace;
 }
@@ -242,7 +242,7 @@
 
 .vehicle-picker-modal {
   background: var(--theme-bg-card);
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
   width: 100%;
   max-height: 80vh;
   display: flex;
@@ -260,13 +260,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 20px 14px;
+  padding: var(--space-5) var(--space-5) 14px;
   border-bottom: 1px solid var(--theme-border);
 }
 
 .vehicle-picker-modal-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-primary);
 }
@@ -276,19 +276,19 @@
   border: none;
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--font-md);
   color: var(--theme-text-secondary);
 }
 
 .vehicle-picker-list {
   overflow-y: auto;
   flex: 1;
-  padding: 8px 12px max(24px, env(safe-area-inset-bottom));
+  padding: var(--space-2) var(--space-3) max(24px, env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
 }
 
@@ -297,12 +297,12 @@
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 12px 14px;
+  padding: var(--space-3) 14px;
   border: none;
   background: var(--theme-bg-card);
   cursor: pointer;
   text-align: left;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   transition: background 0.15s;
   font-family: inherit;
 }
@@ -319,7 +319,7 @@
 .vehicle-picker-item-photo {
   width: 56px;
   height: 56px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   flex-shrink: 0;
   background: var(--theme-border-light);
@@ -348,30 +348,30 @@
 
 .vehicle-picker-item-meta {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1-5);
   flex-wrap: wrap;
 }
 
 .vp-brand {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-primary);
   background: var(--theme-bg-hover);
-  padding: 1px 8px;
-  border-radius: 6px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
 }
 
 .vp-type {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: var(--btn-success-color);
   background: var(--theme-success-bg);
-  padding: 1px 8px;
-  border-radius: 6px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
 }
 
 .vehicle-picker-item-reg {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   font-family: 'Monaco', 'Courier New', monospace;
 }
@@ -383,31 +383,31 @@
 
 .vehicle-picker-empty {
   text-align: center;
-  padding: 48px 20px;
+  padding: var(--space-12) var(--space-5);
   color: var(--theme-text-muted);
 }
 
 .vehicle-picker-empty svg {
   opacity: 0.4;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .vehicle-picker-empty p {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 /* ═══ LISTE DES RÉSERVATIONS ═══ */
 .mobile-reservations .reservations-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .mobile-reservations .reservation-card {
   background: var(--theme-bg-card);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
@@ -416,13 +416,13 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .mobile-reservations .reservation-vehicle-thumb {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   flex-shrink: 0;
   background: var(--theme-border-light);
@@ -439,21 +439,21 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .mobile-reservations .vehicle-name {
   font-weight: 700;
   color: var(--theme-text-primary);
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .mobile-reservations .vehicle-plate {
   background: var(--theme-bg-hover);
   color: var(--theme-primary);
-  padding: 2px 10px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: var(--space-0-5) var(--space-2-5);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 700;
   width: fit-content;
   font-family: 'Monaco', 'Courier New', monospace;
@@ -462,25 +462,25 @@
 .mobile-reservations .reservation-dates {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--theme-text-subtle);
-  font-size: 0.875rem;
-  margin-bottom: 10px;
+  font-size: var(--font-base);
+  margin-bottom: var(--space-2-5);
   font-weight: 500;
 }
 
 .mobile-reservations .reservation-details {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .mobile-reservations .detail-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--theme-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--font-base);
 }
 
 .mobile-reservations .detail-item svg {
@@ -489,11 +489,11 @@
 }
 
 .mobile-reservations .reservation-notes {
-  margin-top: 10px;
-  padding: 10px 14px;
+  margin-top: var(--space-2-5);
+  padding: var(--space-2-5) 14px;
   background: var(--theme-bg-page);
-  border-radius: 12px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   font-style: italic;
   border: 1px solid var(--theme-border);
@@ -502,21 +502,21 @@
 /* ═══ ÉTAT VIDE ═══ */
 .mobile-reservations .empty-state {
   text-align: center;
-  padding: 48px 24px;
+  padding: var(--space-12) var(--space-6);
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
 
 .mobile-reservations .empty-state svg {
   color: var(--theme-border-muted);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .mobile-reservations .empty-state p {
   color: var(--theme-text-secondary);
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
   font-size: 15px;
 }
 
@@ -524,8 +524,8 @@
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
   color: var(--theme-text-inverse);
   border: none;
-  padding: 14px 24px;
-  border-radius: 14px;
+  padding: 14px var(--space-6);
+  border-radius: var(--radius-xl);
   font-weight: 700;
   cursor: pointer;
   font-size: 15px;

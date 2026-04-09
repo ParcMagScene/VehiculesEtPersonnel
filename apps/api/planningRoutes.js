@@ -68,6 +68,21 @@ function copyBLToAttachments(file, affaireId) {
 }
 
 // ═══════════════════════════════════════════════
+// VALIDATION — Dates & Heures
+// ═══════════════════════════════════════════════
+
+const DATE_RE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+
+function isValidDate(str) {
+  return typeof str === 'string' && DATE_RE.test(str);
+}
+
+function isValidTime(str) {
+  return typeof str === 'string' && TIME_RE.test(str);
+}
+
+// ═══════════════════════════════════════════════
 // AFFICHAGE DYNAMIQUE — CRUD
 // ═══════════════════════════════════════════════
 
@@ -141,6 +156,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (!type || !category || !date) {
         return res.status(400).json({ error: 'Champs obligatoires : type, category, date' });
       }
+      if (!isValidDate(date)) {
+        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (time && !isValidTime(time)) {
+        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+      }
 
       const id = crypto.randomUUID().replace(/-/g, '');
 
@@ -166,6 +187,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (!existing) return res.status(404).json({ error: 'Événement non trouvé' });
 
       const { affaire_id, bl_import_id, type, category, date, period, time, comment, client, location, visible } = req.body;
+
+      if (date && !isValidDate(date)) {
+        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (time && !isValidTime(time)) {
+        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+      }
 
       const stmt = db.prepare(`
         UPDATE dynamic_display_events
@@ -265,6 +293,18 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Un fichier ou du texte extrait est requis' });
       }
 
+      // [AUDIT FIX I3] Valider parsed_data si présent
+      if (parsed_data) {
+        try {
+          const test = typeof parsed_data === 'string' ? JSON.parse(parsed_data) : parsed_data;
+          if (test && typeof test !== 'object') {
+            return res.status(400).json({ error: 'parsed_data doit être un objet JSON' });
+          }
+        } catch {
+          return res.status(400).json({ error: 'parsed_data n\'est pas du JSON valide' });
+        }
+      }
+
       const id = crypto.randomUUID().replace(/-/g, '');
 
       // Extraire les métadonnées enrichies du parsed_data
@@ -289,6 +329,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       // Fallback : utiliser pd.numero si affaire_id non fourni
       let linkedAffaireId = affaire_id || pd?.numero || null;
       let affaireCreated = false;
+      let finalId, updated = false, bpItemsCount = 0;
+
+      // [PHASE 4] Transaction atomique : affaire + bl_import + bp_items
+      const atomicImport = db.transaction(() => {
+
       if (linkedAffaireId) {
         const existingAffaire = db.prepare('SELECT id, numero_affaire FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
         if (!existingAffaire) {
@@ -354,9 +399,6 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         ? db.prepare('SELECT id FROM bl_imports WHERE affaire_id = ? AND filename = ?').get(linkedAffaireId, existingFilename)
         : null;
 
-      let finalId;
-      let updated = false;
-
       if (existingImport) {
         // ── UPDATE : mettre à jour l'import existant ──
         finalId = existingImport.id;
@@ -412,13 +454,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         );
       }
 
-      // Copier le PDF en pièce jointe de l'affaire
-      if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
-
-      const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(finalId);
-
       // ═══ Auto-persist BP items with equipment matching ═══
-      let bpItemsCount = 0;
       if (pd && Array.isArray(pd.items) && pd.items.length > 0) {
         try {
           const insertItem = db.prepare(`
@@ -503,6 +539,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         }
       }
 
+      }); // fin atomicImport
+      atomicImport();
+
+      // Copier le PDF en pièce jointe de l'affaire (opération fichier, hors transaction)
+      if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
+
+      const created = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(finalId);
       res.status(updated ? 200 : 201).json({ ...created, affaire_created: affaireCreated, bp_items_count: bpItemsCount, updated });
     } catch (error) {
       logger.error('POST /api/planning/bl-imports error:', error);
@@ -548,6 +591,26 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'Aucun fichier ou métadonnées fourni' });
       }
 
+      // [AUDIT FIX I4] Valider que items est un tableau d'objets avec des champs attendus
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ error: 'items doit être un tableau JSON' });
+      }
+      if (items.length > 50) {
+        return res.status(400).json({ error: 'Maximum 50 items par batch' });
+      }
+      for (const item of items) {
+        if (item.parsed_data) {
+          try {
+            const pd = typeof item.parsed_data === 'string' ? JSON.parse(item.parsed_data) : item.parsed_data;
+            if (pd && typeof pd !== 'object') {
+              return res.status(400).json({ error: 'parsed_data doit être un objet JSON' });
+            }
+          } catch {
+            return res.status(400).json({ error: 'parsed_data invalide dans un des items' });
+          }
+        }
+      }
+
       const results = [];
       const filesMap = {};
       (req.files || []).forEach((f, idx) => { filesMap[idx] = f; });
@@ -590,6 +653,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           let linkedAffaireId = affaire_id || pd?.numero || null;
           let affaireCreated = false;
           let affaireUpdated = false;
+          let finalId;
+          let updated = false;
+          let bpItemsCount = 0;
+          const existingFilename = file ? file.originalname : `text-import-${i}`;
+
+          // [PHASE 4] Transaction atomique par item : affaire + bl_import + bp_items
+          const atomicItem = db.transaction(() => {
 
           if (linkedAffaireId) {
             const existingAffaire = db.prepare('SELECT id, numero_affaire FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
@@ -609,6 +679,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
                 }
                 // Mettre à jour les champs vides de l'affaire existante
                 const aff = db.prepare('SELECT * FROM affaires WHERE numero_affaire = ?').get(linkedAffaireId);
+                // [SEC] Whitelist des champs autorisés pour l'UPDATE dynamique
+                const ALLOWED_AFFAIRE_FIELDS = new Set([
+                  'client', 'interlocuteur', 'tel', 'fax', 'devis',
+                  'adresse_livraison', 'titre', 'type', 'date_debut', 'date_fin',
+                  'modified_by', 'modified_at'
+                ]);
                 const updates = [];
                 const params = [];
                 if (!aff.client && pd?.client) { updates.push('client = ?'); params.push(pd.client); }
@@ -626,6 +702,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
                   updates.push("modified_by = ?", "modified_at = datetime('now')");
                   params.push(req.user.id);
                   params.push(linkedAffaireId);
+                  // [SEC] Vérifier que tous les champs sont dans la whitelist
+                  const allValid = updates.every(u => {
+                    const field = u.split(/\s*=\s*/)[0];
+                    return ALLOWED_AFFAIRE_FIELDS.has(field);
+                  });
+                  if (!allValid) throw new Error('Champ non autorisé dans UPDATE affaire');
                   db.prepare(`UPDATE affaires SET ${updates.join(', ')} WHERE numero_affaire = ?`).run(...params);
                   affaireUpdated = true;
                 }
@@ -671,13 +753,10 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
           }
 
           // Dédoublonnage BL import
-          const existingFilename = file ? file.originalname : `text-import-${i}`;
           const existingImport = linkedAffaireId
             ? db.prepare('SELECT id FROM bl_imports WHERE affaire_id = ? AND filename = ?').get(linkedAffaireId, existingFilename)
             : null;
 
-          let finalId;
-          let updated = false;
           const enrichedDataStr = pd ? JSON.stringify(pd) : null;
 
           if (existingImport) {
@@ -710,11 +789,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
             );
           }
 
-          // Copier le PDF en pièce jointe de l'affaire
-          if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
-
           // Auto-persist BP items with equipment matching
-          let bpItemsCount = 0;
           if (pd?.items?.length > 0) {
             try {
               const insertMany = db.transaction((bpItems) => {
@@ -742,6 +817,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
               logger.error('Erreur bp_items batch:', bpErr.message);
             }
           }
+
+          }); // fin atomicItem
+          atomicItem();
+
+          // Copier le PDF en pièce jointe de l'affaire (opération fichier, hors transaction)
+          if (file && linkedAffaireId) copyBLToAttachments(file, linkedAffaireId);
 
           results.push({
             index: i,
@@ -1310,7 +1391,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         margins: { top: 25, bottom: 20, left: 25, right: 25 },
         info: {
           Title: `Fiche du jour - ${dateFr}`,
-          Author: 'eM@g - Mag Scène',
+          Author: 'eM@g',
           Subject: 'Planification journalière',
         }
       });
@@ -1700,6 +1781,15 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (!date) {
         return res.status(400).json({ error: 'Le champ date est obligatoire' });
       }
+      if (!isValidDate(date)) {
+        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (time && !isValidTime(time)) {
+        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+      }
+      if (end_time && !isValidTime(end_time)) {
+        return res.status(400).json({ error: 'Format end_time invalide (attendu HH:mm)' });
+      }
 
       const id = crypto.randomUUID().replace(/-/g, '');
 
@@ -1773,9 +1863,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       `);
 
       const createdIds = [];
+      const skipped = [];
       const insertMany = db.transaction((items) => {
         for (const t of items) {
           if (!t.date) continue;
+          if (!isValidDate(t.date)) { skipped.push(t.date); continue; }
           const id = crypto.randomUUID().replace(/-/g, '');
           const sect = t.section || 'manual';
           const vis = EVENT_SECTIONS_BATCH.includes(sect) ? 0 : 1;
@@ -1848,6 +1940,16 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
 
       const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id, location_address, location_lat, location_lng } = req.body;
+
+      if (date && !isValidDate(date)) {
+        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (time && !isValidTime(time)) {
+        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+      }
+      if (end_time && !isValidTime(end_time)) {
+        return res.status(400).json({ error: 'Format end_time invalide (attendu HH:mm)' });
+      }
 
       const stmt = db.prepare(`
         UPDATE task_assignments

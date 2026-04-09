@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, MapPin, Clock, User, ArrowRight, ArrowDown } from 'lucide-react';
+import { X, Plus, Trash2, MapPin, Clock, User, ArrowDown } from 'lucide-react';
 import './TripDetailsModal.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded as checkGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import LocationDialog from './LocationDialog';
@@ -9,6 +9,8 @@ import api from '../../utils/api';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
 
+import { STATUS } from '../../constants';
+
 const TripDetailsModal = ({
   event,
   tripDetail,
@@ -17,7 +19,7 @@ const TripDetailsModal = ({
   drivers,
   persons = [],
   vehicle,
-  nextEvent, // Pour les jonctions
+  _nextEvent, // Pour les jonctions
   googleMapsApiKey,
   companyAddress = '',
   initialLocations = [],
@@ -74,7 +76,7 @@ const TripDetailsModal = ({
     onClose();
   };
   const [isSaved, setIsSaved] = useState(!!currentTripDetail);
-  const [locations, setLocations] = useState([]);
+  const [_locations, setLocations] = useState([]);
   const [allLocations, setAllLocations] = useState([]);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocationField, setEditingLocationField] = useState(null);
@@ -140,7 +142,7 @@ const TripDetailsModal = ({
     }
   };
 
-  const getLocationHistory = () => {
+  const _getLocationHistory = () => {
     try {
       return JSON.parse(localStorage.getItem('locationHistory') || '[]');
     } catch (error) {
@@ -158,13 +160,13 @@ const TripDetailsModal = ({
             lng: position.coords.longitude
           });
         },
-        (error) => {
+        (_error) => {
         }
       );
     }
   }, []);
 
-  // Charger les lieux et l'adresse de Mag Scène
+  // Charger les lieux et l'adresse du siège
   useEffect(() => {
     
     // Si on a déjà les lieux depuis le parent, les utiliser directement
@@ -184,26 +186,24 @@ const TripDetailsModal = ({
         // Utiliser companyAddress si fourni, sinon charger depuis l'API
         let address = companyAddress;
         if (!address) {
-          const response = await fetch('/api/config/calendarConfig', {
-            credentials: 'include'
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
+          try {
+            const data = await api.getConfig('calendarConfig');
             address = data?.companyAddress || '';
+          } catch {
+            // ignore
           }
         }
         
         
-        // Créer un lieu virtuel pour Mag Scène si une adresse existe
+        // Créer un lieu virtuel pour le siège si une adresse existe
         if (address) {
-          const magSceneLocation = {
-            id: 'mag-scene',
-            name: 'Mag Scène',
+          const companyLocation = {
+            id: 'company-hq',
+            name: 'Siège',
             address: address,
             type: 'Dépôt'
           };
-          setAllLocations([magSceneLocation, ...locationsData]);
+          setAllLocations([companyLocation, ...locationsData]);
         } else {
           setAllLocations(locationsData);
         }
@@ -542,7 +542,7 @@ const TripDetailsModal = ({
           })
         };
         
-        const outboundResult = await new Promise((resolve, reject) => {
+        const outboundResult = await new Promise((resolve, _reject) => {
           service.route(request, (response, status) => {
             if (status === 'OK') {
               let totalDurationSeconds = 0;
@@ -594,7 +594,7 @@ const TripDetailsModal = ({
           })
         };
         
-        const returnResult = await new Promise((resolve, reject) => {
+        const returnResult = await new Promise((resolve, _reject) => {
           service.route(request, (response, status) => {
             if (status === 'OK') {
               let totalDurationSeconds = 0;
@@ -903,7 +903,7 @@ const TripDetailsModal = ({
         handleSafeClose();
       }
     }}>
-      <div className="trip-details-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="trip-details-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <div style={{ flex: 1 }}>
             <h2>📍 {isCombinedMode ? 'Trajets liés' : 'Détails du trajet'}</h2>
@@ -980,9 +980,9 @@ const TripDetailsModal = ({
               ✅ Détails du trajet enregistrés
             </div>
           )}
-          <button onClick={handleSafeClose} className="close-button">
+          <Button variant="ghost" onClick={handleSafeClose} className="close-button">
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         {/* Timeline chronologique pour les trajets liés */}
@@ -1003,8 +1003,7 @@ const TripDetailsModal = ({
               const isLast = idx === combinedEvents.length - 1;
               
               return (
-                <button
-                  key={ce.event.id}
+                <Button variant="ghost"                   key={ce.event.id}
                   type="button"
                   className={`combined-edit-tab ${activeTab === idx ? 'active' : ''} ${hasData ? 'has-data' : ''}`}
                   onClick={() => setActiveTab(idx)}
@@ -1016,7 +1015,7 @@ const TripDetailsModal = ({
                     {isFirst ? '(Aller)' : isLast ? '(Retour)' : '(Transfert)'}
                   </span>
                   {hasData && <span className="tab-saved">✓</span>}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -1048,7 +1047,7 @@ const TripDetailsModal = ({
                 else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite SPL';
                 const hierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
                 const reqLevel = hierarchy.indexOf(requiredSkill);
-                const qualified = (persons || []).filter(p => p.status === 'active' && p.skills?.some(s => {
+                const qualified = (persons || []).filter(p => p.status === STATUS.ACTIVE && p.skills?.some(s => {
                   const sL = hierarchy.indexOf(s.name);
                   return sL >= 0 && sL >= reqLevel;
                 })).map(p => ({ id: p.id, name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`, photo: p.photo || null, skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));
@@ -1081,15 +1080,14 @@ const TripDetailsModal = ({
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('departureLocation')}
                     title="Enregistrer comme lieu"
                   >
                     <MapPin size={16} />
                     Nouveau lieu
-                  </button>
+                  </Button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
               </FormField>
@@ -1156,27 +1154,25 @@ const TripDetailsModal = ({
                     />
                   </FormField>
                   <FormField className="form-group" label="-">
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       onClick={() => removePause(pause.id)}
                       className="remove-pause-btn"
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </Button>
                   </FormField>
                 </div>
               );
             })}
             <div className="trip-row">
               <div className="form-group">
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   onClick={() => addPause('outbound')}
                   className="add-pause-btn"
                 >
                   <Plus size={16} />
                   Ajouter une pause
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1192,15 +1188,14 @@ const TripDetailsModal = ({
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('arrivalLocation')}
                     title="Enregistrer comme lieu"
                   >
                     <MapPin size={16} />
                     Nouveau lieu
-                  </button>
+                  </Button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
               </FormField>
@@ -1227,15 +1222,14 @@ const TripDetailsModal = ({
             </div>
 
             <div className="duration-section">
-              <button
-                type="button"
+              <Button variant="ghost"                 type="button"
                 onClick={handleCalculateOutbound}
                 disabled={isCalculating}
                 className="calculate-btn"
               >
                 <Clock size={18} />
                 {isCalculating ? 'Calcul...' : 'Calculer le temps de trajet'}
-              </button>
+              </Button>
               {formData.outboundDuration && (() => {
                 const pauseDurations = pauses
                   .filter(p => p.pauseType === 'outbound' && p.duration)
@@ -1267,15 +1261,14 @@ const TripDetailsModal = ({
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('returnDepartureLocation')}
                     title="Enregistrer comme lieu"
                   >
                     <MapPin size={16} />
                     Nouveau lieu
-                  </button>
+                  </Button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
               </FormField>
@@ -1342,27 +1335,25 @@ const TripDetailsModal = ({
                     />
                   </FormField>
                   <FormField className="form-group" label="-">
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       onClick={() => removePause(pause.id)}
                       className="remove-pause-btn"
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </Button>
                   </FormField>
                 </div>
               );
             })}
             <div className="trip-row">
               <div className="form-group">
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   onClick={() => addPause('return')}
                   className="add-pause-btn"
                 >
                   <Plus size={16} />
                   Ajouter une pause
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -1378,15 +1369,14 @@ const TripDetailsModal = ({
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <button
-                    type="button"
+                  <Button variant="ghost"                     type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('returnArrivalLocation')}
                     title="Enregistrer comme lieu"
                   >
                     <MapPin size={16} />
                     Nouveau lieu
-                  </button>
+                  </Button>
                 </div>
                 <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
               </FormField>
@@ -1413,15 +1403,14 @@ const TripDetailsModal = ({
             </div>
 
             <div className="duration-section">
-              <button
-                type="button"
+              <Button variant="ghost"                 type="button"
                 onClick={handleCalculateReturn}
                 disabled={isCalculating}
                 className="calculate-btn"
               >
                 <Clock size={18} />
                 {isCalculating ? 'Calcul...' : 'Calculer le temps de trajet'}
-              </button>
+              </Button>
               {formData.returnDuration && (() => {
                 const pauseDurations = pauses
                   .filter(p => p.pauseType === 'return' && p.duration)

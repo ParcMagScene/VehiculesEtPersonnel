@@ -1,5 +1,6 @@
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
+import { stockImportSchema, validate } from './schemas/imports.js';
 
 // ═══════════════════════════════════════════════════════════════
 // Catégories Stock
@@ -165,7 +166,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       const prefix = stock_type === 'sav' ? 'SAV' : 'STK';
       let ref = reference;
       if (!ref) {
-        const last = db.prepare(`SELECT reference FROM stock_items WHERE reference LIKE '${prefix}-%' ORDER BY reference DESC LIMIT 1`).get();
+        const last = db.prepare('SELECT reference FROM stock_items WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1').get(`${prefix}-%`);
         const num = last ? parseInt(last.reference.replace(`${prefix}-`, ''), 10) + 1 : 1;
         ref = `${prefix}-${String(num).padStart(5, '0')}`;
       }
@@ -504,15 +505,10 @@ export function setupStockImportRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // Import en masse
-  app.post('/api/stock/import', authenticateToken, requireAdmin, (req, res) => {
+  // [AUDIT FIX I5] Validation Zod mandatory
+  app.post('/api/stock/import', authenticateToken, requireAdmin, validate(stockImportSchema), (req, res) => {
     try {
       const { items, mode = 'upsert' } = req.body;
-      if (!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ error: 'Aucun article à importer' });
-      }
-      if (items.length > 5000) {
-        return res.status(400).json({ error: 'Maximum 5000 articles par import' });
-      }
 
       // Build category lookup: name (lowercase) → id
       const allCats = db.prepare('SELECT id, name, parent_id FROM stock_categories').all();
@@ -618,7 +614,8 @@ export function setupStockImportRoutes(app, authenticateToken, requireAdmin) {
       res.json({ inserted, updated, skipped, errors: errors.slice(0, 20), total: items.length });
     } catch (error) {
       logger.error('Erreur import stock:', error);
-      res.status(500).json({ error: 'Erreur import: ' + error.message });
+      // [AUDIT FIX H1] Ne pas exposer error.message au client
+      res.status(500).json({ error: 'Erreur lors de l\'import du stock' });
     }
   });
 }

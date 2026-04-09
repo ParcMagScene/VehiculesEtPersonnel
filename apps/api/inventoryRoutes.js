@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// server/inventoryRoutes.js — Module Inventaire Unifié Mag Scène
+// server/inventoryRoutes.js — Module Inventaire Unifié eM@g
 // Gère : emplacements multi-dépôts, historique prix, anomalies,
 //         comptages inventaire, alertes stock bas, stats avancées,
 //         moteur de prix intelligent (IQR, σ, score confiance)

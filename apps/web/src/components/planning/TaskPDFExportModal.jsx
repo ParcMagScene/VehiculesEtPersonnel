@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   X, FileDown, Eye, Check, CheckSquare, Square, Minus,
   User, Clock, Loader2, Calendar, MapPin, Briefcase
 } from 'lucide-react';
 import api from '../../utils/api';
 import { formatDateFr } from '../../utils/formatUtils';
+import { safeParseDate } from '../../utils/dateUtils';
 import './TaskPDFExportModal.css';
 import { Button, EmptyState } from '@/design-system';
+
+import { STATUS } from '../../constants';
 
 // ═══ Constantes sections (identiques au planning) ═══
 const SECTIONS = {
@@ -73,12 +76,12 @@ const mapEventToSection = (event) => {
   return 'evenements';
 };
 
-const mapAffaireToSection = (affaire) => {
+const _mapAffaireToSection = (affaire) => {
   const info = AFFAIRE_TYPE_INFO[affaire.type];
   return info ? info.section : 'manual';
 };
 
-function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], googleRdvEvents = [], planningAssignments = [], persons = [], onClose }) {
+function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], googleRdvEvents = [], planningAssignments = [], _persons = [], onClose }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [pdfUrl, setPdfUrl] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -107,8 +110,8 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     Object.keys(SECTIONS).forEach(k => { groups[k] = []; });
 
     // 1) Tâches manuelles (exclure les tâches terminées et celles dont l'événement lié est terminé)
-    const doneEventIds = new Set((displayEvents || []).filter(ev => ev.status === 'done').map(ev => ev.id));
-    (tasks || []).filter(t => t.status !== 'done' && !(t.displayEventId && doneEventIds.has(t.displayEventId))).forEach(t => {
+    const doneEventIds = new Set((displayEvents || []).filter(ev => ev.status === STATUS.DONE).map(ev => ev.id));
+    (tasks || []).filter(t => t.status !== STATUS.DONE && !(t.displayEventId && doneEventIds.has(t.displayEventId))).forEach(t => {
       const sec = t.section || 'manual';
       const item = { uid: `task-${t.id}`, type: 'task', section: sec, data: t };
       items.push(item);
@@ -120,7 +123,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
     // 3) Événements d'affichage non liés à des tâches (exclure les terminés)
     const linkedEventIds = new Set((tasks || []).filter(t => t.displayEventId).map(t => t.displayEventId));
-    (displayEvents || []).filter(ev => !linkedEventIds.has(ev.id) && ev.status !== 'done').forEach(ev => {
+    (displayEvents || []).filter(ev => !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE).forEach(ev => {
       const sec = mapEventToSection(ev);
       const item = { uid: `event-${ev.id}`, type: 'event', section: sec, data: ev };
       items.push(item);
@@ -344,7 +347,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
     if (item.type === 'task') {
       const task = item.data;
-      const isDone = task.status === 'done';
+      const isDone = task.status === STATUS.DONE;
       const taskSection = normalizeSection(task.section || 'manual');
       const affaireNum = task.affaireNum || '';
       const linkedAffaire = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
@@ -385,7 +388,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const assignments = getAssignments('task', task.id);
       const courseInfo = courseType ? EVENT_TYPES[courseType] : null;
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`} onClick={() => toggleItem(item.uid)}>
+        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <span className="task-cb-status" title={STATUS_LABELS[task.status]}>{STATUS_ICONS[task.status]}</span>
           {affaireNum && <span className="task-cb-affaire" title={affaireNum}>{affaireNum}</span>}
@@ -418,7 +421,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const ti = AFFAIRE_TYPE_INFO[a.type] || { label: a.type || 'Affaire', emoji: '📋' };
       const assignments = getAssignments('affaire', a.id);
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} onClick={() => toggleItem(item.uid)}>
+        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <Briefcase size={11} style={{ color: 'var(--theme-purple-accent)', flexShrink: 0 }} />
           <span className="task-cb-title">{ti.emoji} {a.numeroAffaire} — {a.client || 'Sans client'}</span>
@@ -446,7 +449,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
         ? [ev.affaireId, ev.client].filter(Boolean).join(' — ') || ti.label
         : `${ti.label} ${ev.affaireId ? `(${ev.affaireId})` : ''} ${ev.client ? `— ${ev.client}` : ''}`;
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} onClick={() => toggleItem(item.uid)}>
+        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <span className="task-cb-status">{isAffaireOnly ? '' : ti.emoji}</span>
           <span className="task-cb-title">{displayText}</span>
@@ -469,10 +472,10 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const ev = item.data;
       const startDT = ev.start?.dateTime || ev.start?.date || '';
       const timeStr = startDT.includes('T')
-        ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        ? safeParseDate(startDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || ''
         : '';
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} onClick={() => toggleItem(item.uid)}>
+        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <Calendar size={11} style={{ color: 'var(--theme-primary)', flexShrink: 0 }} />
           <span className="task-cb-title">
@@ -489,7 +492,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
   return (
     <div className="pdf-export-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="pdf-export-modal" onClick={e => e.stopPropagation()}>
+      <div className="pdf-export-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         {/* Header */}
         <div className="pdf-export-header">
           <div className="pdf-export-header-left">
@@ -499,22 +502,22 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
               <span className="pdf-export-date">{dateFr}</span>
             </div>
           </div>
-          <button className="pdf-export-close" onClick={onClose}>
+          <Button variant="ghost" className="pdf-export-close" onClick={onClose} aria-label="Fermer">
             <X size={18} />
-          </button>
+          </Button>
         </div>
 
         <div className="pdf-export-body">
           {/* Panneau de sélection (gauche) */}
           <div className="pdf-export-selection">
             <div className="selection-toolbar">
-              <button className="select-all-btn" onClick={toggleAll}>
+              <Button variant="ghost" className="select-all-btn" onClick={toggleAll}>
                 {selectedIds.size === totalItems ? (
                   <><CheckSquare size={15} /> Tout désélectionner</>
                 ) : (
                   <><Square size={15} /> Tout sélectionner</>
                 )}
-              </button>
+              </Button>
               <span className="selection-count">
                 {selectedIds.size}/{totalItems} élément{selectedIds.size > 1 ? 's' : ''}
               </span>
@@ -528,7 +531,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
                 return (
                   <div key={sectionKey} className="selection-section">
-                    <div className="section-checkbox-row" onClick={() => toggleSection(sectionKey)}>
+                    <div className="section-checkbox-row" role="checkbox" tabIndex={0} onClick={() => toggleSection(sectionKey)}>
                       <span className="section-cb" style={{ borderColor: info.color }}>
                         {state === 'all' && <Check size={12} style={{ color: info.color }} />}
                         {state === 'partial' && <Minus size={12} style={{ color: info.color }} />}

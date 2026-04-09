@@ -6,15 +6,15 @@
 .mobile-maintenances .type-selection {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .mobile-maintenances .type-card {
   width: 100%;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
   text-align: center;
   cursor: pointer;
   box-shadow: 0 2px 8px var(--shadow-inner);
@@ -28,8 +28,8 @@
 .type-icon {
   width: 64px;
   height: 64px;
-  border-radius: 50%;
-  margin: 0 auto 1rem;
+  border-radius: var(--radius-full);
+  margin: 0 auto var(--space-4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,22 +49,22 @@
 }
 
 .type-title {
-  font-size: 1.125rem;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--theme-bg-dark);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-2);
 }
 
 .type-description {
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 
 /* Formulaire */
 .mobile-maintenances .maintenance-form {
   background: var(--theme-bg-card);
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
@@ -73,14 +73,14 @@
 .mobile-maintenances .screen-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .mobile-maintenances .screen-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   color: var(--theme-bg-dark);
 }
 
@@ -89,7 +89,7 @@
   border: none;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -99,27 +99,27 @@
 }
 
 .mobile-maintenances .form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--space-5);
 }
 
 .mobile-maintenances .form-group label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   font-weight: 600;
   color: var(--theme-text-body);
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+  font-size: var(--font-base);
+  margin-bottom: var(--space-2);
 }
 
 .mobile-maintenances .form-group input,
 .mobile-maintenances .form-group select,
 .mobile-maintenances .form-group textarea {
   width: 100%;
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   border: 2px solid var(--theme-border);
-  border-radius: 14px;
-  font-size: 1rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--font-md);
   font-family: inherit;
   box-shadow: none;
   color: var(--theme-text-primary);
@@ -137,8 +137,8 @@
 
 .mobile-maintenances .form-actions {
   display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
 }
 
 .mobile-maintenances .btn-cancel,
@@ -146,10 +146,10 @@
   flex: 1;
   padding: 14px;
   border: none;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-weight: 700;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: var(--font-md);
   transition: transform 0.15s;
 }
 
@@ -167,13 +167,13 @@
 .mobile-maintenances .maintenances-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .mobile-maintenances .maintenance-card {
   background: var(--theme-bg-card);
-  border-radius: 16px;
-  padding: 1.25rem;
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
 }
@@ -182,13 +182,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .mobile-maintenances .status-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-2xl);
+  font-size: var(--font-sm);
   font-weight: 600;
   display: inline-block;
   text-transform: none;
@@ -224,29 +224,29 @@
 .mobile-maintenances .maintenance-date {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   color: var(--theme-text-gray);
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+  font-size: var(--font-base);
+  margin-bottom: var(--space-2);
   font-weight: normal;
 }
 
 .mobile-maintenances .maintenance-garage {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   color: var(--theme-text-gray);
-  font-size: 0.875rem;
-  margin-bottom: 0.75rem;
+  font-size: var(--font-base);
+  margin-bottom: var(--space-3);
   margin-top: 0;
 }
 
 .mobile-maintenances .maintenance-description {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
   background: var(--theme-bg-secondary);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   color: var(--theme-text-subtle);
   line-height: normal;
 }

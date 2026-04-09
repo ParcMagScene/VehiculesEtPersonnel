@@ -17,9 +17,9 @@
   padding: 6px 10px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
   text-align: left;
@@ -58,7 +58,7 @@
 }
 
 .driver-select-skill {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -82,13 +82,13 @@
 
 /* Avatar styles */
 .driver-select-avatar-img {
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .driver-select-avatar-initials {
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,7 +106,7 @@
   right: 0;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 10px 25px var(--shadow-xl);
   z-index: var(--z-overlay);
   max-height: 280px;
@@ -131,7 +131,7 @@
   align-items: center;
   gap: 10px;
   padding: 7px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -175,7 +175,7 @@
 }
 
 .driver-select-option-skill {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -191,7 +191,7 @@
   padding: 16px;
   text-align: center;
   color: var(--theme-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 /* Scrollbar */

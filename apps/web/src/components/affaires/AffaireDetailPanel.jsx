@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, ChevronRight, ChevronDown, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw, ShoppingCart, Palette } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, Calendar, Users, Truck, FileText, MapPin, Briefcase, LinkIcon, Paperclip, Phone, Mail, User, Clock, ExternalLink, FolderOpen, File, Download, Plus, Upload, UserPlus, Check, AlertCircle, Package, Hash, Trash2, RefreshCw, Edit3, Save, ClipboardList, Loader, Wrench, ArrowRight, RotateCcw, ShoppingCart } from 'lucide-react';
 import { AFFAIRE_TYPES, getTypeInfo, AFFAIRE_TYPE_SECTIONS } from '../../utils/affaireConstants';
 import api, { getApiUrl } from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
@@ -10,7 +10,11 @@ import { fr } from 'date-fns/locale';
 import { capitalizeText } from '../../utils/dateUtils';
 import './AffaireDetailPanel.css';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
-import { Dialog, Input, Textarea, Select, Table, Avatar, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { Avatar, Button, Input, Select, Table, Textarea, Tooltip } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
+
+import { STATUS } from '../../constants';
 
 const ReservationModal = lazy(() => import('../vehicles/ReservationModal'));
 const EventDetailsModal = lazy(() => import('../planning/EventDetailsModal'));
@@ -78,7 +82,7 @@ const extractLinksFromText = (text) => {
 // Contenu partagé (sections de détail)
 // ═══════════════════════════════════════
 
-const AffaireDetailContent = ({ affaire, reservations = [], missions = [], persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity, isEditing = false, editForm = null, setEditForm = null }) => {
+const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity, isEditing = false, editForm = null, setEditForm = null }) => {
   const typeInfo = getTypeInfo(isEditing && editForm ? editForm.type : affaire.type);
 
   // ═══ États pour les actions (mode éditable) ═══
@@ -96,11 +100,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   const [showOrdersModal, setShowOrdersModal] = useState(false);
   const [planningOpen, setPlanningOpen] = useState(false);
   const [annotatingBL, setAnnotatingBL] = useState(null); // bl import object en cours d'annotation
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const fileInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
 
-  const { annotate, reset: resetAnnotation, annotationResult, isLoading: annotationLoading } = useAnnotateBP({ toast: { error: (msg) => showFeedback({ type: 'error', message: msg }, 4000) } });
+  const { annotate, reset: resetAnnotation, annotationResult, isLoading: _annotationLoading } = useAnnotateBP({ toast: { error: (msg) => showFeedback({ type: 'error', message: msg }, 4000) } });
 
   // ═══ Autocomplete Client & Interlocuteur ═══
   const [clientSuggestions, setClientSuggestions] = useState([]);
@@ -236,15 +240,8 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     let successCount = 0;
     for (const file of files) {
       try {
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('affaireId', affaire.numeroAffaire);
-        const resp = await fetch(`${API_BASE_URL}/upload-attachment`, {
-          method: 'POST',
-          credentials: 'include',
-          body: fd,
-        });
-        if (resp.ok) successCount++;
+        await api.uploadAttachment(file, affaire.numeroAffaire);
+        successCount++;
       } catch (err) {
         console.error('Erreur upload:', err);
       }
@@ -429,7 +426,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   }, [affaire.id, loadLinkedAffaires, showFeedback]);
 
   const handleRemoveLink = useCallback((linkId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le lien',
       message: 'Supprimer ce lien entre affaires ?',
       variant: 'danger',
@@ -459,7 +456,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   // État des étapes — initialisé à partir des tâches existantes
   const [taskSteps, setTaskSteps] = useState(() => {
     const init = {};
-    TASK_STEPS.forEach(s => { init[s.key] = { enabled: false, date: '', time: '', endTime: '', period: '', notes: '', taskId: null, status: 'pending' }; });
+    TASK_STEPS.forEach(s => { init[s.key] = { enabled: false, date: '', time: '', endTime: '', period: '', notes: '', taskId: null, status: STATUS.PENDING }; });
     return init;
   });
 
@@ -491,7 +488,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           period: (step.key === 'preparation' || step.key === 'chargement') ? 'AM' : 'PM',
           notes: '',
           taskId: null,
-          status: 'pending',
+          status: STATUS.PENDING,
         };
       });
       setTaskSteps(updated);
@@ -646,14 +643,14 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   }, [affaire.numeroAffaire, showArticles, linkedBLImports]);
 
   // ═══ Générer commandes depuis articles BL ═══
-  const handleGenerateOrders = () => {
+  const _handleGenerateOrders = () => {
     if (blArticles.length === 0 || generatingOrders) return;
     const fournisseurs = [...new Set(blArticles.map(a => a.fournisseur).filter(Boolean))];
     if (fournisseurs.length === 0) {
       showFeedback('⚠ Aucun fournisseur identifié dans les articles');
       return;
     }
-    setConfirmDialog({
+    confirm({
       title: 'Générer les commandes',
       message: `Générer ${fournisseurs.length} commande${fournisseurs.length > 1 ? 's' : ''} (${fournisseurs.join(', ')}) pour ${blArticles.length} article${blArticles.length > 1 ? 's' : ''} ?`,
       variant: 'confirm',
@@ -680,7 +677,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
   // ═══ Suppression d'un BL/BP importé ═══
   const handleDeleteBL = (bl) => {
     const docLabel = (affaire.type === 'Location' || affaire.type === 'Prestation') ? 'BP' : 'BL';
-    setConfirmDialog({
+    confirm({
       title: `Supprimer le ${docLabel}`,
       message: `Supprimer le ${docLabel} "${bl.filename}" ? Cette action est irréversible.`,
       variant: 'danger',
@@ -746,15 +743,8 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
     if (!affaire.numeroAffaire) { setAttachmentFiles([]); return; }
     const loadAttachments = async () => {
       try {
-        const resp = await fetch(`${API_BASE_URL}/attachments/${encodeURIComponent(affaire.numeroAffaire)}`, {
-          credentials: 'include'
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          setAttachmentFiles(data.files || []);
-        } else {
-          setAttachmentFiles([]);
-        }
+        const data = await api.getAttachments(affaire.numeroAffaire);
+        setAttachmentFiles(data.files || []);
       } catch {
         setAttachmentFiles([]);
       }
@@ -1041,16 +1031,18 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                       <span className="bl-import-type-badge">{docLabel}</span>
                       {sectionsCount > 0 && <span>{sectionsCount} section{sectionsCount > 1 ? 's' : ''}</span>}
                       {itemsCount > 0 && <span>{itemsCount} article{itemsCount > 1 ? 's' : ''}</span>}
-                      {bl.createdAt && <span><Clock size={11} /> {new Date(bl.createdAt).toLocaleDateString('fr-FR')}</span>}
+                      {bl.createdAt && <span><Clock size={11} /> {formatDateSimple(bl.createdAt)}</span>}
                     </div>
                   </div>
                   <div className={`bl-import-status ${bl.status || 'pending'}`}>
-                    {bl.status === 'validated' ? 'Validé' : bl.status === 'rejected' ? 'Rejeté' : 'En attente'}
+                    {bl.status === STATUS.VALIDATED ? 'Validé' : bl.status === STATUS.REJECTED ? 'Rejeté' : 'En attente'}
                   </div>
                   {editable && (
-                    <button className="bl-import-delete-btn" onClick={e => { e.stopPropagation(); handleDeleteBL(bl); }} title="Supprimer ce BL/BP">
+ <Tooltip content="Supprimer ce BL/BP" position="bottom">
+   <Button variant="ghost" className="bl-import-delete-btn" onClick={e => { e.stopPropagation(); handleDeleteBL(bl); }}>
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
+ </Tooltip>
                   )}
                 </div>
               );
@@ -1073,9 +1065,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           <Truck size={15} /> Réservations liées
           <span className="section-count">{linkedReservations.length}</span>
           {editable && (
-            <button className="section-action-btn" onClick={handleOpenReservation} disabled={isLoadingAction} title="Nouvelle réservation">
+ <Tooltip content="Nouvelle réservation" position="bottom">
+   <Button variant="ghost" className="section-action-btn" onClick={handleOpenReservation} disabled={isLoadingAction}>
               <Plus size={13} /> Réservation
-            </button>
+            </Button>
+ </Tooltip>
           )}
         </h3>
         {linkedReservations.length === 0 ? (
@@ -1115,7 +1109,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                 {r.comment && (
                   <div className="resa-comment">{r.comment}</div>
                 )}
-                <span className={`resa-status status-${r.status || 'confirmed'}`}>{r.status === 'confirmed' ? 'Confirmée' : r.status === 'pending' ? 'En attente' : r.status || 'Confirmée'}</span>
+                <span className={`resa-status status-${r.status || 'confirmed'}`}>{r.status === STATUS.CONFIRMED ? 'Confirmée' : r.status === STATUS.PENDING ? 'En attente' : r.status || 'Confirmée'}</span>
                 <ChevronRight size={14} className="resa-chevron" />
               </div>
             ))}
@@ -1130,9 +1124,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             <LinkIcon size={15} /> Affaires liées
             <span className="section-count">{allLinkedAffaires.length}</span>
             {editable && (
-              <button className="section-action-btn" onClick={() => setShowLinkSearch(!showLinkSearch)} title="Lier une affaire">
+ <Tooltip content="Lier une affaire" position="bottom">
+   <Button variant="ghost" className="section-action-btn" onClick={() => setShowLinkSearch(!showLinkSearch)}>
                 <Plus size={13} /> Lier
-              </button>
+              </Button>
+ </Tooltip>
             )}
           </h3>
           {showLinkSearch && (
@@ -1148,7 +1144,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               {linkSearchResults.length > 0 && (
                 <div className="link-search-results">
                   {linkSearchResults.map(a => (
-                    <div key={a.id} className="link-search-item" onClick={() => handleAddLink(a.id)}>
+                    <div key={a.id} className="link-search-item" role="button" tabIndex={0} onClick={() => handleAddLink(a.id)}>
                       <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                       <span className="link-search-client">{a.client || '—'}</span>
                       <span className="link-search-title">{a.titre || a.eventName || ''}</span>
@@ -1180,9 +1176,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                     <span className="linked-affaire-relation">{linked.relation === 'parent' ? '↑ Parent' : '↓ Enfant'}</span>
                   </div>
                   {editable && (
-                    <button className="linked-affaire-remove" onClick={() => handleRemoveLink(linked.link_id)} title="Supprimer le lien">
+ <Tooltip content="Supprimer le lien" position="bottom">
+   <Button variant="ghost" className="linked-affaire-remove" onClick={() => handleRemoveLink(linked.link_id)}>
                       <Trash2 size={13} />
-                    </button>
+                    </Button>
+ </Tooltip>
                   )}
                 </div>
               ))}
@@ -1210,7 +1208,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               const statusInfo = TASK_STATUS_MAP[s.status] || TASK_STATUS_MAP.pending;
               return (
                 <div key={step.key} className={`task-step-item ${s.enabled ? 'enabled' : ''}`} style={s.enabled ? { borderLeftColor: step.color } : {}}>
-                  <div className="task-step-header" onClick={(e) => toggleTaskStep(step.key, e)} style={{ cursor: 'pointer' }}>
+                  <div className="task-step-header" role="button" tabIndex={0} onClick={(e) => toggleTaskStep(step.key, e)} style={{ cursor: 'pointer' }}>
                     <div className="task-step-check" style={s.enabled ? { background: step.color, borderColor: step.color } : {}}>
                       {s.enabled && <Check size={10} color="#fff" />}
                     </div>
@@ -1230,7 +1228,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                       <div className="tsf-row">
                         <label>Date</label>
                         <input type="date" value={s.date} onChange={e => updateTaskStep(step.key, 'date', e.target.value)} />
-                        <button type="button" className="tsf-today-btn" onClick={() => updateTaskStep(step.key, 'date', format(new Date(), 'yyyy-MM-dd'))} title="Aujourd'hui">Auj.</button>
+                        <Tooltip content="Aujourd'hui" position="bottom"><Button variant="ghost" type="button" className="tsf-today-btn" onClick={() => updateTaskStep(step.key, 'date', format(new Date(), 'yyyy-MM-dd'))}>Auj.</Button></Tooltip>
                         <label>Période</label>
                         <Select value={s.period} onChange={e => updateTaskStep(step.key, 'period', e.target.value)}>
                           <option value="AM">Matin</option>
@@ -1256,11 +1254,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             {/* Bouton Enregistrer si des changements existent */}
             {hasTaskChanges && (
               <div className="task-form-actions">
-                <button className="section-action-btn" onClick={loadAffaireTasks}>Annuler</button>
-                <button className="section-action-btn primary" onClick={handleSaveTaskSteps} disabled={savingTasks}>
+                <Button variant="ghost" className="section-action-btn" onClick={loadAffaireTasks}>Annuler</Button>
+                <Button variant="ghost" className="section-action-btn primary" onClick={handleSaveTaskSteps} disabled={savingTasks}>
                   {savingTasks ? <Loader size={13} className="spin" /> : <Save size={13} />}
                   Enregistrer la planification
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -1273,9 +1271,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
           <Users size={15} /> Personnel affecté
           <span className="section-count">{assignedPersonnel.length}</span>
           {editable && (
-            <button className="section-action-btn personnel-btn" onClick={async () => { await loadActionData('personnel'); setShowPersonnelForm(true); }} disabled={isLoadingAction} title="Affecter du personnel">
+ <Tooltip content="Affecter du personnel" position="bottom">
+   <Button variant="ghost" className="section-action-btn personnel-btn" onClick={async () => { await loadActionData('personnel'); setShowPersonnelForm(true); }} disabled={isLoadingAction}>
               <UserPlus size={13} /> Affecter
-            </button>
+            </Button>
+ </Tooltip>
           )}
         </h3>
         {/* Mini-formulaire d'affectation */}
@@ -1293,10 +1293,10 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               <Input type="text" placeholder="Titre de la mission (optionnel)" value={missionTitle} onChange={e => setMissionTitle(e.target.value)} className="inline-input" />
             </div>
             <div className="inline-form-actions">
-              <button className="inline-btn confirm" onClick={handleAssignPersonnel} disabled={!selectedPersonId}>
+              <Button variant="ghost" className="inline-btn confirm" onClick={handleAssignPersonnel} disabled={!selectedPersonId}>
                 <Check size={13} /> Affecter
-              </button>
-              <button className="inline-btn cancel" onClick={() => setShowPersonnelForm(false)}>Annuler</button>
+              </Button>
+              <Button variant="ghost" className="inline-btn cancel" onClick={() => setShowPersonnelForm(false)}>Annuler</Button>
             </div>
           </div>
         )}
@@ -1333,7 +1333,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
                     )}
                   </div>
                   <span className={`person-status status-${p.status}`}>
-                    {p.status === 'confirmed' ? 'Confirmé' : p.status === 'option' ? 'Option' : p.status === 'accepted' ? 'Accepté' : p.status === 'proposed' ? 'Proposé' : p.status === 'declined' ? 'Refusé' : p.status || '—'}
+                    {p.status === STATUS.CONFIRMED ? 'Confirmé' : p.status === 'option' ? 'Option' : p.status === STATUS.ACCEPTED ? 'Accepté' : p.status === 'proposed' ? 'Proposé' : p.status === 'declined' ? 'Refusé' : p.status || '—'}
                   </span>
                 </div>
                 {/* Postes habituels */}
@@ -1367,9 +1367,11 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         <h3 className="detail-section-title">
           <Paperclip size={15} /> Pièces et liens joints
           {editable && (
-            <button className="section-action-btn upload-btn" onClick={() => setShowUploadForm(v => !v)} title="Importer un fichier">
+ <Tooltip content="Importer un fichier" position="bottom">
+   <Button variant="ghost" className="section-action-btn upload-btn" onClick={() => setShowUploadForm(v => !v)}>
               <Upload size={13} /> Importer
-            </button>
+            </Button>
+ </Tooltip>
           )}
         </h3>
         {/* Zone d'upload */}
@@ -1476,13 +1478,12 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             <>
               <p className="detail-empty">Aucun article — importez un BL pour alimenter cette liste</p>
               {editable && linkedBLImports.length > 0 && (
-                <button
-                  className="generate-orders-btn"
+                <Button variant="ghost"                   className="generate-orders-btn"
                   onClick={() => setShowOrdersModal(true)}
                 >
                   <ShoppingCart size={14} />
                   Créer / Mettre à jour les commandes
-                </button>
+                </Button>
               )}
             </>
           ) : (
@@ -1520,13 +1521,12 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
               </div>
               {/* Bouton générer/mettre à jour commandes */}
               {editable && linkedBLImports.length > 0 && (
-                <button
-                  className="generate-orders-btn"
+                <Button variant="ghost"                   className="generate-orders-btn"
                   onClick={() => setShowOrdersModal(true)}
                 >
                   <ShoppingCart size={14} />
                   Créer / Mettre à jour les commandes
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -1674,13 +1674,12 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
             </div>
             {/* Bouton commandes — seulement pour articles vente */}
             {editable && linkedBLImports.length > 0 && (
-              <button
-                className="generate-orders-btn"
+              <Button variant="ghost"                 className="generate-orders-btn"
                 onClick={() => setShowOrdersModal(true)}
               >
                 <ShoppingCart size={14} />
                 Créer / Mettre à jour les commandes
-              </button>
+              </Button>
             )}
           </div>
         </section>
@@ -1782,15 +1781,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], perso
         </Suspense>
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </div>
   );
 };
@@ -1868,20 +1859,20 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
           <span className="slide-panel-numero">{currentAffaire.numeroAffaire}</span>
           <span className="slide-panel-type" style={{ background: typeInfo.color }}>{typeInfo.label}</span>
         </div>
-        <Tooltip content="Fermer"><button className="slide-panel-close" onClick={handleClose}>
+        <Tooltip content="Fermer"><Button variant="ghost" className="slide-panel-close" onClick={handleClose}>
           <X size={18} />
-        </button></Tooltip>
+        </Button></Tooltip>
       </div>
       <div className="slide-panel-body">
         <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={onRefresh} onNavigateToEntity={onNavigateToEntity} />
       </div>
       <div className="slide-panel-footer">
-        <button className="slide-panel-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
+        <Button variant="ghost" className="slide-panel-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
           {hasBLImports ? <><RefreshCw size={14} /> MAJ BL</> : <><FileText size={14} /> Import BL</>}
-        </button>
-        <button className="slide-panel-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentAffaire); }}>
+        </Button>
+        <Button variant="ghost" className="slide-panel-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentAffaire); }}>
           <ExternalLink size={14} /> Ouvrir la fiche
-        </button>
+        </Button>
       </div>
       {showBLImport && (
         <Suspense fallback={null}>
@@ -2079,26 +2070,32 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
           <div className="dialog-header-actions">
             {isEditing ? (
               <>
-                <button className="dialog-cancel-btn" onClick={cancelEditing} title="Annuler les modifications">
+ <Tooltip content="Annuler les modifications" position="bottom">
+   <Button variant="ghost" className="dialog-cancel-btn" onClick={cancelEditing}>
                   <X size={15} /> Annuler
-                </button>
-                <button className="dialog-save-btn" onClick={saveEditing} disabled={isSaving} title="Enregistrer les modifications">
+                </Button>
+ </Tooltip>
+ <Tooltip content="Enregistrer les modifications" position="bottom">
+   <Button variant="ghost" className="dialog-save-btn" onClick={saveEditing} disabled={isSaving}>
                   <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                </button>
+                </Button>
+ </Tooltip>
               </>
             ) : (
               <>
-                <button className="dialog-edit-btn" onClick={startEditing} title="Modifier les informations de l'affaire">
+ <Tooltip content="Modifier les informations de l'affaire" position="bottom">
+   <Button variant="ghost" className="dialog-edit-btn" onClick={startEditing}>
                   <Edit3 size={15} /> Modifier
-                </button>
-                <button className="dialog-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
+                </Button>
+ </Tooltip>
+                <Button variant="ghost" className="dialog-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
                   {hasBLImports ? <><RefreshCw size={15} /> MAJ BL</> : <><FileText size={15} /> Import BL</>}
-                </button>
+                </Button>
               </>
             )}
-            <Tooltip content={isEditing ? "Annuler" : "Fermer"}><button className="dialog-close" onClick={handleClose}>
+            <Tooltip content={isEditing ? "Annuler" : "Fermer"}><Button variant="ghost" className="dialog-close" onClick={handleClose}>
               <X size={20} />
-            </button></Tooltip>
+            </Button></Tooltip>
           </div>
         </div>
         <div className="dialog-body">

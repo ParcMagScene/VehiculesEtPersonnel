@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import logger from "../../utils/logger";
 import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
 import api from '../../utils/api';
-import { Button, Dialog, FormField, Input, Select, InlineAlert } from '@/design-system';
+import { Button, Dialog, FormField, Input, Select, InlineAlert , Tooltip} from '@/design-system';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import { useToast } from '../../hooks/useToast';
@@ -292,7 +292,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     }
   }, [formData.lat, formData.lng, formData.name]);
 
-  // Calculer la distance et le temps depuis Mag Scène
+  // Calculer la distance et le temps depuis le siège
   useEffect(() => {
     if (!formData.lat || !formData.lng || !companyAddress) return;
 
@@ -403,21 +403,23 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         handleSafeClose();
       }
     }}>
-      <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="location-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="location-dialog-header">
           <h2>
             <MapPin size={24} />
             {location ? 'Modifier le lieu' : 'Nouveau lieu'}
             {formData.lat && formData.lng && (
-              <span className="gps-badge" title="Position GPS enregistrée">
+ <Tooltip content="Position GPS enregistrée" position="bottom">
+   <span className="gps-badge">
                 <Navigation size={16} />
                 GPS
               </span>
+ </Tooltip>
             )}
           </h2>
-          <button className="close-button" onClick={handleSafeClose}>
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -496,7 +498,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                 <div className="route-info">
                   <h3>
                     <Navigation size={18} />
-                    Depuis Mag Scène
+                    Depuis le siège
                   </h3>
                   {isLoadingRoute ? (
                     <div className="loading">Calcul en cours...</div>

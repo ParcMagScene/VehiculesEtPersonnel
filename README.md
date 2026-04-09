@@ -1,6 +1,8 @@
 # 🚛 eM@g — Gestion de Flotte, Personnel & Équipements
 
-Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour Mag Scène (entreprise de prestations événementielles à La Réunion).
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+Application web de **gestion de flotte de véhicules, de planning du personnel et de catalogue d'équipements** pour les entreprises de prestations événementielles et techniques.
 
 ## ✨ Fonctionnalités
 
@@ -61,7 +63,7 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 - **Écrans & Playlists** : Configuration d'écrans, playlists de contenu, médias, messages, templates
 - **Apparence** : Règles de couleurs dynamiques, icônes de localisation, messages de bienvenue
 - **Sonos** : Contrôle Sonos intégré (now playing)
-- **Alarme SNCF** : Alarme sonore à l'échéance des tâches + bouton test admin
+- **Alarme sonore** : Alarme à l'échéance des tâches + bouton test admin
 - **Sneaky** : Affichage furtif de GIFs
 - **Prévisualisation** : Aperçu temps réel des écrans TV, sidebar tâches avec nettoyage automatique des titres
 - **Client TV** : Client web dédié pour écrans d'affichage
@@ -120,31 +122,25 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 ```bash
 # Cloner le dépôt
 git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
-cd "eM@g"
+cd VehiculesEtPersonnel
 
-# Installer les dépendances frontend
+# Installer toutes les dépendances (monorepo)
 npm install
-
-# Installer les dépendances backend
-cd server && npm install && cd ..
 ```
 
 ### Configuration
 
 ```bash
 # Créer le fichier d'environnement backend
-cp server/.env.example server/.env
-# Éditer server/.env avec votre JWT_SECRET
+cp apps/api/.env.example apps/api/.env
+# Éditer apps/api/.env avec votre JWT_SECRET
 ```
 
 ### Lancement en développement
 
 ```bash
-# Terminal 1 — Backend (port 3003)
-cd server && npm start
-
-# Terminal 2 — Frontend (port 5174)
-npm run dev
+# Lance backend (port 3003) + frontend (port 5174)
+npm run dev:start
 ```
 
 - **Frontend** : http://localhost:5174
@@ -192,15 +188,20 @@ eM@g/
 │   └── utils/
 │       ├── api/            # Client API modulaire (15 modules, ~375 méthodes)
 │       └── ...             # dates, indexedDB, pdfParser, deepLinking
-├── server/
-│   ├── server.js           # Point d'entrée Express (~317 lignes)
-│   ├── database.js         # SQLite 92 tables + 15 index perf (~2855 lignes)
-│   ├── config/             # Helmet, CORS, rate limiters
-│   ├── middleware/          # Auth JWT, authorize, sanitize, upload, errorHandler
-│   ├── 18 fichiers routes  # ~19 593 lignes de routes API
-│   ├── cache.js            # Cache LRU/TTL (5 instances)
-│   ├── emailService.js     # Service d'envoi d'emails
-│   └── migrations/         # 17 fichiers SQL
+├── apps/
+│   ├── api/                # ══ BACKEND EXPRESS ══
+│   │   ├── server.js       # Point d'entrée Express (health endpoint, middlewares)
+│   │   ├── database.js     # SQLite 92 tables + 15 index perf
+│   │   ├── schemas/        # Validation Zod (imports CSV/JSON)
+│   │   ├── config/         # Helmet, CORS, rate limiters
+│   │   ├── middleware/     # Auth JWT, authorize, sanitize, upload, errorHandler
+│   │   ├── *Routes.js      # 18+ fichiers de routes API
+│   │   ├── cache.js        # Cache LRU/TTL (5 instances)
+│   │   ├── emailService.js # Service d'envoi d'emails
+│   │   └── migrations/     # 17 fichiers SQL
+│   ├── web/                # ══ FRONTEND REACT ══
+│   └── tv-client/          # ══ CLIENT TV ══
+├── tests/                  # 56 tests (unit, schemas Zod, DB init)
 ├── public/
 │   ├── depot-zones.json    # Plan dépôt 1 (Événementiel)
 │   ├── depot2-zones.json   # Plan dépôt 2 (Structure)
@@ -214,8 +215,8 @@ eM@g/
 ## 🌐 Accès
 
 ### Production
-- **Frontend** : http://magsav.duckdns.org:4173
-- **Backend** : http://magsav.duckdns.org:3002
+- **Frontend** : http://votre-serveur:4173
+- **Backend** : http://votre-serveur:3002
 
 ### Développement
 - **Frontend** : http://localhost:5174
@@ -243,8 +244,9 @@ npm run preview      # Prévisualiser le build
 npm run deploy       # Build + déploiement PM2
 npm run lint         # Vérification du code (ESLint)
 npm run dev:start    # Démarre backend + frontend en dev
+npm test             # Lance les 56 tests (unit + schemas + DB)
 ```
 
 ---
 
-**Développé pour Mag Scène — La Réunion**
+**Développé avec ❤️ — Open Source sous [licence MIT](LICENSE)**

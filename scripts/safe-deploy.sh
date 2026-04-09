@@ -65,11 +65,22 @@ pm2 restart vehicules 2>/dev/null && echo "   ✅ Frontend redémarré" || echo 
 echo "🔄 Redémarrage du serveur backend..."
 pm2 restart vehicules-backend 2>/dev/null && echo "   ✅ Backend redémarré" || echo "   ⚠️  PM2 vehicules-backend non trouvé"
 
-# 6. Nettoyage
+# 6. Smoke test — vérifier que l'API répond
+echo ""
+echo "🩺 Smoke test santé API..."
+sleep 2
+HEALTH=$(curl -sf http://localhost:3002/api/health 2>/dev/null || echo '{"ok":false}')
+if echo "$HEALTH" | grep -q '"ok":true'; then
+  echo "   ✅ API opérationnelle"
+else
+  echo "   ⚠️  L'API ne répond pas correctement — vérifiez pm2 logs vehicules-backend"
+fi
+
+# 7. Nettoyage
 rm -rf "$BACKUP_DIR"
 
 echo ""
 echo "✅ Déploiement terminé avec succès !"
-echo "   Frontend: http://magsav.duckdns.org:4173/"
-echo "   Backend:  http://magsav.duckdns.org:3002/"
+echo "   Frontend: http://localhost:4173/"
+echo "   Backend:  http://localhost:3002/"
 pm2 list

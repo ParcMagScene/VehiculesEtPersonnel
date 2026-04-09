@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Plus, Edit2, Trash2, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import LocationDialog from '../vehicles/LocationDialog';
-import { Button, Dialog, Input, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
+import { Button, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
 import { useToast } from '../../hooks/useToast';
 
@@ -16,7 +17,7 @@ function LocationsTab({ currentUser }) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [companyAddress, setCompanyAddress] = useState('');
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const loadLocations = useCallback(async () => {
     try {
@@ -39,7 +40,7 @@ function LocationsTab({ currentUser }) {
   }, [loadLocations]);
 
   const allLocations = companyAddress
-    ? [{ id: 'mag-scene', name: 'Mag Scène', address: companyAddress, type: 'Dépôt', isCompanyLocation: true }, ...locations]
+    ? [{ id: 'company-hq', name: 'Siège', address: companyAddress, type: 'Dépôt', isCompanyLocation: true }, ...locations]
     : locations;
 
   const filtered = allLocations.filter(loc =>
@@ -59,7 +60,7 @@ function LocationsTab({ currentUser }) {
   };
 
   const handleDelete = (loc) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer le lieu',
       message: `Voulez-vous vraiment supprimer « ${loc.name} » ?`,
       onConfirm: async () => {
@@ -70,9 +71,7 @@ function LocationsTab({ currentUser }) {
         } catch (err) {
           toast.error(`Erreur: ${err.message}`);
         }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null),
     });
   };
 
@@ -84,21 +83,14 @@ function LocationsTab({ currentUser }) {
     <>
       {/* Toolbar */}
       <div className="annuaire-toolbar">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un lieu..." />
-        <div className="annuaire-toolbar-actions">
-          <Button variant="primary" onClick={() => { setEditingLocation(null); setShowDialog(true); }}>
-            <Plus size={15} /> Nouveau lieu
-          </Button>
+        <div className="annuaire-toolbar-actions-row">
+          <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un lieu..." />
+          <div className="annuaire-toolbar-actions">
+            <Button variant="primary" onClick={() => { setEditingLocation(null); setShowDialog(true); }}>
+              <Plus size={15} /> Nouveau lieu
+            </Button>
+          </div>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="annuaire-header-stats">
-        <span className="stat-badge location">{allLocations.length} lieux</span>
-        {LOCATION_TYPES.map(t => {
-          const count = grouped[t]?.length || 0;
-          return count > 0 ? <span key={t} className="stat-badge">{count} {t.toLowerCase()}{count > 1 ? 's' : ''}</span> : null;
-        })}
       </div>
 
       {/* Content */}
@@ -147,7 +139,7 @@ function LocationsTab({ currentUser }) {
                         <td>
                           {!loc.isCompanyLocation && (
                             <div className="actions-cell">
-                              <Tooltip content="Modifier"><button onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></button></Tooltip>
+                              <Tooltip content="Modifier"><Button variant="ghost" onClick={() => { setEditingLocation(loc); setShowDialog(true); }}><Edit2 size={14} /></Button></Tooltip>
                               {currentUser?.isAdmin && (
                                 <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(loc)}><Trash2 size={14} /></Button></Tooltip>
                               )}
@@ -176,17 +168,7 @@ function LocationsTab({ currentUser }) {
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </>
   );
 }

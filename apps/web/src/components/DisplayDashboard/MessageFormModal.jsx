@@ -1,5 +1,5 @@
 // MessageFormModal — Création / édition d'un message d'affichage
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { MessageSquare, Save } from 'lucide-react';
 import { Button, FormField, ModalLayout, Input, Textarea, Select } from '@/design-system';
 import { useToast } from '../../hooks/useToast';

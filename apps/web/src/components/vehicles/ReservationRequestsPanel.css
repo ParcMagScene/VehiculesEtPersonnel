@@ -1,7 +1,7 @@
 .reservation-requests-panel {
   padding: 0;
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 2px 4px var(--shadow-sm);
   margin: 20px 0;
   display: flex;
@@ -14,7 +14,7 @@
   margin: 0;
   padding: 16px 20px 8px;
   color: var(--theme-text-primary);
-  font-size: 24px;
+  font-size: var(--font-2xl);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -32,10 +32,10 @@
   padding: 8px 16px;
   border: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .requests-filters button:hover {
@@ -59,7 +59,7 @@
 
 .request-card {
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 16px;
   background: var(--theme-bg-page);
   transition: all 0.2s;
@@ -93,14 +93,14 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  font-size: 16px;
+  font-size: var(--font-md);
   color: var(--theme-text-primary);
 }
 
 .request-status {
   padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -134,13 +134,13 @@
 }
 
 .request-detail-label {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   font-weight: 500;
 }
 
 .request-detail-value {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-primary);
 }
 
@@ -148,8 +148,8 @@
   margin-top: 12px;
   padding: 12px;
   background: var(--theme-bg-card);
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   color: var(--theme-text-subtle);
 }
 
@@ -167,7 +167,7 @@
   background: var(--theme-success-alt);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 600;
   display: flex;
@@ -187,7 +187,7 @@
   background: var(--theme-danger);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 600;
   display: flex;
@@ -206,8 +206,8 @@
   padding: 12px;
   background: var(--theme-danger-bg);
   border-left: 3px solid var(--theme-danger);
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   color: var(--theme-danger-text);
 }
 
@@ -220,7 +220,7 @@
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--theme-border);
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   display: flex;
   justify-content: space-between;
@@ -230,7 +230,7 @@
   text-align: center;
   padding: 40px;
   color: var(--theme-text-muted);
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 
 .reject-dialog-overlay {
@@ -248,7 +248,7 @@
 
 .reject-dialog {
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 24px;
   max-width: 500px;
   width: 90%;
@@ -264,9 +264,9 @@
   min-height: 100px;
   padding: 12px;
   border: 1px solid var(--theme-border-medium);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--font-base);
   resize: vertical;
 }
 
@@ -280,7 +280,7 @@
   flex: 1;
   padding: 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-weight: 600;
 }

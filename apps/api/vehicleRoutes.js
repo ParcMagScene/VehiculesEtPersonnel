@@ -89,22 +89,22 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
       vehicle.status || 'available',
       vehicle.notes || '',
       vehicle.photo || '',
-      vehicle.lastMaintenanceDate || null,
-      vehicle.lastMaintenanceKm || null,
-      vehicle.controlesTechniques || null,
+      vehicle.last_maintenance_date || null,
+      vehicle.last_maintenance_km || null,
+      vehicle.controles_techniques || null,
       vehicle.kilometrage || null,
-      vehicle.mileageHistory || null,
+      vehicle.mileage_history || null,
       vehicle.assigned_to || null,
       vehicle.pupitre || null,
-      vehicle.isInsured ? 1 : 0,
-      vehicle.insuranceCompany || '',
-      vehicle.insuranceNumber || '',
-      vehicle.insuranceExpiry || null,
-      vehicle.isLocation ? 1 : 0,
-      vehicle.orderIndex || 0,
+      vehicle.is_insured ? 1 : 0,
+      vehicle.insurance_company || '',
+      vehicle.insurance_number || '',
+      vehicle.insurance_expiry || null,
+      vehicle.is_location ? 1 : 0,
+      vehicle.order_index || 0,
       vehicle.latitude || null,
       vehicle.longitude || null,
-      vehicle.locationUpdatedAt || null,
+      vehicle.location_updated_at || null,
       req.user.id,
       req.user.id
     );
@@ -112,7 +112,8 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
     addToHistory('vehicle', vehicle.id, 'created', vehicle, req.user.id, req.user.name);
     invalidateEntity('vehicles');
     
-    res.json(vehicle);
+    const saved = db.prepare('SELECT * FROM vehicles WHERE id = ?').get(vehicle.id);
+    res.json(saved);
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
@@ -122,6 +123,19 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
 app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
     const vehicle = req.body;
+
+    // Validation kilométrage : doit être >= au kilométrage actuel
+    if (vehicle.kilometrage != null) {
+      const current = db.prepare('SELECT kilometrage FROM vehicles WHERE id = ?').get(req.params.id);
+      const currentKm = current?.kilometrage || 0;
+      const newKm = parseInt(vehicle.kilometrage) || 0;
+      if (newKm > 0 && currentKm > 0 && newKm < currentKm) {
+        return res.status(400).json({
+          error: `Le kilométrage (${newKm} km) ne peut pas être inférieur au kilométrage actuel (${currentKm} km)`
+        });
+      }
+    }
+
     const stmt = db.prepare(`
       UPDATE vehicles SET name = ?, type = ?, category = ?, registration = ?, brand = ?, model = ?, year = ?,
         color = ?, vin = ?, status = ?, notes = ?, photo = ?,
@@ -146,22 +160,22 @@ app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
       vehicle.status || 'available',
       vehicle.notes || '',
       vehicle.photo || '',
-      vehicle.lastMaintenanceDate || null,
-      vehicle.lastMaintenanceKm || null,
-      vehicle.controlesTechniques || null,
+      vehicle.last_maintenance_date || null,
+      vehicle.last_maintenance_km || null,
+      vehicle.controles_techniques || null,
       vehicle.kilometrage || null,
-      vehicle.mileageHistory || null,
+      vehicle.mileage_history || null,
       vehicle.assigned_to || null,
       vehicle.pupitre || null,
-      vehicle.isInsured ? 1 : 0,
-      vehicle.insuranceCompany || '',
-      vehicle.insuranceNumber || '',
-      vehicle.insuranceExpiry || null,
-      vehicle.isLocation ? 1 : 0,
-      vehicle.orderIndex || 0,
+      vehicle.is_insured ? 1 : 0,
+      vehicle.insurance_company || '',
+      vehicle.insurance_number || '',
+      vehicle.insurance_expiry || null,
+      vehicle.is_location ? 1 : 0,
+      vehicle.order_index || 0,
       vehicle.latitude || null,
       vehicle.longitude || null,
-      vehicle.locationUpdatedAt || null,
+      vehicle.location_updated_at || null,
       req.user.id,
       req.params.id
     );
@@ -169,7 +183,8 @@ app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
     addToHistory('vehicle', req.params.id, 'updated', vehicle, req.user.id, req.user.name);
     invalidateEntity('vehicles');
     
-    res.json(vehicle);
+    const saved = db.prepare('SELECT * FROM vehicles WHERE id = ?').get(req.params.id);
+    res.json(saved);
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
@@ -507,6 +522,27 @@ app.put('/api/reservation-requests/:id/approve', authenticateToken, (req, res) =
     
     if (!request) {
       return res.status(404).json({ error: 'Demande introuvable' });
+    }
+
+    // [AUDIT FIX HIGH-3] Vérifier les chevauchements avec les réservations existantes
+    const overlapStmt = db.prepare(`
+      SELECT id, start_date, end_date, client_name 
+      FROM reservations 
+      WHERE vehicle_id = ? 
+        AND start_date <= ? AND end_date >= ?
+    `);
+    const conflicts = overlapStmt.all(request.vehicle_id, request.end_date, request.start_date);
+    
+    if (conflicts.length > 0) {
+      return res.status(409).json({
+        error: 'Ce véhicule est déjà réservé sur cette période',
+        conflicts: conflicts.map(c => ({
+          id: c.id,
+          start_date: c.start_date,
+          end_date: c.end_date,
+          client_name: c.client_name
+        }))
+      });
     }
 
     // Créer la réservation

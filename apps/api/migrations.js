@@ -90,7 +90,7 @@ try {
     quantity REAL DEFAULT 1,
     priority TEXT DEFAULT 'normal' CHECK(priority IN ('low','normal','high','urgent')),
     affaire_id TEXT,
-    destination TEXT DEFAULT 'Stock Mag Scène',
+    destination TEXT DEFAULT 'Stock',
     destination_other TEXT,
     status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected','ordered')),
     order_id INTEGER,

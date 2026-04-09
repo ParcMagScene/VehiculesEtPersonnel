@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import {
-  X, Save, Calendar, Clock, User, Briefcase, AlertTriangle,
-  ChevronDown, ChevronUp, Plus, Minus, Check, Info, Trash2, Edit2, Users, Search,
+  X, Save, Calendar, Clock, User, Briefcase, ChevronDown, Plus, Check, Info, Trash2, Edit2, Users, Search,
 } from 'lucide-react';
-import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDay, addDays } from 'date-fns';
+import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
-import { Dialog, Input, Textarea, Spinner, InlineAlert } from '@/design-system';
+import { Button, Dialog, InlineAlert, Input, Spinner, Textarea } from '@/design-system';
 import './AssignmentDialog.css';
 
 const POSITION_CATEGORIES = [
@@ -553,7 +552,6 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         ? `${selectedAffaire.numeroAffaire || ''} — ${selectedAffaire.titre || selectedAffaire.eventName || selectedAffaire.client || 'Mission'}`.trim()
         : selectedPositions.length > 0 ? selectedPositions.join(', ') : `Mission ${format(parseISO(startDate), 'd MMM yyyy', { locale: fr })}`;
 
-
       // Sérialiser les jours OFF (on ne stocke que les jours explicitement OFF)
       const offDays = Object.entries(dayStates)
         .filter(([, v]) => v === 'off')
@@ -579,7 +577,6 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
       };
 
       let mission, assignment;
-
 
       if (isEdit) {
         // ── Mode édition : mettre à jour ──
@@ -671,7 +668,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   };
 
   // Raccourci pour la catégorie d'une compétence
-  const getSkillCategory = (skillId) => {
+  const _getSkillCategory = (skillId) => {
     const skill = (skills || []).find(s => s.id === parseInt(skillId));
     if (!skill) return null;
     return SKILL_CATEGORIES.find(c => c.value === skill.category);
@@ -690,7 +687,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
   const dialogContent = (
     <div className="assignment-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
-      <div className="assignment-dialog" onClick={e => e.stopPropagation()}>
+      <div className="assignment-dialog" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Affectation">
         {/* Header */}
         <div className="assignment-dialog-header">
           <div className="assignment-dialog-title">
@@ -699,17 +696,16 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
           </div>
           <div className="assignment-dialog-header-actions">
             {isEdit && onDelete && (
-              <button
-                className="asd-btn-header-delete"
+              <Button variant="ghost"                 className="asd-btn-header-delete"
                 onClick={() => onDelete(existingMission)}
                 title="Supprimer cette mission"
               >
                 <Trash2 size={16} />
-              </button>
+              </Button>
             )}
-            <button className="assignment-dialog-close" onClick={handleSafeClose}>
+            <Button variant="ghost" className="assignment-dialog-close" onClick={handleSafeClose} aria-label="Fermer">
               <X size={18} />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -796,13 +792,12 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                       <span className={`asd-person-type type-${p.type}`}>
                         {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
                       </span>
-                      <button
-                        className="asd-person-remove"
+                      <Button variant="ghost"                         className="asd-person-remove"
                         onClick={() => setAdditionalPersonIds(prev => prev.filter(id => id !== p.id))}
                         title="Retirer"
                       >
                         <X size={12} />
-                      </button>
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -810,15 +805,14 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
               {/* Bouton / dropdown d'ajout de personnel supplémentaire */}
               <div className="asd-add-person-wrapper" ref={addPersonContainerRef}>
-                <button
-                  className="asd-btn-add-person"
+                <Button variant="ghost"                   className="asd-btn-add-person"
                   onClick={() => { setShowAddPersonDropdown(!showAddPersonDropdown); setAddPersonSearch(''); }}
                   title="Ajouter un personnel à cette mission"
                 >
                   <Users size={14} />
                   <Plus size={12} />
                   <span>Ajouter personnel</span>
-                </button>
+                </Button>
                 {showAddPersonDropdown && (
                   <div className="asd-add-person-dropdown">
                     <Input
@@ -878,9 +872,9 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                       </span>
                     )}
                   </div>
-                  <button className="asd-affaire-remove" onClick={() => setSelectedAffaire(null)}>
+                  <Button variant="ghost" className="asd-affaire-remove" onClick={() => setSelectedAffaire(null)}>
                     <X size={14} />
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="asd-affaire-dropdown-wrapper">
@@ -965,9 +959,9 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 <span className="asd-day-count">{onDays.length}/{rangeDays.length} jour(s) ON</span>
               </div>
               <div className="asd-days-actions">
-                <button className="asd-days-btn" onClick={() => setAllDays('on')}>Tous ON</button>
-                <button className="asd-days-btn" onClick={() => setAllDays('off')}>Tous OFF</button>
-                <button className="asd-days-btn" onClick={() => {
+                <Button variant="ghost" className="asd-days-btn" onClick={() => setAllDays('on')}>Tous ON</Button>
+                <Button variant="ghost" className="asd-days-btn" onClick={() => setAllDays('off')}>Tous OFF</Button>
+                <Button variant="ghost" className="asd-days-btn" onClick={() => {
                   // Toggle weekends OFF
                   setDayStates(prev => {
                     const next = { ...prev };
@@ -977,7 +971,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                     });
                     return next;
                   });
-                }}>Toggle W-E</button>
+                }}>Toggle W-E</Button>
               </div>
               <div className="asd-days-grid">
                 {rangeDays.map(d => {
@@ -1072,15 +1066,14 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                     { value: 'option', label: 'Option', color: '#f59e0b' },
                     { value: 'proposed', label: 'Proposé', color: 'var(--theme-text-gray)' },
                   ].map(opt => (
-                    <button
-                      key={opt.value}
+                    <Button variant="ghost"                       key={opt.value}
                       className={`asd-status-btn ${status === opt.value ? 'active' : ''}`}
                       style={{ '--btn-color': opt.color }}
                       onClick={() => setStatus(opt.value)}
                     >
                       {status === opt.value && <Check size={12} />}
                       {opt.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -1107,11 +1100,10 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
 
         {/* Footer */}
         <div className="assignment-dialog-footer">
-          <button className="asd-btn asd-btn-cancel" onClick={handleSafeClose} disabled={saving}>
+          <Button variant="ghost" className="asd-btn asd-btn-cancel" onClick={handleSafeClose} disabled={saving}>
             Annuler
-          </button>
-          <button
-            className="asd-btn asd-btn-save"
+          </Button>
+          <Button variant="ghost"             className="asd-btn asd-btn-save"
             onClick={handleSave}
             disabled={saving || success}
           >
@@ -1126,7 +1118,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 {isEdit ? 'Enregistrer' : additionalPersonIds.length > 0 ? `Créer ${1 + additionalPersonIds.length} affectations` : "Créer l'affectation"}
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

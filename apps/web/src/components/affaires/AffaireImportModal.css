@@ -21,7 +21,7 @@
 
 .affaire-modal-content {
   background: var(--theme-bg-page);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
@@ -53,7 +53,7 @@
 
 .affaire-modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   font-weight: 600;
   color: var(--modal-header-color);
 }
@@ -61,7 +61,7 @@
 .close-button {
   background: var(--close-btn-bg);
   border: 1px solid var(--close-btn-border);
-  font-size: 2rem;
+  font-size: var(--font-3xl);
   color: var(--close-btn-color);
   cursor: pointer;
   padding: 0;
@@ -97,7 +97,7 @@
   color: var(--btn-primary-color);
   border: none;
   border-radius: var(--btn-radius);
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
@@ -117,7 +117,7 @@
 /* Zone de drop */
 .drop-zone {
   border: 3px dashed var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 60px 40px;
   text-align: center;
   background: var(--theme-bg-page);
@@ -144,14 +144,14 @@
 }
 
 .drop-zone-text {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   color: var(--theme-text-subtle);
   margin: 0;
 }
 
 .drop-zone-or {
   color: var(--theme-text-muted);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   margin: 8px 0;
 }
 
@@ -161,7 +161,7 @@
   border: 2px solid var(--theme-primary);
   color: var(--theme-primary);
   border-radius: var(--btn-radius);
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
@@ -188,7 +188,7 @@
   color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--btn-radius);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
@@ -205,7 +205,7 @@
   color: var(--btn-danger-filled-color);
   border: none;
   border-radius: var(--btn-radius);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   cursor: pointer;
   transition: var(--btn-transition);
 }
@@ -219,7 +219,7 @@
   margin: 16px 0;
   padding: 16px;
   background: var(--theme-bg-page);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .additional-bls-list h4 {
@@ -233,13 +233,13 @@
   height: 50px;
   border: 4px solid var(--theme-border-medium);
   border-top-color: var(--theme-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.8s linear infinite;
 }
 
 .processing-indicator p {
   color: var(--theme-text-gray);
-  font-size: 1rem;
+  font-size: var(--font-md);
   margin: 0;
 }
 
@@ -248,7 +248,7 @@
   padding: 20px;
   background: var(--theme-warning-bg);
   border: 2px solid var(--theme-warning);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   text-align: center;
 }
 
@@ -281,7 +281,7 @@
   border: 1px solid var(--theme-success-alt);
   color: var(--theme-success-text);
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 500;
   text-align: center;
 }
@@ -295,7 +295,7 @@
 .affaire-import-modal .form-group label {
   font-weight: 600;
   color: var(--theme-text-muted);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -305,8 +305,8 @@
 .affaire-import-modal .form-group select {
   padding: 8px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 7px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-family: inherit;
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
@@ -397,7 +397,7 @@
   }
 
   .affaire-modal-header h2 {
-    font-size: 1.25rem;
+    font-size: var(--font-xl);
   }
 
   .affaire-modal-body {
@@ -425,7 +425,7 @@
   padding: 10px 14px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 16px;
 }
 
@@ -440,14 +440,14 @@
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: var(--radius-2xl);
+  font-size: var(--font-sm);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .doc-confidence {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
 }
 
@@ -472,7 +472,7 @@
   width: 100%;
   height: 6px;
   background: var(--theme-border);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   margin-top: 10px;
   overflow: hidden;
 }
@@ -480,7 +480,7 @@
 .batch-progress-fill {
   height: 100%;
   background: var(--btn-primary-bg);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   transition: width 0.3s ease;
 }
 
@@ -499,16 +499,16 @@
 
 .batch-results-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--font-md);
   color: var(--theme-text-primary);
 }
 
 .btn-reset-batch {
   background: none;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--font-base);
   cursor: pointer;
   color: var(--theme-text-secondary);
   transition: all 0.15s;
@@ -532,7 +532,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
   cursor: pointer;
@@ -567,12 +567,12 @@
 }
 
 .batch-result-icon {
-  font-size: 16px;
+  font-size: var(--font-md);
   flex-shrink: 0;
 }
 
 .batch-result-name {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-primary);
   overflow: hidden;
@@ -588,21 +588,21 @@
 }
 
 .batch-result-fields {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
 }
 
 .batch-result-affaire {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--btn-primary-bg);
   background: var(--primary-tint-subtle);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .batch-result-error {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-danger);
 }
 
@@ -611,7 +611,7 @@
   width: 100%;
   height: 350px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   margin-bottom: 16px;
   animation: aiFadeIn 0.2s ease-out;

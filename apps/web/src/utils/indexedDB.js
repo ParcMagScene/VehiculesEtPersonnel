@@ -212,3 +212,19 @@ export const clearAuthFromIDB = async () => {
     });
   } catch { /* silencieux */ }
 };
+
+// [AUDIT FIX MED-F4] Vider tous les stores au logout (PII: clients, personnel, conducteurs)
+export const clearAllIndexedDB = async () => {
+  try {
+    const db = await openDB();
+    const storeNames = Object.values(STORES);
+    const tx = db.transaction(storeNames, 'readwrite');
+    for (const name of storeNames) {
+      tx.objectStore(name).clear();
+    }
+    return new Promise((resolve) => {
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); resolve(); };
+    });
+  } catch { /* silencieux — non bloquant au logout */ }
+};

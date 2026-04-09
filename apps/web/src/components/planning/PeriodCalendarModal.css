@@ -16,7 +16,7 @@
 
 .pcm-modal {
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 420px;
   max-width: 95vw;
   max-height: 90vh;
@@ -48,16 +48,16 @@
 }
 
 .pcm-header-emoji {
-  font-size: 24px;
+  font-size: var(--font-2xl);
 }
 
 .pcm-header-title {
   font-weight: 700;
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 
 .pcm-header-person {
-  font-size: 12px;
+  font-size: var(--font-sm);
   opacity: 0.85;
 }
 
@@ -67,7 +67,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--close-btn-hover-bg);
   background: var(--close-btn-bg);
   color: var(--theme-text-inverse);
@@ -113,7 +113,7 @@
   height: 32px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   color: var(--theme-text-secondary);
   transition: all 0.15s;
@@ -132,7 +132,7 @@
 
 .pcm-cal-dayname {
   text-align: center;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-muted);
   padding: 4px 0;
@@ -148,8 +148,8 @@
   border: none;
   background: none;
   cursor: pointer;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-dark);
   transition: all 0.12s;
@@ -183,18 +183,18 @@
   background: var(--range-color, var(--theme-info));
   color: var(--theme-text-inverse);
   font-weight: 700;
-  border-radius: 8px 0 0 8px;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
 .pcm-cal-day.range-end {
   background: var(--range-color, var(--theme-info));
   color: var(--theme-text-inverse);
   font-weight: 700;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .pcm-cal-day.range-start.range-end {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 /* Périodes déjà enregistrées */
@@ -212,7 +212,7 @@
   transform: translateX(-50%);
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--range-color, var(--theme-info));
   opacity: 0.7;
 }
@@ -244,7 +244,7 @@
 }
 
 .pcm-option-row > label {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-secondary);
   min-width: 44px;
@@ -253,7 +253,7 @@
 .pcm-period-toggle {
   display: flex;
   background: var(--theme-border-light);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid var(--theme-border);
 }
@@ -262,7 +262,7 @@
   padding: 4px 10px;
   border: none;
   background: none;
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -275,13 +275,13 @@
 }
 
 .pcm-date-display {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
   margin-left: auto;
 }
 
 .pcm-days-count {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 700;
   text-align: center;
   padding: 6px 0;
@@ -294,7 +294,7 @@
 }
 
 .pcm-reason label {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-secondary);
 }
@@ -302,8 +302,8 @@
 .pcm-reason input {
   padding: 8px 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   outline: none;
   transition: border-color 0.15s;
 }
@@ -320,8 +320,8 @@
   padding: 8px 12px;
   background: var(--theme-warning-bg);
   border: 1px solid var(--theme-warning-border);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-warning-text);
 }
@@ -333,8 +333,8 @@
   padding: 8px 12px;
   background: var(--theme-info-bg);
   border: 1px solid var(--theme-info-border);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-info-dark);
 }
@@ -346,8 +346,8 @@
   padding: 8px 12px;
   background: var(--theme-danger-bg);
   border: 1px solid var(--btn-danger-hover-bg);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-danger-dark);
 }
@@ -360,8 +360,8 @@
   margin: 0 20px 12px;
   background: var(--theme-success-bg);
   border: 1px solid var(--theme-success-border);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-success-text-alt);
   animation: fadeIn 0.2s ease;
@@ -381,8 +381,8 @@
   padding: 8px 16px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -400,8 +400,8 @@
   gap: 6px;
   padding: 8px 18px;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-text-inverse);
   cursor: pointer;
@@ -418,7 +418,7 @@
 }
 
 /* ── Mobile ── */
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .pcm-modal {
     width: 100%;
     max-width: 100%;
@@ -445,10 +445,10 @@
 .pcm-time-input {
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   width: 110px;
   cursor: pointer;
@@ -462,7 +462,7 @@
 
 .pcm-time-sep {
   color: var(--theme-text-tertiary);
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 
 /* Pro / Perso toggle */
@@ -481,10 +481,10 @@
   gap: 5px;
   padding: 6px 14px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -515,7 +515,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   cursor: pointer;
 }
@@ -528,7 +528,7 @@
 }
 
 .pcm-google-warn {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-warning-text, var(--theme-warning));
   margin-left: auto;
 }

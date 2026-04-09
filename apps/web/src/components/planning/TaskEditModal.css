@@ -19,7 +19,7 @@
 
 .tem-modal {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 480px;
   max-height: 85vh;
@@ -53,7 +53,7 @@
   color: var(--theme-text-secondary);
   cursor: pointer;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
 .tem-close:hover {
@@ -75,8 +75,8 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.75rem;
+  border-radius: var(--radius-md-lg);
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 .tem-badge.affaire {
@@ -132,7 +132,7 @@
   width: 100%;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--theme-border-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-secondary);
   color: var(--theme-text-primary);
   font-size: 0.88rem;
@@ -160,7 +160,7 @@
   gap: 8px;
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--theme-border-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-secondary);
 }
 
@@ -180,7 +180,7 @@
   width: 22px;
   height: 22px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-muted);
   cursor: pointer;
@@ -212,10 +212,10 @@
   width: 100%;
   padding: 0.5rem 0.6rem 0.5rem 2rem;
   border: 1px solid var(--theme-border-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-secondary);
   color: var(--theme-text-primary);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-family: inherit;
 }
 .tem-affaire-search:focus {
@@ -233,7 +233,7 @@
   overflow-y: auto;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px var(--shadow-modal);
   z-index: var(--z-tooltip);
   padding: 4px;
@@ -242,7 +242,7 @@
 .tem-affaire-empty {
   padding: 0.75rem;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
 }
 
@@ -253,7 +253,7 @@
   width: 100%;
   padding: 0.4rem 0.5rem;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.82rem;
@@ -281,7 +281,7 @@
 }
 
 .tem-affaire-opt-titre {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
   max-width: 120px;
   overflow: hidden;
@@ -304,7 +304,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: #4285f415;
   color: var(--theme-info);
   border: 1px solid #4285f430;
@@ -331,8 +331,8 @@
   gap: 6px;
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -356,11 +356,11 @@
   background: var(--theme-bg-hover);
 }
 
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .tem-modal {
     max-width: 100%;
     max-height: 95vh;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
   .tem-row {
     grid-template-columns: 1fr;

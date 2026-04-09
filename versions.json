@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Index centralisé de toutes les versions du projet eM@g",
+  "updated": "2026-04-08",
+  "application": {
+    "name": "eM@g",
+    "version": "2.1.0",
+    "source": "package.json"
+  },
+  "packages": {
+    "root": {
+      "version": "2.1.0",
+      "path": "package.json"
+    },
+    "api": {
+      "version": "1.0.0",
+      "path": "apps/api/package.json"
+    },
+    "web": {
+      "version": "2.0.0",
+      "path": "apps/web/package.json"
+    }
+  },
+  "documentation": {
+    "version": "1.0.0",
+    "index": "docs/docs-index.json",
+    "totalFiles": 40
+  },
+  "prompts": {
+    "version": "1.0.0",
+    "index": "prompts/prompts-index.json",
+    "totalPrompts": 9
+  },
+  "changelogs": {
+    "global": "CHANGELOG.md",
+    "api": "docs/06-Changelog/CHANGELOG_API.md",
+    "db": "docs/06-Changelog/CHANGELOG_DB.md",
+    "ui": "docs/06-Changelog/CHANGELOG_UI.md",
+    "docs": "docs/06-Changelog/CHANGELOG_DOCS.md",
+    "prompts": "prompts/CHANGELOG_PROMPTS.md",
+    "security": "CHANGELOG_SECURITY.md"
+  },
+  "modules": {
+    "auth": { "version": "2.0.0", "docs": ["docs/api/auth.md", "docs/modules/auth.md"] },
+    "vehicles": { "version": "2.0.0", "docs": ["docs/api/vehicles.md", "docs/modules/vehicles.md"] },
+    "personnel": { "version": "2.0.0", "docs": ["docs/api/personnel.md", "docs/modules/personnel.md"] },
+    "equipment": { "version": "2.0.0", "docs": ["docs/api/equipment.md", "docs/modules/equipment.md"] },
+    "affaires": { "version": "2.0.0", "docs": ["docs/api/affaires.md", "docs/modules/affaires.md"] },
+    "orders": { "version": "2.0.0", "docs": ["docs/api/orders.md", "docs/modules/orders.md"] },
+    "stock": { "version": "2.0.0", "docs": ["docs/api/stock.md", "docs/modules/stock.md"] },
+    "planning": { "version": "2.0.0", "docs": ["docs/api/planning.md", "docs/modules/planning.md"] },
+    "messaging": { "version": "2.0.0", "docs": ["docs/api/messaging.md", "docs/modules/messaging.md"] },
+    "leaves": { "version": "2.0.0", "docs": ["docs/api/leaves.md", "docs/modules/leaves.md"] },
+    "annuaire": { "version": "2.0.0", "docs": ["docs/api/annuaire.md", "docs/modules/annuaire.md"] },
+    "video": { "version": "2.0.0", "docs": ["docs/api/video.md", "docs/modules/video.md"] },
+    "display": { "version": "2.0.0", "docs": ["docs/api/display.md", "docs/modules/display.md"] },
+    "attachments": { "version": "2.0.0", "docs": ["docs/api/attachments.md"] },
+    "supplier-catalog": { "version": "2.0.0", "docs": ["docs/api/supplier-catalog.md"] },
+    "inventory": { "version": "2.0.0", "docs": ["docs/modules/inventory.md"] },
+    "mailing": { "version": "2.0.0", "docs": ["docs/modules/mailing.md"] }
+  }
+}

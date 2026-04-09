@@ -1,8 +1,21 @@
 import db from './database.js';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs';
+import { dirname, join, basename, extname } from 'path';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import logger from './logger.js';
+
+// [AUDIT Phase 4] Types MIME autorisés pour les uploads messagerie
+const MESSAGING_ALLOWED_MIMES = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'video/mp4', 'video/webm',
+  'application/pdf',
+  'text/plain',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+]);
+const MESSAGING_MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 Mo
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -234,15 +247,33 @@ export function setupMessagingRoutes(app, authenticateToken) {
         return res.status(400).json({ error: 'Fichier manquant' });
       }
 
+      // [AUDIT Phase 4] Valider le type MIME
+      if (!mimeType || !MESSAGING_ALLOWED_MIMES.has(mimeType)) {
+        return res.status(400).json({ error: `Type de fichier non autorisé: ${mimeType || 'inconnu'}` });
+      }
+
+      // [SECURITY] Vérifier aussi l'extension du fichier (le MIME client est spoofable)
+      const ALLOWED_MSG_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt', '.mp4', '.webm', '.mov'];
+      const fileExt = extname(filename).toLowerCase();
+      if (!ALLOWED_MSG_EXTS.includes(fileExt)) {
+        return res.status(400).json({ error: `Extension de fichier non autorisée: ${fileExt || 'aucune'}` });
+      }
+
+      // [AUDIT Phase 4] Décoder et vérifier la taille
+      const buffer = Buffer.from(data, 'base64');
+      if (buffer.length > MESSAGING_MAX_FILE_SIZE) {
+        return res.status(400).json({ error: 'Fichier trop volumineux (max 25 Mo)' });
+      }
+
       // Déterminer le type de message
       let msgType = 'file';
-      if (mimeType && mimeType.startsWith('image/')) msgType = 'image';
-      else if (mimeType && mimeType.startsWith('video/')) msgType = 'video';
+      if (mimeType.startsWith('image/')) msgType = 'image';
+      else if (mimeType.startsWith('video/')) msgType = 'video';
 
-      // Sauvegarder le fichier
-      const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${filename}`;
+      // [AUDIT Phase 4] Sanitize filename — basename pour éviter le path traversal
+      const safeName = basename(filename).replace(/[^a-zA-Z0-9._-]/g, '_');
+      const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
       const filePath = join(UPLOADS_DIR, uniqueName);
-      const buffer = Buffer.from(data, 'base64');
       writeFileSync(filePath, buffer);
 
       // Créer le message

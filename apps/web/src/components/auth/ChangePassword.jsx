@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Lock, Save, Eye, EyeOff, Shield, KeyRound } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, FormField, Input } from '@/design-system';
@@ -24,8 +24,8 @@ const ChangePassword = ({ currentUser }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (newPassword.length < 4) {
-      toast.info('Le nouveau mot de passe doit contenir au moins 4 caractères');
+    if (newPassword.length < 10) {
+      toast.info('Le nouveau mot de passe doit contenir au moins 10 caractères');
       return;
     }
 
@@ -49,8 +49,8 @@ const ChangePassword = ({ currentUser }) => {
   };
 
   const handleAdminSetPassword = async () => {
-    if (adminNewPassword.length < 4) {
-      toast.info('Le mot de passe doit contenir au moins 4 caractères');
+    if (adminNewPassword.length < 10) {
+      toast.info('Le mot de passe doit contenir au moins 10 caractères');
       return;
     }
     try {
@@ -81,7 +81,7 @@ const ChangePassword = ({ currentUser }) => {
           <div className="admin-password-form">
             <FormField className="form-group" label="Nouveau mot de passe" htmlFor="adminNewPassword">
               <div className="password-input-wrapper">
-                <input
+                <Input
                   id="adminNewPassword"
                   type={showAdminPassword ? 'text' : 'password'}
                   value={adminNewPassword}
@@ -89,22 +89,21 @@ const ChangePassword = ({ currentUser }) => {
                   placeholder="Saisir le nouveau mot de passe"
                   autoComplete="new-password"
                 />
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   className="password-toggle-btn"
                   onClick={() => setShowAdminPassword(!showAdminPassword)}
                   title={showAdminPassword ? 'Masquer' : 'Afficher'}
                 >
                   {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                </Button>
               </div>
-              <p className="field-hint">Minimum 4 caractères</p>
+              <p className="field-hint">Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial</p>
             </FormField>
             <div className="form-actions">
               <Button
                 variant="primary"
                 onClick={handleAdminSetPassword}
-                disabled={isSavingAdmin || adminNewPassword.length < 4}
+                disabled={isSavingAdmin || adminNewPassword.length < 10}
               >
                 <KeyRound size={16} />
                 {isSavingAdmin ? 'Application...' : 'Appliquer le mot de passe'}
@@ -132,46 +131,44 @@ const ChangePassword = ({ currentUser }) => {
 
         <FormField className="form-group" label="Nouveau mot de passe" htmlFor="newPassword" required>
           <div className="password-input-wrapper">
-          <input
+          <Input
             id="newPassword"
             type={showNewPassword ? 'text' : 'password'}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
-            minLength={4}
+            minLength={10}
             autoComplete="new-password"
           />
-          <button
-            type="button"
+          <Button variant="ghost"             type="button"
             className="password-toggle-btn"
             onClick={() => setShowNewPassword(!showNewPassword)}
             title={showNewPassword ? 'Masquer' : 'Afficher'}
           >
             {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
+          </Button>
           </div>
-          <p className="field-hint">Minimum 4 caractères</p>
+          <p className="field-hint">Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial</p>
         </FormField>
 
         <FormField className="form-group" label="Confirmer le nouveau mot de passe" htmlFor="confirmPassword" required>
           <div className="password-input-wrapper">
-          <input
+          <Input
             id="confirmPassword"
             type={showConfirmPassword ? 'text' : 'password'}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            minLength={4}
+            minLength={10}
             autoComplete="new-password"
           />
-          <button
-            type="button"
+          <Button variant="ghost"             type="button"
             className="password-toggle-btn"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             title={showConfirmPassword ? 'Masquer' : 'Afficher'}
           >
             {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
+          </Button>
           </div>
         </FormField>
 

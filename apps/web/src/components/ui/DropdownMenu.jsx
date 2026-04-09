@@ -60,7 +60,7 @@ export function DropdownMenu({
 
   return (
     <>
-      <span ref={triggerRef} className="ui-dropdown-trigger" onClick={toggle}>
+      <span ref={triggerRef} className="ui-dropdown-trigger" onClick={toggle} role="button" tabIndex={0} aria-haspopup="true" aria-expanded={open} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }}>
         {trigger}
       </span>
       {open && createPortal(

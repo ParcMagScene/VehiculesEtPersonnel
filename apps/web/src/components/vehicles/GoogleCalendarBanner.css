@@ -5,7 +5,7 @@
   margin-bottom: 0;
   position: sticky;
   top: 72px;
-  z-index: 150;
+  z-index: var(--z-sticky);
   background: var(--theme-bg-card);
   transition: all 0.3s ease;
   display: flex;
@@ -33,7 +33,7 @@
 
 .google-calendar-banner-grid.closed .banner-vehicle-header {
   height: 35px;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   padding: 0 1rem;
   align-items: center;
   background: var(--theme-gradient);
@@ -97,7 +97,7 @@
 
 .resize-indicator {
   color: var(--theme-text-inverse);
-  font-size: 16px;
+  font-size: var(--font-md);
   line-height: 1;
   letter-spacing: -2px;
   font-weight: bold;
@@ -143,7 +143,7 @@
   flex-direction: column;
   padding: 0.375rem 0.75rem;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: left;
@@ -174,9 +174,9 @@
   background: var(--close-btn-bg);
   border: 1px solid var(--glass-medium);
   color: var(--theme-text-inverse);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.02em;
   transition: all 0.2s;
@@ -210,7 +210,7 @@
   color: var(--theme-text-inverse);
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -237,7 +237,7 @@
   gap: 0.25rem;
   background: var(--close-btn-bg);
   border: 1px solid var(--glass-medium);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   padding: 0.2rem 0.4rem;
   width: 100%;
   transition: border-color 0.2s;
@@ -259,7 +259,7 @@
   border: none;
   outline: none;
   color: var(--theme-text-inverse);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 500;
   min-width: 0;
   padding: 0.15rem 0;
@@ -276,7 +276,7 @@
   color: var(--theme-text-inverse);
   width: 16px;
   height: 16px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -294,7 +294,7 @@
   font-size: 0.6rem;
   background: var(--close-btn-border);
   padding: 0.1rem 0.35rem;
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
@@ -304,7 +304,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 .banner-reconnect-google {
@@ -315,7 +315,7 @@
   padding: 0.2rem 0.5rem;
   background: var(--close-btn-bg);
   border: 1px solid var(--glass-medium);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-sm);
   color: var(--theme-bg-card-translucent);
   font-size: 0.65rem;
   font-weight: 500;
@@ -346,9 +346,9 @@
   color: var(--theme-text-inverse);
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -367,9 +367,9 @@
   color: var(--theme-text-inverse);
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -496,8 +496,8 @@
 .event-block-span {
   padding: 2px 6px;
   margin: 0;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-sm);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -542,7 +542,7 @@
   color: var(--theme-purple-accent);
   background: var(--theme-bg-card-translucent);
   padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-xs);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -562,7 +562,7 @@
   width: 16px;
   height: 16px;
   background: var(--theme-bg-card-translucent);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   color: var(--theme-success-alt);
   flex-shrink: 0;
   pointer-events: none;
@@ -581,7 +581,7 @@
   height: 16px;
   padding: 0 4px;
   background: var(--theme-bg-card-translucent);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--theme-indigo);
   flex-shrink: 0;
   pointer-events: none;
@@ -619,14 +619,14 @@
   right: 0;
   bottom: 0;
   border: 2px solid var(--success-tint-bold);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   pointer-events: none;
 }
 
 /* État d'authentification */
 .google-calendar-banner.auth {
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 1rem;
   box-shadow: 0 2px 4px var(--shadow-xs);
 }
@@ -642,13 +642,13 @@
 .auth-prompt h3 {
   margin: 0 0 0.5rem 0;
   color: var(--theme-text-body);
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
 }
 
 .auth-prompt p {
   margin: 0 0 1rem 0;
   color: var(--theme-text-gray);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .signin-button {
@@ -656,7 +656,7 @@
   color: var(--theme-text-inverse);
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
@@ -675,7 +675,7 @@
   padding: 1rem;
   text-align: center;
   color: var(--theme-text-gray);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-bottom: 1rem;
   box-shadow: 0 2px 4px var(--shadow-xs);
 }
@@ -686,9 +686,9 @@
   padding: 0.75rem;
   background: var(--theme-danger-bg);
   border: 1px solid #fcc;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: #c33;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .error-message p {
@@ -715,7 +715,7 @@
     max-width: calc(100vw - 160px);
   }
   .banner-vehicle-header {
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
     padding: 0.25rem 0.5rem;
   }
 }

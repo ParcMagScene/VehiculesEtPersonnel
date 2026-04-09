@@ -17,6 +17,11 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Global: capture unhandled promise rejections to avoid silent failures
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[unhandledrejection]', event.reason);
+});
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

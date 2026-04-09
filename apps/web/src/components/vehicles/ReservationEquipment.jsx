@@ -3,20 +3,23 @@
 // Composant à intégrer dans un modal de détail de réservation
 // ============================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, Trash2, Box, Search, Weight, Ruler, ExternalLink } from 'lucide-react';
-import { Button, Dialog, ModalLayout, Input, Tooltip } from '@/design-system';
+import { useState, useEffect, useCallback } from 'react';
+import { Package, Plus, Trash2, Box, Search } from 'lucide-react';
+import { Button, ModalLayout, Input, Tooltip } from '@/design-system';
 import api from '../../utils/api';
 import { formatDimensions, buildChargementUrlForReservation, openInChargement } from '../../utils/deepLinking';
 import './ReservationEquipment.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
-export default function ReservationEquipment({ reservationId, currentUser }) {
+import { TIMING } from '../../constants';
+
+export default function ReservationEquipment({ reservationId, _currentUser }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [data, setData] = useState({ items: [], summary: { count: 0, totalQuantity: 0, totalWeight: 0, totalVolume: 0 } });
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadEquipment = useCallback(async () => {
     if (!reservationId) return;
@@ -34,13 +37,12 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
   useEffect(() => { loadEquipment(); }, [loadEquipment]);
 
   const handleRemove = (linkId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Retirer',
       message: 'Retirer cet \xE9quipement de la r\xE9servation ?',
       variant: 'danger',
       confirmLabel: 'Retirer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.removeEquipmentFromReservation(reservationId, linkId);
           loadEquipment();
@@ -76,9 +78,9 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
             <span className="summary-label">Volume total</span>
           </div>
           <div style={{ marginLeft: 'auto' }}>
-            <button className="catalog-btn catalog-btn-3d" onClick={handleOpenChargement}>
+            <Button variant="ghost" className="catalog-btn catalog-btn-3d" onClick={handleOpenChargement}>
               <Box size={16} /> Ouvrir dans Chargement 3D
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -89,9 +91,9 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
           <Plus size={14} /> Ajouter du matériel
         </Button>
         {items.length > 0 && (
-          <button className="catalog-btn catalog-btn-3d catalog-btn-sm" onClick={handleOpenChargement}>
+          <Button variant="ghost" className="catalog-btn catalog-btn-3d catalog-btn-sm" onClick={handleOpenChargement}>
             <Box size={14} /> Charger dans 3D
-          </button>
+          </Button>
         )}
       </div>
 
@@ -120,7 +122,7 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
               <span className="eq-qty">×{item.quantity}</span>
               {item.weight && <span style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>{item.weight * item.quantity} kg</span>}
               <Tooltip content="Retirer">
-                <Button variant="danger" size="sm" iconOnly onClick={() => handleRemove(item.id)}>
+                <Button variant="danger" size="sm" iconOnly aria-label="Retirer" onClick={() => handleRemove(item.id)}>
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>
@@ -137,17 +139,7 @@ export default function ReservationEquipment({ reservationId, currentUser }) {
           onClose={() => setShowAddDialog(false)}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }
@@ -173,7 +165,7 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
         setLoading(false);
       }
     };
-    const timer = setTimeout(load, 300);
+    const timer = setTimeout(load, TIMING.DEBOUNCE_SEARCH);
     return () => clearTimeout(timer);
   }, [search]);
 

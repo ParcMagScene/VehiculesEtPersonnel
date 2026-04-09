@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 2px solid var(--theme-border-medium);
 }
@@ -22,14 +22,14 @@
 .month-navigation {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 1;
 }
 
 .month-nav-btn {
   background: var(--theme-bg-tertiary);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   width: 36px;
   height: 36px;
   display: flex;
@@ -48,14 +48,14 @@
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   cursor: pointer;
   transition: background 0.2s;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   margin-left: auto;
 }
@@ -66,7 +66,7 @@
 
 .mobile-planning-header h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--theme-text-heading);
   text-transform: capitalize;
@@ -77,13 +77,13 @@
 .close-button {
   background: none;
   border: none;
-  padding: 8px;
+  padding: var(--space-2);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--theme-text-gray);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: background 0.2s;
 }
 
@@ -124,7 +124,7 @@
 .mobile-day-column {
   flex: 1;
   min-width: 80px;
-  padding: 12px 4px;
+  padding: var(--space-3) var(--space-1);
   text-align: center;
   border-right: 1px solid var(--theme-border-medium);
 }
@@ -144,17 +144,17 @@
 }
 
 .mobile-day-name {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-gray);
   text-transform: uppercase;
 }
 
 .mobile-day-date {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-heading);
-  margin-top: 2px;
+  margin-top: var(--space-0-5);
 }
 
 /* Grille des véhicules */
@@ -178,31 +178,31 @@
 }
 
 .mobile-vehicle-label {
-  padding: 6px 12px;
+  padding: var(--space-1-5) var(--space-3);
   background: var(--theme-bg-secondary);
   border-bottom: 1px solid var(--theme-border-medium);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: fit-content;
   margin: 0 auto;
   pointer-events: auto;
 }
 
 .mobile-vehicle-name {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-heading);
 }
 
 .mobile-vehicle-registration {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-gray);
   font-family: 'Monaco', monospace;
   background: var(--theme-bg-card);
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: var(--space-0-5) var(--space-1-5);
+  border-radius: var(--radius-xs);
 }
 
 .mobile-days-grid {
@@ -229,7 +229,7 @@
 
 /* Items de réservation */
 .mobile-reservation {
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -237,7 +237,7 @@
   justify-content: center;
   height: 56px;
   box-shadow: var(--shadow-sm);
-  margin: 2px;
+  margin: var(--space-0-5);
   z-index: var(--z-base);
   color: var(--theme-text-inverse);
   position: relative;
@@ -253,7 +253,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--space-0-5);
   pointer-events: none;
   z-index: var(--z-dropdown);
 }
@@ -264,7 +264,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 
 .mobile-item-icon {
@@ -289,7 +289,7 @@
 }
 
 .mobile-item-title {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--theme-text-heading);
   white-space: normal;
@@ -297,8 +297,8 @@
 }
 
 .mobile-item-subtitle {
-  font-size: 10px;
-  margin-top: 2px;
+  font-size: var(--font-2xs);
+  margin-top: var(--space-0-5);
   font-weight: 500;
 }
 
@@ -312,7 +312,7 @@
 
 /* Items de maintenance */
 .mobile-maintenance {
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -320,7 +320,7 @@
   justify-content: center;
   border-left: 3px solid;
   height: 56px;
-  margin: 2px;
+  margin: var(--space-0-5);
   z-index: var(--z-base);
   position: relative;
   overflow: visible;
@@ -335,7 +335,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--space-0-5);
   pointer-events: none;
   z-index: var(--z-dropdown);
 }
@@ -346,7 +346,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 
 .mobile-maintenance-reported {

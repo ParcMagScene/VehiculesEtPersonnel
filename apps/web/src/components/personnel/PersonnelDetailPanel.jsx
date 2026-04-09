@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, User, Phone, Mail, Briefcase, Award, Calendar, MapPin, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Phone, Mail, Briefcase, Award, Calendar, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
-import { Tag, Avatar, SectionHeader } from '@/design-system';
+import { Avatar, Button, SectionHeader, Tag , Tooltip} from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './PersonnelDetailPanel.css';
 
 const CONTRACT_TYPES = [
@@ -52,7 +54,7 @@ const LEAVE_TYPE_LABELS = {
 const STATUS_LABELS = { pending: 'En attente', approved: 'Approuvé', rejected: 'Refusé' };
 const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444' };
 
-const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequestLeave }) => {
+const PersonnelDetailContent = ({ person, positions = [], _skills = [], onRequestLeave }) => {
   if (!person) return null;
 
   // Parser les postes par défaut
@@ -83,7 +85,7 @@ const PersonnelDetailContent = ({ person, positions = [], skills = [], onRequest
                   {CONTRACT_TYPES.find(c => c.value === person.contractType)?.label || person.contractType}
                 </Tag>
               )}
-              {person.status === 'inactive' && (
+              {person.status === STATUS.INACTIVE && (
                 <Tag color="neutral" size="sm">Inactif</Tag>
               )}
             </div>
@@ -194,9 +196,11 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
     <section className="pdp-section">
       <SectionHeader className="pdp-section-title" as="h4" icon={<Clock size={14} />} title="Absences" actions={
         onRequestLeave && (
-          <button className="pdp-absence-add-btn" onClick={() => onRequestLeave(personId)} title="Ajouter une absence">
+ <Tooltip content="Ajouter une absence" position="bottom">
+   <Button variant="ghost" className="pdp-absence-add-btn" onClick={() => onRequestLeave(personId)}>
             <Plus size={12} />
-          </button>
+          </Button>
+ </Tooltip>
         )
       } />
       {loading ? (
@@ -217,9 +221,9 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
                 <div className="pdp-absence-row">
                   <span className="pdp-absence-type" style={{ color: leaveColor }}>{leaveLabel}</span>
                   <span className="pdp-absence-status" style={{ color: statusColor }}>
-                    {a.status === 'pending' && <Clock size={10} />}
-                    {a.status === 'approved' && <Check size={10} />}
-                    {a.status === 'rejected' && <XCircle size={10} />}
+                    {a.status === STATUS.PENDING && <Clock size={10} />}
+                    {a.status === STATUS.APPROVED && <Check size={10} />}
+                    {a.status === STATUS.REJECTED && <XCircle size={10} />}
                     {statusLabel}
                   </span>
                 </div>
@@ -299,9 +303,9 @@ const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onE
             </div>
           </div>
         </div>
-        <button className="slide-panel-close" onClick={handleClose}>
+        <Button variant="ghost" className="slide-panel-close" onClick={handleClose} aria-label="Fermer">
           <X size={18} />
-        </button>
+        </Button>
       </div>
 
       {/* Body */}
@@ -317,9 +321,9 @@ const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onE
       {/* Footer */}
       {onEdit && (
         <div className="pdp-slide-footer">
-          <button className="pdp-slide-edit-btn" onClick={() => onEdit?.(currentPerson)}>
+          <Button variant="ghost" className="pdp-slide-edit-btn" onClick={() => onEdit?.(currentPerson)}>
             <ExternalLink size={14} /> Modifier la fiche
-          </button>
+          </Button>
         </div>
       )}
     </div>

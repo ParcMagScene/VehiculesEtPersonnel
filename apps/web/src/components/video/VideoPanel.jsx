@@ -2,16 +2,20 @@
 // VideoPanel.jsx — Module principal de surveillance vidéo
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { useCameraList } from '../../hooks/useCameraList';
 import { usePTZ } from '../../hooks/usePTZ';
 import CameraGrid from './CameraGrid';
 import CameraPTZControls from './CameraPTZControls';
 import PlaybackPanel from './PlaybackPanel';
-import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight, Film } from 'lucide-react';
+import PresetPanel from './PresetPanel';
+import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, Repeat, ChevronLeft, ChevronRight, Film, Monitor } from 'lucide-react';
 import api from '../../utils/api';
 import './VideoPanel.css';
-import { Button, Dialog, Table, Spinner, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
+import { Button, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+import { ROLES } from '../../constants';
 
 const GRID_LAYOUTS = [
   { id: 1, label: '1', cols: 1 },
@@ -36,7 +40,7 @@ const VideoPanel = ({ currentUser }) => {
   const [gridSize, setGridSize] = useState(4);
   const [gridPage, setGridPage] = useState(0);
   const [isRotating, setIsRotating] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const rotateTimer = useRef(null);
 
   // PTZ clavier
@@ -50,7 +54,7 @@ const VideoPanel = ({ currentUser }) => {
       .catch(() => setProxyAvailable(false));
   }, []);
 
-  const isAdmin = currentUser?.role === 'admin';
+  const isAdmin = currentUser?.role === ROLES.ADMIN;
   const enabledCameras = cameras.filter(c => c.enabled);
   const totalPages = Math.ceil(enabledCameras.length / gridSize);
 
@@ -121,13 +125,12 @@ const VideoPanel = ({ currentUser }) => {
   }, [editingCamera, updateCamera, createCamera]);
 
   const handleDeleteCamera = useCallback((id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: 'Supprimer cette caméra ?',
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         await deleteCamera(id);
         setEditingCamera(null);
         setShowSettings(false);
@@ -139,6 +142,11 @@ const VideoPanel = ({ currentUser }) => {
     setTestingAll(true);
     try { await testAll(); } finally { setTestingAll(false); }
   }, [testAll]);
+
+  const handleDetachPreset = useCallback((presetId) => {
+    const url = `${window.location.origin}?detached-preset=${presetId}`;
+    window.open(url, `preset-${presetId}`, 'width=960,height=720,menubar=no,toolbar=no,location=no,status=no');
+  }, []);
 
   if (loading) {
     return (
@@ -160,19 +168,22 @@ const VideoPanel = ({ currentUser }) => {
         <div className="video-panel__actions">
           {/* Vues */}
           <div className="video-panel__view-toggle">
-            <button className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} title="Vue grille">
+            <Tooltip content="Vue grille" position="bottom"><Button variant="ghost" className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} aria-label="Vue grille">
               <Grid size={18} />
-            </button>
-            <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste">
+            </Button></Tooltip>
+            <Tooltip content="Vue liste" position="bottom"><Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} aria-label="Vue liste">
               <List size={18} />
-            </button>
-            <button className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements">
+            </Button></Tooltip>
+            <Tooltip content="Enregistrements" position="bottom"><Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} aria-label="Enregistrements">
               <Film size={18} />
-            </button>
+            </Button></Tooltip>
+            <Tooltip content="Presets multi-caméras" position="bottom"><Button variant="ghost" className={viewMode === 'preset' ? 'active' : ''} onClick={() => setViewMode('preset')} aria-label="Presets multi-caméras">
+              <Monitor size={18} />
+            </Button></Tooltip>
             {isAdmin && (
-              <button className={viewMode === 'admin' ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration">
+              <Tooltip content="Administration" position="bottom"><Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} aria-label="Administration">
                 <Settings size={18} />
-              </button>
+              </Button></Tooltip>
             )}
           </div>
 
@@ -182,41 +193,41 @@ const VideoPanel = ({ currentUser }) => {
               <Divider orientation="vertical" />
               <div className="video-panel__layout-btns">
                 {GRID_LAYOUTS.map(l => (
-                  <button
-                    key={l.id}
+                  <Tooltip key={l.id} content={`Grille ${l.label} caméras`} position="bottom">
+                  <Button variant="ghost"
                     className={`video-panel__layout-btn ${gridSize === l.id ? 'active' : ''}`}
                     onClick={() => { setGridSize(l.id); setGridPage(0); }}
-                    title={`Grille ${l.label} caméras`}
                   >
                     {l.label === '1' ? <Maximize2 size={14} /> : <LayoutGrid size={14} />}
                     <span>{l.label}</span>
-                  </button>
+                  </Button>
+                  </Tooltip>
                 ))}
               </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="video-panel__page-controls">
-                  <Tooltip content="Page précédente"><button onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
+                  <Tooltip content="Page précédente" position="bottom"><Button variant="ghost" onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
                     <ChevronLeft size={16} />
-                  </button></Tooltip>
+                  </Button></Tooltip>
                   <span className="video-panel__page-info">{gridPage + 1}/{totalPages}</span>
-                  <Tooltip content="Page suivante"><button onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
+                  <Tooltip content="Page suivante" position="bottom"><Button variant="ghost" onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
                     <ChevronRight size={16} />
-                  </button></Tooltip>
+                  </Button></Tooltip>
                 </div>
               )}
 
               {/* Rotation auto */}
               {totalPages > 1 && (
-                <Tooltip content={isRotating ? 'Arrêter la rotation' : 'Rotation automatique'}>
+                <Tooltip content={isRotating ? 'Arrêter la rotation' : 'Rotation automatique'} position="bottom">
                   <Button
                     variant="secondary"
                     size="sm"
                     className={isRotating ? 'active' : ''}
                     onClick={() => setIsRotating(v => !v)}
                   >
-                    <RotateCw size={16} />
+                    <Repeat size={16} />
                   </Button>
                 </Tooltip>
               )}
@@ -225,7 +236,7 @@ const VideoPanel = ({ currentUser }) => {
 
           <Divider orientation="vertical" />
 
-          <Tooltip content="Rafraîchir">
+          <Tooltip content="Rafraîchir" position="bottom">
             <Button variant="secondary" size="sm" onClick={refresh}>
               <RefreshCw size={16} />
             </Button>
@@ -282,6 +293,16 @@ const VideoPanel = ({ currentUser }) => {
         <PlaybackPanel cameras={cameras} initialCameraId={playbackCameraId} />
       )}
 
+      {viewMode === 'preset' && (
+        <div className="video-panel__content">
+          <PresetPanel
+            cameras={cameras}
+            proxyAvailable={proxyAvailable}
+            onDetach={handleDetachPreset}
+          />
+        </div>
+      )}
+
       {viewMode === 'list' && (
         <div className="video-panel__list">
           <Table className="video-panel__table">
@@ -311,9 +332,11 @@ const VideoPanel = ({ currentUser }) => {
                   <td>{cam.lastSeen ? new Date(cam.lastSeen).toLocaleString('fr-FR') : '—'}</td>
                   {isAdmin && (
                     <td>
-                      <Button variant="ghost" size="xs" iconOnly onClick={() => { setEditingCamera(cam); setShowSettings(true); }}>
+ <Tooltip content="Configurer la caméra" position="bottom">
+   <Button variant="ghost" size="xs" iconOnly onClick={() => { setEditingCamera(cam); setShowSettings(true); }}>
                         <Settings size={14} />
                       </Button>
+ </Tooltip>
                     </td>
                   )}
                 </tr>
@@ -323,7 +346,7 @@ const VideoPanel = ({ currentUser }) => {
         </div>
       )}
 
-      {viewMode === 'admin' && isAdmin && (
+      {viewMode === ROLES.ADMIN && isAdmin && (
         <div className="video-panel__admin">
           <div className="video-panel__admin-section">
             <h3><Shield size={18} /> Administration des caméras</h3>
@@ -394,17 +417,7 @@ const VideoPanel = ({ currentUser }) => {
           />
         </Suspense>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

@@ -8,7 +8,7 @@ import {
   X, Download, Printer, ZoomIn, ZoomOut,
   ChevronLeft, ChevronRight, Layers, Info
 } from 'lucide-react';
-import { Tooltip } from '@/design-system';
+import { Button, Tooltip } from '@/design-system';
 import { FAMILY_COLORS } from '../../utils/bpAnnotationEngine';
 import './BPAnnotationViewer.css';
 
@@ -42,8 +42,7 @@ function groupTextIntoLines(textItems, viewport) {
       y: tx[5],
       width: item.width * viewport.scale,
       height: Math.abs(tx[3] - tx[1]) || item.height * viewport.scale || 12,
-      italic: !isMainFont || hasShear,
-    };
+      italic: !isMainFont || hasShear };
   }).filter(p => p.text.length > 0);
 
   const tolerance = 4;
@@ -70,8 +69,7 @@ function groupTextIntoLines(textItems, viewport) {
         text: item.text,
         items: [item],
         italicChars: item.italic ? item.text.length : 0,
-        totalChars: item.text.length,
-      });
+        totalChars: item.text.length });
     }
   }
 
@@ -85,7 +83,7 @@ function groupTextIntoLines(textItems, viewport) {
 
 // ─── Dessiner les annotations sur l'overlay ───
 function drawAnnotations(ctx, lines, viewport, annotationData) {
-  const { sections = [], annotatedItems = [], kits = [] } = annotationData;
+  const { sections = [], annotatedItems = [], _kits = [] } = annotationData;
   if (lines.length === 0) return;
 
   // Index section -> couleur
@@ -327,7 +325,7 @@ function drawInfoBlock(ctx, canvasWidth, lines, affaireData, scale) {
   }
 }
 
-function roundRect(ctx, x, y, w, h, r) {
+function _roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -359,7 +357,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
   const [loading, setLoading] = useState(false);
 
   const data = annotationResult || {};
-  const { sections = [], stats = {}, infoLines = [], affaire, blImport, kits = [] } = data;
+  const { sections = [], stats = {}, infoLines = [], affaire, blImport, _kits = [] } = data;
 
   // ─── Charger le PDF ───
   useEffect(() => {
@@ -512,7 +510,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
     const win = window.open('', '_blank');
     if (win) {
       const imgsHtml = images.map((src, i) =>
-        '<img src="' + src + '" style="width:100%;height:auto;display:block;' +
+        '<img src="' + src + '" alt="BP annoté page ' + (i + 1) + '" style="width:100%;height:auto;display:block;' +
         (i < images.length - 1 ? 'page-break-after:always;' : '') + '" />'
       ).join('');
 
@@ -574,34 +572,34 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
             {blImport?.filename && <span className="bp-filename">{blImport.filename}</span>}
           </div>
           <div className="bp-annotation-toolbar">
-            <Tooltip content="Zoom -"><button onClick={zoomOut}><ZoomOut size={16} /></button></Tooltip>
+            <Tooltip content="Zoom -"><Button variant="ghost" onClick={zoomOut} aria-label="Zoom arrière"><ZoomOut size={16} /></Button></Tooltip>
             <span className="bp-zoom-label">{Math.round(displayScale * 100)}%</span>
-            <Tooltip content="Zoom +"><button onClick={zoomIn}><ZoomIn size={16} /></button></Tooltip>
-            <Tooltip content="Ajuster"><button onClick={zoomFit}>🔍</button></Tooltip>
+            <Tooltip content="Zoom +"><Button variant="ghost" onClick={zoomIn} aria-label="Zoom avant"><ZoomIn size={16} /></Button></Tooltip>
+            <Tooltip content="Ajuster"><Button variant="ghost" onClick={zoomFit}>🔍</Button></Tooltip>
             <div className="bp-toolbar-sep" />
-            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+            <Button variant="ghost" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
               <ChevronLeft size={16} />
-            </button>
+            </Button>
             <span className="bp-page-label">{currentPage} / {numPages}</span>
-            <button onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} disabled={currentPage >= numPages}>
+            <Button variant="ghost" onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} disabled={currentPage >= numPages}>
               <ChevronRight size={16} />
-            </button>
+            </Button>
             <div className="bp-toolbar-sep" />
             <Tooltip content="Légende">
-              <button className={showLegend ? 'active' : ''} onClick={() => setShowLegend(v => !v)}>
+              <Button variant="ghost" className={showLegend ? 'active' : ''} onClick={() => setShowLegend(v => !v)}>
                 <Layers size={16} />
-              </button>
+              </Button>
             </Tooltip>
             <Tooltip content="Infos affaire">
-              <button className={showInfo ? 'active' : ''} onClick={() => setShowInfo(v => !v)}>
+              <Button variant="ghost" className={showInfo ? 'active' : ''} onClick={() => setShowInfo(v => !v)}>
                 <Info size={16} />
-              </button>
+              </Button>
             </Tooltip>
             <div className="bp-toolbar-sep" />
-            <Tooltip content="Imprimer"><button onClick={handlePrint}><Printer size={16} /></button></Tooltip>
-            <Tooltip content="Télécharger"><button onClick={handleDownload}><Download size={16} /></button></Tooltip>
+            <Tooltip content="Imprimer"><Button variant="ghost" onClick={handlePrint} aria-label="Imprimer"><Printer size={16} /></Button></Tooltip>
+            <Tooltip content="Télécharger"><Button variant="ghost" onClick={handleDownload} aria-label="Télécharger"><Download size={16} /></Button></Tooltip>
           </div>
-          <button className="bp-annotation-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="bp-annotation-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}

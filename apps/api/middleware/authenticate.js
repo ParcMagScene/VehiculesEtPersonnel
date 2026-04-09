@@ -2,7 +2,6 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import db from '../database.js';
 import { authCache } from '../cache.js';
-import logger from '../logger.js';
 
 /**
  * Middleware d'authentification — vérifie JWT + session active en DB

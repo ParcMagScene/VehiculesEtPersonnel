@@ -3,13 +3,13 @@
 // Affichage du titre en cours, et configuration IP
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
+import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { Music, Wifi, RefreshCw, Disc } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { Button, Input, Checkbox, InlineAlert, SectionHeader } from '@/design-system';
 
-function SonosTab({ currentUser, refreshKey }) {
+function SonosTab({ _currentUser, refreshKey }) {
   const toast = useToast();
   const [sonosIP, setSonosIP] = useState('');
   const [nowPlaying, setNowPlaying] = useState(null);
@@ -108,7 +108,7 @@ function SonosTab({ currentUser, refreshKey }) {
             ) : nowPlaying.playing ? (
               <div className="dtv-sonos-playing">
                 {nowPlaying.albumArtURI && (
-                  <img src={nowPlaying.albumArtURI} alt="Album art" className="dtv-sonos-art" />
+                  <img src={nowPlaying.albumArtURI} alt="Album art" loading="lazy" className="dtv-sonos-art" />
                 )}
                 <div className="dtv-sonos-info">
                   <div className="dtv-sonos-title">{nowPlaying.title}</div>

@@ -1,19 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Check, X, Clock, User } from 'lucide-react';
 import api from '../../utils/api';
 import './ReservationRequestsPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { DetailRow, Dialog, Textarea} from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { Button, DetailRow, Textarea } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import { formatDateFr } from '../../utils/formatUtils';
 
 const ReservationRequestsPanel = ({ onRequestProcessed }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending'); // 'pending', 'approved', 'rejected', 'all'
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [loading, setLoading] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   useEffect(() => {
     loadRequests();
@@ -30,13 +34,12 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
   };
 
   const handleApprove = (requestId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Approuver',
       message: 'Approuver cette demande et cr\xE9er la r\xE9servation ?',
       variant: 'confirm',
       confirmLabel: 'Approuver',
       onConfirm: async () => {
-        setConfirmDialog(null);
         setLoading(true);
         try {
           await api.approveReservationRequest(requestId);
@@ -91,17 +94,6 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
     return req.status === filter;
   });
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return 'N/A';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
   const formatPeriod = (period) => {
     const periods = {
       morning: 'Matin',
@@ -128,38 +120,38 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       </h2>
 
       <div className="requests-filters">
-        <button 
-          className={filter === 'pending' ? 'active' : ''}
+        <Button variant="ghost" 
+          className={filter === STATUS.PENDING ? 'active' : ''}
           onClick={() => setFilter('pending')}
         >
-          En attente ({requests.filter(r => r.status === 'pending').length})
-        </button>
-        <button 
-          className={filter === 'approved' ? 'active' : ''}
+          En attente ({requests.filter(r => r.status === STATUS.PENDING).length})
+        </Button>
+        <Button variant="ghost" 
+          className={filter === STATUS.APPROVED ? 'active' : ''}
           onClick={() => setFilter('approved')}
         >
-          Approuvées ({requests.filter(r => r.status === 'approved').length})
-        </button>
-        <button 
-          className={filter === 'rejected' ? 'active' : ''}
+          Approuvées ({requests.filter(r => r.status === STATUS.APPROVED).length})
+        </Button>
+        <Button variant="ghost" 
+          className={filter === STATUS.REJECTED ? 'active' : ''}
           onClick={() => setFilter('rejected')}
         >
-          Rejetées ({requests.filter(r => r.status === 'rejected').length})
-        </button>
-        <button 
+          Rejetées ({requests.filter(r => r.status === STATUS.REJECTED).length})
+        </Button>
+        <Button variant="ghost" 
           className={filter === 'all' ? 'active' : ''}
           onClick={() => setFilter('all')}
         >
           Toutes ({requests.length})
-        </button>
+        </Button>
       </div>
 
       <div className="requests-list">
         {filteredRequests.length === 0 ? (
           <div className="empty-requests">
-            {filter === 'pending' && 'Aucune demande en attente'}
-            {filter === 'approved' && 'Aucune demande approuvée'}
-            {filter === 'rejected' && 'Aucune demande rejetée'}
+            {filter === STATUS.PENDING && 'Aucune demande en attente'}
+            {filter === STATUS.APPROVED && 'Aucune demande approuvée'}
+            {filter === STATUS.REJECTED && 'Aucune demande rejetée'}
             {filter === 'all' && 'Aucune demande'}
           </div>
         ) : (
@@ -177,10 +169,10 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
               <div className="request-details">
                 <DetailRow className="request-detail-item" label="Début">
-                  {formatDate(request.startDate)} - {formatPeriod(request.startPeriod)}
+                  {formatDateFr(request.startDate, 'N/A')} - {formatPeriod(request.startPeriod)}
                 </DetailRow>
                 <DetailRow className="request-detail-item" label="Fin">
-                  {formatDate(request.endDate)} - {formatPeriod(request.endPeriod)}
+                  {formatDateFr(request.endDate, 'N/A')} - {formatPeriod(request.endPeriod)}
                 </DetailRow>
                 {request.clientName && (
                   <DetailRow className="request-detail-item" label="Client" value={request.clientName} />
@@ -202,31 +194,31 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
                 </div>
               )}
 
-              {request.status === 'rejected' && request.rejectionReason && (
+              {request.status === STATUS.REJECTED && request.rejectionReason && (
                 <div className="rejection-reason">
                   <strong>Motif du rejet:</strong>
                   {request.rejectionReason}
                 </div>
               )}
 
-              {request.status === 'pending' && (
+              {request.status === STATUS.PENDING && (
                 <div className="request-actions">
-                  <button 
+                  <Button variant="ghost" 
                     className="approve-button"
                     onClick={() => handleApprove(request.id)}
                     disabled={loading}
                   >
                     <Check size={18} />
                     Approuver
-                  </button>
-                  <button 
+                  </Button>
+                  <Button variant="ghost" 
                     className="reject-button"
                     onClick={() => handleRejectClick(request)}
                     disabled={loading}
                   >
                     <X size={18} />
                     Rejeter
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -247,7 +239,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
       {rejectDialogOpen && (
         <div className="reject-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && setRejectDialogOpen(false)}>
-          <div className="reject-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="reject-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
             <h3>Rejeter la demande</h3>
             <Textarea
               placeholder="Indiquez le motif du rejet..."
@@ -255,34 +247,24 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
               onChange={(e) => setRejectionReason(e.target.value)}
             />
             <div className="reject-dialog-actions">
-              <button 
+              <Button variant="ghost" 
                 className="cancel"
                 onClick={() => setRejectDialogOpen(false)}
               >
                 Annuler
-              </button>
-              <button 
+              </Button>
+              <Button variant="ghost" 
                 className="confirm"
                 onClick={handleRejectConfirm}
                 disabled={loading}
               >
                 Confirmer le rejet
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

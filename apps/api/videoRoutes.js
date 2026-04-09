@@ -15,6 +15,7 @@ import {
   extractDahuaChannel, extractPasswordFromRtspUrl, searchNvrRecordings,
   buildPlaybackRtspUrl, registerPlaybackInProxy, whepPlaybackExchange,
 } from './videoProxyService.js';
+import { verifyTvToken } from './middleware/tvAuth.js';
 
 // Rate limiting simple pour les flux vidéo
 const streamRateMap = new Map();
@@ -54,7 +55,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     try {
       const cameras = db.prepare(`
         SELECT id, name, brand, model, ip, rtsp_url, rtsp_port, http_port, ptz_supported,
-               location, affaire_id, zone, enabled, stream_profile, status,
+               location, affaire_id, zone, enabled, stream_profile, channel, status,
                sort_order, notes, last_seen, created_at, updated_at
         FROM cameras ORDER BY sort_order, name
       `).all();
@@ -79,7 +80,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const camera = db.prepare(`
         SELECT id, name, brand, model, ip, rtsp_url, rtsp_port, http_port,
                username, ptz_supported, location, affaire_id, zone, enabled,
-               stream_profile, snapshot_path, status, sort_order, notes,
+               stream_profile, snapshot_path, channel, status, sort_order, notes,
                last_seen, created_at, updated_at
         FROM cameras WHERE id = ?
       `).get(id);
@@ -98,7 +99,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { name, brand, model, ip, rtsp_url, rtsp_port, http_port,
               username, password, ptz_supported, location, affaire_id,
-              zone, enabled, stream_profile, snapshot_path, notes } = req.body;
+              zone, enabled, stream_profile, snapshot_path, notes, channel } = req.body;
 
       if (!name || !ip) return res.status(400).json({ error: 'name et ip sont requis' });
 
@@ -112,14 +113,15 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const result = db.prepare(`
         INSERT INTO cameras (name, brand, model, ip, rtsp_url, rtsp_port, http_port,
           username, password_encrypted, ptz_supported, location, affaire_id, zone,
-          enabled, stream_profile, snapshot_path, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          enabled, stream_profile, snapshot_path, notes, channel)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         name, brand || 'generic', model || null, ip, rtsp_url || null,
         rtsp_port || 554, http_port || 80, username || 'admin',
         passwordEncrypted, ptz_supported ? 1 : 0, location || null,
         affaire_id || null, zone || null, enabled !== false ? 1 : 0,
-        stream_profile || 'main', snapshot_path || null, notes || null
+        stream_profile || 'main', snapshot_path || null, notes || null,
+        channel || 1
       );
 
       const camera = db.prepare('SELECT * FROM cameras WHERE id = ?').get(result.lastInsertRowid);
@@ -149,7 +151,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
 
       const { name, brand, model, ip, rtsp_url, rtsp_port, http_port,
               username, password, ptz_supported, location, affaire_id,
-              zone, enabled, stream_profile, snapshot_path, notes, sort_order } = req.body;
+              zone, enabled, stream_profile, snapshot_path, notes, sort_order, channel } = req.body;
 
       // Chiffrer le nouveau mot de passe seulement s'il est fourni
       let passwordEncrypted = existing.password_encrypted;
@@ -162,7 +164,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
           name = ?, brand = ?, model = ?, ip = ?, rtsp_url = ?, rtsp_port = ?,
           http_port = ?, username = ?, password_encrypted = ?, ptz_supported = ?,
           location = ?, affaire_id = ?, zone = ?, enabled = ?, stream_profile = ?,
-          snapshot_path = ?, notes = ?, sort_order = ?, updated_at = datetime('now')
+          snapshot_path = ?, notes = ?, sort_order = ?, channel = ?, updated_at = datetime('now')
         WHERE id = ?
       `).run(
         name ?? existing.name, brand ?? existing.brand, model ?? existing.model,
@@ -172,7 +174,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         location ?? existing.location, affaire_id ?? existing.affaire_id,
         zone ?? existing.zone, enabled !== undefined ? (enabled ? 1 : 0) : existing.enabled,
         stream_profile ?? existing.stream_profile, snapshot_path ?? existing.snapshot_path,
-        notes ?? existing.notes, sort_order ?? existing.sort_order, id
+        notes ?? existing.notes, sort_order ?? existing.sort_order,
+        channel ?? existing.channel ?? 1, id
       );
 
       // Re-enregistrer dans le proxy
@@ -262,6 +265,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const { token } = req.params;
       const session = getSession(token);
       if (session) {
+        // [AUDIT FIX V3] Libérer le stream WHEP dans MediaMTX
+        if (session.location) whepDelete(session.location);
         removeSession(token);
         db.prepare(`UPDATE video_sessions SET status = 'closed', ended_at = datetime('now') WHERE session_token = ?`).run(token);
         logVideoAccess(req.user.id, req.user.name, session.cameraId, null, 'stop_stream', req.ip);
@@ -278,7 +283,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // ════════════════════════════════════════
 
   // POST /api/video/cameras/:id/ptz — Commande PTZ
-  app.post('/api/video/cameras/:id/ptz', authenticateToken, (req, res) => {
+  // [AUDIT FIX H4] PTZ = opération sensible → requireAdmin
+  app.post('/api/video/cameras/:id/ptz', authenticateToken, requireAdmin, (req, res) => {
     (async () => {
       try {
         const id = parseInt(req.params.id, 10);
@@ -478,7 +484,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         res.json({ cameraId: id, date, recordings });
       } catch (error) {
         logger.error('GET recordings:', error);
-        res.status(500).json({ error: 'Erreur recherche enregistrements', detail: error.message });
+        // [AUDIT FIX H1] Ne pas exposer error.message au client
+        res.status(500).json({ error: 'Erreur recherche enregistrements' });
       }
     })();
   });
@@ -544,12 +551,12 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ════════════════════════════════════════
-  // ROUTES TV PUBLIQUES (sans auth)
+  // ROUTES TV (authentifiées par token TV)
   // Pour l'écran TV : affichage passif
   // ════════════════════════════════════════
 
   // GET /api/video/tv/cameras — Caméras activées (pas de mot de passe)
-  app.get('/api/video/tv/cameras', (_req, res) => {
+  app.get('/api/video/tv/cameras', verifyTvToken, (_req, res) => {
     try {
       const cameras = db.prepare(
         `SELECT id, name, brand, model, location, zone, ptz_supported,
@@ -563,9 +570,13 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // POST /api/video/tv/cameras/:id/whep — WHEP public (TV)
-  app.post('/api/video/tv/cameras/:id/whep', (req, res) => {
-    const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(req.params.id);
+  // POST /api/video/tv/cameras/:id/whep — WHEP authentifié par token TV
+  app.post('/api/video/tv/cameras/:id/whep', verifyTvToken, (req, res) => {
+    // [AUDIT FIX V5] parseInt + rate limit TV
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+    if (!checkStreamRate(`tv_${id}`)) return res.status(429).json({ error: 'Trop de requêtes vidéo' });
+    const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
     if (!camera) return res.status(404).json({ error: 'Caméra introuvable' });
 
     (async () => {
@@ -585,5 +596,95 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         res.status(500).json({ error: 'Erreur WebRTC' });
       }
     })();
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  //  PRESETS — Vues multi-caméras (4 max)
+  // ═══════════════════════════════════════════════════════════════
+
+  // GET /api/video/presets — Presets partagés + perso de l'utilisateur
+  // [AUDIT FIX V2] Filtrer par is_shared OU user_id
+  app.get('/api/video/presets', authenticateToken, (req, res) => {
+    try {
+      const presets = db.prepare(`
+        SELECT id, name, camera_ids, user_id, is_shared, created_at, updated_at
+        FROM camera_presets
+        WHERE is_shared = 1 OR user_id = ?
+        ORDER BY name
+      `).all(req.user.id);
+      res.json(presets.map(p => ({ ...p, camera_ids: JSON.parse(p.camera_ids || '[]') })));
+    } catch (error) {
+      logger.error('GET /api/video/presets:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // POST /api/video/presets — Créer un preset
+  app.post('/api/video/presets', authenticateToken, (req, res) => {
+    try {
+      const { name, camera_ids } = req.body;
+      if (!name?.trim()) return res.status(400).json({ error: 'Nom requis' });
+      if (!Array.isArray(camera_ids) || camera_ids.length === 0 || camera_ids.length > 4) {
+        return res.status(400).json({ error: 'Sélectionnez 1 à 4 caméras' });
+      }
+      const result = db.prepare(`
+        INSERT INTO camera_presets (name, camera_ids, user_id, is_shared)
+        VALUES (?, ?, ?, 1)
+      `).run(name.trim(), JSON.stringify(camera_ids), req.user.id);
+      const preset = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(result.lastInsertRowid);
+      res.status(201).json({ ...preset, camera_ids: JSON.parse(preset.camera_ids) });
+    } catch (error) {
+      logger.error('POST /api/video/presets:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // PUT /api/video/presets/:id — Modifier un preset
+  // [AUDIT FIX V2] Vérifier propriétaire ou admin
+  app.put('/api/video/presets/:id', authenticateToken, (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+      const existing = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
+      if (!existing) return res.status(404).json({ error: 'Preset introuvable' });
+      if (existing.user_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres presets' });
+      }
+      const { name, camera_ids } = req.body;
+      if (camera_ids && (!Array.isArray(camera_ids) || camera_ids.length > 4)) {
+        return res.status(400).json({ error: 'Maximum 4 caméras' });
+      }
+      db.prepare(`
+        UPDATE camera_presets SET name = ?, camera_ids = ?, updated_at = datetime('now') WHERE id = ?
+      `).run(
+        (name?.trim()) || existing.name,
+        camera_ids ? JSON.stringify(camera_ids) : existing.camera_ids,
+        id
+      );
+      const updated = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
+      res.json({ ...updated, camera_ids: JSON.parse(updated.camera_ids) });
+    } catch (error) {
+      logger.error('PUT /api/video/presets/:id:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
+  });
+
+  // DELETE /api/video/presets/:id — Supprimer un preset
+  // [AUDIT FIX V2] Vérifier propriétaire ou admin
+  app.delete('/api/video/presets/:id', authenticateToken, (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ error: 'ID invalide' });
+      const existing = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
+      if (!existing) return res.status(404).json({ error: 'Preset introuvable' });
+      if (existing.user_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Vous ne pouvez supprimer que vos propres presets' });
+      }
+      db.prepare('DELETE FROM camera_presets WHERE id = ?').run(id);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('DELETE /api/video/presets/:id:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+    }
   });
 }

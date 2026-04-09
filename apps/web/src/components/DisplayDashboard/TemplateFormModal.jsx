@@ -1,5 +1,5 @@
 // TemplateFormModal — Création / édition d'un template d'affichage
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Layout, Save, Plus, Trash2 } from 'lucide-react';
 import { Button, FormField, ModalLayout, Input, Textarea, Select, Tooltip } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
@@ -160,7 +160,7 @@ function TemplateFormModal({ template, onSave, onClose }) {
                 </div>
                 {form.zones.length > 1 && (
                   <Tooltip content="Supprimer">
-                    <Button variant="danger" size="sm" iconOnly onClick={() => removeZone(idx)}>
+                    <Button variant="danger" size="sm" iconOnly aria-label="Supprimer la zone" onClick={() => removeZone(idx)}>
                       <Trash2 size={12} />
                     </Button>
                   </Tooltip>

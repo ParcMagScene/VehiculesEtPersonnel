@@ -3,14 +3,16 @@
 // Import catalogues PDF, consultation, filtres, suppression
 // ============================================================
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FileText, Upload, Trash2, X, ChevronLeft, ChevronRight, Package, Filter, History, BarChart3, AlertCircle, DatabaseZap, Settings, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { FileText, Upload, Trash2, X, ChevronLeft, ChevronRight, Package, History, BarChart3, AlertCircle, DatabaseZap, Settings, RefreshCw } from 'lucide-react';
 import api from '../../utils/api';
 import './SupplierCatalogPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, ModalLayout, Input, Select, Table, EntityCombobox, Spinner, Tag, InlineAlert, SearchBar, Tooltip } from '@/design-system';
-import { extractTextFromPDF, extractPDFMeta } from '../../utils/pdfParser';
-import { parseCatalog, detectSupplier, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { formatDateTime } from '../../utils/formatUtils';
+import { Button, ModalLayout, Select, Table, EntityCombobox, Spinner, Tag, InlineAlert, SearchBar, Tooltip } from '@/design-system';
+import { extractPDFMeta } from '../../utils/pdfParser';
+import { parseCatalog, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
 import CatalogSettingsPanel from './CatalogSettingsPanel';
 
 const PAGE_SIZE = 50;
@@ -40,7 +42,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // Modal import
   const [showImport, setShowImport] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const isAdmin = currentUser?.isAdmin;
   const canWrite = isAdmin || currentUser?.permissions?.can_manage_catalog === true;
@@ -104,7 +106,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // ── Suppression d'un article ──
   const handleDeleteArticle = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer l\'article',
       message: 'Supprimer cet article ?',
       variant: 'danger',
@@ -123,7 +125,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // ── Suppression d'un import (+ ses articles) ──
   const handleDeleteImport = (imp) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer l\'import',
       message: `Supprimer l'import "${imp.filename}" et ses ${imp.items_count} articles ?`,
       variant: 'danger',
@@ -143,7 +145,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
   // ── Purge totale ──
   const handlePurge = () => {
-    setConfirmDialog({
+    confirm({
       title: 'Purger la base',
       message: `⚠️ Supprimer TOUS les ${total} articles fournisseurs et l'historique d'imports ?\n\nCette action est irréversible.`,
       variant: 'danger',
@@ -206,44 +208,44 @@ export default function SupplierCatalogPanel({ currentUser }) {
         <h2><FileText size={24} /> Articles Fournisseurs</h2>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {/* Sous-navigation */}
-          <button
-            className={`catalog-btn ${view === 'articles' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+          <Button variant="ghost"             className={`catalog-btn ${view === 'articles' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('articles')}
           >
             <Package size={16} /> Articles
-          </button>
-          <button
-            className={`catalog-btn ${view === 'imports' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+          </Button>
+          <Button variant="ghost"             className={`catalog-btn ${view === 'imports' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('imports')}
           >
             <History size={16} /> Imports
-          </button>
-          <button
-            className={`catalog-btn ${view === 'stats' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+          </Button>
+          <Button variant="ghost"             className={`catalog-btn ${view === 'stats' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('stats')}
           >
             <BarChart3 size={16} /> Stats
-          </button>
-          <button
-            className={`catalog-btn ${view === 'settings' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
+          </Button>
+          <Button variant="ghost"             className={`catalog-btn ${view === 'settings' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('settings')}
           >
             <Settings size={16} /> Paramètres
-          </button>
+          </Button>
           {canWrite && (
             <Button variant="primary" onClick={() => setShowImport(true)}>
               <Upload size={16} /> Importer PDF
             </Button>
           )}
           {canWrite && total > 0 && (
-            <Button variant="secondary" onClick={handleRefreshBrands} disabled={refreshingBrands} title="Détecter automatiquement les marques dans les désignations">
+ <Tooltip content="Détecter automatiquement les marques dans les désignations" position="bottom">
+   <Button variant="secondary" onClick={handleRefreshBrands} disabled={refreshingBrands}>
               <RefreshCw size={16} className={refreshingBrands ? 'spin' : ''} /> Màj marques
             </Button>
+ </Tooltip>
           )}
           {canWrite && total > 0 && (
-            <Button variant="danger" onClick={handlePurge} title="Vider toute la base articles fournisseurs">
+ <Tooltip content="Vider toute la base articles fournisseurs" position="bottom">
+   <Button variant="danger" onClick={handlePurge}>
               <DatabaseZap size={16} /> Vider la base
             </Button>
+ </Tooltip>
           )}
         </div>
       </div>
@@ -332,7 +334,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
                       {canWrite && (
                         <td>
                           <Tooltip content="Supprimer">
-                            <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} onClick={() => handleDeleteArticle(a.id)}>
+                            <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} aria-label="Supprimer" onClick={() => handleDeleteArticle(a.id)}>
                               <Trash2 size={14} />
                             </Button>
                           </Tooltip>
@@ -384,7 +386,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
               <tbody>
                 {imports.map(imp => (
                   <tr key={imp.id}>
-                    <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{new Date(imp.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{formatDateTime(imp.created_at)}</td>
                     <td><FileText size={14} style={{ marginRight: 4, verticalAlign: 'text-bottom' }} />{imp.filename}</td>
                     <td>{imp.supplier_name || '—'}</td>
                     <td style={{ textAlign: 'center' }}>{imp.page_count || '?'}</td>
@@ -393,7 +395,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
                     {canWrite && (
                       <td>
                         <Tooltip content="Supprimer import + articles">
-                          <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} onClick={() => handleDeleteImport(imp)}>
+                          <Button variant="danger" size="sm" iconOnly style={{ padding: '0.25rem' }} aria-label="Supprimer" onClick={() => handleDeleteImport(imp)}>
                             <Trash2 size={14} />
                           </Button>
                         </Tooltip>
@@ -451,15 +453,8 @@ export default function SupplierCatalogPanel({ currentUser }) {
           onClose={() => setShowImport(false)}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />    </div>
+      {ConfirmDialogRenderer}
+    </div>
   );
 }
 
@@ -620,7 +615,7 @@ function ImportPDFModal({ onDone, onClose }) {
                         <span>{f.name}</span>
                         <span className="catalog-import-file-size">{(f.size / 1024 / 1024).toFixed(1)} Mo</span>
                         <Tooltip content="Retirer">
-                          <Button variant="ghost" size="sm" iconOnly onClick={() => handleRemoveFile(i)}>
+                          <Button variant="ghost" size="sm" iconOnly aria-label="Retirer" onClick={() => handleRemoveFile(i)}>
                             <X size={14} />
                           </Button>
                         </Tooltip>

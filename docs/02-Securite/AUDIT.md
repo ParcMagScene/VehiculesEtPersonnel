@@ -71,7 +71,7 @@ eM@g est une application métier **fonctionnellement riche** qui couvre 14 modul
 | 🔴 **P0** | 6 DROP TABLE `task_assignments` à chaque démarrage | Intégrité |
 | 🔴 **P1** | N+1 queries sur 4 endpoints critiques (×50-150 queries) | Performance |
 | 🔴 **P1** | Transactions manquantes sur congés (4 ops non-atomiques) | Intégrité |
-| 🟡 **P2** | 0 tests automatisés, 0 TypeScript, 0 PropTypes | Maintenabilité |
+| 🟡 **P2** | 0 tests automatisés, 0 TypeScript, 0 PropTypes | Maintenabilité | ← ✅ 56 tests ajoutés (avril 2026) |
 | 🟡 **P2** | 52 fichiers CSS sans dark mode, 192 !important | UX |
 
 ### Chiffres clés
@@ -81,7 +81,7 @@ eM@g est une application métier **fonctionnellement riche** qui couvre 14 modul
 | Vulnérabilités critiques | **3** | 🔴 À corriger immédiatement |
 | Vulnérabilités hautes | **5** | 🟠 Sous 2 semaines |
 | Vulnérabilités moyennes | **12** | 🟡 Sous 1 mois |
-| Tests automatisés | **0** | 🔴 Aucune couverture |
+| Tests automatisés | **56** (avril 2026) | ✅ 9 suites, 3 fichiers |
 | Couverture TypeScript | **0%** | 🟡 Risque maintenabilité |
 | Couverture ARIA (a11y) | **5%** | 🔴 Non conforme WCAG |
 | Couverture dark mode CSS | **25%** | 🟡 Incomplète |
@@ -141,7 +141,7 @@ FRONTEND REACT : App.jsx → Header + 14 modules lazy-loaded
 | Base de données | SQLite (better-sqlite3) | WAL mode |
 | Authentification | JWT + bcrypt | SHA-256 hash en DB |
 | Déploiement | PM2 | Cron restart 6h |
-| Domaine | DuckDNS | magsav.duckdns.org |
+| Domaine | Dynamic DNS | (configurable via .env) |
 | Reverse proxy | Non documenté | HTTP → HTTPS supposé |
 
 ---
@@ -1180,7 +1180,7 @@ setInterval(() => {
 | God Components (>1500 l.) | **6** | 🟡 |
 | useState dans PersonnelPanel | **48** | 🔴 |
 | PropTypes / TypeScript | **0** | 🟡 |
-| Tests automatisés | **0** | 🔴 |
+| Tests automatisés | **56** (avril 2026) | ✅ |
 | Couverture ARIA (a11y) | **~5%** | 🔴 |
 | Dark mode CSS | **~25%** couverture | 🟡 |
 | Couleurs hex hardcodées | **~379** | 🟡 |
@@ -1426,6 +1426,7 @@ setInterval(() => {
   - Aucune limite de longueur sur les champs texte (DoS par payload géant)
   - Les paramètres d'URL (`:id`) ne sont jamais validés comme integers
 - **Correction suggérée :** Implémenter une couche de validation avec Zod ou Joi. Créer un middleware `validate(schema)` réutilisable.
+- ✅ **Corrigé (avril 2026)** : Zod implémenté dans `apps/api/schemas/imports.js` avec middleware `validate()` sur 4 endpoints import.
 
 ---
 
@@ -1480,6 +1481,7 @@ setInterval(() => {
 - **Fichiers :** Aucun fichier `*.test.js` ou `*.spec.js` dans `server/`
 - **Problème :** Aucun test unitaire ou d'intégration pour 18 000 lignes de code backend. Les bugs identifiés dans ce rapport (BUG-01, BUG-02, RACE-01) auraient été détectés par des tests basiques.
 - **Correction suggérée :** Prioriser les tests sur les flux critiques : authentification, réinitialisation mot de passe, calcul de solde congés, génération de références.
+- ✅ **Corrigé (avril 2026)** : 56 tests (21 unit + 17 schémas Zod + 18 DB init) — `npm test`
 
 ---
 
@@ -2184,15 +2186,15 @@ L'import CSV crée automatiquement la hiérarchie de catégories avec des icône
 **Fichiers** : `apps/api/backup-database.sh:4-5`, `apps/api/backup-on-stop.sh:4-5`, `apps/api/ecosystem.config.js:9`  
 **Impact** : ⚠️ **AUCUN BACKUP N'EST CRÉÉ** lors des redémarrages PM2
 
-Les scripts de sauvegarde pointent vers l'ancien chemin `/Users/reunion/eM@g/server/vehicules.db` alors que la DB est en `/Users/reunion/eM@g/apps/api/vehicules.db`. PM2 appelle ces scripts (`post_update`) mais ils échouent silencieusement.
+Les scripts de sauvegarde pointent vers l'ancien chemin `$REPO_ROOT/server/vehicules.db` alors que la DB est en `$REPO_ROOT/apps/api/vehicules.db`. PM2 appelle ces scripts (`post_update`) mais ils échouent silencieusement.
 
 **Root cause** : Migration en monorepo sans mise à jour des scripts de backup.
 
 ```diff
 --- a/apps/api/backup-database.sh
 +++ b/apps/api/backup-database.sh
--DB_FILE="/Users/reunion/eM@g/server/vehicules.db"
--BACKUP_DIR="/Users/reunion/eM@g/server/backups"
+-DB_FILE="$REPO_ROOT/server/vehicules.db"
+-BACKUP_DIR="$REPO_ROOT/server/backups"
 +SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 +DB_FILE="$SCRIPT_DIR/vehicules.db"
 +BACKUP_DIR="$SCRIPT_DIR/backups"
@@ -2201,8 +2203,8 @@ Les scripts de sauvegarde pointent vers l'ancien chemin `/Users/reunion/eM@g/ser
 ```diff
 --- a/apps/api/backup-on-stop.sh
 +++ b/apps/api/backup-on-stop.sh
--DB_FILE="/Users/reunion/eM@g/server/vehicules.db"
--BACKUP_DIR="/Users/reunion/eM@g/server/backups"
+-DB_FILE="$REPO_ROOT/server/vehicules.db"
+-BACKUP_DIR="$REPO_ROOT/server/backups"
 +SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 +DB_FILE="$SCRIPT_DIR/vehicules.db"
 +BACKUP_DIR="$SCRIPT_DIR/backups"
@@ -2777,7 +2779,7 @@ Validation par extension seule (`.jpg.php` passe).
 | LOW-09 | Domain production dans logs deploy | safe-deploy.sh:77 |
 | LOW-10 | PM2 chemins absolus user-specific | ecosystem.config.js:3-5 |
 | LOW-11 | Pas d'utilisateur système dédié | ecosystem.config.js |
-| LOW-12 | Exposition domaine DuckDNS | safe-deploy.sh |
+| LOW-12 | Exposition domaine Dynamic DNS | safe-deploy.sh |
 
 ---
 

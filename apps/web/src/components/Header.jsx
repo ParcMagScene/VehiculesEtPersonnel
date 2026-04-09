@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, ClipboardCheck, Video, Layers } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../utils/dateUtils';
-import QRCodeModal from './QRCodeModal';
 import OverdueInterventionModal from './planning/OverdueInterventionModal';
 import ProfileEditModal from './auth/ProfileEditModal';
 import { useToast } from '../hooks/useToast';
-import { Dialog, Textarea, Avatar } from '@/design-system';
+import { useConfirmDialog } from '../hooks/useConfirmDialog';
+import { Avatar, Button, Textarea , Tooltip} from '@/design-system';
+import { STATUS } from '../constants';
+
 import './Header.css';
 
-const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
+const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], _onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
-  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
   const [showRequestsPopup, setShowRequestsPopup] = useState(false);
@@ -26,7 +28,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState(null);
   // (quick-create supprimé — les actions sont dans le header et la bannière)
 
   // Charger les demandes en attente (interventions + réservations) pour le badge admin
@@ -125,8 +126,8 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
 
   // Compter les pannes signalées, interventions programmées et demandes d'intervention
   const reportedMaintenances = maintenances.filter(m => m.status === 'reported');
-  const scheduledMaintenances = maintenances.filter(m => m.status === 'scheduled');
-  const pendingMaintenances = maintenances.filter(m => m.status === 'pending');
+  const scheduledMaintenances = maintenances.filter(m => m.status === STATUS.SCHEDULED);
+  const pendingMaintenances = maintenances.filter(m => m.status === STATUS.PENDING);
   const inProgressMaintenances = maintenances.filter(m => m.status === 'in_progress');
   const immobilizedVehicles = reportedMaintenances.filter(m => m.isImmobilized);
   
@@ -154,7 +155,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     try {
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
-        status: 'completed'
+        status: STATUS.COMPLETED
       });
       if (onRefreshMaintenances) {
         await onRefreshMaintenances();
@@ -169,7 +170,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     try {
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
-        status: 'cancelled',
+        status: STATUS.CANCELLED,
         notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[Annulée] ${reason}`
       });
       if (onRefreshMaintenances) {
@@ -185,7 +186,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
     try {
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
-        status: 'pending',
+        status: STATUS.PENDING,
         notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[En attente] ${reason}`
       });
       if (onRefreshMaintenances) {
@@ -222,18 +223,20 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         <div className="header-title-container">
           <div className="header-logo-area">
             <img src="/Logos/LogoEmagTransp.png" alt="eM@g Scene" className="header-logo" />
-            <button className="help-trigger-btn" onClick={onOpenHelp} title="Aide — Guide d'utilisation" aria-label="Aide">
+ <Tooltip content="Aide — Guide d'utilisation" position="bottom">
+   <Button variant="ghost" className="help-trigger-btn" onClick={onOpenHelp} aria-label="Aide">
               <HelpCircle size={18} />
               <span>Aide</span>
-            </button>
-            <button 
+            </Button>
+ </Tooltip>
+            <Button variant="ghost" 
               className="theme-toggle-btn" 
               onClick={onToggleTheme} 
               title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'} 
               aria-label="Basculer le thème"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+            </Button>
           </div>
           <div className="module-tabs" role="tablist" aria-label="Module principal">
             {(() => {
@@ -261,8 +264,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               return orderedTabs.map(tab => {
                 const Icon = tab.icon;
                 return (
-                  <button
-                    key={tab.id}
+                  <Button variant="ghost"                     key={tab.id}
                     className={`module-tab ${activeModule === tab.id ? 'active' : ''}`}
                     onClick={() => setActiveModule(tab.id)}
                     role="tab"
@@ -270,7 +272,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   >
                     <Icon size={18} />
                     <span>{tab.label}</span>
-                  </button>
+                  </Button>
                 );
               });
             })()}
@@ -284,22 +286,22 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
               <div className="notifications-popup-header">
                 <h3><Bell size={20} strokeWidth={2.5} className="popup-icon" /> {
                   notificationFilter === 'reported' ? 'Pannes signalées' :
-                  notificationFilter === 'pending' ? "Demandes d'intervention / CT" :
-                  notificationFilter === 'active' ? 'Interventions actives' :
+                  notificationFilter === STATUS.PENDING ? "Demandes d'intervention / CT" :
+                  notificationFilter === STATUS.ACTIVE ? 'Interventions actives' :
                   notificationFilter === 'reservations' ? 'Demandes de réservation' :
                   'Notifications'
                 }</h3>
-                <button className="close-popup-button" onClick={() => setShowNotificationsPopup(false)}>✕</button>
+                <Button variant="ghost" className="close-popup-button" onClick={() => setShowNotificationsPopup(false)} aria-label="Fermer les notifications">✕</Button>
               </div>
               <div className="notifications-popup-content">
                 {((notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
-                  (notificationFilter === 'pending' && pendingMaintenances.length === 0) ||
-                  (notificationFilter === 'active' && activeInterventions.length === 0)) ? (
+                  (notificationFilter === STATUS.PENDING && pendingMaintenances.length === 0) ||
+                  (notificationFilter === STATUS.ACTIVE && activeInterventions.length === 0)) ? (
                   <p className="no-notifications">Aucune notification</p>
                 ) : (
                   <>
                     {/* Section Interventions en retard */}
-                    {(notificationFilter === 'all' || notificationFilter === 'active' || notificationFilter === 'overdue') && overdueInterventions.length > 0 && (
+                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === 'overdue') && overdueInterventions.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title"><Clock size={18} strokeWidth={2.5} /> Interventions en retard</h4>
                         <div className="notifications-list">
@@ -340,7 +342,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     )}
 
                     {/* Section Interventions programmées */}
-                    {(notificationFilter === 'all' || notificationFilter === 'active' || notificationFilter === 'scheduled') && scheduledMaintenances.length > 0 && (
+                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === STATUS.SCHEDULED) && scheduledMaintenances.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions programmées</h4>
                         <div className="notifications-list">
@@ -387,7 +389,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     )}
 
                     {/* Section Interventions en cours */}
-                    {(notificationFilter === 'all' || notificationFilter === 'active' || notificationFilter === 'in_progress') && inProgressMaintenances.length > 0 && (
+                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === 'in_progress') && inProgressMaintenances.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions en cours</h4>
                         <div className="notifications-list">
@@ -434,7 +436,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                     )}
 
                     {/* Section Demandes d'intervention */}
-                    {(notificationFilter === 'all' || notificationFilter === 'pending') && pendingMaintenances.length > 0 && (
+                    {(notificationFilter === 'all' || notificationFilter === STATUS.PENDING) && pendingMaintenances.length > 0 && (
                       <div className="notification-section">
                         <h4 className="notification-section-title"><ClipboardList size={18} strokeWidth={2.5} /> Demandes d'intervention</h4>
                         <div className="notifications-list">
@@ -506,8 +508,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   <span className="notification-registration">{vehicle.registration}</span>
                                 )}
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    className="notif-action-btn create-intervention"
+                                  <Button variant="ghost"                                     className="notif-action-btn create-intervention"
                                     onClick={() => {
                                       setShowNotificationsPopup(false);
                                       setExpandedReportedId(null);
@@ -518,7 +519,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   >
                                     <Wrench size={14} />
                                     Créer une intervention
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
                             );
@@ -621,12 +622,12 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                     placeholder="Motif du refus..."
+                                    aria-label="Motif du refus"
                                     rows={2}
                                     autoFocus
                                   />
                                   <div className="reject-form-buttons">
-                                    <button
-                                      className="notif-action-btn confirm-reject"
+                                    <Button variant="ghost"                                       className="notif-action-btn confirm-reject"
                                       disabled={!rejectionReason.trim()}
                                       onClick={async () => {
                                         try {
@@ -642,22 +643,20 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                       }}
                                     >
                                       Confirmer le refus
-                                    </button>
-                                    <button
-                                      className="notif-action-btn cancel-reject"
+                                    </Button>
+                                    <Button variant="ghost"                                       className="notif-action-btn cancel-reject"
                                       onClick={() => {
                                         setRejectingRequestId(null);
                                         setRejectionReason('');
                                       }}
                                     >
                                       Annuler
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               ) : (
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    className="notif-action-btn approve"
+                                  <Button variant="ghost"                                     className="notif-action-btn approve"
                                     onClick={async () => {
                                       try {
                                         await api.approveReservationRequest(request.id);
@@ -672,14 +671,13 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   >
                                     <Check size={14} />
                                     Approuver
-                                  </button>
-                                  <button
-                                    className="notif-action-btn reject"
+                                  </Button>
+                                  <Button variant="ghost"                                     className="notif-action-btn reject"
                                     onClick={() => setRejectingRequestId(request.id)}
                                   >
                                     <X size={14} />
                                     Refuser
-                                  </button>
+                                  </Button>
                                 </div>
                               )}
                             </div>
@@ -701,7 +699,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
               <div className="notifications-popup-header">
                 <h3><CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" /> Demandes de réservation</h3>
-                <button className="close-popup-button" onClick={() => setShowRequestsPopup(false)}>✕</button>
+                <Button variant="ghost" className="close-popup-button" onClick={() => setShowRequestsPopup(false)} aria-label="Fermer les demandes">✕</Button>
               </div>
               <div className="notifications-popup-content">
                 {pendingReservationRequests.length === 0 ? (
@@ -799,12 +797,12 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                     placeholder="Motif du refus..."
+                                    aria-label="Motif du refus"
                                     rows={2}
                                     autoFocus
                                   />
                                   <div className="reject-form-buttons">
-                                    <button
-                                      className="notif-action-btn confirm-reject"
+                                    <Button variant="ghost"                                       className="notif-action-btn confirm-reject"
                                       disabled={!rejectionReason.trim()}
                                       onClick={async () => {
                                         try {
@@ -819,21 +817,19 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                       }}
                                     >
                                       <X size={14} /> Confirmer le refus
-                                    </button>
-                                    <button
-                                      className="notif-action-btn dismiss"
+                                    </Button>
+                                    <Button variant="ghost"                                       className="notif-action-btn dismiss"
                                       onClick={() => { setRejectingRequestId(null); setRejectionReason(''); }}
                                     >
                                       Annuler
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               ) : (
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    className="notif-action-btn approve"
+                                  <Button variant="ghost"                                     className="notif-action-btn approve"
                                     onClick={() => {
-                                      setConfirmDialog({
+                                      confirm({
                                         title: 'Approuver la demande',
                                         message: 'Approuver cette demande et créer la réservation ?',
                                         variant: 'confirm',
@@ -853,14 +849,13 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                                   >
                                     <Check size={14} />
                                     Valider
-                                  </button>
-                                  <button
-                                    className="notif-action-btn reject"
+                                  </Button>
+                                  <Button variant="ghost"                                     className="notif-action-btn reject"
                                     onClick={() => { setRejectingRequestId(request.id); setRejectionReason(''); }}
                                   >
                                     <X size={14} />
                                     Refuser
-                                  </button>
+                                  </Button>
                                 </div>
                               )}
                             </div>
@@ -959,34 +954,22 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
             )}
             </div>
             
-            <button className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages" title="Messages">
+ <Tooltip content="Messages" position="bottom">
+   <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages">
               <MessageSquare size={20} />
               {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
-            </button>
+            </Button>
+ </Tooltip>
 
             {currentUser?.isAdmin && (
-              <button className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing" title="Mailing">
+ <Tooltip content="Mailing" position="bottom">
+   <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing">
                 <Mail size={20} />
-              </button>
+              </Button>
+ </Tooltip>
             )}
 
-            <button className="qr-button" onClick={() => setShowQRCodeModal(true)} aria-label="Afficher le QR code mobile">
-              <QrCode size={20} />
-            </button>
-
-            {(activeModule === 'vehicles' || activeModule === 'equipment' || activeModule === 'stock') && (
-            <button 
-              className="management-button" 
-              onClick={onOpenManagement} 
-              aria-label="Ouvrir le panneau de gestion"
-              style={{ position: 'relative' }}
-            >
-              {activeModule === 'vehicles' ? <Truck size={18} /> : activeModule === 'stock' ? <Layers size={18} /> : <Package size={18} />}
-              Gestion
-            </button>
-            )}
-
-            <button 
+            <Button variant="ghost" 
               className="settings-button" 
               onClick={onOpenSettings} 
               aria-label="Ouvrir les paramètres"
@@ -1016,12 +999,11 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   {pendingAccessRequests}
                 </span>
               )}
-            </button>
+            </Button>
 
             {currentUser && (
               <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
+                <Button variant="ghost"                   onClick={() => setShowUserMenu(!showUserMenu)}
                   title={currentUser.name}
                   aria-label={`Menu utilisateur (${currentUser.name})`}
                   style={{
@@ -1049,7 +1031,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                   }}
                 >
                   <Avatar name={currentUser.name} avatar={currentUser.avatar} size={36} />
-                </button>
+                </Button>
 
                 {showUserMenu && (
                   <>
@@ -1065,44 +1047,39 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
                         </div>
                       </div>
                       
-                      <button
-                        className="user-menu-btn"
+                      <Button variant="ghost"                         className="user-menu-btn"
                         onClick={() => { setShowUserMenu(false); setShowProfileModal(true); }}
                       >
                         <UserCog size={16} />
                         Mon profil
-                      </button>
+                      </Button>
 
-                      <button
-                        className="user-menu-btn"
+                      <Button variant="ghost"                         className="user-menu-btn"
                         onClick={() => { setShowUserMenu(false); if (onOpenPreferences) onOpenPreferences(); }}
                       >
                         <Settings size={16} />
                         Préférences
-                      </button>
+                      </Button>
 
-                      <button
-                        className="user-menu-btn"
+                      <Button variant="ghost"                         className="user-menu-btn"
                         onClick={() => { setShowUserMenu(false); onLogout(); }}
                       >
                         <LayoutGrid size={16} />
                         Changer d'utilisateur
-                      </button>
+                      </Button>
 
-                      <button
-                        className="user-menu-btn danger"
+                      <Button variant="ghost"                         className="user-menu-btn danger"
                         onClick={() => { setShowUserMenu(false); onLogout(); }}
                       >
                         <XCircle size={16} />
                         Se déconnecter
-                      </button>
+                      </Button>
 
-                      <button
-                        className="user-menu-cancel"
+                      <Button variant="ghost"                         className="user-menu-cancel"
                         onClick={() => setShowUserMenu(false)}
                       >
                         Annuler
-                      </button>
+                      </Button>
                     </div>
                   </>
                 )}
@@ -1112,10 +1089,6 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
         </div>
       </div>
     </div>
-
-    {showQRCodeModal && (
-      <QRCodeModal onClose={() => setShowQRCodeModal(false)} />
-    )}
 
     {selectedOverdueIntervention && (
       <OverdueInterventionModal
@@ -1140,15 +1113,7 @@ const Header = ({ view, setView, currentDate, setCurrentDate, onOpenManagement, 
       />
     )}
 
-    <Dialog
-      open={!!confirmDialog}
-      onClose={() => setConfirmDialog(null)}
-      title={confirmDialog?.title}
-      variant={confirmDialog?.variant}
-      onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-      confirmLabel={confirmDialog?.confirmLabel}
-      cancelLabel="Annuler"
-    />
+    {ConfirmDialogRenderer}
   </>
   );
 };

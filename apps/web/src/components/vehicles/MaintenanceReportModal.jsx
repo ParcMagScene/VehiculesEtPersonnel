@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, Printer, FileText, ChevronLeft, ChevronRight, Calendar, Download, Filter } from 'lucide-react';
+import { X, Printer, FileText, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import api from '../../utils/api';
 import './MaintenanceReportModal.css';
-import { Select, Table } from '@/design-system';
+import { Button, Select, Table , Tooltip} from '@/design-system';
+import { formatDateTime, formatDateSimple } from '../../utils/formatUtils';
 
 const PERIOD_MODES = [
   { value: 'day', label: 'Journalier' },
@@ -17,26 +18,6 @@ const REPORT_TYPES = [
   { value: 'entries', label: 'Entrées uniquement' },
   { value: 'exits', label: 'Sorties uniquement' },
 ];
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    return format(d, 'dd/MM/yyyy HH:mm', { locale: fr });
-  } catch {
-    return dateStr;
-  }
-};
-
-const formatDateShort = (dateStr) => {
-  if (!dateStr) return '—';
-  try {
-    const d = new Date(dateStr);
-    return format(d, 'dd/MM/yyyy', { locale: fr });
-  } catch {
-    return dateStr;
-  }
-};
 
 const formatCost = (cost) => {
   if (cost === null || cost === undefined) return '—';
@@ -198,41 +179,44 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
 
   return (
     <div className="mr-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="mr-modal" onClick={e => e.stopPropagation()}>
+      <div className="mr-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="mr-header">
           <h2><FileText size={20} /> Rapport Maintenance Matériel</h2>
-          <button className="mr-close" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="mr-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Toolbar */}
         <div className="mr-toolbar">
           <div className="mr-toolbar-left">
             {PERIOD_MODES.map(m => (
-              <button
-                key={m.value}
+              <Button variant="ghost"                 key={m.value}
                 className={`mr-period-btn ${periodMode === m.value ? 'active' : ''}`}
                 onClick={() => setPeriodMode(m.value)}
               >
                 {m.label}
-              </button>
+              </Button>
             ))}
           </div>
           <div className="mr-toolbar-center">
-            <button className="mr-nav-btn" onClick={goPrev}><ChevronLeft size={18} /></button>
-            <button className="mr-today-btn" onClick={goToday}>Aujourd'hui</button>
-            <button className="mr-nav-btn" onClick={goNext}><ChevronRight size={18} /></button>
+            <Button variant="ghost" className="mr-nav-btn" onClick={goPrev} aria-label="Rapport précédent"><ChevronLeft size={18} /></Button>
+            <Button variant="ghost" className="mr-today-btn" onClick={goToday}>Aujourd'hui</Button>
+            <Button variant="ghost" className="mr-nav-btn" onClick={goNext} aria-label="Rapport suivant"><ChevronRight size={18} /></Button>
             <span className="mr-date-label">{label}</span>
           </div>
           <div className="mr-toolbar-right">
             <Select className="mr-type-select" value={reportType} onChange={e => setReportType(e.target.value)}>
               {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </Select>
-            <button className="mr-action-btn" onClick={handlePrint} title="Imprimer">
+ <Tooltip content="Imprimer" position="bottom">
+   <Button variant="ghost" className="mr-action-btn" onClick={handlePrint}>
               <Printer size={16} /> Imprimer
-            </button>
-            <button className="mr-action-btn export" onClick={handleExportPDF} title="Télécharger en PDF" disabled={exporting}>
+            </Button>
+ </Tooltip>
+ <Tooltip content="Télécharger en PDF" position="bottom">
+   <Button variant="ghost" className="mr-action-btn export" onClick={handleExportPDF} disabled={exporting}>
               <Download size={16} /> {exporting ? 'Export...' : 'PDF'}
-            </button>
+            </Button>
+ </Tooltip>
           </div>
         </div>
 
@@ -272,8 +256,8 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                       <td className="mr-mono">{row.equipmentUid || '—'}</td>
                       <td className="mr-mono">{row.equipmentSerialNumber || '—'}</td>
                       <td className="mr-desc">{row.title}{row.description ? ` — ${row.description}` : ''}</td>
-                      <td>{row.entryDate ? formatDate(row.entryDate) : (row.createdAt ? formatDateShort(row.createdAt) : '—')}</td>
-                      <td>{row.exitDate ? formatDate(row.exitDate) : '—'}</td>
+                      <td>{row.entryDate ? formatDateTime(row.entryDate) : (row.createdAt ? formatDateSimple(row.createdAt) : '—')}</td>
+                      <td>{row.exitDate ? formatDateTime(row.exitDate) : '—'}</td>
                       <td>{row.reportedByName || '—'}</td>
                       <td className="mr-cost">{formatCost(row.cost)}</td>
                     </tr>
@@ -326,8 +310,8 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                     <td>{row.equipmentUid || '—'}</td>
                     <td>{row.equipmentSerialNumber || '—'}</td>
                     <td>{row.title}{row.description ? ` — ${row.description}` : ''}</td>
-                    <td>{row.entryDate ? formatDate(row.entryDate) : (row.createdAt ? formatDateShort(row.createdAt) : '—')}</td>
-                    <td>{row.exitDate ? formatDate(row.exitDate) : '—'}</td>
+                    <td>{row.entryDate ? formatDateTime(row.entryDate) : (row.createdAt ? formatDateSimple(row.createdAt) : '—')}</td>
+                    <td>{row.exitDate ? formatDateTime(row.exitDate) : '—'}</td>
                     <td>{row.reportedByName || '—'}</td>
                     <td>{formatCost(row.cost)}</td>
                   </tr>

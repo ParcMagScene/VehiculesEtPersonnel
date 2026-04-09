@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
-  X, Calendar, Clock, MapPin, Briefcase, Check, Loader,
+  X, Calendar, Clock, MapPin, Check, Loader,
   Package, Truck, ArrowRight, RotateCcw, Wrench, AlertCircle
 } from 'lucide-react';
 import api from '../../utils/api';
@@ -8,7 +8,9 @@ import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../../utils/affaireCons
 import AffaireBadge from '../AffaireBadge';
 import { useToast } from '../../hooks/useToast';
 import './EventTaskModal.css';
-import { Input, Select } from '@/design-system';
+import { Button, Input, Select } from '@/design-system';
+
+import { STATUS } from '../../constants';
 
 // ═══ Définition des étapes opérationnelles ═══
 const TASK_STEPS = [
@@ -41,11 +43,13 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     const startDT = event?.start?.dateTime || event?.start?.date || '';
     const endDT = event?.end?.dateTime || event?.end?.date || '';
     const startDate = startDT.slice(0, 10);
-    const startTime = startDT.includes('T')
-      ? new Date(startDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const parsedStart = startDT.includes('T') ? new Date(startDT) : null;
+    const parsedEnd = endDT.includes('T') ? new Date(endDT) : null;
+    const startTime = parsedStart && !isNaN(parsedStart)
+      ? parsedStart.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       : '';
-    const endTime = endDT.includes('T')
-      ? new Date(endDT).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    const endTime = parsedEnd && !isNaN(parsedEnd)
+      ? parsedEnd.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       : '';
     const location = event?.location || '';
     const description = event?.description || '';
@@ -199,7 +203,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
           source_id: event.id,
           google_event_title: eventInfo.cleanSummary || eventInfo.summary,
           affaire_num: eventInfo.affaireNum || null,
-          status: 'pending',
+          status: STATUS.PENDING,
           location_address: s.locationAddress || null,
         };
       });
@@ -242,7 +246,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
             <h3><Calendar size={18} /> Définir les tâches</h3>
             <p className="etm-event-title">{eventInfo.summary}</p>
           </div>
-          <button className="etm-close" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="etm-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Event summary */}
@@ -265,7 +269,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
             const Icon = step.icon;
             return (
               <div key={step.key} className={`etm-step ${s.enabled ? 'enabled' : ''}`}>
-                <div className="etm-step-header" onClick={() => toggleStep(step.key)}>
+                <div className="etm-step-header" role="button" tabIndex={0} onClick={() => toggleStep(step.key)}>
                   <div className={`etm-step-check ${s.enabled ? 'checked' : ''}`} style={s.enabled ? { background: step.color } : {}}>
                     {s.enabled && <Check size={12} />}
                   </div>
@@ -353,17 +357,17 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         {/* Footer */}
         <div className="etm-footer">
           {hasExistingTasks && (
-            <button className="etm-btn danger" onClick={handleDeleteAll} disabled={deleting}>
+            <Button variant="ghost" className="etm-btn danger" onClick={handleDeleteAll} disabled={deleting}>
               {deleting ? <Loader size={14} className="spin" /> : <AlertCircle size={14} />}
               Supprimer les tâches
-            </button>
+            </Button>
           )}
           <div className="etm-footer-right">
-            <button className="etm-btn secondary" onClick={onClose}>Annuler</button>
-            <button className="etm-btn primary" onClick={handleSave} disabled={saving || enabledSteps.length === 0}>
+            <Button variant="ghost" className="etm-btn secondary" onClick={onClose}>Annuler</Button>
+            <Button variant="ghost" className="etm-btn primary" onClick={handleSave} disabled={saving || enabledSteps.length === 0}>
               {saving ? <Loader size={14} className="spin" /> : <Check size={14} />}
               {hasExistingTasks ? 'Mettre à jour' : 'Créer'} {enabledSteps.length} tâche{enabledSteps.length > 1 ? 's' : ''}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

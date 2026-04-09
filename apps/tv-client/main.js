@@ -6,6 +6,23 @@
 
 const API_BASE = window.location.origin;
 
+// Token TV : lu depuis le paramètre URL ?token= ou depuis localStorage
+const TV_TOKEN = (() => {
+  const urlToken = new URLSearchParams(window.location.search).get('token');
+  if (urlToken) {
+    localStorage.setItem('tv-token', urlToken);
+    return urlToken;
+  }
+  return localStorage.getItem('tv-token') || '';
+})();
+
+/** Fetch wrapper qui inclut le header X-TV-Token */
+function tvFetch(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (TV_TOKEN) headers['X-TV-Token'] = TV_TOKEN;
+  return fetch(url, { ...options, headers });
+}
+
 // État global
 let colorRules = [];
 let locationIconRules = [];
@@ -117,7 +134,7 @@ function updateDateTime() {
 // ===============================================
 async function loadTVState() {
   try {
-    const response = await fetch(`${API_BASE}/api/display/tv-public-state`);
+    const response = await tvFetch(`${API_BASE}/api/display/tv-public-state`);
     const state = await response.json();
 
     // Appliquer la config (variables CSS)
@@ -211,9 +228,12 @@ function renderEvents(events) {
   const recurrentList = document.getElementById('recurrent-events-list');
 
   if (regularList) {
+    const regularSection = regularList.closest('.events-section') || regularList.parentElement;
     if (regular.length === 0) {
-      regularList.innerHTML = '<li>Aucune tâche planifiée aujourd\'hui</li>';
+      regularList.innerHTML = '';
+      if (regularSection) regularSection.style.display = 'none';
     } else {
+      if (regularSection) regularSection.style.display = '';
       regularList.innerHTML = '';
       regular.forEach(event => {
         const li = createEventElement(event);
@@ -223,9 +243,12 @@ function renderEvents(events) {
   }
 
   if (recurrentList) {
+    const recurrentSection = recurrentList.closest('.events-section') || recurrentList.parentElement;
     if (recurrent.length === 0) {
-      recurrentList.innerHTML = '<li>Aucune tâche récurrente</li>';
+      recurrentList.innerHTML = '';
+      if (recurrentSection) recurrentSection.style.display = 'none';
     } else {
+      if (recurrentSection) recurrentSection.style.display = '';
       recurrentList.innerHTML = '';
       recurrent.forEach(event => {
         const li = createEventElement(event);
@@ -335,7 +358,7 @@ async function toggleEventComplete(eventId, li) {
     : '/api/display/tv/complete-event';
 
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const response = await tvFetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventId: strEventId })
@@ -390,7 +413,7 @@ async function loadWeather() {
       return;
     }
 
-    const response = await fetch(`${API_BASE}/api/display/weather`);
+    const response = await tvFetch(`${API_BASE}/api/display/weather`);
     const data = await response.json();
     const weatherEl = document.getElementById('weather');
 
@@ -428,7 +451,7 @@ function getWeatherIcon(iconCode) {
 // ===============================================
 async function loadSonosNowPlaying() {
   try {
-    const response = await fetch(`${API_BASE}/api/display/sonos-now-playing`);
+    const response = await tvFetch(`${API_BASE}/api/display/sonos-now-playing`);
     const data = await response.json();
     updateSonosWidget(data);
   } catch (error) {
@@ -449,8 +472,19 @@ function updateSonosWidget(data) {
   if (data && data.playing && data.title) {
     widget.style.display = 'flex';
     if (albumArt) {
-      albumArt.src = data.albumArtURI || data.albumArt || '/display-logo/logo.png';
-      albumArt.onerror = () => { albumArt.onerror = null; albumArt.src = '/display-logo/logo.png'; };
+      const artUrl = data.albumArtURI || data.albumArt || '/display-logo/logo.png';
+      // Éviter de re-tenter les URLs en 404 (ex: RadioMeuh.png manquant)
+      if (albumArt._failedUrls && albumArt._failedUrls.has(artUrl)) {
+        albumArt.src = '/display-logo/logo.png';
+      } else if (albumArt.src !== artUrl) {
+        albumArt.onerror = () => {
+          albumArt.onerror = null;
+          if (!albumArt._failedUrls) albumArt._failedUrls = new Set();
+          albumArt._failedUrls.add(artUrl);
+          albumArt.src = '/display-logo/logo.png';
+        };
+        albumArt.src = artUrl;
+      }
     }
 
     // Radio : Sonos met souvent "Artiste - Titre" dans le champ title, avec artist vide

@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // ⚠️ En ESM, les imports sont hoistés et exécutés AVANT le code de server.js.
-// On doit charger dotenv ici pour que DB_PATH soit défini au moment de la lecture.
+// On doit charger dotenv ici (duplication intentionnelle avec env.js) car database.js
+// est importé avant env.js à cause du hoisting ESM. Les deux doivent rester synchronisés.
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
 const envFile = isDev ? '.env.development' : '.env';
 dotenv.config({ path: join(__dirname, envFile) });
@@ -36,6 +37,9 @@ db.pragma('synchronous = FULL');
 
 // Configurer le checkpoint automatique (tous les 1000 pages)
 db.pragma('wal_autocheckpoint = 1000');
+
+// [PHASE 4] Timeout 5s si la DB est verrouillée par un autre writer
+db.pragma('busy_timeout = 5000');
 
 // Créer les tables
 // [AUDIT FIX P1-12] Les clauses ON DELETE des FOREIGN KEY ne s'appliquent qu'aux nouvelles bases.

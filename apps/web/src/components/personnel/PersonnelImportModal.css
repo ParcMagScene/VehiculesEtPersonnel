@@ -35,12 +35,12 @@
   align-items: center;
   gap: 2px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-light, var(--theme-border));
   background: var(--theme-bg-card);
   cursor: pointer;
   transition: all 0.15s ease;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   min-width: 80px;
 }
@@ -83,10 +83,10 @@
   gap: 6px;
   cursor: pointer;
   font-weight: 500;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s ease;
 }
 
@@ -98,7 +98,7 @@
   max-height: 300px;
   overflow-y: auto;
   margin-top: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-light, var(--theme-border));
 }
 
@@ -113,8 +113,8 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.72rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -140,8 +140,8 @@
 .pi-type-tag {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.72rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-xs);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -168,7 +168,7 @@
 }
 
 .pi-collision-via {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   margin-left: 4px;
 }
@@ -183,7 +183,7 @@
 }
 
 .pi-analyze-hint {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 
@@ -266,6 +266,6 @@
   }
 
   .pi-collision-count {
-    font-size: 1.1rem;
+    font-size: var(--font-lg);
   }
 }

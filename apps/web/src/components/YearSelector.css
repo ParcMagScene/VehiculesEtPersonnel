@@ -16,7 +16,7 @@
 
 .year-selector-modal {
   background: var(--theme-bg-card);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-modal);
   max-width: 600px;
   position: relative;
@@ -40,7 +40,7 @@
 
 .year-selector-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 700;
 }
 
@@ -54,7 +54,7 @@
 .year-item {
   background: var(--theme-bg-secondary);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem 1rem;
   cursor: pointer;
   display: flex;
@@ -92,7 +92,7 @@
 }
 
 .year-number {
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 600;
   color: inherit;
 }
@@ -107,7 +107,7 @@
   width: 8px;
   height: 8px;
   background: var(--theme-success-alt);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   box-shadow: 0 0 0 2px var(--success-tint-vivid);
   animation: pulse 2s infinite;
 }
@@ -130,7 +130,7 @@
   }
   
   .year-number {
-    font-size: 1.1rem;
+    font-size: var(--font-lg);
   }
 }
 

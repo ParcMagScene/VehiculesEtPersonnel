@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Package, ArrowLeft, FileText, AlertTriangle, Wrench, Settings, Home, Loader } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, FileText, AlertTriangle, Wrench, Settings, Home, Loader } from 'lucide-react';
 import api from '../../utils/api';
 import './MobileEquipmentQR.css';
 import { useToast } from '../../hooks/useToast';
-import { Input, Textarea, Select, Spinner, InlineAlert } from '@/design-system';
+import { Button, InlineAlert, Input, Select, Spinner, Textarea } from '@/design-system';
+
+import { STATUS } from '../../constants';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX
@@ -148,9 +150,9 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           <h2>Équipement introuvable</h2>
           <p>UID : <code>{uid}</code></p>
           <p>{error}</p>
-          <button className="m-eq-qr-btn" onClick={onBack || onNavigateHome}>
+          <Button variant="ghost" className="m-eq-qr-btn" onClick={onBack || onNavigateHome}>
             <Home size={18} /> Retour à l'accueil
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -164,7 +166,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
-          <button onClick={() => setScreen('menu')}><ArrowLeft size={20} /></button>
+          <Button variant="ghost" onClick={() => setScreen('menu')}><ArrowLeft size={20} /></Button>
           <h2>Fiche Équipement</h2>
         </div>
         <div className="m-eq-qr-fiche">
@@ -188,10 +190,10 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           {equipment.notes && <div className="m-eq-qr-notes"><p>{equipment.notes}</p></div>}
           
           {/* Attributions actives */}
-          {equipment.assignments?.filter(a => a.status === 'active').length > 0 && (
+          {equipment.assignments?.filter(a => a.status === STATUS.ACTIVE).length > 0 && (
             <div className="m-eq-qr-section">
               <h4>👤 Attribué à</h4>
-              {equipment.assignments.filter(a => a.status === 'active').map(a => (
+              {equipment.assignments.filter(a => a.status === STATUS.ACTIVE).map(a => (
                 <div key={a.id} className="m-eq-qr-assign">
                   <strong>{a.firstName || a.first_name} {a.lastName || a.last_name}</strong>
                   <span>depuis le {safeDate(a.startDate || a.start_date)}</span>
@@ -229,7 +231,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
-          <button onClick={() => setScreen('menu')}><ArrowLeft size={20} /></button>
+          <Button variant="ghost" onClick={() => setScreen('menu')}><ArrowLeft size={20} /></Button>
           <h2>⚠️ Signaler un défaut</h2>
         </div>
         {submitSuccess ? (
@@ -241,10 +243,10 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
             <Input type="text" value={defautForm.title} onChange={e => setDefautForm({...defautForm, title: e.target.value})} placeholder="Ex: Câble arraché, bouton cassé..." autoFocus />
             <label>Détails (optionnel)</label>
             <Textarea value={defautForm.description} onChange={e => setDefautForm({...defautForm, description: e.target.value})} rows={4} placeholder="Quand est-ce arrivé ? Circonstances..." />
-            <button className="m-eq-qr-submit warn" onClick={handleSubmitDefaut} disabled={submitting}>
+            <Button variant="ghost" className="m-eq-qr-submit warn" onClick={handleSubmitDefaut} disabled={submitting}>
               {submitting ? <Loader size={16} className="spin" /> : <AlertTriangle size={16} />}
               Envoyer le signalement
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -256,7 +258,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
-          <button onClick={() => setScreen('menu')}><ArrowLeft size={20} /></button>
+          <Button variant="ghost" onClick={() => setScreen('menu')}><ArrowLeft size={20} /></Button>
           <h2>🔧 Demande de SAV</h2>
         </div>
         {submitSuccess ? (
@@ -282,10 +284,10 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
             <Input type="text" value={savForm.title} onChange={e => setSavForm({...savForm, title: e.target.value})} placeholder="Ex: Batterie ne charge plus" />
             <label>Description</label>
             <Textarea value={savForm.description} onChange={e => setSavForm({...savForm, description: e.target.value})} rows={4} placeholder="Détails du problème..." />
-            <button className="m-eq-qr-submit" onClick={handleSubmitSav} disabled={submitting}>
+            <Button variant="ghost" className="m-eq-qr-submit" onClick={handleSubmitSav} disabled={submitting}>
               {submitting ? <Loader size={16} className="spin" /> : <Wrench size={16} />}
               Créer la demande SAV
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -297,7 +299,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
-          <button onClick={() => setScreen('menu')}><ArrowLeft size={20} /></button>
+          <Button variant="ghost" onClick={() => setScreen('menu')}><ArrowLeft size={20} /></Button>
           <h2>⚙️ Intervention directe</h2>
         </div>
         {submitSuccess ? (
@@ -317,10 +319,10 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
             <Textarea value={interventionForm.description} onChange={e => setInterventionForm({...interventionForm, description: e.target.value})} rows={3} placeholder="Actions effectuées..." />
             <label>Résolution</label>
             <Textarea value={interventionForm.resolution} onChange={e => setInterventionForm({...interventionForm, resolution: e.target.value})} rows={3} placeholder="Pièces changées, résultat..." />
-            <button className="m-eq-qr-submit ok" onClick={handleSubmitIntervention} disabled={submitting}>
+            <Button variant="ghost" className="m-eq-qr-submit ok" onClick={handleSubmitIntervention} disabled={submitting}>
               {submitting ? <Loader size={16} className="spin" /> : <Settings size={16} />}
               Enregistrer l'intervention
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -331,7 +333,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
   return (
     <div className="m-eq-qr">
       <div className="m-eq-qr-header">
-        <button onClick={onBack || onNavigateHome}><ArrowLeft size={20} /></button>
+        <Button variant="ghost" onClick={onBack || onNavigateHome} aria-label="Retour"><ArrowLeft size={20} /></Button>
         <h2>Équipement scanné</h2>
       </div>
 
@@ -357,46 +359,46 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
 
       {/* Menu multi-choix */}
       <div className="m-eq-qr-menu">
-        <button className="m-eq-qr-menu-btn home" onClick={onNavigateHome}>
+        <Button variant="ghost" className="m-eq-qr-menu-btn home" onClick={onNavigateHome}>
           <Home size={24} />
           <div>
             <strong>eM@g Home</strong>
             <span>Retour à l'accueil mobile</span>
           </div>
-        </button>
+        </Button>
         
-        <button className="m-eq-qr-menu-btn fiche" onClick={() => setScreen('fiche')}>
+        <Button variant="ghost" className="m-eq-qr-menu-btn fiche" onClick={() => setScreen('fiche')}>
           <FileText size={24} />
           <div>
             <strong>Fiche Équipement</strong>
             <span>Voir les détails, attributions, historique</span>
           </div>
-        </button>
+        </Button>
         
-        <button className="m-eq-qr-menu-btn defaut" onClick={() => setScreen('defaut')}>
+        <Button variant="ghost" className="m-eq-qr-menu-btn defaut" onClick={() => setScreen('defaut')}>
           <AlertTriangle size={24} />
           <div>
             <strong>Signalisation Défaut</strong>
             <span>Signaler un problème sur cet équipement</span>
           </div>
-        </button>
+        </Button>
         
-        <button className="m-eq-qr-menu-btn sav" onClick={() => setScreen('sav')}>
+        <Button variant="ghost" className="m-eq-qr-menu-btn sav" onClick={() => setScreen('sav')}>
           <Wrench size={24} />
           <div>
             <strong>Demande de SAV</strong>
             <span>Créer un ticket d'intervention</span>
           </div>
-        </button>
+        </Button>
 
         {isAdmin && (
-          <button className="m-eq-qr-menu-btn intervention" onClick={() => setScreen('intervention')}>
+          <Button variant="ghost" className="m-eq-qr-menu-btn intervention" onClick={() => setScreen('intervention')}>
             <Settings size={24} />
             <div>
               <strong>Intervention directe</strong>
               <span>Enregistrer une intervention immédiate</span>
             </div>
-          </button>
+          </Button>
         )}
       </div>
     </div>

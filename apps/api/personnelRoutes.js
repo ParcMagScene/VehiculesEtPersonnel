@@ -6,6 +6,7 @@
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { alertAssignmentCreated } from './emailService.js';
+import { validate, personnelImportSchema } from './schemas/imports.js';
 
 // ============ PERSONS (PERSONNEL) ============
 
@@ -213,7 +214,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/persons/import-csv — Import CSV Personnel avec détection des collisions
-  app.post('/api/persons/import-csv', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/persons/import-csv', authenticateToken, requireAdmin, validate(personnelImportSchema), (req, res) => {
     try {
       const { data, mode } = req.body;
       // data = tableau d'objets [{code_libre, nom, prenom, cp, ville, portable, type_csv}, ...]

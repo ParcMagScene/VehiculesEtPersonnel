@@ -28,7 +28,7 @@
   height: 85vh;
   max-height: 750px;
   background: var(--theme-bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-modal);
   overflow: hidden;
   animation: pdfSlideUp 0.25s ease;
@@ -58,7 +58,7 @@
 
 .pdf-export-header-left h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-primary);
 }
@@ -76,7 +76,7 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -110,7 +110,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: var(--space-2-5) var(--space-4);
   border-bottom: 1px solid var(--theme-border);
   background: var(--theme-bg-secondary);
 }
@@ -121,7 +121,7 @@
   gap: 6px;
   padding: 5px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.78rem;
@@ -135,7 +135,7 @@
 }
 
 .selection-count {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   font-weight: 500;
 }
@@ -169,7 +169,7 @@
   width: 18px;
   height: 18px;
   border: 2px solid var(--theme-border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -178,7 +178,7 @@
 }
 
 .section-cb-emoji {
-  font-size: 0.9rem;
+  font-size: var(--font-base);
 }
 
 .section-cb-label {
@@ -189,7 +189,7 @@
 }
 
 .section-cb-count {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 700;
 }
 
@@ -206,7 +206,7 @@
   cursor: pointer;
   transition: background 0.1s;
   user-select: none;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   margin: 1px 8px;
 }
 
@@ -222,7 +222,7 @@
   width: 16px;
   height: 16px;
   border: 1.5px solid var(--theme-border);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -237,7 +237,7 @@
 }
 
 .task-cb-status {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   flex-shrink: 0;
   width: 14px;
   text-align: center;
@@ -290,7 +290,7 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-primary, var(--theme-info));
   color: var(--theme-bg-card);
   font-size: 0.55rem;
@@ -310,7 +310,7 @@
   color: var(--theme-purple-accent, var(--theme-primary-hover));
   background: rgba(124, 58, 237, 0.08);
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
   white-space: nowrap;
   max-width: 80px;
@@ -323,7 +323,7 @@
   font-size: 0.6rem;
   font-weight: 600;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   border: 1px solid;
   flex-shrink: 0;
   white-space: nowrap;
@@ -366,7 +366,7 @@
   justify-content: center;
   height: 200px;
   color: var(--theme-text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 /* ── Aperçu PDF (droite) ── */
@@ -410,7 +410,7 @@
   gap: 12px;
   color: var(--theme-text-muted);
   text-align: center;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   line-height: 1.5;
 }
 
@@ -428,7 +428,7 @@
 .pdf-export-footer .btn-cancel {
   padding: 8px 18px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   font-size: 0.82rem;
@@ -447,7 +447,7 @@
   gap: 6px;
   padding: 8px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   font-size: 0.82rem;

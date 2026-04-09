@@ -26,12 +26,14 @@ export function addToHistory(entityType, entityId, action, changes, userId, user
 /**
  * Récupérer l'historique des modifications d'une entité
  */
-export function getHistory(entityType, entityId) {
+// [AUDIT FIX LOW-03] LIMIT par défaut pour éviter les requêtes non bornées
+export function getHistory(entityType, entityId, limit = 200) {
   const stmt = db.prepare(`
     SELECT * FROM modification_history 
     WHERE entity_type = ? AND entity_id = ?
     ORDER BY timestamp DESC
+    LIMIT ?
   `);
 
-  return stmt.all(entityType, entityId);
+  return stmt.all(entityType, entityId, limit);
 }

@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  ChevronLeft, MapPin, Package, Layers, ChevronDown, ChevronUp, 
-  X, ZoomIn, ZoomOut, RotateCcw, Filter, Eye
+  ChevronLeft, MapPin, Package, Layers, X, ZoomIn, ZoomOut, RotateCcw
 } from 'lucide-react';
 import api from '../../utils/api';
-import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from '../vehicles/DepotMapEditor';
+import { getZonePoints, hasSkew, computeZonesBounds } from '../vehicles/DepotMapEditor';
 import './MobileLocation.css';
-import { Input, SearchBar } from '@/design-system';
+import { Button, SearchBar } from '@/design-system';
+
+import { STATUS } from '../../constants';
 
 function MobileLocation({ onBack }) {
   const [zones, setZones] = useState(null);
@@ -21,7 +22,7 @@ function MobileLocation({ onBack }) {
   const [floor, setFloor] = useState('RDC');
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [depot, setDepot] = useState(1);
+  const [depot, _setDepot] = useState(1);
   const svgRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -123,7 +124,7 @@ function MobileLocation({ onBack }) {
     return (
       <div className="mobile-location">
         <div className="mobile-module-header">
-          <button className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
           <h2>📍 Localisation</h2>
         </div>
         <div className="mobile-module-loading">Chargement du plan...</div>
@@ -134,15 +135,15 @@ function MobileLocation({ onBack }) {
   return (
     <div className="mobile-location">
       <div className="mobile-module-header">
-        <button className="mobile-back-btn" onClick={onBack}><ChevronLeft size={20} /></button>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
         <h2>📍 Localisation</h2>
         <div className="mloc-view-toggle">
-          <button className={viewMode === 'map' ? 'active' : ''} onClick={() => setViewMode('map')}>
+          <Button variant="ghost" className={viewMode === 'map' ? 'active' : ''} onClick={() => setViewMode('map')}>
             <MapPin size={16} />
-          </button>
-          <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}>
+          </Button>
+          <Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}>
             <Layers size={16} />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -201,13 +202,13 @@ function MobileLocation({ onBack }) {
           {floors.length > 1 && (
             <div className="mloc-floor-selector">
               {floors.map(f => (
-                <button 
+                <Button variant="ghost" 
                   key={f.id} 
                   className={`mloc-floor-btn ${floor === f.id ? 'active' : ''}`}
                   onClick={() => setFloor(f.id)}
                 >
                   {f.label || f.id}
-                </button>
+                </Button>
               ))}
             </div>
           )}
@@ -221,9 +222,9 @@ function MobileLocation({ onBack }) {
             onTouchEnd={handleTouchEnd}
           >
             <div className="mloc-zoom-controls">
-              <button onClick={handleZoomIn}><ZoomIn size={18} /></button>
-              <button onClick={handleZoomOut}><ZoomOut size={18} /></button>
-              <button onClick={handleResetView}><RotateCcw size={18} /></button>
+              <Button variant="ghost" onClick={handleZoomIn} aria-label="Zoomer"><ZoomIn size={18} /></Button>
+              <Button variant="ghost" onClick={handleZoomOut} aria-label="Dézoomer"><ZoomOut size={18} /></Button>
+              <Button variant="ghost" onClick={handleResetView} aria-label="Réinitialiser la vue"><RotateCcw size={18} /></Button>
             </div>
 
             <svg
@@ -362,7 +363,7 @@ function MobileLocation({ onBack }) {
               </h3>
               <span className="mloc-panel-count">{zoneEquipments.length} équipement{zoneEquipments.length > 1 ? 's' : ''}</span>
             </div>
-            <button onClick={() => setSelectedZone(null)}><X size={20} /></button>
+            <Button variant="ghost" onClick={() => setSelectedZone(null)}><X size={20} /></Button>
           </div>
           <div className="mloc-panel-list">
             {loadingEquipments ? (
@@ -381,7 +382,7 @@ function MobileLocation({ onBack }) {
                   </div>
                 </div>
                 <div className={`mloc-eq-status ${eq.status || 'unknown'}`}>
-                  {eq.status === 'available' ? 'Dispo' : eq.status === 'in_use' ? 'En cours' : eq.status === 'maintenance' ? 'SAV' : eq.status || '—'}
+                  {eq.status === 'available' ? 'Dispo' : eq.status === 'in_use' ? 'En cours' : eq.status === STATUS.MAINTENANCE ? 'SAV' : eq.status || '—'}
                 </div>
               </div>
             ))}

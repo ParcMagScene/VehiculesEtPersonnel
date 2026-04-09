@@ -2,25 +2,29 @@
 // ONGLET CONGÉS & ABSENCES — Module complet
 // Vue salarié: solde + historique + nouvelle demande
 // Vue admin: validations en attente + team overview + stats + soldes
-// Conforme Code du travail, IDCC 3252, Politique Mag Scène
+// Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Calendar, Clock, CheckCircle, XCircle, AlertTriangle,
-  Plus, Download, RefreshCw, Users, BarChart3,
-  ChevronDown, Trash2, Send, FileText, Shield,
-  CalendarOff, Filter, Eye, TrendingUp,
+  Calendar, Clock, CheckCircle, XCircle, Plus, Download, RefreshCw, Users, BarChart3,
+  ChevronDown, Trash2, Shield,
+  CalendarOff, Eye, TrendingUp,
 } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWeekend } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
+import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
 import LeaveRequestForm from './LeaveRequestForm';
 import LeaveRequestsPanel from './LeaveRequestsPanel';
 import LeaveValidationPanel from './LeaveValidationPanel';
 import './LeavesTab.css';
 import { Button, Card, DetailRow, EmptyState, InlineAlert, Tooltip, SectionHeader } from '@/design-system';
+import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+import { STATUS } from '../../constants';
 
 // ═══════════════════════════════════════
 // Helpers
@@ -44,6 +48,8 @@ const fmtShortDate = (d) => {
 
 const LeavesTab = ({ persons = [], currentUser }) => {
   const isAdmin = !!currentUser?.isAdmin;
+  const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Data state
   const [myRequests, setMyRequests] = useState([]);
@@ -129,9 +135,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
 
   const myStats = useMemo(() => ({
     total: myRequests.length,
-    pending: myRequests.filter(r => r.status === 'pending').length,
-    accepted: myRequests.filter(r => r.status === 'accepted' || r.status === 'modified').length,
-    refused: myRequests.filter(r => r.status === 'refused').length,
+    pending: myRequests.filter(r => r.status === STATUS.PENDING).length,
+    accepted: myRequests.filter(r => r.status === STATUS.ACCEPTED || r.status === 'modified').length,
+    refused: myRequests.filter(r => r.status === STATUS.REFUSED).length,
   }), [myRequests]);
 
   const filteredRequests = useMemo(() => {
@@ -149,7 +155,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
 
     return allRequests
       .filter(r => {
-        if (r.status !== 'accepted' && r.status !== 'modified') return false;
+        if (r.status !== STATUS.ACCEPTED && r.status !== 'modified') return false;
         const start = parseISO(r.start_date || r.startDate);
         const end = parseISO(r.end_date || r.endDate);
         return start <= monthEnd && end >= monthStart;
@@ -161,23 +167,31 @@ const LeavesTab = ({ persons = [], currentUser }) => {
   // Handlers
   // ═══════════════════════════════════════
 
-  const handleCancel = async (id) => {
-    try {
-      await api.cancelLeave(id);
-      setCancellingId(null);
-      loadData();
-    } catch (err) {
-      setError(err.error || err.message || 'Erreur lors de l\'annulation');
-    }
+  const handleCancel = (id) => {
+    confirm({
+      title: 'Annuler la demande',
+      message: 'Annuler cette demande de congé ?',
+      variant: 'danger',
+      confirmLabel: 'Annuler le congé',
+      onConfirm: async () => {
+        try {
+          await api.cancelLeave(id);
+          setCancellingId(null);
+          loadData();
+          toast.success('Demande annulée');
+        } catch (err) {
+          setError(err.error || err.message || 'Erreur lors de l\'annulation');
+        }
+      },
+    });
   };
 
   const handleDownloadPdf = async (id) => {
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = window.open('', '_blank');
-        win.document.write(data.html);
-        win.document.close();
+        const win = openSanitizedPrintWindow(data.html);
+        if (!win) { setError('Popup bloquée'); return; }
         setTimeout(() => win.print(), 500);
       }
     } catch {
@@ -210,9 +224,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           )}
         </div>
         <div className="lt-header-actions">
-          <Tooltip content="Rafraîchir"><button className="lt-btn lt-btn-refresh" onClick={loadData}>
+          <Tooltip content="Rafraîchir"><Button variant="ghost" className="lt-btn lt-btn-refresh" onClick={loadData}>
             <RefreshCw size={16} />
-          </button></Tooltip>
+          </Button></Tooltip>
           <Button variant="primary" onClick={() => setShowRequestForm(true)}>
             <Plus size={16} /> Nouvelle demande
           </Button>
@@ -282,24 +296,21 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       {/* Navigation admin */}
       {isAdmin && (
         <div className="lt-admin-nav">
-          <button
-            className={`lt-nav-btn ${adminView === 'overview' ? 'active' : ''}`}
+          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'overview' ? 'active' : ''}`}
             onClick={() => setAdminView('overview')}
           >
             <BarChart3 size={14} /> Vue d'ensemble
-          </button>
-          <button
-            className={`lt-nav-btn ${adminView === 'mine' ? 'active' : ''}`}
+          </Button>
+          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'mine' ? 'active' : ''}`}
             onClick={() => setAdminView('mine')}
           >
             <Calendar size={14} /> Mes congés
-          </button>
-          <button
-            className={`lt-nav-btn ${adminView === 'all' ? 'active' : ''}`}
+          </Button>
+          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'all' ? 'active' : ''}`}
             onClick={() => setAdminView('all')}
           >
             <Users size={14} /> Toutes les demandes
-          </button>
+          </Button>
         </div>
       )}
 
@@ -334,15 +345,15 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                         </span>
                       </div>
                       {req.priority_score > 0 && (
-                        <span className="lt-priority-badge" title="Priorité">P{req.priority_score}</span>
+                        <Tooltip content="Priorité" position="bottom"><span className="lt-priority-badge">P{req.priority_score}</span></Tooltip>
                       )}
                     </div>
                   );
                 })}
                 {pendingRequests.length > 5 && (
-                  <button className="lt-btn lt-btn-link" onClick={() => setShowValidationPanel(true)}>
+                  <Button variant="ghost" className="lt-btn lt-btn-link" onClick={() => setShowValidationPanel(true)}>
                     Voir les {pendingRequests.length - 5} autres…
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -456,30 +467,26 @@ const LeavesTab = ({ persons = [], currentUser }) => {
         <div className="lt-requests">
           {/* Filtres */}
           <div className="lt-filters">
-            <button
-              className={`lt-filter-btn ${requestFilter === 'all' ? 'active' : ''}`}
+            <Button variant="ghost"               className={`lt-filter-btn ${requestFilter === 'all' ? 'active' : ''}`}
               onClick={() => setRequestFilter('all')}
             >
               Toutes ({adminView === 'all' ? allRequests.length : myRequests.length})
-            </button>
-            <button
-              className={`lt-filter-btn pending ${requestFilter === 'pending' ? 'active' : ''}`}
+            </Button>
+            <Button variant="ghost"               className={`lt-filter-btn pending ${requestFilter === STATUS.PENDING ? 'active' : ''}`}
               onClick={() => setRequestFilter('pending')}
             >
               <Clock size={12} /> En attente
-            </button>
-            <button
-              className={`lt-filter-btn accepted ${requestFilter === 'accepted' ? 'active' : ''}`}
+            </Button>
+            <Button variant="ghost"               className={`lt-filter-btn accepted ${requestFilter === STATUS.ACCEPTED ? 'active' : ''}`}
               onClick={() => setRequestFilter('accepted')}
             >
               <CheckCircle size={12} /> Acceptées
-            </button>
-            <button
-              className={`lt-filter-btn refused ${requestFilter === 'refused' ? 'active' : ''}`}
+            </Button>
+            <Button variant="ghost"               className={`lt-filter-btn refused ${requestFilter === STATUS.REFUSED ? 'active' : ''}`}
               onClick={() => setRequestFilter('refused')}
             >
               <XCircle size={12} /> Refusées
-            </button>
+            </Button>
           </div>
 
           {/* Liste */}
@@ -565,23 +572,22 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                           </DetailRow>
                         )}
                         <div className="lt-card-actions">
-                          <button className="lt-action-btn pdf" onClick={() => handleDownloadPdf(req.id)}>
+                          <Button variant="ghost" className="lt-action-btn pdf" onClick={() => handleDownloadPdf(req.id)}>
                             <Download size={14} /> PDF
-                          </button>
-                          {(req.status === 'pending' || req.status === 'accepted') && (
+                          </Button>
+                          {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) && (
                             cancellingId === req.id ? (
                               <div className="lt-cancel-confirm">
                                 <span>Confirmer ?</span>
-                                <button className="lt-action-btn yes" onClick={() => handleCancel(req.id)}>Oui</button>
-                                <button className="lt-action-btn no" onClick={() => setCancellingId(null)}>Non</button>
+                                <Button variant="ghost" className="lt-action-btn yes" onClick={() => handleCancel(req.id)}>Oui</Button>
+                                <Button variant="ghost" className="lt-action-btn no" onClick={() => setCancellingId(null)}>Non</Button>
                               </div>
                             ) : (
-                              <button
-                                className="lt-action-btn cancel"
+                              <Button variant="ghost"                                 className="lt-action-btn cancel"
                                 onClick={() => setCancellingId(req.id)}
                               >
                                 <Trash2 size={14} /> Annuler
-                              </button>
+                              </Button>
                             )
                           )}
                         </div>
@@ -614,7 +620,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       {showRequestForm && (
         <LeaveRequestForm
           person={null}
-          persons={persons.filter(p => p.status === 'active')}
+          persons={persons.filter(p => p.status === STATUS.ACTIVE)}
           isAdmin={isAdmin}
           currentUser={currentUser}
           onClose={() => setShowRequestForm(false)}
@@ -629,6 +635,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
         />
       )}
 
+      {ConfirmDialogRenderer}
       {showHistoryPanel && (
         <LeaveRequestsPanel
           personId={showHistoryPanel.personId}

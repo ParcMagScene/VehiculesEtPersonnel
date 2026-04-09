@@ -1,6 +1,5 @@
-import React from 'react';
-import { safeDate } from '../../utils/formatUtils';
-import { Table } from '@/design-system';
+import { safeDate, formatDateSimple } from '../../utils/formatUtils';
+import { STATUS } from '../../constants';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -8,11 +7,7 @@ const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"'
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 // URL de base pour les QR codes
-const APP_BASE_URL = (() => {
-  const origin = window.location.origin;
-  if (origin.includes('magsav.duckdns.org')) return origin;
-  return 'http://magsav.duckdns.org:4173';
-})();
+const APP_BASE_URL = window.location.origin;
 
 const SAV_STATUS = {
   open: { label: 'Ouvert', color: '#3b82f6' },
@@ -80,7 +75,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
   const assignments = eq.assignments || [];
   const tickets = eq.savTickets || [];
 
-  const today = new Date().toLocaleDateString('fr-FR');
+  const today = formatDateSimple(new Date().toISOString());
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -190,7 +185,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
           <td>${esc(a.firstName || a.first_name || '')} ${esc(a.lastName || a.last_name || '')}</td>
           <td>${safeDate(a.startDate || a.start_date)}</td>
           <td>${(a.endDate || a.end_date) ? safeDate(a.endDate || a.end_date) : 'En cours'}</td>
-          <td><span class="sheet-badge ${a.status}">${a.status === 'active' ? 'Actif' : 'Retourné'}</span></td>
+          <td><span class="sheet-badge ${a.status}">${a.status === STATUS.ACTIVE ? 'Actif' : 'Retourné'}</span></td>
           <td>${esc(a.notes || '—')}</td>
         </tr>`).join('')}
       </tbody>

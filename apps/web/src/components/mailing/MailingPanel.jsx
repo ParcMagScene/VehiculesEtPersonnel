@@ -2,18 +2,20 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import {
   X, Mail, FileText, Clock, Send, Plus, Trash2, Edit3, Eye,
-  Search, ChevronDown, ChevronUp, Users, AlertTriangle, Check,
-  Copy, Settings, RefreshCw
+  Search, AlertTriangle, Check,
+  Settings, RefreshCw
 } from 'lucide-react';
 import api from '../../utils/api';
 import './MailingPanel.css';
-import { Dialog, Input, Textarea, Select, Checkbox, Tabs, TabList, Tab, TabPanel, Tag, EmptyState, Tooltip } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { Button, Checkbox, EmptyState, Input, Select, Tab, TabList, TabPanel, Tabs, Tag, Textarea, Tooltip } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 // Variables disponibles pour les templates
 const AVAILABLE_VARS = [
   { key: 'nom', label: 'Nom du destinataire', example: 'Jean Dupont' },
   { key: 'email', label: 'Email du destinataire', example: 'jean@example.com' },
-  { key: 'date', label: "Date du jour", example: new Date().toLocaleDateString('fr-FR') },
+  { key: 'date', label: "Date du jour", example: formatDateSimple(new Date().toISOString()) },
   { key: 'entreprise', label: "Nom de l'entreprise", example: 'eM@g' },
   { key: 'objet', label: 'Objet personnalisé', example: 'Votre commande' },
 ];
@@ -72,7 +74,7 @@ export default function MailingPanel({ isOpen, onClose }) {
   const [configForm, setConfigForm] = useState({});
   const [savingConfig, setSavingConfig] = useState(false);
   const [configTestResult, setConfigTestResult] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Charger les données
   const loadData = useCallback(async () => {
@@ -220,13 +222,12 @@ export default function MailingPanel({ isOpen, onClose }) {
   };
 
   const deleteTemplate = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: 'Supprimer ce template ?',
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteMailTemplate(id);
           setTemplates(prev => prev.filter(t => t.id !== id));
@@ -275,7 +276,7 @@ export default function MailingPanel({ isOpen, onClose }) {
             <Mail size={20} />
             <h2>Mailing</h2>
           </div>
-          <button className="mailing-close" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="mailing-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Tabs */}
@@ -343,12 +344,11 @@ export default function MailingPanel({ isOpen, onClose }) {
                       }
                     }}
                   />
-                  <button
-                    onClick={() => { addRecipient(manualEmail); setManualEmail(''); }}
+                  <Button variant="ghost"                     onClick={() => { addRecipient(manualEmail); setManualEmail(''); }}
                     disabled={!manualEmail}
                   >
                     <Plus size={14} />
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Contacts rapides */}
@@ -364,8 +364,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                     </div>
                     <div className="mailing-contacts-list">
                       {filteredContacts.slice(0, 10).map(c => (
-                        <button
-                          key={`${c.type}-${c.id}`}
+                        <Button variant="ghost"                           key={`${c.type}-${c.id}`}
                           className="mailing-contact-item"
                           onClick={() => addRecipient(c.email)}
                           disabled={selectedRecipients.includes(c.email)}
@@ -373,7 +372,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                           <span className="mailing-contact-name">{c.name}</span>
                           <span className="mailing-contact-email">{c.email}</span>
                           <span className={`mailing-contact-type type-${c.type}`}>{c.type}</span>
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </div>
@@ -425,19 +424,18 @@ export default function MailingPanel({ isOpen, onClose }) {
 
               {/* Actions */}
               <div className="mailing-compose-actions">
-                <button className="mailing-btn secondary" onClick={handlePreview}>
+                <Button variant="ghost" className="mailing-btn secondary" onClick={handlePreview}>
                   <Eye size={14} /> Prévisualiser
-                </button>
-                <button className="mailing-btn secondary" onClick={resetCompose}>
+                </Button>
+                <Button variant="ghost" className="mailing-btn secondary" onClick={resetCompose}>
                   <RefreshCw size={14} /> Réinitialiser
-                </button>
-                <button
-                  className="mailing-btn primary"
+                </Button>
+                <Button variant="ghost"                   className="mailing-btn primary"
                   onClick={handleSend}
                   disabled={sending || selectedRecipients.length === 0 || !composeSubject.trim() || !smtpConfigured}
                 >
                   <Send size={14} /> {sending ? 'Envoi...' : 'Envoyer'}
-                </button>
+                </Button>
               </div>
 
               {/* Résultat envoi */}
@@ -453,7 +451,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                   <div className="mailing-preview-modal" onClick={e => e.stopPropagation()}>
                     <div className="mailing-preview-header">
                       <h3>Prévisualisation</h3>
-                      <button onClick={() => setShowPreview(false)}><X size={18} /></button>
+                      <Button variant="ghost" onClick={() => setShowPreview(false)}><X size={18} /></Button>
                     </div>
                     <div className="mailing-preview-body" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }} />
                   </div>
@@ -469,9 +467,9 @@ export default function MailingPanel({ isOpen, onClose }) {
             <div className="mailing-templates">
               <div className="mailing-templates-header">
                 <h3>{templates.length} template{templates.length > 1 ? 's' : ''}</h3>
-                <button className="mailing-btn primary" onClick={() => openTemplateEditor()}>
+                <Button variant="ghost" className="mailing-btn primary" onClick={() => openTemplateEditor()}>
                   <Plus size={14} /> Nouveau
-                </button>
+                </Button>
               </div>
 
               {templates.length === 0 && !editingTemplate && (
@@ -488,12 +486,12 @@ export default function MailingPanel({ isOpen, onClose }) {
                     </span>
                   </div>
                   <div className="mailing-tpl-actions">
-                    <Tooltip content="Modifier"><button onClick={() => openTemplateEditor(tpl)}><Edit3 size={14} /></button></Tooltip>
-                    <Tooltip content="Utiliser"><button onClick={() => {
+                    <Tooltip content="Modifier"><Button variant="ghost" onClick={() => openTemplateEditor(tpl)}><Edit3 size={14} /></Button></Tooltip>
+                    <Tooltip content="Utiliser"><Button variant="ghost" onClick={() => {
                       handleSelectTemplate(tpl);
                       setActiveTab('compose');
-                    }}><Send size={14} /></button></Tooltip>
-                    <Tooltip content="Supprimer"><button onClick={() => deleteTemplate(tpl.id)} className="danger"><Trash2 size={14} /></button></Tooltip>
+                    }}><Send size={14} /></Button></Tooltip>
+                    <Tooltip content="Supprimer"><Button variant="ghost" onClick={() => deleteTemplate(tpl.id)} className="danger"><Trash2 size={14} /></Button></Tooltip>
                   </div>
                 </div>
               ))}
@@ -526,14 +524,13 @@ export default function MailingPanel({ isOpen, onClose }) {
                     <label>Variables disponibles :</label>
                     <div className="mailing-vars-insert">
                       {AVAILABLE_VARS.map(v => (
-                        <button
-                          key={v.key}
+                        <Button variant="ghost"                           key={v.key}
                           className="mailing-var-btn"
                           onClick={() => insertVariable(v.key)}
                           title={v.label}
                         >
                           {`{{${v.key}}}`}
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </div>
@@ -549,10 +546,10 @@ export default function MailingPanel({ isOpen, onClose }) {
                   </div>
 
                   <div className="mailing-tpl-editor-actions">
-                    <button className="mailing-btn secondary" onClick={() => setEditingTemplate(null)}>Annuler</button>
-                    <button className="mailing-btn primary" onClick={saveTemplate} disabled={savingTpl || !tplName.trim()}>
+                    <Button variant="ghost" className="mailing-btn secondary" onClick={() => setEditingTemplate(null)}>Annuler</Button>
+                    <Button variant="ghost" className="mailing-btn primary" onClick={saveTemplate} disabled={savingTpl || !tplName.trim()}>
                       <Check size={14} /> {savingTpl ? 'Enregistrement...' : 'Enregistrer'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -566,9 +563,9 @@ export default function MailingPanel({ isOpen, onClose }) {
             <div className="mailing-history">
               <div className="mailing-history-header">
                 <h3>{historyTotal} envoi{historyTotal > 1 ? 's' : ''}</h3>
-                <button className="mailing-btn secondary" onClick={loadData}>
+                <Button variant="ghost" className="mailing-btn secondary" onClick={loadData}>
                   <RefreshCw size={14} /> Actualiser
-                </button>
+                </Button>
               </div>
 
               {history.length === 0 && (
@@ -631,7 +628,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                 </div>
                 <div className="mailing-form-group">
                   <label>Mot de passe :</label>
-                  <Input type="password" value={configForm.smtp_pass || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_pass: e.target.value }))} placeholder="••••••••" />
+                  <Input type="password" value={configForm.smtp_pass || ''} onChange={e => setConfigForm(prev => ({ ...prev, smtp_pass: e.target.value }))} placeholder="••••••••" autoComplete="off" />
                 </div>
                 <div className="mailing-form-group">
                   <label>Nom expéditeur :</label>
@@ -671,12 +668,12 @@ export default function MailingPanel({ isOpen, onClose }) {
               ))}
 
               <div className="mailing-config-actions">
-                <button className="mailing-btn secondary" onClick={testConfig}>
+                <Button variant="ghost" className="mailing-btn secondary" onClick={testConfig}>
                   <Send size={14} /> Test SMTP
-                </button>
-                <button className="mailing-btn primary" onClick={saveConfig} disabled={savingConfig}>
+                </Button>
+                <Button variant="ghost" className="mailing-btn primary" onClick={saveConfig} disabled={savingConfig}>
                   <Check size={14} /> {savingConfig ? 'Enregistrement...' : 'Enregistrer'}
-                </button>
+                </Button>
               </div>
 
               {configTestResult && (
@@ -691,17 +688,7 @@ export default function MailingPanel({ isOpen, onClose }) {
         </div>
         </Tabs>
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

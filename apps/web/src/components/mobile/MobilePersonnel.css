@@ -11,8 +11,8 @@
 .mpers-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
 }
@@ -20,17 +20,17 @@
 .mpers-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
 }
 
 .mpers-back {
   background: none;
   border: none;
   color: var(--theme-text-body);
-  padding: 6px;
+  padding: var(--space-1-5);
   cursor: pointer;
   display: flex;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .mpers-back:active {
@@ -41,7 +41,7 @@
 .mpers-view-toggle {
   display: flex;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -60,7 +60,7 @@
 .mpers-view-toggle button.active {
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* Date navigation */
@@ -68,7 +68,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  padding: var(--space-2-5) var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
 }
@@ -79,7 +79,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: none;
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-body);
@@ -93,13 +93,13 @@
 .mpers-date-label {
   border: none;
   background: none;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-body);
   text-transform: capitalize;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: var(--space-1-5) var(--space-3);
+  border-radius: var(--radius-md);
 }
 
 .mpers-date-label.today {
@@ -114,13 +114,13 @@
 .mpers-today-btn {
   display: block;
   margin: 0 auto;
-  padding: 4px 16px;
+  padding: var(--space-1) var(--space-4);
   border: none;
   background: var(--theme-primary-main);
   color: var(--theme-text-inverse);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 600;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   cursor: pointer;
 }
 
@@ -132,18 +132,18 @@
 .mpers-day-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 
 .mpers-day-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
   background: var(--theme-bg-card);
-  border-radius: 14px;
-  margin-bottom: 6px;
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-1-5);
   box-shadow: 0 1px 4px var(--shadow-xs);
   border: 1px solid var(--theme-border);
   cursor: pointer;
@@ -161,20 +161,20 @@
 .mpers-avatar {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--theme-text-inverse);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   flex-shrink: 0;
 }
 
 .mpers-avatar-img {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -186,9 +186,9 @@
 
 .mpers-day-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-bg-dark);
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .mpers-day-missions {
@@ -200,14 +200,14 @@
 .mpers-mission-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: 0.78rem;
 }
 
 .mpers-mission-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--mission-color, var(--theme-info));
   flex-shrink: 0;
 }
@@ -215,7 +215,7 @@
 .mpers-task-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: 0.78rem;
 }
 
@@ -237,7 +237,7 @@
 
 .mpers-mission-time {
   color: var(--theme-text-muted);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   flex-shrink: 0;
 }
 
@@ -251,8 +251,8 @@
   font-size: 0.78rem;
   color: var(--theme-danger-text, var(--theme-danger));
   background: var(--theme-danger-bg, var(--theme-danger-bg));
-  padding: 2px 8px;
-  border-radius: 8px;
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--radius-md);
   font-weight: 500;
 }
 
@@ -288,7 +288,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   text-transform: uppercase;
@@ -303,8 +303,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 6px 4px;
+  gap: var(--space-1);
+  padding: var(--space-1-5) var(--space-1);
   border-bottom: 1px solid var(--theme-border);
   cursor: pointer;
 }
@@ -316,7 +316,7 @@
 .mpers-week-avatar {
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -329,7 +329,7 @@
 .mpers-week-avatar-img {
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -384,7 +384,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--space-0-5);
   border-right: 1px solid var(--theme-border);
   cursor: pointer;
 }
@@ -396,7 +396,7 @@
 .mpers-week-day-col.today .mpers-week-day-num {
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   width: 22px;
   height: 22px;
   display: flex;
@@ -431,7 +431,7 @@
   min-width: 100px;
   flex: 1;
   border-right: 1px solid var(--theme-border);
-  padding: 4px;
+  padding: var(--space-1);
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -446,8 +446,8 @@
 /* Mission card dans cellule semaine */
 .mpers-cell-mission {
   border-left: 3px solid;
-  border-radius: 4px;
-  padding: 3px 6px;
+  border-radius: var(--radius-xs);
+  padding: 3px var(--space-1-5);
   background: linear-gradient(135deg, var(--theme-info-bg, var(--theme-info-bg)) 0%, var(--theme-info-bg) 100%);
   min-height: 0;
   flex-shrink: 0;
@@ -494,7 +494,7 @@
 .mpers-cell-free-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-success-alt, var(--theme-success-alt));
   opacity: 0.35;
 }
@@ -503,9 +503,9 @@
 .mpers-week-legend {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  padding: 12px 16px;
-  font-size: 0.72rem;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 
@@ -518,7 +518,7 @@
 .mpers-legend-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: inline-block;
 }
 
@@ -535,9 +535,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-3);
   color: var(--theme-text-muted);
-  padding: 3rem 2rem;
+  padding: var(--space-12) var(--space-8);
 }
 
 .mpers-empty-list svg {
@@ -554,8 +554,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 24px 16px 20px;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4) var(--space-5);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-bg-tertiary);
 }
@@ -563,14 +563,14 @@
 .mpers-detail-photo {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
 }
 
 .mpers-detail-avatar {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -580,15 +580,15 @@
 }
 
 .mpers-detail-top h3 {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: 1.3rem;
   text-align: center;
 }
 
 .mpers-status-tag {
-  font-size: 0.75rem;
-  padding: 3px 12px;
-  border-radius: 12px;
+  font-size: var(--font-sm);
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-lg);
   font-weight: 600;
 }
 
@@ -603,23 +603,23 @@
 }
 
 .mpers-contract {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   background: var(--theme-bg-tertiary);
-  padding: 3px 12px;
-  border-radius: 12px;
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-lg);
 }
 
 /* Sections */
 .mpers-section {
-  padding: 16px;
+  padding: var(--space-4);
   background: var(--theme-bg-card);
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .mpers-section h4 {
-  margin: 0 0 12px;
-  font-size: 0.85rem;
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -629,11 +629,11 @@
 .mpers-info-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 0;
+  gap: var(--space-2-5);
+  padding: var(--space-2-5) 0;
   color: var(--theme-bg-dark);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   border-bottom: 1px solid var(--theme-bg-tertiary);
 }
 
@@ -648,7 +648,7 @@
 
 .mpers-empty-info {
   color: var(--theme-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   margin: 0;
   font-style: italic;
 }
@@ -657,17 +657,17 @@
 .mpers-skills {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mpers-skill-chip {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
   background: var(--theme-purple-bg);
-  border-radius: 16px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-xl);
+  font-size: var(--font-sm);
   color: var(--theme-info-text-alt);
   font-weight: 500;
 }
@@ -681,15 +681,15 @@
 .mpers-positions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mpers-position-tag {
-  padding: 5px 12px;
+  padding: 5px var(--space-3);
   background: var(--theme-info-bg-strong);
   color: var(--theme-info-dark);
-  border-radius: 12px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
@@ -697,7 +697,7 @@
 .mpers-notes {
   margin: 0;
   color: var(--theme-text-body);
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   line-height: 1.5;
   white-space: pre-wrap;
 }
@@ -709,36 +709,36 @@
 .mpers-my-planning {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 /* Profil en-tête */
 .mpers-my-profile {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--theme-border-medium);
 }
 
 .mpers-my-avatar-img {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   object-fit: cover;
 }
 
 .mpers-my-avatar {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--theme-text-inverse);
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   flex-shrink: 0;
 }
 
@@ -750,12 +750,12 @@
 
 /* Sections jour */
 .mpers-my-section {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .mpers-my-section h4 {
-  margin: 0 0 8px;
-  font-size: 0.85rem;
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-muted);
   text-transform: uppercase;
@@ -766,9 +766,9 @@
 .mpers-my-unavail-card {
   background: var(--theme-error-bg);
   border-left: 3px solid var(--theme-error-main);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .mpers-my-unavail-reason {
@@ -783,16 +783,16 @@
   font-size: 0.82rem;
   color: var(--theme-error-dark);
   opacity: 0.8;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 /* Carte mission */
 .mpers-my-mission-card {
   background: var(--theme-bg-card);
   border-left: 4px solid var(--theme-info);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
   box-shadow: var(--shadow-sm);
 }
 
@@ -803,33 +803,33 @@
 }
 
 .mpers-my-mission-client {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-muted);
-  margin-top: 2px;
+  margin-top: var(--space-0-5);
 }
 
 .mpers-my-mission-time {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
+  gap: var(--space-1-5);
+  font-size: var(--font-base);
   color: var(--theme-text-body);
-  margin-top: 6px;
+  margin-top: var(--space-1-5);
 }
 
 .mpers-my-mission-location {
   font-size: 0.82rem;
   color: var(--theme-text-muted);
-  margin-top: 2px;
+  margin-top: var(--space-0-5);
 }
 
 /* Carte tâche */
 .mpers-my-task-card {
   background: var(--theme-bg-card);
   border-left: 4px solid var(--theme-warning);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
   box-shadow: var(--shadow-sm);
 }
 
@@ -840,15 +840,15 @@
 }
 
 .mpers-my-task-section {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-muted);
-  margin-top: 2px;
+  margin-top: var(--space-0-5);
 }
 
 .mpers-my-task-period {
   font-size: 0.82rem;
   color: var(--theme-text-body);
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 /* Aucune activité */
@@ -856,8 +856,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 40px 16px;
+  gap: var(--space-2);
+  padding: var(--space-10) var(--space-4);
   color: var(--theme-text-muted);
   text-align: center;
 }
@@ -871,15 +871,15 @@
 .mpers-my-week-grid {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-0-5);
 }
 
 .mpers-my-week-day {
   display: flex;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -905,14 +905,14 @@
 }
 
 .mpers-my-week-day-name {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   color: var(--theme-text-muted);
   font-weight: 500;
 }
 
 .mpers-my-week-day-num {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-text-heading);
 }
@@ -925,27 +925,27 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   justify-content: center;
 }
 
 .mpers-my-week-unavail {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-error-dark);
   font-weight: 500;
 }
 
 .mpers-my-week-mission,
 .mpers-my-week-task {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-body);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-left: 3px solid;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   background: var(--theme-bg-page);
 }
 
 .mpers-my-week-free {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-muted);
 }

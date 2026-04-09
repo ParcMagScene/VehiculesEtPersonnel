@@ -13,8 +13,8 @@
 .mloc-search-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
+  gap: var(--space-2-5);
+  padding: var(--space-2-5) var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-light);
   color: var(--theme-text-muted);
@@ -41,14 +41,14 @@
   height: 28px;
   border: none;
   background: var(--theme-bg-secondary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   color: var(--theme-text-muted);
   cursor: pointer;
 }
 
 /* ── Résultats de recherche ── */
 .mloc-search-results {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
   max-height: 50vh;
@@ -62,22 +62,22 @@
   color: var(--theme-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-2-5);
 }
 
 .mloc-search-group {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .mloc-search-zone {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2-5);
   border-left: 3px solid;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   background: var(--theme-bg-secondary);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
   cursor: pointer;
@@ -88,20 +88,20 @@
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   padding: 1px 7px;
-  border-radius: 10px;
-  font-size: 0.72rem;
+  border-radius: var(--radius-md-lg);
+  font-size: var(--font-xs);
   font-weight: 700;
 }
 
 .mloc-search-items {
-  padding-left: 16px;
+  padding-left: var(--space-4);
 }
 
 .mloc-search-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-2);
   font-size: 0.82rem;
   color: var(--theme-text-body);
   border-bottom: 1px solid var(--theme-border-light);
@@ -114,7 +114,7 @@
 .mloc-search-more {
   font-size: 0.78rem;
   color: var(--theme-text-muted);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   font-style: italic;
 }
 
@@ -124,22 +124,22 @@
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-secondary);
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 /* ── Stats bar ── */
 .mloc-stats-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   background: var(--theme-bg-secondary);
 }
 
 .mloc-stat {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--theme-text-secondary);
@@ -154,7 +154,7 @@
   margin-left: auto;
   display: flex;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -178,15 +178,15 @@
 /* ── Sélecteur d'étage ── */
 .mloc-floor-selector {
   display: flex;
-  gap: 6px;
-  padding: 8px 16px;
+  gap: var(--space-1-5);
+  padding: var(--space-2) var(--space-4);
 }
 
 .mloc-floor-btn {
   flex: 1;
-  padding: 8px;
+  padding: var(--space-2);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   font-size: 0.82rem;
   font-weight: 600;
@@ -225,7 +225,7 @@
   right: 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   z-index: var(--z-dropdown);
 }
 
@@ -233,7 +233,7 @@
   width: 36px;
   height: 36px;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   color: var(--theme-text-secondary);
   display: flex;
@@ -252,19 +252,19 @@
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .mloc-zone-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.15s;
   box-shadow: 0 1px 4px var(--shadow-xs);
@@ -282,7 +282,7 @@
 .mloc-zone-color {
   width: 12px;
   height: 40px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
@@ -298,13 +298,13 @@
 }
 
 .mloc-zone-floor {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
   margin-top: 1px;
 }
 
 .mloc-zone-count {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: var(--theme-primary);
   min-width: 30px;
@@ -319,7 +319,7 @@
   right: 0;
   max-height: 55vh;
   background: var(--theme-bg-card);
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
   box-shadow: 0 -4px 24px var(--shadow-xl);
   z-index: var(--z-dropdown);
   display: flex;
@@ -337,13 +337,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
+  padding: var(--space-4) var(--space-5) var(--space-3);
   border-bottom: 1px solid var(--theme-border-light);
 }
 
 .mloc-panel-header h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-primary);
 }
@@ -361,7 +361,7 @@
   height: 36px;
   border: none;
   background: var(--theme-bg-secondary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   color: var(--theme-text-muted);
   cursor: pointer;
 }
@@ -370,12 +370,12 @@
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 8px 16px 20px;
+  padding: var(--space-2) var(--space-4) var(--space-5);
 }
 
 .mloc-panel-loading,
 .mloc-panel-empty {
-  padding: 24px;
+  padding: var(--space-6);
   text-align: center;
   color: var(--theme-text-muted);
   font-size: 0.88rem;
@@ -384,8 +384,8 @@
 .mloc-equipment-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 0;
+  gap: var(--space-2-5);
+  padding: var(--space-2-5) 0;
   border-bottom: 1px solid var(--theme-border-light);
   color: var(--theme-text-secondary);
 }
@@ -411,16 +411,16 @@
 .mloc-eq-details {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   flex-wrap: wrap;
-  margin-top: 2px;
-  font-size: 0.72rem;
+  margin-top: var(--space-0-5);
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
 }
 
 .mloc-eq-status {
-  padding: 3px 8px;
-  border-radius: 8px;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-md);
   font-size: 0.7rem;
   font-weight: 600;
   flex-shrink: 0;

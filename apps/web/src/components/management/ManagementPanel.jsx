@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, Map, MapPin, Cloud, Gauge } from 'lucide-react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, MapPin, Cloud, Gauge } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../../utils/photoList';
 import { formatPhoneDisplay } from '../PhoneInput';
@@ -15,15 +15,16 @@ import ClientDialog from '../vehicles/ClientDialog';
 import ReservationRequestsPanel from '../vehicles/ReservationRequestsPanel';
 import VehicleMaintenanceModal from '../vehicles/VehicleMaintenanceModal';
 import api from '../../utils/api';
-import PersonnelPanel from '../personnel/PersonnelPanel';
+const PersonnelPanel = React.lazy(() => import('../personnel/PersonnelPanel'));
 import './ManagementPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, Input, Select } from '@/design-system';
+import { Button, Input, Select } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 const ManagementPanel = ({
   vehicles,
   setVehicles,
-  reservations,
+  _reservations,
   setReservations,
   clients,
   setClients,
@@ -31,9 +32,9 @@ const ManagementPanel = ({
   setDrivers,
   locations,
   setLocations,
-  calendarConfig,
+  _calendarConfig,
   setCalendarConfig,
-  garages,
+  _garages,
   setGarages,
   maintenances,
   setMaintenances,
@@ -77,8 +78,8 @@ const ManagementPanel = ({
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [vehicleToMaintain, setVehicleToMaintain] = useState(null);
   const [companyAddress, setCompanyAddress] = useState('');
-  const autocompleteRef = useRef(null);
-  const inputRef = useRef(null);
+  const _autocompleteRef = useRef(null);
+  const _inputRef = useRef(null);
 
   const fileInputRef = useRef(null);
 
@@ -86,7 +87,7 @@ const ManagementPanel = ({
   const [depotZones, setDepotZones] = useState(null);
   const [locationStats, setLocationStats] = useState(null);
   const [activeDepot, setActiveDepot] = useState(1);
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Charger le nombre de demandes d'accès en attente
   useEffect(() => {
@@ -102,7 +103,7 @@ const ManagementPanel = ({
     return () => clearInterval(interval);
   }, [currentUser]);
 
-  // Charger l'adresse de Mag Scène depuis la config
+  // Charger l'adresse du siège depuis la config
   useEffect(() => {
     const loadCompanyAddress = async () => {
       try {
@@ -134,8 +135,6 @@ const ManagementPanel = ({
     };
     loadDepotData();
   }, [activeTab, activeDepot]);
-
-
 
   // Charger la liste des photos au montage du composant
   useEffect(() => {
@@ -182,16 +181,16 @@ const ManagementPanel = ({
       case 'clients': return clients;
       case 'drivers': return drivers;
       case 'locations': {
-        // Ajouter Mag Scène comme premier lieu si une adresse est configurée
+        // Ajouter le siège comme premier lieu si une adresse est configurée
         if (companyAddress) {
-          const magSceneLocation = {
-            id: 'mag-scene',
-            name: 'Mag Scène',
+          const companyLocation = {
+            id: 'company-hq',
+            name: 'Siège',
             address: companyAddress,
             type: 'Dépôt',
             isCompanyLocation: true
           };
-          return [magSceneLocation, ...locations];
+          return [companyLocation, ...locations];
         }
         return locations;
       }
@@ -199,7 +198,7 @@ const ManagementPanel = ({
     }
   };
 
-  const setCurrentList = (newList) => {
+  const _setCurrentList = (newList) => {
     switch (activeTab) {
       case 'vehicles': setVehicles(newList); break;
       case 'clients': setClients(newList); break;
@@ -435,7 +434,7 @@ const ManagementPanel = ({
   };
 
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer cet élément',
       message: 'Êtes-vous sûr de vouloir supprimer cet élément ?',
       variant: 'danger',
@@ -471,7 +470,7 @@ const ManagementPanel = ({
     });
   };
 
-  const handleMoveUp = async (index) => {
+  const _handleMoveUp = async (index) => {
     if (index === 0) return;
     const currentList = [...getCurrentList()];
     [currentList[index - 1], currentList[index]] = [currentList[index], currentList[index - 1]];
@@ -503,7 +502,7 @@ const ManagementPanel = ({
     }
   };
 
-  const handleMoveDown = async (index) => {
+  const _handleMoveDown = async (index) => {
     const currentList = [...getCurrentList()];
     if (index === currentList.length - 1) return;
     [currentList[index], currentList[index + 1]] = [currentList[index + 1], currentList[index]];
@@ -548,7 +547,7 @@ const ManagementPanel = ({
     if (activeTab === 'vehicles') {
       const allVehicles = [...vehicles];
       const sectionVehicles = allVehicles.filter(v => 
-        dropSection === 'magscene' ? !v.isLocation : v.isLocation
+        dropSection === 'company' ? !v.isLocation : v.isLocation
       );
       
       if (draggedIndex === dropIndex) return;
@@ -558,10 +557,10 @@ const ManagementPanel = ({
       
       // Reconstruire la liste complète en conservant l'ordre des deux sections
       const otherVehicles = allVehicles.filter(v => 
-        dropSection === 'magscene' ? v.isLocation : !v.isLocation
+        dropSection === 'company' ? v.isLocation : !v.isLocation
       );
       
-      const newList = dropSection === 'magscene' 
+      const newList = dropSection === 'company' 
         ? [...sectionVehicles, ...otherVehicles]
         : [...otherVehicles, ...sectionVehicles];
       
@@ -576,7 +575,7 @@ const ManagementPanel = ({
       try {
         // Ne mettre à jour que les véhicules de la section qui a été réorganisée
         const vehiclesToUpdate = newList.filter(v => 
-          dropSection === 'magscene' ? !v.isLocation : v.isLocation
+          dropSection === 'company' ? !v.isLocation : v.isLocation
         );
         
         await Promise.all(
@@ -687,35 +686,35 @@ const ManagementPanel = ({
   if (panelType === 'management' && activeModule === 'personnel') {
     return (
       <div className="management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-        <div className="management-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="management-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
           <div className="management-header">
             <h2>{panelTitle}</h2>
-            <button className="close-button" onClick={onClose}>
+            <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer">
               <X size={24} />
-            </button>
+            </Button>
           </div>
-          <PersonnelPanel currentUser={currentUser} mode="management" />
-        </div>
+          <Suspense fallback={<div style={{padding:'2rem',textAlign:'center'}}>Chargement…</div>}>
+            <PersonnelPanel currentUser={currentUser} mode="management" />
+          </Suspense>        </div>
       </div>
     );
   }
 
   return (
     <div className="management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="management-panel" onClick={(e) => e.stopPropagation()}>
+      <div className="management-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="management-header">
           <h2>{panelTitle}</h2>
-          <button className="close-button" onClick={onClose}>
+          <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer">
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         <div className="management-tabs">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <button
-                key={tab.id}
+              <Button variant="ghost"                 key={tab.id}
                 className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
@@ -729,7 +728,7 @@ const ManagementPanel = ({
                 {tab.id === 'users' && pendingAccessCount > 0 && (
                   <span className="tab-badge">{pendingAccessCount}</span>
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -740,7 +739,7 @@ const ManagementPanel = ({
             <div className="add-section">
               <div className="add-section-header">
                 <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : 'un lieu'}</h3>
-                <button 
+                <Button variant="ghost" 
                   className="toggle-add-form-btn"
                   onClick={() => {
                     if (activeTab === 'locations') {
@@ -755,7 +754,7 @@ const ManagementPanel = ({
                   title={activeTab === 'locations' ? 'Ajouter un lieu' : activeTab === 'clients' ? 'Ajouter un client' : (showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire')}
                 >
                   {(activeTab === 'locations' || activeTab === 'clients') ? <Plus size={20} /> : (showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
-                </button>
+                </Button>
               </div>
             {showAddForm && activeTab !== 'locations' && activeTab !== 'clients' && (
               <div className="add-form">
@@ -822,21 +821,19 @@ const ManagementPanel = ({
                         <option key={photo} value={photo}>{photo}</option>
                       ))}
                     </Select>
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
                       onClick={refreshPhotoList}
                       title="Rafraîchir la liste des photos"
                     >
                       <RefreshCw size={16} />
-                    </button>
+                    </Button>
                   </div>
                   <div className="color-picker">
                     <label>Couleur d'affichage:</label>
                     <div className="color-options-grid">
                       {colors.map(color => (
-                        <button
-                          key={color}
+                        <Button variant="ghost"                           key={color}
                           className={`color-option ${newItem.color === color ? 'selected' : ''}`}
                           style={{ backgroundColor: color }}
                           onClick={() => setNewItem({ ...newItem, color, displayColor: color })}
@@ -847,10 +844,10 @@ const ManagementPanel = ({
                 </>
               )}
               
-              <button className="add-button" onClick={handleAdd}>
+              <Button variant="ghost" className="add-button" onClick={handleAdd}>
                 <Plus size={20} />
                 Ajouter
-              </button>
+              </Button>
             </div>
             )}
             </div>
@@ -867,10 +864,10 @@ const ManagementPanel = ({
               
               <div className="sync-form">
                 <div className="import-export-buttons">
-                  <button className="export-button" onClick={handleExportData}>
+                  <Button variant="ghost" className="export-button" onClick={handleExportData}>
                     <Download size={20} />
                     Exporter toutes les données
-                  </button>
+                  </Button>
                   
                   <input 
                     type="file" 
@@ -879,10 +876,10 @@ const ManagementPanel = ({
                     style={{ display: 'none' }}
                     onChange={handleImportData}
                   />
-                  <button className="import-button" onClick={() => fileInputRef.current?.click()}>
+                  <Button variant="ghost" className="import-button" onClick={() => fileInputRef.current?.click()}>
                     <Upload size={20} />
                     Importer des données
-                  </button>
+                  </Button>
                 </div>
                 
                 {importStatus && (
@@ -936,8 +933,7 @@ const ManagementPanel = ({
             <div className="depot-map-settings-wrapper" style={{ padding: '0 8px' }}>
               {/* Sélecteur de dépôt */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-                <button
-                  onClick={() => setActiveDepot(1)}
+                <Button variant="ghost"                   onClick={() => setActiveDepot(1)}
                   style={{
                     padding: '8px 18px',
                     borderRadius: 8,
@@ -951,9 +947,8 @@ const ManagementPanel = ({
                   }}
                 >
                   Dépôt 1 — Événementiel
-                </button>
-                <button
-                  onClick={() => setActiveDepot(2)}
+                </Button>
+                <Button variant="ghost"                   onClick={() => setActiveDepot(2)}
                   style={{
                     padding: '8px 18px',
                     borderRadius: 8,
@@ -967,7 +962,7 @@ const ManagementPanel = ({
                   }}
                 >
                   Dépôt 2 — Structure
-                </button>
+                </Button>
               </div>
               {depotZones ? (
                 <DepotMap
@@ -1003,18 +998,18 @@ const ManagementPanel = ({
           <div className="items-section">
             {activeTab === 'vehicles' ? (
               <>
-                {/* Véhicules Mag Scène */}
+                {/* Véhicules entreprise */}
                 <div className="vehicles-subsection">
-                  <h3>Véhicules Mag Scène ({vehicles.filter(v => !v.isLocation).length})</h3>
+                  <h3>Véhicules entreprise ({vehicles.filter(v => !v.isLocation).length})</h3>
                   <div className="items-list">
                     {vehicles.filter(v => !v.isLocation).map((item, index) => (
                       <div 
                         key={item.id} 
-                        className={`item-card ${draggedSection === 'magscene' && draggedIndex === index ? 'dragging' : ''}`}
+                        className={`item-card ${draggedSection === 'company' && draggedIndex === index ? 'dragging' : ''}`}
                         draggable={!editingItem}
-                        onDragStart={() => handleDragStart(index, 'magscene')}
+                        onDragStart={() => handleDragStart(index, 'company')}
                         onDragOver={handleDragOver}
-                        onDrop={() => handleDrop(index, 'magscene')}
+                        onDrop={() => handleDrop(index, 'company')}
                       >
                         {editingItem?.id === item.id ? (
                     <div className="edit-form">
@@ -1061,21 +1056,19 @@ const ManagementPanel = ({
                                 <option key={photo} value={photo}>{photo}</option>
                               ))}
                             </Select>
-                            <button
-                              type="button"
+                            <Button variant="ghost"                               type="button"
                               className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
                               onClick={refreshPhotoList}
                               title="Rafraîchir la liste des photos"
                             >
                               <RefreshCw size={16} />
-                            </button>
+                            </Button>
                           </div>
                           <div className="color-picker-inline">
                             <label>Couleur d'affichage:</label>
                             <div className="color-options-grid">
                               {colors.map(color => (
-                                <button
-                                  key={color}
+                                <Button variant="ghost"                                   key={color}
                                   className={`color-option ${(editingItem.displayColor || editingItem.color) === color ? 'selected' : ''}`}
                                   style={{ backgroundColor: color }}
                                   onClick={() => setEditingItem({ ...editingItem, color, displayColor: color })}
@@ -1180,19 +1173,19 @@ const ManagementPanel = ({
                         <div className="drag-handle" title="Glisser pour réorganiser">
                           <GripVertical size={20} />
                         </div>
-                        <button 
+                        <Button variant="ghost" 
                           className="maintenance-button" 
                           onClick={(e) => { e.stopPropagation(); handleOpenMaintenance(item); }}
                           title="Maintenance et contrôle technique"
                         >
                           <Gauge size={16} />
-                        </button>
-                        <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                        </Button>
+                        <Button variant="ghost" className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                           <Edit2 size={16} />
-                        </button>
-                        <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                        </Button>
+                        <Button variant="ghost" className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
                           <Trash2 size={16} />
-                        </button>
+                        </Button>
                       </div>
                     </>
                   )}
@@ -1201,7 +1194,7 @@ const ManagementPanel = ({
               
               {vehicles.filter(v => !v.isLocation).length === 0 && (
                 <div className="empty-state">
-                  <p>Aucun véhicule Mag Scène</p>
+                  <p>Aucun véhicule entreprise</p>
                 </div>
               )}
             </div>
@@ -1264,21 +1257,19 @@ const ManagementPanel = ({
                                   <option key={photo} value={photo}>{photo}</option>
                                 ))}
                               </Select>
-                              <button
-                                type="button"
+                              <Button variant="ghost"                                 type="button"
                                 className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
                                 onClick={refreshPhotoList}
                                 title="Rafraîchir la liste des photos"
                               >
                                 <RefreshCw size={16} />
-                              </button>
+                              </Button>
                             </div>
                             <div className="color-picker-inline">
                               <label>Couleur d'affichage:</label>
                               <div className="color-options-grid">
                                 {colors.map(color => (
-                                  <button
-                                    key={color}
+                                  <Button variant="ghost"                                     key={color}
                                     className={`color-option ${(editingItem.displayColor || editingItem.color) === color ? 'selected' : ''}`}
                                     style={{ backgroundColor: color }}
                                     onClick={() => setEditingItem({ ...editingItem, color, displayColor: color })}
@@ -1317,19 +1308,19 @@ const ManagementPanel = ({
                               <div className="drag-handle" title="Glisser pour réorganiser">
                                 <GripVertical size={20} />
                               </div>
-                              <button 
+                              <Button variant="ghost" 
                                 className="maintenance-button" 
                                 onClick={(e) => { e.stopPropagation(); handleOpenMaintenance(item); }}
                                 title="Maintenance et contrôle technique"
                               >
                                 <Gauge size={16} />
-                              </button>
-                              <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                              </Button>
+                              <Button variant="ghost" className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                                 <Edit2 size={16} />
-                              </button>
-                              <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                              </Button>
+                              <Button variant="ghost" className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
                                 <Trash2 size={16} />
-                              </button>
+                              </Button>
                             </div>
                           </>
                         )}
@@ -1370,7 +1361,7 @@ const ManagementPanel = ({
                         return (
                           <div key={type} className="locations-group">
                             <h4 className="group-title">{type} ({typeLocations.length})</h4>
-                            {typeLocations.map((item, index) => (
+                            {typeLocations.map((item, _index) => (
                               <div key={item.id} className="item-card">
                                 {editingItem?.id === item.id ? (
                                   <div className="edit-form">
@@ -1419,13 +1410,13 @@ const ManagementPanel = ({
                                       </div>
                                     </div>
                                     <div className="item-actions">
-                                      <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                                      <Button variant="ghost" className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                                         <Edit2 size={16} />
-                                      </button>
+                                      </Button>
                                       {!item.isCompanyLocation && (
-                                        <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                                        <Button variant="ghost" className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
                                           <Trash2 size={16} />
-                                        </button>
+                                        </Button>
                                       )}
                                     </div>
                                   </>
@@ -1438,7 +1429,7 @@ const ManagementPanel = ({
                     })()
                   ) : (
                     // Affichage normal pour les autres onglets
-                    getCurrentList().map((item, index) => (
+                    getCurrentList().map((item, _index) => (
                     <div key={item.id} className="item-card">
                       {editingItem?.id === item.id ? (
                         <div className="edit-form">
@@ -1490,12 +1481,12 @@ const ManagementPanel = ({
                             </div>
                           </div>
                           <div className="item-actions">
-                            <button className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
+                            <Button variant="ghost" className="edit-button" onClick={(e) => { e.stopPropagation(); handleEdit(item); }}>
                               <Edit2 size={16} />
-                            </button>
-                            <button className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                            </Button>
+                            <Button variant="ghost" className="delete-button" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
                               <Trash2 size={16} />
-                            </button>
+                            </Button>
                           </div>
                         </>
                       )}
@@ -1557,15 +1548,7 @@ const ManagementPanel = ({
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </div>
   );
 };

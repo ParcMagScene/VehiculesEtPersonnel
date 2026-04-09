@@ -4,13 +4,13 @@
 // zoom/pan, recherche visuelle et tooltip détaillé
 // ============================================================
 
-import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { MapPin, Layers, BarChart3, ZoomIn, ZoomOut, Maximize2, Settings2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
-import { getZonePoints, hasSkew, getZonePoly, computeZonesBounds } from './DepotMapEditor';
+import { getZonePoints, hasSkew, computeZonesBounds } from './DepotMapEditor';
 import './DepotMap.css';
-import { Input, SearchBar, Tooltip } from '@/design-system';
+import { Button, SearchBar, Tooltip } from '@/design-system';
 
 const DepotMapEditor = lazy(() => import('./DepotMapEditor'));
 
@@ -343,36 +343,37 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           )}
           {/* Éditer le plan (admin uniquement) */}
           {!compact && currentUser?.isAdmin && (
-            <button type="button" className="depot-edit-btn" onClick={() => setShowEditor(true)} title="Éditer le plan">
+ <Tooltip content="Éditer le plan" position="bottom">
+   <Button variant="ghost" type="button" className="depot-edit-btn" onClick={() => setShowEditor(true)}>
               <Settings2 size={14} />
               Éditer
-            </button>
+            </Button>
+ </Tooltip>
           )}
           {/* Zoom */}
           <div className="depot-zoom-controls">
-            <Tooltip content="Dézoomer"><button type="button" onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM}>
+            <Tooltip content="Dézoomer"><Button variant="ghost" type="button" onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM}>
               <ZoomOut size={16} />
-            </button></Tooltip>
+            </Button></Tooltip>
             <span className="depot-zoom-level">{Math.round(zoom * 100)}%</span>
-            <Tooltip content="Zoomer"><button type="button" onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM}>
+            <Tooltip content="Zoomer"><Button variant="ghost" type="button" onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM}>
               <ZoomIn size={16} />
-            </button></Tooltip>
-            <Tooltip content="Réinitialiser"><button type="button" onClick={handleZoomReset}>
+            </Button></Tooltip>
+            <Tooltip content="Réinitialiser"><Button variant="ghost" type="button" onClick={handleZoomReset}>
               <Maximize2 size={14} />
-            </button></Tooltip>
+            </Button></Tooltip>
           </div>
           {/* Étage */}
           <div className="depot-floor-selector">
             {floors.map(f => (
-              <button
-                type="button"
+              <Button variant="ghost"                 type="button"
                 key={f.id}
                 className={`depot-floor-btn ${activeFloor === f.id ? 'active' : ''}`}
                 onClick={() => setActiveFloor(f.id)}
               >
                 <Layers size={14} />
                 {f.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -723,8 +724,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
         <BarChart3 size={14} />
         <span className="legend-label">Zones :</span>
         {floorZones.map(zone => (
-          <button
-            type="button"
+          <Button variant="ghost"             type="button"
             key={zone.id}
             className={`legend-chip ${selectedZone === zone.id ? 'active' : ''} ${highlightedZone === zone.id ? 'highlighted' : ''}`}
             style={{ '--chip-color': zone.color }}
@@ -739,7 +739,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
               ? <span className="legend-count search-count">{searchResults[zone.id]}</span>
               : statsMap[zone.id] > 0 && <span className="legend-count">{statsMap[zone.id]}</span>
             }
-          </button>
+          </Button>
         ))}
       </div>      )}
 

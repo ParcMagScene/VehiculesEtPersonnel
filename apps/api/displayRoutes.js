@@ -13,6 +13,7 @@ import db from './database.js';
 import logger from './logger.js';
 import { randomBytes } from 'node:crypto';
 import { uploadMedia } from './middleware/upload.js';
+import { validateFileType } from './middleware/validateFileType.js';
 import rateLimit from 'express-rate-limit';
 
 // Rate limiter dédié pour les endpoints TV publics (écriture)
@@ -73,7 +74,11 @@ function cleanTvTitle(t) {
 // ── Multer : upload GIF icônes ────────────────────────────────
 const gifStorage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, gifsDir),
-  filename: (_req, file, cb) => cb(null, file.originalname),
+  // [AUDIT FIX I6] Sanitiser le nom de fichier — empêche path traversal
+  filename: (_req, file, cb) => {
+    const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_{2,}/g, '_');
+    cb(null, safe);
+  },
 });
 const uploadGif = multer({
   storage: gifStorage,
@@ -158,6 +163,8 @@ function logAction(screenId, action, details, userId) {
     logger.warn('Display log write error:', e.message);
   }
 }
+
+import { verifyTvToken, optionalTvToken } from './middleware/tvAuth.js';
 
 // ════════════════════════════════════════════════════════════════
 export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
@@ -499,8 +506,13 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // [AUDIT FIX C1] MIME réels pour médias display
+  const DISPLAY_MEDIA_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+  const DISPLAY_GIF_MIMES = ['image/gif', 'image/png'];
+  const DISPLAY_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
   // POST /api/display/media — Upload média
-  app.post('/api/display/media', authenticateToken, uploadMedia.single('file'), (req, res) => {
+  app.post('/api/display/media', authenticateToken, uploadMedia.single('file'), validateFileType(DISPLAY_MEDIA_MIMES), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Aucun fichier fourni' });
 
@@ -909,7 +921,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // GET /api/display/welcome-message — Message dynamique actuel (pour l'écran TV)
-  app.get('/api/display/welcome-message', (_req, res) => {
+  app.get('/api/display/welcome-message', authenticateToken, (_req, res) => {
     try {
       // Vérifier d'abord le message furtif
       const sneakyFile = join(displayDataDir, 'sneaky-message.json');
@@ -1019,7 +1031,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/location-gifs — Upload d'un GIF
-  app.post('/api/display/location-gifs', authenticateToken, requireAdmin, uploadGif.single('gif'), (req, res) => {
+  app.post('/api/display/location-gifs', authenticateToken, requireAdmin, uploadGif.single('gif'), validateFileType(DISPLAY_GIF_MIMES), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Fichier requis' });
       logAction(null, 'gif_uploaded', { filename: req.file.filename }, req.user.id);
@@ -1083,7 +1095,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────── LOGO ────────────────────────────────────
 
   // POST /api/display/logo — Upload du logo
-  app.post('/api/display/logo', authenticateToken, requireAdmin, uploadLogo.single('logo'), (req, res) => {
+  app.post('/api/display/logo', authenticateToken, requireAdmin, uploadLogo.single('logo'), validateFileType(DISPLAY_IMAGE_MIMES), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Fichier requis' });
       // Stocker le chemin dans la config
@@ -1124,7 +1136,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────── PHOTO FURTIVE ────────────────────────────────
 
   // POST /api/display/sneaky-photo — Activer une photo furtive
-  app.post('/api/display/sneaky-photo', authenticateToken, requireAdmin, uploadSneaky.single('photo'), (req, res) => {
+  app.post('/api/display/sneaky-photo', authenticateToken, requireAdmin, uploadSneaky.single('photo'), validateFileType(DISPLAY_IMAGE_MIMES), (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Photo requise' });
       const duration = req.body.duration || '60';
@@ -1225,15 +1237,15 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
 
   // ──────────────────── MÉTÉO ───────────────────────────────────
 
-  // GET /api/display/weather — Proxy OpenWeatherMap
-  app.get('/api/display/weather', async (_req, res) => {
+  // GET /api/display/weather — Proxy OpenWeatherMap (auth TV ou admin)
+  app.get('/api/display/weather', optionalTvToken, async (_req, res) => {
     try {
       const apiKeyRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherApiKey'").get();
       const cityRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherCity'").get();
       const apiKey = apiKeyRow ? JSON.parse(apiKeyRow.value) : '';
       const city = cityRow ? JSON.parse(cityRow.value) : 'Saint-Denis,RE,FR';
 
-      if (!apiKey) return res.json({ error: 'Clé API météo non configurée' });
+      if (!apiKey) return res.status(503).json({ error: 'Clé API météo non configurée' });
 
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=fr`;
       const response = await fetch(url);
@@ -1280,7 +1292,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
 
   // Logos locaux connus (évite la recherche favicon pour ces radios)
   const KNOWN_RADIO_LOGOS = {
-    'radiomeuh': '/Logos/RadioMeuh.png',
+    'radiomeuh': '/display-logo/logo.png',
   };
 
   async function getRadioFavicon(streamUrl) {
@@ -1459,7 +1471,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   }
 
   // GET /api/display/sonos-now-playing — Titre en cours sur Sonos
-  app.get('/api/display/sonos-now-playing', async (_req, res) => {
+  app.get('/api/display/sonos-now-playing', optionalTvToken, async (_req, res) => {
     try {
       const result = await getSonosNowPlaying();
       res.json(result);
@@ -1665,8 +1677,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // Accessible sans authentification pour les écrans TV
   // ═══════════════════════════════════════════════════════════════
 
-  // GET /api/display/tv-public-state — État complet sans auth pour l'écran TV
-  app.get('/api/display/tv-public-state', async (_req, res) => {
+  // GET /api/display/tv-public-state — État complet pour l'écran TV (authentifié par token TV)
+  app.get('/api/display/tv-public-state', optionalTvToken, async (_req, res) => {
     try {
       // Config apparence
       const configRows = db.prepare('SELECT key, value FROM display_config').all();
@@ -1840,7 +1852,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ── Completed events toggle (public pour écran TV) ──
 
   // GET /api/display/tv/completed-events — Liste des tâches terminées du jour
-  app.get('/api/display/tv/completed-events', (_req, res) => {
+  app.get('/api/display/tv/completed-events', optionalTvToken, (_req, res) => {
     try {
       const today = new Date();
       const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -1853,7 +1865,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/tv/complete-event — Marquer une tâche comme terminée
-  app.post('/api/display/tv/complete-event', tvWriteLimiter, (req, res) => {
+  app.post('/api/display/tv/complete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
@@ -1868,7 +1880,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/tv/uncomplete-event — Démarquer une tâche
-  app.post('/api/display/tv/uncomplete-event', tvWriteLimiter, (req, res) => {
+  app.post('/api/display/tv/uncomplete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
@@ -1890,7 +1902,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ══════════════════════════════════════════════════════════════════
 
   // /api/events → Tâches du jour au format { regular, recurrent }
-  app.get('/api/events', async (_req, res) => {
+  app.get('/api/events', optionalTvToken, async (_req, res) => {
     try {
       const now = new Date();
       const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -1947,7 +1959,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/config → config apparence
-  app.get('/api/config', (_req, res) => {
+  app.get('/api/config', optionalTvToken, (_req, res) => {
     try {
       const rows = db.prepare('SELECT key, value FROM display_config').all();
       const config = {};
@@ -1962,7 +1974,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/welcome-message → message d'accueil
-  app.get('/api/welcome-message', (_req, res) => {
+  app.get('/api/welcome-message', optionalTvToken, (_req, res) => {
     try {
       const sneakyFile = join(displayDataDir, 'sneaky-message.json');
       const sneaky = readJsonFile(sneakyFile, null);
@@ -1988,7 +2000,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/completed-events → événements terminés du jour
-  app.get('/api/completed-events', (_req, res) => {
+  app.get('/api/completed-events', optionalTvToken, (_req, res) => {
     try {
       const today = new Date().toISOString().split('T')[0];
       const rows = db.prepare('SELECT event_id FROM display_completed_events WHERE event_date = ?').all(today);
@@ -2000,7 +2012,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/complete-event → marquer terminé
-  app.post('/api/complete-event', tvWriteLimiter, (req, res) => {
+  app.post('/api/complete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
@@ -2014,7 +2026,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/uncomplete-event → démarquer
-  app.post('/api/uncomplete-event', tvWriteLimiter, (req, res) => {
+  app.post('/api/uncomplete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
@@ -2028,7 +2040,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/event-color-rules → règles de couleurs
-  app.get('/api/event-color-rules', (_req, res) => {
+  app.get('/api/event-color-rules', optionalTvToken, (_req, res) => {
     try {
       const rules = db.prepare('SELECT keyword, color, description FROM display_color_rules ORDER BY sort_order').all();
       res.json(rules);
@@ -2039,7 +2051,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/location-icons → icônes de lieux
-  app.get('/api/location-icons', (_req, res) => {
+  app.get('/api/location-icons', optionalTvToken, (_req, res) => {
     try {
       const rules = db.prepare('SELECT keyword, gif_filename FROM display_location_icon_rules ORDER BY sort_order').all();
       res.json(rules);
@@ -2050,13 +2062,13 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // /api/weather → météo (proxy)
-  app.get('/api/weather', async (_req, res) => {
+  app.get('/api/weather', optionalTvToken, async (_req, res) => {
     try {
       const apiKeyRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherApiKey'").get();
       const cityRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherCity'").get();
       const apiKey = apiKeyRow ? JSON.parse(apiKeyRow.value) : '';
       const city = cityRow ? JSON.parse(cityRow.value) : 'Saint-Denis,RE,FR';
-      if (!apiKey) return res.json({ error: 'Clé API météo non configurée' });
+      if (!apiKey) return res.status(503).json({ error: 'Clé API météo non configurée' });
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=fr`;
       const response = await fetch(url);
       const data = await response.json();

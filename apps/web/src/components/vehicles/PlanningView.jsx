@@ -1,8 +1,11 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from 'date-fns';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { format, addDays, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, Users, Briefcase, Clock, Ban } from 'lucide-react';
 import api from '../../utils/api';
+import { STATUS } from '../../constants';
+
+import { Button } from '@/design-system';
 import './PlanningView.css';
 
 function PlanningView({ 
@@ -144,20 +147,18 @@ function PlanningView({
           {format(weekDays[0], "'Semaine du' d MMMM yyyy", { locale: fr })}
         </div>
         <div className="planning-mode-toggle">
-          <button
-            className={`planning-mode-btn ${planningMode === 'vehicles' ? 'active' : ''}`}
+          <Button variant="ghost"             className={`planning-mode-btn ${planningMode === 'vehicles' ? 'active' : ''}`}
             onClick={() => setPlanningMode('vehicles')}
           >
             <Calendar size={16} />
             <span>Véhicules</span>
-          </button>
-          <button
-            className={`planning-mode-btn ${planningMode === 'personnel' ? 'active' : ''}`}
+          </Button>
+          <Button variant="ghost"             className={`planning-mode-btn ${planningMode === 'personnel' ? 'active' : ''}`}
             onClick={() => setPlanningMode('personnel')}
           >
             <Users size={16} />
             <span>Personnel</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -264,9 +265,9 @@ function PlanningView({
                               </div>
                               <div className="planning-maintenance-status">
                                 {maintenance.status === 'reported' ? 'Panne' :
-                                 maintenance.status === 'scheduled' ? 'Programmée' :
+                                 maintenance.status === STATUS.SCHEDULED ? 'Programmée' :
                                  maintenance.status === 'in_progress' ? 'En cours' :
-                                 maintenance.status === 'pending' ? 'Demande' : 'Terminée'}
+                                 maintenance.status === STATUS.PENDING ? 'Demande' : 'Terminée'}
                               </div>
                             </div>
                           </div>

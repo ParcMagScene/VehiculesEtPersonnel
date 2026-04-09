@@ -17,7 +17,7 @@
 }
 
 .planning-week-title {
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 600;
   color: var(--theme-text-heading);
   text-transform: capitalize;
@@ -45,7 +45,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 16px;
+  font-size: var(--font-md);
   color: var(--theme-text-heading);
   background: var(--theme-bg-tertiary);
   border-bottom: 2px solid var(--theme-border-medium);
@@ -79,7 +79,7 @@
 }
 
 .planning-vehicle-registration {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   font-family: 'Monaco', monospace;
 }
@@ -115,13 +115,13 @@
 
 .planning-day-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-heading);
   text-transform: capitalize;
 }
 
 .planning-day-date {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   text-transform: capitalize;
 }
@@ -162,7 +162,7 @@
 .planning-reservation {
   background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
   border-left: 3px solid var(--theme-info);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -190,7 +190,7 @@
 
 .planning-reservation-client {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-info-dark);
   white-space: nowrap;
   overflow: hidden;
@@ -198,14 +198,14 @@
 }
 
 .planning-reservation-period {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-info);
   margin-top: 2px;
 }
 
 /* Interventions */
 .planning-maintenance {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -273,7 +273,7 @@
 
 .planning-maintenance-description {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-heading);
   white-space: nowrap;
   overflow: hidden;
@@ -281,7 +281,7 @@
 }
 
 .planning-maintenance-status {
-  font-size: 11px;
+  font-size: var(--font-xs);
   margin-top: 2px;
 }
 
@@ -312,7 +312,7 @@
   display: flex;
   gap: 4px;
   background: var(--theme-bg-tertiary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 4px;
 }
 
@@ -322,10 +322,10 @@
   gap: 6px;
   padding: 8px 16px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-gray);
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -355,7 +355,7 @@
   gap: 10px;
   padding: 40px;
   color: var(--theme-text-gray);
-  font-size: 14px;
+  font-size: var(--font-base);
   width: 100%;
 }
 
@@ -365,7 +365,7 @@
 
 /* Missions */
 .planning-mission {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 8px;
   cursor: default;
   transition: all 0.2s;
@@ -395,13 +395,13 @@
 
 .planning-mission-type {
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--font-sm);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .planning-mission-client {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-heading);
   font-weight: 500;
   white-space: nowrap;
@@ -411,7 +411,7 @@
 }
 
 .planning-mission-location {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-gray);
   white-space: nowrap;
   overflow: hidden;
@@ -426,8 +426,8 @@
   gap: 6px;
   padding: 4px 8px;
   background: var(--theme-danger-bg);
-  border-radius: 4px;
-  font-size: 11px;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-xs);
   color: var(--theme-danger-text-alt);
   font-weight: 500;
 }
@@ -440,7 +440,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-success-alt);
   opacity: 0.4;
 }
@@ -519,7 +519,7 @@
 
   .planning-column-header {
     height: 60px;
-    font-size: 13px;
+    font-size: var(--font-base);
   }
 
   .planning-days-header {
@@ -527,11 +527,11 @@
   }
 
   .planning-vehicle-name {
-    font-size: 13px;
+    font-size: var(--font-base);
   }
 
   .planning-vehicle-registration {
-    font-size: 11px;
+    font-size: var(--font-xs);
   }
 
   .planning-vehicle-row {
@@ -552,12 +552,12 @@
 
   .planning-reservation-client,
   .planning-maintenance-description {
-    font-size: 11px;
+    font-size: var(--font-xs);
   }
 
   .planning-reservation-period,
   .planning-maintenance-status {
-    font-size: 10px;
+    font-size: var(--font-2xs);
   }
 
   .planning-header {
@@ -584,7 +584,7 @@
   }
 
   .planning-vehicle-name {
-    font-size: 12px;
+    font-size: var(--font-sm);
   }
 
   .planning-reservation-icon,

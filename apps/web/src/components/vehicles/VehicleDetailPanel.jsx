@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader, User, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { X, Wrench, AlertTriangle, Calendar, Gauge, User, ExternalLink } from 'lucide-react';
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
-import { Tag } from '@/design-system';
+import { Button, Tag } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 import './VehicleDetailPanel.css';
 
 /* ═══════════════════════════════════════════════
@@ -34,11 +35,6 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
         ? JSON.parse(vehicle.controlesTechniques)
         : vehicle.controlesTechniques)
     : [];
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
 
   const getDeadlineStatus = (deadline) => {
     if (!deadline) return null;
@@ -87,9 +83,9 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
       <section className="vdp-section">
         <div className="vdp-photo-block">
           {vehicle.photo ? (
-            <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} className="vdp-photo" />
+            <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" className="vdp-photo" />
           ) : (
-            <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vdp-photo vdp-avatar" />
+            <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vdp-photo vdp-avatar" />
           )}
         </div>
         <div className="vdp-info-grid">
@@ -138,7 +134,7 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
             <div className="vdp-km-label"><Gauge size={13} /> Kilométrage</div>
             <div className="vdp-km-value">{lastKm.toLocaleString('fr-FR')} km</div>
             <div className="vdp-km-meta">
-              {lastMileageEntry?.timestamp && <span><Calendar size={11} /> {formatDate(lastMileageEntry.timestamp)}</span>}
+              {lastMileageEntry?.timestamp && <span><Calendar size={11} /> {formatDateSimple(lastMileageEntry.timestamp)}</span>}
               {(lastMileageEntry?.userName || lastMileageEntry?.user_name) && (
                 <span><User size={11} /> {lastMileageEntry.userName || lastMileageEntry.user_name}</span>
               )}
@@ -152,20 +148,20 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
         <div className="vdp-actions">
           {isAdmin && (
             <>
-              <button className="vdp-action-btn vdp-schedule" onClick={() => onAction?.('schedule')}>
+              <Button variant="ghost" className="vdp-action-btn vdp-schedule" onClick={() => onAction?.('schedule')}>
                 <Calendar size={14} /> Programmer
-              </button>
-              <button className="vdp-action-btn vdp-request" onClick={() => onAction?.('request')}>
+              </Button>
+              <Button variant="ghost" className="vdp-action-btn vdp-request" onClick={() => onAction?.('request')}>
                 <Wrench size={14} /> Demander
-              </button>
-              <button className="vdp-action-btn vdp-km-ctrl" onClick={() => onAction?.('km')}>
+              </Button>
+              <Button variant="ghost" className="vdp-action-btn vdp-km-ctrl" onClick={() => onAction?.('km')}>
                 <Gauge size={14} /> KM & CT
-              </button>
+              </Button>
             </>
           )}
-          <button className="vdp-action-btn vdp-breakdown" onClick={() => onAction?.('breakdown')}>
+          <Button variant="ghost" className="vdp-action-btn vdp-breakdown" onClick={() => onAction?.('breakdown')}>
             <AlertTriangle size={14} /> Panne
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -183,8 +179,8 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
                     {deadline && <span className={`vdp-ct-badge ${deadline.className}`}>{deadline.label}</span>}
                   </div>
                   <div className="vdp-ct-dates">
-                    <span>Dernier : {formatDate(ct.date)}</span>
-                    {ct.deadline && <span>Échéance : {formatDate(ct.deadline)}</span>}
+                    <span>Dernier : {formatDateSimple(ct.date)}</span>
+                    {ct.deadline && <span>Échéance : {formatDateSimple(ct.deadline)}</span>}
                   </div>
                 </div>
               );
@@ -206,7 +202,7 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
                   <span className="vdp-intervention-type">{getTypeLabel(m.type)}</span>
                   {getStatusBadge(m.status)}
                 </div>
-                <div className="vdp-intervention-date">{formatDate(m.date)}</div>
+                <div className="vdp-intervention-date">{formatDateSimple(m.date)}</div>
                 {m.description && <div className="vdp-intervention-desc">{m.description}</div>}
                 <div className="vdp-intervention-tags">
                   {m.mileage && parseInt(m.mileage) > 0 && (
@@ -288,9 +284,9 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
             </div>
           </div>
         </div>
-        <button className="slide-panel-close" onClick={handleClose}>
+        <Button variant="ghost" className="slide-panel-close" onClick={handleClose}>
           <X size={18} />
-        </button>
+        </Button>
       </div>
 
       {/* Body */}
@@ -305,9 +301,9 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
 
       {/* Footer */}
       <div className="vdp-slide-footer">
-        <button className="vdp-slide-open-btn" onClick={() => onOpenDialog?.(currentVehicle)}>
+        <Button variant="ghost" className="vdp-slide-open-btn" onClick={() => onOpenDialog?.(currentVehicle)}>
           <ExternalLink size={14} /> Ouvrir la fiche complète
-        </button>
+        </Button>
       </div>
     </div>
   );

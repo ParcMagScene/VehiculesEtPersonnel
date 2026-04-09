@@ -13,8 +13,14 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 
 // ── Protection SSRF — bloquer les IPs internes sauf le LAN local ──
 const BLOCKED_RANGES = [/^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^169\.254\./, /^0\./, /^255\./];
+// [SEC FIX] Bloque aussi IPv6 loopback et link-local
+const BLOCKED_IPV6 = ['::1', '::ffff:127.0.0.1', 'fe80::', 'fc00::', 'fd00::'];
 function isBlockedIP(ip) {
-  if (!ip || !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return true;
+  if (!ip) return true;
+  // Bloquer IPv6 dangereuses
+  if (ip.includes(':')) return BLOCKED_IPV6.some(prefix => ip.startsWith(prefix));
+  // IPv4 : vérifier format + ranges
+  if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return true;
   return BLOCKED_RANGES.some(r => r.test(ip));
 }
 
@@ -38,7 +44,19 @@ function getKeyBuffer() {
     }
   }
   if (!process.env.VIDEO_CIPHER_KEY) {
-    logger.warn('⚠️  VIDEO_CIPHER_KEY non défini — les mots de passe caméra seront perdus au redémarrage');
+    // [AUDIT FIX MED-B5] Générer et persister la clé pour éviter la perte au redémarrage
+    const generated = crypto.randomBytes(32).toString('hex');
+    const envPath = join(__dir, '.env');
+    try {
+      let content = '';
+      try { content = fs.readFileSync(envPath, 'utf8'); } catch {}
+      const line = `\nVIDEO_CIPHER_KEY=${generated}\n`;
+      fs.appendFileSync(envPath, line);
+      process.env.VIDEO_CIPHER_KEY = generated;
+      logger.info('🔑 VIDEO_CIPHER_KEY générée et sauvegardée dans .env');
+    } catch (writeErr) {
+      logger.warn('⚠️  VIDEO_CIPHER_KEY non défini et impossible d\'écrire dans .env — les mots de passe caméra seront perdus au redémarrage');
+    }
   }
   const key = process.env.VIDEO_CIPHER_KEY || crypto.randomBytes(32).toString('hex');
   logger.info(`🔑 Cipher key initialisée (source: ${process.env.VIDEO_CIPHER_KEY ? 'env' : 'random'})`);
@@ -86,7 +104,17 @@ export function generateSessionToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+const MAX_ACTIVE_SESSIONS = 500;
+
 export function storeSession(token, data) {
+  // [AUDIT FIX V4] Purger les sessions les plus anciennes si cap atteint
+  if (activeSessions.size >= MAX_ACTIVE_SESSIONS) {
+    let oldest = null, oldestKey = null;
+    for (const [k, v] of activeSessions) {
+      if (!oldest || v.createdAt < oldest) { oldest = v.createdAt; oldestKey = k; }
+    }
+    if (oldestKey) activeSessions.delete(oldestKey);
+  }
   activeSessions.set(token, { ...data, createdAt: Date.now() });
   // Auto-expiration après 4h
   setTimeout(() => activeSessions.delete(token), 4 * 60 * 60 * 1000);
@@ -112,12 +140,13 @@ export function buildRtspUrl(camera, password) {
   const pass = password || '';
   const brand = (camera.brand || '').toLowerCase();
 
-  // Profils RTSP par marque
-  let path = '/Streaming/Channels/101'; // Hikvision par défaut
+  // Profils RTSP par marque — channel configurable (défaut: 1)
+  const ch = camera.channel || 1;
+  let path = `/Streaming/Channels/${ch}01`; // Hikvision par défaut
   if (brand.includes('dahua') || brand.includes('amcrest')) {
-    path = '/cam/realmonitor?channel=1&subtype=0';
+    path = `/cam/realmonitor?channel=${ch}&subtype=0`;
   } else if (brand.includes('ezviz')) {
-    path = '/Streaming/Channels/101';
+    path = `/Streaming/Channels/${ch}01`;
   } else if (brand.includes('axis')) {
     path = '/axis-media/media.amp';
   } else if (brand.includes('onvif') || brand === 'generic') {
@@ -126,9 +155,9 @@ export function buildRtspUrl(camera, password) {
 
   if (camera.stream_profile === 'sub') {
     if (brand.includes('dahua') || brand.includes('amcrest')) {
-      path = '/cam/realmonitor?channel=1&subtype=1';
+      path = `/cam/realmonitor?channel=${ch}&subtype=1`;
     } else if (brand.includes('hikvision') || brand.includes('ezviz')) {
-      path = '/Streaming/Channels/102';
+      path = `/Streaming/Channels/${ch}02`;
     }
   }
 
@@ -213,9 +242,11 @@ export async function fetchSnapshot(camera, password) {
   if (camera.snapshot_path) {
     url = `http://${ip}:${httpPort}${camera.snapshot_path}`;
   } else if (brand.includes('hikvision') || brand.includes('ezviz')) {
-    url = `http://${ip}:${httpPort}/ISAPI/Streaming/channels/101/picture`;
+    const ch = camera.channel || 1;
+    url = `http://${ip}:${httpPort}/ISAPI/Streaming/channels/${ch}01/picture`;
   } else if (brand.includes('dahua') || brand.includes('amcrest')) {
-    url = `http://${ip}:${httpPort}/cgi-bin/snapshot.cgi?channel=1`;
+    const ch = camera.channel || 1;
+    url = `http://${ip}:${httpPort}/cgi-bin/snapshot.cgi?channel=${ch}`;
   } else if (brand.includes('axis')) {
     url = `http://${ip}:${httpPort}/axis-cgi/jpg/image.cgi`;
   } else {
@@ -267,7 +298,8 @@ export async function sendPTZCommand(camera, password, command, speed = 1) {
         stop: 'Stop',
       };
       const code = codeMap[command] || 'Stop';
-      url = `http://${ip}:${httpPort}/cgi-bin/ptz.cgi?action=start&channel=1&code=${code}&arg1=0&arg2=${speed}&arg3=0`;
+      const ch = camera.channel || 1;
+      url = `http://${ip}:${httpPort}/cgi-bin/ptz.cgi?action=start&channel=${ch}&code=${code}&arg1=0&arg2=${speed}&arg3=0`;
     } else if (brand.includes('hikvision') || brand.includes('ezviz')) {
       // Hikvision ISAPI PTZ continuous
       method = 'PUT';
@@ -276,7 +308,8 @@ export async function sendPTZCommand(camera, password, command, speed = 1) {
       const tiltSpeed = command === 'up' ? speed * 30 : command === 'down' ? -speed * 30 : 0;
       const zoomSpeed = command === 'zoomin' ? speed * 10 : command === 'zoomout' ? -speed * 10 : 0;
       body = `<PTZData><pan>${panSpeed}</pan><tilt>${tiltSpeed}</tilt><zoom>${zoomSpeed}</zoom></PTZData>`;
-      url = `http://${ip}:${httpPort}/ISAPI/PTZCtrl/channels/1/continuous`;
+      const ch = camera.channel || 1;
+      url = `http://${ip}:${httpPort}/ISAPI/PTZCtrl/channels/${ch}/continuous`;
     } else {
       // ONVIF fallback — basic HTTP PTZ
       const codeMap = {

@@ -3,11 +3,12 @@
 // Galerie d'icônes + Règles d'association type de tâche → icône
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import { Film, Upload, Plus, Trash2, Save, X, Check } from 'lucide-react';
+import { useState, useEffect, useCallback, memo } from 'react';
+import { Film, Upload, Plus, Trash2, Save, X } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api, { getApiUrl } from '../../utils/api';
-import { Button, Dialog, Select, Tooltip, SectionHeader } from '@/design-system';
+import { Button, Select, Tooltip, SectionHeader } from '@/design-system';
 
 // Types de tâches (sections) disponibles pour l'association icône
 const TASK_SECTIONS = [
@@ -32,16 +33,16 @@ const TASK_SECTIONS = [
   { key: 'manual', label: '✏️ Divers' },
 ];
 
-function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
+function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [gifs, setGifs] = useState([]);
   const [rules, setRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showMosaic, setShowMosaic] = useState(null); // index de la règle en cours
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
-  const API_URL = getApiUrl();
+  const _API_URL = getApiUrl();
 
   const loadData = useCallback(async () => {
     try {
@@ -79,13 +80,12 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
   }, [toast]);
 
   const handleDeleteGif = useCallback((filename) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer l'ic\xF4ne \xAB ${filename} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayLocationGif(filename);
           toast.success('Ic\xF4ne supprim\xE9e');
@@ -95,7 +95,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
         }
       },
     });
-  }, [toast]);
+  }, [confirm, toast]);
 
   // ── Gestion règles d'icônes ──
   const handleAddRule = () => {
@@ -163,9 +163,9 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
               <div key={gif} className="dtv-gif-item">
                 <img src={gifUrl(gif)} alt={gif} />
                 <span className="dtv-gif-name">{gif.replace(/\.(gif|png)$/i, '')}</span>
-                <Tooltip content="Supprimer"><button className="dtv-gif-delete" onClick={() => handleDeleteGif(gif)}>
+                <Tooltip content="Supprimer"><Button variant="ghost" className="dtv-gif-delete" onClick={() => handleDeleteGif(gif)}>
                   <Trash2 size={12} />
-                </button></Tooltip>
+                </Button></Tooltip>
               </div>
             ))}
           </div>
@@ -183,7 +183,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
           )}
           {rules.map((rule, index) => (
             <div key={index} className="dtv-icon-rule">
-              <div className="dtv-icon-selector" onClick={() => setShowMosaic(index)}>
+              <div className="dtv-icon-selector" role="button" tabIndex={0} onClick={() => setShowMosaic(index)}>
                 {rule.gifFilename ? (
                   <img src={gifUrl(rule.gifFilename)} alt={rule.gifFilename} />
                 ) : (
@@ -230,7 +230,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
             ) : (
               <div className="dtv-mosaic-grid">
                 {gifs.map(gif => (
-                  <div key={gif} className="dtv-mosaic-item" onClick={() => handleSelectIcon(gif)}>
+                  <div key={gif} className="dtv-mosaic-item" role="button" tabIndex={0} onClick={() => handleSelectIcon(gif)}>
                     <img src={gifUrl(gif)} alt={gif} />
                   </div>
                 ))}
@@ -242,17 +242,7 @@ function LocationIconsTab({ currentUser, refreshKey, onPreviewChange }) {
           </div>
         </div>
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

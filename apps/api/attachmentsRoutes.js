@@ -3,6 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import logger from './logger.js';
+import { validateFileType } from './middleware/validateFileType.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,6 +48,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
+  // [AUDIT FIX H2] Limite de taille pour les uploads BL
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: function (req, file, cb) {
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
@@ -62,7 +65,8 @@ const uploadAttachment = multer({
   fileFilter: function (req, file, cb) {
     const allowedMimes = [
       'application/pdf',
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff',
+      // [AUDIT FIX] SVG retiré — vecteur XSS potentiel (scripts embarqués)
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff',
       'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -101,7 +105,8 @@ app.post('/api/create-folder', authenticateToken, (req, res) => {
 });
 
 // Upload d'un BL (sécurisé)
-app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), (req, res) => {
+// [AUDIT FIX C1] Validation magic bytes PDF
+app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), validateFileType(['application/pdf']), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Aucun fichier fourni' });

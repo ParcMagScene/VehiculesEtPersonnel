@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Plus, X, Save, Edit2, Trash2, Briefcase } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
 import { POSITION_CATEGORIES } from './personnelConstants';
-import { Button, Dialog, Input, Select, Checkbox, EmptyState } from '@/design-system';
+import { Button, Input, Select, Checkbox, EmptyState } from '@/design-system';
 
 const PositionsTab = ({ positions, setPositions, currentUser }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showForm, setShowForm] = useState(false);
   const [editingPosition, setEditingPosition] = useState(null);
   const [form, setForm] = useState({ name: '', category: 'autre', is_common: false });
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const groupedPositions = POSITION_CATEGORIES.map(cat => ({
     ...cat,
@@ -40,13 +41,12 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
   };
 
   const handleDelete = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: 'Supprimer ce poste ?',
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deletePosition(id);
           setPositions(prev => prev.filter(p => p.id !== id));
@@ -73,7 +73,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
           <form className="personnel-form compact" onSubmit={handleSubmit}>
             <div className="personnel-form-header">
               <h3>{editingPosition ? 'Modifier' : 'Nouveau poste'}</h3>
-              <button type="button" className="close-btn" onClick={resetForm}><X size={18} /></button>
+              <Button variant="ghost" type="button" className="close-btn" onClick={resetForm} aria-label="Fermer"><X size={18} /></Button>
             </div>
             <div className="personnel-form-grid">
               <div className="form-field">
@@ -126,10 +126,10 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
                         setForm({ name: pos.name, category: pos.category, is_common: !!pos.isCommon });
                         setEditingPosition(pos);
                         setShowForm(true);
-                      }}>
+                      }} aria-label="Modifier">
                         <Edit2 size={12} />
                       </Button>
-                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(pos.id)}>
+                      <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(pos.id)} aria-label="Supprimer">
                         <Trash2 size={12} />
                       </Button>
                     </div>
@@ -143,17 +143,7 @@ const PositionsTab = ({ positions, setPositions, currentUser }) => {
           <EmptyState icon={<Briefcase size={48} />} title="Aucun poste enregistré" />
         )}
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 };

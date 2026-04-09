@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users, Briefcase } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users } from 'lucide-react';
 import api from '../../utils/api';
 import ProfileEditModal from '../auth/ProfileEditModal';
 import './UserManagement.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Dialog, ModalLayout, Input, Table, Checkbox, Tag, Card, Avatar } from '@/design-system';
+import { Button, ModalLayout, Input, Table, Checkbox, Tag, Card, Avatar , Tooltip} from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { formatDateSimple } from '../../utils/formatUtils';
+
+import { STATUS } from '../../constants';
 
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const toast = useToast();
@@ -17,7 +21,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const [approveModal, setApproveModal] = useState(null); // { id, email, name }
   const [personModal, setPersonModal] = useState(null); // { user } pour création de fiche personnel
   const [personsMap, setPersonsMap] = useState({}); // user_id -> person
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   useEffect(() => {
     loadData();
@@ -72,7 +76,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   };
 
   const handleRemoveEmail = (id) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer cet email',
       message: 'Supprimer cet email autorisé ?',
       variant: 'danger',
@@ -90,7 +94,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
   const handleToggleAdmin = (userId, currentIsAdmin) => {
     const action = currentIsAdmin ? 'retirer les droits admin' : 'donner les droits admin';
-    setConfirmDialog({
+    confirm({
       title: 'Modifier les droits',
       message: `Voulez-vous vraiment ${action} à cet utilisateur ?`,
       variant: 'warning',
@@ -121,7 +125,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   };
 
   const handleDeleteUser = (userId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer cet utilisateur',
       message: 'Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.',
       variant: 'danger',
@@ -139,7 +143,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   };
 
   const handleResetPassword = (userId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Réinitialiser le mot de passe',
       message: 'Marquer ce compte pour réinitialisation ? L\'utilisateur devra définir un nouveau mot de passe lors de sa prochaine connexion.',
       variant: 'confirm',
@@ -170,7 +174,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     const { id, email: reqEmail, name: reqName } = approveModal;
 
     try {
-      const result = await api.updateAccessRequest(id, 'approved', giveAdmin);
+      const _result = await api.updateAccessRequest(id, 'approved', giveAdmin);
       
       if (sendEmail) {
         // Construire l'URL de création de compte
@@ -178,7 +182,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         const setupLink = `${appUrl}?setup=${encodeURIComponent(reqEmail)}`;
         
         // Construire le mail type
-        const subject = encodeURIComponent('Votre accès à MagSav - Réservation Véhicules');
+        const subject = encodeURIComponent('Votre accès eM@g - Réservation Véhicules');
         const body = encodeURIComponent(
           `Bonjour ${reqName},\n\n` +
           `Votre demande d'accès à l'application de réservation de véhicules a été approuvée !\n\n` +
@@ -186,7 +190,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           `${setupLink}\n\n` +
           `Ce lien vous amènera directement à la page de création de votre compte.\n\n` +
           `Cordialement,\n` +
-          `L'équipe Mag Scène`
+          `L'équipe eM@g`
         );
         
         // Ouvrir Gmail compose dans un nouvel onglet
@@ -203,7 +207,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   };
 
   const handleRejectRequest = (requestId) => {
-    setConfirmDialog({
+    confirm({
       title: 'Rejeter la demande',
       message: 'Rejeter cette demande d\'accès ?',
       variant: 'warning',
@@ -274,7 +278,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     <td>
                       {!user.isAdmin && (
                         <div className="permissions-group">
-                          <label className="permission-checkbox" title="Autoriser la gestion des maintenances véhicules">
+ <Tooltip content="Autoriser la gestion des maintenances véhicules" position="bottom">
+   <label className="permission-checkbox">
                             <Checkbox
                               checked={user.permissions?.can_manage_vehicle_maintenance || user.permissions?.can_manage_maintenance || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_vehicle_maintenance', user.permissions)}
@@ -283,7 +288,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               🚗 Maint. Véhicules
                             </span>
                           </label>
-                          <label className="permission-checkbox" title="Autoriser la gestion des maintenances matériel (SAV)">
+ </Tooltip>
+ <Tooltip content="Autoriser la gestion des maintenances matériel (SAV)" position="bottom">
+   <label className="permission-checkbox">
                             <Checkbox
                               checked={user.permissions?.can_manage_equipment_maintenance || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_equipment_maintenance', user.permissions)}
@@ -292,7 +299,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               🔧 Maint. Matériel
                             </span>
                           </label>
-                          <label className="permission-checkbox" title="Autoriser la gestion du catalogue d'équipements et flight-cases">
+ </Tooltip>
+ <Tooltip content="Autoriser la gestion du catalogue d'équipements et flight-cases" position="bottom">
+   <label className="permission-checkbox">
                             <Checkbox
                               checked={user.permissions?.can_manage_catalog || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_catalog', user.permissions)}
@@ -301,7 +310,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               📦 Catalogue
                             </span>
                           </label>
-                          <label className="permission-checkbox" title="Autoriser la gestion des modèles de camions">
+ </Tooltip>
+ <Tooltip content="Autoriser la gestion des modèles de camions" position="bottom">
+   <label className="permission-checkbox">
                             <Checkbox
                               checked={user.permissions?.can_manage_trucks || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_trucks', user.permissions)}
@@ -310,6 +321,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               🚛 Camions
                             </span>
                           </label>
+ </Tooltip>
                         </div>
                       )}
                       {user.isAdmin && (
@@ -318,48 +330,55 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <Button
+                        <Tooltip content="Modifier le profil" position="bottom">
+                          <Button
                           variant="primary" size="sm" iconOnly
                           onClick={() => setEditingUser(user)}
-                          title="Modifier le profil"
+ 
+                          aria-label="Modifier le profil"
                         >
                           <Pencil size={14} />
                         </Button>
-                        <button
-                          onClick={() => handleResetPassword(user.id)}
+                        </Tooltip>
+                        <Tooltip content="Réinitialiser - l'utilisateur devra définir un nouveau mot de passe" position="bottom">
+                          <Button variant="ghost"                           onClick={() => handleResetPassword(user.id)}
                           className="btn-icon btn-warning"
-                          title="Réinitialiser - l'utilisateur devra définir un nouveau mot de passe"
+ 
                         >
                           <RefreshCw size={14} />
-                        </button>
-                        <Button
+                        </Button>
+                        </Tooltip>
+                        <Tooltip content="Supprimer l'utilisateur" position="bottom">
+                          <Button
                           variant="danger" size="sm" iconOnly
                           onClick={() => handleDeleteUser(user.id)}
-                          title="Supprimer l'utilisateur"
+ 
+                          aria-label="Supprimer l'utilisateur"
                         >
                           <Trash2 size={14} />
                         </Button>
+                        </Tooltip>
                       </div>
                     </td>
                     <td>
                       {personsMap[user.id] ? (
-                        <button
-                          className="personnel-linked-badge clickable"
+                        <Button variant="ghost"                           className="personnel-linked-badge clickable"
                           title={`Voir la fiche de ${personsMap[user.id].firstName} ${personsMap[user.id].lastName}`}
                           onClick={() => onNavigateToPersonnel && onNavigateToPersonnel(personsMap[user.id])}
                         >
                           <UserCheck size={13} />
                           <span>{personsMap[user.id].type === 'contractuel' ? 'Contractuel' : 'Permanent'}</span>
                           <ExternalLink size={11} />
-                        </button>
+                        </Button>
                       ) : (
-                        <button
-                          onClick={() => setPersonModal({ user })}
+                        <Tooltip content="Créer une fiche personnel pour cet utilisateur" position="bottom">
+                          <Button variant="ghost"                           onClick={() => setPersonModal({ user })}
                           className="btn-create-personnel"
-                          title="Créer une fiche personnel pour cet utilisateur"
+ 
                         >
                           <Users size={13} /> Créer
-                        </button>
+                        </Button>
+                        </Tooltip>
                       )}
                     </td>
                   </tr>
@@ -382,9 +401,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
             placeholder="email@example.com"
             required
           />
-          <button type="submit">
+          <Button variant="ghost" type="submit">
             <UserPlus size={18} /> Autoriser
-          </button>
+          </Button>
         </form>
 
         <div className="emails-list">
@@ -415,13 +434,16 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     </td>
                     <td>{email.userName || '-'}</td>
                     <td>
-                      <Button
+                      <Tooltip content="Supprimer" position="bottom">
+                        <Button
                         variant="danger" size="sm" iconOnly
                         onClick={() => handleRemoveEmail(email.id)}
-                        title="Supprimer"
+ 
+                        aria-label="Supprimer"
                       >
                         <Trash2 size={16} />
                       </Button>
+                      </Tooltip>
                     </td>
                   </tr>
                 ))}
@@ -432,7 +454,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       </div>
 
       {/* Historique des demandes traitées */}
-      {accessRequests.filter(r => r.status !== 'pending').length > 0 && (
+      {accessRequests.filter(r => r.status !== STATUS.PENDING).length > 0 && (
         <div className="user-management-section">
           <h3>Historique des demandes</h3>
           <div className="requests-history">
@@ -448,22 +470,22 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                 </tr>
               </thead>
               <tbody>
-                {accessRequests.filter(r => r.status !== 'pending').map((request) => (
+                {accessRequests.filter(r => r.status !== STATUS.PENDING).map((request) => (
                   <tr key={request.id}>
                     <td>{request.name}</td>
                     <td>{request.email}</td>
                     <td>
-                      {new Date(request.createdAt).toLocaleDateString('fr-FR')}
+                      {formatDateSimple(request.createdAt)}
                     </td>
                     <td>
-                      <Tag color={request.status === 'approved' ? 'success' : 'danger'} size="sm">
-                        {request.status === 'approved' ? '✓ Approuvée' : '✗ Rejetée'}
+                      <Tag color={request.status === STATUS.APPROVED ? 'success' : 'danger'} size="sm">
+                        {request.status === STATUS.APPROVED ? '✓ Approuvée' : '✗ Rejetée'}
                       </Tag>
                     </td>
                     <td>{request.reviewedByName || '-'}</td>
                     <td>
                       {request.reviewedAt 
-                        ? new Date(request.reviewedAt).toLocaleDateString('fr-FR')
+                        ? formatDateSimple(request.reviewedAt)
                         : '-'
                       }
                     </td>
@@ -476,15 +498,15 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       )}
 
       {/* Demandes d'accès en attente */}
-      {accessRequests.filter(r => r.status === 'pending').length > 0 && (
+      {accessRequests.filter(r => r.status === STATUS.PENDING).length > 0 && (
         <div className="user-management-section access-requests-section">
           <h3>
             <Bell size={20} className="notification-icon" />
-            Demandes d'accès en attente ({accessRequests.filter(r => r.status === 'pending').length})
+            Demandes d'accès en attente ({accessRequests.filter(r => r.status === STATUS.PENDING).length})
           </h3>
           
           <div className="requests-list">
-            {accessRequests.filter(r => r.status === 'pending').map((request) => (
+            {accessRequests.filter(r => r.status === STATUS.PENDING).map((request) => (
               <Card key={request.id} className="request-card">
                 <div className="request-info">
                   <div className="request-name">{request.name}</div>
@@ -500,20 +522,24 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                   </div>
                 </div>
                 <div className="request-actions">
-                  <Button 
+                  <Tooltip content="Approuver" position="bottom">
+                    <Button 
                     variant="success"
                     onClick={() => handleApproveRequest(request.id, request.email, request.name)}
-                    title="Approuver"
+ 
                   >
                     <UserCheck size={18} /> Approuver
                   </Button>
-                  <Button 
+                  </Tooltip>
+                  <Tooltip content="Rejeter" position="bottom">
+                    <Button 
                     variant="danger"
                     onClick={() => handleRejectRequest(request.id)}
-                    title="Rejeter"
+ 
                   >
                     <UserX size={18} /> Rejeter
                   </Button>
+                  </Tooltip>
                 </div>
               </Card>
             ))}
@@ -560,15 +586,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         />
       )}
 
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title}
-        variant={confirmDialog?.variant}
-        onConfirm={() => { confirmDialog?.onConfirm(); setConfirmDialog(null); }}
-        confirmLabel={confirmDialog?.confirmLabel}
-        cancelLabel="Annuler"
-      />
+      {ConfirmDialogRenderer}
     </div>
   );
 };
@@ -694,7 +712,7 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
         last_name: lastName.trim(),
         email: user.email || '',
         type: personType,
-        status: 'active',
+        status: STATUS.ACTIVE,
         user_id: user.id,
       };
       if (personType === 'contractuel') {
@@ -758,14 +776,13 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
             <label className="create-personnel-section-label">Type de personnel</label>
             <div className="create-personnel-type-cards">
               {PERSON_TYPES.map((t) => (
-                <button
-                  key={t.value}
+                <Button variant="ghost"                   key={t.value}
                   className={`personnel-type-card ${personType === t.value ? 'active' : ''}`}
                   onClick={() => setPersonType(t.value)}
                 >
                   <span className="personnel-type-icon">{t.icon}</span>
                   <span className="personnel-type-label">{t.label}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>

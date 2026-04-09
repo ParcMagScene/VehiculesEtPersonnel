@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, AlertCircle, Paperclip, LinkIcon, Plus, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, CheckSquare, PackagePlus, DollarSign } from 'lucide-react';
+import { Calendar, Briefcase, Paperclip, LinkIcon, Plus, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, PackagePlus, DollarSign } from 'lucide-react';
 import api from '../../utils/api';
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -9,7 +9,9 @@ import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import './AffairesPanel.css';
-import { Input, Checkbox, Spinner, EmptyState, InlineAlert, SearchBar, Tooltip, Divider } from '@/design-system';
+import { Button, Checkbox, Divider, EmptyState, InlineAlert, SearchBar, Spinner, Tooltip } from '@/design-system';
+
+import { STATUS } from '../../constants';
 
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));
@@ -79,7 +81,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   const [googleError, setGoogleError] = useState(null);
   const [sortBy, setSortBy] = useState('dateDebut');
   const [sortOrder, setSortOrder] = useState('desc');
-  const googleCalendarIdRef = useRef(null);
+  const _googleCalendarIdRef = useRef(null);
 
   // Sélection / détail affaire
   const [selectedAffaire, setSelectedAffaire] = useState(null);
@@ -457,7 +459,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   // Filtrer et trier
   const filteredAffaires = useMemo(() => {
     let result = [...enrichedAffaires];
-    const today = new Date().toISOString().slice(0, 10);
+    const _today = new Date().toISOString().slice(0, 10);
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const archiveThreshold = oneWeekAgo.toISOString().slice(0, 10);
@@ -671,7 +673,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   useEffect(() => {
     if (hasScrolledInitRef.current || isLoading || filteredAffaires.length === 0 || !listRef.current) return;
     hasScrolledInitRef.current = true;
-    const firstActive = filteredAffaires.find(a => getAffaireStatus(a, today) === 'active')
+    const firstActive = filteredAffaires.find(a => getAffaireStatus(a, today) === STATUS.ACTIVE)
       || filteredAffaires.find(a => getAffaireStatus(a, today) === 'upcoming');
     if (!firstActive) return;
     const key = firstActive.id || firstActive.numeroAffaire;
@@ -737,7 +739,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
   return (
     <div className="affaires-panel">
       {error && (
-        <InlineAlert action={<button onClick={handleRefresh}>Réessayer</button>}>{error}</InlineAlert>
+        <InlineAlert action={<Button variant="ghost" onClick={handleRefresh}>Réessayer</Button>}>{error}</InlineAlert>
       )}
       {googleError && (
         <InlineAlert variant="warning">{googleError}</InlineAlert>
@@ -791,16 +793,16 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           {/* Type — sélecteur horizontal */}
           <div className="affaires-type-selector">
-            <button
-              className={`affaires-type-btn${!filterType ? ' active' : ''}`}
+            <Tooltip content="Tous les types" position="bottom">
+              <Button variant="ghost"               className={`affaires-type-btn${!filterType ? ' active' : ''}`}
               onClick={() => setFilterType('')}
-              title="Tous les types"
+ 
             >
               Tous
-            </button>
+            </Button>
+            </Tooltip>
             {AFFAIRE_TYPES.map(t => (
-              <button
-                key={t.value}
+              <Button variant="ghost"                 key={t.value}
                 className={`affaires-type-btn${filterType === t.value ? ' active' : ''}`}
                 style={filterType === t.value ? { '--type-color': t.color } : {}}
                 onClick={() => setFilterType(filterType === t.value ? '' : t.value)}
@@ -808,7 +810,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
               >
                 <span className="affaires-type-icon">{t.icon}</span>
                 <span className="affaires-type-label">{t.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -816,14 +818,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           {/* Vue semaine / mois */}
           <div className="affaires-tb-view-selector">
-            <button className={`affaires-tb-view-btn${viewMode === 'week' ? ' active' : ''}`} onClick={() => handleViewModeChange('week')}>Sem.</button>
-            <button className={`affaires-tb-view-btn${viewMode === 'month' ? ' active' : ''}`} onClick={() => handleViewModeChange('month')}>Mois</button>
+            <Button variant="ghost" className={`affaires-tb-view-btn${viewMode === 'week' ? ' active' : ''}`} onClick={() => handleViewModeChange('week')}>Sem.</Button>
+            <Button variant="ghost" className={`affaires-tb-view-btn${viewMode === 'month' ? ' active' : ''}`} onClick={() => handleViewModeChange('month')}>Mois</Button>
           </div>
 
           {/* Navigation dates */}
-          <Tooltip content="Période précédente"><button className="affaires-tb-nav-btn" onClick={goToPrevious}><ChevronLeft size={16} /></button></Tooltip>
-          <button className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`} onClick={goToToday}>Aujourd'hui</button>
-          <Tooltip content="Période suivante"><button className="affaires-tb-nav-btn" onClick={goToNext}><ChevronRight size={16} /></button></Tooltip>
+          <Tooltip content="Période précédente"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToPrevious} aria-label="Période précédente"><ChevronLeft size={16} /></Button></Tooltip>
+          <Button variant="ghost" className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
+          <Tooltip content="Période suivante"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToNext} aria-label="Période suivante"><ChevronRight size={16} /></Button></Tooltip>
           <div
             className="affaires-tb-date-label"
             onClick={() => { viewMode === 'month' ? setShowMonthSelector(true) : setShowWeekSelector(true); }}
@@ -847,16 +849,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           </label>
 
           {/* Archivées */}
-          <label className="affaires-tb-toggle" title="Afficher les affaires terminées depuis plus d'une semaine">
+ <Tooltip content="Afficher les affaires terminées depuis plus d'une semaine" position="bottom">
+   <label className="affaires-tb-toggle">
             <Checkbox checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
             <span>Archivées</span>
           </label>
+ </Tooltip>
 
           <Divider orientation="vertical" />
 
           {/* Boutons d'actions */}
-          <button
-            className="affaires-new-btn"
+          <Button variant="ghost"             className="affaires-new-btn"
             onClick={async () => {
               try {
                 const newAffaire = {
@@ -884,36 +887,39 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           >
             <Plus size={14} />
             <span>Nouvelle affaire</span>
-          </button>
+          </Button>
           {/* Import BL/BP unifié */}
-          <button
-            className="affaires-tb-bl-import-btn multi-import"
+          <Tooltip content="Importer un ou plusieurs BL / BP" position="bottom">
+            <Button variant="ghost"             className="affaires-tb-bl-import-btn multi-import"
             onClick={() => setShowMultiImport(true)}
-            title="Importer un ou plusieurs BL / BP"
+ 
             style={{ gap: 4 }}
           >
             <PackagePlus size={14} /> Import BL/BP
-          </button>
-          <button
-            className="affaires-tb-bl-import-btn"
+          </Button>
+          </Tooltip>
+          <Tooltip content="Analyse batch des BL PDF" position="bottom">
+            <Button variant="ghost"             className="affaires-tb-bl-import-btn"
             onClick={() => setShowBatchAnalysis(true)}
-            title="Analyse batch des BL PDF"
+ 
             style={{ gap: 4 }}
           >
             <BarChart2 size={14} /> Analyse batch
-          </button>
+          </Button>
+          </Tooltip>
 
           <Divider orientation="vertical" />
 
           {/* Stats */}
-          <button
-            className="affaires-tb-nav-btn"
+          <Tooltip content="Rafraîchir les affaires" position="bottom">
+            <Button variant="ghost"             className="affaires-tb-nav-btn"
             onClick={handleRefresh}
-            title="Rafraîchir les affaires"
+ 
             style={{ display: 'flex', alignItems: 'center', gap: 4 }}
           >
             <RefreshCw size={14} />
-          </button>
+          </Button>
+          </Tooltip>
           <div className="affaires-count-box">
             <span className="affaires-count-number">{filteredAffaires.length}</span>
             <span className="affaires-count-label">affaire{filteredAffaires.length !== 1 ? 's' : ''}</span>
@@ -938,34 +944,34 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             {/* En-tête du tableau (cliquable pour trier) */}
             <div className="affaire-table-header">
               <span className="ath-status"></span>
-              <span className="ath-numero sortable" onClick={() => toggleSort('numero')}>
+              <span className="ath-numero sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('numero')}>
                 N° Affaire {sortBy === 'numero' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-type sortable" onClick={() => toggleSort('type')}>
+              <span className="ath-type sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('type')}>
                 Type {sortBy === 'type' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-dates sortable" onClick={() => toggleSort('dateDebut')}>
+              <span className="ath-dates sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('dateDebut')}>
                 Période {sortBy === 'dateDebut' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-client sortable" onClick={() => toggleSort('client')}>
+              <span className="ath-client sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('client')}>
                 Client {sortBy === 'client' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-titre sortable" onClick={() => toggleSort('titre')}>
+              <span className="ath-titre sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('titre')}>
                 Titre / Événement {sortBy === 'titre' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-lieu sortable" onClick={() => toggleSort('lieu')}>
+              <span className="ath-lieu sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('lieu')}>
                 Lieu {sortBy === 'lieu' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
               <span className="ath-bl">BL</span>
               <span className="ath-orders">Cmd</span>
               <span className="ath-icons"></span>
-              <span className="ath-tasks sortable" onClick={() => toggleSort('tasks')}>
+              <span className="ath-tasks sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('tasks')}>
                 Tâches {sortBy === 'tasks' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-resa sortable" onClick={() => toggleSort('resa')}>
+              <span className="ath-resa sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('resa')}>
                 Résa {sortBy === 'resa' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
-              <span className="ath-pers sortable" onClick={() => toggleSort('pers')}>
+              <span className="ath-pers sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('pers')}>
                 Pers {sortBy === 'pers' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
               </span>
             </div>
@@ -993,9 +999,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
                 >
                   <span className="ar-status">
                     {affaire.isArchived ? (
-                      <span className="status-dot archived" title="Archivée" />
+ <Tooltip content="Archivée" position="bottom"><span className="status-dot archived" /></Tooltip>
                     ) : (
-                      <span className={`status-dot ${status}`} title={status === 'active' ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminée'} />
+                      <span className={`status-dot ${status}`} title={status === STATUS.ACTIVE ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminée'} />
                     )}
                   </span>
                   <span className="ar-numero">{affaire.numeroAffaire || '—'}</span>
@@ -1052,7 +1058,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
                         const s = t.section || 'manual';
                         if (!groups[s]) groups[s] = { count: 0, done: 0 };
                         groups[s].count++;
-                        if (t.status === 'done') groups[s].done++;
+                        if (t.status === STATUS.DONE) groups[s].done++;
                       }
                       const SECTION_META = {
                         prep_locations: { e: '📦', c: '#f59e0b', l: 'Prép. Loc' },
@@ -1120,8 +1126,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       />
 
       {/* FAB création rapide d'affaire */}
-      <button
-        className="affaire-fab-create"
+      <Button variant="ghost"         className="affaire-fab-create"
         onClick={async () => {
           try {
             const newAffaire = {
@@ -1148,7 +1153,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         title="Nouvelle affaire"
       >
         <Plus size={22} />
-      </button>
+      </Button>
 
       {/* Sélecteurs de date */}
       {showMonthSelector && (

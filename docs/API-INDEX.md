@@ -3,7 +3,7 @@
 > Référence exhaustive de toute la documentation interne du projet eM@g.
 > Équivalent d'une API Reference (type Swagger) pour la documentation.
 >
-> **Dernière mise à jour** : Juillet 2025
+> **Dernière mise à jour** : Avril 2026
 > **Fichiers indexés** : 16 fichiers Markdown dans `docs/`
 
 ---
@@ -36,7 +36,7 @@
 | Structure des dossiers | [§3](01-Architecture/ARCHITECTURE.md#3-structure-des-dossiers) | Monorepo `apps/api`, `apps/web`, `apps/tv-client` |
 | Architecture Backend | [§4](01-Architecture/ARCHITECTURE.md#4-architecture-backend) | Express, 18 fichiers routes, middlewares, `.env` |
 | Architecture Frontend | [§5](01-Architecture/ARCHITECTURE.md#5-architecture-frontend) | App.jsx, code splitting, IndexedDB (12 stores), API client (15 modules, ~375 méthodes) |
-| Déploiement & infrastructure | [§14](01-Architecture/ARCHITECTURE.md#14-déploiement--infrastructure) | PM2, Raspberry Pi, DuckDNS, ports 3002/4173 |
+| Déploiement & infrastructure | [§14](01-Architecture/ARCHITECTURE.md#14-déploiement--infrastructure) | PM2, Raspberry Pi, Dynamic DNS, ports 3002/4173 |
 | Design System | [§15](01-Architecture/ARCHITECTURE.md#15-design-system) | Variables CSS, tokens, thèmes |
 | Cache Backend | [§16](01-Architecture/ARCHITECTURE.md#16-cache-backend) | LRU/TTL, invalidation automatique |
 | Performance (Phase 4) | [§17](01-Architecture/ARCHITECTURE.md#17-performance-phase-4) | Batch queries, index SQL |
@@ -98,8 +98,22 @@
 | Google Calendar | `/api/google-calendar` | — | `googleCalendarRoutes.js` |
 | Fournisseurs | `/api/supplier-catalog` | — | `supplierCatalogRoutes.js` |
 | Profil | `/api/profile` | — | `profileRoutes.js` |
+| Santé | `/api/health` | 1 | `server.js` (GET — vérifie DB, uptime, retourne 503 si erreur) |
 
 → Codes d'erreur : `400` Bad Request, `401` Unauthorized, `403` Forbidden, `404` Not Found, `409` Conflict, `500` Internal Server Error
+
+### 3.1 Routes dépréciées (legacy)
+
+Ces routes restent fonctionnelles pour rétrocompatibilité mais émettent un avertissement dans les logs. Elles seront supprimées dans une version majeure future.
+
+| Préfixe legacy | Remplacement | Fichier |
+|----------------|--------------|----------|
+| `/api/clients` | `/api/annuaire/clients` | `routes.js` → `annuaireRoutes.js` |
+| `/api/drivers` | `/api/annuaire` (table `persons`) | `routes.js` → `annuaireRoutes.js` |
+| `/api/locations` | `/api/annuaire/locations` | `routes.js` → `annuaireRoutes.js` |
+| `/api/garages` | `/api/annuaire/garages` | `routes.js` → `annuaireRoutes.js` |
+
+> **Action** : migrer tous les appels frontend vers les routes `/api/annuaire/*` avant suppression.
 
 ---
 
@@ -157,7 +171,7 @@
 | Vulnérabilités connues | xlsx (HIGH — Prototype Pollution, ReDoS), esbuild/vite (MODERATE — SSRF dev) |
 | Pratiques implémentées | Prepared statements, JWT httpOnly, bcrypt, rate limiting, CORS, Helmet, permissions granulaires |
 | Procédure mises à jour | `npm audit`, cycle 6 étapes sécurisé |
-| Signalement | Email admin@magsav.com, 30 jours divulgation coordonnée |
+| Signalement | Email admin@example.com, 30 jours divulgation coordonnée |
 
 ### 6.2 Audit technique
 
@@ -277,7 +291,7 @@ SilentRefresh   ──→ ARCHITECTURE.md (auth)
 | **RTSP** | Real-Time Streaming Protocol — flux vidéo caméras |
 | **PM2** | Process Manager 2 — gestionnaire de processus Node.js |
 | **WAL** | Write-Ahead Logging — mode journalisation SQLite |
-| **DuckDNS** | Service DNS dynamique gratuit |
+| **Dynamic DNS** | Service DNS dynamique (configurable) |
 | **Flugtcase** | Flight case — caisse de transport pour équipement événementiel |
 
 ---

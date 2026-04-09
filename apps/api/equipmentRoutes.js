@@ -12,6 +12,7 @@ import multer from 'multer';
 import logger from './logger.js';
 import { normalizeBrand } from './brandHelpers.js';
 import PDFDocument from 'pdfkit';
+import { validate, equipmentImportSchema, savImportSchema } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -411,7 +412,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/equipment/import-csv — Import CSV Locmat
-  app.post('/api/equipment/import-csv', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/equipment/import-csv', authenticateToken, requireAdmin, validate(equipmentImportSchema), (req, res) => {
     try {
       const { data, mode } = req.body;
       // data = tableau d'objets [{code_libre, nom, famille, sous_famille, categorie, zone, stock, marque, numero_serie}, ...]
@@ -459,9 +460,51 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       };
       
       if (mode === 'preview') {
-        // Mode aperçu : retourner les stats sans rien insérer
+        // Mode aperçu : retourner les stats ET l'analyse par item
+        const findExisting = db.prepare(`
+          SELECT id, name, reference, serial_number FROM equipment
+          WHERE (reference = ? AND reference IS NOT NULL AND reference != '')
+             OR (serial_number = ? AND serial_number IS NOT NULL AND serial_number != '')
+          LIMIT 1
+        `);
+
+        let toCreate = 0, toUpdate = 0, toSkip = 0;
+        const collisions = [];
+
+        for (let i = 0; i < data.length; i++) {
+          const row = data[i];
+          const nom = (row.nom || '').trim();
+          if (!nom) { toSkip++; continue; }
+
+          const reference = (row.code_libre || '').trim() || null;
+          const serialNumber = (row.numero_serie || '').trim() || null;
+          const existing = (reference || serialNumber) ? findExisting.get(reference, serialNumber) : null;
+
+          if (existing) {
+            toUpdate++;
+            collisions.push({
+              index: i,
+              csvName: nom,
+              csvRef: reference,
+              csvSerial: serialNumber,
+              existingId: existing.id,
+              existingName: existing.name,
+              existingRef: existing.reference,
+              existingSerial: existing.serial_number,
+              action: 'update',
+              matchedBy: existing.reference === reference ? 'reference' : 'serial_number',
+            });
+          } else {
+            toCreate++;
+          }
+        }
+
         return res.json({
           totalRows: data.length,
+          toCreate,
+          toUpdate,
+          toSkip,
+          collisions,
           families: [...familiesSet.values()],
           subfamilies: [...subfamiliesSet.values()].map(v => v.name),
           categories: [...categoriesSet.values()].map(v => v.name),
@@ -480,7 +523,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         VALUES (?, ?, ?, ?, ?, ?, ?, 'available', ?)
       `);
 
-      let created = 0, skipped = 0, familiesCreated = 0, subfamiliesCreated = 0, categoriesCreated = 0;
+      let created = 0, updated = 0, skipped = 0, familiesCreated = 0, subfamiliesCreated = 0, categoriesCreated = 0;
 
       const importAll = db.transaction(() => {
         // Phase 1 : Créer les familles
@@ -532,7 +575,18 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           }
         }
 
-        // Phase 4 : Insérer les équipements
+        // Phase 4 : Insérer ou mettre à jour les équipements
+        const findExisting = db.prepare(`
+          SELECT id FROM equipment
+          WHERE (reference = ? AND reference IS NOT NULL AND reference != '')
+             OR (serial_number = ? AND serial_number IS NOT NULL AND serial_number != '')
+          LIMIT 1
+        `);
+        const updateEquip = db.prepare(`
+          UPDATE equipment SET name = ?, category_id = ?, brand = ?, stock_quantity = ?, location = ?, modified_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `);
+
         for (const row of data) {
           const nom = (row.nom || '').trim();
           if (!nom) { skipped++; continue; }
@@ -548,27 +602,42 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           const stock = parseInt(row.stock) || 1;
           const zone = (row.zone || '').trim() || null;
 
-          insertEquip.run(nom, reference, serialNumber, categoryId, resolved.brand, stock, zone, req.user.id);
-          // Link brand_id if resolved
-          if (resolved.brand_id) {
-            db.prepare('UPDATE equipment SET brand_id = ? WHERE id = last_insert_rowid()').run(resolved.brand_id);
+          // Détecter un équipement existant par référence ou numéro de série
+          const existing = (reference || serialNumber) ? findExisting.get(reference, serialNumber) : null;
+
+          if (existing) {
+            updateEquip.run(nom, categoryId, resolved.brand, stock, zone, existing.id);
+            if (resolved.brand_id) {
+              db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(resolved.brand_id, existing.id);
+            }
+            updated++;
+          } else {
+            insertEquip.run(nom, reference, serialNumber, categoryId, resolved.brand, stock, zone, req.user.id);
+            if (resolved.brand_id) {
+              db.prepare('UPDATE equipment SET brand_id = ? WHERE id = last_insert_rowid()').run(resolved.brand_id);
+            }
+            created++;
           }
-          created++;
         }
       });
 
       importAll();
 
-      addToHistory('equipment', null, 'import_csv', { created, skipped, familiesCreated, subfamiliesCreated, categoriesCreated }, req.user.id, req.user.name);
+      addToHistory('equipment', null, 'import_csv', {
+        created, updated, skipped,
+        familiesCreated, subfamiliesCreated, categoriesCreated,
+        total: data.length,
+      }, req.user.id, req.user.name);
       
       res.json({
         success: true,
         created,
+        updated,
         skipped,
         familiesCreated,
         subfamiliesCreated,
         categoriesCreated,
-        message: `Import terminé : ${created} équipement(s) créé(s), ${skipped} ignoré(s), ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
+        message: `Import terminé : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s), ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
       });
     } catch (error) {
       logger.error('Erreur import CSV:', error);
@@ -613,6 +682,17 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
     try {
       const { equipment_id, assigned_to, start_date, end_date, affaire_id, notes } = req.body;
       if (!equipment_id || !start_date) return res.status(400).json({ error: 'Équipement et date de début requis' });
+      
+      // [AUDIT FIX MED-W4] Empêcher la double affectation active
+      const existing = db.prepare(
+        "SELECT id, assigned_to, start_date FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'"
+      ).get(equipment_id);
+      if (existing) {
+        return res.status(409).json({
+          error: 'Cet équipement est déjà affecté',
+          existing: { id: existing.id, assigned_to: existing.assigned_to, start_date: existing.start_date }
+        });
+      }
       
       const result = db.prepare(`
         INSERT INTO equipment_assignments (equipment_id, assigned_to, assigned_by, start_date, end_date, affaire_id, notes, status)
@@ -812,12 +892,32 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
   });
 
   // PUT /api/sav-tickets/:id
+  // [AUDIT FIX MED-W1] Transitions d'état SAV autorisées
+  const VALID_SAV_TRANSITIONS = {
+    open: ['in_progress', 'waiting_parts', 'closed'],
+    in_progress: ['waiting_parts', 'resolved', 'closed'],
+    waiting_parts: ['in_progress', 'resolved', 'closed'],
+    resolved: ['closed', 'open'], // réouverture possible
+    closed: ['open'], // réouverture uniquement
+  };
+
   app.put('/api/sav-tickets/:id', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { assigned_to, type, priority, status, title, description, resolution, cost } = req.body;
       
       const oldTicket = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
       if (!oldTicket) return res.status(404).json({ error: 'Ticket non trouvé' });
+      
+      // [AUDIT FIX MED-W1] Valider la transition d'état
+      if (status && status !== oldTicket.status) {
+        const allowed = VALID_SAV_TRANSITIONS[oldTicket.status];
+        if (!allowed || !allowed.includes(status)) {
+          return res.status(400).json({
+            error: `Transition de statut invalide : ${oldTicket.status} → ${status}`,
+            allowed: allowed || []
+          });
+        }
+      }
       
       const resolvedAt = (status === 'resolved' || status === 'closed') && oldTicket.status !== 'resolved' && oldTicket.status !== 'closed'
         ? new Date().toISOString()
@@ -877,7 +977,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
   });
 
   // POST /api/sav-tickets/import-csv — Import CSV Interventions Locmat
-  app.post('/api/sav-tickets/import-csv', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/sav-tickets/import-csv', authenticateToken, requireAdmin, validate(savImportSchema), (req, res) => {
     try {
       const { data, mode, manualLinks } = req.body;
       // data = [{intervention, code_article, nom_article, numero_de_serie, debut, fin, cout, a}, ...]

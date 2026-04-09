@@ -17,7 +17,7 @@
 ### 1a. Annuler le dernier commit (pas encore poussé)
 
 ```bash
-cd /Users/reunion/eM@g
+cd "$REPO_ROOT"  # Racine du projet
 git log --oneline -5                    # Identifier le commit à annuler
 git reset --soft HEAD~1                 # Annule le commit, garde les fichiers modifiés
 ```
@@ -25,7 +25,7 @@ git reset --soft HEAD~1                 # Annule le commit, garde les fichiers m
 ### 1b. Revenir à un commit précis (déjà poussé sur dev)
 
 ```bash
-cd /Users/reunion/eM@g
+cd "$REPO_ROOT"  # Racine du projet
 git checkout dev
 git log --oneline -10                   # Trouver le <commit-sha> cible
 git revert <commit-sha>                 # Crée un commit inverse (safe, traçable)
@@ -37,7 +37,7 @@ git push origin dev
 ⚠️ **À utiliser uniquement si la production est cassée.**
 
 ```bash
-cd /Users/reunion/eM@g
+cd "$REPO_ROOT"  # Racine du projet
 git checkout main
 git log --oneline -5                    # Identifier le dernier commit stable
 git reset --hard <commit-sha-stable>    # Revient au commit stable
@@ -49,7 +49,7 @@ git push origin main
 ### 1d. Restaurer la branche prod depuis origin (si divergence locale)
 
 ```bash
-cd /Users/reunion/eM@g
+cd "$REPO_ROOT"  # Racine du projet
 git checkout main
 git fetch origin
 git reset --hard origin/main            # ⚠️ Écrase les changements locaux
@@ -62,7 +62,7 @@ git reset --hard origin/main            # ⚠️ Écrase les changements locaux
 ### 2a. Identifier les backups disponibles
 
 ```bash
-ls -lhtr /Users/reunion/eM@g/backups/*.db | tail -10
+ls -lhtr backups/*.db | tail -10
 ```
 
 Format des noms : `prod-YYYYMMDD-HHMMSS.db`, `dev-YYYYMMDD-HHMMSS.db`
@@ -74,16 +74,16 @@ Format des noms : `prod-YYYYMMDD-HHMMSS.db`, `dev-YYYYMMDD-HHMMSS.db`
 pm2 stop vehicules-backend
 
 # 2. Vérifier l'intégrité du backup AVANT de restaurer
-sqlite3 /Users/reunion/eM@g/backups/prod-XXXXXXXX-XXXXXX.db "PRAGMA integrity_check;"
+sqlite3 backups/prod-XXXXXXXX-XXXXXX.db "PRAGMA integrity_check;"
 # Doit retourner "ok"
 
 # 3. Remplacer la base de données
-cp /Users/reunion/eM@g/apps/api/vehicules.db /Users/reunion/eM@g/apps/api/vehicules.db.before-rollback
-cp /Users/reunion/eM@g/backups/prod-XXXXXXXX-XXXXXX.db /Users/reunion/eM@g/apps/api/vehicules.db
+cp apps/api/vehicules.db apps/api/vehicules.db.before-rollback
+cp backups/prod-XXXXXXXX-XXXXXX.db apps/api/vehicules.db
 
 # 4. Supprimer les fichiers WAL/SHM résiduels
-rm -f /Users/reunion/eM@g/apps/api/vehicules.db-wal
-rm -f /Users/reunion/eM@g/apps/api/vehicules.db-shm
+rm -f apps/api/vehicules.db-wal
+rm -f apps/api/vehicules.db-shm
 
 # 5. Relancer le backend
 pm2 start vehicules-backend
@@ -97,11 +97,11 @@ pm2 logs vehicules-backend --lines 20   # Vérifier que tout est OK
 lsof -ti:3003 | xargs kill -9 2>/dev/null
 
 # 2. Remplacer la base
-cp /Users/reunion/eM@g/backups/dev-XXXXXXXX-XXXXXX.db /Users/reunion/eM@g/apps/api/vehicules-dev.db
+cp backups/dev-XXXXXXXX-XXXXXX.db apps/api/vehicules-dev.db
 
 # 3. Supprimer WAL/SHM
-rm -f /Users/reunion/eM@g/apps/api/vehicules-dev.db-wal
-rm -f /Users/reunion/eM@g/apps/api/vehicules-dev.db-shm
+rm -f apps/api/vehicules-dev.db-wal
+rm -f apps/api/vehicules-dev.db-shm
 
 # 4. Relancer le dev
 npm run dev:start
@@ -117,7 +117,7 @@ Pour un rollback **manuel** du frontend :
 
 ```bash
 # Si dist-backup/ existe encore
-cp -r /Users/reunion/eM@g/dist-backup/* /Users/reunion/eM@g/apps/web/dist/
+cp -r dist-backup/* apps/web/dist/
 pm2 restart vehicules
 ```
 
@@ -129,18 +129,18 @@ Si la synchronisation dev ↔ prod a causé des problèmes :
 
 ```bash
 # 1. Toujours vérifier les backups AVANT la sync
-ls -lhtr /Users/reunion/eM@g/backups/*.db | tail -5
+ls -lhtr backups/*.db | tail -5
 
 # 2. Restaurer la DB prod depuis le backup pre-sync
 pm2 stop vehicules-backend
-cp /Users/reunion/eM@g/backups/prod-XXXXXXXX-XXXXXX.db /Users/reunion/eM@g/apps/api/vehicules.db
-rm -f /Users/reunion/eM@g/apps/api/vehicules.db-wal /Users/reunion/eM@g/apps/api/vehicules.db-shm
+cp backups/prod-XXXXXXXX-XXXXXX.db apps/api/vehicules.db
+rm -f apps/api/vehicules.db-wal apps/api/vehicules.db-shm
 pm2 start vehicules-backend
 
 # 3. Restaurer la DB dev
 lsof -ti:3003 | xargs kill -9 2>/dev/null
-cp /Users/reunion/eM@g/backups/dev-XXXXXXXX-XXXXXX.db /Users/reunion/eM@g/apps/api/vehicules-dev.db
-rm -f /Users/reunion/eM@g/apps/api/vehicules-dev.db-wal /Users/reunion/eM@g/apps/api/vehicules-dev.db-shm
+cp backups/dev-XXXXXXXX-XXXXXX.db apps/api/vehicules-dev.db
+rm -f apps/api/vehicules-dev.db-wal apps/api/vehicules-dev.db-shm
 npm run dev:start
 ```
 
@@ -155,24 +155,24 @@ Procédure complète si tout est cassé :
 pm2 stop all
 
 # 2. Backup de l'état cassé (pour diagnostic post-mortem)
-mkdir -p /Users/reunion/eM@g/backups/crash-$(date +%Y%m%d-%H%M%S)
-cp /Users/reunion/eM@g/apps/api/vehicules.db /Users/reunion/eM@g/backups/crash-$(date +%Y%m%d-%H%M%S)/
-cp /Users/reunion/eM@g/apps/api/vehicules-dev.db /Users/reunion/eM@g/backups/crash-$(date +%Y%m%d-%H%M%S)/ 2>/dev/null
+mkdir -p backups/crash-$(date +%Y%m%d-%H%M%S)
+cp apps/api/vehicules.db backups/crash-$(date +%Y%m%d-%H%M%S)/
+cp apps/api/vehicules-dev.db backups/crash-$(date +%Y%m%d-%H%M%S)/ 2>/dev/null
 
 # 3. Rollback Git
-cd /Users/reunion/eM@g
+cd "$REPO_ROOT"  # Racine du projet
 git checkout main
 git reset --hard origin/main
 
 # 4. Restaurer la DB prod
-cp /Users/reunion/eM@g/backups/prod-XXXXXXXX-XXXXXX.db /Users/reunion/eM@g/apps/api/vehicules.db
-rm -f /Users/reunion/eM@g/apps/api/vehicules.db-wal /Users/reunion/eM@g/apps/api/vehicules.db-shm
+cp backups/prod-XXXXXXXX-XXXXXX.db apps/api/vehicules.db
+rm -f apps/api/vehicules.db-wal apps/api/vehicules.db-shm
 
 # 5. Rebuild frontend
-cd /Users/reunion/eM@g/apps/web && npx vite build
+cd apps/web && npx vite build
 
 # 6. Relancer tout
-pm2 start /Users/reunion/eM@g/apps/api/ecosystem.config.js
+pm2 start apps/api/ecosystem.config.js
 pm2 save
 
 # 7. Vérifier

@@ -71,3 +71,14 @@ export const capitalizeText = (text) => {
     return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
   }).join(' ');
 };
+
+/**
+ * Parse une date ISO en toute sécurité.
+ * @param {string} str - La chaîne ISO à parser
+ * @returns {Date|null} L'objet Date, ou null si invalide
+ */
+export const safeParseDate = (str) => {
+  if (!str) return null;
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+};

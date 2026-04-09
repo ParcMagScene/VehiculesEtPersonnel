@@ -21,12 +21,12 @@
   opacity: 0.92;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35) !important;
   transition: none !important;
-  z-index: 100001 !important;
+  z-index: var(--z-draggable) !important;
 }
 
 .modal-resizing {
   transition: none !important;
-  z-index: 100001 !important;
+  z-index: var(--z-draggable) !important;
 }
 
 /* --- Enhanced modal base ----------------------------------------- */
@@ -203,7 +203,7 @@
   left: 50%;
   top: 2px;
   transform: translateX(-50%);
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--drag-handle-color, rgba(120, 120, 120, 0.4));
   pointer-events: none;
   letter-spacing: 2px;

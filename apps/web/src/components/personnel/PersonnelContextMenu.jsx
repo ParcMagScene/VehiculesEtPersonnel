@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Calendar, GraduationCap, Building2, Wrench, FileCheck, Clock } from 'lucide-react';
-import { Tag, Divider } from '@/design-system';
+import { Button, Divider, Tag } from '@/design-system';
 import './PersonnelContextMenu.css';
 
 // Types de périodes disponibles dans le menu contextuel
@@ -63,8 +63,7 @@ const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
       {menuItems.map(item => {
         const Icon = item.icon;
         return (
-          <button
-            key={item.type}
+          <Button variant="ghost"             key={item.type}
             className="pp-context-menu-item"
             onClick={() => onSelect(item.type, person)}
           >
@@ -75,7 +74,7 @@ const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
             {item.requiresApproval && (
               <Tag color="warning" size="sm">Validation requise</Tag>
             )}
-          </button>
+          </Button>
         );
       })}
     </div>

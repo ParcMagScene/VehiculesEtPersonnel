@@ -40,8 +40,8 @@ body {
   background: transparent;
   border: none;
   color: #666;
-  padding: 12px 8px;
-  font-size: 14px;
+  padding: var(--space-3) var(--space-2);
+  font-size: var(--font-base);
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -167,7 +167,7 @@ header {
 #events-list li.all-day-event,
 #regular-events-list li.all-day-event,
 .recurrent-events-list li.all-day-event {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* Structure en colonnes */
@@ -234,11 +234,11 @@ main {
   justify-content: center;
   flex-shrink: 0;
   border: 2px solid currentColor;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
   overflow: hidden;
-  padding: 4px;
+  padding: var(--space-1);
   margin: 0 auto;
 }
 .col-location .location-icon img {
@@ -280,7 +280,7 @@ main {
   display: inline-block;
   font-size: 0.6em;
   padding: 0.2em 0.5em;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: rgba(0, 225, 255, 0.15);
   border: 1px solid var(--primary-color, #00e1ff);
   margin-right: 0.5em;
@@ -337,7 +337,7 @@ footer {
   padding: 15px 25px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: var(--space-5);
   z-index: 1000;
   box-shadow: 0 8px 32px rgba(0, 225, 255, 0.3);
   backdrop-filter: blur(10px);
@@ -351,7 +351,7 @@ footer {
 #sonos-album-art {
   width: 80px;
   height: 80px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   object-fit: contain;
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -392,7 +392,7 @@ footer {
   height: 250px;
   width: auto;
   max-width: 400px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 6px 30px rgba(0, 225, 255, 0.5), 0 0 40px rgba(0, 225, 255, 0.3);
   border: 3px solid var(--primary-color, #00e1ff);
   animation: sneakyPhotoSlide 25s linear infinite;
@@ -412,7 +412,7 @@ footer {
   align-items: center;
   gap: 0.7em;
   background: rgba(0,0,0,0.2);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.3em 0.8em;
 }
 
@@ -480,17 +480,17 @@ footer {
   header {
     display: flex;
     flex-direction: column;
-    padding: 10px;
-    gap: 10px;
+    padding: var(--space-2-5);
+    gap: var(--space-2-5);
   }
   #logo { height: 60px; margin: 0 auto; }
   #welcome { font-size: 1.2em; order: 2; }
   #datetime { font-size: 0.9em; order: 1; }
   .events-container, .recurrent-events-container { padding: 10px; }
   .event-item {
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 8px;
+    padding: var(--space-3);
+    margin-bottom: var(--space-2);
+    border-radius: var(--radius-md);
     background: rgba(0, 225, 255, 0.05);
     border: 1px solid rgba(0, 225, 255, 0.2);
   }
@@ -511,7 +511,7 @@ footer {
   color: var(--primary-color, #00e1ff);
   font-size: 1.5em;
   padding: 0.3em 0.5em;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: opacity 0.4s ease;
   flex-shrink: 0;

@@ -12,7 +12,7 @@
   width: 80px;
   height: 80px;
   background: var(--theme-bg-card);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,7 +46,7 @@
 
 .qr-section {
   background: var(--theme-bg-card);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 2rem;
   text-align: center;
   box-shadow: var(--shadow-sm);
@@ -58,7 +58,7 @@
   padding: 1rem;
   background: var(--theme-bg-card);
   border: 2px solid var(--theme-border);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   margin-bottom: 1rem;
 }
 
@@ -73,13 +73,13 @@
   justify-content: center;
   gap: 0.5rem;
   color: var(--theme-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   margin: 0;
 }
 
 .url-section {
   background: var(--theme-bg-card);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--theme-border);
@@ -103,8 +103,8 @@
   flex: 1;
   padding: 0.75rem;
   border: 2px solid var(--theme-border);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   font-family: monospace;
   background: var(--theme-bg-secondary);
   color: var(--theme-text-primary);
@@ -121,7 +121,7 @@
   background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: transform 0.2s;
   display: flex;
@@ -139,14 +139,14 @@
 
 .url-hint {
   margin: 0.5rem 0 0;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
 }
 
 /* ─── Fonctionnalités grille ─── */
 .features-section {
   background: var(--theme-bg-card);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--theme-border);
@@ -154,7 +154,7 @@
 
 .features-section h3 {
   margin: 0 0 1rem;
-  font-size: 1.125rem;
+  font-size: var(--font-lg);
   color: var(--theme-text-primary);
 }
 
@@ -169,7 +169,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
   transition: background 0.15s;
@@ -180,7 +180,7 @@
 }
 
 .feature-icon {
-  font-size: 1.2rem;
+  font-size: var(--font-xl);
   flex-shrink: 0;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .feature-text span {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
   line-height: 1.2;
 }
@@ -206,7 +206,7 @@
 /* ─── Section impression affichettes ─── */
 .poster-section {
   background: var(--theme-bg-card);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
   border: 2px solid var(--accent-tint-vivid);
@@ -214,7 +214,7 @@
 
 .poster-section h3 {
   margin: 0 0 0.5rem;
-  font-size: 1.125rem;
+  font-size: var(--font-lg);
   color: var(--theme-text-primary);
   display: flex;
   align-items: center;
@@ -222,7 +222,7 @@
 }
 
 .poster-desc {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   margin: 0 0 1rem;
 }
@@ -258,7 +258,7 @@
   padding: 6px 14px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
   font-weight: 500;
   color: var(--theme-text-secondary);
@@ -281,8 +281,8 @@
   width: 60px;
   padding: 6px 10px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   text-align: center;
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
@@ -303,7 +303,7 @@
   background: linear-gradient(135deg, var(--theme-primary), var(--theme-secondary));
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -323,14 +323,14 @@
 .access-info {
   background: rgba(251, 191, 36, 0.1);
   border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1rem;
 }
 
 .access-info p {
   margin: 0;
   color: var(--theme-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   line-height: 1.5;
 }
 

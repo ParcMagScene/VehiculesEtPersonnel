@@ -269,4 +269,4 @@ Un admin peut attribuer les droits lors de l'approbation d'une demande d'accès 
 
 **Version :** 4.2
 **Dernière mise à jour :** 11 mars 2026
-© MagScene — Usage interne uniquement
+© eM@g — Usage interne uniquement

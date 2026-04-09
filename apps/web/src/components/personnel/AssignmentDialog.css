@@ -25,7 +25,7 @@
 .assignment-dialog {
   background: var(--theme-bg-page);
   color: var(--theme-text-primary);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   width: 100%;
   max-width: 600px;
   height: 85vh;
@@ -91,7 +91,7 @@
   color: var(--theme-text-inverse);
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -124,7 +124,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: var(--theme-text-body);
   text-transform: uppercase;
@@ -135,7 +135,7 @@
   font-weight: 400;
   color: var(--theme-text-muted);
   text-transform: none;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 /* ── Personne ── */
@@ -147,7 +147,7 @@
   padding: 0.6rem 0.8rem;
   background: var(--theme-info-bg);
   border: 1px solid var(--theme-info-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .asd-person-badge.asd-person-selectable {
@@ -176,7 +176,7 @@
   margin-top: 4px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
@@ -186,7 +186,7 @@
   padding: 0.5rem 0.8rem;
   border: none;
   border-bottom: 1px solid var(--theme-border-medium);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   outline: none;
   background: var(--theme-bg-secondary);
   box-sizing: border-box;
@@ -203,7 +203,7 @@
   gap: 0.5rem;
   padding: 0.5rem 0.8rem;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   transition: background 0.1s;
 }
 .asd-person-option:hover {
@@ -223,7 +223,7 @@
   font-size: 0.65rem;
   font-weight: 600;
   padding: 1px 6px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   text-transform: uppercase;
 }
 .asd-person-opt-type.type-permanent {
@@ -245,7 +245,7 @@
   font-size: 0.7rem;
   font-weight: 600;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   text-transform: uppercase;
 }
 
@@ -271,7 +271,7 @@
   font-size: 0.65rem;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid;
 }
 
@@ -287,7 +287,7 @@
   padding: 0.5rem 0.75rem;
   background: var(--theme-success-bg);
   border: 1px solid var(--theme-success-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 .asd-affaire-info {
@@ -301,12 +301,12 @@
 
 .asd-affaire-numero {
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-success-text-alt);
 }
 
 .asd-affaire-titre {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-body);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -315,7 +315,7 @@
 }
 
 .asd-affaire-client {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
 }
 
@@ -330,7 +330,7 @@
   color: var(--theme-danger);
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -352,8 +352,8 @@
   width: 100%;
   padding: 0.55rem 0.75rem;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
-  font-size: 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
@@ -371,7 +371,7 @@
   right: 0;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 8px 24px var(--shadow-xl);
   max-height: 200px;
   overflow-y: auto;
@@ -383,7 +383,7 @@
   padding: 1rem;
   text-align: center;
   color: var(--theme-text-muted);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 .asd-affaire-option {
@@ -426,7 +426,7 @@
 
 .asd-affaire-opt-num {
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-info-dark);
   white-space: nowrap;
 }
@@ -473,7 +473,7 @@
 }
 
 .asd-field label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-gray);
 }
@@ -483,7 +483,7 @@
 .asd-field textarea {
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--theme-border-muted);
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   font-size: 0.82rem;
   outline: none;
   transition: border-color 0.15s;
@@ -508,7 +508,7 @@
   margin-left: auto;
   font-weight: 500;
   color: var(--theme-success-alt);
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   text-transform: none;
 }
 
@@ -523,7 +523,7 @@
   font-weight: 600;
   border: 1px solid var(--theme-border-muted);
   background: var(--theme-bg-card);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--theme-text-body);
   transition: all 0.15s;
@@ -548,7 +548,7 @@
   justify-content: center;
   width: 48px;
   height: 54px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 2px solid var(--theme-border-medium);
   cursor: pointer;
   transition: all 0.15s;
@@ -586,7 +586,7 @@
 }
 
 .asd-day-num {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-text-body);
 }
@@ -639,7 +639,7 @@
   padding: 0.4rem;
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border-medium);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .asd-skills-category {
@@ -667,8 +667,8 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 8px;
-  font-size: 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   cursor: pointer;
   border: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
@@ -703,7 +703,7 @@
   padding: 0.5rem 0.75rem;
   background: var(--theme-warning-bg);
   border: 1px solid var(--theme-warning-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.78rem;
   color: var(--theme-warning-text);
   font-weight: 500;
@@ -735,7 +735,7 @@
   font-weight: 600;
   border: 2px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   color: var(--theme-text-gray);
   transition: all 0.15s;
@@ -758,8 +758,8 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.6rem 0.8rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
@@ -790,7 +790,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 1.2rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: var(--btn-font-weight);
   border: none;
   border-radius: var(--btn-radius);
@@ -829,7 +829,7 @@
   height: 14px;
   border: 2px solid var(--close-btn-hover-bg);
   border-top-color: var(--theme-text-inverse);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: ad-spin 0.6s linear infinite;
 }
 
@@ -838,11 +838,11 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .assignment-dialog {
     max-width: 100%;
     height: 95vh;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     margin-top: auto;
   }
 
@@ -874,7 +874,7 @@
   padding: 6px 10px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
   gap: 6px;
@@ -890,7 +890,7 @@
 
 .asd-position-placeholder {
   color: var(--theme-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 .asd-position-chevron {
@@ -914,8 +914,8 @@
   align-items: center;
   gap: 3px;
   padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-sm);
   font-weight: 500;
   border: 1.5px solid;
   background: var(--theme-bg-card);
@@ -924,7 +924,7 @@
 
 .asd-position-tag-remove {
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   line-height: 1;
   opacity: 0.6;
   margin-left: 2px;
@@ -942,7 +942,7 @@
   z-index: var(--z-dropdown);
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
@@ -959,7 +959,7 @@
   border: none;
   outline: none;
   flex: 1;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-heading);
   background: transparent;
 }
@@ -1013,7 +1013,7 @@
   font-weight: 700;
   color: var(--theme-info);
   border: 1.5px solid var(--theme-border-muted);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 .asd-position-item.selected .asd-position-check {
@@ -1025,7 +1025,7 @@
 .asd-position-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 
@@ -1037,7 +1037,7 @@
   padding: 16px;
   text-align: center;
   color: var(--theme-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 /* ── Multi-affectation ── */
@@ -1051,7 +1051,7 @@
 .asd-person-badge.asd-person-additional {
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border-medium);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.45rem 0.7rem;
   position: relative;
 }
@@ -1063,7 +1063,7 @@
   width: 20px;
   height: 20px;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-danger-bg, var(--theme-danger-bg));
   color: var(--theme-danger, var(--theme-danger));
   cursor: pointer;
@@ -1087,7 +1087,7 @@
   gap: 4px;
   padding: 6px 12px;
   border: 1px dashed var(--theme-border-medium);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -1105,11 +1105,11 @@
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 55;
+  z-index: var(--z-dropdown);
   margin-top: 4px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   min-width: 280px;

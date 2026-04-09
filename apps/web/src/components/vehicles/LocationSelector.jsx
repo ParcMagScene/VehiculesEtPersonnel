@@ -4,7 +4,7 @@
 // Supporte un ou plusieurs dépôts
 // ============================================================
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { MapPin, Warehouse } from 'lucide-react';
 import './LocationSelector.css';
 import { Select } from '@/design-system';

@@ -48,7 +48,7 @@
   color: var(--theme-text-inverse);
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -77,7 +77,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   cursor: pointer;
   transition: background 0.15s;
   position: relative;
@@ -94,13 +94,13 @@
 .msg-conv-avatar {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-gradient-alt);
   color: var(--theme-text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -111,7 +111,7 @@
 }
 
 .msg-conv-name {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
   white-space: nowrap;
@@ -120,7 +120,7 @@
 }
 
 .msg-conv-last {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -137,17 +137,17 @@
 }
 
 .msg-conv-time {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-muted);
 }
 
 .msg-unread-badge {
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-indigo);
   color: var(--theme-text-inverse);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -158,7 +158,7 @@
   text-align: center;
   padding: 40px 20px;
   color: var(--theme-text-muted);
-  font-size: 13px;
+  font-size: var(--font-base);
 }
 
 .msg-empty-icon {
@@ -189,7 +189,7 @@
   color: var(--theme-text-secondary);
   cursor: pointer;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
 }
@@ -200,7 +200,7 @@
 }
 
 .msg-chat-title {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
   flex: 1;
@@ -233,7 +233,7 @@
 }
 
 .msg-sender-name {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-muted);
   margin-bottom: 2px;
   padding: 0 8px;
@@ -241,8 +241,8 @@
 
 .msg-bubble {
   padding: 8px 12px;
-  border-radius: 16px;
-  font-size: 13px;
+  border-radius: var(--radius-xl);
+  font-size: var(--font-base);
   line-height: 1.4;
   word-break: break-word;
 }
@@ -273,10 +273,10 @@
   gap: 8px;
   padding: 6px 10px;
   background: var(--close-btn-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin-top: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   text-decoration: none;
   color: inherit;
 }
@@ -293,14 +293,14 @@
 }
 
 .msg-attachment-size {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   opacity: 0.7;
 }
 
 .msg-image-preview {
   max-width: 200px;
   max-height: 200px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-top: 4px;
   cursor: pointer;
 }
@@ -320,9 +320,9 @@
 .msg-input-area textarea {
   flex: 1;
   border: 1px solid var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: var(--font-base);
   resize: none;
   max-height: 100px;
   min-height: 36px;
@@ -338,7 +338,7 @@
 .msg-send-btn {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-gradient-alt);
   color: var(--theme-text-inverse);
   border: none;
@@ -370,7 +370,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transition: all 0.15s;
   flex-shrink: 0;
 }
@@ -391,7 +391,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transition: all 0.15s;
   flex-shrink: 0;
 }
@@ -409,7 +409,7 @@
   left: 10px;
   width: 320px;
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
   border: 1px solid var(--theme-border);
   z-index: var(--z-dropdown);
@@ -430,8 +430,8 @@
   border: none;
   background: none;
   padding: 4px 6px;
-  border-radius: 6px;
-  font-size: 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-md);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -458,9 +458,9 @@
   height: 28px;
   border: none;
   background: none;
-  font-size: 18px;
+  font-size: var(--font-lg);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -477,7 +477,7 @@
   position: fixed;
   inset: 0;
   background: var(--shadow-modal);
-  z-index: 2100;
+  z-index: var(--z-modal-nested);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -485,7 +485,7 @@
 
 .msg-new-modal {
   background: var(--theme-bg-card);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 24px;
   width: 340px;
   max-width: 90vw;
@@ -509,7 +509,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -525,18 +525,18 @@
 .msg-user-option-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-secondary);
 }
 
 .msg-user-option-name {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-dark);
 }
 
@@ -548,8 +548,8 @@
 
 .msg-new-actions button {
   padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   cursor: pointer;
   border: none;
 }
@@ -574,13 +574,13 @@
   position: fixed;
   inset: 0;
   background: var(--shadow-sm);
-  z-index: 1999;
+  z-index: var(--z-overlay);
 }
 
 /* ═══ Séparateur date ═══ */
 .msg-date-separator {
   text-align: center;
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-text-muted);
   padding: 8px 0;
 }
@@ -588,7 +588,7 @@
 .msg-date-separator span {
   background: var(--theme-border-light);
   padding: 3px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
 }
 
 /* ═══ Responsive ═══ */

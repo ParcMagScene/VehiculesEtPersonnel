@@ -3,10 +3,13 @@ import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Clock, CheckCircle, AlertTriangle, FileText, Loader, X, User, Calendar, Gauge } from 'lucide-react';
 import { Button, Dialog, FormField, Input, Textarea, Select, Checkbox, Tabs, TabList, Tab, TabPanel, StatusBadge } from '@/design-system';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
 import api from '../../utils/api';
 import './MaintenanceDialog.css';
 import { useToast } from '../../hooks/useToast';
+
+import { STATUS } from '../../constants';
 
 function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garages = [], reservations = [], maintenanceToEdit = null, actionType = null, currentUser = null }) {
   // Trouver la maintenance à éditer dès le départ
@@ -84,7 +87,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     onClose();
   };
   const [statusReason, setStatusReason] = useState(''); // Motif pour pending/cancelled/rescheduled
-  const [confirmDialog, setConfirmDialog] = useState(null); // { message, onConfirm }
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showCancelForm, setShowCancelForm] = useState(false);
   const startDateInputRef = useRef(null);
   const [formData, setFormData] = useState(
@@ -268,7 +271,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       if (editingId && m.id === editingId) continue;
       
       // Vérifier uniquement les maintenances programmées avec des dates
-      if (m.status !== 'scheduled' || !m.startDate || !m.endDate) continue;
+      if (m.status !== STATUS.SCHEDULED || !m.startDate || !m.endDate) continue;
       
       const existingStart = getPeriodTimestamp(m.startDate, m.startDatePeriod || 'AM');
       const existingEnd = getPeriodTimestamp(m.endDate, m.endDatePeriod || 'PM');
@@ -390,7 +393,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
     return labels[type] || type;
   };
 
-  const updateMaintenanceStatus = (maintenanceId, newStatus) => {
+  const _updateMaintenanceStatus = (maintenanceId, newStatus) => {
     const maintenance = maintenances.find(m => m.id === maintenanceId);
     if (maintenance) {
       const updated = { ...maintenance, status: newStatus };
@@ -399,16 +402,15 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   };
 
   const deleteMaintenance = (maintenanceId) => {
-    setConfirmDialog({
+    confirm({
       message: 'Attention, si vous supprimez cette intervention, elle n\'apparaîtra plus dans l\'historique du véhicule. Cette action est irréversible.\n\nSupprimer quand même ?',
       onConfirm: () => {
-        setConfirmDialog(null);
         onSave({ id: maintenanceId, _deleted: true });
       }
     });
   };
 
-  const cancelEditing = () => {
+  const _cancelEditing = () => {
     setEditingId(null);
     setIsQuickReport(getInitialQuickReport());
     setFormData({
@@ -437,7 +439,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
 
   return (
     <div className="maintenance-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}>
-      <div className="maintenance-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="maintenance-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div 
           className="maintenance-dialog-header"
           style={editingId ? {
@@ -451,7 +453,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               {vehicle.registration && <span className="vehicle-registration">{vehicle.registration}</span>}
             </div>
           </div>
-          <button className="close-button" onClick={handleSafeClose}>✕</button>
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>✕</Button>
         </div>
 
         <Tabs value={activeTab} onChange={setActiveTab}>
@@ -459,9 +461,9 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           <Tab value="new">
             {editingId ? (
               isViewMode ? '📋 Détails' :
-              maintenanceToEditData?.status === 'pending' ? '📝 Demande d\'intervention' :
+              maintenanceToEditData?.status === STATUS.PENDING ? '📝 Demande d\'intervention' :
               maintenanceToEditData?.status === 'reported' ? '⚠️ Panne signalée' :
-              maintenanceToEditData?.status === 'scheduled' ? '📅 Intervention programmée' :
+              maintenanceToEditData?.status === STATUS.SCHEDULED ? '📅 Intervention programmée' :
               '✏️ Modifier l\'intervention'
             ) : '➕ Nouvelle intervention'}
           </Tab>
@@ -554,7 +556,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 </div>
               )}
               {/* Mode de saisie - masquer si actionType est défini ou si on édite une intervention */}
-              {!actionType && !(editingId && (maintenanceToEditData?.status === 'pending' || maintenanceToEditData?.status === 'reported' || maintenanceToEditData?.status === 'scheduled')) && 
+              {!actionType && !(editingId && (maintenanceToEditData?.status === STATUS.PENDING || maintenanceToEditData?.status === 'reported' || maintenanceToEditData?.status === STATUS.SCHEDULED)) && 
                !formData.status && (
                 <div className="form-mode-selector">
                   {/* Pour nouvelle intervention : afficher les choix selon les droits */}
@@ -565,7 +567,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                           <label className="mode-option">
                             <input
                               type="radio"
-                              checked={!isQuickReport && formData.status === 'scheduled'}
+                              checked={!isQuickReport && formData.status === STATUS.SCHEDULED}
                               onChange={() => {
                                 setIsQuickReport(false);
                                 handleChange('isQuickReport', false);
@@ -577,7 +579,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                           <label className="mode-option">
                             <input
                               type="radio"
-                              checked={!isQuickReport && formData.status === 'pending'}
+                              checked={!isQuickReport && formData.status === STATUS.PENDING}
                               onChange={() => {
                                 setIsQuickReport(false);
                                 handleChange('isQuickReport', false);
@@ -630,7 +632,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               )}
 
               <div className="form-row">
-                {(formData.status === 'scheduled' || formData.status === 'in_progress' || formData.status === 'completed' || formData.status === 'rescheduled') && (
+                {(formData.status === STATUS.SCHEDULED || formData.status === 'in_progress' || formData.status === STATUS.COMPLETED || formData.status === 'rescheduled') && (
                   <>
                     <FormField className="form-group" label="Type d'intervention" required>
                       <Select
@@ -681,7 +683,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                   </>
                 )}
 
-                {formData.status === 'pending' && !isQuickReport && (
+                {formData.status === STATUS.PENDING && !isQuickReport && (
                   <FormField className="form-group full-width" label="Type d'intervention">
                     <Select
                       value={formData.type}
@@ -697,7 +699,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 )}
               </div>
 
-              {(formData.status === 'scheduled' || formData.status === 'in_progress' || formData.status === 'completed' || formData.status === 'rescheduled') && (
+              {(formData.status === STATUS.SCHEDULED || formData.status === 'in_progress' || formData.status === STATUS.COMPLETED || formData.status === 'rescheduled') && (
                 <>
                   <div className="form-row">
                     <FormField className="form-group" label="Date de début" required>
@@ -808,7 +810,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               </div>
 
               {/* Formulaire motif d'annulation (affiché au-dessus des boutons) */}
-              {editingId && canManageMaintenance && showCancelForm && formData.status !== 'cancelled' && (
+              {editingId && canManageMaintenance && showCancelForm && formData.status !== STATUS.CANCELLED && (
                 <div className="status-reason-field" style={{ marginBottom: '12px' }}>
                   <label>❌ Motif d'annulation :</label>
                   <Textarea
@@ -930,12 +932,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
               {vehicleMaintenances.length === 0 ? (
                 <div className="empty-state">
                   <p>Aucun entretien enregistré pour ce véhicule</p>
-                  <button 
+                  <Button variant="ghost" 
                     className="add-first-button"
                     onClick={() => setActiveTab('new')}
                   >
                     ➕ Ajouter le premier entretien
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="maintenance-list">
@@ -957,7 +959,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                             <span className="maintenance-date">
                               {maintenance.isQuickReport || maintenance.status === 'reported'
                                 ? `Signalée le ${format(parseISO(maintenance.createdAt), 'dd MMMM yyyy', { locale: fr })}`
-                                : maintenance.status === 'pending'
+                                : maintenance.status === STATUS.PENDING
                                 ? `Demandée le ${format(parseISO(maintenance.createdAt), 'dd MMMM yyyy', { locale: fr })}`
                                 : maintenance.startDate && maintenance.endDate
                                 ? (maintenance.startDate === maintenance.endDate
@@ -972,21 +974,19 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                               {getStatusIcon(maintenance.status)}
                               {getStatusLabel(maintenance.status)}
                             </StatusBadge>
-                            <button
-                              className="edit-maintenance-button"
+                            <Button variant="ghost"                               className="edit-maintenance-button"
                               onClick={() => startEditing(maintenance)}
                               title="Modifier"
                             >
                               ✏️
-                            </button>
+                            </Button>
                             {canManageMaintenance && (
-                              <button
-                                className="delete-maintenance-button"
+                              <Button variant="ghost"                                 className="delete-maintenance-button"
                                 onClick={() => deleteMaintenance(maintenance.id)}
                                 title="Supprimer"
                               >
                                 🗑️
-                              </button>
+                              </Button>
                             )}
                           </div>
                         </div>
@@ -1038,32 +1038,30 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           <div className="form-actions">
             {isViewMode ? (
               <div className="form-actions-right" style={{ marginLeft: 'auto' }}>
-                <button type="button" className="submit-button" onClick={onClose}>Fermer</button>
+                <Button variant="ghost" type="button" className="submit-button" onClick={onClose}>Fermer</Button>
               </div>
             ) : editingId ? (
               <>
                 <div className="form-actions-left">
                   {canManageMaintenance && (
-                    <button 
+                    <Button variant="ghost" 
                       type="button" 
                       className="delete-button"
                       onClick={() => deleteMaintenance(editingId)}
                     >
                       🗑️ Supprimer
-                    </button>
+                    </Button>
                   )}
-                  {canManageMaintenance && formData.status !== 'cancelled' && !showCancelForm && (
-                    <button
-                      type="button"
+                  {canManageMaintenance && formData.status !== STATUS.CANCELLED && !showCancelForm && (
+                    <Button variant="ghost"                       type="button"
                       className="cancel-intervention-button"
                       onClick={() => setShowCancelForm(true)}
                     >
                       ❌ Annuler l'intervention
-                    </button>
+                    </Button>
                   )}
-                  {canManageMaintenance && formData.status === 'cancelled' && (
-                    <button
-                      type="button"
+                  {canManageMaintenance && formData.status === STATUS.CANCELLED && (
+                    <Button variant="ghost"                       type="button"
                       className="reschedule-button"
                       onClick={() => {
                         handleChange('status', 'scheduled');
@@ -1071,12 +1069,12 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       }}
                     >
                       📅 Reprogrammer
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <div className="form-actions-right">
-                  {canManageMaintenance && formData.status !== 'cancelled' && (
-                    <button 
+                  {canManageMaintenance && formData.status !== STATUS.CANCELLED && (
+                    <Button variant="ghost" 
                       type="button" 
                       className="reschedule-button"
                       onClick={() => {
@@ -1085,20 +1083,20 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                     >
                       <Clock size={16} />
                       Reporter
-                    </button>
+                    </Button>
                   )}
                   {hasChanges && (
-                    <button type="submit" form="maintenance-form" className="submit-button">
+                    <Button variant="ghost" type="submit" form="maintenance-form" className="submit-button">
                       ✓ Valider les modifications
-                    </button>
+                    </Button>
                   )}
                 </div>
               </>
             ) : (
               <>
-                <button type="submit" form="maintenance-form" className="submit-button">
-                  {isQuickReport ? '⚠️ Signaler' : formData.status === 'pending' ? '📝 Enregistrer la demande' : '📅 Enregistrer'}
-                </button>
+                <Button variant="ghost" type="submit" form="maintenance-form" className="submit-button">
+                  {isQuickReport ? '⚠️ Signaler' : formData.status === STATUS.PENDING ? '📝 Enregistrer la demande' : '📅 Enregistrer'}
+                </Button>
               </>
             )}
           </div>
@@ -1107,7 +1105,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
         {/* Dialogue d'avertissement de conflit */}
         {conflictWarning && conflictWarning.length > 0 && (
           <div className="conflict-warning-overlay" onMouseDown={(e) => e.target === e.currentTarget && setConflictWarning(null)}>
-            <div className="conflict-warning-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="conflict-warning-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
               <div className="conflict-warning-header">
                 <h3>⚠️ Conflit détecté</h3>
               </div>
@@ -1137,24 +1135,24 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 </p>
               </div>
               <div className="conflict-warning-actions">
-                <button 
+                <Button variant="ghost" 
                   className="conflict-button conflict-cancel"
                   onClick={() => setConflictWarning(null)}
                 >
                   Annuler
-                </button>
-                <button 
+                </Button>
+                <Button variant="ghost" 
                   className="conflict-button conflict-change"
                   onClick={() => setConflictWarning(null)}
                 >
                   Changer les dates
-                </button>
-                <button 
+                </Button>
+                <Button variant="ghost" 
                   className="conflict-button conflict-proceed"
-                  onClick={(e) => {
+                  onClick={(_e) => {
                     // Forcer l'enregistrement malgré le conflit
                     setConflictWarning(null);
-                    const fakeEvent = { preventDefault: () => {} };
+                    const _fakeEvent = { preventDefault: () => {} };
                     // Appeler handleSubmit avec le flag de conflit déjà passé
                     const maintenance = {
                       id: editingId || Date.now(),
@@ -1177,7 +1175,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                       garageId: '',
                       cost: '',
                       mileage: '',
-                      status: 'scheduled',
+                      status: STATUS.SCHEDULED,
                       notes: '',
                       isImmobilized: false,
                       isQuickReport: false
@@ -1185,23 +1183,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                   }}
                 >
                   Programmer quand même
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         )}
       </div>
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title="Confirmation"
-        variant="confirm"
-        confirmLabel="Oui"
-        cancelLabel="Non"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
 
       <Dialog
         open={showUnsavedWarning}

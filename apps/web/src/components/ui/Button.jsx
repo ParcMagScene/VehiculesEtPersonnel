@@ -35,6 +35,7 @@ const Button = forwardRef(({
       className={classes}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
+      aria-label={iconOnly && !props['aria-label'] ? props.title : props['aria-label']}
       {...props}
     >
       {loading && <Loader size={size === 'xs' ? 12 : size === 'sm' ? 14 : 16} className="ui-btn__spinner" />}

@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, Filter,
-  TrendingUp, TrendingDown, AlertTriangle, BarChart3, ArrowUpCircle, ArrowDownCircle,
-  RotateCcw, Layers, Tag as TagIcon, MapPin, Euro, Hash, X, Check, ChevronDown,
-  Archive, Eye, FolderOpen, Upload, FileText, AlertCircle, ExternalLink, Map } from 'lucide-react';
+import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, TrendingUp, AlertTriangle, ArrowUpCircle, ArrowDownCircle,
+  RotateCcw, Layers, Tag as TagIcon, MapPin, Euro, Hash, X, Check, Archive, Upload, ExternalLink, Map } from 'lucide-react';
 import api from '../../utils/api';
-import { formatCurrency, formatDateTime as formatDate, formatDateSimple as formatDateShort } from '../../utils/formatUtils';
-import { Button, Dialog, ModalLayout, Input, Textarea, Select, Table, EntityCombobox, Spinner, Tag, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
+import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
+import { Button, ModalLayout, Input, Textarea, Select, Table, EntityCombobox, Spinner, Tag, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
 import './StockPanel.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { extractTextFromPDF } from '../../utils/pdfParser';
 import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
@@ -17,8 +16,7 @@ const MOVEMENT_TYPES = {
   in: { label: 'Entrée', color: '#10b981', icon: '📥', Icon: ArrowDownCircle },
   out: { label: 'Sortie', color: '#ef4444', icon: '📤', Icon: ArrowUpCircle },
   adjustment: { label: 'Ajustement', color: '#f59e0b', icon: '🔧', Icon: RotateCcw },
-  return: { label: 'Retour', color: '#3b82f6', icon: '↩️', Icon: RotateCcw },
-};
+  return: { label: 'Retour', color: '#3b82f6', icon: '↩️', Icon: RotateCcw } };
 
 const UNITS = ['u', 'm', 'm²', 'm³', 'kg', 'L', 'h', 'j', 'lot', 'forfait', 'paire', 'rouleau', 'boîte'];
 
@@ -30,14 +28,16 @@ const CATEGORY_COLORS = [
 const CATEGORY_ICONS = ['📦', '🔧', '⚡', '🔩', '🛠️', '📐', '🧰', '💡', '🔌', '🧲', '🪛', '⛓️'];
 
 // ═══ Composant Principal ═══
-function StockPanel({ currentUser, stockType = 'vente', showManagement = false, onCloseManagement }) {
+function StockPanel({ currentUser, stockType = 'vente', showManagement = false, onOpenManagement, onCloseManagement }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState(null);
   const [suppliers, setSuppliers] = useState([]);
   const [movements, setMovements] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [lowStockFilter, setLowStockFilter] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -48,20 +48,26 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   const [editingCategory, setEditingCategory] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [dialogItem, setDialogItem] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null);
   const [showImport, setShowImport] = useState(false);
   const [depotZones, setDepotZones] = useState(null);
   const [allDepotZones, setAllDepotZones] = useState(null);
 
   const isAdmin = currentUser?.isAdmin === true;
   const clickTimerRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  // Debounce search (300ms)
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchTerm]);
 
   // ═══ Chargement des données ═══
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const params = { stock_type: stockType };
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (categoryFilter) params.category_id = categoryFilter;
       if (lowStockFilter) params.low_stock = 'true';
 
@@ -81,10 +87,11 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
       setAllDepotZones(allZonesData);
     } catch (error) {
       console.error('Erreur chargement stock:', error);
+      toast.error('Erreur de chargement du stock');
     } finally {
       setLoading(false);
     }
-  }, [stockType, searchTerm, categoryFilter, lowStockFilter]);
+  }, [stockType, debouncedSearch, categoryFilter, lowStockFilter]);
 
   const loadMovements = useCallback(async (itemId) => {
     try {
@@ -123,7 +130,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   };
 
   const handleDeleteItem = (item) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer l\'article',
       message: `Supprimer "${item.name}" (${item.reference}) ? L'historique des mouvements sera aussi supprimé.`,
       onConfirm: async () => {
@@ -132,9 +139,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           setSelectedItem(null);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -155,7 +160,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   };
 
   const handleDeleteCategory = (cat) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer la catégorie',
       message: `Supprimer la catégorie "${cat.name}" ? Elle ne doit contenir aucun article.`,
       onConfirm: async () => {
@@ -163,9 +168,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           await api.deleteStockCategory(cat.id);
           loadData();
         } catch (error) { toast.error('Erreur: ' + error.message); }
-        setConfirmDialog(null);
       },
-      onCancel: () => setConfirmDialog(null)
     });
   };
 
@@ -193,20 +196,6 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
   // ═══ Rendu ═══
   return (
     <div className="stock-panel">
-      {/* Header — stats uniquement (plus de tabs) */}
-      <div className="stock-header">
-        <div className="stock-header-title">
-          <Package size={18} />
-          <span>{stockType === 'sav' ? 'Stock SAV (pièces)' : 'Stock Vente'}</span>
-        </div>
-        {stats && (
-          <div className="stock-header-stats">
-            <span className="stat-badge"><Package size={14} /> {stats.totalItems || 0} articles</span>
-            {stats.lowStockCount > 0 && <span className="stat-badge warning"><AlertTriangle size={14} /> {stats.lowStockCount} stock bas</span>}
-          </div>
-        )}
-      </div>
-
       {/* Content wrapper — table + slide panel côte à côte */}
       <div className="stock-content-wrapper">
         <div className="stock-content-inner">
@@ -240,6 +229,8 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
                 lowStockFilter={lowStockFilter}
                 onLowStockChange={setLowStockFilter}
                 selectedItemId={selectedItem?.id}
+                stats={stats}
+                onOpenManagement={onOpenManagement}
                 onSelect={(item) => {
                   clearTimeout(clickTimerRef.current);
                   clickTimerRef.current = setTimeout(() => {
@@ -307,17 +298,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           onClose={() => setShowMovementForm(false)}
         />
       )}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        confirmLabel={confirmDialog?.confirmLabel || 'Oui'}
-        cancelLabel={confirmDialog?.cancelLabel || 'Non'}
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
       {showImport && (
         <ImportStockModal
           onDone={() => { setShowImport(false); loadData(); }}
@@ -328,10 +309,10 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
       {/* Panneau Gestion Catégories (via bouton Gestion du header) */}
       {showManagement && (
         <div className="stock-management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement?.()}>
-          <div className="stock-management-panel" onClick={e => e.stopPropagation()}>
+          <div className="stock-management-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
             <div className="stock-management-header">
               <h2><Layers size={20} /> Gestion des catégories</h2>
-              <button onClick={onCloseManagement}><X size={20} /></button>
+              <Button variant="ghost" onClick={onCloseManagement} aria-label="Fermer"><X size={20} /></Button>
             </div>
             <CategoriesView
               categories={categories}
@@ -350,7 +331,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
 // ═══════════════════════════════════════════════════════════════
 // Volet latéral (Slide Panel)
 // ═══════════════════════════════════════════════════════════════
-const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAdmin, depotZones, allDepotZones }) => {
+const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAdmin, _depotZones, _allDepotZones }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -408,7 +389,7 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
           <span className="stock-slide-ref">{current.reference}</span>
         </div>
         <Tooltip content="Fermer">
-          <button className="stock-slide-close" onClick={handleClose}><X size={18} /></button>
+          <Button variant="ghost" className="stock-slide-close" onClick={handleClose} aria-label="Fermer"><X size={18} /></Button>
         </Tooltip>
       </div>
       <div className="stock-slide-body">
@@ -441,19 +422,21 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
         {current.notes && <p className="stock-slide-notes">{current.notes}</p>}
       </div>
       <div className="stock-slide-footer">
-        <Button variant="secondary" onClick={() => onMovement()} title="Mouvement">
+ <Tooltip content="Mouvement" position="bottom">
+   <Button variant="secondary" onClick={() => onMovement()}>
           <TrendingUp size={14} /> Mouvement
         </Button>
+ </Tooltip>
         {isAdmin && (
           <Tooltip content="Modifier">
-            <Button variant="secondary" onClick={() => onEdit(current)} iconOnly>
+            <Button variant="secondary" onClick={() => onEdit(current)} iconOnly aria-label="Modifier">
               <Edit2 size={14} />
             </Button>
           </Tooltip>
         )}
-        <button className="stock-slide-open-btn" onClick={() => onOpenDialog(current)}>
+        <Button variant="ghost" className="stock-slide-open-btn" onClick={() => onOpenDialog(current)}>
           <ExternalLink size={14} /> Ouvrir la fiche
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -462,7 +445,7 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
 // ═══════════════════════════════════════════════════════════════
 // Dashboard (exporté pour InventoryPanel)
 // ═══════════════════════════════════════════════════════════════
-function DashboardView({ stats, items, onSelectItem }) {
+function _DashboardView({ stats, _items, onSelectItem }) {
   if (!stats) return <div className="stock-empty">Chargement des statistiques...</div>;
 
   return (
@@ -526,7 +509,7 @@ function DashboardView({ stats, items, onSelectItem }) {
             {stats.lowStockItems.map(item => {
               const pct = item.min_quantity > 0 ? Math.round((item.quantity / item.min_quantity) * 100) : 0;
               return (
-                <div key={item.id} className="stock-alert-item" onClick={() => onSelectItem(item)}>
+                <div key={item.id} className="stock-alert-item" role="button" tabIndex={0} onClick={() => onSelectItem(item)}>
                   <div className="alert-item-info">
                     <span className="alert-item-name">{item.name}</span>
                     <span className="alert-item-ref">{item.reference}</span>
@@ -555,7 +538,7 @@ function DashboardView({ stats, items, onSelectItem }) {
           <h3>🔥 Articles les plus mouvementés</h3>
           <div className="stock-top-items">
             {stats.topMovedItems.map((item, i) => (
-              <div key={item.id} className="stock-top-item" onClick={() => onSelectItem(item)}>
+              <div key={item.id} className="stock-top-item" role="button" tabIndex={0} onClick={() => onSelectItem(item)}>
                 <span className="top-rank">#{i + 1}</span>
                 <span className="top-name">{item.name}</span>
                 <span className="top-ref">{item.reference}</span>
@@ -572,7 +555,7 @@ function DashboardView({ stats, items, onSelectItem }) {
 // ═══════════════════════════════════════════════════════════════
 // Liste des Articles
 // ═══════════════════════════════════════════════════════════════
-function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, selectedItemId, onSelect, onDoubleClick, onAdd, onImport, isAdmin }) {
+function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, selectedItemId, onSelect, onDoubleClick, onAdd, onImport, _isAdmin, stats, onOpenManagement }) {
   return (
     <div className="stock-items-view">
       {/* Toolbar */}
@@ -586,23 +569,37 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
             placeholder="Toutes catégories"
             allowClear
           />
-          <button
-            className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
+          <Tooltip content="Afficher uniquement les stocks bas" position="bottom">
+            <Button variant="ghost"             className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
             onClick={() => onLowStockChange(!lowStockFilter)}
-            title="Afficher uniquement les stocks bas"
+ 
           >
             <AlertTriangle size={14} />
             Stock bas
-          </button>
+          </Button>
+          </Tooltip>
         </div>
-        <button className="stock-add-btn" onClick={onImport} title="Importer un inventaire CSV">
+        {stats && (
+          <div className="stock-header-stats">
+            <span className="stat-badge"><Package size={14} /> {stats.totalItems || 0} articles</span>
+            {stats.lowStockCount > 0 && <span className="stat-badge warning"><AlertTriangle size={14} /> {stats.lowStockCount} stock bas</span>}
+          </div>
+        )}
+ <Tooltip content="Importer un inventaire CSV" position="bottom">
+   <Button variant="ghost" className="stock-add-btn" onClick={onImport}>
           <Upload size={16} />
           <span>Importer</span>
-        </button>
-        <button className="stock-add-btn" onClick={onAdd}>
+        </Button>
+ </Tooltip>
+        <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
           <Plus size={16} />
           <span>Nouvel article</span>
-        </button>
+        </Button>
+        {onOpenManagement && (
+          <Button variant="ghost" className="stock-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion des catégories">
+            <Layers size={16} /> Gestion
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -610,7 +607,7 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
         <EmptyState
           icon={<Package size={48} />}
           title="Aucun article trouvé"
-          action={<button className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer un article</button>}
+          action={<Button variant="ghost" className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer un article</Button>}
         />
       ) : (
         <div className="stock-table-container">
@@ -696,20 +693,20 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
   return (
     <div className="stock-detail">
       <div className="stock-detail-header">
-        <button className="stock-back-btn" onClick={onBack}>
+        <Button variant="ghost" className="stock-back-btn" onClick={onBack}>
           <ArrowLeft size={18} /> Retour
-        </button>
+        </Button>
         <div className="stock-detail-actions">
-          <button className="stock-movement-btn" onClick={onMovement}>
+          <Button variant="ghost" className="stock-movement-btn" onClick={onMovement}>
             <TrendingUp size={16} /> Mouvement
-          </button>
-          <button className="stock-edit-btn" onClick={onEdit}>
+          </Button>
+          <Button variant="ghost" className="stock-edit-btn" onClick={onEdit}>
             <Edit2 size={16} /> Modifier
-          </button>
+          </Button>
           {isAdmin && (
-            <button className="stock-delete-btn" onClick={onDelete}>
+            <Button variant="ghost" className="stock-delete-btn" onClick={onDelete}>
               <Trash2 size={16} />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -766,9 +763,11 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
                   ? <>
                       {item.location_depot ? `D${item.location_depot} — ` : ''}{item.location_zone}{item.location_floor ? ` (${item.location_floor})` : ''}
                       {(depotZones || allDepotZones) && (
-                        <button className="stock-zone-map-btn" onClick={() => setShowMap(!showMap)} title="Voir sur le plan">
+ <Tooltip content="Voir sur le plan" position="bottom">
+   <Button variant="ghost" className="stock-zone-map-btn" onClick={() => setShowMap(!showMap)}>
                           <Map size={13} /> Plan
-                        </button>
+                        </Button>
+ </Tooltip>
                       )}
                     </>
                   : item.location || '—'}
@@ -841,7 +840,7 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
 // ═══════════════════════════════════════════════════════════════
 // Vue Mouvements globaux
 // ═══════════════════════════════════════════════════════════════
-function MovementsView({ movements, items, onAddMovement, onRefresh }) {
+function _MovementsView({ movements, _items, onAddMovement, _onRefresh }) {
   const [typeFilter, setTypeFilter] = useState('');
 
   const filtered = useMemo(() => {
@@ -860,9 +859,9 @@ function MovementsView({ movements, items, onAddMovement, onRefresh }) {
             ))}
           </Select>
         </div>
-        <button className="stock-add-btn" onClick={onAddMovement}>
+        <Button variant="ghost" className="stock-add-btn" onClick={onAddMovement}>
           <Plus size={16} /> Nouveau mouvement
-        </button>
+        </Button>
       </div>
 
       {filtered.length === 0 ? (
@@ -926,9 +925,9 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
       <div className="stock-toolbar">
         <h3><Layers size={18} /> Catégories ({categories.length})</h3>
         {isAdmin && (
-          <button className="stock-add-btn" onClick={onAdd}>
+          <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
             <Plus size={16} /> Nouvelle catégorie
-          </button>
+          </Button>
         )}
       </div>
 
@@ -936,7 +935,7 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
         <EmptyState
           icon={<Layers size={48} />}
           title="Aucune catégorie créée"
-          action={isAdmin && <button className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer</button>}
+          action={isAdmin && <Button variant="ghost" className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer</Button>}
         />
       ) : (
         <div className="stock-categories-grid">
@@ -952,10 +951,10 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
               {isAdmin && (
                 <div className="cat-actions">
                   <Tooltip content="Modifier">
-                    <button onClick={() => onEdit(cat)}><Edit2 size={14} /></button>
+                    <Button variant="ghost" onClick={() => onEdit(cat)}><Edit2 size={14} /></Button>
                   </Tooltip>
                   <Tooltip content="Supprimer">
-                    <button onClick={() => onDelete(cat)} disabled={cat.item_count > 0}><Trash2 size={14} /></button>
+                    <Button variant="ghost" onClick={() => onDelete(cat)} disabled={cat.item_count > 0}><Trash2 size={14} /></Button>
                   </Tooltip>
                 </div>
               )}
@@ -988,8 +987,7 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
     location_zone: item?.location_zone || '',
     location_floor: item?.location_floor || '',
     supplier_id: item?.supplier_id || '',
-    notes: item?.notes || '',
-  });
+    notes: item?.notes || '' });
 
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -1003,8 +1001,7 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
       quantity: Number(form.quantity) || 0,
       min_quantity: Number(form.min_quantity) || 0,
       category_id: form.category_id || null,
-      supplier_id: form.supplier_id || null,
-    });
+      supplier_id: form.supplier_id || null });
   };
 
   return (
@@ -1088,18 +1085,16 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                 value={{
                   location_depot: form.location_depot,
                   location_zone: form.location_zone,
-                  location_floor: form.location_floor,
-                }}
+                  location_floor: form.location_floor }}
                 onChange={(loc) => setForm(f => ({
                   ...f,
                   location_depot: loc.location_depot || '',
                   location_zone: loc.location_zone || '',
-                  location_floor: loc.location_floor || '',
-                }))}
+                  location_floor: loc.location_floor || '' }))}
               />
-              <button type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)}>
+              <Button variant="ghost" type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)}>
                 <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
-              </button>
+              </Button>
               {showMap && (() => {
                 const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
                 const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
@@ -1109,9 +1104,9 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                     {depotsList.length > 1 && (
                       <div className="stock-form-map-tabs">
                         {depotsList.map((d, i) => (
-                          <button key={d.id || i} type="button" className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
+                          <Button variant="ghost" key={d.id || i} type="button" className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
                             {d.name || `Dépôt ${d.id || i + 1}`}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     )}
@@ -1125,8 +1120,7 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                           ...f,
                           location_depot: currentDepotData.id || currentDepotData.depotId || '',
                           location_zone: zoneId,
-                          location_floor: zoneObj?.floor || '',
-                        }));
+                          location_floor: zoneObj?.floor || '' }));
                       }}
                       onZoneFilter={() => {}}
                       compact
@@ -1159,8 +1153,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
     description: category?.description || '',
     parent_id: category?.parent_id || '',
     color: category?.color || CATEGORY_COLORS[0],
-    icon: category?.icon || '📦',
-  });
+    icon: category?.icon || '📦' });
 
   const parentOptions = categories.filter(c => c.id !== category?.id);
 
@@ -1206,12 +1199,11 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
             <label>Icône</label>
             <div className="stock-icon-picker">
               {CATEGORY_ICONS.map(icon => (
-                <button
-                  key={icon}
+                <Button variant="ghost"                   key={icon}
                   type="button"
                   className={`icon-pick ${form.icon === icon ? 'active' : ''}`}
                   onClick={() => setForm(f => ({ ...f, icon }))}
-                >{icon}</button>
+                >{icon}</Button>
               ))}
             </div>
           </div>
@@ -1219,8 +1211,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
             <label>Couleur</label>
             <div className="stock-color-picker">
               {CATEGORY_COLORS.map(color => (
-                <button
-                  key={color}
+                <Button variant="ghost"                   key={color}
                   type="button"
                   className={`color-pick ${form.color === color ? 'active' : ''}`}
                   style={{ background: color }}
@@ -1243,8 +1234,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
     type: 'in',
     quantity: '',
     reason: '',
-    reference: '',
-  });
+    reference: '' });
 
   const selectedItem = items.find(i => i.id === Number(form.stock_item_id));
 
@@ -1254,8 +1244,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
     onSave({
       ...form,
       stock_item_id: Number(form.stock_item_id),
-      quantity: Number(form.quantity),
-    });
+      quantity: Number(form.quantity) });
   };
 
   return (
@@ -1292,15 +1281,14 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
             <label>Type de mouvement</label>
             <div className="stock-movement-types">
               {Object.entries(MOVEMENT_TYPES).map(([key, mt]) => (
-                <button
-                  key={key}
+                <Button variant="ghost"                   key={key}
                   type="button"
                   className={`movement-type-btn ${form.type === key ? 'active' : ''}`}
                   style={{ '--mt-color': mt.color }}
                   onClick={() => setForm(f => ({ ...f, type: key }))}
                 >
                   {mt.icon} {mt.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -1392,8 +1380,7 @@ function parseInventoryCSV(text) {
             category_name: cols[3] || '',
             location: cols[4] || '',
             quantity: qty,
-            unit_price: isNaN(val) ? 0 : val,
-          });
+            unit_price: isNaN(val) ? 0 : val });
         }
       }
     }
@@ -1409,8 +1396,7 @@ function parseInventoryCSV(text) {
     loc: headers.findIndex(h => /^(emplacement|lieu|location)/.test(h)),
     qty: headers.findIndex(h => /^(quanti|qty|qté|stock)/.test(h)),
     price: headers.findIndex(h => /^(valeur|prix|p\.?u|unit)/.test(h)),
-    total: headers.findIndex(h => /^total/.test(h)),
-  };
+    total: headers.findIndex(h => /^total/.test(h)) };
 
   for (let i = headerIdx + 1; i < lines.length; i++) {
     const line = lines[i];
@@ -1434,8 +1420,7 @@ function parseInventoryCSV(text) {
       category_name: get(colIdx.cat),
       location: get(colIdx.loc),
       quantity: getNum(colIdx.qty),
-      unit_price: getNum(colIdx.price),
-    });
+      unit_price: getNum(colIdx.price) });
   }
 
   return items;
@@ -1469,7 +1454,7 @@ function parseInventoryPDF(text) {
     if (!line || SKIP_RE.test(line)) continue;
 
     // Split sur 2+ espaces = colonnes
-    const cols = line.split(/\s{2,}/).map(c => c.trim()).filter(Boolean);
+    const cols = line.split(/\s{2 }/).map(c => c.trim()).filter(Boolean);
     if (cols.length < 4) continue;
 
     // Les 3 dernières colonnes = total, valeur, quantité
@@ -1518,8 +1503,7 @@ function parseInventoryPDF(text) {
       category_name,
       location,
       quantity: isNaN(qty) ? 0 : qty,
-      unit_price: isNaN(value) ? 0 : value,
-    });
+      unit_price: isNaN(value) ? 0 : value });
   }
   return items;
 }
@@ -1532,7 +1516,7 @@ function ImportStockModal({ onDone, onClose }) {
   const [parsedItems, setParsedItems] = useState([]);
   const [error, setError] = useState('');
   const [importMode, setImportMode] = useState('upsert'); // upsert | insert_only
-  const [result, setResult] = useState(null);
+  const [_result, setResult] = useState(null);
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -1582,8 +1566,7 @@ function ImportStockModal({ onDone, onClose }) {
     try {
       const res = await api.importStockItems({
         items: parsedItems,
-        mode: importMode,
-      });
+        mode: importMode });
       setResult(res);
       toast.success(`Import terminé : ${res.inserted} créés, ${res.updated} mis à jour, ${res.skipped} ignorés`);
       onDone();
@@ -1663,6 +1646,7 @@ function ImportStockModal({ onDone, onClose }) {
                     rows={8}
                     value={pasteText}
                     onChange={e => { setPasteText(e.target.value); setFile(null); }}
+                    aria-label="Coller les données CSV"
                     placeholder={"Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17"}
                     style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
                   />

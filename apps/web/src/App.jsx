@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef, useTransition } from 'react';
 import { format } from 'date-fns';
 import Header from './components/Header';
 const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
-import { VehicleSlidePanel } from './components/vehicles/VehicleDetailPanel';
+const VehicleSlidePanel = lazy(() => import('./components/vehicles/VehicleDetailPanel').then(m => ({ default: m.VehicleSlidePanel })));
 import LoginForm from './components/auth/LoginForm';
 import ErrorBoundary from './components/ErrorBoundary';
 const PlanningView = lazy(() => import('./components/vehicles/PlanningView'));
@@ -20,10 +20,14 @@ import { useSilentRefresh } from './hooks/useSilentRefresh';
 import { useGoogleCalendar } from './hooks/useGoogleCalendar';
 import { useMessagingPolling } from './hooks/useMessagingPolling';
 import { LoadingOverlay } from './design-system';
+import { STATUS } from './constants';
+
+import { Button } from '@/design-system';
 import './App.css';
 import './styles/draggable-modals.css';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
+const PresetDetachedView = lazy(() => import('./components/video/PresetDetachedView'));
 
 // Code splitting - Lazy loading des composants lourds
 const Calendar = lazy(() => import('./components/vehicles/Calendar'));
@@ -32,7 +36,6 @@ const MobileApp = lazy(() => import('./components/mobile/MobileApp'));
 const ManagementPanel = lazy(() => import('./components/management/ManagementPanel'));
 const MaintenanceDialog = lazy(() => import('./components/vehicles/MaintenanceDialog'));
 const VehicleMaintenanceModal = lazy(() => import('./components/vehicles/VehicleMaintenanceModal'));
-const PersonnelPanel = lazy(() => import('./components/personnel/PersonnelPanel'));
 const AffairesPanel = lazy(() => import('./components/affaires/AffairesPanel'));
 const EquipmentPanel = lazy(() => import('./components/equipment/EquipmentPanel'));
 const OrdersPanel = lazy(() => import('./components/orders/OrdersPanel'));
@@ -95,7 +98,11 @@ function AppContent() {
   const [isMobile, setIsMobile] = useState(() => detectMobile());
   const [view, setView] = useState('week');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeModule, setActiveModule] = useState('vehicles');
+  const [activeModule, _setActiveModule] = useState('vehicles');
+  const [, startModuleTransition] = useTransition();
+  const setActiveModule = useCallback((mod) => {
+    startModuleTransition(() => _setActiveModule(mod));
+  }, []);
   const [showManagement, setShowManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showEquipmentManagement, setShowEquipmentManagement] = useState(false);
@@ -159,7 +166,7 @@ function AppContent() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
+    if (outcome === STATUS.ACCEPTED) {
       setShowPwaInstall(false);
     }
     setDeferredPrompt(null);
@@ -362,15 +369,7 @@ function AppContent() {
         setView={setView}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
-        onOpenManagement={() => {
-          if (activeModule === 'equipment') {
-            setShowEquipmentManagement(true);
-          } else if (activeModule === 'stock') {
-            setShowStockManagement(true);
-          } else {
-            setShowManagement(true);
-          }
-        }}
+
         onOpenSettings={() => setShowSettings(true)}
         activeModule={activeModule}
         setActiveModule={setActiveModule}
@@ -407,12 +406,13 @@ function AppContent() {
       {showPwaInstall && (
         <div className="pwa-install-banner">
           <span>📱 Installer eM@g sur votre appareil pour un accès rapide</span>
-          <button className="pwa-install-btn" onClick={handlePwaInstall}>Installer</button>
-          <button className="pwa-dismiss-btn" onClick={() => setShowPwaInstall(false)}>✕</button>
+          <Button variant="ghost" className="pwa-install-btn" onClick={handlePwaInstall}>Installer</Button>
+          <Button variant="ghost" className="pwa-dismiss-btn" onClick={() => setShowPwaInstall(false)}>✕</Button>
         </div>
       )}
       
       {activeModule === 'vehicles' && (
+      <Suspense fallback={null}>
       <GoogleCalendarBanner 
         calendarConfig={data.calendarConfig} 
         view={view}
@@ -474,9 +474,11 @@ function AppContent() {
             setActiveModule('affaires');
           } catch (err) {
             console.error('Erreur création affaire:', err);
+            toast.error('Erreur lors de la création de l\'affaire');
           }
         }}
       />
+      </Suspense>
       )}
 
       <main id="main-content">
@@ -484,6 +486,7 @@ function AppContent() {
       {activeModule === 'vehicles' && (
         <>
           {view === 'planning' ? (
+            <Suspense fallback={<LoadingOverlay label="Chargement du planning..." />}>
             <PlanningView
               vehicles={data.vehicles}
               reservations={data.reservations}
@@ -500,6 +503,7 @@ function AppContent() {
               drivers={data.drivers}
               persons={data.persons}
             />
+            </Suspense>
           ) : (
             <div className="calendar-with-vehicle-panel">
               <ErrorBoundary moduleName="Calendrier">
@@ -509,6 +513,7 @@ function AppContent() {
                 setView={setView}
                 currentDate={currentDate}
                 setCurrentDate={setCurrentDate}
+                onOpenManagement={() => setShowManagement(true)}
                 vehicles={data.vehicles}
                 reservations={data.reservations}
                 maintenances={data.maintenances}
@@ -541,6 +546,7 @@ function AppContent() {
               />
               </Suspense>
               </ErrorBoundary>
+              <Suspense fallback={null}>
               <VehicleSlidePanel
                 vehicle={selectedVehicleForDetails}
                 maintenances={data.maintenances}
@@ -556,6 +562,7 @@ function AppContent() {
                   else if (action === 'breakdown') { handleReportBreakdown(v); setSelectedVehicleForDetails(null); }
                 }}
               />
+              </Suspense>
             </div>
           )}
         </>
@@ -578,6 +585,7 @@ function AppContent() {
           <EquipmentPanel
             currentUser={currentUser}
             showManagement={showEquipmentManagement}
+            onOpenManagement={() => setShowEquipmentManagement(true)}
             onCloseManagement={() => setShowEquipmentManagement(false)}
           />
         </Suspense>
@@ -598,15 +606,15 @@ function AppContent() {
         <ErrorBoundary moduleName="Stocks">
           <div className="stocks-container">
             <div className="sub-tabs">
-              <button className={`sub-tab ${stockSubTab === 'vente' ? 'active' : ''}`} onClick={() => setStockSubTab('vente')}>
+              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'vente' ? 'active' : ''}`} onClick={() => setStockSubTab('vente')}>
                 📦 Stock Vente
-              </button>
-              <button className={`sub-tab ${stockSubTab === 'sav' ? 'active' : ''}`} onClick={() => setStockSubTab('sav')}>
+              </Button>
+              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'sav' ? 'active' : ''}`} onClick={() => setStockSubTab('sav')}>
                 🔧 SAV (Pièces)
-              </button>
-              <button className={`sub-tab ${stockSubTab === 'inventory' ? 'active' : ''}`} onClick={() => setStockSubTab('inventory')}>
+              </Button>
+              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'inventory' ? 'active' : ''}`} onClick={() => setStockSubTab('inventory')}>
                 📋 Inventaire
-              </button>
+              </Button>
             </div>
             {(stockSubTab === 'vente' || stockSubTab === 'sav') && (
               <Suspense fallback={<LoadingOverlay label="Chargement du stock..." />}>
@@ -614,6 +622,7 @@ function AppContent() {
                   currentUser={currentUser}
                   stockType={stockSubTab}
                   showManagement={showStockManagement}
+                  onOpenManagement={() => setShowStockManagement(true)}
                   onCloseManagement={() => setShowStockManagement(false)}
                 />
               </Suspense>
@@ -667,6 +676,7 @@ function AppContent() {
 
 
       {showManagement && (
+        <ErrorBoundary moduleName="Gestion">
         <Suspense fallback={<LoadingOverlay label="Chargement du panneau de gestion..." />}>
           <ManagementPanel
             vehicles={data.vehicles}
@@ -696,9 +706,11 @@ function AppContent() {
             }}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {showSettings && (
+        <ErrorBoundary moduleName="Paramètres">
         <Suspense fallback={<LoadingOverlay label="Chargement des paramètres..." />}>
           <ManagementPanel
             vehicles={data.vehicles}
@@ -720,15 +732,17 @@ function AppContent() {
             currentUser={currentUser}
             panelType="settings"
             onClose={() => setShowSettings(false)}
-            onNavigateToPersonnel={(person) => {
+            onNavigateToPersonnel={(_person) => {
               setShowSettings(false);
               setActiveModule('planning');
             }}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {selectedVehicleForMaintenance && (
+        <ErrorBoundary moduleName="Maintenance">
         <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
           <MaintenanceDialog
             vehicle={selectedVehicleForMaintenance}
@@ -746,9 +760,11 @@ function AppContent() {
             }}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {vehicleForDialog && (
+        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
         <VehicleDetailsModal
           vehicle={vehicleForDialog}
           maintenances={data.maintenances}
@@ -764,9 +780,11 @@ function AppContent() {
             setVehicleForDialog(null);
           }}
         />
+        </Suspense>
       )}
 
       {selectedVehicleForKilometrageControl && (
+        <ErrorBoundary moduleName="Kilométrage">
         <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
           <VehicleMaintenanceModal
             vehicle={selectedVehicleForKilometrageControl}
@@ -786,9 +804,11 @@ function AppContent() {
             onClose={() => setSelectedVehicleForKilometrageControl(null)}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {/* Messagerie interne */}
+      <ErrorBoundary moduleName="Messagerie">
       <Suspense fallback={null}>
         <MessagingPanel
           isOpen={showMessaging}
@@ -796,14 +816,17 @@ function AppContent() {
           currentUser={currentUser}
         />
       </Suspense>
+      </ErrorBoundary>
 
       {/* Mailing avancé */}
+      <ErrorBoundary moduleName="Mailing">
       <Suspense fallback={null}>
         <MailingPanel
           isOpen={showMailing}
           onClose={() => setShowMailing(false)}
         />
       </Suspense>
+      </ErrorBoundary>
 
       {/* Préférences utilisateur */}
       <Suspense fallback={null}>
@@ -833,6 +856,7 @@ function AppContent() {
 
       {/* Modal global de détail d'affaire (ouvert depuis n'importe quel badge) */}
       {globalAffaireDialog && (
+        <ErrorBoundary moduleName="Détail Affaire">
         <Suspense fallback={null}>
           <AffaireDetailDialog
             affaire={globalAffaireDialog}
@@ -842,6 +866,7 @@ function AppContent() {
             onNavigateToEntity={handleNavigateToEntity}
           />
         </Suspense>
+        </ErrorBoundary>
       )}
       </main>
 
@@ -862,6 +887,18 @@ function AppContent() {
 
 
 function App() {
+  // Fenêtre détachée preset vidéo
+  const detachedPresetId = new URLSearchParams(window.location.search).get('detached-preset');
+  if (detachedPresetId) {
+    return (
+      <AuthProvider>
+        <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>Chargement...</div>}>
+          <PresetDetachedView presetId={detachedPresetId} />
+        </Suspense>
+      </AuthProvider>
+    );
+  }
+
   return (
     <AuthProvider>
       <AppContent />

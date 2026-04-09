@@ -31,9 +31,9 @@
   padding: 10px 16px;
   background: var(--theme-danger-bg);
   border: 1px solid var(--btn-danger-hover-bg);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--theme-danger-dark);
-  font-size: 13px;
+  font-size: var(--font-base);
   margin-bottom: 12px;
 }
 
@@ -42,10 +42,10 @@
   background: var(--theme-danger-dark);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 4px 12px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .affaires-warning {
@@ -55,9 +55,9 @@
   padding: 8px 16px;
   background: var(--theme-warning-bg);
   border: 1px solid var(--theme-warning-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: var(--theme-warning-dark);
-  font-size: 13px;
+  font-size: var(--font-base);
   margin-bottom: 12px;
 }
 
@@ -68,9 +68,9 @@
   padding: 6px 16px;
   background: var(--theme-info-bg);
   border: 1px solid var(--theme-info-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: #0284c7;
-  font-size: 12px;
+  font-size: var(--font-sm);
   margin-bottom: 12px;
 }
 
@@ -87,18 +87,18 @@
 .affaires-toolbar-bar {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--theme-bg-page);
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
-  margin-bottom: 8px;
+  border-radius: var(--radius-md-lg);
+  margin-bottom: var(--space-2);
   flex-shrink: 0;
 }
 
 .affaires-toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
   width: 100%;
 }
@@ -109,7 +109,7 @@
   gap: 6px;
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0 10px;
   height: 32px;
   min-width: 140px;
@@ -133,7 +133,7 @@
   border: none;
   outline: none;
   color: var(--theme-text-primary);
-  font-size: 13px;
+  font-size: var(--font-base);
   width: 100%;
   padding: 0;
 }
@@ -150,7 +150,7 @@
   padding: 2px;
   display: flex;
   align-items: center;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transition: all 0.2s;
 }
 
@@ -163,7 +163,7 @@
   display: flex;
   gap: 3px;
   background: var(--theme-border-light);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 3px;
   flex-shrink: 0;
 }
@@ -175,8 +175,8 @@
   padding: 4px 10px;
   border: none;
   background: transparent;
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -196,7 +196,7 @@
 }
 
 .affaires-type-icon {
-  font-size: 13px;
+  font-size: var(--font-base);
   line-height: 1;
 }
 
@@ -215,7 +215,7 @@
   display: flex;
   gap: 2px;
   background: var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 2px;
   flex-shrink: 0;
 }
@@ -223,10 +223,10 @@
 .affaires-tb-view-btn {
   padding: 4px 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary);
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -249,10 +249,10 @@
   justify-content: center;
   padding: 4px 8px;
   border: 1px solid var(--theme-border);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-subtle);
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -272,13 +272,13 @@
 }
 
 .affaires-tb-date-label {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
   cursor: pointer;
   white-space: nowrap;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.2s;
   flex-shrink: 0;
 }
@@ -306,7 +306,7 @@
 }
 
 .affaires-tb-toggle span {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   white-space: nowrap;
@@ -318,7 +318,7 @@
 
 /* Compteur affaires dans toolbar */
 .affaires-tb-count {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   white-space: nowrap;
@@ -332,7 +332,7 @@
   gap: 5px;
   padding: 5px 12px;
   border: 1px solid var(--theme-primary);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--accent-tint-extra);
   color: var(--theme-primary);
   font-size: 0.78rem;
@@ -377,13 +377,13 @@
   padding: 4px 10px;
   background: var(--theme-border-light);
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
   line-height: 1.2;
 }
 
 .affaires-count-number {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 800;
   color: var(--theme-text-dark);
   letter-spacing: -0.5px;
@@ -407,8 +407,8 @@
   background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%));
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -445,7 +445,7 @@
   right: 4px;
   height: 18px;
   background: linear-gradient(to bottom, #e8ecf1, var(--theme-border));
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   overflow: visible;
   box-shadow: inset 0 1px 2px var(--shadow-inner);
 }
@@ -484,7 +484,7 @@
   position: absolute;
   top: 4px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   opacity: 0.55;
   transition: opacity 0.15s, box-shadow 0.15s;
   min-width: 3px;
@@ -517,7 +517,7 @@
   width: 8px;
   height: 8px;
   background: var(--theme-danger);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
 }
 
 /* Curseur déplaçable */
@@ -544,7 +544,7 @@
   height: 14px;
   background: var(--theme-primary);
   border: 2px solid var(--theme-bg-card);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   margin-top: -2px;
   box-shadow: 0 1px 4px var(--btn-primary-hover-shadow);
   pointer-events: auto;
@@ -562,7 +562,7 @@
 }
 
 .cursor-date {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   color: var(--theme-primary);
   font-weight: 700;
   white-space: nowrap;
@@ -570,7 +570,7 @@
   margin-top: 1px;
   background: var(--theme-bg-card);
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   box-shadow: var(--shadow-sm);
   line-height: 1.4;
 }
@@ -625,7 +625,7 @@
   overflow-x: hidden;
   min-height: 0;
   border: 1px solid var(--theme-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
   transition: flex 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -646,7 +646,7 @@
 }
 
 .affaires-empty p {
-  font-size: 14px;
+  font-size: var(--font-base);
   margin: 0;
 }
 
@@ -661,7 +661,7 @@
   padding: 8px 12px;
   background: var(--theme-gradient);
   border-bottom: 2px solid var(--theme-border);
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--theme-text-inverse);
   text-transform: uppercase;
@@ -717,7 +717,7 @@
   box-sizing: border-box;
   padding: 7px 12px;
   border-bottom: 1px solid var(--theme-border-light);
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-dark);
   gap: 8px;
   transition: background 0.15s;
@@ -774,7 +774,7 @@
 .status-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: inline-block;
 }
 
@@ -806,7 +806,7 @@
   min-width: 60px;
   font-weight: 700;
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-primary);
   letter-spacing: 0.3px;
   overflow: hidden;
@@ -825,9 +825,9 @@
 
 .affaire-type-tag {
   padding: 2px 8px;
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   color: var(--theme-text-inverse);
-  font-size: 10px;
+  font-size: var(--font-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -838,7 +838,7 @@
   width: 200px;
   flex-shrink: 1;
   min-width: 100px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   white-space: nowrap;
   overflow: hidden;
@@ -921,7 +921,7 @@
   align-items: center;
   gap: 1px;
   padding: 1px 4px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 9px;
   font-weight: 700;
   line-height: 1;
@@ -973,7 +973,7 @@
   font-size: 0.7rem;
   line-height: 1;
   padding: 2px 4px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid;
   white-space: nowrap;
   cursor: default;
@@ -994,7 +994,7 @@
   flex-shrink: 0;
   text-align: center;
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-subtle);
 }
 
@@ -1018,7 +1018,7 @@
   }
 
   .affaires-tb-date-label {
-    font-size: 11px;
+    font-size: var(--font-xs);
   }
 
   .affaires-stats {
@@ -1094,7 +1094,7 @@
   }
 
   .stat-value {
-    font-size: 13px;
+    font-size: var(--font-base);
   }
 }
 
@@ -1105,7 +1105,7 @@
   right: 24px;
   width: 52px;
   height: 52px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--theme-gradient-alt);
   color: var(--theme-text-inverse);
   border: none;

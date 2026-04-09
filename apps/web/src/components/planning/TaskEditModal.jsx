@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  X, Clock, User, FileText, Calendar, Check, Loader, Save, Briefcase, Search, Link2, Unlink, MapPin, ExternalLink
+  X, Clock, User, FileText, Calendar, Loader, Save, Briefcase, Search, Link2, Unlink, MapPin, ExternalLink
 } from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import { useToast } from '../../hooks/useToast';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import './TaskEditModal.css';
-import { Input, Textarea, Select, EntityCombobox } from '@/design-system';
+import { Button, EntityCombobox, Input, Select, Textarea } from '@/design-system';
 
 const SECTIONS = {
   rdv:                'Rendez-vous',
@@ -24,6 +25,7 @@ const SECTIONS = {
   installation:       'Installation',
   montage:            'Montage',
   demontage:          'Démontage',
+  depot:              'Dépôt',
   prep_tournees:      'Préparations Tournées',
   evenements:         'Autres Événements',
   taches_secondaires: 'Tâches Secondaires',
@@ -99,6 +101,9 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     });
   }, [task]);
 
+  const { isDirty, guardClose } = useDirtyForm(form);
+  const safeClose = guardClose(onClose);
+
   // Filtrer les affaires selon la recherche
   const filteredAffaires = useMemo(() => {
     if (!affaireSearch.trim()) return affaires.slice(0, 30);
@@ -149,17 +154,17 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     }
   };
 
-  const personName = task.personFirstName
+  const _personName = task.personFirstName
     ? `${task.personFirstName} ${task.personLastName || ''}`
     : null;
 
   return (
-    <div className="tem-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="tem-overlay" onMouseDown={(e) => e.target === e.currentTarget && safeClose()}>
       <div className="tem-modal">
         {/* Header */}
         <div className="tem-header">
           <h3><FileText size={18} /> Modifier la tâche</h3>
-          <button className="tem-close" onClick={onClose}><X size={20} /></button>
+          <Button variant="ghost" className="tem-close" onClick={safeClose} aria-label="Fermer"><X size={20} /></Button>
         </div>
 
         {/* Badges info */}
@@ -247,14 +252,13 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               <div className="tem-affaire-selected">
                 <AffaireBadge numero={form.affaireNum} type={selectedAffaire?.type} />
                 <span className="tem-affaire-client">{selectedAffaire?.client || ''}</span>
-                <button
-                  type="button"
+                <Button variant="ghost"                   type="button"
                   className="tem-affaire-clear"
                   onClick={() => update('affaireNum', '')}
                   title="Retirer l'affaire"
                 >
                   <Unlink size={12} />
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="tem-affaire-picker">
@@ -274,8 +278,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                     {filteredAffaires.length === 0 ? (
                       <div className="tem-affaire-empty">Aucune affaire trouvée</div>
                     ) : filteredAffaires.map(a => (
-                      <button
-                        key={a.numeroAffaire}
+                      <Button variant="ghost"                         key={a.numeroAffaire}
                         type="button"
                         className="tem-affaire-option"
                         onClick={() => {
@@ -287,7 +290,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                         <span className="tem-affaire-opt-num">{a.numeroAffaire}</span>
                         <span className="tem-affaire-opt-client">{a.client || a.nom || ''}</span>
                         {a.titre && <span className="tem-affaire-opt-titre">{a.titre}</span>}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -357,11 +360,11 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
 
         {/* Footer */}
         <div className="tem-footer">
-          <button className="tem-btn secondary" onClick={onClose}>Annuler</button>
-          <button className="tem-btn primary" onClick={handleSave} disabled={saving || !form.title.trim()}>
+          <Button variant="ghost" className="tem-btn secondary" onClick={onClose}>Annuler</Button>
+          <Button variant="ghost" className="tem-btn primary" onClick={handleSave} disabled={saving || !form.title.trim()}>
             {saving ? <Loader size={14} className="spin" /> : <Save size={14} />}
             Enregistrer
-          </button>
+          </Button>
         </div>
       </div>
     </div>

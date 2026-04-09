@@ -3,7 +3,7 @@
  * Drop one or many PDFs, parse them, review with full detail, then batch import.
  * Creates new affaires or updates existing ones.
  */
-import React, { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase,
   Trash2, Loader, Tag, ChevronDown, ChevronRight, PackagePlus,
@@ -14,6 +14,8 @@ import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../.
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import { useToast } from '../../hooks/useToast';
 import { Button, Input, ProgressBar } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './BLMultiImportModal.css';
 
 const AFFAIRE_TYPE_OPTIONS = AFFAIRE_TYPES;
@@ -107,7 +109,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
 
     const newItems = filesToAdd.map(f => ({
       file: f,
-      status: 'pending',
+      status: STATUS.PENDING,
       parsedData: null,
       rawText: '',
       docType: null,
@@ -217,7 +219,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
           affaire_type: effectiveType,
           parsed_data: merged,
           raw_text: item.rawText,
-          status: 'validated',
+          status: STATUS.VALIDATED,
           force_type: !!effectiveType,
         });
       });
@@ -249,11 +251,11 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
 
   return (
     <div className="bl-import-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bl-multi-import-modal" onClick={e => e.stopPropagation()}>
+      <div className="bl-multi-import-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         {/* Header */}
         <div className="modal-header">
           <h3><PackagePlus size={20} /> Import BL / BP</h3>
-          <button className="modal-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="modal-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         {/* Body */}
@@ -305,8 +307,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
               </div>
               <div className="type-pills global">
                 {AFFAIRE_TYPE_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value}
+                  <Button variant="ghost"                     key={opt.value}
                     type="button"
                     className={globalType === opt.value ? 'active' : ''}
                     style={globalType === opt.value ? { borderColor: opt.color, background: `${opt.color}18`, color: opt.color } : {}}
@@ -315,7 +316,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                     }}
                   >
                     {opt.icon} {opt.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -352,7 +353,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
             <div className="batch-file-list">
               {items.map((item, idx) => (
                 <div key={idx} className={`batch-file-item ${item.status}`}>
-                  <div className="batch-file-header" onClick={() => toggleExpand(idx)}>
+                  <div className="batch-file-header" role="button" tabIndex={0} onClick={() => toggleExpand(idx)}>
                     <span className="batch-file-expand">
                       {item.expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </span>
@@ -382,13 +383,12 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                         {item.parsedData.confidence}%
                       </span>
                     )}
-                    <button
-                      className="batch-file-remove"
+                    <Button variant="ghost"                       className="batch-file-remove"
                       onClick={(e) => { e.stopPropagation(); removeItem(idx); }}
                       title="Retirer"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
 
                   {/* ─── Expanded details ─── */}
@@ -409,15 +409,14 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                         <label><Tag size={13} /> Type</label>
                         <div className="type-pills">
                           {AFFAIRE_TYPE_OPTIONS.map(opt => (
-                            <button
-                              key={opt.value}
+                            <Button variant="ghost"                               key={opt.value}
                               type="button"
                               className={item.affaireType === opt.value ? 'active' : ''}
                               style={item.affaireType === opt.value ? { borderColor: opt.color, background: `${opt.color}18`, color: opt.color } : {}}
                               onClick={(e) => { e.stopPropagation(); updateItem(idx, { affaireType: opt.value }); }}
                             >
                               {opt.icon} {opt.label}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       </div>
@@ -470,7 +469,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                             const isOpen = item.expandedSections[sIdx];
                             return (
                               <div key={sIdx} className="detail-section" style={{ '--sec-bg': sc.bg, '--sec-border': sc.border, '--sec-text': sc.text }}>
-                                <div className="detail-section-header" onClick={(e) => { e.stopPropagation(); toggleSection(idx, sIdx); }}>
+                                <div className="detail-section-header" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); toggleSection(idx, sIdx); }}>
                                   <span>{sc.icon}</span>
                                   <span className="detail-section-name">{sec.name}</span>
                                   <span className="detail-section-count">{sec.items?.length || 0} art.</span>
@@ -500,15 +499,14 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                       {/* ─── Articles (flat, for non-section docs) ─── */}
                       {(!item.parsedData.sections || item.parsedData.sections.length === 0) && item.parsedData.items && item.parsedData.items.length > 0 && (
                         <div className="detail-articles">
-                          <button
-                            type="button"
+                          <Button variant="ghost"                             type="button"
                             className="detail-articles-toggle"
                             onClick={(e) => { e.stopPropagation(); updateItem(idx, { showArticles: !item.showArticles }); }}
                           >
                             <Package size={13} />
                             Articles ({item.parsedData.items.length})
                             {item.showArticles ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                          </button>
+                          </Button>
                           {item.showArticles && (
                             <div className="detail-articles-list">
                               {item.parsedData.items.slice(0, 30).map((art, aIdx) => (
@@ -541,14 +539,13 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                       )}
 
                       {/* ─── Raw text toggle ─── */}
-                      <button
-                        type="button"
+                      <Button variant="ghost"                         type="button"
                         className="detail-raw-toggle"
                         onClick={(e) => { e.stopPropagation(); updateItem(idx, { showRaw: !item.showRaw }); }}
                       >
                         {item.showRaw ? <EyeOff size={13} /> : <Eye size={13} />}
                         {item.showRaw ? 'Masquer texte brut' : 'Voir texte brut'}
-                      </button>
+                      </Button>
                       {item.showRaw && (
                         <div className="detail-raw-text">{item.rawText}</div>
                       )}

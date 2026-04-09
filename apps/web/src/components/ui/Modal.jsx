@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import './Modal.css';
@@ -23,13 +23,34 @@ function Modal({ open, onClose, size = 'md', className = '', children }) {
     };
   }, [open]);
 
-  /* ── Close on Escape ── */
+  /* ── Close on Escape + Focus trap ── */
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') { onClose?.(); return; }
+      if (e.key === 'Tab') {
+        const modal = overlayRef.current?.querySelector('[role="dialog"]');
+        if (!modal) return;
+        const focusable = modal.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
     };
     document.addEventListener('keydown', handler);
+    // Auto-focus first focusable element
+    const modal = overlayRef.current?.querySelector('[role="dialog"]');
+    const firstFocusable = modal?.querySelector(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    firstFocusable?.focus();
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 

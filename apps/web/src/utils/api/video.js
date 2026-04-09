@@ -110,4 +110,31 @@ export function registerVideoMethods(ApiClient) {
       body: JSON.stringify({ sdp: offerSdp, startTime, endTime }),
     });
   };
+
+  // ── Presets (vues multi-caméras) ──
+
+  ApiClient.prototype.getVideoPresets = async function () {
+    const data = await this.request('/video/presets');
+    return toCamelCase(data);
+  };
+
+  ApiClient.prototype.createVideoPreset = async function (presetData) {
+    const data = await this.request('/video/presets', {
+      method: 'POST',
+      body: JSON.stringify(toSnakeCase(presetData)),
+    });
+    return toCamelCase(data);
+  };
+
+  ApiClient.prototype.updateVideoPreset = async function (id, presetData) {
+    const data = await this.request(`/video/presets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(toSnakeCase(presetData)),
+    });
+    return toCamelCase(data);
+  };
+
+  ApiClient.prototype.deleteVideoPreset = async function (id) {
+    return this.request(`/video/presets/${id}`, { method: 'DELETE' });
+  };
 }

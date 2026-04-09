@@ -56,7 +56,7 @@ function smartCacheHeaders() {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), staleAssetReload(), smartCacheHeaders()],
   // Le dossier public est à la racine du monorepo
   publicDir: '../../public',
@@ -81,16 +81,17 @@ export default defineConfig({
     },
   },
   esbuild: {
-    // En build de production, supprimer les console.log/debug (garder console.error/warn)
-    drop: process.env.NODE_ENV === 'production' ? ['debugger'] : [],
-    pure: process.env.NODE_ENV === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
+    // [PHASE 5] Conditionné par le mode Vite (pas process.env.NODE_ENV)
+    // vite build → mode='production', vite dev → mode='development'
+    drop: mode === 'production' ? ['debugger'] : [],
+    pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
   },
   server: {
     // MODE DEV — proxy vers le backend DEV sur port 3003
     host: '0.0.0.0',
     port: 5174,
     open: true,
-    allowedHosts: ['localhost', '192.168.205.75', 'magsav.duckdns.org'],
+    allowedHosts: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3003',
@@ -102,7 +103,7 @@ export default defineConfig({
     // MODE PROD — proxy vers le backend PROD sur port 3002
     host: '0.0.0.0',
     port: 4173,
-    allowedHosts: ['localhost', '192.168.205.75', 'magsav.duckdns.org'],
+    allowedHosts: true,
     headers: {
       'Pragma': 'no-cache',
       'Expires': '0',
@@ -135,4 +136,4 @@ export default defineConfig({
       'pdfjs-dist/build/pdf.worker.min.mjs': 'pdfjs-dist/build/pdf.worker.mjs'
     }
   }
-})
+}))

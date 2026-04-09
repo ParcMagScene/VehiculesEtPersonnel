@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Save, AlertTriangle, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Save, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select } from '@/design-system';
 import './InterventionModal.css';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { formatDateSimple } from '../../utils/formatUtils';
+
+import { STATUS } from '../../constants';
 
 const InterventionModal = ({ 
   intervention, 
@@ -14,7 +18,7 @@ const InterventionModal = ({
 }) => {
   const isAdmin = currentUser?.isAdmin === true;
   const toast = useToast();
-  const [confirmDialog, setConfirmDialog] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [formData, setFormData] = useState({
     date: intervention?.date || '',
@@ -90,7 +94,7 @@ const InterventionModal = ({
           
           setDeadlineWarning({
             type: 'error',
-            message: `⚠️ Cette intervention est programmée ${diffDays} jour(s) après la deadline du contrôle technique ${formData.technicalControlType} (${new Date(controle.deadline).toLocaleDateString('fr-FR')})`,
+            message: `⚠️ Cette intervention est programmée ${diffDays} jour(s) après la deadline du contrôle technique ${formData.technicalControlType} (${formatDateSimple(controle.deadline)})`,
             controleType: formData.technicalControlType
           });
         } else {
@@ -102,7 +106,7 @@ const InterventionModal = ({
     }
   };
 
-  const getTypeLabel = (type) => {
+  const _getTypeLabel = (type) => {
     const types = {
       'maintenance': 'Maintenance',
       'repair': 'Réparation',
@@ -117,7 +121,7 @@ const InterventionModal = ({
     return types[type] || type;
   };
 
-  const getStatusLabel = (status) => {
+  const _getStatusLabel = (status) => {
     const statuses = {
       'planned': 'Planifiée',
       'scheduled': 'Programmée',
@@ -139,10 +143,9 @@ const InterventionModal = ({
     e.preventDefault();
     
     if (deadlineWarning && deadlineWarning.type === 'error') {
-      setConfirmDialog({
+      confirm({
         message: `⚠️ ATTENTION : Cette intervention dépasse la deadline du contrôle technique.\n\n${deadlineWarning.message}\n\nVoulez-vous continuer quand même ?`,
         onConfirm: () => {
-          setConfirmDialog(null);
           onSave({
             ...intervention,
             ...formData,
@@ -161,25 +164,23 @@ const InterventionModal = ({
   };
 
   const handleDelete = () => {
-    setConfirmDialog({
+    confirm({
       message: 'Êtes-vous sûr de vouloir supprimer cette intervention ?',
       onConfirm: () => {
-        setConfirmDialog(null);
         onDelete(intervention.id);
       }
     });
   };
 
   const handleMarkCompleted = async () => {
-    setConfirmDialog({
+    confirm({
       message: 'Marquer cette intervention comme effectuée ?',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await onSave({
             ...intervention,
             ...formData,
-            status: 'completed',
+            status: STATUS.COMPLETED,
             cost: formData.cost ? parseFloat(formData.cost) : null,
             updatedAt: new Date().toISOString()
           });
@@ -361,6 +362,7 @@ const InterventionModal = ({
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows="3"
               placeholder="Détails de l'intervention..."
+              maxLength={1000}
             />
           </FormField>
 
@@ -370,6 +372,7 @@ const InterventionModal = ({
               value={formData.garage}
               onChange={(e) => setFormData({ ...formData, garage: e.target.value })}
               placeholder="Nom du garage ou prestataire"
+              maxLength={200}
             />
           </FormField>
 
@@ -377,6 +380,7 @@ const InterventionModal = ({
             <Input
               type="number"
               step="0.01"
+              min="0"
               value={formData.cost}
               onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
               placeholder="0.00"
@@ -385,17 +389,7 @@ const InterventionModal = ({
 
         </form>
     </ModalLayout>
-    <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm}
-        title="Confirmation"
-        variant="confirm"
-        confirmLabel="Oui"
-        cancelLabel="Non"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+    {ConfirmDialogRenderer}
       <Dialog
         open={showUnsavedWarning}
         onClose={() => setShowUnsavedWarning(false)}

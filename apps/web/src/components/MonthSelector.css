@@ -16,7 +16,7 @@
 
 .month-selector-modal {
   background: var(--theme-bg-card);
-  border-radius: 1rem;
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-modal);
   max-width: 900px;
   width: 90%;
@@ -40,14 +40,14 @@
 
 .month-selector-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   font-weight: 700;
 }
 
 .close-button {
   background: var(--glass-light);
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   color: var(--theme-text-inverse);
   cursor: pointer;
   padding: 0.5rem;
@@ -71,7 +71,7 @@
 .month-selector-item {
   background: var(--theme-bg-secondary);
   border: 2px solid var(--theme-border-medium);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -90,7 +90,7 @@
 
 .month-selector-name {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--font-md);
   color: var(--theme-bg-dark);
   margin-bottom: 0.75rem;
   text-align: center;
@@ -129,7 +129,7 @@
 .day-dot {
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
 }
 

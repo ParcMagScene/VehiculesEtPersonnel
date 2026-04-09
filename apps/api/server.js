@@ -1,7 +1,7 @@
 // Charger le fichier .env AVANT tous les autres imports (ESM hoisting)
 import { isDev, envFile } from './env.js';
 import { fileURLToPath as _fileURLToPath } from 'url';
-import { dirname as _dirname, join as _join } from 'path';
+import { dirname as _dirname } from 'path';
 
 const __serverFile = _fileURLToPath(import.meta.url);
 const __serverDir = _dirname(__serverFile);
@@ -11,7 +11,7 @@ if (isDev) {
   logger.info('═══════════════════════════════════════════');
   logger.info('  🔧 MODE DÉVELOPPEMENT — Serveur isolé');
   logger.info(`  📄 Env: ${envFile}`);
-  logger.info(`  🔌 Port: ${process.env.PORT || 3003}`);
+  logger.info(`  🔌 Port: ${process.env.PORT || 3002}`);
   logger.info(`  💾 DB: ${process.env.DB_PATH || 'vehicules-dev.db'}`);
   logger.info('  ⚠️  La production n\'est PAS affectée');
   logger.info('═══════════════════════════════════════════');
@@ -31,9 +31,9 @@ import logger from './logger.js';
 // ── Configs & Middlewares extraits ──
 import { helmetConditional } from './config/helmet.js';
 import { corsMiddleware } from './config/cors.js';
-import { authLimiter, generalLimiter } from './config/rateLimiter.js';
+import { authLimiter, generalLimiter, sensitiveEndpointLimiter } from './config/rateLimiter.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
-import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess, requireTruckAccess } from './middleware/authorize.js';
+import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess } from './middleware/authorize.js';
 import { xssSanitize } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -71,12 +71,20 @@ const PORT = process.env.PORT || 3002;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
 
-if (JWT_SECRET === 'your-secret-key-change-in-production' || JWT_SECRET === 'CHANGEZ_CETTE_CLE') {
-  logger.warn('⚠️  ATTENTION: JWT_SECRET par défaut détecté ! Créez un fichier server/.env avec un secret sécurisé.');
+const KNOWN_DEFAULT_SECRETS = [
+  'your-secret-key-change-in-production',
+  'CHANGEZ_CETTE_CLE',
+  'dev-secret-key-not-for-production',
+  'secret',
+  'changeme',
+];
+
+if (KNOWN_DEFAULT_SECRETS.includes(JWT_SECRET) || JWT_SECRET.length < 32) {
   if (process.env.NODE_ENV === 'production') {
-    logger.error('❌ FATAL: JWT_SECRET par défaut interdit en production. Définissez JWT_SECRET dans server/.env');
+    logger.error('❌ FATAL: JWT_SECRET par défaut ou trop court (<32 chars) interdit en production. Définissez JWT_SECRET dans .env');
     process.exit(1);
   }
+  logger.warn('⚠️  ATTENTION: JWT_SECRET par défaut ou trop court ! Générez un secret d\'au moins 32 caractères.');
 }
 
 // ── Middlewares globaux (configs extraites) ──
@@ -84,17 +92,36 @@ app.use(compression({ threshold: 1024 }));
 app.use(helmetConditional);
 app.use(corsMiddleware);
 app.use(cookieParser());
-app.use(express.json({ limit: '10mb' }));
+// [AUDIT FIX H3] Limite body JSON réduite (les imports volumineux utilisent multer)
+app.use(express.json({ limit: '1mb' }));
 app.use(xssSanitize);
 
 // Rate limiting
 app.use('/api/', generalLimiter);
+
+// [PHASE 6] Health check — pas d'auth, utilisé par PM2/monitoring
+const startedAt = Date.now();
+app.get('/api/health', (req, res) => {
+  try {
+    db.prepare('SELECT 1').get();
+    res.json({ ok: true, uptime: Math.floor((Date.now() - startedAt) / 1000), db: 'connected' });
+  } catch (err) {
+    res.status(503).json({ ok: false, db: 'error', error: err.message });
+  }
+});
+
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/set-new-password', authLimiter);
 app.use('/api/auth/self-reset-password', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
+// [AUDIT FIX MED-B4/B6] Rate limiters sur endpoints sensibles (POST publics uniquement)
+// Les GET /api/access-requests/* sont protégés par authenticateToken+requireAdmin
+app.post('/api/access-requests', sensitiveEndpointLimiter);
+app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);
+app.use('/api/admin/reset-password', sensitiveEndpointLimiter);
 
 // Créer le middleware d'authentification avec le secret JWT
 const authenticateToken = createAuthenticateToken(JWT_SECRET);
@@ -267,9 +294,11 @@ if (isDev) {
 // Middleware centralisé de gestion d'erreurs (doit être APRÈS toutes les routes)
 app.use(errorHandler);
 
+const SERVER_HOST = process.env.SERVER_HOST || '0.0.0.0';
+
 app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
-  logger.info(`📡 Accessible depuis le réseau sur http://192.168.205.75:${PORT}`);
+  logger.info(`📡 Accessible depuis le réseau sur http://${SERVER_HOST}:${PORT}`);
   // Initialiser le service email
   initEmailTransporter(db);
   // Lancer le nettoyage périodique des fichiers TEMP
@@ -283,17 +312,17 @@ app.listen(PORT, '0.0.0.0', () => {
 
 // ── Serveur secondaire sur port 3001 — Client TV standalone ──
 // Rétrocompatibilité avec les navigateurs des écrans TV (ex calendar-dashboard)
-// Sert la même app Express, les écrans existants sur http://192.168.205.75:3001/ continuent de fonctionner
+// Sert la même app Express, les écrans existants continuent de fonctionner
 // En DEV, on ne démarre PAS ce serveur pour laisser la production servir les écrans TV
 if (!isDev) {
 const TV_PORT = 3001;
 const tvServer = http.createServer(app);
 tvServer.listen(TV_PORT, '0.0.0.0', () => {
-  logger.info(`📺 Client TV accessible sur http://192.168.205.75:${TV_PORT}/tv-client/`);
+  logger.info(`📺 Client TV accessible sur http://${SERVER_HOST}:${TV_PORT}/tv-client/`);
 });
 tvServer.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    logger.warn(`⚠️  Port ${TV_PORT} déjà utilisé — le client TV reste accessible via http://192.168.205.75:${PORT}/tv`);
+    logger.warn(`⚠️  Port ${TV_PORT} déjà utilisé — le client TV reste accessible via http://${SERVER_HOST}:${PORT}/tv`);
   } else {
     logger.error('Erreur serveur TV:', err.message);
   }
@@ -321,25 +350,33 @@ function cleanExpiredSessions() {
  * Nettoyage des fichiers temporaires > 24h dans /attachments/TEMP/
  */
 function cleanTempFiles() {
-  const tempDir = path.join(__dirname, '..', '..', 'public', 'attachments', 'TEMP');
-  try {
-    if (!fs.existsSync(tempDir)) return;
-    const files = fs.readdirSync(tempDir);
-    const maxAge = 24 * 60 * 60 * 1000; // 24h
-    let removed = 0;
-    for (const file of files) {
-      const filePath = path.join(tempDir, file);
-      try {
-        const stat = fs.statSync(filePath);
-        if (Date.now() - stat.mtimeMs > maxAge) {
-          fs.unlinkSync(filePath);
-          removed++;
-        }
-      } catch { /* ignore */ }
+  const publicDir = path.join(__dirname, '..', '..', 'public');
+  // Répertoires à nettoyer avec durée max de rétention
+  const targets = [
+    { dir: path.join(publicDir, 'attachments', 'TEMP'), maxAge: 24 * 60 * 60 * 1000, label: 'TEMP' },              // 24h
+    { dir: path.join(publicDir, 'bl-imports'),           maxAge: 7 * 24 * 60 * 60 * 1000, label: 'bl-imports' },     // 7 jours
+    { dir: path.join(publicDir, 'imports'),              maxAge: 7 * 24 * 60 * 60 * 1000, label: 'imports' },        // 7 jours
+  ];
+
+  for (const { dir, maxAge, label } of targets) {
+    try {
+      if (!fs.existsSync(dir)) continue;
+      const files = fs.readdirSync(dir);
+      let removed = 0;
+      for (const file of files) {
+        const filePath = path.join(dir, file);
+        try {
+          const stat = fs.statSync(filePath);
+          if (stat.isFile() && Date.now() - stat.mtimeMs > maxAge) {
+            fs.unlinkSync(filePath);
+            removed++;
+          }
+        } catch { /* ignore */ }
+      }
+      if (removed > 0) logger.info(`🧹 ${label} cleanup: ${removed} fichier(s) supprimé(s)`);
+    } catch (err) {
+      logger.error(`Erreur nettoyage ${label}:`, err.message);
     }
-    if (removed > 0) logger.info(`🧹 TEMP cleanup: ${removed} fichier(s) supprimé(s)`);
-  } catch (err) {
-    logger.error('Erreur nettoyage TEMP:', err.message);
   }
 }
 

@@ -41,7 +41,7 @@
 .kpi-card {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 16px;
   display: flex;
   align-items: flex-start;
@@ -58,7 +58,7 @@
   top: 0; left: 0;
   width: 4px;
   height: 100%;
-  border-radius: 4px 0 0 4px;
+  border-radius: var(--radius-xs) 0 0 var(--radius-xs);
   opacity: 0.8;
 }
 
@@ -110,7 +110,7 @@
 .kpi-detail {
   font-size: 0.7rem;
   padding: 2px 6px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   background: var(--theme-bg-hover);
   color: var(--theme-text-secondary);
   font-weight: 500;
@@ -131,7 +131,7 @@
 .dashboard-section {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -163,7 +163,7 @@
   font-weight: 500;
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: background 0.15s;
 }
 
@@ -177,7 +177,7 @@
 
 .empty-text {
   color: var(--theme-text-secondary);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-align: center;
   padding: 16px 0;
 }
@@ -195,7 +195,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-page);
   font-size: 0.82rem;
   transition: background 0.15s;
@@ -232,7 +232,7 @@
 }
 
 .res-period {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
   text-align: right;
   font-weight: 500;
@@ -251,7 +251,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-bg-page);
   font-size: 0.82rem;
 }
@@ -270,14 +270,14 @@
 }
 
 .maint-type {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
 
 .maint-status {
   font-size: 0.7rem;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   font-weight: 600;
 }
 
@@ -297,7 +297,7 @@
 }
 
 .overdue-badge {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
 }
 
 /* Stock alerts */
@@ -313,7 +313,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--theme-danger-bg);
   font-size: 0.82rem;
 }
@@ -330,7 +330,7 @@
 .stock-alert-qty.danger { color: var(--theme-danger-dark); }
 
 .stock-alert-threshold {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
 
@@ -341,8 +341,8 @@
   gap: 10px;
   padding: 12px;
   background: var(--theme-warning-bg);
-  border-radius: 8px;
-  font-size: 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   color: var(--theme-warning-text);
 }
 
@@ -366,12 +366,12 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-base);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   pointer-events: none;
 }
 
 /* ─── Responsive ─── */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .dashboard-kpi-grid {
     grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
     gap: 10px;

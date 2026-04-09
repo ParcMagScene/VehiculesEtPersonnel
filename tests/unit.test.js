@@ -116,7 +116,7 @@ describe('getApiUrl', () => {
   });
 
   it('hostname production → /api', () => {
-    assert.equal(getApiUrl('magsav.duckdns.org', '443'), '/api');
+    assert.equal(getApiUrl('myapp.example.com', '443'), '/api');
   });
 });
 
@@ -126,10 +126,8 @@ describe('getApiUrl', () => {
 describe('CORS allowedOrigins (logique)', () => {
   function buildAllowedOrigins(envOverride, isDev) {
     let defaults = [
-      'https://magsav.duckdns.org',
-      'http://magsav.duckdns.org:4173',
-      'http://magsav.duckdns.org',
-      'http://192.168.205.75:4173',
+      'http://localhost:4173',
+      'http://127.0.0.1:4173',
     ];
     if (isDev) {
       defaults.push('http://localhost:5174', 'http://localhost:5175', 'http://127.0.0.1:5174', 'http://127.0.0.1:5175');

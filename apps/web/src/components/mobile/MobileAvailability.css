@@ -8,8 +8,8 @@
 .availability-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
+  gap: var(--space-4);
+  padding: var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
   position: sticky;
@@ -19,7 +19,7 @@
 
 .availability-header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 600;
   color: var(--theme-text-heading);
 }
@@ -27,13 +27,13 @@
 .back-button {
   background: none;
   border: none;
-  padding: 8px;
+  padding: var(--space-2);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--theme-info);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: background 0.2s;
 }
 
@@ -46,10 +46,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .mobile-availability .nav-button {
@@ -57,7 +57,7 @@
   border: none;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,28 +87,28 @@
 }
 
 .day-name {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--theme-text-heading);
   text-transform: capitalize;
 }
 
 .day-date {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
-  margin-top: 2px;
+  margin-top: var(--space-0-5);
   text-transform: capitalize;
 }
 
 .today-button {
-  margin: 12px 16px;
-  padding: 10px 16px;
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-2-5) var(--space-4);
   background: var(--theme-info);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--font-base);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -121,20 +121,20 @@
 /* Statistiques */
 .availability-stats {
   display: flex;
-  gap: 12px;
-  padding: 16px;
+  gap: var(--space-3);
+  padding: var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border-medium);
 }
 
 .availability-stats .stat {
   flex: 1;
-  padding: 16px;
-  border-radius: 16px;
+  padding: var(--space-4);
+  border-radius: var(--radius-xl);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .availability-stats .stat.available {
@@ -146,13 +146,13 @@
 }
 
 .stat-value {
-  font-size: 28px;
+  font-size: var(--font-2xl);
   font-weight: 700;
   color: var(--theme-text-heading);
 }
 
 .stat-label {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
 }
 
@@ -160,34 +160,34 @@
 .vehicles-list {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .empty-state {
   text-align: center;
-  padding: 48px 24px;
+  padding: var(--space-12) var(--space-6);
   color: var(--theme-text-muted);
 }
 
 .empty-state svg {
   opacity: 0.5;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .empty-state p {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 
 .vehicle-card {
   background: var(--theme-bg-card);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 12px;
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--space-4);
   box-shadow: 0 2px 8px var(--shadow-inner);
   border: 1px solid var(--theme-border);
   transition: all 0.2s;
@@ -202,7 +202,7 @@
 .vehicle-photo-thumb {
   width: 56px;
   height: 56px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   overflow: hidden;
   flex-shrink: 0;
   background: var(--theme-bg-tertiary);
@@ -228,11 +228,11 @@
 .vehicle-photo-thumb.small {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .vehicle-photo-thumb.small .vehicle-photo-placeholder {
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .vehicle-info {
@@ -241,54 +241,54 @@
 }
 
 .vehicle-name {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--theme-text-heading);
-  margin-bottom: 2px;
+  margin-bottom: var(--space-0-5);
 }
 
 .vehicle-meta-line {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 2px;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-0-5);
 }
 
 .vehicle-brand-tag {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-indigo);
   background: var(--theme-bg-hover);
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 1px var(--space-1-5);
+  border-radius: var(--radius-xs);
 }
 
 .vehicle-type-tag {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: var(--btn-success-color);
   background: var(--theme-success-bg);
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 1px var(--space-1-5);
+  border-radius: var(--radius-xs);
 }
 
 .vehicle-registration {
-  font-size: 13px;
+  font-size: var(--font-base);
   color: var(--theme-text-gray);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
 .reserve-button {
-  padding: 10px 16px;
+  padding: var(--space-2-5) var(--space-4);
   background: var(--theme-info);
   color: var(--theme-text-inverse);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--font-base);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
@@ -301,14 +301,14 @@
 
 /* Véhicules occupés */
 .unavailable-section {
-  padding: 16px;
+  padding: var(--space-4);
   background: var(--theme-bg-card);
   border-top: 1px solid var(--theme-border-medium);
 }
 
 .unavailable-section h3 {
-  margin: 0 0 12px 0;
-  font-size: 16px;
+  margin: 0 0 var(--space-3) 0;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--theme-text-gray);
 }
@@ -316,17 +316,17 @@
 .unavailable-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .unavailable-item {
   background: var(--theme-bg-secondary);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
   border-left: 3px solid var(--theme-danger);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-2-5);
 }
 
 .unavailable-item .vehicle-info {
@@ -336,15 +336,15 @@
 }
 
 .unavailable-item .vehicle-name {
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .unavailable-item .vehicle-registration {
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .unavailable-reason {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-danger);
   font-weight: 500;
 }

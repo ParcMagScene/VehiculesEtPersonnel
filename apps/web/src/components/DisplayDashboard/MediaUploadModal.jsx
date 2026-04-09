@@ -1,5 +1,5 @@
 // MediaUploadModal — Upload de médias (images/vidéos)
-import React, { useState, useCallback, useRef, memo } from 'react';
+import { useState, useCallback, useRef, memo } from 'react';
 import { Upload, Image, Film, Loader } from 'lucide-react';
 import { Button, FormField, ModalLayout, Input } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
@@ -115,7 +115,7 @@ function MediaUploadModal({ onSave, onClose }) {
             {file ? (
               <div className="drop-zone-preview">
                 {preview ? (
-                  <img src={preview} alt="Aperçu" className="drop-preview-img" />
+                  <img src={preview} alt="Aperçu" loading="lazy" className="drop-preview-img" />
                 ) : (
                   <Film size={48} />
                 )}

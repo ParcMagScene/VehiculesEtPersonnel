@@ -15,8 +15,8 @@
 .cal-nav-toolbar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 6px 16px;
+  gap: var(--space-4);
+  padding: var(--space-1-5) var(--space-4);
   background: var(--theme-bg-card);
   border-bottom: 1px solid var(--theme-border);
   flex-shrink: 0;
@@ -26,7 +26,7 @@
   display: flex;
   gap: 2px;
   background: var(--theme-border-light);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 2px;
 }
 
@@ -34,8 +34,8 @@
   padding: 5px 14px;
   border: none;
   background: transparent;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-text-secondary);
   cursor: pointer;
@@ -65,8 +65,8 @@
   padding: 4px 8px;
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--theme-text-subtle);
   cursor: pointer;
@@ -89,7 +89,7 @@
 }
 
 .cal-nav-label {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
   margin-left: 8px;
@@ -103,6 +103,16 @@
 
 .cal-nav-label.clickable:hover {
   color: var(--theme-primary, var(--theme-primary));
+}
+
+.cal-management-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Dark mode toolbar navigation */
@@ -146,10 +156,10 @@
   }
   .cal-nav-view-btn {
     padding: 4px 10px;
-    font-size: 11px;
+    font-size: var(--font-xs);
   }
   .cal-nav-label {
-    font-size: 12px;
+    font-size: var(--font-sm);
   }
 }
 
@@ -254,7 +264,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-align: left;
   border-bottom: 1px solid var(--glass-light);
   display: flex;
@@ -281,10 +291,10 @@
   justify-content: center;
   background: var(--close-btn-border);
   color: var(--theme-text-inverse);
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md-lg);
   margin-left: 6px;
   flex-shrink: 0;
   letter-spacing: 0;
@@ -303,7 +313,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
@@ -334,9 +344,9 @@
   color: var(--theme-text-inverse);
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -357,7 +367,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   border-bottom: 1px solid var(--glass-light);
   display: flex;
   align-items: center;
@@ -439,16 +449,16 @@
 .day-view-header {
   text-align: center;
   padding: 0.75rem 1rem !important;
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .day-view-header .day-name {
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   font-weight: 700;
 }
 
 .day-view-header .day-number {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-transform: capitalize;
   opacity: 0.7;
 }
@@ -481,7 +491,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   font-weight: 700;
   text-transform: capitalize;
   min-height: 5.5rem;
@@ -489,7 +499,7 @@
 
 .calendar-header-cell .month-name {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--font-md);
 }
 
 .calendar-header-cell .weeks-in-month {
@@ -545,7 +555,7 @@
 }
 
 .calendar-header-cell.day-header {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   padding: 0.5rem 0.5rem;
   height: 3.5rem;
   position: static;
@@ -555,7 +565,7 @@
 }
 
 .calendar-header-cell.day-header .day-name {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   text-transform: capitalize;
   font-weight: 600;
 }
@@ -650,7 +660,7 @@
 .vehicle-photo {
   width: 45px;
   height: 45px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
   box-shadow: 0 2px 4px var(--shadow-sm);
   background: var(--theme-bg-tertiary);
@@ -670,7 +680,7 @@
 
 .vehicle-photo img.vehicle-avatar {
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .vehicle-photo .photo-placeholder {
@@ -686,7 +696,7 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   z-index: var(--z-dropdown);
   width: 20px;
   height: 20px;
@@ -700,14 +710,14 @@
 .vehicle-cell .vehicle-name {
   display: block;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   color: var(--theme-bg-dark);
 }
 
 .breakdown-indicator {
   display: inline-block;
   margin-right: 0.3rem;
-  font-size: 1rem;
+  font-size: var(--font-md);
   animation: pulse-warning 2s ease-in-out infinite;
 }
 
@@ -729,13 +739,13 @@
   right: -2px;
   background: var(--theme-danger-dark);
   color: var(--theme-text-inverse);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   width: 18px;
   height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   z-index: var(--z-dropdown);
   box-shadow: 0 2px 6px rgba(220, 38, 38, 0.5);
   animation: pulse-danger 1.5s ease-in-out infinite;
@@ -757,7 +767,7 @@
 
 .vehicle-cell .vehicle-type {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-gray);
   background: none;
@@ -767,7 +777,7 @@
 
 .vehicle-cell .vehicle-registration {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 900;
   color: var(--theme-primary-light);
   font-family: monospace;
@@ -779,13 +789,13 @@
 
 .vehicle-cell .vehicle-brand {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-muted);
 }
 
 .vehicle-period {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-muted);
   font-weight: 600;
   margin-top: 0.25rem;
@@ -835,7 +845,7 @@
   position: relative;
   box-shadow: 0 2px 4px var(--shadow-xl), 
               inset 0 0 0 1px var(--shadow-modal);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   transition: box-shadow 0.2s, transform 0.2s;
 }
 
@@ -912,7 +922,7 @@
   transition: opacity 0.2s, width 0.2s;
   pointer-events: auto;
   background: var(--overlay-light);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .resize-handle-start {
@@ -948,7 +958,7 @@
 }
 
 .reservation-overlay {
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -988,7 +998,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-bg-dark);
   text-align: center;
   align-items: center;
@@ -1001,7 +1011,7 @@
 
 .reservation-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1010,7 +1020,7 @@
 
 .reservation-location {
   font-weight: 400;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
   white-space: nowrap;
   overflow: hidden;
@@ -1024,7 +1034,7 @@
   color: var(--theme-purple-accent);
   background: rgba(124, 58, 237, 0.1);
   padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1051,13 +1061,13 @@
   font-size: 0.65rem;
   background: rgba(124, 58, 237, 0.2);
   padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-xs);
   margin-left: 0.125rem;
   font-weight: 700;
 }
 
 .event-badge {
-  font-size: 0.875rem;
+  font-size: var(--font-base);
   margin-right: 0.25rem;
   display: inline-block;
   animation: pulse 2s infinite;
@@ -1065,13 +1075,13 @@
 
 .client-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--font-base);
   text-align: center;
   width: 100%;
 }
 
 .location-name {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   opacity: 0.9;
   text-align: center;
   width: 100%;
@@ -1120,7 +1130,7 @@
   align-items: center;
   justify-content: space-between;
   background: rgba(255, 255, 255, 0.75);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   padding: 0 2px;
   font-size: 0.6rem;
   font-weight: 600;
@@ -1140,7 +1150,7 @@
   justify-content: center;
   background: var(--theme-indigo);
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   padding: 0;
   width: 16px;
@@ -1164,7 +1174,7 @@
 }
 
 .tournee-link-btn:active {
-  background: #4338ca;
+  background: var(--theme-info-text-alt);
   transform: scale(0.9);
 }
 
@@ -1184,7 +1194,7 @@
   justify-content: center;
   background: var(--theme-success-dark);
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   padding: 0;
   width: 14px;
@@ -1240,7 +1250,7 @@
   justify-content: center;
   background: var(--theme-success-dark);
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
   padding: 0;
   width: 14px;
@@ -1295,7 +1305,7 @@
 
   .time-slot {
     padding: 0.375rem;
-    font-size: 0.875rem;
+    font-size: var(--font-base);
   }
 }
 
@@ -1329,7 +1339,7 @@
   }
 
   .vehicle-name {
-    font-size: 0.8rem;
+    font-size: var(--font-sm);
   }
 
   .vehicle-registration {
@@ -1345,12 +1355,12 @@
   }
 
   .time-slot {
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
     padding: 0.25rem;
   }
 
   .calendar-grid-headers .calendar-header {
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
   }
 }
 

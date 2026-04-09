@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2100;
+  z-index: var(--z-modal-nested);
   padding: 20px;
   animation: eventFormFadeIn 0.2s ease-out;
 }
@@ -21,7 +21,7 @@
 
 .event-form-modal {
   background: var(--theme-bg-page);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   max-width: 560px;
   width: 100%;
   max-height: 90vh;
@@ -49,7 +49,7 @@
 .event-form-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
 }
 
@@ -59,9 +59,9 @@
   color: var(--theme-text-inverse);
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--font-lg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,7 +87,7 @@
 }
 
 .event-form-field label {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-subtle);
   display: flex;
@@ -101,8 +101,8 @@
 .event-form-field textarea {
   padding: 10px 12px;
   border: 1px solid var(--theme-border);
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -168,7 +168,7 @@
   left: 3px;
   bottom: 3px;
   background-color: var(--theme-bg-card);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   transition: 0.3s;
 }
 
@@ -194,9 +194,9 @@
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
   color: var(--theme-text-subtle);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-base);
   transition: all 0.2s;
 }
 
@@ -209,9 +209,9 @@
   border: none;
   background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
   color: var(--theme-text-inverse);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -257,7 +257,7 @@
 }
 
 /* Responsive */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .event-form-row {
     grid-template-columns: 1fr;
   }

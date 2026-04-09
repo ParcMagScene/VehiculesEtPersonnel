@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { X, Printer, Tag, Download } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button, Input } from '@/design-system';
@@ -16,11 +16,7 @@ const LABEL_FORMATS = [
 
 const EXPORT_FORMATS = ['SVG', 'PNG', 'JPG'];
 
-const APP_BASE_URL = (() => {
-  const origin = window.location.origin;
-  if (origin.includes('magsav.duckdns.org')) return origin;
-  return 'http://magsav.duckdns.org:4173';
-})();
+const APP_BASE_URL = window.location.origin;
 
 const escSvg = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -110,7 +106,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
       labels.push(
         '<div class="label" style="width: ' + format.width + 'mm; height: ' + format.height + 'mm;">' +
           '<div class="label-content">' +
-            (showLogo ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" /></div>' : '') +
+            (showLogo ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Logo" /></div>' : '') +
             '<div class="label-info">' +
               '<div class="label-ref">' + escSvg(eq.reference || '') + '</div>' +
               (eq.uid ? '<div class="label-uid"><b>UID: ' + escSvg(eq.uid) + '</b></div>' : '') +
@@ -177,7 +173,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             <Tag size={18} />
             <span>Étiquette — {eq.reference || cleanName(eq.name)}</span>
           </div>
-          <button className="elp-close" onClick={onClose}><X size={18} /></button>
+          <Button variant="ghost" className="elp-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         </div>
 
         <div className="elp-body">
@@ -191,7 +187,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <div className="elp-label-content" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
                 {showLogo && (
                   <div className="elp-label-logo">
-                    <img src="/Logos/logo_Noir_Transp.png" alt="Mag Scène" style={{ height: qrPreviewSize + 'px', width: 'auto' }} />
+                    <img src="/Logos/logo_Noir_Transp.png" alt="Logo" style={{ height: qrPreviewSize + 'px', width: 'auto' }} />
                   </div>
                 )}
                 <div className="elp-label-info">
@@ -214,9 +210,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <label>Format :</label>
               <div className="elp-format-options">
                 {LABEL_FORMATS.map((f, i) => (
-                  <button key={i} className={'elp-format-btn ' + (selectedPreset === i ? 'active' : '')} onClick={() => setSelectedPreset(i)}>
+                  <Button variant="ghost" key={i} className={'elp-format-btn ' + (selectedPreset === i ? 'active' : '')} onClick={() => setSelectedPreset(i)}>
                     {f.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -235,10 +231,10 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             )}
 
             <div className="elp-field-inline">
-              <label>Logo Mag Scène :</label>
+              <label>Logo entreprise :</label>
               <div className="elp-toggle-group">
-                <button className={'elp-toggle-btn ' + (showLogo ? 'active' : '')} onClick={() => setShowLogo(true)}>Avec</button>
-                <button className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')} onClick={() => setShowLogo(false)}>Sans</button>
+                <Button variant="ghost" className={'elp-toggle-btn ' + (showLogo ? 'active' : '')} onClick={() => setShowLogo(true)}>Avec</Button>
+                <Button variant="ghost" className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')} onClick={() => setShowLogo(false)}>Sans</Button>
               </div>
             </div>
 
@@ -251,9 +247,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <label>Export :</label>
               <div className="elp-toggle-group">
                 {EXPORT_FORMATS.map(f => (
-                  <button key={f} className={'elp-toggle-btn ' + (exportFormat === f ? 'active' : '')} onClick={() => setExportFormat(f)}>
+                  <Button variant="ghost" key={f} className={'elp-toggle-btn ' + (exportFormat === f ? 'active' : '')} onClick={() => setExportFormat(f)}>
                     {f}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

@@ -3,6 +3,7 @@ import logger from './logger.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { contactsImportSchema, validate } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -897,13 +898,10 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
   });
 
   // ─── POST /api/annuaire/import/contacts-csv — Import contacts depuis données CSV uploadées ───
-  app.post('/api/annuaire/import/contacts-csv', authenticateToken, requireAdmin, (req, res) => {
+  // [AUDIT FIX I2] Validation Zod mandatory
+  app.post('/api/annuaire/import/contacts-csv', authenticateToken, requireAdmin, validate(contactsImportSchema), (req, res) => {
     try {
       const { data, mode = 'import' } = req.body;
-
-      if (!data || !Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ error: 'Données CSV manquantes ou vides' });
-      }
 
       /**
        * Parse un nom "NOM Prénom" en { lastName, firstName }.
@@ -1058,7 +1056,8 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
         clients: db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active FROM clients').get(),
         suppliers: db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active FROM suppliers').get(),
         prestataires: db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active FROM prestataires').get(),
-        contacts: db.prepare('SELECT COUNT(*) as total FROM annuaire_contacts').get()
+        contacts: db.prepare('SELECT COUNT(*) as total FROM annuaire_contacts').get(),
+        locations: db.prepare('SELECT COUNT(*) as total FROM locations').get()
       };
       res.json(stats);
     } catch (error) {

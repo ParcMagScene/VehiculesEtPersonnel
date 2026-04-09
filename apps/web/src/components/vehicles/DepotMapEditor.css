@@ -16,7 +16,7 @@
 .depot-editor-panel {
   background: var(--theme-bg-card, #1e1e2e);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   width: 92vw;
@@ -52,15 +52,15 @@
 
 .depot-editor-dirty {
   color: var(--theme-warning);
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
 .depot-editor-msg {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   font-weight: 500;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 .depot-editor-msg-success {
   color: var(--theme-success);
@@ -82,9 +82,9 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
@@ -159,9 +159,9 @@
 .dep-ed-floor-btn {
   flex: 1;
   padding: 0.3rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
@@ -190,9 +190,9 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
@@ -243,9 +243,9 @@
 .dep-ed-dim-inputs input {
   width: 70px;
   padding: 0.2rem 0.35rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-text-subtle);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: var(--theme-text-primary);
   color: var(--theme-border-light);
   text-align: center;
@@ -253,14 +253,14 @@
 
 .dep-ed-dim-inputs span {
   color: var(--theme-text-tertiary, var(--theme-text-secondary));
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
 }
 
 /* Zone properties */
 .dep-ed-props {
   background: var(--theme-bg-darker);
   border: 1px solid var(--theme-text-dark);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.5rem;
 }
 
@@ -280,9 +280,9 @@
 .dep-ed-field select {
   flex: 1;
   padding: 0.25rem 0.4rem;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   border: 1px solid var(--theme-text-subtle);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--theme-text-primary);
   color: var(--theme-border-light);
 }
@@ -293,7 +293,7 @@
   padding: 2px;
   flex: 0;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--theme-text-subtle);
 }
 
@@ -318,7 +318,7 @@
 }
 
 .dep-ed-cat-label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   color: var(--theme-bg-muted);
   flex: 1;
 }
@@ -342,7 +342,7 @@
 .dep-ed-swatch {
   width: 22px;
   height: 22px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 2px solid transparent;
   cursor: pointer;
   transition: border-color 0.15s, transform 0.1s;
@@ -362,7 +362,7 @@
 .dep-ed-palette-sm .dep-ed-swatch {
   width: 18px;
   height: 18px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
 }
 
 .dep-ed-coords {
@@ -436,9 +436,9 @@
   gap: 0.35rem;
   width: 100%;
   padding: 0.2rem 0.4rem;
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--theme-text-secondary, var(--theme-text-muted));
   cursor: pointer;
@@ -492,7 +492,7 @@
 .depot-editor-svg-container {
   position: relative;
   overflow: visible;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
   background: var(--theme-bg-darker);
   max-width: 100%;
@@ -516,7 +516,7 @@
   gap: 0.25rem;
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 0.25rem 0.4rem;
   backdrop-filter: blur(8px);
 }
@@ -538,7 +538,7 @@
   color: var(--theme-text-tertiary, var(--theme-text-secondary));
   padding: 0.25rem 0.5rem;
   background: var(--theme-bg-darker, var(--theme-bg-darker))60;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .depot-editor-info-hints {
@@ -560,8 +560,8 @@
   padding: 0.5rem 1rem;
   background: rgba(245, 158, 11, 0.95);
   color: var(--theme-text-heading);
-  border-radius: 8px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
   font-weight: 600;
   box-shadow: 0 4px 12px var(--shadow-modal);
   white-space: nowrap;
@@ -583,7 +583,7 @@
 .dep-ed-subtract-dialog-inner {
   background: var(--theme-bg-secondary, var(--theme-text-primary));
   border: 1px solid var(--theme-border, var(--theme-text-dark));
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
   text-align: center;
   box-shadow: 0 8px 24px var(--overlay-light);
@@ -591,12 +591,12 @@
 }
 .dep-ed-subtract-dialog-inner h4 {
   margin: 0 0 0.5rem;
-  font-size: 1rem;
+  font-size: var(--font-md);
   color: var(--theme-text, var(--theme-border));
 }
 .dep-ed-subtract-dialog-inner p {
   margin: 0 0 0.75rem;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary, var(--theme-text-muted));
 }
 .dep-ed-subtract-choices {
@@ -606,7 +606,7 @@
   gap: 0.75rem;
 }
 .dep-ed-subtract-choices span {
-  font-size: 0.8rem;
+  font-size: var(--font-sm);
   color: var(--theme-text-tertiary, var(--theme-text-secondary));
 }
 .dep-ed-subtract-choices .dep-ed-btn {
@@ -626,6 +626,6 @@
   padding: 2px 6px;
   background: var(--theme-accent, var(--theme-info));
   color: var(--theme-bg-card);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-weight: 600;
 }

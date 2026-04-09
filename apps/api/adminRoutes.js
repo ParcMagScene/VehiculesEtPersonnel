@@ -5,6 +5,8 @@ import db from './database.js';
 import { alertAccessRequest, initEmailTransporter, getTransporter } from './emailService.js';
 import logger from './logger.js';
 import { getAllCacheStats, ALL_CACHES } from './cache.js';
+import { encryptPassword, decryptPassword } from './videoProxyService.js';
+import { validatePassword } from './passwordPolicy.js';
 
 export function setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS }) {
 
@@ -21,6 +23,11 @@ const cookieOptions = {
 app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { userId, newPassword } = req.body;
+    // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      return res.status(400).json({ error: pwError });
+    }
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
     stmt.run(passwordHash, userId);
@@ -43,6 +50,11 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
       return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
     }
     
+    // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      return res.status(400).json({ error: pwError });
+    }
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const updateStmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
     updateStmt.run(passwordHash, req.user.id);
@@ -398,6 +410,11 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
     }
     
     if (newPassword) {
+      // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée
+      const pwError = validatePassword(newPassword);
+      if (pwError) {
+        return res.status(400).json({ error: pwError });
+      }
       const passwordHash = await bcrypt.hash(newPassword, 10);
       const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
       stmt.run(passwordHash, id);
@@ -446,20 +463,26 @@ app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req,
 });
 
 // Vérifier si un compte nécessite une réinitialisation
+// [SEC FIX] Ne renvoie que le strict nécessaire (pas id/name) pour limiter l'info leak
 app.post('/api/auth/check-reset', async (req, res) => {
   try {
     const { email } = req.body;
     
-    const stmt = db.prepare('SELECT id, email, name, password_reset_required FROM users WHERE email = ?');
+    if (!email) {
+      return res.status(400).json({ error: 'Email requis' });
+    }
+    
+    const stmt = db.prepare('SELECT id, name, password_reset_required FROM users WHERE email = ?');
     const user = stmt.get(email);
     
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      // [SEC] Réponse uniforme pour éviter l'énumération d'emails
+      return res.json({ resetRequired: false });
     }
     
     res.json({ 
       resetRequired: user.password_reset_required === 1,
-      user: { id: user.id, email: user.email, name: user.name }
+      user: { name: user.name }
     });
   } catch (error) {
     logger.error('Erreur check reset:', error);
@@ -473,8 +496,10 @@ app.post('/api/auth/set-new-password', async (req, res) => {
   try {
     const { email, newPassword, resetToken } = req.body;
     
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères' });
+    // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée
+    const pwError = validatePassword(newPassword);
+    if (pwError) {
+      return res.status(400).json({ error: pwError });
     }
     
     const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
@@ -640,7 +665,9 @@ app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
     
     // Si le mot de passe est masqué, ne pas le mettre à jour
     const currentConfig = db.prepare('SELECT smtp_pass FROM email_config WHERE id = 1').get();
-    const finalPass = (smtp_pass && smtp_pass !== '••••••••') ? smtp_pass : (currentConfig?.smtp_pass || '');
+    const rawPass = (smtp_pass && smtp_pass !== '••••••••') ? smtp_pass : null;
+    // Si nouveau mot de passe fourni, le chiffrer ; sinon garder l'existant (déjà chiffré)
+    const finalPass = rawPass ? encryptPassword(rawPass) : (currentConfig?.smtp_pass || '');
 
     db.prepare(`
       UPDATE email_config SET
@@ -681,7 +708,7 @@ app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, 
       host: config.smtp_host,
       port: config.smtp_port || 587,
       secure: config.smtp_secure === 1,
-      auth: { user: config.smtp_user, pass: config.smtp_pass },
+      auth: { user: config.smtp_user, pass: decryptPassword(config.smtp_pass) || config.smtp_pass },
     });
 
     await testTransporter.sendMail({

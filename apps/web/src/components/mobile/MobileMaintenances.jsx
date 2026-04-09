@@ -1,9 +1,11 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import { useState, useImperativeHandle, forwardRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ArrowLeft, Settings, AlertTriangle, Calendar, Plus, MapPin } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';
+import { STATUS } from '../../constants';
+
 import './MobileMaintenances.css';
 
 const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, currentUser, onMaintenanceCreated, onBack }, ref) => {
@@ -26,7 +28,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
     endDate: '',
     garageId: '',
     description: '',
-    status: 'pending'
+    status: STATUS.PENDING
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -36,7 +38,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
     setFormData({
       ...formData,
       type,
-      status: type === 'breakdown' ? 'reported' : type === 'scheduled' ? 'scheduled' : 'pending'
+      status: type === 'breakdown' ? 'reported' : type === STATUS.SCHEDULED ? 'scheduled' : 'pending'
     });
   };
 
@@ -60,7 +62,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
         endDate: '',
         garageId: '',
         description: '',
-        status: 'pending'
+        status: STATUS.PENDING
       });
     } catch (err) {
       setError(err.message || 'Erreur lors de la création');
@@ -70,7 +72,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
   };
 
   const myMaintenances = maintenances
-    .filter(m => new Date(m.endDate || m.startDate) >= new Date() || m.status !== 'completed')
+    .filter(m => new Date(m.endDate || m.startDate) >= new Date() || m.status !== STATUS.COMPLETED)
     .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
   const getStatusBadge = (status) => {
@@ -93,7 +95,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
     return (
       <div className="mobile-maintenances">
         <div className="screen-header">
-          <button className="back-button" onClick={() => {
+          <Button variant="ghost" className="back-button" onClick={() => {
             setShowForm(false);
             // Si ouvert directement via action rapide, retourner à l'accueil
             if (openedDirectly) {
@@ -102,34 +104,34 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
             }
           }}>
             <ArrowLeft size={24} />
-          </button>
+          </Button>
           <h2>Type d'intervention</h2>
         </div>
 
         <div className="type-selection">
-          <button className="type-card" onClick={() => handleTypeSelect('scheduled')}>
+          <Button variant="ghost" className="type-card" onClick={() => handleTypeSelect('scheduled')}>
             <div className="type-icon scheduled">
               <Calendar size={32} />
             </div>
             <div className="type-title">Intervention programmée</div>
             <div className="type-description">Planifier une intervention future</div>
-          </button>
+          </Button>
 
-          <button className="type-card" onClick={() => handleTypeSelect('request')}>
+          <Button variant="ghost" className="type-card" onClick={() => handleTypeSelect('request')}>
             <div className="type-icon request">
               <Settings size={32} />
             </div>
             <div className="type-title">Demande d'intervention</div>
             <div className="type-description">Soumettre une demande à valider</div>
-          </button>
+          </Button>
 
-          <button className="type-card" onClick={() => handleTypeSelect('breakdown')}>
+          <Button variant="ghost" className="type-card" onClick={() => handleTypeSelect('breakdown')}>
             <div className="type-icon breakdown">
               <AlertTriangle size={32} />
             </div>
             <div className="type-title">Signaler une panne</div>
             <div className="type-description">Signaler un problème urgent</div>
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -139,11 +141,11 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
     return (
       <div className="mobile-maintenances">
         <div className="screen-header">
-          <button className="back-button" onClick={() => setFormType('')}>
+          <Button variant="ghost" className="back-button" onClick={() => setFormType('')}>
             <ArrowLeft size={24} />
-          </button>
+          </Button>
           <h2>
-            {formType === 'scheduled' && 'Programmer'}
+            {formType === STATUS.SCHEDULED && 'Programmer'}
             {formType === 'request' && 'Demander'}
             {formType === 'breakdown' && 'Signaler'}
           </h2>
@@ -165,7 +167,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
             </Select>
           </FormField>
 
-          {formType === 'scheduled' && (
+          {formType === STATUS.SCHEDULED && (
             <>
               <div className="form-row">
                 <FormField className="form-group" label={<><Calendar size={18} /> Début</>}>
@@ -199,7 +201,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
                 </Select>
               </FormField>
             </>
-          )}}
+          )}
 
           <FormField className="form-group" label="Description">
             <Textarea
@@ -229,13 +231,13 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
   return (
     <div className="mobile-maintenances">
       <div className="screen-header">
-        <button className="back-button" onClick={onBack}>
+        <Button variant="ghost" className="back-button" onClick={onBack}>
           <ArrowLeft size={24} />
-        </button>
+        </Button>
         <h2>Interventions</h2>
-        <button className="add-button" onClick={() => setShowForm(true)}>
+        <Button variant="ghost" className="add-button" onClick={() => setShowForm(true)}>
           <Plus size={24} />
-        </button>
+        </Button>
       </div>
 
       <div className="maintenances-list">

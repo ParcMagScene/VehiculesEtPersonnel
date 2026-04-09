@@ -15,6 +15,8 @@ import { loadFromIndexedDB } from '../../utils/indexedDB';
 import './ReservationModal.css';
 import { useToast } from '../../hooks/useToast';
 
+import { STATUS } from '../../constants';
+
 const ReservationEquipment = lazy(() => import('./ReservationEquipment'));
 
 const ReservationModal = ({
@@ -112,17 +114,15 @@ const ReservationModal = ({
     onClose();
   };
 
-  const [newAffaire, setNewAffaire] = useState('');
-
   // Ref pour le champ lieu (autocomplétion custom sur les lieux enregistrés)
   const locationInputRef = React.useRef(null);
 
   // Hooks pour l'autocomplétion
   const { suggestions: clientSuggestions, addToHistory: addClient } = useAutocomplete('clients');
   const { suggestions: driverSuggestions, addToHistory: addDriver } = useAutocomplete('drivers');
-  const { suggestions: locationSuggestions, addToHistory: addLocation } = useAutocomplete('locations');
+  const { suggestions: _locationSuggestions, addToHistory: addLocation } = useAutocomplete('locations');
   const { suggestions: prestationSuggestions, addToHistory: addPrestation } = useAutocomplete('prestations');
-  const { suggestions: affaireSuggestions, addToHistory: addAffaire } = useAutocomplete('affaires');
+  const { suggestions: _affaireSuggestions, addToHistory: addAffaire } = useAutocomplete('affaires');
 
   // États pour TripDetailsModal
   const [selectedEventForTrip, setSelectedEventForTrip] = useState(null);
@@ -141,7 +141,7 @@ const ReservationModal = ({
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   
-  // État pour l'adresse de Mag Scène
+  // État pour l'adresse du siège
   const [companyAddress, setCompanyAddress] = useState('');
   const [allLocations, setAllLocations] = useState(locations);
 
@@ -179,7 +179,7 @@ const ReservationModal = ({
     const requiredLevel = skillHierarchy.indexOf(requiredSkill);
     
     return persons
-      .filter(p => p.status === 'active' && p.skills?.some(s => {
+      .filter(p => p.status === STATUS.ACTIVE && p.skills?.some(s => {
         const sLevel = skillHierarchy.indexOf(s.name);
         return sLevel >= 0 && sLevel >= requiredLevel;
       }))
@@ -220,7 +220,7 @@ const ReservationModal = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Charger l'adresse de Mag Scène et créer la liste complète des lieux
+  // Charger l'adresse du siège et créer la liste complète des lieux
   useEffect(() => {
     const fetchCompanyAddress = async () => {
       try {
@@ -231,19 +231,19 @@ const ReservationModal = ({
         
         setCompanyAddress(address);
         
-        // Créer un lieu virtuel pour Mag Scène si une adresse existe
+        // Créer un lieu virtuel pour le siège si une adresse existe
         if (address) {
-          // Vérifier si Mag Scène n'est pas déjà dans la liste
-          const hasMagScene = locations.some(l => l.id === 'mag-scene' || l.name === 'Mag Scène');
+          // Vérifier si le siège n'est pas déjà dans la liste
+          const hasCompanyHQ = locations.some(l => l.id === 'company-hq' || l.id === 'mag-scene');
           
-          if (!hasMagScene) {
-            const magSceneLocation = {
-              id: 'mag-scene',
-              name: 'Mag Scène',
+          if (!hasCompanyHQ) {
+            const companyLocation = {
+              id: 'company-hq',
+              name: 'Siège',
               address: address,
               type: 'Dépôt'
             };
-            setAllLocations([magSceneLocation, ...locations]);
+            setAllLocations([companyLocation, ...locations]);
           } else {
             setAllLocations(locations);
           }
@@ -293,12 +293,8 @@ const ReservationModal = ({
     const loadTripDetails = async () => {
       if (isEdit && reservation?.id) {
         try {
-          const response = await fetch(`/api/trip-details/${reservation.id}`, {
-            credentials: 'include'
-          });
-          
-          if (response.ok) {
-            const details = await response.json();
+          const details = await api.getTripDetails(reservation.id);
+          if (details) {
             const detailsMap = {};
             details.forEach(detail => {
               // Transformer les noms snake_case en camelCase
@@ -363,7 +359,7 @@ const ReservationModal = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleGoogleEventSelect = (e) => {
+  const _handleGoogleEventSelect = (e) => {
     const eventId = e.target.value;
     if (eventId) {
       const selectedEvent = googleEvents.find(ev => ev.id === eventId);
@@ -479,28 +475,12 @@ const ReservationModal = ({
         return null;
       }
       
-      const response = await fetch('/api/trip-details', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          reservationId: reservation?.id,
-          eventId: selectedEventForTrip.event.id,
-          eventOrder: selectedEventForTrip.eventIndex,
-          ...tripData
-        })
+      const savedData = await api.saveTripDetails({
+        reservationId: reservation?.id,
+        eventId: selectedEventForTrip.event.id,
+        eventOrder: selectedEventForTrip.eventIndex,
+        ...tripData
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur serveur:', response.status, errorText);
-        toast.error(`Erreur lors de l'enregistrement: ${response.status} - ${errorText}`);
-        return null;
-      }
-      
-      const savedData = await response.json();
       
       // Transformer les noms snake_case en camelCase pour cohérence
       const transformedData = {
@@ -577,30 +557,17 @@ const ReservationModal = ({
     }
     
     try {
-      const response = await fetch('/api/trip-details/link', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          reservationId: reservation.id,
-          eventId1,
-          eventId2
-        })
+      const data = await api.linkTrips({
+        reservationId: reservation.id,
+        eventId1,
+        eventId2
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        // Mettre à jour tripDetails avec les données retournées
-        const detailsMap = {};
-        data.tripDetails.forEach(detail => {
-          detailsMap[detail.event_id] = transformTripDetail(detail);
-        });
-        setTripDetails(detailsMap);
-      } else {
-        toast.error('Erreur lors de la liaison des trajets');
-      }
+      // Mettre à jour tripDetails avec les données retournées
+      const detailsMap = {};
+      data.tripDetails.forEach(detail => {
+        detailsMap[detail.event_id] = transformTripDetail(detail);
+      });
+      setTripDetails(detailsMap);
     } catch (error) {
       console.error('Erreur liaison trajets:', error);
     }
@@ -611,26 +578,15 @@ const ReservationModal = ({
     if (!reservation?.id) return;
     
     try {
-      const response = await fetch('/api/trip-details/unlink', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          reservationId: reservation.id,
-          eventId
-        })
+      const data = await api.unlinkTrip({
+        reservationId: reservation.id,
+        eventId
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const detailsMap = {};
-        data.tripDetails.forEach(detail => {
-          detailsMap[detail.event_id] = transformTripDetail(detail);
-        });
-        setTripDetails(detailsMap);
-      }
+      const detailsMap = {};
+      data.tripDetails.forEach(detail => {
+        detailsMap[detail.event_id] = transformTripDetail(detail);
+      });
+      setTripDetails(detailsMap);
     } catch (error) {
       console.error('Erreur déliaison trajet:', error);
     }
@@ -703,7 +659,7 @@ const ReservationModal = ({
 
   // Ouvrir le modal de trajet combiné pour un groupe
   const handleOpenCombinedTripDetails = (groupEventItems) => {
-    setSelectedEventsForCombinedTrip(groupEventItems.map((item, index) => ({
+    setSelectedEventsForCombinedTrip(groupEventItems.map((item, _index) => ({
       event: item.event,
       eventIndex: formData.linkedEventIds.indexOf(item.eventId)
     })));
@@ -810,7 +766,7 @@ const ReservationModal = ({
     });
   };
 
-  const formatEventOption = (event) => {
+  const _formatEventOption = (event) => {
     const startDate = event.start?.dateTime 
       ? new Date(event.start.dateTime) 
       : event.start?.date 
@@ -856,7 +812,7 @@ const ReservationModal = ({
       : '#3b82f6';
   };
 
-  const selectedVehicle = vehicles.find(v => v.id === parseInt(formData.vehicleId));
+  const _selectedVehicle = vehicles.find(v => v.id === parseInt(formData.vehicleId));
   const displayDate = formData.date 
     ? format(new Date(formData.date), "EEEE d MMMM yyyy", { locale: fr })
     : '';
@@ -870,7 +826,7 @@ const ReservationModal = ({
               {isReadOnly ? '📋 Détails de la réservation' : (formData.prestationName || (currentUser?.isAdmin ? 'Nouvelle réservation' : 'Nouvelle demande'))} {formData.isTournee && '🚐'}
             </h2>
             {(formData.date || formData.endDate) && (
-              <div style={{ fontSize: '0.875rem', color: 'var(--theme-text-inverse)', marginTop: '0.25rem' }}>
+              <div className="reservation-header-subtitle">
                 {formData.date && format(new Date(formData.date + 'T00:00:00'), 'dd MMMM yyyy', { locale: fr })}
                 {formData.endDate && formData.endDate !== formData.date && (
                   <> → {format(new Date(formData.endDate + 'T00:00:00'), 'dd MMMM yyyy', { locale: fr })}</>
@@ -886,21 +842,7 @@ const ReservationModal = ({
             )}
           </div>
           <label 
-            className="checkbox-label" 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.25rem', 
-              cursor: 'pointer',
-              padding: '0.375rem 0.625rem',
-              background: 'rgba(255, 255, 255, 0.15)',
-              borderRadius: '0.375rem',
-              fontSize: '0.875rem',
-              whiteSpace: 'nowrap',
-              marginLeft: '0.75rem',
-              alignSelf: 'flex-start',
-              border: '1px solid rgba(255, 255, 255, 0.3)'
-            }}
+            className="checkbox-label reservation-tournee-toggle" 
             title="En mode tournée, les détails (client, conducteur, lieu) seront définis individuellement pour chaque événement lié."
           >
             <Checkbox
@@ -909,15 +851,15 @@ const ReservationModal = ({
               style={{ margin: 0, cursor: isReadOnly ? 'default' : 'pointer' }}
               disabled={isReadOnly}
             />
-            <span style={{ fontWeight: '500', color: 'var(--theme-text-inverse)' }}>🚐 Tournée</span>
+            <span className="reservation-tournee-label">🚐 Tournée</span>
           </label>
-          <button className="close-button" onClick={handleSafeClose} aria-label="Fermer la fenêtre">
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose} aria-label="Fermer la fenêtre">
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         <form id="reservation-form" onSubmit={handleSubmit} className="modal-form">
-          <fieldset disabled={isReadOnly} style={{ border: 'none', margin: 0, padding: 0 }}>
+          <fieldset disabled={isReadOnly} className="reservation-fieldset">
           {googleEvent && (
             <div className="google-event-badge">
               📅 Lié à : <strong>{googleEvent.summary}</strong>
@@ -1013,11 +955,11 @@ const ReservationModal = ({
                 <FormField className="form-group" label="Lieu" htmlFor="locationName" style={{ flex: 'initial', width: 'auto' }}>
                   {/* Filtre par type de lieu */}
                   {locationTypes.length > 1 && (
-                    <div style={{ marginBottom: '6px' }}>
+                    <div className="reservation-location-filter-wrap">
                       <Select
                         value={locationTypeFilter}
                         onChange={(e) => setLocationTypeFilter(e.target.value)}
-                        style={{ fontSize: '0.85rem', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--theme-border)' }}
+                        className="reservation-location-filter-select"
                       >
                         <option value="">Tous les types</option>
                         {locationTypes.map(t => (
@@ -1026,8 +968,8 @@ const ReservationModal = ({
                       </Select>
                     </div>
                   )}
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
-                    <div style={{ minWidth: '300px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                  <div className="reservation-location-row">
+                    <div className="reservation-location-search-wrap">
                       <Input
                         ref={locationInputRef}
                         id="locationName"
@@ -1046,24 +988,12 @@ const ReservationModal = ({
                         }}
                         placeholder="Rechercher un lieu..."
                         autoComplete="off"
-                        style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}
+                        className="reservation-location-input-full"
                       />
                       {showLocationDropdown && filteredLocations.length > 0 && (
                         <div
                           ref={locationDropdownRef}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            right: 0,
-                            maxHeight: '200px',
-                            overflowY: 'auto',
-                            backgroundColor: 'var(--theme-bg-card)',
-                            border: '1px solid var(--theme-border)',
-                            borderRadius: '0 0 6px 6px',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                            zIndex: 100,
-                          }}
+                          className="reservation-location-dropdown"
                         >
                           {filteredLocations.map((location) => (
                             <div
@@ -1074,49 +1004,28 @@ const ReservationModal = ({
                                 setShowLocationDropdown(false);
                                 setHasChanges(true);
                               }}
-                              style={{
-                                padding: '8px 12px',
-                                cursor: 'pointer',
-                                borderBottom: '1px solid var(--theme-border-light)',
-                                fontSize: '0.9rem',
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--theme-bg-hover)'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--theme-bg-card)'}
+                              className="reservation-location-item"
                             >
-                              <div style={{ fontWeight: 500 }}>{location.name}</div>
+                              <div className="reservation-location-item-name">{location.name}</div>
                               {location.address && (
-                                <div style={{ fontSize: '0.8rem', color: 'var(--theme-text-gray)' }}>{location.address}</div>
+                                <div className="reservation-location-item-address">{location.address}</div>
                               )}
                               {location.type && (
-                                <div style={{ fontSize: '0.75rem', color: 'var(--theme-text-muted)', fontStyle: 'italic' }}>{location.type}</div>
+                                <div className="reservation-location-item-type">{location.type}</div>
                               )}
                             </div>
                           ))}
                         </div>
                       )}
                     </div>
-                    <button
-                      type="button"
+                    <Button variant="ghost"                       type="button"
                       onClick={handleOpenLocationDialog}
-                      className="add-location-button"
+                      className="add-location-button reservation-add-location-btn"
                       title="Créer ou rechercher un lieu avec Google Maps"
-                      style={{
-                        padding: '0 12px',
-                        backgroundColor: 'var(--theme-primary)',
-                        color: 'var(--theme-text-inverse)',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        whiteSpace: 'nowrap',
-                        alignSelf: 'stretch',
-                      }}
                     >
                       <MapPin size={16} />
                       Nouveau lieu
-                    </button>
+                    </Button>
                   </div>
                   {formData.locationName && (() => {
                     const location = locations.find(l => l.name === formData.locationName);
@@ -1221,7 +1130,7 @@ const ReservationModal = ({
                     {formData.isTournee ? (
                       // Mode tournée : afficher tous les événements liés
                       formData.linkedEventIds.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', width: '100%' }}>
+                        <div className="reservation-tournee-events">
                           {formData.linkedEventIds.map(eventId => {
                             const event = googleEvents.find(e => e.id === eventId);
                             if (!event) return null;
@@ -1248,8 +1157,8 @@ const ReservationModal = ({
                                 }}
                                 title="Cliquer pour voir l'événement"
                               >
-                                <span className="event-dates" style={{ fontSize: '0.7rem' }}>{dateRange}</span>
-                                {event.affaire && <span className="event-affaire" style={{ fontSize: '0.7rem' }}>{event.affaire}</span>}
+                                <span className="event-dates reservation-event-date-xs">{dateRange}</span>
+                                {event.affaire && <span className="event-affaire reservation-event-date-xs">{event.affaire}</span>}
                               </div>
                             );
                           })}
@@ -1376,13 +1285,13 @@ const ReservationModal = ({
                       })}
                       
                       <div className="dropdown-footer">
-                        <button 
+                        <Button variant="ghost" 
                           type="button"
                           className="dropdown-close-button"
                           onClick={() => setIsEventDropdownOpen(false)}
                         >
                           Terminé
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -1391,7 +1300,7 @@ const ReservationModal = ({
             )}
 
             {formData.isTournee && formData.linkedEventIds.length > 0 && (() => {
-              const { groups, ungrouped, sortedEventIds } = getTripGroups();
+              const { _groups, _ungrouped, sortedEventIds } = getTripGroups();
               
               // Préparer les données enrichies pour chaque event
               const enrichedEvents = sortedEventIds.map((item, idx) => {
@@ -1422,7 +1331,7 @@ const ReservationModal = ({
               let currentGroupId = null;
               let currentGroupItems = [];
               
-              enrichedEvents.forEach((item, idx) => {
+              enrichedEvents.forEach((item, _idx) => {
                 if (item.groupId) {
                   if (item.groupId === currentGroupId) {
                     currentGroupItems.push(item);
@@ -1471,8 +1380,7 @@ const ReservationModal = ({
                     }}
                   >
                     <div 
-                      className="clickable-event"
-                      style={{ cursor: 'pointer', flex: 1 }}
+                      className="clickable-event reservation-event-clickable"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onRequestViewEvent) {
@@ -1482,19 +1390,12 @@ const ReservationModal = ({
                       }}
                       title="Cliquer pour voir l'événement"
                     >
-                      <div style={{ 
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        gap: '0.5rem', marginBottom: '0.375rem'
-                      }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--theme-text-gray)', fontWeight: '500' }}>
+                      <div className="reservation-event-header">
+                        <span className="reservation-event-date-badge">
                           📅 {dateRange}
                         </span>
                         {event.affaire && (
-                          <span style={{ 
-                            fontSize: '0.75rem', fontWeight: '600', color: 'var(--theme-primary)',
-                            backgroundColor: 'var(--theme-bg-indigo-lighter)', padding: '0.125rem 0.5rem', borderRadius: '0.25rem',
-                            display: 'flex', alignItems: 'center', gap: '0.25rem'
-                          }}>
+                          <span className="reservation-event-affaire-badge">
                             {affairesWithAttachments.includes(event.affaire) && (
                               <Paperclip size={11} style={{ opacity: 0.7 }} title={`${attachmentCounts[event.affaire] || ''} pièce(s) jointe(s)`} />
                             )}
@@ -1505,19 +1406,18 @@ const ReservationModal = ({
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--theme-text-heading)', fontWeight: '500', marginBottom: '0.375rem' }}>
+                      <div className="reservation-event-title">
                         {cleanTitle}
                       </div>
                       {event.location && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--theme-text-gray)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <div className="reservation-event-location">
                           📍 {event.location}
                         </div>
                       )}
                     </div>
                     {/* Bouton trajet solo (seulement si pas dans un groupe) */}
                     {!isInGroup && (
-                      <button
-                        type="button"
+                      <Button variant="ghost"                         type="button"
                         className="trip-details-btn"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1526,14 +1426,13 @@ const ReservationModal = ({
                       >
                         <MapPin size={16} />
                         Détails du trajet
-                      </button>
+                      </Button>
                     )}
                     {/* Boutons de liaison (seulement si solo et en mode édition) */}
                     {!isInGroup && isEdit && (
                       <div className="trip-link-actions">
                         {originalIndex < sortedEventIds.length - 1 && (
-                          <button
-                            type="button"
+                          <Button variant="ghost"                             type="button"
                             className="link-next-btn"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1544,10 +1443,9 @@ const ReservationModal = ({
                           >
                             <Link2 size={14} />
                             Lier au suivant
-                          </button>
+                          </Button>
                         )}
-                        <button
-                          type="button"
+                        <Button variant="ghost"                           type="button"
                           className="link-event-btn"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1557,7 +1455,7 @@ const ReservationModal = ({
                         >
                           <Link2 size={14} />
                           Lier à un événement
-                        </button>
+                        </Button>
                         {linkEventComboboxOpen === eventId && (
                           <div className="link-event-combobox" onClick={(e) => e.stopPropagation()}>
                             <div className="combobox-header">Choisir un événement à lier</div>
@@ -1614,9 +1512,9 @@ const ReservationModal = ({
                                   );
                                 })}
                             </div>
-                            <button type="button" className="combobox-close" onClick={() => setLinkEventComboboxOpen(null)}>
+                            <Button variant="ghost" type="button" className="combobox-close" onClick={() => setLinkEventComboboxOpen(null)}>
                               Fermer
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -1636,19 +1534,19 @@ const ReservationModal = ({
                 return (
                   <div key={key} className="trip-link-separator">
                     {areLinked ? (
-                      <button type="button" className="unlink-btn"
+                      <Button variant="ghost" type="button" className="unlink-btn"
                         onClick={(e) => { e.stopPropagation(); handleUnlinkTrip(firstEventId); }}
                         title="Délier ces événements">
                         <Unlink size={14} />
                         <span className="link-label">Liés</span>
-                      </button>
+                      </Button>
                     ) : isEdit ? (
-                      <button type="button" className="link-btn"
+                      <Button variant="ghost" type="button" className="link-btn"
                         onClick={(e) => { e.stopPropagation(); handleLinkTrips(lastEventId, firstEventId); }}
                         title="Lier les trajets de ces événements">
                         <Link2 size={14} />
                         <span className="link-label">Lier</span>
-                      </button>
+                      </Button>
                     ) : (
                       <div className="link-separator-line" />
                     )}
@@ -1657,20 +1555,14 @@ const ReservationModal = ({
               };
               
               return (
-                <div className="linked-events-display" style={{ 
-                  marginTop: '1rem', padding: '1rem',
-                  backgroundColor: 'var(--theme-bg-secondary)', borderRadius: '0.5rem', border: '1px solid var(--theme-border)'
-                }}>
-                  <div style={{ 
-                    fontWeight: '600', fontSize: '0.875rem', color: 'var(--theme-text-body)',
-                    marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
-                  }}>
+                <div className="linked-events-display reservation-linked-section">
+                  <div className="reservation-linked-header">
                     <span>🗓️ Événements liés à cette tournée</span>
-                    <span style={{ fontWeight: 'normal', color: 'var(--theme-text-gray)', fontSize: '0.8rem' }}>
+                    <span className="reservation-linked-count">
                       ({formData.linkedEventIds.length})
                     </span>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                  <div className="reservation-events-stack">
                     {segments.map((segment, segIdx) => {
                       const elements = [];
                       
@@ -1696,19 +1588,18 @@ const ReservationModal = ({
                                   {itemIdx > 0 && (
                                     <div className="group-inner-separator">
                                       <Unlink size={12} />
-                                      <button type="button" className="unlink-inner-btn"
+                                      <Button variant="ghost" type="button" className="unlink-inner-btn"
                                         onClick={(e) => { e.stopPropagation(); handleUnlinkTrip(item.eventId); }}
                                         title="Délier cet événement du groupe">
                                         Délier
-                                      </button>
+                                      </Button>
                                     </div>
                                   )}
                                   {renderEventCard(item, true)}
                                 </React.Fragment>
                               ))}
                             </div>
-                            <button
-                              type="button"
+                            <Button variant="ghost"                               type="button"
                               className="trip-details-btn combined-trip-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1717,7 +1608,7 @@ const ReservationModal = ({
                             >
                               <MapPin size={16} />
                               Détails du trajet combiné ({segment.items.length} événements)
-                            </button>
+                            </Button>
                           </div>
                         );
                       } else {
@@ -1749,7 +1640,7 @@ const ReservationModal = ({
           {/* SECTION MATÉRIEL (uniquement en édition) */}
           {isEdit && reservation?.id && (
             <>
-              <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-gray)' }}>Chargement matériel...</div>}>
+              <Suspense fallback={<div className="reservation-loading-fallback">Chargement matériel...</div>}>
                 <ReservationEquipment
                   reservationId={reservation.id}
                   currentUser={currentUser}
@@ -1763,27 +1654,26 @@ const ReservationModal = ({
 
         <div className="modal-actions">
           {isEdit && currentUser?.isAdmin && (
-            <button
-              type="button"
+            <Button variant="ghost"               type="button"
               className="delete-button"
               onClick={onDelete}
             >
               <Trash2 size={18} />
               Supprimer
-            </button>
+            </Button>
           )}
           <Button variant="ghost" onClick={isReadOnly ? onClose : handleSafeClose}>
             {isReadOnly ? 'Fermer' : 'Annuler'}
           </Button>
           {!isEdit && (
-            <button type="submit" form="reservation-form" className="submit-button">
+            <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
               {currentUser?.isAdmin ? 'Créer' : 'Demander'}
-            </button>
+            </Button>
           )}
           {isEdit && !isReadOnly && (hasChanges || formData.isTournee) && (
-            <button type="submit" form="reservation-form" className="submit-button">
+            <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
               Valider les modifications
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -1,9 +1,11 @@
 // MessagesTab — Gestion des messages/annonces d'affichage
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { MessageSquare, Trash2, Settings, ToggleLeft, ToggleRight, AlertTriangle, Clock } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
-import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
+import { Button, EmptyState, Tooltip } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 const PRIORITY_CONFIG = {
   low: { label: 'Basse', color: 'var(--theme-text-muted)', icon: null },
@@ -12,11 +14,11 @@ const PRIORITY_CONFIG = {
   urgent: { label: 'Urgente', color: 'var(--theme-danger)', icon: AlertTriangle },
 };
 
-function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
+function MessagesTab({ _currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadMessages = useCallback(async () => {
     try {
@@ -35,13 +37,12 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   }, [loadMessages, refreshKey]);
 
   const handleDelete = useCallback((msg) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer le message \xAB ${msg.title} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayMessage(msg.id);
           toast.success('Message supprim\xE9');
@@ -51,7 +52,7 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
         }
       },
     });
-  }, [toast, onRefresh]);
+  }, [confirm, toast, onRefresh]);
 
   const handleToggle = useCallback(async (msg) => {
     try {
@@ -93,10 +94,10 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
               {msg.body && <p className="list-item-desc">{msg.body.substring(0, 120)}{msg.body.length > 120 ? '…' : ''}</p>}
               <div className="list-item-meta">
                 {msg.date_start && (
-                  <span><Clock size={12} /> Du {new Date(msg.date_start).toLocaleDateString('fr-FR')}</span>
+                  <span><Clock size={12} /> Du {formatDateSimple(msg.date_start)}</span>
                 )}
                 {msg.date_end && (
-                  <span>au {new Date(msg.date_end).toLocaleDateString('fr-FR')}</span>
+                  <span>au {formatDateSimple(msg.date_end)}</span>
                 )}
                 {isExpired && <span className="badge-expired">Expiré</span>}
                 {!msg.is_active && <span className="badge-inactive">Inactif</span>}
@@ -104,17 +105,17 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
             </div>
             <div className="list-item-actions">
               <Tooltip content="Modifier">
-                <Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(msg)}>
+                <Button variant="ghost" size="sm" iconOnly aria-label="Modifier" onClick={() => onEdit(msg)}>
                   <Settings size={14} />
                 </Button>
               </Tooltip>
               <Tooltip content={msg.is_active ? 'Désactiver' : 'Activer'}>
-                <Button variant="ghost" size="sm" iconOnly onClick={() => handleToggle(msg)}>
+                <Button variant="ghost" size="sm" iconOnly aria-label="Basculer visibilité" onClick={() => handleToggle(msg)}>
                   {msg.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
                 </Button>
               </Tooltip>
               <Tooltip content="Supprimer">
-                <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(msg)}>
+                <Button variant="danger" size="sm" iconOnly aria-label="Supprimer" onClick={() => handleDelete(msg)}>
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>
@@ -122,17 +123,7 @@ function MessagesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
           </div>
         );
       })}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

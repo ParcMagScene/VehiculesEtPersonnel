@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Wrench, AlertTriangle, Calendar, FileText, Gauge, Clock, CheckCircle, Loader, User } from 'lucide-react';
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import InterventionModal from '../planning/InterventionModal';
+import { Button } from '@/design-system';
+import { formatDateSimple } from '../../utils/formatUtils';
 import './VehicleDetailsModal.css';
 
 const VehicleDetailsModal = ({ 
@@ -50,17 +52,6 @@ const VehicleDetailsModal = ({
         ? JSON.parse(vehicle.controlesTechniques) 
         : vehicle.controlesTechniques)
     : [];
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Non renseigné';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Non renseigné';
-    return date.toLocaleDateString('fr-FR', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    });
-  };
 
   const getDeadlineStatus = (deadline) => {
     if (!deadline) return null;
@@ -167,7 +158,7 @@ const VehicleDetailsModal = ({
 
   return (
     <div className="vd-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="vehicle-details-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="vehicle-details-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         {/* En-tête */}
         <div className="modal-header">
           <div className="header-content">
@@ -185,9 +176,9 @@ const VehicleDetailsModal = ({
               </div>
             </div>
           </div>
-          <button className="close-button" onClick={onClose}>
+          <Button variant="ghost" className="close-button" onClick={onClose}>
             <X size={24} />
-          </button>
+          </Button>
         </div>
 
         {/* Corps du modal */}
@@ -198,11 +189,11 @@ const VehicleDetailsModal = ({
             <div className="info-container">
               {vehicle.photo ? (
                 <div className="vehicle-photo-container">
-                  <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} />
+                  <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" />
                 </div>
               ) : (
                 <div className="vehicle-photo-container">
-                  <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" />
+                  <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vehicle-avatar" />
                 </div>
               )}
               <div className="info-grid">
@@ -261,7 +252,7 @@ const VehicleDetailsModal = ({
                       <span className="info-value info-value-km">{lastKm.toLocaleString('fr-FR')} km</span>
                       {(kmDate || kmUser) && (
                         <span className="info-km-meta">
-                          {kmDate && <span className="km-meta-item"><Calendar size={12} /> {formatDate(kmDate)}</span>}
+                          {kmDate && <span className="km-meta-item"><Calendar size={12} /> {formatDateSimple(kmDate, 'Non renseigné')}</span>}
                           {kmUser && <span className="km-meta-item"><User size={12} /> {kmUser}</span>}
                         </span>
                       )}
@@ -276,7 +267,7 @@ const VehicleDetailsModal = ({
           <div className="action-buttons">
             {isAdmin && (
               <>
-                <button 
+                <Button variant="ghost" 
                   className="action-btn schedule-btn"
                   onClick={() => {
                     onScheduleMaintenance(vehicle);
@@ -285,8 +276,8 @@ const VehicleDetailsModal = ({
                 >
                   <Calendar size={20} />
                   Programmer une intervention
-                </button>
-                <button 
+                </Button>
+                <Button variant="ghost" 
                   className="action-btn maintenance-btn"
                   onClick={() => {
                     onRequestMaintenance(vehicle);
@@ -295,10 +286,10 @@ const VehicleDetailsModal = ({
                 >
                   <Wrench size={20} />
                   Demander une intervention
-                </button>
+                </Button>
                 
                 {/* Bouton Kilométrage accessible uniquement aux admins */}
-                <button 
+                <Button variant="ghost" 
                   className="action-btn kilometrage-btn"
                   onClick={() => {
                     onOpenMaintenance(vehicle);
@@ -306,11 +297,11 @@ const VehicleDetailsModal = ({
                 >
                   <Gauge size={20} />
                   Kilométrage & Contrôles techniques
-                </button>
+                </Button>
               </>
             )}
             
-            <button 
+            <Button variant="ghost" 
               className="action-btn breakdown-btn"
               onClick={() => {
                 onReportBreakdown(vehicle);
@@ -319,7 +310,7 @@ const VehicleDetailsModal = ({
             >
               <AlertTriangle size={20} />
               Signaler une panne
-            </button>
+            </Button>
             {!isAdmin && (
               <p className="info-message">
                 ℹ️ Vous ne pouvez que signaler des pannes. Pour programmer une intervention ou gérer le kilométrage/contrôles techniques, contactez un administrateur.
@@ -353,12 +344,12 @@ const VehicleDetailsModal = ({
                       <div className="deadline-dates">
                         <div className="deadline-date-item">
                           <span className="deadline-date-label">Dernier contrôle :</span>
-                          <span className="deadline-date-value">{formatDate(controle.date)}</span>
+                          <span className="deadline-date-value">{formatDateSimple(controle.date, 'Non renseigné')}</span>
                         </div>
                         {controle.deadline && (
                           <div className="deadline-date-item">
                             <span className="deadline-date-label">Échéance :</span>
-                            <span className="deadline-date-value">{formatDate(controle.deadline)}</span>
+                            <span className="deadline-date-value">{formatDateSimple(controle.deadline, 'Non renseigné')}</span>
                           </div>
                         )}
                       </div>
@@ -378,13 +369,13 @@ const VehicleDetailsModal = ({
               <div className="empty-deadlines">
                 <p>Aucun contrôle technique enregistré</p>
                 {isAdmin && (
-                  <button 
+                  <Button variant="ghost" 
                     className="add-control-button"
                     onClick={() => onOpenMaintenance(vehicle)}
                   >
                     <Calendar size={16} />
                     Ajouter des contrôles techniques
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -407,7 +398,7 @@ const VehicleDetailsModal = ({
                         <span className="maintenance-type">{getTypeLabel(maintenance.type)}</span>
                         {getStatusBadge(maintenance.status)}
                       </div>
-                      <span className="maintenance-date">{formatDate(maintenance.date)}</span>
+                      <span className="maintenance-date">{formatDateSimple(maintenance.date, 'Non renseigné')}</span>
                     </div>
                     {maintenance.description && (
                       <div className="maintenance-description">{maintenance.description}</div>

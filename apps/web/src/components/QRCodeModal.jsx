@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { QrCode, Printer, Link as LinkIcon, Download } from 'lucide-react';
-import { ModalLayout } from '@/design-system';
+import { Button, ModalLayout } from '@/design-system';
 import './QRCodeModal.css';
 
 function QRCodeModal({ onClose }) {
   const canvasRef = useRef(null);
-  const mobileUrl = 'http://magsav.duckdns.org:4173/#/mobile';
+  const mobileUrl = `${window.location.origin}/#/mobile`;
 
   useEffect(() => {
     generateQRCode();
@@ -39,7 +39,7 @@ function QRCodeModal({ onClose }) {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>QR Codes - Accès Mobile MagScene</title>
+          <title>QR Codes - Accès Mobile eM@g</title>
           <style>
             @page {
               size: A4 portrait;
@@ -225,7 +225,7 @@ function QRCodeModal({ onClose }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'qrcode-magscene-mobile.jpg';
+      link.download = 'qrcode-emag-mobile.jpg';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -233,7 +233,7 @@ function QRCodeModal({ onClose }) {
     }, 'image/jpeg', 0.95);
   };
 
-  const handleOverlayClick = (e) => {
+  const _handleOverlayClick = (e) => {
     if (e.target.classList.contains('qr-modal-overlay')) {
       onClose();
     }
@@ -249,14 +249,14 @@ function QRCodeModal({ onClose }) {
       className="qr-modal"
       footer={
         <>
-          <button className="print-button" onClick={handlePrint}>
+          <Button variant="ghost" className="print-button" onClick={handlePrint}>
             <Printer size={20} />
             Imprimer
-          </button>
-          <button className="print-button" onClick={handleDownloadJPG}>
+          </Button>
+          <Button variant="ghost" className="print-button" onClick={handleDownloadJPG}>
             <Download size={20} />
             Télécharger JPG
-          </button>
+          </Button>
         </>
       }
     >

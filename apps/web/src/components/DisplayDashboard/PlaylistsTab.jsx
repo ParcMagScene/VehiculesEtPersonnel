@@ -1,15 +1,16 @@
 // PlaylistsTab — Liste et gestion des playlists
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { List, Play, Monitor, Clock, Trash2, Settings, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
-import { Button, Dialog, EmptyState, Tooltip } from '@/design-system';
+import { Button, EmptyState, Tooltip } from '@/design-system';
 
 function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const loadPlaylists = useCallback(async () => {
     try {
@@ -28,13 +29,12 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   }, [loadPlaylists, refreshKey]);
 
   const handleDelete = useCallback((playlist) => {
-    setConfirmDialog({
+    confirm({
       title: 'Supprimer',
       message: `Supprimer la playlist \xAB ${playlist.name} \xBB ?`,
       variant: 'danger',
       confirmLabel: 'Supprimer',
       onConfirm: async () => {
-        setConfirmDialog(null);
         try {
           await api.deleteDisplayPlaylist(playlist.id);
           toast.success('Playlist supprim\xE9e');
@@ -44,7 +44,7 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
         }
       },
     });
-  }, [toast, onRefresh]);
+  }, [confirm, toast, onRefresh]);
 
   const handleToggle = useCallback(async (playlist) => {
     try {
@@ -83,18 +83,18 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
           </div>
           <div className="list-item-actions">
             <Tooltip content="Modifier">
-              <Button variant="ghost" size="sm" iconOnly onClick={() => onEdit(pl)}>
+              <Button variant="ghost" size="sm" iconOnly aria-label="Modifier" onClick={() => onEdit(pl)}>
                 <Settings size={14} />
               </Button>
             </Tooltip>
             <Tooltip content={pl.is_active ? 'Désactiver' : 'Activer'}>
-              <Button variant="ghost" size="sm" iconOnly onClick={() => handleToggle(pl)}>
+              <Button variant="ghost" size="sm" iconOnly aria-label="Basculer visibilité" onClick={() => handleToggle(pl)}>
                 {pl.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
               </Button>
             </Tooltip>
             {currentUser?.isAdmin && (
               <Tooltip content="Supprimer">
-                <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(pl)}>
+                <Button variant="danger" size="sm" iconOnly aria-label="Supprimer" onClick={() => handleDelete(pl)}>
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>
@@ -102,17 +102,7 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
           </div>
         </div>
       ))}
-      <Dialog
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        title={confirmDialog?.title || 'Confirmation'}
-        variant={confirmDialog?.variant || 'confirm'}
-        onConfirm={confirmDialog?.onConfirm}
-        confirmLabel={confirmDialog?.confirmLabel || 'Confirmer'}
-        cancelLabel="Annuler"
-      >
-        {confirmDialog?.message}
-      </Dialog>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, MessageSquare, Send, Paperclip, ArrowLeft, Plus, File, Image, Download, Users, Smile } from 'lucide-react';
 import api, { getApiUrl } from '../../utils/api';
+import { useToast } from '../../hooks/useToast';
 import { Button, Textarea, EmptyState, Tooltip } from '@/design-system';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -67,14 +68,19 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   const pollRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [emojiCategory, setEmojiCategory] = useState(0);
+  const toast = useToast();
 
   // Charger les conversations
   const loadConversations = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await api.getConversations();
       setConversations(data);
     } catch (err) {
       console.error('Erreur chargement conversations:', err);
+      toast.error('Erreur chargement des conversations');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -91,6 +97,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       ));
     } catch (err) {
       console.error('Erreur chargement messages:', err);
+      toast.error('Erreur chargement des messages');
     }
   }, []);
 
@@ -148,6 +155,8 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       ));
     } catch (err) {
       console.error('Erreur envoi message:', err);
+      toast.error('Erreur envoi du message');
+      setInputText(text);
     }
   };
 
@@ -172,6 +181,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       reader.readAsDataURL(file);
     } catch (err) {
       console.error('Erreur envoi fichier:', err);
+      toast.error('Erreur envoi du fichier');
     }
   };
 
@@ -191,6 +201,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       }
     } catch (err) {
       console.error('Erreur création conversation:', err);
+      toast.error('Erreur création de la conversation');
     }
   };
 
@@ -202,6 +213,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       setShowNewConv(true);
     } catch (err) {
       console.error('Erreur chargement utilisateurs:', err);
+      toast.error('Erreur chargement des utilisateurs');
     }
   };
 
@@ -233,19 +245,19 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   return (
     <>
       <div className="messaging-backdrop" onClick={onClose} />
-      <div className={`messaging-panel ${isOpen ? 'open' : ''}`}>
+      <div className={`messaging-panel ${isOpen ? 'open' : ''}`} role="dialog" aria-modal="true" aria-label="Messages">
         <div className="msg-header">
           <h3><MessageSquare size={18} /> Messages</h3>
           <div className="msg-header-actions">
             <Tooltip content="Nouveau message">
-              <button className="msg-header-btn" onClick={openNewConvModal}>
+              <Button variant="ghost" className="msg-header-btn" onClick={openNewConvModal}>
                 <Plus size={16} />
-              </button>
+              </Button>
             </Tooltip>
             <Tooltip content="Fermer">
-              <button className="msg-header-btn" onClick={onClose}>
+              <Button variant="ghost" className="msg-header-btn" onClick={onClose}>
                 <X size={16} />
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -264,10 +276,13 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 <div
                   key={conv.id}
                   className="msg-conv-item"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     setActiveConversation(conv);
                     loadMessages(conv.id);
                   }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveConversation(conv); loadMessages(conv.id); } }}
                 >
                   <div className="msg-conv-avatar">
                     {conv.type === 'group' ? <Users size={16} /> : getInitials(getConversationName(conv))}
@@ -295,9 +310,9 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
           /* ═══ Vue chat ═══ */
           <div className="msg-chat-view">
             <div className="msg-chat-header">
-              <button className="msg-back-btn" onClick={() => { setActiveConversation(null); setMessages([]); }}>
+              <Button variant="ghost" className="msg-back-btn" onClick={() => { setActiveConversation(null); setMessages([]); }}>
                 <ArrowLeft size={18} />
-              </button>
+              </Button>
               <span className="msg-chat-title">{getConversationName(activeConversation)}</span>
             </div>
 
@@ -323,6 +338,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                           <img
                             src={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
                             alt={item.attachments[0].original_name}
+                            loading="lazy"
                             className="msg-image-preview"
                             onClick={() => window.open(`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`, '_blank')}
                           />
@@ -351,33 +367,31 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
 
             <div className="msg-input-area">
               <Tooltip content="Joindre un fichier">
-                <button className="msg-attach-btn" onClick={() => fileInputRef.current?.click()}>
+                <Button variant="ghost" className="msg-attach-btn" onClick={() => fileInputRef.current?.click()}>
                   <Paperclip size={18} />
-                </button>
+                </Button>
               </Tooltip>
               <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
               <Tooltip content="Emojis">
-                <button className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`} onClick={() => setShowEmojiPicker(v => !v)}>
+                <Button variant="ghost" className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`} onClick={() => setShowEmojiPicker(v => !v)}>
                   <Smile size={18} />
-                </button>
+                </Button>
               </Tooltip>
               {showEmojiPicker && (
                 <div className="msg-emoji-picker">
                   <div className="msg-emoji-tabs">
                     {EMOJI_CATEGORIES.map((cat, i) => (
-                      <button
-                        key={i}
+                      <Button variant="ghost"                         key={i}
                         className={`msg-emoji-tab${emojiCategory === i ? ' active' : ''}`}
                         onClick={() => setEmojiCategory(i)}
                       >
                         {cat.name.split(' ')[0]}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                   <div className="msg-emoji-grid">
                     {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, i) => (
-                      <button
-                        key={i}
+                      <Button variant="ghost"                         key={i}
                         className="msg-emoji-item"
                         onClick={() => {
                           setInputText(prev => prev + emoji);
@@ -385,7 +399,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                         }}
                       >
                         {emoji}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -396,12 +410,13 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Écrire un message…"
+                aria-label="Écrire un message"
                 rows={1}
               />
               <Tooltip content="Envoyer">
-                <button className="msg-send-btn" onClick={handleSend} disabled={!inputText.trim()}>
+                <Button variant="ghost" className="msg-send-btn" onClick={handleSend} disabled={!inputText.trim()}>
                   <Send size={16} />
-                </button>
+                </Button>
               </Tooltip>
             </div>
           </div>

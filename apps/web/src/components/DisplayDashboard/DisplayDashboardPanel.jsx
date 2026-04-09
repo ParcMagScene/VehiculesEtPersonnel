@@ -3,7 +3,7 @@
 // Sous-module de Planning → onglet « Dashboard Écrans »
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
 import { Palette, MessageCircle, Tag, Film, Camera, Music, ExternalLink } from 'lucide-react';
 import './DisplayDashboardPanel.css';
 import { Tabs, TabList, Tab, TabPanel } from '@/design-system';
@@ -20,7 +20,9 @@ const DashboardTasksSidebar = lazy(() => import('./DashboardTasksSidebar'));
 
 function getTvUrl() {
   const { hostname, port } = window.location;
-  if (['5174', '5175', '4173'].includes(port)) return `http://${hostname}:3003/tv`;
+  // Dev (Vite) → backend sur 3003 ; Preview/Prod → backend sur 3002
+  if (port === '5174' || port === '5175') return `http://${hostname}:3003/tv`;
+  if (port === '4173') return `http://${hostname}:3002/tv`;
   return `http://${hostname}:${port}/tv`;
 }
 
@@ -98,7 +100,7 @@ function DisplayDashboardPanel({ currentUser }) {
     setPreviewOverrides({});
   }, [activeTab]);
 
-  const handleRefresh = useCallback(() => {
+  const _handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
   }, []);
 

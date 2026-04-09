@@ -22,7 +22,7 @@
 
 .etm-modal {
   background: var(--theme-bg-card);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 560px;
   max-height: 85vh;
@@ -37,13 +37,13 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem 0.75rem;
+  padding: var(--space-3) var(--space-4) var(--space-2);
   border-bottom: 1px solid var(--theme-border-primary);
 }
 
 .etm-header h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--font-lg);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -52,7 +52,7 @@
 
 .etm-event-title {
   margin: 0.25rem 0 0;
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   color: var(--theme-text-secondary);
   font-weight: 500;
 }
@@ -63,7 +63,7 @@
   color: var(--theme-text-secondary);
   cursor: pointer;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
 .etm-close:hover {
@@ -76,7 +76,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: var(--space-2) var(--space-5);
   border-bottom: 1px solid var(--theme-border-primary);
 }
 
@@ -86,7 +86,7 @@
   gap: 4px;
   font-size: 0.78rem;
   padding: 3px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-2xl);
   background: var(--theme-bg-secondary);
   color: var(--theme-text-secondary);
   font-weight: 500;
@@ -122,7 +122,7 @@
 
 .etm-step {
   border: 1px solid var(--theme-border-primary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   transition: all 0.15s;
 }
@@ -149,7 +149,7 @@
 .etm-step-check {
   width: 20px;
   height: 20px;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   border: 2px solid var(--theme-border-secondary, #ccc);
   display: flex;
   align-items: center;
@@ -193,7 +193,7 @@
 }
 
 .etm-field label {
-  font-size: 0.72rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-text-secondary);
   text-transform: uppercase;
@@ -203,7 +203,7 @@
 .etm-field input,
 .etm-field select {
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border-primary);
   background: var(--theme-bg-secondary);
   color: var(--theme-text-primary);
@@ -232,7 +232,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: #4285f415;
   color: var(--theme-info);
   border: 1px solid #4285f430;
@@ -265,7 +265,7 @@
   align-items: center;
   gap: 6px;
   padding: 7px 16px;
-  border-radius: 7px;
+  border-radius: var(--radius-md);
   border: none;
   font-size: 0.82rem;
   font-weight: 600;
@@ -307,11 +307,11 @@
 }
 
 /* Mobile */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .etm-modal {
     max-width: 100%;
     max-height: 95vh;
-    border-radius: 12px 12px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 
   .etm-step-fields {

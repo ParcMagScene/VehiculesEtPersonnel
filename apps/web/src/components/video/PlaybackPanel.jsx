@@ -2,10 +2,12 @@
 // PlaybackPanel.jsx — Relecture des enregistrements NVR
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Calendar, Play, Square, Loader, Clock, Film, AlertCircle } from 'lucide-react';
 import api from '../../utils/api';
-import { Button, Select } from '@/design-system';
+import { Button, Select , Tooltip} from '@/design-system';
+import { TIMING } from '../../constants';
+
 import './PlaybackPanel.css';
 
 const PlaybackPanel = ({ cameras, initialCameraId }) => {
@@ -114,7 +116,7 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
           }
         };
         pc.addEventListener('icegatheringstatechange', check);
-        setTimeout(resolve, 3000);
+        setTimeout(resolve, TIMING.STATUS_CLEAR);
       });
 
       const result = await api.startPlayback(
@@ -233,15 +235,14 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
             {recordings.map((rec, i) => {
               const isActive = currentSegment?.startTime === rec.startTime;
               return (
-                <button
-                  key={i}
+                <Button variant="ghost"                   key={i}
                   className={`playback-panel__segment-btn ${isActive ? 'active' : ''}`}
                   onClick={() => startPlayback(rec.startTime, rec.endTime)}
                 >
                   <Play size={12} />
                   <span>{rec.startTime.slice(11, 16)} → {rec.endTime.slice(11, 16)}</span>
                   <span className="playback-panel__segment-size">{formatSize(rec.size)}</span>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -277,9 +278,11 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
         />
         {(playing || connecting) && (
           <div className="playback-panel__player-controls">
-            <Button variant="secondary" size="sm" onClick={stopPlayback} title="Arrêter">
+ <Tooltip content="Arrêter" position="bottom">
+   <Button variant="secondary" size="sm" onClick={stopPlayback}>
               <Square size={16} /> Arrêter
             </Button>
+ </Tooltip>
             {currentSegment && (
               <span className="playback-panel__now-playing">
                 🎬 {currentSegment.startTime.slice(11, 16)} → {currentSegment.endTime.slice(11, 16)}

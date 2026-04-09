@@ -1,7 +1,7 @@
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import { useState, useImperativeHandle, forwardRef } from 'react';
 import { format, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ArrowLeft, Car, Calendar, Users, MapPin, Plus, ChevronRight, Check } from 'lucide-react';
+import { ArrowLeft, Car, Calendar, Users, Plus, ChevronRight, Check } from 'lucide-react';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import api from '../../utils/api';
 import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';
@@ -125,7 +125,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
     return (
       <div className="mobile-reservations">
         <div className="screen-header">
-          <button className="back-button" onClick={() => {
+          <Button variant="ghost" className="back-button" onClick={() => {
             setShowForm(false);
             // Si ouvert directement via action rapide, retourner à l'accueil
             if (openedDirectly) {
@@ -134,15 +134,14 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
             }
           }}>
             <ArrowLeft size={24} />
-          </button>
+          </Button>
           <h2>{currentUser?.isAdmin ? 'Nouvelle réservation' : 'Nouvelle demande'}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="reservation-form">
           <FormField className="form-group" label={<><Car size={18} /> Véhicule</>}>
             {/* Custom vehicle picker with photos */}
-            <button
-              type="button"
+            <Button variant="ghost"               type="button"
               className={`vehicle-picker-btn ${formData.vehicleId ? 'selected' : ''}`}
               onClick={() => setShowVehiclePicker(true)}
             >
@@ -155,6 +154,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                       <img
                         src={v.photo ? `/Photos/${v.photo}` : getVehicleAvatar(v.type)}
                         alt={v.name}
+                        loading="lazy"
                         onError={(e) => { e.target.src = getVehicleAvatar(v.type); }}
                       />
                     </div>
@@ -171,7 +171,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                   <ChevronRight size={18} className="vehicle-picker-chevron" />
                 </>
               )}
-            </button>
+            </Button>
 
             {/* Vehicle picker modal */}
             {showVehiclePicker && (
@@ -179,12 +179,11 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                 <div className="vehicle-picker-modal" onClick={e => e.stopPropagation()}>
                   <div className="vehicle-picker-modal-header">
                     <h3>Choisir un véhicule</h3>
-                    <button type="button" onClick={() => setShowVehiclePicker(false)}>✕</button>
+                    <Button variant="ghost" type="button" onClick={() => setShowVehiclePicker(false)}>✕</Button>
                   </div>
                   <div className="vehicle-picker-list">
                     {availableVehicles.map(vehicle => (
-                      <button
-                        key={vehicle.id}
+                      <Button variant="ghost"                         key={vehicle.id}
                         type="button"
                         className={`vehicle-picker-item ${String(formData.vehicleId) === String(vehicle.id) ? 'active' : ''}`}
                         onClick={() => {
@@ -196,6 +195,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                           <img
                             src={vehicle.photo ? `/Photos/${vehicle.photo}` : getVehicleAvatar(vehicle.type)}
                             alt={vehicle.name}
+                            loading="lazy"
                             onError={(e) => { e.target.src = getVehicleAvatar(vehicle.type); }}
                           />
                         </div>
@@ -210,7 +210,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                         {String(formData.vehicleId) === String(vehicle.id) && (
                           <Check size={20} className="vehicle-picker-check" />
                         )}
-                      </button>
+                      </Button>
                     ))}
                     {availableVehicles.length === 0 && (
                       <div className="vehicle-picker-empty">
@@ -296,13 +296,13 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
   return (
     <div className="mobile-reservations">
       <div className="screen-header">
-        <button className="back-button" onClick={onBack}>
+        <Button variant="ghost" className="back-button" onClick={onBack}>
           <ArrowLeft size={24} />
-        </button>
+        </Button>
         <h2>Réservations</h2>
-        <button className="add-button" onClick={() => setShowForm(true)}>
+        <Button variant="ghost" className="add-button" onClick={() => setShowForm(true)}>
           <Plus size={24} />
-        </button>
+        </Button>
       </div>
 
       <div className="reservations-list">
@@ -325,6 +325,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                     <img
                       src={vehicle?.photo ? `/Photos/${vehicle.photo}` : getVehicleAvatar(vehicle?.type)}
                       alt={vehicle?.name || 'Véhicule'}
+                      loading="lazy"
                       onError={(e) => { e.target.src = getVehicleAvatar(vehicle?.type); }}
                     />
                   </div>

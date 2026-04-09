@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import logger from "../../utils/logger";
 import { X, MapPin, Navigation, Clock, Route, Mail, Phone, User } from 'lucide-react';
 import api from '../../utils/api';
@@ -340,12 +340,12 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         handleSafeClose();
       }
     }}>
-      <div className="location-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="location-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="location-dialog-header">
           <h2>{client ? 'Modifier le client' : 'Nouveau client'}</h2>
-          <button className="close-button" onClick={handleSafeClose}>
+          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
             <X size={20} />
-          </button>
+          </Button>
         </div>
 
         {error && (
@@ -412,14 +412,14 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 </small>
               </FormField>
 
-              <button 
+              <Button variant="ghost" 
                 type="button" 
                 className="geolocate-button"
                 onClick={handleGeolocalise}
               >
                 <Navigation size={16} />
                 Me géolocaliser
-              </button>
+              </Button>
 
               {formData.lat && formData.lng && (
                 <div className="coordinates-info">
@@ -432,7 +432,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 <div className="route-info">
                   <h3>
                     <Route size={18} />
-                    Distance depuis Mag Scène
+                    Distance depuis le siège
                   </h3>
                   <div className="route-info">
                     {distance && (

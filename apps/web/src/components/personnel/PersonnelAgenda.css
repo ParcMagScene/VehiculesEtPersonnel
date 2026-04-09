@@ -44,7 +44,7 @@
   flex: 1;
   border: none;
   outline: none;
-  font-size: 13px;
+  font-size: var(--font-base);
   background: transparent;
   color: var(--theme-text-heading);
 }
@@ -80,13 +80,13 @@
 .agenda-person-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--theme-info), var(--theme-primary-light));
   color: var(--theme-text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   flex-shrink: 0;
   text-transform: uppercase;
@@ -98,7 +98,7 @@
 }
 
 .agenda-person-name {
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-heading);
   white-space: nowrap;
@@ -107,7 +107,7 @@
 }
 
 .agenda-person-role {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-gray);
   margin-top: 1px;
 }
@@ -125,14 +125,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: var(--theme-text-gray);
 }
 
 .legend-dot {
   width: 10px;
   height: 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   flex-shrink: 0;
 }
 
@@ -149,10 +149,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: var(--space-3) var(--space-5);
   background: var(--theme-bg-card);
   border-bottom: 2px solid var(--theme-border-medium);
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -161,7 +161,7 @@
 }
 
 .agenda-person-title {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--theme-text-heading);
   margin: 0;
@@ -176,7 +176,7 @@
 .agenda-nav-btn {
   width: 32px;
   height: 32px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
   cursor: pointer;
@@ -203,10 +203,10 @@
 
 .agenda-today-btn {
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-card);
-  font-size: 13px;
+  font-size: var(--font-base);
   cursor: pointer;
   color: var(--theme-text-gray);
   transition: all 0.2s;
@@ -226,16 +226,16 @@
   display: flex;
   gap: 2px;
   background: var(--theme-bg-tertiary);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 3px;
 }
 
 .agenda-view-toggle button {
   padding: 6px 14px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: transparent;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 500;
   cursor: pointer;
   color: var(--theme-text-gray);
@@ -303,7 +303,7 @@
 }
 
 .week-day-name {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   text-transform: uppercase;
   color: var(--theme-text-gray);
@@ -311,7 +311,7 @@
 }
 
 .week-day-number {
-  font-size: 20px;
+  font-size: var(--font-xl);
   font-weight: 600;
   color: var(--theme-text-heading);
 }
@@ -319,13 +319,13 @@
 .today-badge {
   background: var(--theme-info);
   color: var(--theme-text-inverse) !important;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   width: 28px;
   height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 .agenda-week-body {
@@ -363,7 +363,7 @@
   align-items: center;
   justify-content: center;
   color: var(--theme-success-alt);
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 500;
   opacity: 0.6;
 }
@@ -373,7 +373,7 @@
   display: flex;
   gap: 6px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border-left: 3px solid;
   cursor: default;
   transition: transform 0.15s, box-shadow 0.15s;
@@ -395,7 +395,7 @@
 }
 
 .agenda-event-title {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -403,7 +403,7 @@
 }
 
 .agenda-event-subtitle {
-  font-size: 11px;
+  font-size: var(--font-xs);
   opacity: 0.8;
   margin-top: 1px;
   white-space: nowrap;
@@ -412,7 +412,7 @@
 }
 
 .agenda-event-location {
-  font-size: 10px;
+  font-size: var(--font-2xs);
   opacity: 0.7;
   margin-top: 2px;
   display: flex;
@@ -438,7 +438,7 @@
 .agenda-month-day-label {
   text-align: center;
   padding: 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-gray);
   text-transform: uppercase;
@@ -482,7 +482,7 @@
 .month-cell-date {
   text-align: right;
   padding: 2px 4px;
-  font-size: 13px;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-gray);
 }
@@ -490,7 +490,7 @@
 .month-cell-date .today-badge {
   width: 24px;
   height: 24px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .month-cell-events {
@@ -506,12 +506,12 @@
   align-items: center;
   gap: 4px;
   padding: 2px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .month-event-label {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-inverse);
   font-weight: 500;
   white-space: nowrap;
@@ -520,7 +520,7 @@
 }
 
 .month-event-more {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--theme-text-gray);
   padding: 1px 6px;
   font-weight: 500;
@@ -534,11 +534,11 @@
 
   .agenda-period-title {
     min-width: 160px;
-    font-size: 14px;
+    font-size: var(--font-base);
   }
 
   .agenda-person-title {
-    font-size: 16px;
+    font-size: var(--font-md);
   }
 }
 
@@ -564,13 +564,13 @@
   .agenda-person-item {
     flex-shrink: 0;
     padding: 6px 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
   }
 
   .agenda-person-item.active {
     border-right: none;
     background: var(--theme-info-bg-strong);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
   }
 
   .agenda-legend {
@@ -584,11 +584,11 @@
 
   .agenda-period-title {
     min-width: auto;
-    font-size: 13px;
+    font-size: var(--font-base);
   }
 
   .week-day-number {
-    font-size: 16px;
+    font-size: var(--font-md);
   }
 
   .agenda-month-cell {
@@ -604,11 +604,11 @@
   .agenda-person-avatar {
     width: 28px;
     height: 28px;
-    font-size: 11px;
+    font-size: var(--font-xs);
   }
 
   .agenda-person-name {
-    font-size: 12px;
+    font-size: var(--font-sm);
   }
 
   .agenda-person-role {
@@ -626,7 +626,7 @@
   .month-event-dot {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     padding: 0;
   }
 }

@@ -83,21 +83,23 @@ function LocationsTab({ currentUser }) {
     <>
       {/* Toolbar */}
       <div className="annuaire-toolbar">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un lieu..." />
-        <div className="annuaire-toolbar-actions">
-          <Button variant="primary" onClick={() => { setEditingLocation(null); setShowDialog(true); }}>
-            <Plus size={15} /> Nouveau lieu
-          </Button>
+        <div className="annuaire-toolbar-top">
+          <div className="annuaire-header-stats">
+            <span className="stat-badge location">{allLocations.length} lieux</span>
+            {LOCATION_TYPES.map(t => {
+              const count = grouped[t]?.length || 0;
+              return count > 0 ? <span key={t} className="stat-badge">{count} {t.toLowerCase()}{count > 1 ? 's' : ''}</span> : null;
+            })}
+          </div>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="annuaire-header-stats">
-        <span className="stat-badge location">{allLocations.length} lieux</span>
-        {LOCATION_TYPES.map(t => {
-          const count = grouped[t]?.length || 0;
-          return count > 0 ? <span key={t} className="stat-badge">{count} {t.toLowerCase()}{count > 1 ? 's' : ''}</span> : null;
-        })}
+        <div className="annuaire-toolbar-actions-row">
+          <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un lieu..." />
+          <div className="annuaire-toolbar-actions">
+            <Button variant="primary" onClick={() => { setEditingLocation(null); setShowDialog(true); }}>
+              <Plus size={15} /> Nouveau lieu
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Content */}

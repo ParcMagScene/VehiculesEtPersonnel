@@ -300,12 +300,13 @@ function AnnuairePanel({ currentUser }) {
               );
             })}
           </div>
-          {stats && activeTab !== 'lieux' && (
+          {stats && (
             <div className="annuaire-header-stats">
               <span className="stat-badge client">{stats.clients?.total || 0} clients</span>
               <span className="stat-badge supplier">{stats.suppliers?.total || 0} fournisseurs</span>
               <span className="stat-badge prestataire">{stats.prestataires?.total || 0} prestataires</span>
               <span className="stat-badge contact">{stats.contacts?.total || 0} contacts</span>
+              <span className="stat-badge location">{stats.locations?.total || 0} lieux</span>
             </div>
           )}
         </div>

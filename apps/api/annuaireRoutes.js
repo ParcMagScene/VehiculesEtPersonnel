@@ -1056,7 +1056,8 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
         clients: db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active FROM clients').get(),
         suppliers: db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active FROM suppliers').get(),
         prestataires: db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active FROM prestataires').get(),
-        contacts: db.prepare('SELECT COUNT(*) as total FROM annuaire_contacts').get()
+        contacts: db.prepare('SELECT COUNT(*) as total FROM annuaire_contacts').get(),
+        locations: db.prepare('SELECT COUNT(*) as total FROM locations').get()
       };
       res.json(stats);
     } catch (error) {

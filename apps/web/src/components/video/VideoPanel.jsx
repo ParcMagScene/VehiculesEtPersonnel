@@ -9,7 +9,7 @@ import CameraGrid from './CameraGrid';
 import CameraPTZControls from './CameraPTZControls';
 import PlaybackPanel from './PlaybackPanel';
 import PresetPanel from './PresetPanel';
-import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, RotateCw, ChevronLeft, ChevronRight, Film, Monitor } from 'lucide-react';
+import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, Repeat, ChevronLeft, ChevronRight, Film, Monitor } from 'lucide-react';
 import api from '../../utils/api';
 import './VideoPanel.css';
 import { Button, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
@@ -168,22 +168,22 @@ const VideoPanel = ({ currentUser }) => {
         <div className="video-panel__actions">
           {/* Vues */}
           <div className="video-panel__view-toggle">
-            <Button variant="ghost" className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} title="Vue grille" aria-label="Vue grille">
+            <Tooltip content="Vue grille" position="bottom"><Button variant="ghost" className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} aria-label="Vue grille">
               <Grid size={18} />
-            </Button>
-            <Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Vue liste" aria-label="Vue liste">
+            </Button></Tooltip>
+            <Tooltip content="Vue liste" position="bottom"><Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} aria-label="Vue liste">
               <List size={18} />
-            </Button>
-            <Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} title="Enregistrements" aria-label="Enregistrements">
+            </Button></Tooltip>
+            <Tooltip content="Enregistrements" position="bottom"><Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} aria-label="Enregistrements">
               <Film size={18} />
-            </Button>
-            <Button variant="ghost" className={viewMode === 'preset' ? 'active' : ''} onClick={() => setViewMode('preset')} title="Presets multi-caméras" aria-label="Presets multi-caméras">
+            </Button></Tooltip>
+            <Tooltip content="Presets multi-caméras" position="bottom"><Button variant="ghost" className={viewMode === 'preset' ? 'active' : ''} onClick={() => setViewMode('preset')} aria-label="Presets multi-caméras">
               <Monitor size={18} />
-            </Button>
+            </Button></Tooltip>
             {isAdmin && (
-              <Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} title="Administration" aria-label="Administration">
+              <Tooltip content="Administration" position="bottom"><Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} aria-label="Administration">
                 <Settings size={18} />
-              </Button>
+              </Button></Tooltip>
             )}
           </div>
 
@@ -193,25 +193,26 @@ const VideoPanel = ({ currentUser }) => {
               <Divider orientation="vertical" />
               <div className="video-panel__layout-btns">
                 {GRID_LAYOUTS.map(l => (
-                  <Button variant="ghost"                     key={l.id}
+                  <Tooltip key={l.id} content={`Grille ${l.label} caméras`} position="bottom">
+                  <Button variant="ghost"
                     className={`video-panel__layout-btn ${gridSize === l.id ? 'active' : ''}`}
                     onClick={() => { setGridSize(l.id); setGridPage(0); }}
-                    title={`Grille ${l.label} caméras`}
                   >
                     {l.label === '1' ? <Maximize2 size={14} /> : <LayoutGrid size={14} />}
                     <span>{l.label}</span>
                   </Button>
+                  </Tooltip>
                 ))}
               </div>
 
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="video-panel__page-controls">
-                  <Tooltip content="Page précédente"><Button variant="ghost" onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
+                  <Tooltip content="Page précédente" position="bottom"><Button variant="ghost" onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
                     <ChevronLeft size={16} />
                   </Button></Tooltip>
                   <span className="video-panel__page-info">{gridPage + 1}/{totalPages}</span>
-                  <Tooltip content="Page suivante"><Button variant="ghost" onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
+                  <Tooltip content="Page suivante" position="bottom"><Button variant="ghost" onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
                     <ChevronRight size={16} />
                   </Button></Tooltip>
                 </div>
@@ -219,14 +220,14 @@ const VideoPanel = ({ currentUser }) => {
 
               {/* Rotation auto */}
               {totalPages > 1 && (
-                <Tooltip content={isRotating ? 'Arrêter la rotation' : 'Rotation automatique'}>
+                <Tooltip content={isRotating ? 'Arrêter la rotation' : 'Rotation automatique'} position="bottom">
                   <Button
                     variant="secondary"
                     size="sm"
                     className={isRotating ? 'active' : ''}
                     onClick={() => setIsRotating(v => !v)}
                   >
-                    <RotateCw size={16} />
+                    <Repeat size={16} />
                   </Button>
                 </Tooltip>
               )}
@@ -235,7 +236,7 @@ const VideoPanel = ({ currentUser }) => {
 
           <Divider orientation="vertical" />
 
-          <Tooltip content="Rafraîchir">
+          <Tooltip content="Rafraîchir" position="bottom">
             <Button variant="secondary" size="sm" onClick={refresh}>
               <RefreshCw size={16} />
             </Button>

@@ -332,9 +332,11 @@ const VideoPanel = ({ currentUser }) => {
                   <td>{cam.lastSeen ? new Date(cam.lastSeen).toLocaleString('fr-FR') : '—'}</td>
                   {isAdmin && (
                     <td>
-                      <Button variant="ghost" size="xs" iconOnly onClick={() => { setEditingCamera(cam); setShowSettings(true); }} title="Configurer la caméra">
+ <Tooltip content="Configurer la caméra" position="bottom">
+   <Button variant="ghost" size="xs" iconOnly onClick={() => { setEditingCamera(cam); setShowSettings(true); }}>
                         <Settings size={14} />
                       </Button>
+ </Tooltip>
                     </td>
                   )}
                 </tr>

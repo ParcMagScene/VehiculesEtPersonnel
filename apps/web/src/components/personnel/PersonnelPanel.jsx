@@ -537,9 +537,11 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
             ))}
           </Select>
           {currentUser?.isAdmin && (
-            <Button variant="secondary" onClick={() => setShowImportModal(true)} title="Importer depuis un CSV">
+ <Tooltip content="Importer depuis un CSV" position="bottom">
+   <Button variant="secondary" onClick={() => setShowImportModal(true)}>
               <Upload size={14} /> Import CSV
             </Button>
+ </Tooltip>
           )}
           <Button variant="primary" onClick={openCreate}>
             <Plus size={14} /> Personnel
@@ -1709,15 +1711,17 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         </div>
         {!isGhost && (
           <>
-            <Button variant="ghost"               className="pp-assignment-delete"
+            <Tooltip content="Supprimer cette mission" position="bottom">
+              <Button variant="ghost"               className="pp-assignment-delete"
               onClick={(e) => {
                 e.stopPropagation();
                 setDeleteMission({ mission: spanHere.mission, person });
               }}
-              title="Supprimer cette mission"
+ 
             >
               <Trash2 size={12} />
             </Button>
+            </Tooltip>
             {/* Poignées de resize */}
             {view !== 'year' && !spanHere.clippedLeft && (
               <div className="pp-resize-handle pp-resize-handle-start"
@@ -1834,13 +1838,15 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               <span>Permanents</span>
               <div className="pp-column-header-actions">
                 {pendingLeaveCount > 0 && (
-                  <Button variant="ghost"                     className="pp-leave-badge-btn"
+                  <Tooltip content="Demandes de congés en attente" position="bottom">
+                    <Button variant="ghost"                     className="pp-leave-badge-btn"
                     onClick={() => setShowLeaveApproval(true)}
-                    title="Demandes de congés en attente"
+ 
                   >
                     <Clock size={12} />
                     <span className="pp-leave-badge-count">{pendingLeaveCount}</span>
                   </Button>
+                  </Tooltip>
                 )}
                 <Button variant="ghost"                   className="pp-section-toggle"
                   onClick={() => setCollapsedSections(prev => ({ ...prev, permanents: !prev.permanents }))}

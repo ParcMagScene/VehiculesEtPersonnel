@@ -34,7 +34,7 @@ import YearSelector from '../YearSelector';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
 import './Calendar.css';
-import { Button } from '@/design-system';
+import { Button , Tooltip} from '@/design-system';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 import { STATUS, TIMING } from '../../constants';
@@ -369,10 +369,11 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
             // Si dans le même groupe, bouton "délier"
             if (seg.type === 'group' && !isFirstInSeg) {
               gridElements.push(
-                <Button variant="ghost"                   key={`linked-sep-${segIdx}-${itemIdx}`}
+                <Tooltip content="Délier les trajets" position="bottom">
+                  <Button variant="ghost"                   key={`linked-sep-${segIdx}-${itemIdx}`}
                   className="tournee-link-btn linked"
                   style={{ gridColumn: `${linkCol} / span 1` }}
-                  title="Délier les trajets"
+ 
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -381,14 +382,16 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                 >
                   <Link size={12} />
                 </Button>
+                </Tooltip>
               );
             } else {
               // Bouton "dé-lié" (pas encore liés) - icône Link2
               gridElements.push(
-                <Button variant="ghost"                   key={`link-${segIdx}-${itemIdx}`}
+                <Tooltip content="Lier les trajets" position="bottom">
+                  <Button variant="ghost"                   key={`link-${segIdx}-${itemIdx}`}
                   className="tournee-link-btn"
                   style={{ gridColumn: `${linkCol} / span 1` }}
-                  title="Lier les trajets"
+ 
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -397,6 +400,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                 >
                   <Link2 size={12} />
                 </Button>
+                </Tooltip>
               );
             }
           }
@@ -410,8 +414,9 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
               }}>
                 <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
                 {onOpenTrip && (
-                  <Button variant="ghost"                     className="tournee-trip-btn"
-                    title="Détails du trajet"
+                  <Tooltip content="Détails du trajet" position="bottom">
+                    <Button variant="ghost"                     className="tournee-trip-btn"
+ 
                     onMouseDown={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
@@ -420,6 +425,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
                   >
                     <MapPin size={10} />
                   </Button>
+                  </Tooltip>
                 )}
               </span>
             );
@@ -502,12 +508,14 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
       <div className="reservation-affaire">
         <span className="reservation-affaire-text">{affaires[0]}{affaires.length > 1 && <span className="affaire-plus"> +{affaires.length - 1}</span>}</span>
         {singleEventId && onOpenTrip && (
-          <Button variant="ghost"             className="reservation-trip-btn"
-            title="Voir le trajet"
+          <Tooltip content="Voir le trajet" position="bottom">
+            <Button variant="ghost"             className="reservation-trip-btn"
+ 
             onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
           >
             <MapPin size={10} />
           </Button>
+          </Tooltip>
         )}
       </div>
     );
@@ -517,12 +525,14 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
   if (singleEventId && onOpenTrip && !block.isTournee) {
     return (
       <div className="reservation-affaire">
-        <Button variant="ghost"           className="reservation-trip-btn solo"
-          title="Voir le trajet"
+        <Tooltip content="Voir le trajet" position="bottom">
+          <Button variant="ghost"           className="reservation-trip-btn solo"
+ 
           onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
         >
           <MapPin size={10} />
         </Button>
+        </Tooltip>
       </div>
     );
   }
@@ -1943,9 +1953,11 @@ const Calendar = ({
         <div className="calendar-headers-row">
           <div className="vehicle-column-header">
             <span>Véhicules entreprise</span>
-            <span className="vehicle-availability-badge" title="Véhicules disponibles aujourd'hui (hors locations)">
+ <Tooltip content="Véhicules disponibles aujourd'hui (hors locations)" position="bottom">
+   <span className="vehicle-availability-badge">
               {availabilityCount.company.available}/{availabilityCount.company.total}
             </span>
+ </Tooltip>
             <Button variant="ghost" 
               className="section-toggle-button" 
               onClick={() => setCollapsedSections(prev => ({ ...prev, company: !prev.company }))}
@@ -1994,17 +2006,19 @@ const Calendar = ({
                             {weeksInMonth.map((weekStart, idx) => {
                               const weekNum = getWeek(weekStart, { weekStartsOn: 1 });
                               return (
-                                <span 
+                                <Tooltip content="Cliquer pour voir la semaine" position="bottom">
+                                  <span 
                                   key={idx} 
                                   className="week-number-small clickable"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleWeekClick(weekStart);
                                   }}
-                                  title="Cliquer pour voir la semaine"
+ 
                                 >
                                   S{weekNum}
                                 </span>
+                                </Tooltip>
                               );
                             })}
                           </div>
@@ -2094,7 +2108,7 @@ const Calendar = ({
                         <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" loading="lazy" />
                       )}
                       {hasBreakdown && (
-                        <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
+                        <Tooltip content="Panne signalée" position="bottom"><span className="breakdown-indicator-photo">⚠️</span></Tooltip>
                       )}
                       {hasExpiredControl && (
                         <div 
@@ -2124,9 +2138,11 @@ const Calendar = ({
                   className="vehicle-section-header"
                 >
                   <span>Véhicules de location</span>
-                  <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
+ <Tooltip content="Véhicules de location disponibles aujourd'hui" position="bottom">
+   <span className="vehicle-availability-badge location">
                     {availabilityCount.location.available}/{availabilityCount.location.total}
                   </span>
+ </Tooltip>
                   <Button variant="ghost" 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
@@ -2165,7 +2181,7 @@ const Calendar = ({
                         <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" loading="lazy" />
                       )}
                       {hasBreakdown && (
-                        <span className="breakdown-indicator-photo" title="Panne signalée">⚠️</span>
+                        <Tooltip content="Panne signalée" position="bottom"><span className="breakdown-indicator-photo">⚠️</span></Tooltip>
                       )}
                       {hasExpiredControl && (
                         <div 
@@ -2314,14 +2330,16 @@ const Calendar = ({
                             </div>
                           </div>
                           {!block.isMaintenance && onDeleteReservation && (
-                            <Button variant="ghost"                               className="reservation-delete-btn"
-                              title="Supprimer cette réservation"
+                            <Tooltip content="Supprimer cette réservation" position="bottom">
+                              <Button variant="ghost"                               className="reservation-delete-btn"
+ 
                               onClick={(e) => { e.stopPropagation(); e.preventDefault(); confirm({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                             >
                               <Trash2 size={12} />
                             </Button>
+                            </Tooltip>
                           )}
                           {view !== 'year' && !isBeingResized && (
                             <>
@@ -2372,9 +2390,11 @@ const Calendar = ({
                   style={{ gridColumn: '1 / -1' }}
                 >
                   <span>Véhicules de location</span>
-                  <span className="vehicle-availability-badge location" title="Véhicules de location disponibles aujourd'hui">
+ <Tooltip content="Véhicules de location disponibles aujourd'hui" position="bottom">
+   <span className="vehicle-availability-badge location">
                     {availabilityCount.location.available}/{availabilityCount.location.total}
                   </span>
+ </Tooltip>
                   <Button variant="ghost" 
                     className="section-toggle-button"
                     onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
@@ -2506,14 +2526,16 @@ const Calendar = ({
                             </div>
                           </div>
                           {!block.isMaintenance && onDeleteReservation && (
-                            <Button variant="ghost"                               className="reservation-delete-btn"
-                              title="Supprimer cette réservation"
+                            <Tooltip content="Supprimer cette réservation" position="bottom">
+                              <Button variant="ghost"                               className="reservation-delete-btn"
+ 
                               onClick={(e) => { e.stopPropagation(); e.preventDefault(); confirm({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
                               onMouseDown={(e) => e.stopPropagation()}
                               onMouseUp={(e) => e.stopPropagation()}
                             >
                               <Trash2 size={12} />
                             </Button>
+                            </Tooltip>
                           )}
                           {view !== 'year' && !isBeingResized && (
                             <>

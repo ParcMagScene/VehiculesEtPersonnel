@@ -877,15 +877,21 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
             {saveMsg && <span className={`depot-editor-msg depot-editor-msg-${saveMsg.type}`}>{saveMsg.text}</span>}
           </div>
           <div className="depot-editor-actions">
-            <Button variant="ghost" className="dep-ed-btn" onClick={handleUndo} disabled={history.length === 0} title="Annuler (⌘Z)">
+ <Tooltip content="Annuler (⌘Z)" position="bottom">
+   <Button variant="ghost" className="dep-ed-btn" onClick={handleUndo} disabled={history.length === 0}>
               <Undo2 size={16} /> Annuler
             </Button>
-            <Button variant="ghost" className="dep-ed-btn" onClick={handleRedo} disabled={redoStack.length === 0} title="Rétablir (⌘⇧Z)">
+ </Tooltip>
+ <Tooltip content="Rétablir (⌘⇧Z)" position="bottom">
+   <Button variant="ghost" className="dep-ed-btn" onClick={handleRedo} disabled={redoStack.length === 0}>
               <Redo2 size={16} /> Rétablir
             </Button>
-            <Button variant="primary" onClick={handleSave} disabled={saving || !dirty} title="Sauvegarder (⌘S)">
+ </Tooltip>
+ <Tooltip content="Sauvegarder (⌘S)" position="bottom">
+   <Button variant="primary" onClick={handleSave} disabled={saving || !dirty}>
               <Save size={16} /> {saving ? 'Sauvegarde...' : 'Sauvegarder'}
             </Button>
+ </Tooltip>
             <Tooltip content="Fermer (Esc)"><Button variant="ghost" className="dep-ed-btn dep-ed-btn-close" onClick={onClose}>
               <X size={16} />
             </Button></Tooltip>
@@ -998,12 +1004,14 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                   <Button variant="danger" size="sm" onClick={handleDeleteZone}>
                     <Trash2 size={14} /> Supprimer
                   </Button>
-                  <Button variant="ghost"                     className={`dep-ed-btn-sm ${subtractMode ? 'active' : ''}`}
+                  <Tooltip content="Soustraction booléenne — Découper le chevauchement entre deux zones" position="bottom">
+                    <Button variant="ghost"                     className={`dep-ed-btn-sm ${subtractMode ? 'active' : ''}`}
                     onClick={subtractMode ? cancelSubtract : startSubtractMode}
-                    title="Soustraction booléenne — Découper le chevauchement entre deux zones"
+ 
                   >
                     <Scissors size={14} /> {subtractMode ? 'Annuler soustraction' : 'Soustraire'}
                   </Button>
+                  </Tooltip>
                 </>
               )}
             </div>

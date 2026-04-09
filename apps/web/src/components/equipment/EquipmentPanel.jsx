@@ -913,10 +913,12 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
                 onChange={setFilterCatTree}
                 isMobile={isMobile}
               />
-              <label className="eq-filter-check" title="Afficher uniquement les matériels sérialisés">
+ <Tooltip content="Afficher uniquement les matériels sérialisés" position="bottom">
+   <label className="eq-filter-check">
                 <Checkbox checked={filterSerialized} onChange={(e) => setFilterSerialized(e.target.checked)} />
                 <span>Sérialisés</span>
               </label>
+ </Tooltip>
               {depotZones && (
                 <Select className="eq-filter eq-zone-filter" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} title="Filtrer par zone dépôt">
                   <option value="">Toutes zones</option>
@@ -929,9 +931,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
                 </Select>
               )}
               {depotZones && (
-                <Button variant="secondary" className={showDepotMap ? 'active' : ''} onClick={() => setShowDepotMap(!showDepotMap)} title="Plan du dépôt">
+ <Tooltip content="Plan du dépôt" position="bottom">
+   <Button variant="secondary" className={showDepotMap ? 'active' : ''} onClick={() => setShowDepotMap(!showDepotMap)}>
                   <Map size={14} />
                 </Button>
+ </Tooltip>
               )}
               <Button variant="primary" onClick={() => { setEditingEquipment(null); setShowEquipmentModal(true); }}>
                 <Plus size={14} /> Équipement
@@ -942,19 +946,25 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
             <>
               <SearchBar value={savSearch} onChange={setSavSearch} placeholder="Rechercher ticket, matériel..." size="sm" />
               {isAdmin && (
-                <Button variant="secondary" onClick={() => setShowSavImportModal(true)} title="Importer interventions SAV">
+ <Tooltip content="Importer interventions SAV" position="bottom">
+   <Button variant="secondary" onClick={() => setShowSavImportModal(true)}>
                   <Upload size={14} /> Import SAV
                 </Button>
+ </Tooltip>
               )}
               {canManageEquipmentMaintenance && (
-                <Button variant="secondary" onClick={() => setShowReportModal(true)} title="Rapport maintenance matériel">
+ <Tooltip content="Rapport maintenance matériel" position="bottom">
+   <Button variant="secondary" onClick={() => setShowReportModal(true)}>
                   <FileText size={14} /> Rapport
                 </Button>
+ </Tooltip>
               )}
               {canManageEquipmentMaintenance && (
-                <Button variant="secondary" onClick={handleExportSavPdf} disabled={exportingSavPdf} title="Exporter PDF du matériel en SAV">
+ <Tooltip content="Exporter PDF du matériel en SAV" position="bottom">
+   <Button variant="secondary" onClick={handleExportSavPdf} disabled={exportingSavPdf}>
                   <Download size={14} /> {exportingSavPdf ? 'Export...' : 'PDF SAV'}
                 </Button>
+ </Tooltip>
               )}
               <Select className="eq-filter" value={savFilterStatus} onChange={(e) => setSavFilterStatus(e.target.value)}>
                 <option value="_active">En cours (actifs)</option>
@@ -977,39 +987,53 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
 
         {/* Stats */}
         <div className="eq-stats-row">
-          <Button variant="ghost" className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }} title="Tous">
+ <Tooltip content="Tous" position="bottom">
+   <Button variant="ghost" className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }}>
             <Package size={13} />
             <span className="eq-stat-value">{stats.total}</span>
           </Button>
-          <Button variant="ghost" className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`} onClick={() => { setFilterStatus('available'); setListFilter(''); setSubTab('inventory'); }} title="Disponibles">
+ </Tooltip>
+ <Tooltip content="Disponibles" position="bottom">
+   <Button variant="ghost" className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`} onClick={() => { setFilterStatus('available'); setListFilter(''); setSubTab('inventory'); }}>
             <CheckCircle size={13} />
             <span className="eq-stat-value">{stats.available}</span>
           </Button>
-          <Button variant="ghost" className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_use'); setListFilter(''); setSubTab('inventory'); }} title="En service">
+ </Tooltip>
+ <Tooltip content="En service" position="bottom">
+   <Button variant="ghost" className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_use'); setListFilter(''); setSubTab('inventory'); }}>
             <Clock size={13} />
             <span className="eq-stat-value">{stats.in_use}</span>
           </Button>
-          <Button variant="ghost" className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }} title="Maintenance">
+ </Tooltip>
+ <Tooltip content="Maintenance" position="bottom">
+   <Button variant="ghost" className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }}>
             <Wrench size={13} />
             <span className="eq-stat-value">{stats.maintenance}</span>
           </Button>
+ </Tooltip>
           {stats.openTickets > 0 && (
-            <Button variant="ghost" className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`} onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }} title="Tickets SAV">
+ <Tooltip content="Tickets SAV" position="bottom">
+   <Button variant="ghost" className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`} onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }}>
               <AlertTriangle size={13} />
               <span className="eq-stat-value">{stats.openTickets}</span>
             </Button>
+ </Tooltip>
           )}
           {favoriteIds.size > 0 && (
-            <Button variant="ghost" className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }} title="Favoris">
+ <Tooltip content="Favoris" position="bottom">
+   <Button variant="ghost" className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }}>
               <Star size={13} />
               <span className="eq-stat-value">{favoriteIds.size}</span>
             </Button>
+ </Tooltip>
           )}
           {watchIds.size > 0 && (
-            <Button variant="ghost" className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }} title="Surveillance">
+ <Tooltip content="Surveillance" position="bottom">
+   <Button variant="ghost" className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }}>
               <Eye size={13} />
               <span className="eq-stat-value">{watchIds.size}</span>
             </Button>
+ </Tooltip>
           )}
         </div>
       </div>
@@ -1618,9 +1642,11 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                         <Button variant="ghost" onClick={() => { setLinkingPhoto(null); setLinkSearch(''); }} style={{ fontSize: 9, padding: '1px 6px', marginTop: 2, borderRadius: 3, background: 'var(--theme-bg-tertiary)', border: '1px solid var(--theme-border-medium)', cursor: 'pointer' }}>Annuler</Button>
                       </div>
                     ) : (
-                      <span className="eq-media-card-nolink" role="button" tabIndex={0} onClick={() => setLinkingPhoto(p)} style={{ cursor: 'pointer' }} title="Cliquer pour associer manuellement">
+ <Tooltip content="Cliquer pour associer manuellement" position="bottom">
+   <span className="eq-media-card-nolink" role="button" tabIndex={0} onClick={() => setLinkingPhoto(p)} style={{ cursor: 'pointer' }}>
                         Non associé
                       </span>
+ </Tooltip>
                     )}
                   </div>
                   <div className="eq-media-card-actions" style={{ display: 'flex', gap: 2 }}>
@@ -1781,18 +1807,22 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                       }
                     }
                     if (z) return (
-                      <span className="eq-zone-badge eq-zone-clickable" role="button" tabIndex={0} style={{ background: z.color, color: z.textColor || '#fff' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }} title="Voir sur le plan">
+ <Tooltip content="Voir sur le plan" position="bottom">
+   <span className="eq-zone-badge eq-zone-clickable" role="button" tabIndex={0} style={{ background: z.color, color: z.textColor || '#fff' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }}>
                         <MapPin size={11} />
                         {z.label}
                         {(eq.location_code || eq.locationCode) && <span className="eq-zone-code">{eq.location_code || eq.locationCode}</span>}
                       </span>
+ </Tooltip>
                     );
                     // Zone non trouvée dans les JSON mais présente en base → quand même cliquable
                     return (
-                      <span className="eq-zone-badge eq-zone-clickable" role="button" tabIndex={0} style={{ background: 'var(--theme-text-secondary)', color: 'var(--theme-text-inverse)' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }} title="Voir sur le plan">
+ <Tooltip content="Voir sur le plan" position="bottom">
+   <span className="eq-zone-badge eq-zone-clickable" role="button" tabIndex={0} style={{ background: 'var(--theme-text-secondary)', color: 'var(--theme-text-inverse)' }} onClick={(e) => { e.stopPropagation(); onOpenDepotMap && onOpenDepotMap(zoneId, eq.name); }}>
                         <MapPin size={11} />
                         {zoneId}
                       </span>
+ </Tooltip>
                     );
                   }
                   return eq.location || '—';
@@ -1927,9 +1957,11 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
               <span className="eq-field-value">
                 {(eq.location_zone || eq.locationZone) ? `${(eq.location_depot || eq.locationDepot) ? `D${eq.location_depot || eq.locationDepot} — ` : ''}${eq.location_zone || eq.locationZone}${(eq.location_code || eq.locationCode) ? ` — ${eq.location_code || eq.locationCode}` : ''}${(eq.location_floor || eq.locationFloor) ? ` (${eq.location_floor || eq.locationFloor})` : ''}` : eq.location}
                 {(eq.location_zone || eq.locationZone) && onOpenDepotMap && (
-                  <Button variant="ghost" className="eq-zone-map-btn" onClick={(e) => { e.stopPropagation(); onOpenDepotMap(eq.location_zone || eq.locationZone, eq.name); }} title="Voir sur le plan">
+ <Tooltip content="Voir sur le plan" position="bottom">
+   <Button variant="ghost" className="eq-zone-map-btn" onClick={(e) => { e.stopPropagation(); onOpenDepotMap(eq.location_zone || eq.locationZone, eq.name); }}>
                     <Map size={13} /> Plan
                   </Button>
+ </Tooltip>
                 )}
               </span>
             </div>

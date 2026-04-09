@@ -580,7 +580,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                               {isExpanded && sec.items && sec.items.length > 0 && (
                                 <div className="bl-loc-section-items">
                                   <div className="bl-loc-items-header">
-                                    <span className="bl-loc-col-match" title="Catalogue">🔗</span>
+                                    <Tooltip content="Catalogue" position="bottom"><span className="bl-loc-col-match">🔗</span></Tooltip>
                                     <span className="bl-loc-col-ref">Référence</span>
                                     <span className="bl-loc-col-desc">Désignation</span>
                                     <span className="bl-loc-col-qty">Qté</span>
@@ -597,7 +597,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                                             <Link2 size={13} style={{ color: '#10b981' }} />
                                           </span>
                                         ) : item.reference ? (
-                                          <span title="Référence non trouvée dans le catalogue" style={{ opacity: 0.3 }}>—</span>
+                                          <Tooltip content="Référence non trouvée dans le catalogue" position="bottom"><span style={{ opacity: 0.3 }}>—</span></Tooltip>
                                         ) : null}
                                       </span>
                                       <span className="bl-loc-col-ref">{item.reference || '—'}</span>
@@ -687,14 +687,16 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
           <div className="bl-loc-footer-right">
             <Button variant="ghost" onClick={onClose}>Annuler</Button>
             {parsedData && !isWrongDocType && (
-              <Button variant="ghost"                 className="bl-loc-btn-events"
+              <Tooltip content="Importer et créer les événements d'affichage dynamique" position="bottom">
+                <Button variant="ghost"                 className="bl-loc-btn-events"
                 onClick={handleGenerateEvents}
                 disabled={generating || saving || !affaireType}
-                title="Importer et créer les événements d'affichage dynamique"
+ 
               >
                 <Monitor size={15} />
                 {generating ? 'Génération...' : 'Importer + Événements'}
               </Button>
+              </Tooltip>
             )}
             <Button
               variant="primary"

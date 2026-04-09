@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Phone, Mail, Briefcase, Award, Calendar, ExternalLink, Link2, Clock, Check, XCircle, Plus } from 'lucide-react';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
-import { Avatar, Button, SectionHeader, Tag } from '@/design-system';
+import { Avatar, Button, SectionHeader, Tag , Tooltip} from '@/design-system';
 import { STATUS } from '../../constants';
 
 import './PersonnelDetailPanel.css';
@@ -196,9 +196,11 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
     <section className="pdp-section">
       <SectionHeader className="pdp-section-title" as="h4" icon={<Clock size={14} />} title="Absences" actions={
         onRequestLeave && (
-          <Button variant="ghost" className="pdp-absence-add-btn" onClick={() => onRequestLeave(personId)} title="Ajouter une absence">
+ <Tooltip content="Ajouter une absence" position="bottom">
+   <Button variant="ghost" className="pdp-absence-add-btn" onClick={() => onRequestLeave(personId)}>
             <Plus size={12} />
           </Button>
+ </Tooltip>
         )
       } />
       {loading ? (

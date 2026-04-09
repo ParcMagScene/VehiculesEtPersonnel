@@ -1153,7 +1153,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         </span>
 
         <span className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`} title={[fullTitle, showEventType && task.eventType, (task.locationAddress || task.eventLocation || linkedAffaire?.location) && '📍 ' + (task.locationAddress || task.eventLocation || linkedAffaire?.location), task.notes && '📝 ' + task.notes, (task.personFirstName || task.personLastName) && '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' ')].filter(Boolean).join('\n')}>
-          {isGoogle && <span className="google-mini-badge" title="Google Calendar">G</span>}
+          {isGoogle && <Tooltip content="Google Calendar" position="bottom"><span className="google-mini-badge">G</span></Tooltip>}
           {courseType && (() => { const ct = EVENT_TYPES[courseType]; return ct ? <span className="course-type-badge" style={{ background: `${ct.color}18`, color: ct.color, borderColor: `${ct.color}40` }}>{ct.emoji} {ct.label}</span> : null; })()}
           {task.reservation_vehicle_name && (
             <span className="vehicle-badge" title={`🚗 ${task.reservation_vehicle_name} ${task.reservation_vehicle_reg || ''}`}>
@@ -1188,12 +1188,14 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           {renderMultiAssign('task', task.id)}
           {/* Lier à une affaire (seulement si pas déjà liée) */}
           {!affaireNum && (
-            <Button variant="ghost"               className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
-              title="Lier à une affaire"
+            <Tooltip content="Lier à une affaire" position="bottom">
+              <Button variant="ghost"               className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
+ 
               onClick={(e) => { e.stopPropagation(); setLinkingTaskId(linkingTaskId === task.id ? null : task.id); setLinkTaskSearchQuery(''); }}
             >
               <Link size={13} />
             </Button>
+            </Tooltip>
           )}
           <Tooltip content={isHidden ? 'Afficher sur l\'écran' : 'Masquer de l\'écran'}>
             <Button variant="ghost"               className={`toggle-visible ${isHidden ? 'off' : ''}`}
@@ -1421,7 +1423,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
 
         <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
-          {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
+          {affaire._linkedGoogleEvent && <Tooltip content="Lié à un événement Google Calendar" position="bottom"><span className="google-linked-badge">G</span></Tooltip>}
         </span>
 
         <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
@@ -1514,17 +1516,19 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         <div className="task-actions">
-          <span className="google-badge" title="Google Calendar">G</span>
+          <Tooltip content="Google Calendar" position="bottom"><span className="google-badge">G</span></Tooltip>
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
             {isProcessed ? '✓' : '⚙'}
           </span>
-          <Button variant="ghost"             className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
-            title="Lier à une affaire"
+          <Tooltip content="Lier à une affaire" position="bottom">
+            <Button variant="ghost"             className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+ 
             style={affaireNum ? { visibility: 'hidden' } : {}}
             onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
           >
             <Link size={13} />
           </Button>
+          </Tooltip>
         </div>
         {/* Mini-badges des tâches créées depuis cet événement */}
         {linkedTasks.length > 0 && (
@@ -1619,7 +1623,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
 
         <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
-          {affaire._linkedGoogleEvent && <span className="google-linked-badge" title="Lié à un événement Google Calendar">G</span>}
+          {affaire._linkedGoogleEvent && <Tooltip content="Lié à un événement Google Calendar" position="bottom"><span className="google-linked-badge">G</span></Tooltip>}
         </span>
 
         <span className="ev-col ev-col-client" title={displayClient}>{displayClient}</span>
@@ -1730,13 +1734,15 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
             {isProcessed ? '✓' : '⚙'}
           </span>
-          <Button variant="ghost"             className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
-            title="Lier à une affaire"
+          <Tooltip content="Lier à une affaire" position="bottom">
+            <Button variant="ghost"             className={`btn-link-affaire ${isLinking ? 'active' : ''}`}
+ 
             style={affaireNum ? { visibility: 'hidden' } : {}}
             onClick={(e) => { e.stopPropagation(); setLinkingEvent(isLinking ? null : event); setLinkSearchQuery(''); }}
           >
             <Link size={13} />
           </Button>
+          </Tooltip>
         </div>
         {/* Mini-badges des tâches créées depuis cet événement iCal */}
         {linkedTasks.length > 0 && (
@@ -1847,15 +1853,19 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             <span className="wk-person">{item.personFirstName?.charAt(0)}{item.personLastName?.charAt(0)}</span>
           )}
           <div className="wk-actions">
-            <Button variant="ghost" onClick={() => setEditingTask(item)} title="Modifier">
+ <Tooltip content="Modifier" position="bottom">
+   <Button variant="ghost" onClick={() => setEditingTask(item)}>
               <Edit2 size={10} />
             </Button>
+ </Tooltip>
             <Button variant="ghost" onClick={() => handleToggleTaskVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
               {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
             </Button>
-            <Button variant="ghost" className="del" onClick={() => handleDelete(item.id)} title="Supprimer">
+ <Tooltip content="Supprimer" position="bottom">
+   <Button variant="ghost" className="del" onClick={() => handleDelete(item.id)}>
               <Trash2 size={10} />
             </Button>
+ </Tooltip>
           </div>
         </div>
       );
@@ -1876,9 +1886,11 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             <Button variant="ghost" onClick={() => handleToggleDisplayEventVisible(item)} title={item.visible === 0 ? 'Afficher' : 'Masquer'}>
               {item.visible === 0 ? <EyeOff size={10} /> : <Eye size={10} />}
             </Button>
-            <Button variant="ghost" className="del" onClick={() => handleDeleteDisplayEvent(item.id)} title="Retirer">
+ <Tooltip content="Retirer" position="bottom">
+   <Button variant="ghost" className="del" onClick={() => handleDeleteDisplayEvent(item.id)}>
               <Trash2 size={10} />
             </Button>
+ </Tooltip>
           </div>
         </div>
       );
@@ -1900,12 +1912,14 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             {typeInfo.emoji} {item.client || item.numeroAffaire}{(item.event_name || item.titre) ? ` · ${(item.event_name || item.titre).slice(0, 15)}${(item.event_name || item.titre).length > 15 ? '…' : ''}` : ''}
           </span>
           {item._googleTime && <span className="wk-time">{item._googleTime}</span>}
-          {item._linkedGoogleEvent && <span className="wk-google-badge" title="Lié Google">G</span>}
+          {item._linkedGoogleEvent && <Tooltip content="Lié Google" position="bottom"><span className="wk-google-badge">G</span></Tooltip>}
           {isProcessed && <span className="wk-status-dot done">✓</span>}
           <div className="wk-actions">
-            <Button variant="ghost" className="del" onClick={(e) => { e.stopPropagation(); handleHideAffaire(item); }} title="Retirer">
+ <Tooltip content="Retirer" position="bottom">
+   <Button variant="ghost" className="del" onClick={(e) => { e.stopPropagation(); handleHideAffaire(item); }}>
               <X size={10} />
             </Button>
+ </Tooltip>
           </div>
         </div>
       );
@@ -2195,29 +2209,35 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <div className="tp-toolbar-left">
           {/* Toggle vue Jour / Semaine */}
           <div className="tp-view-toggle">
-            <Button variant="ghost"               className={viewMode === 'day' ? 'active' : ''}
+            <Tooltip content="Vue jour" position="bottom">
+              <Button variant="ghost"               className={viewMode === 'day' ? 'active' : ''}
               onClick={() => setViewMode('day')}
-              title="Vue jour"
+ 
             >
               <LayoutList size={15} /> Jour
             </Button>
-            <Button variant="ghost"               className={viewMode === 'week' ? 'active' : ''}
+            </Tooltip>
+            <Tooltip content="Vue semaine" position="bottom">
+              <Button variant="ghost"               className={viewMode === 'week' ? 'active' : ''}
               onClick={() => setViewMode('week')}
-              title="Vue semaine"
+ 
             >
               <CalendarDays size={15} /> Semaine
             </Button>
+            </Tooltip>
           </div>
 
           <div className="tp-date-nav">
             <Button variant="ghost" onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? -7 : -1))}>
               <ChevronLeft size={16} />
             </Button>
-            <span className="tp-current-date" role="button" tabIndex={0} onClick={() => setSelectedDate(todayStr())} title="Aujourd'hui">
+ <Tooltip content="Aujourd'hui" position="bottom">
+   <span className="tp-current-date" role="button" tabIndex={0} onClick={() => setSelectedDate(todayStr())}>
               {viewMode === 'week'
                 ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
                 : formatDateFr(selectedDate)}
             </span>
+ </Tooltip>
             <Button variant="ghost" onClick={() => setSelectedDate(d => addDays(d, viewMode === 'week' ? 7 : 1))}>
               <ChevronRight size={16} />
             </Button>
@@ -2229,24 +2249,36 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           )}
         </div>
         <div className="tp-toolbar-right">
-          <Button variant="secondary" className="btn-toolbar-action" onClick={handleRollover} title="Reporter les tâches non terminées au lendemain">
+ <Tooltip content="Reporter les tâches non terminées au lendemain" position="bottom">
+   <Button variant="secondary" className="btn-toolbar-action" onClick={handleRollover}>
             <SkipForward size={16} /> Reporter
           </Button>
-          <Button variant="secondary" className="btn-toolbar-action btn-clear-done" onClick={handleClearCompleted} title="Effacer les tâches terminées du planning et du dashboard" disabled={doneTasks === 0}>
+ </Tooltip>
+ <Tooltip content="Effacer les tâches terminées du planning et du dashboard" position="bottom">
+   <Button variant="secondary" className="btn-toolbar-action btn-clear-done" onClick={handleClearCompleted} disabled={doneTasks === 0}>
             <CheckCheck size={16} /> Effacer terminées
           </Button>
-          <Button variant="secondary" className="btn-toolbar-action" onClick={handleGenerateRecurring} title="Générer les tâches récurrentes pour ce jour">
+ </Tooltip>
+ <Tooltip content="Générer les tâches récurrentes pour ce jour" position="bottom">
+   <Button variant="secondary" className="btn-toolbar-action" onClick={handleGenerateRecurring}>
             <Repeat size={16} /> Générer
           </Button>
-          <Button variant={showRecurring ? 'primary' : 'secondary'} className={`btn-toolbar-action ${showRecurring ? 'active' : ''}`} onClick={() => setShowRecurring(v => !v)} title="Gérer les tâches récurrentes">
+ </Tooltip>
+ <Tooltip content="Gérer les tâches récurrentes" position="bottom">
+   <Button variant={showRecurring ? 'primary' : 'secondary'} className={`btn-toolbar-action ${showRecurring ? 'active' : ''}`} onClick={() => setShowRecurring(v => !v)}>
             <Settings size={16} /> Récurrentes
           </Button>
-          <Button variant="secondary" className="btn-export-pdf" onClick={handleExportPdf} title="Exporter la fiche de tâches en PDF">
+ </Tooltip>
+ <Tooltip content="Exporter la fiche de tâches en PDF" position="bottom">
+   <Button variant="secondary" className="btn-export-pdf" onClick={handleExportPdf}>
             <FileDown size={16} /> PDF
           </Button>
-          <Button variant="primary" className="btn-toolbar-action" onClick={() => setShowAddTaskModal(true)} title="Ajouter une nouvelle tâche">
+ </Tooltip>
+ <Tooltip content="Ajouter une nouvelle tâche" position="bottom">
+   <Button variant="primary" className="btn-toolbar-action" onClick={() => setShowAddTaskModal(true)}>
             <Plus size={16} /> Nouvelle tâche
           </Button>
+ </Tooltip>
         </div>
       </div>
 

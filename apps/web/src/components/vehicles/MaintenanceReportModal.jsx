@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import { X, Printer, FileText, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import api from '../../utils/api';
 import './MaintenanceReportModal.css';
-import { Button, Select, Table } from '@/design-system';
+import { Button, Select, Table , Tooltip} from '@/design-system';
 import { formatDateTime, formatDateSimple } from '../../utils/formatUtils';
 
 const PERIOD_MODES = [
@@ -207,12 +207,16 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
             <Select className="mr-type-select" value={reportType} onChange={e => setReportType(e.target.value)}>
               {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </Select>
-            <Button variant="ghost" className="mr-action-btn" onClick={handlePrint} title="Imprimer">
+ <Tooltip content="Imprimer" position="bottom">
+   <Button variant="ghost" className="mr-action-btn" onClick={handlePrint}>
               <Printer size={16} /> Imprimer
             </Button>
-            <Button variant="ghost" className="mr-action-btn export" onClick={handleExportPDF} title="Télécharger en PDF" disabled={exporting}>
+ </Tooltip>
+ <Tooltip content="Télécharger en PDF" position="bottom">
+   <Button variant="ghost" className="mr-action-btn export" onClick={handleExportPDF} disabled={exporting}>
               <Download size={16} /> {exporting ? 'Export...' : 'PDF'}
             </Button>
+ </Tooltip>
           </div>
         </div>
 

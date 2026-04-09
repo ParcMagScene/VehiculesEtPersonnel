@@ -317,19 +317,25 @@ function AnnuairePanel({ currentUser }) {
               </Button>
             )}
             {activeTab === 'clients' && currentUser?.isAdmin && (
-              <Button variant="secondary" onClick={() => handleImportCSV('clients')} title="Import CSV Clients Locmat">
+ <Tooltip content="Import CSV Clients Locmat" position="bottom">
+   <Button variant="secondary" onClick={() => handleImportCSV('clients')}>
                 <Upload size={15} /> CSV
               </Button>
+ </Tooltip>
             )}
             {activeTab === 'suppliers' && currentUser?.isAdmin && (
-              <Button variant="secondary" onClick={() => handleImportCSV('suppliers')} title="Import CSV Fournisseurs Locmat">
+ <Tooltip content="Import CSV Fournisseurs Locmat" position="bottom">
+   <Button variant="secondary" onClick={() => handleImportCSV('suppliers')}>
                 <Upload size={15} /> CSV
               </Button>
+ </Tooltip>
             )}
             {activeTab === 'contacts' && currentUser?.isAdmin && (
-              <Button variant="secondary" onClick={() => setShowContactsImport(true)} title="Import CSV Contacts Locmat">
+ <Tooltip content="Import CSV Contacts Locmat" position="bottom">
+   <Button variant="secondary" onClick={() => setShowContactsImport(true)}>
                 <Upload size={15} /> CSV
               </Button>
+ </Tooltip>
             )}
             <Button variant="primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
               <Plus size={15} /> Nouveau

@@ -7,7 +7,7 @@ import AffaireBadge from '../AffaireBadge';
 import './EventDetailsModal.css';
 import { useToast } from '../../hooks/useToast';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { Button, ModalLayout, Input, SectionHeader } from '@/design-system';
+import { Button, ModalLayout, Input, SectionHeader , Tooltip} from '@/design-system';
 
 const BLImportModal = lazy(() => import('../affaires/BLImportModal'));
 const DynamicDisplayDialog = lazy(() => import('../DynamicDisplayDialog'));
@@ -402,10 +402,10 @@ function EventDetailsModal({
                     </div>
                     <div className="affaire-stats">
                       {affaire.reservationCount > 0 && (
-                        <span className="affaire-stat" title="Réservations">🚛 {affaire.reservationCount}</span>
+                        <Tooltip content="Réservations" position="bottom"><span className="affaire-stat">🚛 {affaire.reservationCount}</span></Tooltip>
                       )}
                       {affaire.personnelCount > 0 && (
-                        <span className="affaire-stat" title="Personnel affecté">👷 {affaire.personnelCount}</span>
+                        <Tooltip content="Personnel affecté" position="bottom"><span className="affaire-stat">👷 {affaire.personnelCount}</span></Tooltip>
                       )}
                     </div>
                   </div>
@@ -472,15 +472,17 @@ function EventDetailsModal({
                 icon={<HardDrive size={18} />}
                 title="Liens Google Drive"
                 actions={currentUser?.isAdmin && !editingDriveLink && (
-                  <Button
+                  <Tooltip content="Ajouter un lien Google Drive" position="bottom">
+                    <Button
                     variant="primary" size="sm"
                     className="btn-add-drive-link"
                     onClick={handleStartAddDriveLink}
-                    title="Ajouter un lien Google Drive"
+ 
                   >
                     <Plus size={16} />
                     Ajouter un lien
                   </Button>
+                  </Tooltip>
                 )}
               />
 
@@ -514,19 +516,23 @@ function EventDetailsModal({
                       }}
                     />
                     <div className="drive-link-edit-actions">
-                      <Button variant="ghost"                         className="drive-link-btn drive-link-save"
+                      <Tooltip content="Enregistrer" position="bottom">
+                        <Button variant="ghost"                         className="drive-link-btn drive-link-save"
                         onClick={handleSaveDriveLink}
                         disabled={savingDriveLink}
-                        title="Enregistrer"
+ 
                       >
                         <Check size={14} />
                       </Button>
-                      <Button variant="ghost"                         className="drive-link-btn drive-link-cancel"
+                      </Tooltip>
+                      <Tooltip content="Annuler" position="bottom">
+                        <Button variant="ghost"                         className="drive-link-btn drive-link-cancel"
                         onClick={handleCancelEditDriveLink}
-                        title="Annuler"
+ 
                       >
                         <X size={14} />
                       </Button>
+                      </Tooltip>
                     </div>
                   </div>
                 </div>
@@ -560,19 +566,23 @@ function EventDetailsModal({
                         </a>
                         {currentUser?.isAdmin && (
                           <div className="drive-link-item-actions">
-                            <Button variant="ghost"                               className="drive-link-item-btn drive-link-item-edit"
+                            <Tooltip content="Modifier" position="bottom">
+                              <Button variant="ghost"                               className="drive-link-item-btn drive-link-item-edit"
                               onClick={() => handleStartEditDriveLink(link.reservationId, link.index, link)}
-                              title="Modifier"
+ 
                             >
                               <Edit size={13} />
                             </Button>
-                            <Button variant="ghost"                               className="drive-link-item-btn drive-link-item-delete"
+                            </Tooltip>
+                            <Tooltip content="Supprimer" position="bottom">
+                              <Button variant="ghost"                               className="drive-link-item-btn drive-link-item-delete"
                               onClick={() => handleDeleteDriveLink(link.reservationId, link.index)}
-                              title="Supprimer"
+ 
                               disabled={savingDriveLink}
                             >
                               <Trash2 size={13} />
                             </Button>
+                            </Tooltip>
                           </div>
                         )}
                       </div>
@@ -591,18 +601,21 @@ function EventDetailsModal({
               actions={<div className="section-actions">
                 {currentUser?.isAdmin && (
                   <>
-                    <Button variant="ghost" 
+                    <Tooltip content="Importer un BL" position="bottom">
+                      <Button variant="ghost" 
                       className="btn-import-bl" 
                       onClick={handleImportBL}
-                      title="Importer un BL"
+ 
                       disabled={!event.affaire}
                     >
                       <FileText size={16} />
                       Importer BL
                     </Button>
-                    <label 
+                    </Tooltip>
+                    <Tooltip content="Joindre des fichiers" position="bottom">
+                      <label 
                       className={`btn-open-folder ${!event.affaire || uploading ? 'disabled' : ''}`}
-                      title="Joindre des fichiers"
+ 
                       style={{ cursor: !event.affaire || uploading ? 'not-allowed' : 'pointer' }}
                     >
                       <Plus size={16} />
@@ -615,17 +628,20 @@ function EventDetailsModal({
                         style={{ display: 'none' }}
                       />
                     </label>
+                    </Tooltip>
                   </>
                 )}
-                <Button variant="ghost" 
+                <Tooltip content="Ouvrir le dossier" position="bottom">
+                  <Button variant="ghost" 
                   className="btn-open-folder" 
                   onClick={handleOpenFolder}
-                  title="Ouvrir le dossier"
+ 
                   disabled={!event.affaire}
                 >
                   <Folder size={16} />
                   Ouvrir dossier
                 </Button>
+                </Tooltip>
               </div>}
             />
             
@@ -651,12 +667,14 @@ function EventDetailsModal({
                     <span className="file-name">{file.name}</span>
                     <span className="file-size">{file.size}</span>
                     {currentUser?.isAdmin && (
-                      <Button variant="ghost"                         className="btn-delete-attachment"
+                      <Tooltip content="Supprimer cette pièce jointe" position="bottom">
+                        <Button variant="ghost"                         className="btn-delete-attachment"
                         onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(file); }}
-                        title="Supprimer cette pièce jointe"
+ 
                       >
                         <Trash2 size={14} />
                       </Button>
+                      </Tooltip>
                     )}
                   </div>
                 ))}
@@ -671,19 +689,23 @@ function EventDetailsModal({
             Fermer
           </Button>
           <div className="footer-actions">
-            <Button variant="ghost"               className="btn-display-event"
+            <Tooltip content="Ajouter à l'affichage dynamique" position="bottom">
+              <Button variant="ghost"               className="btn-display-event"
               onClick={() => setShowDisplayDialog(true)}
-              title="Ajouter à l'affichage dynamique"
+ 
             >
               📺 Affichage
             </Button>
-            <Button variant="ghost"               className="btn-bl-import"
+            </Tooltip>
+            <Tooltip content="Importer un BL pour cet événement" position="bottom">
+              <Button variant="ghost"               className="btn-bl-import"
               onClick={() => setShowBLImport(true)}
-              title="Importer un BL pour cet événement"
+ 
             >
               <FileText size={16} />
               Import BL
             </Button>
+            </Tooltip>
             {currentUser?.isAdmin && onRequestDeleteEvent && (
               <Button
                 variant="danger"
@@ -705,13 +727,15 @@ function EventDetailsModal({
               </Button>
             )}
             {currentUser?.isAdmin && onRequestEditEvent && (
-              <Button variant="ghost"                 className="btn-edit-event"
+              <Tooltip content="Modifier l'événement" position="bottom">
+                <Button variant="ghost"                 className="btn-edit-event"
                 onClick={() => onRequestEditEvent(event)}
-                title="Modifier l'événement"
+ 
               >
                 <Pencil size={16} />
                 Modifier
               </Button>
+              </Tooltip>
             )}
           </div>
         </div>

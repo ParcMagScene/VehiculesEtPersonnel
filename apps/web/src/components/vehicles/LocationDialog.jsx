@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import logger from "../../utils/logger";
 import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
 import api from '../../utils/api';
-import { Button, Dialog, FormField, Input, Select, InlineAlert } from '@/design-system';
+import { Button, Dialog, FormField, Input, Select, InlineAlert , Tooltip} from '@/design-system';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
 import { useToast } from '../../hooks/useToast';
@@ -409,10 +409,12 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
             <MapPin size={24} />
             {location ? 'Modifier le lieu' : 'Nouveau lieu'}
             {formData.lat && formData.lng && (
-              <span className="gps-badge" title="Position GPS enregistrée">
+ <Tooltip content="Position GPS enregistrée" position="bottom">
+   <span className="gps-badge">
                 <Navigation size={16} />
                 GPS
               </span>
+ </Tooltip>
             )}
           </h2>
           <Button variant="ghost" className="close-button" onClick={handleSafeClose}>

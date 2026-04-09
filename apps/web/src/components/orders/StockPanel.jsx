@@ -439,9 +439,11 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
         {current.notes && <p className="stock-slide-notes">{current.notes}</p>}
       </div>
       <div className="stock-slide-footer">
-        <Button variant="secondary" onClick={() => onMovement()} title="Mouvement">
+ <Tooltip content="Mouvement" position="bottom">
+   <Button variant="secondary" onClick={() => onMovement()}>
           <TrendingUp size={14} /> Mouvement
         </Button>
+ </Tooltip>
         {isAdmin && (
           <Tooltip content="Modifier">
             <Button variant="secondary" onClick={() => onEdit(current)} iconOnly aria-label="Modifier">
@@ -584,18 +586,22 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
             placeholder="Toutes catégories"
             allowClear
           />
-          <Button variant="ghost"             className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
+          <Tooltip content="Afficher uniquement les stocks bas" position="bottom">
+            <Button variant="ghost"             className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
             onClick={() => onLowStockChange(!lowStockFilter)}
-            title="Afficher uniquement les stocks bas"
+ 
           >
             <AlertTriangle size={14} />
             Stock bas
           </Button>
+          </Tooltip>
         </div>
-        <Button variant="ghost" className="stock-add-btn" onClick={onImport} title="Importer un inventaire CSV">
+ <Tooltip content="Importer un inventaire CSV" position="bottom">
+   <Button variant="ghost" className="stock-add-btn" onClick={onImport}>
           <Upload size={16} />
           <span>Importer</span>
         </Button>
+ </Tooltip>
         <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
           <Plus size={16} />
           <span>Nouvel article</span>
@@ -763,9 +769,11 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
                   ? <>
                       {item.location_depot ? `D${item.location_depot} — ` : ''}{item.location_zone}{item.location_floor ? ` (${item.location_floor})` : ''}
                       {(depotZones || allDepotZones) && (
-                        <Button variant="ghost" className="stock-zone-map-btn" onClick={() => setShowMap(!showMap)} title="Voir sur le plan">
+ <Tooltip content="Voir sur le plan" position="bottom">
+   <Button variant="ghost" className="stock-zone-map-btn" onClick={() => setShowMap(!showMap)}>
                           <Map size={13} /> Plan
                         </Button>
+ </Tooltip>
                       )}
                     </>
                   : item.location || '—'}

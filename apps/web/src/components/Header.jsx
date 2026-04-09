@@ -8,7 +8,7 @@ import OverdueInterventionModal from './planning/OverdueInterventionModal';
 import ProfileEditModal from './auth/ProfileEditModal';
 import { useToast } from '../hooks/useToast';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
-import { Avatar, Button, Textarea } from '@/design-system';
+import { Avatar, Button, Textarea , Tooltip} from '@/design-system';
 import { STATUS } from '../constants';
 
 import './Header.css';
@@ -223,10 +223,12 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
         <div className="header-title-container">
           <div className="header-logo-area">
             <img src="/Logos/LogoEmagTransp.png" alt="eM@g Scene" className="header-logo" />
-            <Button variant="ghost" className="help-trigger-btn" onClick={onOpenHelp} title="Aide — Guide d'utilisation" aria-label="Aide">
+ <Tooltip content="Aide — Guide d'utilisation" position="bottom">
+   <Button variant="ghost" className="help-trigger-btn" onClick={onOpenHelp} aria-label="Aide">
               <HelpCircle size={18} />
               <span>Aide</span>
             </Button>
+ </Tooltip>
             <Button variant="ghost" 
               className="theme-toggle-btn" 
               onClick={onToggleTheme} 
@@ -952,15 +954,19 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
             )}
             </div>
             
-            <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages" title="Messages">
+ <Tooltip content="Messages" position="bottom">
+   <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages">
               <MessageSquare size={20} />
               {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
             </Button>
+ </Tooltip>
 
             {currentUser?.isAdmin && (
-              <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing" title="Mailing">
+ <Tooltip content="Mailing" position="bottom">
+   <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing">
                 <Mail size={20} />
               </Button>
+ </Tooltip>
             )}
 
             <Button variant="ghost" 

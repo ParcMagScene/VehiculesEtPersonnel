@@ -793,12 +793,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
 
           {/* Type — sélecteur horizontal */}
           <div className="affaires-type-selector">
-            <Button variant="ghost"               className={`affaires-type-btn${!filterType ? ' active' : ''}`}
+            <Tooltip content="Tous les types" position="bottom">
+              <Button variant="ghost"               className={`affaires-type-btn${!filterType ? ' active' : ''}`}
               onClick={() => setFilterType('')}
-              title="Tous les types"
+ 
             >
               Tous
             </Button>
+            </Tooltip>
             {AFFAIRE_TYPES.map(t => (
               <Button variant="ghost"                 key={t.value}
                 className={`affaires-type-btn${filterType === t.value ? ' active' : ''}`}
@@ -847,10 +849,12 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           </label>
 
           {/* Archivées */}
-          <label className="affaires-tb-toggle" title="Afficher les affaires terminées depuis plus d'une semaine">
+ <Tooltip content="Afficher les affaires terminées depuis plus d'une semaine" position="bottom">
+   <label className="affaires-tb-toggle">
             <Checkbox checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
             <span>Archivées</span>
           </label>
+ </Tooltip>
 
           <Divider orientation="vertical" />
 
@@ -885,31 +889,37 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
             <span>Nouvelle affaire</span>
           </Button>
           {/* Import BL/BP unifié */}
-          <Button variant="ghost"             className="affaires-tb-bl-import-btn multi-import"
+          <Tooltip content="Importer un ou plusieurs BL / BP" position="bottom">
+            <Button variant="ghost"             className="affaires-tb-bl-import-btn multi-import"
             onClick={() => setShowMultiImport(true)}
-            title="Importer un ou plusieurs BL / BP"
+ 
             style={{ gap: 4 }}
           >
             <PackagePlus size={14} /> Import BL/BP
           </Button>
-          <Button variant="ghost"             className="affaires-tb-bl-import-btn"
+          </Tooltip>
+          <Tooltip content="Analyse batch des BL PDF" position="bottom">
+            <Button variant="ghost"             className="affaires-tb-bl-import-btn"
             onClick={() => setShowBatchAnalysis(true)}
-            title="Analyse batch des BL PDF"
+ 
             style={{ gap: 4 }}
           >
             <BarChart2 size={14} /> Analyse batch
           </Button>
+          </Tooltip>
 
           <Divider orientation="vertical" />
 
           {/* Stats */}
-          <Button variant="ghost"             className="affaires-tb-nav-btn"
+          <Tooltip content="Rafraîchir les affaires" position="bottom">
+            <Button variant="ghost"             className="affaires-tb-nav-btn"
             onClick={handleRefresh}
-            title="Rafraîchir les affaires"
+ 
             style={{ display: 'flex', alignItems: 'center', gap: 4 }}
           >
             <RefreshCw size={14} />
           </Button>
+          </Tooltip>
           <div className="affaires-count-box">
             <span className="affaires-count-number">{filteredAffaires.length}</span>
             <span className="affaires-count-label">affaire{filteredAffaires.length !== 1 ? 's' : ''}</span>
@@ -989,7 +999,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
                 >
                   <span className="ar-status">
                     {affaire.isArchived ? (
-                      <span className="status-dot archived" title="Archivée" />
+ <Tooltip content="Archivée" position="bottom"><span className="status-dot archived" /></Tooltip>
                     ) : (
                       <span className={`status-dot ${status}`} title={status === STATUS.ACTIVE ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminée'} />
                     )}

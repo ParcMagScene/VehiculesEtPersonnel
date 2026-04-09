@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { STATUS } from '../../constants';
 
-import { Button } from '@/design-system';
+import { Button , Tooltip} from '@/design-system';
 import './MobilePlanning.css';
 
 function MobilePlanning({ 
@@ -251,10 +251,12 @@ function MobilePlanning({
           <Button variant="ghost" className="month-nav-btn" onClick={goToNextMonth}>
             <ChevronRight size={20} />
           </Button>
-          <Button variant="ghost" className="today-btn" onClick={scrollToToday} title="Aller à aujourd'hui">
+ <Tooltip content="Aller à aujourd'hui" position="bottom">
+   <Button variant="ghost" className="today-btn" onClick={scrollToToday}>
             <CalendarDays size={18} />
             <span>Aujourd'hui</span>
           </Button>
+ </Tooltip>
         </div>
         <Button variant="ghost" className="close-button" onClick={onClose}>
           <X size={24} />

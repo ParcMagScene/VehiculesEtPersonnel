@@ -5,7 +5,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Calendar, Play, Square, Loader, Clock, Film, AlertCircle } from 'lucide-react';
 import api from '../../utils/api';
-import { Button, Select } from '@/design-system';
+import { Button, Select , Tooltip} from '@/design-system';
 import { TIMING } from '../../constants';
 
 import './PlaybackPanel.css';
@@ -278,9 +278,11 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
         />
         {(playing || connecting) && (
           <div className="playback-panel__player-controls">
-            <Button variant="secondary" size="sm" onClick={stopPlayback} title="Arrêter">
+ <Tooltip content="Arrêter" position="bottom">
+   <Button variant="secondary" size="sm" onClick={stopPlayback}>
               <Square size={16} /> Arrêter
             </Button>
+ </Tooltip>
             {currentSegment && (
               <span className="playback-panel__now-playing">
                 🎬 {currentSegment.startTime.slice(11, 16)} → {currentSegment.endTime.slice(11, 16)}

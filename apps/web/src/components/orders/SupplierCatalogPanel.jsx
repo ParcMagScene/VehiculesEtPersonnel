@@ -234,14 +234,18 @@ export default function SupplierCatalogPanel({ currentUser }) {
             </Button>
           )}
           {canWrite && total > 0 && (
-            <Button variant="secondary" onClick={handleRefreshBrands} disabled={refreshingBrands} title="Détecter automatiquement les marques dans les désignations">
+ <Tooltip content="Détecter automatiquement les marques dans les désignations" position="bottom">
+   <Button variant="secondary" onClick={handleRefreshBrands} disabled={refreshingBrands}>
               <RefreshCw size={16} className={refreshingBrands ? 'spin' : ''} /> Màj marques
             </Button>
+ </Tooltip>
           )}
           {canWrite && total > 0 && (
-            <Button variant="danger" onClick={handlePurge} title="Vider toute la base articles fournisseurs">
+ <Tooltip content="Vider toute la base articles fournisseurs" position="bottom">
+   <Button variant="danger" onClick={handlePurge}>
               <DatabaseZap size={16} /> Vider la base
             </Button>
+ </Tooltip>
           )}
         </div>
       </div>

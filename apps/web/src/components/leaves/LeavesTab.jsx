@@ -345,7 +345,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                         </span>
                       </div>
                       {req.priority_score > 0 && (
-                        <span className="lt-priority-badge" title="Priorité">P{req.priority_score}</span>
+                        <Tooltip content="Priorité" position="bottom"><span className="lt-priority-badge">P{req.priority_score}</span></Tooltip>
                       )}
                     </div>
                   );

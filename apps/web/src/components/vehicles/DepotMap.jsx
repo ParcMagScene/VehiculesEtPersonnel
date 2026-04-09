@@ -343,10 +343,12 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
           )}
           {/* Éditer le plan (admin uniquement) */}
           {!compact && currentUser?.isAdmin && (
-            <Button variant="ghost" type="button" className="depot-edit-btn" onClick={() => setShowEditor(true)} title="Éditer le plan">
+ <Tooltip content="Éditer le plan" position="bottom">
+   <Button variant="ghost" type="button" className="depot-edit-btn" onClick={() => setShowEditor(true)}>
               <Settings2 size={14} />
               Éditer
             </Button>
+ </Tooltip>
           )}
           {/* Zoom */}
           <div className="depot-zoom-controls">

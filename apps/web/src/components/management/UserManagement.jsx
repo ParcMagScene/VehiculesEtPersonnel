@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import ProfileEditModal from '../auth/ProfileEditModal';
 import './UserManagement.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, ModalLayout, Input, Table, Checkbox, Tag, Card, Avatar } from '@/design-system';
+import { Button, ModalLayout, Input, Table, Checkbox, Tag, Card, Avatar , Tooltip} from '@/design-system';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { formatDateSimple } from '../../utils/formatUtils';
 
@@ -278,7 +278,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     <td>
                       {!user.isAdmin && (
                         <div className="permissions-group">
-                          <label className="permission-checkbox" title="Autoriser la gestion des maintenances véhicules">
+ <Tooltip content="Autoriser la gestion des maintenances véhicules" position="bottom">
+   <label className="permission-checkbox">
                             <Checkbox
                               checked={user.permissions?.can_manage_vehicle_maintenance || user.permissions?.can_manage_maintenance || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_vehicle_maintenance', user.permissions)}
@@ -287,7 +288,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               🚗 Maint. Véhicules
                             </span>
                           </label>
-                          <label className="permission-checkbox" title="Autoriser la gestion des maintenances matériel (SAV)">
+ </Tooltip>
+ <Tooltip content="Autoriser la gestion des maintenances matériel (SAV)" position="bottom">
+   <label className="permission-checkbox">
                             <Checkbox
                               checked={user.permissions?.can_manage_equipment_maintenance || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_equipment_maintenance', user.permissions)}
@@ -296,7 +299,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               🔧 Maint. Matériel
                             </span>
                           </label>
-                          <label className="permission-checkbox" title="Autoriser la gestion du catalogue d'équipements et flight-cases">
+ </Tooltip>
+ <Tooltip content="Autoriser la gestion du catalogue d'équipements et flight-cases" position="bottom">
+   <label className="permission-checkbox">
                             <Checkbox
                               checked={user.permissions?.can_manage_catalog || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_catalog', user.permissions)}
@@ -305,7 +310,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               📦 Catalogue
                             </span>
                           </label>
-                          <label className="permission-checkbox" title="Autoriser la gestion des modèles de camions">
+ </Tooltip>
+ <Tooltip content="Autoriser la gestion des modèles de camions" position="bottom">
+   <label className="permission-checkbox">
                             <Checkbox
                               checked={user.permissions?.can_manage_trucks || false}
                               onChange={() => handleTogglePermission(user.id, 'can_manage_trucks', user.permissions)}
@@ -314,6 +321,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                               🚛 Camions
                             </span>
                           </label>
+ </Tooltip>
                         </div>
                       )}
                       {user.isAdmin && (
@@ -322,28 +330,34 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     </td>
                     <td>
                       <div className="action-buttons">
-                        <Button
+                        <Tooltip content="Modifier le profil" position="bottom">
+                          <Button
                           variant="primary" size="sm" iconOnly
                           onClick={() => setEditingUser(user)}
-                          title="Modifier le profil"
+ 
                           aria-label="Modifier le profil"
                         >
                           <Pencil size={14} />
                         </Button>
-                        <Button variant="ghost"                           onClick={() => handleResetPassword(user.id)}
+                        </Tooltip>
+                        <Tooltip content="Réinitialiser - l'utilisateur devra définir un nouveau mot de passe" position="bottom">
+                          <Button variant="ghost"                           onClick={() => handleResetPassword(user.id)}
                           className="btn-icon btn-warning"
-                          title="Réinitialiser - l'utilisateur devra définir un nouveau mot de passe"
+ 
                         >
                           <RefreshCw size={14} />
                         </Button>
-                        <Button
+                        </Tooltip>
+                        <Tooltip content="Supprimer l'utilisateur" position="bottom">
+                          <Button
                           variant="danger" size="sm" iconOnly
                           onClick={() => handleDeleteUser(user.id)}
-                          title="Supprimer l'utilisateur"
+ 
                           aria-label="Supprimer l'utilisateur"
                         >
                           <Trash2 size={14} />
                         </Button>
+                        </Tooltip>
                       </div>
                     </td>
                     <td>
@@ -357,12 +371,14 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           <ExternalLink size={11} />
                         </Button>
                       ) : (
-                        <Button variant="ghost"                           onClick={() => setPersonModal({ user })}
+                        <Tooltip content="Créer une fiche personnel pour cet utilisateur" position="bottom">
+                          <Button variant="ghost"                           onClick={() => setPersonModal({ user })}
                           className="btn-create-personnel"
-                          title="Créer une fiche personnel pour cet utilisateur"
+ 
                         >
                           <Users size={13} /> Créer
                         </Button>
+                        </Tooltip>
                       )}
                     </td>
                   </tr>
@@ -418,14 +434,16 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                     </td>
                     <td>{email.userName || '-'}</td>
                     <td>
-                      <Button
+                      <Tooltip content="Supprimer" position="bottom">
+                        <Button
                         variant="danger" size="sm" iconOnly
                         onClick={() => handleRemoveEmail(email.id)}
-                        title="Supprimer"
+ 
                         aria-label="Supprimer"
                       >
                         <Trash2 size={16} />
                       </Button>
+                      </Tooltip>
                     </td>
                   </tr>
                 ))}
@@ -504,20 +522,24 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                   </div>
                 </div>
                 <div className="request-actions">
-                  <Button 
+                  <Tooltip content="Approuver" position="bottom">
+                    <Button 
                     variant="success"
                     onClick={() => handleApproveRequest(request.id, request.email, request.name)}
-                    title="Approuver"
+ 
                   >
                     <UserCheck size={18} /> Approuver
                   </Button>
-                  <Button 
+                  </Tooltip>
+                  <Tooltip content="Rejeter" position="bottom">
+                    <Button 
                     variant="danger"
                     onClick={() => handleRejectRequest(request.id)}
-                    title="Rejeter"
+ 
                   >
                     <UserX size={18} /> Rejeter
                   </Button>
+                  </Tooltip>
                 </div>
               </Card>
             ))}

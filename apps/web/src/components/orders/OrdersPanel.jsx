@@ -1728,9 +1728,11 @@ const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
                         <td>{art.family || '—'}</td>
                         <td className="catalog-picker-price">{art.price_ht ? `${Number(art.price_ht).toFixed(2)} €` : '—'}</td>
                         <td>
-                          <Button variant="ghost" className="catalog-picker-select-btn" onClick={() => onSelect(art)} title="Sélectionner cet article">
+ <Tooltip content="Sélectionner cet article" position="bottom">
+   <Button variant="ghost" className="catalog-picker-select-btn" onClick={() => onSelect(art)}>
                             <Check size={14} /> Choisir
                           </Button>
+ </Tooltip>
                         </td>
                       </tr>
                     );
@@ -1794,9 +1796,11 @@ const MaterialRequestModal = React.memo(({ request, suppliers, onSave, onClose }
               <div className="article-input-group">
                 <Input type="text" value={form.article} onChange={e => setForm(f => ({ ...f, article: e.target.value }))} 
                   placeholder="Nom de l'article" />
-                <Button variant="ghost" type="button" className="catalog-search-btn" onClick={() => setShowCatalogPicker(true)} title="Chercher dans les catalogues fournisseurs">
+ <Tooltip content="Chercher dans les catalogues fournisseurs" position="bottom">
+   <Button variant="ghost" type="button" className="catalog-search-btn" onClick={() => setShowCatalogPicker(true)}>
                   <Layers size={14} /> Catalogue
                 </Button>
+ </Tooltip>
               </div>
             </div>
             <div className="form-field">
@@ -2178,7 +2182,7 @@ const OrderSlidePanel = React.memo(({ order, onClose, onOpenDialog, onEdit, onDe
       <div className="slide-panel-header">
         <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{order.reference}</h3>
-        <Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(order)} title="Ouvrir en détail"><Eye size={14} /></Button>
+        <Tooltip content="Ouvrir en détail" position="bottom"><Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(order)}><Eye size={14} /></Button></Tooltip>
       </div>
       <div className="slide-panel-body">
         <StatusBadge color={status.color}>
@@ -2241,7 +2245,7 @@ const QuoteSlidePanel = React.memo(({ quote, onClose, onOpenDialog, onEdit, onDe
       <div className="slide-panel-header">
         <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{quote.reference}</h3>
-        <Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(quote)} title="Ouvrir en détail"><Eye size={14} /></Button>
+        <Tooltip content="Ouvrir en détail" position="bottom"><Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(quote)}><Eye size={14} /></Button></Tooltip>
       </div>
       <div className="slide-panel-body">
         <StatusBadge color={status.color}>
@@ -2297,8 +2301,8 @@ const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin,
         <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{request.article}</h3>
         <div style={{ display: 'flex', gap: 4 }}>
-          <Button variant="ghost" className="action-btn small" onClick={() => onEdit(request)} title="Modifier"><Edit2 size={14} /></Button>
-          <Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(request)} title="Ouvrir en détail"><Eye size={14} /></Button>
+          <Tooltip content="Modifier" position="bottom"><Button variant="ghost" className="action-btn small" onClick={() => onEdit(request)}><Edit2 size={14} /></Button></Tooltip>
+          <Tooltip content="Ouvrir en détail" position="bottom"><Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(request)}><Eye size={14} /></Button></Tooltip>
         </div>
       </div>
       <div className="slide-panel-body">
@@ -2335,7 +2339,7 @@ const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onView
       <div className="slide-panel-header">
         <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3><Building2 size={16} /> {supplier.name}</h3>
-        <Button variant="ghost" className="action-btn small" onClick={() => { onClose(); onViewDetail(supplier); }} title="Détail complet"><Eye size={14} /></Button>
+        <Tooltip content="Détail complet" position="bottom"><Button variant="ghost" className="action-btn small" onClick={() => { onClose(); onViewDetail(supplier); }}><Eye size={14} /></Button></Tooltip>
       </div>
       <div className="slide-panel-body">
         <div className="slide-fields">

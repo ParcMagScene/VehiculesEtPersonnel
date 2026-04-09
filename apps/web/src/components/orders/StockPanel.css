@@ -47,6 +47,16 @@
   color: var(--theme-warning);
 }
 
+.stock-management-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  margin-left: var(--space-2);
+}
+
 .stock-tabs {
   display: flex;
   gap: 4px;

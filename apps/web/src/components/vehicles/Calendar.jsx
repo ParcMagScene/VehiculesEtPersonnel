@@ -22,7 +22,7 @@ import {
   isSameYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Link, Link2, MapPin, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, Link2, MapPin, Trash2, ChevronLeft, ChevronRight, Truck } from 'lucide-react';
 import api from '../../utils/api';
 import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../../utils/dateUtils';
 import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../../utils/vehicleUtils';
@@ -554,6 +554,7 @@ const Calendar = ({
   setView,
   currentDate,
   setCurrentDate,
+  onOpenManagement,
   vehicles,
   reservations,
   maintenances = [],
@@ -1931,6 +1932,11 @@ const Calendar = ({
             {getDateLabel()}
           </span>
         </div>
+        {onOpenManagement && (
+          <Button variant="ghost" className="cal-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion">
+            <Truck size={16} /> Gestion
+          </Button>
+        )}
       </div>
       <div className="calendar">
         {/* Ligne des headers - fixe, non scrollable */}

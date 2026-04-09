@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video, Layers } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, QrCode, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -14,7 +14,7 @@ import { STATUS } from '../constants';
 
 import './Header.css';
 
-const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenManagement, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], _onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
+const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], _onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
@@ -968,18 +968,6 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenManageme
             <Button variant="ghost" className="qr-button" onClick={() => setShowQRCodeModal(true)} aria-label="Afficher le QR code mobile">
               <QrCode size={20} />
             </Button>
-
-            {(activeModule === 'vehicles' || activeModule === 'equipment' || activeModule === 'stock') && (
-            <Button variant="ghost" 
-              className="management-button" 
-              onClick={onOpenManagement} 
-              aria-label="Ouvrir le panneau de gestion"
-              style={{ position: 'relative' }}
-            >
-              {activeModule === 'vehicles' ? <Truck size={18} /> : activeModule === 'stock' ? <Layers size={18} /> : <Package size={18} />}
-              Gestion
-            </Button>
-            )}
 
             <Button variant="ghost" 
               className="settings-button" 

@@ -369,15 +369,7 @@ function AppContent() {
         setView={setView}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
-        onOpenManagement={() => {
-          if (activeModule === 'equipment') {
-            setShowEquipmentManagement(true);
-          } else if (activeModule === 'stock') {
-            setShowStockManagement(true);
-          } else {
-            setShowManagement(true);
-          }
-        }}
+
         onOpenSettings={() => setShowSettings(true)}
         activeModule={activeModule}
         setActiveModule={setActiveModule}
@@ -521,6 +513,7 @@ function AppContent() {
                 setView={setView}
                 currentDate={currentDate}
                 setCurrentDate={setCurrentDate}
+                onOpenManagement={() => setShowManagement(true)}
                 vehicles={data.vehicles}
                 reservations={data.reservations}
                 maintenances={data.maintenances}
@@ -592,6 +585,7 @@ function AppContent() {
           <EquipmentPanel
             currentUser={currentUser}
             showManagement={showEquipmentManagement}
+            onOpenManagement={() => setShowEquipmentManagement(true)}
             onCloseManagement={() => setShowEquipmentManagement(false)}
           />
         </Suspense>
@@ -628,6 +622,7 @@ function AppContent() {
                   currentUser={currentUser}
                   stockType={stockSubTab}
                   showManagement={showStockManagement}
+                  onOpenManagement={() => setShowStockManagement(true)}
                   onCloseManagement={() => setShowStockManagement(false)}
                 />
               </Suspense>

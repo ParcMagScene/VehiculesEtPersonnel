@@ -575,7 +575,7 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
 };
 
 // ═══ COMPOSANT PRINCIPAL ═══
-const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initialTab, isMobile }) => {
+const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onCloseManagement, initialTab, isMobile }) => {
   const [subTab, setSubTab] = useState(initialTab || 'inventory'); // inventory | sav
   const [equipment, setEquipment] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -894,6 +894,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onCloseManagement, initia
               {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
             </Button>
           </div>
+          {onOpenManagement && (
+            <Button variant="ghost" className="eq-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion du matériel">
+              <Package size={16} /> Gestion
+            </Button>
+          )}
         </div>
 
         <div className="eq-toolbar-actions">

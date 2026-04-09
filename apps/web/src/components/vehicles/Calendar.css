@@ -105,6 +105,16 @@
   color: var(--theme-primary, var(--theme-primary));
 }
 
+.cal-management-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 /* Dark mode toolbar navigation */
 [data-theme="dark"] .cal-nav-toolbar {
   background: var(--theme-bg-card);

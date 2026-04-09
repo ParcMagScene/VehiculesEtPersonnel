@@ -28,7 +28,7 @@ const CATEGORY_COLORS = [
 const CATEGORY_ICONS = ['📦', '🔧', '⚡', '🔩', '🛠️', '📐', '🧰', '💡', '🔌', '🧲', '🪛', '⛓️'];
 
 // ═══ Composant Principal ═══
-function StockPanel({ currentUser, stockType = 'vente', showManagement = false, onCloseManagement }) {
+function StockPanel({ currentUser, stockType = 'vente', showManagement = false, onOpenManagement, onCloseManagement }) {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [items, setItems] = useState([]);
@@ -207,6 +207,11 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
             <span className="stat-badge"><Package size={14} /> {stats.totalItems || 0} articles</span>
             {stats.lowStockCount > 0 && <span className="stat-badge warning"><AlertTriangle size={14} /> {stats.lowStockCount} stock bas</span>}
           </div>
+        )}
+        {onOpenManagement && (
+          <Button variant="ghost" className="stock-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion des catégories">
+            <Layers size={16} /> Gestion
+          </Button>
         )}
       </div>
 

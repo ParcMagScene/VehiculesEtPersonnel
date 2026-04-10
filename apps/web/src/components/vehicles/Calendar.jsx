@@ -891,53 +891,49 @@ const Calendar = ({
   // Centrer sur le début du mois/année visible lors des changements, sauf si on revient à aujourd'hui
   useEffect(() => {
     if (view === 'month' || view === 'year') {
-      // Utiliser plusieurs timeouts pour s'assurer que tout est bien rendu
-      const timeouts = [];
+      let rafId = null;
+      let timeoutId = null;
       
       const scrollToPosition = () => {
-        const container = document.querySelector('.calendar-scroll-area');
-        const headersContainer = document.querySelector('.calendar-headers-scroll-area');
-        
-        if (!container) return;
-        
-        // Vérifier si currentDate correspond à aujourd'hui (même jour)
-        const today = new Date();
-        const isToday = currentDate.getDate() === today.getDate() &&
-                       currentDate.getMonth() === today.getMonth() &&
-                       currentDate.getFullYear() === today.getFullYear();
-        
-        if (isToday) {
-          // Si on est aujourd'hui, centrer sur le jour actuel
-          const todayElements = document.querySelectorAll('.calendar-header-cell.today');
-          if (todayElements.length > 0) {
-            const todayElement = todayElements[0];
-            // Calculer la position pour centrer l'élément
-            const containerWidth = container.offsetWidth;
-            const elementLeft = todayElement.offsetLeft;
-            const elementWidth = todayElement.offsetWidth;
-            const scrollLeft = elementLeft - (containerWidth / 2) + (elementWidth / 2);
-            
-            container.scrollLeft = scrollLeft;
+        rafId = requestAnimationFrame(() => {
+          const container = document.querySelector('.calendar-scroll-area');
+          const headersContainer = document.querySelector('.calendar-headers-scroll-area');
+          
+          if (!container) return;
+          
+          const today = new Date();
+          const isToday = currentDate.getDate() === today.getDate() &&
+                         currentDate.getMonth() === today.getMonth() &&
+                         currentDate.getFullYear() === today.getFullYear();
+          
+          if (isToday) {
+            const todayElement = document.querySelector('.calendar-header-cell.today');
+            if (todayElement) {
+              const containerWidth = container.offsetWidth;
+              const elementLeft = todayElement.offsetLeft;
+              const elementWidth = todayElement.offsetWidth;
+              const scrollLeft = elementLeft - (containerWidth / 2) + (elementWidth / 2);
+              
+              container.scrollLeft = scrollLeft;
+              if (headersContainer) {
+                headersContainer.scrollLeft = scrollLeft;
+              }
+            }
+          } else {
+            container.scrollLeft = 0;
             if (headersContainer) {
-              headersContainer.scrollLeft = scrollLeft;
+              headersContainer.scrollLeft = 0;
             }
           }
-        } else {
-          // Sinon, scroller au début du mois/année
-          container.scrollLeft = 0;
-          if (headersContainer) {
-            headersContainer.scrollLeft = 0;
-          }
-        }
+        });
       };
 
-      // Essayer plusieurs fois pour s'assurer que le DOM est prêt
-      timeouts.push(setTimeout(scrollToPosition, 50));
-      timeouts.push(setTimeout(scrollToPosition, 150));
-      timeouts.push(setTimeout(scrollToPosition, TIMING.DEBOUNCE_SEARCH));
+      // Un seul timeout pour laisser le DOM se stabiliser, puis un rAF
+      timeoutId = setTimeout(scrollToPosition, 100);
 
       return () => {
-        timeouts.forEach(timeout => clearTimeout(timeout));
+        clearTimeout(timeoutId);
+        if (rafId) cancelAnimationFrame(rafId);
       };
     }
   }, [view, currentDate]);
@@ -950,16 +946,19 @@ const Calendar = ({
     
     if (!vehicleColumn || !scrollArea) return;
 
+    let scrollRaf = null;
     const handleScroll = (e) => {
-      if (e.target === scrollArea) {
-        vehicleColumn.scrollTop = scrollArea.scrollTop;
-        // Synchroniser le scroll horizontal des headers
-        if (headersScrollArea) {
-          headersScrollArea.scrollLeft = scrollArea.scrollLeft;
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = requestAnimationFrame(() => {
+        if (e.target === scrollArea) {
+          vehicleColumn.scrollTop = scrollArea.scrollTop;
+          if (headersScrollArea) {
+            headersScrollArea.scrollLeft = scrollArea.scrollLeft;
+          }
+        } else if (e.target === vehicleColumn) {
+          scrollArea.scrollTop = vehicleColumn.scrollTop;
         }
-      } else if (e.target === vehicleColumn) {
-        scrollArea.scrollTop = vehicleColumn.scrollTop;
-      }
+      });
     };
 
     vehicleColumn.addEventListener('scroll', handleScroll);
@@ -968,6 +967,7 @@ const Calendar = ({
     return () => {
       vehicleColumn.removeEventListener('scroll', handleScroll);
       scrollArea.removeEventListener('scroll', handleScroll);
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
     };
   }, [vehicles]);
 

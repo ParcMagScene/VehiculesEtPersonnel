@@ -2136,6 +2136,31 @@
   padding: 8px 0;
 }
 
+/* ─── Sonos : Progress / Seek bar ─── */
+.dtv-sonos-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+.dtv-sonos-progress-time {
+  font-size: 0.75rem;
+  color: var(--theme-text-muted);
+  min-width: 36px;
+  font-variant-numeric: tabular-nums;
+}
+.dtv-sonos-seek {
+  flex: 1;
+}
+
+/* ─── Sonos : Shuffle / Repeat active state ─── */
+.dtv-sonos-active {
+  color: var(--theme-primary) !important;
+  background: rgba(var(--theme-primary-rgb, 59,130,246), 0.15) !important;
+  border-color: var(--theme-primary) !important;
+}
+
 /* ─── Responsive DTV ─── */
 @media (max-width: 768px) {
   .dtv-form-grid {

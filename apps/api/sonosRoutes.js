@@ -411,17 +411,24 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
 
       const { device, coordinatorIP } = result;
 
-      const [track, state, volume, muted] = await Promise.all([
+      const [track, state, volume, muted, playMode] = await Promise.all([
         withTimeout(device.currentTrack()).catch(() => null),
         withTimeout(device.getCurrentState()).catch(() => 'stopped'),
         withTimeout(device.getVolume()).catch(() => null),
         withTimeout(device.getMuted()).catch(() => null),
+        withTimeout(device.getPlayMode()).catch(() => null),
       ]);
 
       let artUrl = '';
       if (track) {
         artUrl = await resolveArtwork(track, coordinatorIP);
       }
+
+      // Parse playMode pour shuffle/repeat
+      const shuffle = playMode ? playMode.includes('SHUFFLE') : false;
+      let repeat = 'none';
+      if (playMode === 'REPEAT_ALL' || playMode === 'SHUFFLE_REPEAT_ONE') repeat = 'all';
+      else if (playMode === 'REPEAT_ONE') repeat = 'one';
 
       res.json({
         playing: state === 'playing',
@@ -434,6 +441,8 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
         position: track?.position || 0,
         volume: volume ?? null,
         muted: muted ?? null,
+        shuffle,
+        repeat,
         zone,
       });
     } catch (error) {

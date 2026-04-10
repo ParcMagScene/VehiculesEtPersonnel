@@ -76,6 +76,7 @@ export const AUDIT_ACTIONS = {
   USER_PERMISSIONS_CHANGE: 'admin.user.permissions_change',
   USER_PASSWORD_RESET: 'admin.user.password_reset',
   USER_PASSWORD_CHANGE: 'admin.user.password_change',
+  USER_BLOCK: 'admin.user.block',
   
   // Admin — Access
   ACCESS_REQUEST_APPROVE: 'admin.access.approve',

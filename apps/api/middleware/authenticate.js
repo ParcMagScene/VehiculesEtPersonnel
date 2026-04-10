@@ -36,6 +36,13 @@ export function createAuthenticateToken(JWT_SECRET) {
         return res.status(401).json({ error: 'Session expirée ou révoquée' });
       }
 
+      // Vérifier si le compte est bloqué
+      const blocked = db.prepare('SELECT is_blocked FROM users WHERE id = ?').get(user.id);
+      if (blocked && blocked.is_blocked) {
+        authCache.delete(tokenHash);
+        return res.status(403).json({ error: 'Votre compte a été bloqué' });
+      }
+
       // Mettre en cache le résultat positif (TTL 30s)
       authCache.set(tokenHash, true);
 

@@ -380,7 +380,7 @@ app.get('/api/users/names', authenticateToken, (req, res) => {
 // Récupérer tous les utilisateurs (admin uniquement)
 app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
   try {
-    const stmt = db.prepare('SELECT id, email, name, is_admin, avatar, permissions, created_at FROM users ORDER BY created_at DESC');
+    const stmt = db.prepare('SELECT id, email, name, is_admin, is_blocked, avatar, permissions, created_at FROM users ORDER BY created_at DESC');
     const users = stmt.all();
     res.json(users.map(u => {
       let perms = {};
@@ -388,6 +388,7 @@ app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
       return {
         ...u,
         isAdmin: u.is_admin === 1,
+        isBlocked: u.is_blocked === 1,
         permissions: perms,
       };
     }));
@@ -401,8 +402,21 @@ app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
 app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { isAdmin, newPassword, permissions } = req.body;
+    const { isAdmin, newPassword, permissions, isBlocked } = req.body;
     
+    if (isBlocked !== undefined) {
+      db.prepare('UPDATE users SET is_blocked = ? WHERE id = ?').run(isBlocked ? 1 : 0, id);
+      if (isBlocked) {
+        // Invalider toutes les sessions pour déconnecter immédiatement l'utilisateur
+        const result = db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(id);
+        auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_BLOCK, targetType: 'user', targetId: id, details: { blocked: true, sessionsInvalidated: result.changes }, req });
+        logger.info(`🚫 Utilisateur ${id} bloqué - ${result.changes} session(s) invalidée(s)`);
+      } else {
+        auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_BLOCK, targetType: 'user', targetId: id, details: { blocked: false }, req });
+        logger.info(`✅ Utilisateur ${id} débloqué`);
+      }
+    }
+
     if (isAdmin !== undefined) {
       const stmt = db.prepare('UPDATE users SET is_admin = ? WHERE id = ?');
       stmt.run(isAdmin ? 1 : 0, id);

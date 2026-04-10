@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users } from 'lucide-react';
+import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users, Ban } from 'lucide-react';
 import api from '../../utils/api';
 import ProfileEditModal from '../auth/ProfileEditModal';
 import './UserManagement.css';
@@ -169,6 +169,28 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     setApproveModal({ id: requestId, email: requestEmail, name: requestName });
   };
 
+  const handleToggleBlock = (userId, currentlyBlocked) => {
+    const action = currentlyBlocked ? 'Débloquer' : 'Bloquer';
+    const message = currentlyBlocked
+      ? 'Voulez-vous débloquer cet utilisateur ? Il pourra se reconnecter.'
+      : 'Voulez-vous bloquer cet utilisateur ? Il sera immédiatement déconnecté et ne pourra plus se connecter.';
+    confirm({
+      title: `${action} cet utilisateur`,
+      message,
+      variant: currentlyBlocked ? 'confirm' : 'danger',
+      confirmLabel: action,
+      onConfirm: async () => {
+        try {
+          await api.updateUser(userId, { isBlocked: !currentlyBlocked });
+          toast.success(`Utilisateur ${currentlyBlocked ? 'débloqué' : 'bloqué'} avec succès`);
+          loadData();
+        } catch (error) {
+          toast.error(`Erreur: ${error.message}`);
+        }
+      },
+    });
+  };
+
   const handleConfirmApprove = async (giveAdmin, sendEmail) => {
     if (!approveModal) return;
     const { id, email: reqEmail, name: reqName } = approveModal;
@@ -257,6 +279,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                       <div className="user-name-cell">
                         <Avatar name={user.name} avatar={user.avatar} size={22} />
                         <span>{user.name}</span>
+                        {user.isBlocked && <Tag variant="danger" size="sm">Bloqué</Tag>}
                       </div>
                     </td>
                     <td>{user.email}</td>
@@ -346,6 +369,16 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
  
                         >
                           <RefreshCw size={14} />
+                        </Button>
+                        </Tooltip>
+                        <Tooltip content={user.isBlocked ? "Débloquer l'utilisateur" : "Bloquer l'utilisateur"} position="bottom">
+                          <Button
+                          variant={user.isBlocked ? "ghost" : "ghost"} size="sm" iconOnly
+                          onClick={() => handleToggleBlock(user.id, user.isBlocked)}
+                          className={user.isBlocked ? "btn-icon btn-success" : "btn-icon btn-warning"}
+                          aria-label={user.isBlocked ? "Débloquer" : "Bloquer"}
+                        >
+                          <Ban size={14} />
                         </Button>
                         </Tooltip>
                         <Tooltip content="Supprimer l'utilisateur" position="bottom">

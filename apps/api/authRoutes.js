@@ -232,6 +232,12 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
     
+    // Vérifier si le compte est bloqué
+    if (user.is_blocked) {
+      auditLog({ actorId: user.id, actorEmail: email, action: AUDIT_ACTIONS.LOGIN_FAILED, targetType: 'user', targetId: user.id, details: { reason: 'account_blocked' }, req });
+      return res.status(403).json({ error: 'Votre compte a été bloqué. Veuillez contacter un administrateur.' });
+    }
+    
     // Vérifier si une réinitialisation est requise AVANT de vérifier le mot de passe
     // (l'utilisateur a probablement oublié son ancien mot de passe)
     if (user.password_reset_required === 1) {

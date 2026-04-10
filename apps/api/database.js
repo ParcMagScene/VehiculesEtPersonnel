@@ -1087,6 +1087,12 @@ function initializeDatabase() {
       db.prepare("ALTER TABLE users ADD COLUMN totp_enabled INTEGER DEFAULT 0").run();
       logger.info('✅ Colonnes totp_secret/totp_enabled ajoutées à users');
     }
+    // Migration: ajouter is_blocked dans users
+    const hasBlocked = userColumns.some(col => col.name === 'is_blocked');
+    if (!hasBlocked) {
+      db.prepare("ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0").run();
+      logger.info('✅ Colonne is_blocked ajoutée à users');
+    }
   } catch (error) {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }

@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import {
   Music, Wifi, RefreshCw, Disc, Play, Pause, SkipBack, SkipForward,
-  Volume2, VolumeX, Heart, Layers, ChevronDown, ChevronUp,
+  Volume2, VolumeX, Heart, Layers, ChevronDown, ChevronUp, Shuffle, Repeat, Repeat1,
 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -21,14 +21,17 @@ const formatTime = (seconds) => {
 };
 
 // ── Sous-composant : Contrôles de lecture ──
-function PlaybackControls({ zone, state, volume, muted, onRefresh, isAdmin }) {
+function PlaybackControls({ zone, state, volume, muted, position, duration, shuffleActive, repeatMode, onRefresh, isAdmin }) {
   const toast = useToast();
   const [vol, setVol] = useState(volume ?? 50);
   const [isMuted, setIsMuted] = useState(muted ?? false);
+  const [seekPos, setSeekPos] = useState(position ?? 0);
+  const [isSeeking, setIsSeeking] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (volume != null) setVol(volume); }, [volume]);
   useEffect(() => { if (muted != null) setIsMuted(muted); }, [muted]);
+  useEffect(() => { if (!isSeeking && position != null) setSeekPos(position); }, [position, isSeeking]);
 
   const exec = useCallback(async (fn, label) => {
     if (busy) return;
@@ -43,11 +46,38 @@ function PlaybackControls({ zone, state, volume, muted, onRefresh, isAdmin }) {
     }
   }, [busy, onRefresh, toast]);
 
+  const nextRepeatMode = () => {
+    const modes = ['none', 'all', 'one'];
+    const current = modes.indexOf(repeatMode || 'none');
+    return modes[(current + 1) % 3];
+  };
+
   if (!isAdmin) return null;
 
   return (
     <div className="dtv-sonos-controls">
+      {/* Barre de progression / seek */}
+      {duration > 0 && (
+        <div className="dtv-sonos-progress">
+          <span className="dtv-sonos-progress-time">{formatTime(seekPos)}</span>
+          <input
+            type="range" min={0} max={duration} value={seekPos}
+            className="dtv-sonos-slider dtv-sonos-seek"
+            onChange={e => { setIsSeeking(true); setSeekPos(Number(e.target.value)); }}
+            onMouseUp={() => { setIsSeeking(false); exec(() => api.sonosSeek(zone, seekPos), 'seek'); }}
+            onTouchEnd={() => { setIsSeeking(false); exec(() => api.sonosSeek(zone, seekPos), 'seek'); }}
+          />
+          <span className="dtv-sonos-progress-time">{formatTime(duration)}</span>
+        </div>
+      )}
       <div className="dtv-sonos-transport">
+        <button
+          className={`dtv-sonos-btn dtv-sonos-btn-sm${shuffleActive ? ' dtv-sonos-active' : ''}`}
+          onClick={() => exec(() => api.sonosShuffle(zone, !shuffleActive), 'shuffle')}
+          disabled={busy} title="Aléatoire"
+        >
+          <Shuffle size={14} />
+        </button>
         <button className="dtv-sonos-btn" onClick={() => exec(() => api.sonosPrevious(zone), 'previous')} disabled={busy} title="Précédent">
           <SkipBack size={16} />
         </button>
@@ -62,6 +92,13 @@ function PlaybackControls({ zone, state, volume, muted, onRefresh, isAdmin }) {
         )}
         <button className="dtv-sonos-btn" onClick={() => exec(() => api.sonosNext(zone), 'next')} disabled={busy} title="Suivant">
           <SkipForward size={16} />
+        </button>
+        <button
+          className={`dtv-sonos-btn dtv-sonos-btn-sm${repeatMode && repeatMode !== 'none' ? ' dtv-sonos-active' : ''}`}
+          onClick={() => exec(() => api.sonosRepeat(zone, nextRepeatMode()), 'repeat')}
+          disabled={busy} title={`Répétition : ${repeatMode || 'off'}`}
+        >
+          {repeatMode === 'one' ? <Repeat1 size={14} /> : <Repeat size={14} />}
         </button>
       </div>
       <div className="dtv-sonos-volume">
@@ -224,9 +261,12 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
 
   useEffect(() => { loadConfig(); }, [loadConfig, refreshKey]);
 
-  // Quand l'IP est configurée, charger les zones
+  // Quand l'IP est configurée, charger les zones et activer le polling auto
   useEffect(() => {
-    if (sonosIP) loadZones();
+    if (sonosIP) {
+      loadZones();
+      setPolling(true);
+    }
   }, [sonosIP, loadZones]);
 
   // Polling toutes les 5s quand activé
@@ -353,6 +393,10 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
                   state={displayState.state}
                   volume={displayState.volume ?? zoneState?.volume}
                   muted={displayState.muted ?? zoneState?.muted}
+                  position={displayState.position}
+                  duration={displayState.duration}
+                  shuffleActive={displayState.shuffle}
+                  repeatMode={displayState.repeat}
                   onRefresh={handleRefresh}
                   isAdmin={isAdmin}
                 />

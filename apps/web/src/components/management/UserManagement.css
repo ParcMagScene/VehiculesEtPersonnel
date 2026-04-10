@@ -739,3 +739,32 @@
   border-top: 1px solid var(--theme-border-medium);
   background: var(--theme-bg-secondary);
 }
+
+/* ── Formulaire de création directe ── */
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.create-user-card {
+  margin-bottom: 16px;
+}
+
+.create-user-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.create-user-form > input {
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.create-user-actions {
+  display: flex;
+  gap: 8px;
+}

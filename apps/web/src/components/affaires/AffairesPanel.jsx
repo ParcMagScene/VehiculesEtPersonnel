@@ -512,28 +512,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       result = result.filter(a => a.type === filterType);
     }
 
-    // Filtre par période (personnalisé)
-    // Les affaires sans dates sont toujours incluses (elles ne doivent pas disparaître)
-    // Les affaires créées récemment sont toujours incluses (même si dates passées) pour rester visibles après import BL
+    // Filtre par période : chevauchement strict [dateDebut, dateFin] ∩ [filterDateStart, filterDateEnd]
+    // Les affaires sans aucune date sont toujours incluses
     // Quand un filtre de type est actif, on désactive le filtre de dates pour tout afficher
-    if (filterDateStart && !filterType) {
+    if ((filterDateStart || filterDateEnd) && !filterType) {
       result = result.filter(a => {
-        const d = a.dateFin || a.dateDebut;
-        if (!d) return true;
-        if (d >= filterDateStart) return true;
-        // Fallback: inclure si l'affaire a été créée dans la période visible
-        const created = (a.createdAt || '').slice(0, 10);
-        return created >= filterDateStart;
-      });
-    }
-    if (filterDateEnd && !filterType) {
-      result = result.filter(a => {
-        const d = a.dateDebut;
-        if (!d) return true;
-        if (d <= filterDateEnd) return true;
-        // Fallback: inclure si l'affaire a été créée dans la période visible
-        const created = (a.createdAt || '').slice(0, 10);
-        return created <= filterDateEnd;
+        if (!a.dateDebut && !a.dateFin) return true;
+        const debut = a.dateDebut || '0000-00-00';
+        const fin = a.dateFin || '9999-12-31';
+        if (filterDateEnd && debut > filterDateEnd) return false;
+        if (filterDateStart && fin < filterDateStart) return false;
+        return true;
       });
     }
 

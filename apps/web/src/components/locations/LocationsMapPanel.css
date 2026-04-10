@@ -1126,3 +1126,54 @@
   .dual-print-main { min-height: 280px; }
   .dual-print-inset { min-height: 200px; }
 }
+
+/* ═══════════════════════════════════════════════
+   Indicateurs hors-écran (flèches directionnelles)
+   ═══════════════════════════════════════════════ */
+.map-offscreen-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 800;
+}
+
+.map-offscreen-pill {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px 3px 6px;
+  border: none;
+  border-radius: 12px;
+  background: var(--theme-surface, rgba(255, 255, 255, 0.92));
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--theme-text-primary, #1e293b);
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  max-width: 160px;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s;
+}
+
+.map-offscreen-pill:hover {
+  background: var(--theme-primary, #3b82f6);
+  color: #fff;
+}
+
+.map-offscreen-arrow {
+  display: inline-block;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.map-offscreen-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

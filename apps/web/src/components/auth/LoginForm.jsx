@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown, User, KeyRound, UserPlus, LogIn } from 'lucide-react';
 import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
@@ -26,6 +26,7 @@ const LoginForm = ({ onLogin }) => {
   // État de vérification email
   const [emailStatus, setEmailStatus] = useState(null); // null | 'checking' | 'authorized' | 'unknown' | 'already-registered'
   const [_emailCheckName, setEmailCheckName] = useState('');
+  const userSelectorRef = useRef(null);
 
   // Vérifier l'email pour savoir si autorisé / déjà inscrit
   const checkEmail = useCallback(async (emailToCheck) => {
@@ -84,6 +85,18 @@ const LoginForm = ({ onLogin }) => {
     return () => clearTimeout(timer);
   }, [email, checkEmail]);
 
+  // Fermer le dropdown utilisateur au clic extérieur
+  useEffect(() => {
+    if (!showUserList) return;
+    const handleClickOutside = (e) => {
+      if (userSelectorRef.current && !userSelectorRef.current.contains(e.target)) {
+        setShowUserList(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showUserList]);
+
   const handleUserSelect = (user) => {
     setSelectedUser(user);
     setEmail(user.email || '');
@@ -128,9 +141,9 @@ const LoginForm = ({ onLogin }) => {
     try {
       const _data = await api.forceLogin(conflictUser.email, conflictUser.password);
       
-      // Fermer le modal et informer le parent
+      // Fermer le modal et se connecter proprement via le callback parent
       setShowSessionConflict(false);
-      window.location.reload(); // Recharger l'application
+      await onLogin(conflictUser.email, conflictUser.password)
     } catch (err) {
       setError(err.message);
     } finally {
@@ -175,6 +188,7 @@ const LoginForm = ({ onLogin }) => {
           {users.length > 0 && (
             <FormField className="form-group" label="Sélectionner un utilisateur">
               <div 
+                ref={userSelectorRef}
                 className="user-selector login-user-selector"
                 onClick={() => setShowUserList(!showUserList)}
               >
@@ -277,14 +291,14 @@ const LoginForm = ({ onLogin }) => {
                   onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   required
                   placeholder="••••••••"
-                  minLength={6}
+                  minLength={10}
                   autoComplete="current-password"
                 />
               </FormField>
 
               {error && <InlineAlert>{error}</InlineAlert>}
 
-              <Button variant="ghost" type="submit" className="login-button" disabled={loading}>
+              <Button variant="primary" type="submit" className="login-button" disabled={loading}>
                 <LogIn size={18} />
                 {loading ? 'Connexion...' : 'Se connecter'}
               </Button>

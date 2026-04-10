@@ -704,8 +704,8 @@ const ManagementPanel = ({
   }
 
   return (
-    <div className="management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="management-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+    <div className={`management-overlay${panelType === 'settings' ? ' management-overlay--modal' : ''}`} onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className={`management-panel${panelType === 'settings' ? ' management-panel--modal' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="management-header">
           <h2>{panelTitle}</h2>
           <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer">

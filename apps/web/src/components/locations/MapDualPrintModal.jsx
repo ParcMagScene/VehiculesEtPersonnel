@@ -333,6 +333,8 @@ export default function MapDualPrintModal({ locations, onClose }) {
               scrollWheelZoom
               zoomControl={false}
               attributionControl={false}
+              zoomSnap={0.25}
+              zoomDelta={0.25}
             >
               <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
               <FitBounds locations={geoLocations} />
@@ -351,6 +353,8 @@ export default function MapDualPrintModal({ locations, onClose }) {
               scrollWheelZoom
               zoomControl={false}
               attributionControl={false}
+              zoomSnap={0.25}
+              zoomDelta={0.25}
             >
               <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
               <FitToRadius radius={10000} />

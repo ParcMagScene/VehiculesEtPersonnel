@@ -17,6 +17,7 @@ import { createLocationIcon, createHQIcon } from './MapMarkers';
 import MapPopup from './MapPopup';
 import MapSearchControl from './MapSearchControl';
 import MapRouteControl from './MapRouteControl';
+import MapOffScreenIndicators from './MapOffScreenIndicators';
 
 function FitBoundsOnLoad({ locations }) {
   const map = useMap();
@@ -62,6 +63,7 @@ export default function MapGeneral({ locations, darkMode = false, onEditLocation
           <FitBoundsOnLoad locations={geoLocations} />
           <MapSearchControl locations={locations} />
           <MapRouteControl locations={locations} />
+          <MapOffScreenIndicators locations={geoLocations} />
 
           {sortedLocs.map((loc, i) => {
             const dir = DIRECTIONS[i % DIRECTIONS.length];

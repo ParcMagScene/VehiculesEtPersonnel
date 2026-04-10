@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users, Ban } from 'lucide-react';
+import { Mail, UserPlus, Trash2, RefreshCw, Shield, User, Check, Clock, UserCheck, UserX, Bell, Pencil, ExternalLink, Users, Ban, KeyRound } from 'lucide-react';
 import api from '../../utils/api';
 import ProfileEditModal from '../auth/ProfileEditModal';
 import './UserManagement.css';
@@ -21,6 +21,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const [approveModal, setApproveModal] = useState(null); // { id, email, name }
   const [personModal, setPersonModal] = useState(null); // { user } pour création de fiche personnel
   const [personsMap, setPersonsMap] = useState({}); // user_id -> person
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [createForm, setCreateForm] = useState({ email: '', name: '', password: '', readOnly: false });
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   useEffect(() => {
@@ -248,6 +250,19 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     });
   };
 
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      await api.createUser(createForm.email, createForm.name, createForm.password, { readOnly: createForm.readOnly });
+      toast.success('Utilisateur créé avec succès');
+      setShowCreateUser(false);
+      setCreateForm({ email: '', name: '', password: '', readOnly: false });
+      loadData();
+    } catch (error) {
+      toast.error(`Erreur: ${error.message}`);
+    }
+  };
+
   if (isLoading) {
     return <div className="user-management-loading">Chargement...</div>;
   }
@@ -256,7 +271,51 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     <div className="user-management">
       {/* Utilisateurs enregistrés */}
       <div className="user-management-section">
-        <h3><User size={20} /> Utilisateurs</h3>
+        <div className="section-header-row">
+          <h3><User size={20} /> Utilisateurs</h3>
+          <Button variant="ghost" onClick={() => setShowCreateUser(!showCreateUser)}>
+            <KeyRound size={16} /> Créer un compte
+          </Button>
+        </div>
+
+        {showCreateUser && (
+          <Card className="create-user-card">
+            <form onSubmit={handleCreateUser} className="create-user-form">
+              <Input
+                type="text"
+                value={createForm.name}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Nom complet"
+                required
+              />
+              <Input
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="email@example.com"
+                required
+              />
+              <Input
+                type="password"
+                value={createForm.password}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, password: e.target.value }))}
+                placeholder="Mot de passe (min 10 car.)"
+                minLength={10}
+                required
+                autoComplete="new-password"
+              />
+              <Checkbox
+                checked={createForm.readOnly}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, readOnly: e.target.checked }))}
+                label="Compte en lecture seule"
+              />
+              <div className="create-user-actions">
+                <Button variant="primary" type="submit">Créer</Button>
+                <Button variant="ghost" type="button" onClick={() => setShowCreateUser(false)}>Annuler</Button>
+              </div>
+            </form>
+          </Card>
+        )}
 
         <div className="users-list">
           {users.length === 0 ? (
@@ -343,6 +402,17 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                             />
                             <span className="checkbox-label">
                               🚛 Camions
+                            </span>
+                          </label>
+ </Tooltip>
+ <Tooltip content="Compte en lecture seule — aucune modification autorisée" position="bottom">
+   <label className="permission-checkbox">
+                            <Checkbox
+                              checked={user.permissions?.read_only || false}
+                              onChange={() => handleTogglePermission(user.id, 'read_only', user.permissions)}
+                            />
+                            <span className="checkbox-label">
+                              🔒 Lecture seule
                             </span>
                           </label>
  </Tooltip>

@@ -380,6 +380,40 @@ app.get('/api/users/names', authenticateToken, (req, res) => {
 });
 
 // Récupérer tous les utilisateurs (admin uniquement)
+// Création directe d'un utilisateur par l'admin
+app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { email, name, password, isAdmin = false, readOnly = false } = req.body;
+    if (!email || !name || !password) {
+      return res.status(400).json({ error: 'Email, nom et mot de passe requis' });
+    }
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ error: pwError });
+
+    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existing) return res.status(409).json({ error: 'Un utilisateur avec cet email existe déjà' });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const permissions = readOnly ? JSON.stringify({ read_only: true }) : '{}';
+
+    const result = db.prepare(
+      'INSERT INTO users (email, name, password_hash, is_admin, permissions) VALUES (?, ?, ?, ?, ?)'
+    ).run(email, name.trim(), passwordHash, isAdmin ? 1 : 0, permissions);
+
+    // Ajouter aussi dans authorized_emails pour ne pas bloquer une future reconnexion
+    const emailExists = db.prepare('SELECT id FROM authorized_emails WHERE email = ?').get(email);
+    if (!emailExists) {
+      db.prepare('INSERT INTO authorized_emails (email, status) VALUES (?, ?)').run(email, 'activated');
+    }
+
+    auditLog(AUDIT_ACTIONS.USER_CREATE, req.user?.id, { targetUserId: result.lastInsertRowid, email });
+    res.status(201).json({ id: result.lastInsertRowid, email, name: name.trim() });
+  } catch (error) {
+    logger.error('Erreur création utilisateur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, email, name, is_admin, is_blocked, avatar, permissions, created_at FROM users ORDER BY created_at DESC');

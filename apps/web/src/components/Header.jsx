@@ -632,17 +632,15 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
                                   <div className="reject-form-buttons">
                                     <Button variant="ghost"                                       className="notif-action-btn confirm-reject"
                                       disabled={!rejectionReason.trim()}
-                                      onClick={async () => {
-                                        try {
-                                          await api.rejectReservationRequest(request.id, rejectionReason);
-                                          setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                          setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                          setRejectingRequestId(null);
-                                          setRejectionReason('');
-                                        } catch (error) {
-                                          console.error('Erreur refus:', error);
+                                      onClick={() => {
+                                        const reason = rejectionReason;
+                                        setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
+                                        setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
+                                        setRejectingRequestId(null);
+                                        setRejectionReason('');
+                                        api.rejectReservationRequest(request.id, reason).catch(() => {
                                           toast.error('Erreur lors du refus de la demande');
-                                        }
+                                        });
                                       }}
                                     >
                                       Confirmer le refus
@@ -660,16 +658,13 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
                               ) : (
                                 <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
                                   <Button variant="ghost"                                     className="notif-action-btn approve"
-                                    onClick={async () => {
-                                      try {
-                                        await api.approveReservationRequest(request.id);
-                                        setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                        setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                        if (onReservationUpdate) onReservationUpdate();
-                                      } catch (error) {
-                                        console.error('Erreur approbation:', error);
+                                    onClick={() => {
+                                      setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
+                                      setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
+                                      if (onReservationUpdate) onReservationUpdate();
+                                      api.approveReservationRequest(request.id).catch(() => {
                                         toast.error('Erreur lors de l\'approbation');
-                                      }
+                                      });
                                     }}
                                   >
                                     <Check size={14} />
@@ -807,16 +802,15 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
                                   <div className="reject-form-buttons">
                                     <Button variant="ghost"                                       className="notif-action-btn confirm-reject"
                                       disabled={!rejectionReason.trim()}
-                                      onClick={async () => {
-                                        try {
-                                          await api.rejectReservationRequest(request.id, rejectionReason);
-                                          setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                          setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                          setRejectingRequestId(null);
-                                          setRejectionReason('');
-                                        } catch (error) {
+                                      onClick={() => {
+                                        const reason = rejectionReason;
+                                        setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
+                                        setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
+                                        setRejectingRequestId(null);
+                                        setRejectionReason('');
+                                        api.rejectReservationRequest(request.id, reason).catch(() => {
                                           toast.error('Erreur lors du refus');
-                                        }
+                                        });
                                       }}
                                     >
                                       <X size={14} /> Confirmer le refus
@@ -837,15 +831,13 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
                                         message: 'Approuver cette demande et créer la réservation ?',
                                         variant: 'confirm',
                                         confirmLabel: 'Approuver',
-                                        onConfirm: async () => {
-                                          try {
-                                            await api.approveReservationRequest(request.id);
-                                            setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                            setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                            toast.success('Demande approuvée ! La réservation a été créée.');
-                                          } catch (error) {
+                                        onConfirm: () => {
+                                          setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
+                                          setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
+                                          toast.success('Demande approuvée ! La réservation a été créée.');
+                                          api.approveReservationRequest(request.id).catch(() => {
                                             toast.error('Erreur lors de la validation');
-                                          }
+                                          });
                                         },
                                       });
                                     }}

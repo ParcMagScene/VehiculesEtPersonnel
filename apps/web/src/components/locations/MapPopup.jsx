@@ -2,7 +2,6 @@
 // MapPopup.jsx — Popup stylisé DS pour les marqueurs de carte
 // ═══════════════════════════════════════════════════════════════
 
-import React from 'react';
 import { Popup } from 'react-leaflet';
 import { getLocationType } from './map-utils';
 

@@ -39,7 +39,8 @@ const SECTION_ORDER = Object.keys(SECTIONS);
 const AFFAIRE_TYPE_MAP = Object.fromEntries(AFFAIRE_TYPES.map(t => [t.value, t]));
 
 // ─── Nettoyage du titre de tâche (retire emojis, label de section, numéro AF) ───
-const SECTION_LABEL_RE = /^(Pr[eé]paration|Chargement|D[eé]part|Enl[eè]vement|Retour|R[eé]cup[eé]ration|Installation|Livraison|Montage|D[eé]montage|Prioritaires?|Secondaires?|Courses?|Divers)\s*[—–\-:]?\s*/i;
+const SECTION_LABEL_RE = /^(Pr(?:e|é)paration|Chargement|D(?:e|é)part|Enl(?:e|è)vement|Retour|R(?:e|é)cup(?:e|é)ration|Installation|Livraison|Montage|D(?:e|é)montage|Prioritaires?|Secondaires?|Courses?|Divers)\s*[—–\-:]?\s*/i;
+// eslint-disable-next-line no-misleading-character-class
 const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u2700-\u27BF]/gu;
 
 function stripAfNum(text, task) {

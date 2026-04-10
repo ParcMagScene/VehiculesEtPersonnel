@@ -13,8 +13,8 @@ function MobilePlanning({
   maintenances, 
   currentDate,
   onClose,
-  clients = [],
-  drivers = []
+  clients: _clients = [],
+  drivers: _drivers = []
 }) {
   const [selectedMonth, setSelectedMonth] = useState(currentDate);
   const scrollWrapperRef = useRef(null);

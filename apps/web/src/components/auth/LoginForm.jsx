@@ -25,7 +25,7 @@ const LoginForm = ({ onLogin }) => {
   const [resetError, setResetError] = useState('');
   // État de vérification email
   const [emailStatus, setEmailStatus] = useState(null); // null | 'checking' | 'authorized' | 'unknown' | 'already-registered'
-  const [emailCheckName, setEmailCheckName] = useState('');
+  const [_emailCheckName, setEmailCheckName] = useState('');
 
   // Vérifier l'email pour savoir si autorisé / déjà inscrit
   const checkEmail = useCallback(async (emailToCheck) => {

@@ -297,8 +297,9 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     // 2. Retirer label de section (redondant avec le bandeau)
     if (sectionInfo?.affaireOnly) {
       title = title
+        // eslint-disable-next-line no-misleading-character-class
         .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
-        .replace(/^(Préparation|Chargement|Départ|Enlèvement|Retour|Récupération|Installation|Livraison)\s*—?\s*/i, '')
+        .replace(/^(Pr(?:e|é)paration|Chargement|D(?:e|é)part|Enl(?:e|è)vement|Retour|R(?:e|é)cup(?:e|é)ration|Installation|Livraison)\s*—?\s*/i, '')
         .trim();
       if (!title) title = task.googleEventTitle || task.notes || '-';
     }
@@ -345,7 +346,8 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
         if (SECTION_COURSE[task.section]) courseType = SECTION_COURSE[task.section];
         else if (task.eventType && EVENT_COURSE[task.eventType]) courseType = EVENT_COURSE[task.eventType];
         else {
-          const m = (task.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\b/iu);
+          // eslint-disable-next-line no-misleading-character-class
+          const m = (task.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\b/iu);
           if (m) {
             const raw = m[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
             courseType = { livraison: 'livraison', recuperation: 'recuperation', enlevement: 'enlevement', retour: 'retour' }[raw] || null;
@@ -357,8 +359,9 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       let displayTitle = cleanTaskTitle(task);
       if (courseType) {
         displayTitle = displayTitle
+          // eslint-disable-next-line no-misleading-character-class
           .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
-          .replace(/^(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\s*—?\s*/i, '')
+          .replace(/^(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\s*—?\s*/i, '')
           .trim() || task.googleEventTitle || task.notes || '-';
       }
 

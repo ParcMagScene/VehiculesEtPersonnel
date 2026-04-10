@@ -2,9 +2,9 @@
 // MapRouteControl.jsx — Calcul et affichage de trajet entre lieux
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Navigation, X, RotateCcw, ArrowDown, Clock, Ruler } from 'lucide-react';
-import { useMap, Polyline, Marker, Popup } from 'react-leaflet';
+import { useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { filterGeoLocations, MAG_SCENE, haversineDistance } from './map-utils';
 

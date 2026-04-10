@@ -2,9 +2,8 @@
 // LocationsMapPanel.jsx — Panneau cartographie des lieux eM@g
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { X, Map, Building2, Moon, Sun } from 'lucide-react';
-import { Button, Badge } from '@/design-system';
 import { LOCATION_TYPES, filterGeoLocations } from './map-utils';
 import MapGeneral from './MapGeneral';
 import MapLocal from './MapLocal';

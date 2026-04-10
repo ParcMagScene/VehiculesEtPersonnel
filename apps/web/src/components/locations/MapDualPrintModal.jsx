@@ -4,7 +4,7 @@
 // Les deux cartes sont zoomables/glissables avant l'impression
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useMemo, useRef, useEffect, useCallback, useState } from 'react';
+import { useMemo, useRef, useEffect, useCallback, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { X, Printer, Download } from 'lucide-react';
@@ -15,7 +15,6 @@ import {
   BOUNDS_PADDING,
   filterGeoLocations,
   filterNearby,
-  getLocationType,
 } from './map-utils';
 import { createLocationIcon, createHQIcon } from './MapMarkers';
 

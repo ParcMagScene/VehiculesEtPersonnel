@@ -2,7 +2,7 @@
 // MapLocal.jsx — Carte locale autour du dépôt Mag Scène (rayon ajustable)
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Tooltip, useMap } from 'react-leaflet';
 import {
   TILE_LIGHT,

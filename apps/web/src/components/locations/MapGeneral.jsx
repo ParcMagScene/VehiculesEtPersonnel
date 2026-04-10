@@ -2,7 +2,7 @@
 // MapGeneral.jsx — Carte générale de tous les lieux géolocalisés
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import {

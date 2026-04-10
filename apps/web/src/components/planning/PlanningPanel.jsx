@@ -19,7 +19,7 @@ function PlanningPanel({
 }) {
   const _toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('personnel');
-  const [isPending, startTransition] = useTransition();
+  const [_isPending, startTransition] = useTransition();
   const [stats, setStats] = useState(null);
   const [displayRefreshKey, _setDisplayRefreshKey] = useState(0);
 

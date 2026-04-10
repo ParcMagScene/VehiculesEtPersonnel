@@ -30,7 +30,7 @@ describe('Table', () => {
   });
 
   it('passes style and rest props in bare mode', () => {
-    const { container } = render(
+    render(
       <Table style={{ border: '1px solid red' }} data-testid="bare">
         <tbody><tr><td>X</td></tr></tbody>
       </Table>

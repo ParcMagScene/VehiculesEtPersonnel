@@ -14,7 +14,7 @@ import { PLANNING_SECTIONS } from '../../constants/colors';
 import './AddTaskModal.css';
 
 // ═══ Constantes (depuis colorConstants) ═══
-const { rdv, evenements, depot, ...ADD_TASK_SECTIONS } = PLANNING_SECTIONS;
+const { rdv: _rdv, evenements: _evenements, depot: _depot, ...ADD_TASK_SECTIONS } = PLANNING_SECTIONS;
 const SECTIONS = ADD_TASK_SECTIONS;
 
 const EVENT_TYPES = {

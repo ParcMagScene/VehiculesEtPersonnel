@@ -39,8 +39,9 @@ const COURSE_SECTIONS = new Set(['courses', 'enlevement', 'retour', 'recuperatio
 const cleanCourseTitle = (title, section) => {
   if (!title || !COURSE_SECTIONS.has(section)) return title || '';
   return title
+    // eslint-disable-next-line no-misleading-character-class
     .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
-    .replace(/^(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\s*—?\s*/i, '')
+    .replace(/^(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\s*—?\s*/i, '')
     .trim() || title;
 };
 
@@ -101,7 +102,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     });
   }, [task]);
 
-  const { isDirty, guardClose } = useDirtyForm(form);
+  const { isDirty: _isDirty, guardClose } = useDirtyForm(form);
   const safeClose = guardClose(onClose);
 
   // Filtrer les affaires selon la recherche

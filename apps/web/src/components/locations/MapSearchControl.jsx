@@ -2,7 +2,7 @@
 // MapSearchControl.jsx — Recherche de lieux et adresses sur la carte
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, X, MapPin, Globe } from 'lucide-react';
 import { useMap } from 'react-leaflet';
 import { filterGeoLocations } from './map-utils';

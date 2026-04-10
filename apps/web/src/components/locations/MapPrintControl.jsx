@@ -2,7 +2,7 @@
 // MapPrintControl.jsx — Bouton d'impression/export de la carte
 // ═══════════════════════════════════════════════════════════════
 
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Printer } from 'lucide-react';
 import { printMap, exportMapPNG } from './map-print-utils';
 

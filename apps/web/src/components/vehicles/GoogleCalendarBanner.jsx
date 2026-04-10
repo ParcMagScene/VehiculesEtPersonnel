@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
 import { format, parseISO, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './GoogleCalendarBanner.css';
@@ -40,7 +40,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   const searchInputRef = useRef(null);
 
   // ── Synchronisation intelligente via useGoogleSync ──
-  const { events: rawEvents, loading, fetchNow, lastSync, isLeader, fetchError } = useGoogleSync({
+  const { events: rawEvents, loading, fetchNow, lastSync: _lastSync, isLeader: _isLeader, fetchError } = useGoogleSync({
     isSignedIn,
     view,
     currentDate,
@@ -471,17 +471,6 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
       await api.disconnectGoogle();
     } catch {}
     handleSignIn();
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await api.disconnectGoogle();
-    } catch (err) {
-      console.warn('Erreur déconnexion Google:', err.message);
-    }
-    setIsSignedIn(false);
-    setGoogleEmail(null);
-    // events nettoyés automatiquement par useGoogleSync quand isSignedIn → false
   };
 
   // Gérer les erreurs de sync (déconnexion, calendrier introuvable)

@@ -1012,8 +1012,9 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     // 2. Retirer le label de section du titre (redondant : "📦 Chargement" dans la section Chargement, etc.)
     if (sectionInfo?.affaireOnly) {
       displayTitle = displayTitle
+        // eslint-disable-next-line no-misleading-character-class
         .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '') // retirer emoji
-        .replace(/^(Préparation|Chargement|Départ|Enlèvement|Retour|Récupération|Installation)\s*—?\s*/i, '')
+        .replace(/^(Pr(?:e|é)paration|Chargement|D(?:e|é)part|Enl(?:e|è)vement|Retour|R(?:e|é)cup(?:e|é)ration|Installation)\s*—?\s*/i, '')
         .trim();
       // Si le titre est vide après nettoyage, utiliser le googleEventTitle ou le client comme titre principal
       if (!displayTitle) {
@@ -1035,7 +1036,8 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         courseType = EVENT_COURSE_TYPE[task.eventType];
       } else {
         // Fallback : chercher dans le titre
-        const courseMatch = displayTitle.match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\b/iu);
+        // eslint-disable-next-line no-misleading-character-class
+        const courseMatch = displayTitle.match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\b/iu);
         if (courseMatch) {
           const rawType = courseMatch[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           const TYPE_MAP = { livraison: 'livraison', recuperation: 'recuperation', enlevement: 'enlevement', retour: 'retour' };
@@ -1045,8 +1047,9 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       // Retirer le type + emoji du titre pour éviter la redondance avec le badge
       if (courseType) {
         displayTitle = displayTitle
+          // eslint-disable-next-line no-misleading-character-class
           .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
-          .replace(/^(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\s*—?\s*/i, '')
+          .replace(/^(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\s*—?\s*/i, '')
           .trim();
         if (!displayTitle) {
           displayTitle = task.googleEventTitle || task.notes || '';
@@ -1507,7 +1510,9 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           <div className="event-linked-tasks">
             {linkedTasks.map(t => {
               const isDone = t.status === STATUS.DONE;
+              // eslint-disable-next-line no-misleading-character-class
               const label = (t.title || '').replace(/\s*—.*$/, '').replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '').trim();
+              // eslint-disable-next-line no-misleading-character-class
               const emoji = (t.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+/u)?.[0] || '📋';
               return (
                 <span key={t.id} className={`linked-task-chip ${isDone ? 'done' : ''}`} title={`${t.title}${t.date ? ' — ' + t.date : ''}${t.time ? ' ' + t.time : ''}`}>
@@ -1721,7 +1726,9 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           <div className="event-linked-tasks">
             {linkedTasks.map(t => {
               const isDone = t.status === STATUS.DONE;
+              // eslint-disable-next-line no-misleading-character-class
               const label = (t.title || '').replace(/\s*—.*$/, '').replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '').trim();
+              // eslint-disable-next-line no-misleading-character-class
               const emoji = (t.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+/u)?.[0] || '📋';
               return (
                 <span key={t.id} className={`linked-task-chip ${isDone ? 'done' : ''}`} title={`${t.title}${t.date ? ' — ' + t.date : ''}${t.time ? ' ' + t.time : ''}`}>

@@ -30,7 +30,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   const [googleCalendarId, setGoogleCalendarId] = useState(null);
   const [googleEmail, setGoogleEmail] = useState(null);
   
-  const [affairesWithAttachments, setAffairesWithAttachments] = useState({});
+  const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
   const [attachmentCounts, setAttachmentCounts] = useState({});
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');

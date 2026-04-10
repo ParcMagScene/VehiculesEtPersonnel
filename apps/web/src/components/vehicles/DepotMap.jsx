@@ -434,7 +434,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
             return (
               <g
                 key={zone.id}
-                className={`depot-zone-group ${isHighlighted ? 'highlighted' : ''} ${hasSearchResult ? 'has-result' : ''}`}
+                className={`depot-zone-group u-cursor-pointer ${isHighlighted ? 'highlighted' : ''} ${hasSearchResult ? 'has-result' : ''}`}
                 onClick={() => {
                   if (onZoneSelect) onZoneSelect(zone.id === selectedZone ? null : zone.id);
                   if (onZoneFilter) onZoneFilter(zone.id === selectedZone ? '' : zone.id);
@@ -442,7 +442,6 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                 onDoubleClick={() => handleZoneDblClick(zone)}
                 onMouseEnter={(e) => handleZoneHover(zone, e)}
                 onMouseLeave={handleZoneLeave}
-                className="u-cursor-pointer"
               >
                 {/* Highlight glow for search results */}
                 {(isHighlighted || hasSearchResult) && (

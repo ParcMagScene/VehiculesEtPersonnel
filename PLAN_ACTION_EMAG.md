@@ -124,7 +124,8 @@
 - [x] **2.6** Implémenter clic droit → créer indisponibilité sur cellule planning
 - [x] **2.7** Badge affaire Google → deep link vers affaire eM@g
 - [x] **2.8** Corriger création événement depuis banner Google
-- [ ] **2.9** ⏳ Sync bidirectionnelle eM@g ↔ Google Calendar (feature majeure — différé)
+- [ ] **2.9** ⏳ Sync bidirectionnelle eM@g ↔ Google Calendar (feature majeure — en cours)
+- [x] **2.9.1** Implémenter push eM@g → Google sur réservations (create/update/delete) avec feature flag `GOOGLE_BIDIRECTIONAL_SYNC` ✅
 - [ ] **2.10** ⏳ Token Google persistent (feature majeure — différé)
 - [x] **2.11** Tests planning + commit ✅ (63/63 pass, commit a30e952)
 

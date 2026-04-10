@@ -4,6 +4,7 @@ import logger from './logger.js';
 import { listCache, cacheMiddleware, invalidateEntity } from './cache.js';
 import { validate } from './schemas/imports.js';
 import { vehicleSchema, reservationSchema, maintenanceSchema, reservationRequestSchema } from './schemas/vehicles.js';
+import { syncReservationToGoogle, deleteReservationFromGoogle } from './googleBidirectionalSync.js';
 
 // Helper : parser les liens Google Drive (rétrocompatible ancien format string simple)
 function parseDriveLinks(value) {
@@ -258,7 +259,7 @@ app.get('/api/reservations', authenticateToken, cacheMiddleware(listCache, () =>
   }
 });
 
-app.post('/api/reservations', authenticateToken, requireAdmin, validate(reservationSchema), (req, res) => {
+app.post('/api/reservations', authenticateToken, requireAdmin, validate(reservationSchema), async (req, res) => {
   try {
     const reservation = req.body;
     
@@ -335,6 +336,23 @@ app.post('/api/reservations', authenticateToken, requireAdmin, validate(reservat
       linkedEventIds: createdReservation.linked_event_ids ? JSON.parse(createdReservation.linked_event_ids) : [],
       googleDriveLink: createdReservation.google_drive_link || ''
     };
+
+    // Sync eM@g -> Google (best effort). N'empêche pas la création locale en cas d'échec.
+    try {
+      const syncResult = await syncReservationToGoogle({
+        reservation: createdReservation,
+        vehicleName: createdReservation.vehicle_name,
+        userId: req.user.id,
+      });
+
+      if (syncResult?.synced && syncResult?.action === 'created' && syncResult?.eventId) {
+        db.prepare('UPDATE reservations SET google_event_id = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(syncResult.eventId, req.user.id, createdReservation.id);
+        mappedReservation.googleEventId = syncResult.eventId;
+      }
+    } catch (syncErr) {
+      logger.warn('Sync Google réservation (create) échouée:', syncErr.message);
+    }
     
     // Alerte email aux admins
     alertReservationCreated(db, mappedReservation, req.user.name)
@@ -349,7 +367,7 @@ app.post('/api/reservations', authenticateToken, requireAdmin, validate(reservat
   }
 });
 
-app.put('/api/reservations/:id', authenticateToken, requireNotReadOnly, validate(reservationSchema), (req, res) => {
+app.put('/api/reservations/:id', authenticateToken, requireNotReadOnly, validate(reservationSchema), async (req, res) => {
   try {
     const reservation = req.body;
 
@@ -387,6 +405,32 @@ app.put('/api/reservations/:id', authenticateToken, requireNotReadOnly, validate
     );
     
     addToHistory('reservation', req.params.id, 'updated', reservation, req.user.id, req.user.name);
+
+    // Sync eM@g -> Google (best effort). N'empêche pas la mise à jour locale.
+    try {
+      const updatedReservation = db.prepare(`
+        SELECT r.*, v.name AS vehicle_name
+        FROM reservations r
+        LEFT JOIN vehicles v ON v.id = r.vehicle_id
+        WHERE r.id = ?
+      `).get(req.params.id);
+
+      if (updatedReservation) {
+        const syncResult = await syncReservationToGoogle({
+          reservation: updatedReservation,
+          vehicleName: updatedReservation.vehicle_name,
+          userId: req.user.id,
+        });
+
+        if (syncResult?.synced && syncResult?.action === 'created' && syncResult?.eventId) {
+          db.prepare('UPDATE reservations SET google_event_id = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?')
+            .run(syncResult.eventId, req.user.id, req.params.id);
+        }
+      }
+    } catch (syncErr) {
+      logger.warn('Sync Google réservation (update) échouée:', syncErr.message);
+    }
+
     invalidateEntity('reservations');
     invalidateEntity('affaires');
     
@@ -431,12 +475,25 @@ app.patch('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) =
   }
 });
 
-app.delete('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) => {
+app.delete('/api/reservations/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
+    const existing = db.prepare('SELECT google_event_id FROM reservations WHERE id = ?').get(req.params.id);
+
     const stmt = db.prepare('DELETE FROM reservations WHERE id = ?');
     stmt.run(req.params.id);
     
     addToHistory('reservation', req.params.id, 'deleted', null, req.user.id, req.user.name);
+
+    // Sync eM@g -> Google (best effort). N'empêche pas la suppression locale.
+    try {
+      await deleteReservationFromGoogle({
+        googleEventId: existing?.google_event_id,
+        userId: req.user.id,
+      });
+    } catch (syncErr) {
+      logger.warn('Sync Google réservation (delete) échouée:', syncErr.message);
+    }
+
     invalidateEntity('reservations');
     invalidateEntity('affaires');
     

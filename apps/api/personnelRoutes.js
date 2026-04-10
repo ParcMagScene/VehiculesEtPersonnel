@@ -7,6 +7,7 @@ import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { alertAssignmentCreated } from './emailService.js';
 import { validate, personnelImportSchema } from './schemas/imports.js';
+import { personSchema } from './schemas/crud.js';
 
 // ============ PERSONS (PERSONNEL) ============
 
@@ -77,7 +78,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/persons — Créer une personne
-  app.post('/api/persons', authenticateToken, (req, res) => {
+  app.post('/api/persons', authenticateToken, validate(personSchema), (req, res) => {
     try {
       const p = req.body;
       if (!p.first_name || !p.last_name) {

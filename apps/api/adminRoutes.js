@@ -8,6 +8,8 @@ import { getAllCacheStats, ALL_CACHES } from './cache.js';
 import { encryptPassword, decryptPassword } from './videoProxyService.js';
 import { validatePassword } from './passwordPolicy.js';
 import { auditLog, AUDIT_ACTIONS } from './auditLog.js';
+import { validate } from './schemas/imports.js';
+import { accessRequestSchema, checkEmailSchema, changePasswordSchema, setNewPasswordSchema } from './schemas/auth.js';
 
 export function setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS }) {
 
@@ -41,7 +43,7 @@ app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (re
 });
 
 // Changer son propre mot de passe
-app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
+app.post('/api/auth/change-password', authenticateToken, validate(changePasswordSchema), async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     
@@ -72,7 +74,7 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 // ============ DEMANDES D'ACCÈS ============
 
 // Créer une demande d'accès (ou auto-approuver si email déjà autorisé)
-app.post('/api/access-requests', async (req, res) => {
+app.post('/api/access-requests', validate(accessRequestSchema), async (req, res) => {
   try {
     const { email, name } = req.body;
     
@@ -133,7 +135,7 @@ app.post('/api/access-requests', async (req, res) => {
 });
 
 // Vérifier si un email est autorisé (pour le lien direct de création de compte)
-app.post('/api/access-requests/check-email', async (req, res) => {
+app.post('/api/access-requests/check-email', validate(checkEmailSchema), async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -522,7 +524,7 @@ app.post('/api/auth/check-reset', async (req, res) => {
 
 // Définir un nouveau mot de passe après réinitialisation
 // [AUDIT FIX CRIT-1] Exige un token OTP valide (envoyé par email) en plus de l'email
-app.post('/api/auth/set-new-password', async (req, res) => {
+app.post('/api/auth/set-new-password', validate(setNewPasswordSchema), async (req, res) => {
   try {
     const { email, newPassword, resetToken } = req.body;
     

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 /**
  * Hook pull-to-refresh pour les écrans mobile.
@@ -59,16 +59,11 @@ export default function usePullToRefresh(onRefresh, { threshold = 80, maxPull = 
     setPullDistance(0);
   }, [disabled, pullDistance, threshold, onRefresh]);
 
-  // Reset si disabled change
-  useEffect(() => {
-    if (disabled) {
-      setPullDistance(0);
-      pullingRef.current = false;
-    }
-  }, [disabled]);
+  // Quand disabled, forcer la distance à 0 sans effet
+  const effectivePull = disabled ? 0 : pullDistance;
 
-  const progress = Math.min(pullDistance / threshold, 1);
-  const triggered = pullDistance >= threshold;
+  const progress = Math.min(effectivePull / threshold, 1);
+  const triggered = effectivePull >= threshold;
 
   const containerProps = {
     ref: containerRef,
@@ -78,10 +73,10 @@ export default function usePullToRefresh(onRefresh, { threshold = 80, maxPull = 
   };
 
   // Nœud indicateur à placer en haut du container
-  const showIndicator = pullDistance > 0 || isRefreshing;
+  const showIndicator = effectivePull > 0 || isRefreshing;
   const indicatorNode = showIndicator ? {
     style: {
-      height: isRefreshing ? 40 : pullDistance,
+      height: isRefreshing ? 40 : effectivePull,
       opacity: isRefreshing ? 1 : progress,
     },
     className: `ptr-indicator${isRefreshing ? ' ptr-refreshing' : ''}${triggered ? ' ptr-triggered' : ''}`,

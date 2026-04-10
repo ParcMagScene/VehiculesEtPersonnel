@@ -7,6 +7,8 @@ import logger from './logger.js';
 import { authCache } from './cache.js';
 import { validatePassword } from './passwordPolicy.js';
 import { auditLog, AUDIT_ACTIONS } from './auditLog.js';
+import { validate } from './schemas/imports.js';
+import { registerSchema, loginSchema, forgotPasswordSchema, selfResetPasswordSchema, checkResetSchema, setNewPasswordSchema, forceLoginSchema, changePasswordSchema } from './schemas/auth.js';
 
 export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev }) {
 
@@ -20,7 +22,7 @@ const cookieOptions = {
 };
 
 // Inscription
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', validate(registerSchema), async (req, res) => {
   try {
     const { email, name, password } = req.body;
     
@@ -60,7 +62,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // Mot de passe oublié (self-service) — [AUDIT FIX CRIT-1] Envoie OTP par email
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', validate(forgotPasswordSchema), async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
@@ -120,7 +122,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
 // Réinitialisation directe du mot de passe (self-service, sans ancien mot de passe)
 // Mode simplifié : email + nom + newPassword → reset direct (pas d'OTP)
-app.post('/api/auth/self-reset-password', async (req, res) => {
+app.post('/api/auth/self-reset-password', validate(selfResetPasswordSchema), async (req, res) => {
   try {
     const { email, name, newPassword } = req.body;
 
@@ -220,7 +222,7 @@ app.post('/api/auth/self-reset-password', async (req, res) => {
 });
 
 // Connexion
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -313,7 +315,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Forcer une nouvelle connexion en fermant les sessions actives
-app.post('/api/auth/force-login', async (req, res) => {
+app.post('/api/auth/force-login', validate(forceLoginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
     

@@ -8,11 +8,12 @@ import { alertSavTicketCreated } from './emailService.js';
 import { readFileSync, writeFileSync, readdirSync, existsSync, unlinkSync, mkdirSync, renameSync } from 'fs';
 import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
+import { validate, equipmentImportSchema, savImportSchema } from './schemas/imports.js';
+import { equipmentSchema } from './schemas/crud.js';
 import multer from 'multer';
 import logger from './logger.js';
 import { normalizeBrand } from './brandHelpers.js';
 import PDFDocument from 'pdfkit';
-import { validate, equipmentImportSchema, savImportSchema } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -203,7 +204,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/equipment
-  app.post('/api/equipment', authenticateToken, (req, res) => {
+  app.post('/api/equipment', authenticateToken, validate(equipmentSchema), (req, res) => {
     try {
       const { name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
       if (!name) return res.status(400).json({ error: 'Nom requis' });
@@ -231,7 +232,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/equipment/:id
-  app.put('/api/equipment/:id', authenticateToken, (req, res) => {
+  app.put('/api/equipment/:id', authenticateToken, validate(equipmentSchema), (req, res) => {
     try {
       const { name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
       

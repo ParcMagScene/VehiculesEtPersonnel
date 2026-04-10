@@ -129,6 +129,8 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
   // Cache key for the current view
   const dateStr = currentDate ? currentDate.toISOString().slice(0, 10) : '';
   const cacheKey = buildCacheKey(view, dateStr, calendarId);
+  const cacheKeyRef = useRef(cacheKey);
+  cacheKeyRef.current = cacheKey;
 
   // ── BroadcastChannel setup ──
 
@@ -151,7 +153,7 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
 
         case 'events-updated':
           // Another tab fetched events — apply if same cache key
-          if (tabId !== tabIdRef.current && payload?.cacheKey === cacheKey && payload?.events) {
+          if (tabId !== tabIdRef.current && payload?.cacheKey === cacheKeyRef.current && payload?.events) {
             setEvents(payload.events);
             setLastSync(payload.timestamp);
           }
@@ -331,7 +333,7 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
     }, 300); // small debounce
 
     return () => clearTimeout(initialTimer);
-  }, [isSignedIn, view, dateStr, calendarId]);
+  }, [isSignedIn, view, dateStr, calendarId, fetchEvents]);
 
   useEffect(() => {
     if (!isLeader || !isSignedIn) {

@@ -4,6 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { resolveBrand } from './brandHelpers.js';
+import { validate } from './schemas/imports.js';
+import { orderSchema } from './schemas/crud.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -231,7 +233,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // Créer une commande
-  app.post('/api/orders', authenticateToken, (req, res) => {
+  app.post('/api/orders', authenticateToken, validate(orderSchema), (req, res) => {
     try {
       const { type = 'purchase', affaire_id, supplier_id, status = 'draft', order_date, expected_date, notes, items = [] } = req.body;
 

@@ -2,6 +2,8 @@ import db, { addToHistory, getHistory } from './database.js';
 import { alertReservationCreated, alertMaintenanceCreated } from './emailService.js';
 import logger from './logger.js';
 import { listCache, cacheMiddleware, invalidateEntity } from './cache.js';
+import { validate } from './schemas/imports.js';
+import { vehicleSchema, reservationSchema, maintenanceSchema, reservationRequestSchema } from './schemas/vehicles.js';
 
 // Helper : parser les liens Google Drive (rétrocompatible ancien format string simple)
 function parseDriveLinks(value) {
@@ -64,7 +66,7 @@ app.get('/api/vehicles', authenticateToken, cacheMiddleware(listCache, () => 've
   }
 });
 
-app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
+app.post('/api/vehicles', authenticateToken, requireAdmin, validate(vehicleSchema), (req, res) => {
   try {
     const vehicle = req.body;
     const stmt = db.prepare(`
@@ -120,7 +122,7 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, (req, res) => {
   }
 });
 
-app.put('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/vehicles/:id', authenticateToken, requireAdmin, validate(vehicleSchema), (req, res) => {
   try {
     const vehicle = req.body;
 
@@ -256,7 +258,7 @@ app.get('/api/reservations', authenticateToken, cacheMiddleware(listCache, () =>
   }
 });
 
-app.post('/api/reservations', authenticateToken, requireAdmin, (req, res) => {
+app.post('/api/reservations', authenticateToken, requireAdmin, validate(reservationSchema), (req, res) => {
   try {
     const reservation = req.body;
     
@@ -347,7 +349,7 @@ app.post('/api/reservations', authenticateToken, requireAdmin, (req, res) => {
   }
 });
 
-app.put('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) => {
+app.put('/api/reservations/:id', authenticateToken, requireAdmin, validate(reservationSchema), (req, res) => {
   try {
     const reservation = req.body;
 
@@ -475,7 +477,7 @@ app.get('/api/reservation-requests', authenticateToken, (req, res) => {
   }
 });
 
-app.post('/api/reservation-requests', authenticateToken, (req, res) => {
+app.post('/api/reservation-requests', authenticateToken, validate(reservationRequestSchema), (req, res) => {
   try {
     const request = req.body;
     const stmt = db.prepare(`
@@ -657,7 +659,7 @@ app.get('/api/maintenances', authenticateToken, cacheMiddleware(listCache, () =>
   }
 });
 
-app.post('/api/maintenances', authenticateToken, (req, res) => {
+app.post('/api/maintenances', authenticateToken, validate(maintenanceSchema), (req, res) => {
   try {
     const maintenance = req.body;
     
@@ -751,7 +753,7 @@ app.post('/api/maintenances', authenticateToken, (req, res) => {
   }
 });
 
-app.put('/api/maintenances/:id', authenticateToken, (req, res) => {
+app.put('/api/maintenances/:id', authenticateToken, validate(maintenanceSchema), (req, res) => {
   try {
     const maintenance = req.body;
     

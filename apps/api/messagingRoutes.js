@@ -3,6 +3,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join, basename, extname } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import logger from './logger.js';
+import { validate } from './schemas/imports.js';
+import { messageSchema } from './schemas/crud.js';
 
 // ═══════════════════════════════════════
 // SSE — Server-Sent Events pour la messagerie temps réel
@@ -258,7 +260,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
   });
 
   // POST /api/messaging/conversations/:id/messages — Envoyer un message
-  app.post('/api/messaging/conversations/:id/messages', authenticateToken, (req, res) => {
+  app.post('/api/messaging/conversations/:id/messages', authenticateToken, validate(messageSchema), (req, res) => {
     try {
       const convId = req.params.id;
       const { content, type = 'text' } = req.body;

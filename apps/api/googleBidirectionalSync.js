@@ -207,3 +207,200 @@ export async function deleteReservationFromGoogle({ googleEventId, userId }) {
   logger.warn(`[GoogleSync] Echec suppression event ${eventId} (${result.status})`);
   return { skipped: true, reason: 'delete_failed', details: result };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Phase 2.9.2 — Pull Google → eM@g (réconciliation)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Extrait la période (AM/PM) à partir d'une chaîne dateTime Google.
+ * Google renvoie "YYYY-MM-DDTHH:MM:SS+02:00" pour Europe/Paris.
+ * L'heure locale Paris est directement lisible dans la chaîne.
+ */
+function parsePeriodFromDateTime(dateTimeStr) {
+  if (!dateTimeStr) return 'AM';
+  const match = dateTimeStr.match(/T(\d{2}):/);
+  if (!match) return 'AM';
+  const hour = parseInt(match[1], 10);
+  return hour >= 12 ? 'PM' : 'AM';
+}
+
+/**
+ * Convertit un événement Google en champs date/période eM@g.
+ * @returns {{ startDate, endDate, startPeriod, endPeriod } | null}
+ */
+function parseGoogleEventDates(event) {
+  // All-day (start.date présent)
+  if (event.start?.date) {
+    const startDate = event.start.date;
+    // Google stocke la fin en exclu — on revient en inclusif
+    const endDate = event.end?.date ? addDays(event.end.date, -1) : startDate;
+    return { startDate, endDate, startPeriod: 'AM', endPeriod: 'PM' };
+  }
+
+  // Événement dateTime
+  if (event.start?.dateTime) {
+    const startDate = event.start.dateTime.slice(0, 10);
+    const endDate = (event.end?.dateTime || event.start.dateTime).slice(0, 10);
+    const startPeriod = parsePeriodFromDateTime(event.start.dateTime);
+    const endPeriod = parsePeriodFromDateTime(event.end?.dateTime || event.start.dateTime);
+    return { startDate, endDate, startPeriod, endPeriod };
+  }
+
+  return null;
+}
+
+/**
+ * Récupère tous les événements Google d'une fenêtre temporelle (pagination automatique).
+ * @returns {{ ok: boolean, events?: object[], reason?: string }}
+ */
+async function listGoogleEventsInWindow(userId, calendarId, timeMin, timeMax) {
+  const events = [];
+  let pageToken = null;
+
+  do {
+    const params = new URLSearchParams({
+      singleEvents: 'true',
+      maxResults: '250',
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      orderBy: 'startTime',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`;
+    const result = await googleRequest(userId, 'GET', url);
+
+    if (!result.ok) {
+      if (result.skipped) return { ok: false, reason: result.reason };
+      return { ok: false, reason: `google_error_${result.status}`, details: result.data };
+    }
+
+    const items = result.data?.items || [];
+    events.push(...items);
+    pageToken = result.data?.nextPageToken || null;
+  } while (pageToken);
+
+  return { ok: true, events };
+}
+
+/**
+ * Réconcilie les réservations eM@g avec les événements Google Calendar.
+ *
+ * Stratégie :
+ * - Pour chaque réservation DB ayant un google_event_id :
+ *   a. Si l'événement n'est plus dans Google → efface google_event_id (orphan)
+ *   b. Si les dates diffèrent → met à jour les dates en DB (Google gagne)
+ * - Renvoie un rapport { synced, orphaned, skipped, errors }
+ *
+ * @param {{ userId: string|number, days?: number }} opts
+ */
+export async function pullReservationsFromGoogle({ userId, days = 90 }) {
+  if (!isGoogleBidirectionalSyncEnabled()) {
+    return { skipped: true, reason: 'feature_disabled' };
+  }
+
+  const calendarId = getCalendarId();
+
+  // Fenêtre : dernière semaine + N jours à venir (pour attraper les modifications récentes)
+  const now = new Date();
+  const timeMin = new Date(now);
+  timeMin.setDate(timeMin.getDate() - 7);
+  const timeMax = new Date(now);
+  timeMax.setDate(timeMax.getDate() + Math.max(1, Math.min(365, Number(days) || 90)));
+
+  // 1. Récupérer les événements Google pour cette fenêtre
+  const listResult = await listGoogleEventsInWindow(userId, calendarId, timeMin, timeMax);
+  if (!listResult.ok) {
+    return { skipped: true, reason: listResult.reason, details: listResult.details };
+  }
+
+  // 2. Construire un index des événements Google par leur ID
+  const googleEventMap = new Map();
+  for (const ev of listResult.events) {
+    if (ev.id && ev.status !== 'cancelled') {
+      googleEventMap.set(ev.id, ev);
+    }
+  }
+
+  // 3. Récupérer les réservations DB qui ont un google_event_id dans la fenêtre
+  const dbReservations = db.prepare(`
+    SELECT r.id, r.vehicle_id, r.start_date, r.end_date, r.start_period, r.end_period,
+           r.google_event_id, v.name as vehicle_name
+    FROM reservations r
+    LEFT JOIN vehicles v ON v.id = r.vehicle_id
+    WHERE r.google_event_id IS NOT NULL AND r.google_event_id != ''
+      AND r.start_date >= date('now', '-7 days')
+      AND r.start_date <= date('now', '+${days} days')
+  `.replace('${days}', String(Math.max(1, Math.min(365, Number(days) || 90))))).all();
+
+  const stmtClearEventId = db.prepare(
+    `UPDATE reservations SET google_event_id = '', modified_at = CURRENT_TIMESTAMP WHERE id = ?`
+  );
+  const stmtUpdateDates = db.prepare(`
+    UPDATE reservations
+    SET start_date = ?, start_period = ?, end_date = ?, end_period = ?,
+        modified_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `);
+
+  let synced = 0;
+  let orphaned = 0;
+  let skipped = 0;
+  const errors = [];
+
+  for (const res of dbReservations) {
+    const googleEvent = googleEventMap.get(res.google_event_id);
+
+    if (!googleEvent) {
+      // Événement supprimé côté Google → on délie la réservation sans la supprimer
+      stmtClearEventId.run(res.id);
+      orphaned++;
+      logger.info(`[GooglePull] Réservation ${res.id} déliée (event ${res.google_event_id} absent de Google)`);
+      continue;
+    }
+
+    // Vérifier que l'event appartient bien à cette réservation (sécurité)
+    const emagId = googleEvent.extendedProperties?.private?.emagReservationId;
+    if (emagId && String(emagId) !== String(res.id)) {
+      // Incohérence — on ne touche pas
+      errors.push({ reservationId: res.id, reason: 'id_mismatch', googleEventId: res.google_event_id });
+      continue;
+    }
+
+    // Comparer les dates
+    const parsed = parseGoogleEventDates(googleEvent);
+    if (!parsed) { skipped++; continue; }
+
+    const datesChanged = (
+      parsed.startDate !== res.start_date ||
+      parsed.endDate !== res.end_date ||
+      parsed.startPeriod !== res.start_period ||
+      parsed.endPeriod !== res.end_period
+    );
+
+    if (datesChanged) {
+      stmtUpdateDates.run(
+        parsed.startDate, parsed.startPeriod,
+        parsed.endDate, parsed.endPeriod,
+        res.id
+      );
+      synced++;
+      logger.info(`[GooglePull] Réservation ${res.id} mise à jour: ${res.start_date}→${parsed.startDate}, ${res.end_date}→${parsed.endDate}`);
+    } else {
+      skipped++;
+    }
+  }
+
+  updateLastSync(userId);
+
+  return {
+    ok: true,
+    synced,
+    orphaned,
+    skipped,
+    errors,
+    total: dbReservations.length,
+    googleEventsInWindow: listResult.events.length,
+  };
+}

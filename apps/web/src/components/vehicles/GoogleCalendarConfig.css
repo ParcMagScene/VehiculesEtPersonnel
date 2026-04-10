@@ -374,8 +374,40 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 0;
+  margin: 0 0 12px 0;
   font-size: var(--font-sm);
+  color: var(--theme-text-muted);
+}
+
+.btn-pull-sync {
+  margin-bottom: 12px;
+}
+
+.pull-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+}
+
+.pull-stat {
+  font-weight: 500;
+}
+
+.pull-stat--warn {
+  color: var(--theme-warning-text, #b45309);
+}
+
+.pull-stat--muted {
+  color: var(--theme-text-muted);
+}
+
+.pull-stat--error {
   color: var(--theme-danger-text);
 }
 

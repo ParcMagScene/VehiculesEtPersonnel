@@ -99,6 +99,9 @@ export function registerAdminMethods(ApiClient) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
       return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, { method: 'DELETE' });
     },
+    async syncPullReservations(days = 90) {
+      return this.request(`/google/sync/pull-reservations?days=${encodeURIComponent(days)}`, { method: 'POST' });
+    },
 
     // Demandes d'accès
     async getAccessRequests() {

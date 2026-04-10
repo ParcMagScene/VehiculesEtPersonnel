@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Save, AlertCircle, LogOut, RefreshCw } from 'lucide-react';
+import { Calendar, Save, AlertCircle, LogOut, RefreshCw, ArrowDownUp } from 'lucide-react';
 import api from '../../utils/api';
 import { saveToIndexedDB, loadFromIndexedDB } from '../../utils/indexedDB';
 import './GoogleCalendarConfig.css';
@@ -14,6 +14,8 @@ const GoogleCalendarConfig = () => {
   const [mapsApiKey, setMapsApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullResult, setPullResult] = useState(null);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   useEffect(() => {
@@ -69,8 +71,32 @@ const GoogleCalendarConfig = () => {
     }
   };
 
-  const handleRevokeOAuth = () => {
-    confirm({
+  const handlePullSync = async () => {
+    setIsPulling(true);
+    setPullResult(null);
+    try {
+      const result = await api.syncPullReservations(90);
+      setPullResult(result);
+      if (result.synced > 0 || result.orphaned > 0) {
+        toast.success(`Sync terminée : ${result.synced} mis à jour, ${result.orphaned} déliés`);
+      } else {
+        toast.info('Sync terminée : aucun changement détecté');
+      }
+    } catch (err) {
+      const msg = err?.message || 'Erreur inconnue';
+      if (msg.includes('feature_disabled')) {
+        toast.warning('Sync bidirectionnelle désactivée (GOOGLE_BIDIRECTIONAL_SYNC=false côté serveur)');
+      } else if (msg.includes('google_not_connected')) {
+        toast.warning('Compte Google non connecté — connectez-vous d\'abord via Paramètres');
+      } else {
+        toast.error(`Erreur sync pull : ${msg}`);
+      }
+    } finally {
+      setIsPulling(false);
+    }
+  };
+
+  const handleRevokeOAuth = () => {    confirm({
       title: 'Déconnexion Google',
       message: '⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nLe token sera révoqué côté Google et supprimé du serveur. Vous devrez autoriser à nouveau l\'accès après cette action.',
       variant: 'warning',
@@ -255,7 +281,35 @@ const GoogleCalendarConfig = () => {
       </form>
 
       <div className="oauth-actions">
-        <h4>🔐 Gestion OAuth</h4>
+        <h4>� Synchronisation bidirectionnelle</h4>
+        <p className="oauth-hint">
+          <AlertCircle size={14} />
+          Réconcilie les réservations eM@g avec les événements Google (90 jours). Si des dates ont été modifiées côté Google, eM@g est mis à jour.
+        </p>
+        <Button
+          variant="secondary"
+          type="button"
+          onClick={handlePullSync}
+          disabled={isPulling}
+          className="btn-pull-sync"
+        >
+          <ArrowDownUp size={18} />
+          {isPulling ? 'Réconciliation en cours...' : 'Réconcilier depuis Google'}
+        </Button>
+        {pullResult && (
+          <div className="pull-result">
+            <span className="pull-stat">✅ {pullResult.synced} mis à jour</span>
+            <span className="pull-stat pull-stat--warn">🔗 {pullResult.orphaned} déliés</span>
+            <span className="pull-stat pull-stat--muted">⏭ {pullResult.skipped} inchangés</span>
+            {pullResult.errors?.length > 0 && (
+              <span className="pull-stat pull-stat--error">⚠ {pullResult.errors.length} erreurs</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="oauth-actions">
+        <h4>�🔐 Gestion OAuth</h4>
         <div className="oauth-buttons">
           <Button variant="ghost" 
             type="button"

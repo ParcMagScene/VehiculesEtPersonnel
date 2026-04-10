@@ -18,6 +18,7 @@ import {
   revokeToken,
   updateLastSync,
 } from './googleTokenManager.js';
+import { pullReservationsFromGoogle } from './googleBidirectionalSync.js';
 
 const GOOGLE_API_BASE = 'https://www.googleapis.com/calendar/v3';
 const GCAL_TIMEOUT_MS = 10000;
@@ -255,6 +256,18 @@ export function setupGoogleRoutes(app, authenticateToken) {
     const calendarId = getCalendarId(req);
     const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(req.params.eventId)}`;
     await googleProxyV2(req, res, 'DELETE', url);
+  }));
+
+  // ── Sync Pull : Google → eM@g (réconciliation bidirectionnelle) ──
+  // Réconcilie les réservations eM@g ayant un google_event_id avec les événements Google.
+  // Google gagne sur les dates si elles divergent.
+  app.post('/api/google/sync/pull-reservations', authenticateToken, gcalRoute(async (req, res) => {
+    const days = Math.max(1, Math.min(365, parseInt(req.query.days || req.body?.days || '90', 10)));
+    const result = await pullReservationsFromGoogle({ userId: req.user.id, days });
+    if (result.skipped) {
+      return res.status(503).json({ error: result.reason, message: 'Synchronisation pull indisponible', details: result.details });
+    }
+    res.json(result);
   }));
 
   logger.info('[Google] Routes OAuth2 v2 montées (/api/google/*)');

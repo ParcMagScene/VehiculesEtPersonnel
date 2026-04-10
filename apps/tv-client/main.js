@@ -30,6 +30,14 @@ let completedEvents = [];
 let tvConfig = {};
 let allEvents = [];
 
+/** Échappe les caractères HTML pour prévenir les injections XSS */
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 // ===============================================
 //  ALARME SONORE — SNCF.wav à l'échéance
 // ===============================================
@@ -130,6 +138,7 @@ function updateDateTime() {
 async function loadTVState() {
   try {
     const response = await tvFetch(`${API_BASE}/api/display/tv-public-state`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const state = await response.json();
 
     // Appliquer la config (variables CSS)
@@ -139,7 +148,7 @@ async function loadTVState() {
     // Message d'accueil
     const welcomeEl = document.getElementById('welcome');
     if (welcomeEl && state.welcomeMessage) {
-      welcomeEl.innerHTML = `<span>${state.welcomeMessage}</span>`;
+      welcomeEl.innerHTML = `<span>${escapeHtml(state.welcomeMessage)}</span>`;
     }
 
     // Stocker les règles
@@ -267,32 +276,34 @@ function createEventElement(event) {
   const isAllDay = !event.time || event.time === '';
   if (isAllDay) li.classList.add('all-day-event');
 
-  const timeStr = event.time || '';
-  const endTimeStr = event.end_time || '';
-  const periodStr = event.period || '';
+  const timeStr = escapeHtml(event.time || '');
+  const endTimeStr = escapeHtml(event.end_time || '');
+  const periodStr = escapeHtml(event.period || '');
   const timeDisplay = timeStr
     ? (endTimeStr ? `${timeStr} → ${endTimeStr}` : timeStr)
     : (periodStr || '');
-  const eventTitle = event.title || 'Sans titre';
-  const eventLocation = event.location || '';
+  const eventTitle = escapeHtml(event.title || 'Sans titre');
+  const eventLocation = escapeHtml(event.location || '');
   const affaireNum = event.affaire_num || '';
   const affaireType = event.affaire_type || '';
 
   // Vérifier si terminé (status 'done' dans la planification OU marqué manuellement sur l'écran)
   const isCompleted = event.status === 'done' || completedEvents.includes(eventId);
 
-  // Rechercher icône de lieu (sur titre + sectionLabel + location)
-  const searchTextForIcon = `${eventTitle} ${event.section || ''} ${event.sectionLabel || ''} ${eventLocation}`;
+  // Rechercher icône de lieu (sur titre + sectionLabel + location — texte brut pour le matching)
+  const rawTitle = event.title || '';
+  const rawLocation = event.location || '';
+  const searchTextForIcon = `${rawTitle} ${event.section || ''} ${event.sectionLabel || ''} ${rawLocation}`;
   const locationIcon = getLocationIcon(searchTextForIcon);
 
   // Construire le contenu de la colonne lieu
   let locationContent;
   if (locationIcon) {
-    locationContent = `<div class="location-icon"><img src="/api/display/gifs/${locationIcon}" alt="${event.sectionLabel || ''}"></div>`;
+    locationContent = `<div class="location-icon"><img src="/api/display/gifs/${encodeURIComponent(locationIcon)}" alt="${escapeHtml(event.sectionLabel || '')}"></div>`;
   } else if (eventLocation) {
     locationContent = eventLocation;
   } else {
-    locationContent = event.sectionLabel || '';
+    locationContent = escapeHtml(event.sectionLabel || '');
   }
 
   // Badge affaire (couleur selon le type d'affaire)
@@ -302,7 +313,7 @@ function createEventElement(event) {
   };
   const badgeColor = AFFAIRE_TYPE_COLORS[affaireType] || '#3b82f6';
   const affaireBadge = affaireNum
-    ? `<span class="tv-affaire-badge" style="--badge-color:${badgeColor}">${affaireNum}</span>`
+    ? `<span class="tv-affaire-badge" style="--badge-color:${badgeColor}">${escapeHtml(affaireNum)}</span>`
     : '';
 
   li.innerHTML = `
@@ -317,8 +328,8 @@ function createEventElement(event) {
   // Marquer comme terminé si c'est le cas
   if (isCompleted) li.classList.add('event-completed');
 
-  // Application des couleurs personnalisées (mot-clé dans titre + section + location)
-  const searchText = `${eventTitle} ${event.section || ''} ${event.sectionLabel || ''} ${eventLocation}`.toLowerCase();
+  // Application des couleurs personnalisées (mot-clé dans titre + section + location — texte brut)
+  const searchText = `${rawTitle} ${event.section || ''} ${event.sectionLabel || ''} ${rawLocation}`.toLowerCase();
   for (const rule of colorRules) {
     if (searchText.includes(rule.keyword.toLowerCase())) {
       li.style.setProperty('--event-color', rule.color);
@@ -404,12 +415,13 @@ async function loadWeather() {
     }
 
     const response = await tvFetch(`${API_BASE}/api/display/weather`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     const weatherEl = document.getElementById('weather');
 
     if (weatherEl && data && !data.error && data.main) {
       const temp = Math.round(data.main.temp);
-      const desc = data.weather?.[0]?.description || '';
+      const desc = escapeHtml(data.weather?.[0]?.description || '');
       const icon = getWeatherIcon(data.weather?.[0]?.icon);
       const wind = data.wind?.speed ? Math.round(data.wind.speed * 3.6) : null;
       const line1 = `${icon} ${temp}°C`;
@@ -442,6 +454,7 @@ function getWeatherIcon(iconCode) {
 async function loadSonosNowPlaying() {
   try {
     const response = await tvFetch(`${API_BASE}/api/sonos/now-playing`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     updateSonosWidget(data);
   } catch (error) {

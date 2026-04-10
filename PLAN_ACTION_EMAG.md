@@ -127,7 +127,7 @@
 - [x] **2.9** ✅ Sync bidirectionnelle eM@g ↔ Google Calendar (complète)
 - [x] **2.9.1** Implémenter push eM@g → Google sur réservations (create/update/delete) avec feature flag `GOOGLE_BIDIRECTIONAL_SYNC` ✅
 - [x] **2.9.2** Réconciliation pull Google → eM@g : dates mises à jour si Google diverge, google_event_id effacé si event supprimé dans Google — endpoint `POST /api/google/sync/pull-reservations`, bouton UI dans GoogleCalendarConfig ✅
-- [ ] **2.10** ⏳ Token Google persistent (feature majeure — différé)
+- [x] **2.10** ✅ Token Google persistent entre sessions — état connexion (isSignedIn, email, calendarId) persisté en localStorage pour démarrage instantané sans flash UI, confirmé par appel async au backend, nettoyé à la déconnexion
 - [x] **2.11** Tests planning + commit ✅ (63/63 pass, commit a30e952)
 
 ---

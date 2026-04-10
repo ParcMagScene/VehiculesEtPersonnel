@@ -17,19 +17,39 @@ import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 const AffaireImportModal = lazy(() => import('../affaires/AffaireImportModal'));
 const GoogleEventFormModal = lazy(() => import('./GoogleEventFormModal'));
 
+// ── Persistance localStorage pour éviter le flash "non connecté" au chargement ──
+const GOOGLE_STATE_KEY = 'emag_google_state';
+
+function loadGoogleStateFromStorage() {
+  try {
+    const raw = localStorage.getItem(GOOGLE_STATE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function saveGoogleStateToStorage(state) {
+  try { localStorage.setItem(GOOGLE_STATE_KEY, JSON.stringify(state)); } catch { /* quota */ }
+}
+
+function clearGoogleStateFromStorage() {
+  try { localStorage.removeItem(GOOGLE_STATE_KEY); } catch { /* */ }
+}
+
 function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire, onNavigateToAffaire }) {
   const toast = useToast();
+  const cachedState = useMemo(() => loadGoogleStateFromStorage(), []);
   const [error, setError] = useState(null);
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [googleConfigured, setGoogleConfigured] = useState(null); // null = loading, true/false
+  const [isSignedIn, setIsSignedIn] = useState(cachedState?.isSignedIn || false);
+  const [googleConfigured, setGoogleConfigured] = useState(cachedState ? true : null); // null = loading, true/false
   const [displayMode, setDisplayMode] = useState('compact'); // 'closed', 'compact'
   const [bannerHeight, setBannerHeight] = useState(200);
   const [modalOpen, setModalOpen] = useState(false);
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [_clickedCell, setClickedCell] = useState(null);
-  const [googleCalendarId, setGoogleCalendarId] = useState(null);
-  const [googleEmail, setGoogleEmail] = useState(null);
+  const [googleCalendarId, setGoogleCalendarId] = useState(cachedState?.calendarId || null);
+  const [googleEmail, setGoogleEmail] = useState(cachedState?.email || null);
   
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
   const [attachmentCounts, setAttachmentCounts] = useState({});
@@ -123,8 +143,15 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
         if (statusData?.connected) {
           setIsSignedIn(true);
           setGoogleEmail(statusData.email || null);
+          // Persister pour éviter le flash au prochain chargement
+          saveGoogleStateToStorage({
+            isSignedIn: true,
+            email: statusData.email || null,
+            calendarId: calendarIdData?.value || null,
+          });
         } else {
           setIsSignedIn(false);
+          clearGoogleStateFromStorage();
         }
       } catch (error) {
         console.error('Erreur lors du chargement du statut Google:', error);

@@ -108,6 +108,8 @@ const GoogleCalendarConfig = () => {
         } catch (err) {
           toast.success('Déconnexion effectuée malgré l\'erreur. La page va se recharger.');
         }
+        // Nettoyer le cache de session Google
+        try { localStorage.removeItem('emag_google_state'); } catch { /* */ }
         
         setTimeout(() => {
           window.location.reload();

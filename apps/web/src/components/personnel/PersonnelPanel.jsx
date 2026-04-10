@@ -1603,6 +1603,8 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           // Absence partielle (AM/PM) ne bloque pas entièrement le slot
           const isFullAbsence = hasAbsence && absence.period === 'FULL';
 
+          const tasksHere = taskSlots[`${person.id}_${slotIndex}`] || [];
+
           return (
             <div
               key={slotIndex}

@@ -349,8 +349,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // POST /api/display/playlists
-  app.post('/api/display/playlists', authenticateToken, (req, res) => {
+  // POST /api/display/playlists (admin)
+  app.post('/api/display/playlists', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { name, description, transition, defaultDuration, items } = req.body;
       if (!name) return res.status(400).json({ error: 'Le nom est requis' });
@@ -394,8 +394,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // PUT /api/display/playlists/:id
-  app.put('/api/display/playlists/:id', authenticateToken, (req, res) => {
+  // PUT /api/display/playlists/:id (admin)
+  app.put('/api/display/playlists/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { name, description, transition, defaultDuration, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_playlists WHERE id = ?').get(req.params.id);
@@ -445,8 +445,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // PUT /api/display/playlists/:id/items — Réordonner / remplacer les items
-  app.put('/api/display/playlists/:id/items', authenticateToken, (req, res) => {
+  // PUT /api/display/playlists/:id/items — Réordonner / remplacer les items (admin)
+  app.put('/api/display/playlists/:id/items', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { items } = req.body;
       if (!Array.isArray(items)) return res.status(400).json({ error: 'items doit être un tableau' });

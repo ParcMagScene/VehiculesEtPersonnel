@@ -269,8 +269,7 @@ function createEventElement(event) {
 
   const timeStr = event.time || '';
   const endTimeStr = event.end_time || '';
-  const periodLabels = { AM: 'Matin', PM: 'Après-midi', JOURNEE: 'Journée' };
-  const periodStr = periodLabels[event.period] || event.period || '';
+  const periodStr = event.period || '';
   const timeDisplay = timeStr
     ? (endTimeStr ? `${timeStr} → ${endTimeStr}` : timeStr)
     : (periodStr || '');

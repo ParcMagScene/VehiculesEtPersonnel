@@ -74,7 +74,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     return d.toISOString().slice(0, 10);
   });
   const [showArchived, setShowArchived] = useState(false);
-  const [slidingMode, setSlidingMode] = useState(true);
+  const [slidingMode, setSlidingMode] = useState(false);
   const [viewMode, setViewMode] = useState('week'); // 'week' | 'month'
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showWeekSelector, setShowWeekSelector] = useState(false);

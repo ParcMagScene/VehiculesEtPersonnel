@@ -54,13 +54,13 @@ Les deux audits touchent `schemas/imports.js` et potentiellement `server.js`.
 
 | Étape | Action | État |
 |-------|--------|------|
-| 1 | Inventorier tous les POST/PUT sans validation | ⬜ TODO |
-| 2 | Créer schémas Zod par domaine | ⬜ TODO |
-| 3 | Ajouter validation sur endpoints critiques | ⬜ TODO |
-| 4 | Vérification MIME uploads | ⬜ TODO |
-| 5 | Sanitisation HTML globale | ⬜ TODO |
-| 6 | Masquer détails erreur en prod | ⬜ TODO |
-| 7 | Body size limit global | ⬜ TODO |
+| 1 | Inventorier tous les POST/PUT sans validation | ✅ DONE |
+| 2 | Créer schémas Zod par domaine | ✅ DONE |
+| 3 | Ajouter validation sur endpoints critiques | ✅ DONE |
+| 4 | Vérification MIME uploads | ✅ DONE |
+| 5 | Sanitisation HTML globale | ✅ DONE |
+| 6 | Masquer détails erreur en prod | ✅ DONE |
+| 7 | Body size limit global | ✅ DONE |
 
 ## Tests à effectuer
 

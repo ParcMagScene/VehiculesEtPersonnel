@@ -22,6 +22,14 @@ const streamRateMap = new Map();
 const STREAM_RATE_WINDOW = 60_000; // 1 min
 const STREAM_RATE_MAX = 120; // max 120 requêtes/min par user (grid 16 + rotation)
 
+// Purge auto des entrées périmées (toutes les 5 min)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of streamRateMap) {
+    if (now - entry.windowStart > STREAM_RATE_WINDOW * 2) streamRateMap.delete(key);
+  }
+}, 300_000);
+
 function checkStreamRate(userId) {
   const now = Date.now();
   const key = `stream_${userId}`;

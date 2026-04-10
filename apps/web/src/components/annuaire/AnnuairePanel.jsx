@@ -543,7 +543,7 @@ function EntityTable({ data, entityType, currentUser, _getLookupName, onSelect, 
           {data.map(item => (
             <tr key={item.id} className={item.is_active === 0 ? 'inactive-row' : ''}>
               <td className="code-cell">{item.code_libre || '—'}</td>
-              <td className="name-cell clickable" onClick={() => onSelect(item)}>
+              <td className="name-cell clickable" role="button" tabIndex={0} onClick={() => onSelect(item)} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onSelect(item)}>
                 <strong>{item.name}</strong>
                 {item.is_active === 0 && <span className="inactive-badge">Inactif</span>}
               </td>

@@ -1,0 +1,2 @@
+cd apps/web && npx eslint src/ --quiet && cd ../..
+npm test

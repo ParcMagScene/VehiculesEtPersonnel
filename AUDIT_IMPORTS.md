@@ -41,10 +41,10 @@ Cet audit dépend de audit/securite (même fichier `schemas/imports.js`).
 
 | Étape | Action | État |
 |-------|--------|------|
-| 1 | Lister tous les endpoints d'import | ⬜ TODO |
-| 2 | Créer schémas Zod manquants | ⬜ TODO |
-| 3 | Appliquer validation + limite lignes | ⬜ TODO |
-| 4 | Améliorer feedback frontend | ⬜ TODO |
+| 1 | Lister tous les endpoints d'import | ✅ DONE |
+| 2 | Créer schémas Zod manquants | ✅ DONE |
+| 3 | Appliquer validation + limite lignes | ✅ DONE |
+| 4 | Améliorer feedback frontend | ✅ DONE |
 
 ## Tests à effectuer
 

@@ -1,4 +1,4 @@
-import { forwardRef, useCallback } from 'react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
 
 /**
@@ -10,6 +10,7 @@ import { Search, X } from 'lucide-react';
  *     onChange={setSearch}
  *     placeholder="Rechercher un véhicule…"
  *     size="sm"
+ *     debounce={300}
  *   />
  */
 const SearchBar = forwardRef(({
@@ -17,14 +18,37 @@ const SearchBar = forwardRef(({
   onChange,
   placeholder = 'Rechercher…',
   size = 'md',
+  debounce = 0,
   className = '',
   ...props
 }, ref) => {
+  const [localValue, setLocalValue] = useState(value);
+  const timerRef = useRef(null);
+
+  // Sync external value → local (controlled mode)
+  useEffect(() => { setLocalValue(value); }, [value]);
+
+  const emit = useCallback((v) => {
+    if (debounce > 0) {
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => onChange?.(v), debounce);
+    } else {
+      onChange?.(v);
+    }
+  }, [onChange, debounce]);
+
+  // Cleanup timer on unmount
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
   const handleChange = useCallback((e) => {
-    onChange?.(e.target.value);
-  }, [onChange]);
+    const v = e.target.value;
+    setLocalValue(v);
+    emit(v);
+  }, [emit]);
 
   const handleClear = useCallback(() => {
+    setLocalValue('');
+    clearTimeout(timerRef.current);
     onChange?.('');
   }, [onChange]);
 
@@ -37,12 +61,12 @@ const SearchBar = forwardRef(({
         ref={ref}
         type="text"
         className="ui-search-bar__input"
-        value={value}
+        value={debounce > 0 ? localValue : value}
         onChange={handleChange}
         placeholder={placeholder}
         {...props}
       />
-      {value && (
+      {(debounce > 0 ? localValue : value) && (
         <button
           type="button"
           className="ui-search-bar__clear"

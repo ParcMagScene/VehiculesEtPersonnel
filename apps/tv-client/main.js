@@ -56,12 +56,7 @@ function playAlarmSound() {
       console.warn('⚠️ Lecture audio bloquée (autoplay) :', err.message);
     });
   }
-  // Afficher brièvement l'icône cloche
-  const btn = document.getElementById('btn-test-sound');
-  if (btn) {
-    btn.classList.add('visible');
-    setTimeout(() => btn.classList.remove('visible'), 5000);
-  }
+
 }
 
 /** Vérifie toutes les secondes si une tâche arrive à échéance */
@@ -559,20 +554,7 @@ function startAutoScroll() {
   setInterval(scroll, 16);
 }
 
-// ===============================================
-//  BOUTON DE TEST SONORE
-// ===============================================
-function setupTestSoundButton() {
-  const btn = document.getElementById('btn-test-sound');
-  if (!btn) return;
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    console.log('🔔 Test sonore SNCF.wav');
-    playAlarmSound();
-    btn.classList.add('test-playing');
-    setTimeout(() => btn.classList.remove('test-playing'), 2000);
-  });
-}
+
 
 // ===============================================
 //  SILENT TOKEN REFRESH (toutes les 6h)
@@ -607,9 +589,6 @@ async function init() {
   setInterval(checkAlarms, 1000);               // Alarmes : chaque seconde
 
   setInterval(refreshTokenSilently, 6 * 60 * 60 * 1000); // Token refresh : toutes les 6h
-
-  // Bouton de test sonore
-  setupTestSoundButton();
 
   // Démarrer le défilement automatique
   startAutoScroll();

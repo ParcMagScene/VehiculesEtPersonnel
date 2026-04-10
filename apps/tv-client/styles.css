@@ -514,40 +514,8 @@ footer {
 }
 
 /* ═══════════ BOUTON TEST SONORE ═══════════ */
-#btn-test-sound {
-  background: rgba(0, 225, 255, 0.15);
-  border: 2px solid rgba(0, 225, 255, 0.4);
-  color: var(--primary-color, #00e1ff);
-  font-size: 1.5em;
-  padding: 0.3em 0.5em;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: opacity 0.4s ease;
-  flex-shrink: 0;
-  opacity: 1;
-  pointer-events: auto;
-}
-#btn-test-sound.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-#btn-test-sound:hover {
-  background: rgba(0, 225, 255, 0.3);
-  border-color: var(--primary-color, #00e1ff);
-  transform: scale(1.1);
-}
-#btn-test-sound:active,
-#btn-test-sound.test-playing {
-  background: rgba(255, 200, 0, 0.3);
-  border-color: #ffc800;
-  animation: bell-ring 0.4s ease 3;
-}
 
-@keyframes bell-ring {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(15deg); }
-  75% { transform: rotate(-15deg); }
-}
+
 
 /* ═══════════ ALARME FLASH ═══════════ */
 .alarm-flash {

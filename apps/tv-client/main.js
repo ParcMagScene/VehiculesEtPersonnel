@@ -315,17 +315,13 @@ function createEventElement(event) {
     <div class="event-columns">
       <div class="col-time">${timeDisplay}</div>
       <div class="col-title">${isCompleted ? '<span class="completed-icon">✅</span>' : ''}${eventTitle}</div>
-      <div class="col-location">${locationContent}</div>
       <div class="col-affaire">${affaireBadge}</div>
+      <div class="col-location">${locationContent}</div>
     </div>
   `;
 
   // Marquer comme terminé si c'est le cas
   if (isCompleted) li.classList.add('event-completed');
-
-  // Gestionnaire de clic pour toggle completed
-  li.style.cursor = 'pointer';
-  li.addEventListener('click', () => toggleEventComplete(eventId, li));
 
   // Application des couleurs personnalisées (mot-clé dans titre + section + location)
   const searchText = `${eventTitle} ${event.section || ''} ${event.sectionLabel || ''} ${eventLocation}`.toLowerCase();
@@ -491,17 +487,7 @@ function updateSonosWidget(data) {
     if (titleEl) titleEl.textContent = data.title || '';
     if (artistEl) artistEl.textContent = data.artist || '';
 
-    // Indicateur volume
-    const volEl = document.getElementById('sonos-volume');
-    if (volEl && typeof data.volume === 'number') {
-      volEl.style.display = 'flex';
-      const volBar = volEl.querySelector('.sonos-vol-bar');
-      const volVal = volEl.querySelector('.sonos-vol-val');
-      if (volBar) volBar.style.width = `${data.volume}%`;
-      if (volVal) volVal.textContent = `${data.volume}%`;
-    } else if (volEl) {
-      volEl.style.display = 'none';
-    }
+
   } else {
     widget.style.display = 'none';
     if (titleEl) titleEl.textContent = '';

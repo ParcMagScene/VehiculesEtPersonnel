@@ -38,11 +38,11 @@
       <h1 id="welcome" class="marquee">Chargement du message...</h1>
       <div id="datetime">
         <div style="display: flex; align-items: center; justify-content: flex-end; gap: 1em;">
-          <div style="display: flex; flex-direction: column; align-items: center;">
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">
             <span id="date"></span>
             <span id="heure"></span>
           </div>
-          <span id="weather" style="margin-right:2em; min-width:180px; display:inline-block;"></span>
+          <span id="weather"></span>
           <button id="btn-test-sound" title="Tester le signal sonore">🔔</button>
         </div>
       </div>
@@ -76,10 +76,6 @@
       <div id="sonos-info">
         <div id="sonos-title"></div>
         <div id="sonos-artist"></div>
-      </div>
-      <div id="sonos-volume" style="display: none;">
-        <div class="sonos-vol-track"><div class="sonos-vol-bar"></div></div>
-        <span class="sonos-vol-val">—</span>
       </div>
     </div>
 

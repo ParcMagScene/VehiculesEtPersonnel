@@ -103,20 +103,26 @@ header {
 /* Date et heure */
 #date {
   display: block;
-  font-size: 2.5em;
+  font-size: 1.1em;
   white-space: nowrap;
   text-align: right;
 }
 #heure {
   display: block;
-  font-size: 2.2em;
+  font-size: 1.3em;
   font-weight: bold;
-  margin-top: 0.1em;
-  text-align: center;
+  margin-top: 0.05em;
+  text-align: right;
 }
 #datetime {
   justify-self: end;
-  margin-right: 2em;
+}
+
+/* Météo collée à droite */
+#weather {
+  font-size: 1.1em;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 /* ═══════════ ANIMATION MARQUEE ═══════════ */
@@ -149,18 +155,19 @@ header {
 /* ═══════════ LISTE ÉVÉNEMENTS ═══════════ */
 #events-list, #regular-events-list, .recurrent-events-list {
   padding: 0;
-  margin: 0 1.5em;
+  margin: 0;
   list-style: none;
   font-size: 2.3em;
 }
 #events-list li, #regular-events-list li, .recurrent-events-list li {
-  padding: 0.8em 0;
+  padding: 0.8em 1em;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   word-break: break-word;
   background: var(--event-bg-color, #000000);
   color: var(--event-text-color, #fff);
   opacity: 0.85;
-  margin-bottom: 0.6em;
+  margin-bottom: 0;
+  cursor: default;
 }
 
 /* Événements toute la journée */
@@ -170,7 +177,7 @@ header {
   border-radius: var(--radius-sm);
 }
 
-/* Structure en colonnes */
+/* Structure en colonnes : Période | Titre | Badge affaire | Icône lieu */
 .event-columns {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
@@ -181,7 +188,7 @@ header {
 
 /* main */
 main {
-  padding: 2em 3em;
+  padding: 0.5em 0;
   display: flex;
   flex-direction: column;
   height: calc(100vh - 200px - var(--tv-overscan, 0px) * 2);
@@ -376,35 +383,7 @@ footer {
   max-width: 450px;
 }
 
-/* Volume indicator */
-#sonos-volume {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  min-width: 50px;
-  flex-shrink: 0;
-}
-.sonos-vol-track {
-  width: 6px;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
-  overflow: hidden;
-  position: relative;
-  transform: rotate(180deg);
-}
-.sonos-vol-bar {
-  width: 100%;
-  height: 50%;
-  background: var(--primary-color, #00e1ff);
-  border-radius: 3px;
-  transition: height 0.3s ease;
-}
-.sonos-vol-val {
-  font-size: 0.7em;
-  color: rgba(255, 255, 255, 0.6);
-}
+/* Volume indicator — retiré (affichage seul) */
 
 /* ═══════════ PHOTO FURTIVE ═══════════ */
 .sneaky-photo-container {
@@ -436,7 +415,7 @@ footer {
 }
 
 /* ═══════════ MÉTÉO ═══════════ */
-#weather { font-size: 1.4em; }
+#weather { font-size: 1.1em; }
 .weather-box {
   display: flex;
   align-items: center;
@@ -454,8 +433,8 @@ footer {
   }
   #logo { height: clamp(80px, 10vw, 120px); margin-left: 1em; }
   #welcome { font-size: clamp(1.5em, 4vw, 2.5em); }
-  #datetime { font-size: clamp(1em, 2.5vw, 1.8em); }
-  #date, #heure { font-size: clamp(0.8em, 2vw, 1.2em); }
+  #datetime { font-size: clamp(0.8em, 2vw, 1.2em); }
+  #date, #heure { font-size: clamp(0.7em, 1.5vw, 1em); }
   .event-columns {
     grid-template-columns: auto 1fr auto auto;
     gap: 0.6em;
@@ -468,10 +447,10 @@ footer {
   .events-container, .recurrent-events-container { padding: 0.5em 1em; }
   .event-item {
     padding: 0.8em 1em;
-    margin-bottom: 0.5em;
+    margin-bottom: 0;
     font-size: clamp(0.9em, 1.5vw, 1.1em);
   }
-  #weather { font-size: clamp(0.8em, 1.5vw, 1em); min-width: 120px !important; }
+  #weather { font-size: clamp(0.7em, 1.3vw, 0.9em); }
 }
 
 /* 720p */
@@ -493,9 +472,9 @@ footer {
   header { grid-template-columns: 1fr 1.2fr 1.5fr; padding: 0.2em 0.5em; }
   #logo { height: 120px; max-width: 90%; }
   #welcome { font-size: 2em; }
-  #date { font-size: 1.5em; margin-right: 1em; }
-  #heure { font-size: 3.2em; font-weight: bold; }
-  #weather { min-width: 120px; margin-right: 2em; }
+  #date { font-size: 0.9em; }
+  #heure { font-size: 1.1em; font-weight: bold; }
+  #weather { font-size: 0.85em; }
   #events-list li, #regular-events-list li { font-size: 1em; padding: 0.3em 0.5em; }
   .recurrent-events-list li { font-size: 0.9em; padding: 0.25em 0.5em; }
   .recurrent-events-title { font-size: 1.4em; }
@@ -545,8 +524,8 @@ footer {
   cursor: pointer;
   transition: opacity 0.4s ease;
   flex-shrink: 0;
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
 }
 #btn-test-sound.visible {
   opacity: 1;

@@ -271,7 +271,15 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
     }
 
     try {
-      const finalReservation = { ...updatedReservation, id };
+      const finalReservation = {
+        ...updatedReservation,
+        id,
+        // Le backend valide start_date/end_date : on normalise depuis date/period du calendrier.
+        startDate: updatedReservation.startDate ?? updatedReservation.date,
+        startPeriod: updatedReservation.startPeriod ?? updatedReservation.period,
+        endDate: updatedReservation.endDate,
+        endPeriod: updatedReservation.endPeriod,
+      };
       logger.log('✅ Envoi API - Objet final:', finalReservation);
       await api.updateReservation(id, finalReservation);
       setReservations(prev => prev.map(r => r.id === id ? finalReservation : r));

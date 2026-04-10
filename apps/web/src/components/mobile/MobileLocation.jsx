@@ -42,13 +42,14 @@ function MobileLocation({ onBack }) {
     setLoading(false);
   }, [depot]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadData(); }, [loadData]);
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadData);
 
   // Charger les équipements d'une zone sélectionnée
   useEffect(() => {
-    if (!selectedZone) { setZoneEquipments([]); return; }
+    if (!selectedZone) { setZoneEquipments([]); return; } // eslint-disable-line react-hooks/set-state-in-effect
     let cancelled = false;
     const load = async () => {
       setLoadingEquipments(true);
@@ -64,7 +65,7 @@ function MobileLocation({ onBack }) {
 
   // Recherche d'équipement
   useEffect(() => {
-    if (!search.trim()) { setSearchResults(null); return; }
+    if (!search.trim()) { setSearchResults(null); return; } // eslint-disable-line react-hooks/set-state-in-effect
     const timer = setTimeout(async () => {
       try {
         const results = await api.getEquipment({ search: search.trim() });

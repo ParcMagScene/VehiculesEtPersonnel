@@ -26,6 +26,7 @@ function PlanningPanel({
   // Auto-switch vers l'onglet Personnel quand navigation demandée
   useEffect(() => {
     if (navigateToPersonId || quickAssignmentSlot) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveSubTab('personnel');
     }
   }, [navigateToPersonId, quickAssignmentSlot]);

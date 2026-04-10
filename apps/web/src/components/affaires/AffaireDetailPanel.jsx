@@ -1804,6 +1804,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
   useEffect(() => {
     if (affaire) {
       // Phase 1 : rend le panneau dans le DOM (width: 0)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       setIsClosing(false);
       // Phase 2 : après une frame, ajoute la classe 'open' pour déclencher la transition

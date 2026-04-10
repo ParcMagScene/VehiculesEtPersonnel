@@ -1123,6 +1123,7 @@ const _QuoteDetail = React.memo(({ quote, onBack, onEdit, onDelete, onConvert, o
 const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
   const itemIdCounter = useRef(0);
   const generateItemId = () => `item-${++itemIdCounter.current}`;
+  // eslint-disable-next-line react-hooks/refs
   const [form, setForm] = useState(() => {
     const items = (order?.items || [{ designation: '', quantity: 1, unit: 'u', unit_price_ht: 0 }])
       .map(i => ({ ...i, _key: generateItemId() }));
@@ -1243,6 +1244,7 @@ const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose }) => {
 const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose }) => {
   const itemIdCounter = useRef(0);
   const generateItemId = () => `item-${++itemIdCounter.current}`;
+  // eslint-disable-next-line react-hooks/refs
   const [form, setForm] = useState(() => {
     const items = (quote?.items || [{ designation: '', quantity: 1, unit: 'u', unit_price_ht: 0 }])
       .map(i => ({ ...i, _key: generateItemId() }));

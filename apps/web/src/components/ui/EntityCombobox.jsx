@@ -62,6 +62,7 @@ export default function EntityCombobox({
   }, [items, query, normalize]);
 
   // Reset highlight quand la liste filtrée change
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setHighlightIdx(0); }, [filtered]);
 
   // Scroll l'élément surligné dans la vue

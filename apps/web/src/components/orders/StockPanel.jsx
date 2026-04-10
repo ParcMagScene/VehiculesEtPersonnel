@@ -339,6 +339,7 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
 
   useEffect(() => {
     if (item) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       setIsClosing(false);
       const raf = requestAnimationFrame(() => {

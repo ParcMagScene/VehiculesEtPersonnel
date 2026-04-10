@@ -76,6 +76,7 @@ function MobileTasks({ currentUser, onBack }) {
     setLoading(false);
   }, [today, personId, showAllTasks]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadTasks);

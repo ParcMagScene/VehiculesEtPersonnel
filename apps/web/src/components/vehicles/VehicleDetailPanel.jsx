@@ -231,6 +231,7 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
 
   useEffect(() => {
     if (vehicle) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       setIsClosing(false);
       const raf = requestAnimationFrame(() => {

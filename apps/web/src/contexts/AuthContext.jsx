@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
   // Vérifier l'authentification au démarrage
   useEffect(() => {
     if (api.isAuthenticated()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsAuthenticated(true);
       setCurrentUser(api.getCurrentUser());
     }

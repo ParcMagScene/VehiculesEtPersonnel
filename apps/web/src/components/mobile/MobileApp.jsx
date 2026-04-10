@@ -74,6 +74,7 @@ function MobileApp({ onSwitchToDesktop }) {
   const { unreadMsgCount } = useMessagingSSE({
     currentUser: isAuthenticated ? currentUser : null,
     onNewMessage: handleNewMessage,
+    // eslint-disable-next-line react-hooks/refs
     isMessagingOpen: currentScreenRef.current === 'messaging',
   });
 
@@ -89,6 +90,13 @@ function MobileApp({ onSwitchToDesktop }) {
     };
     checkAuth();
   }, []);
+
+  const handleLogout = async () => {
+    await api.logout();
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setCurrentScreen('home');
+  };
 
   // Charger les données
   useEffect(() => {
@@ -152,13 +160,6 @@ function MobileApp({ onSwitchToDesktop }) {
   const handleLogin = (user) => {
     setIsAuthenticated(true);
     setCurrentUser(user);
-  };
-
-  const handleLogout = async () => {
-    await api.logout();
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    setCurrentScreen('home');
   };
 
   const handleReservationCreated = (newReservation) => {

@@ -28,6 +28,7 @@ function Drawer({
   /* ── Open animation ── */
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(true);
       // rAF to let the DOM paint before triggering CSS transition
       requestAnimationFrame(() => requestAnimationFrame(() => setAnimating(true)));

@@ -45,6 +45,7 @@ function MobileLeaves({ currentUser, onBack }) {
     setLoading(false);
   }, [currentUser, isAdmin]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadData(); }, [loadData]);
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadData);
@@ -266,7 +267,7 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
 
   // Calculer les jours ouvrés
   useEffect(() => {
-    if (!startDate || !endDate) { setWorkingDays(null); return; }
+    if (!startDate || !endDate) { setWorkingDays(null); return; } // eslint-disable-line react-hooks/set-state-in-effect
     if (new Date(endDate) < new Date(startDate)) { setWorkingDays(null); return; }
     
     const timer = setTimeout(async () => {

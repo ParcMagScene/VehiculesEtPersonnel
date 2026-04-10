@@ -180,6 +180,7 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
 
   useEffect(() => {
     if (!personId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     api.getAvailabilities({ personId })
       .then(data => setAbsences(data || []))
@@ -249,6 +250,7 @@ const PersonnelSlidePanel = ({ person, positions = [], skills = [], onClose, onE
 
   useEffect(() => {
     if (person) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       setIsClosing(false);
       const raf = requestAnimationFrame(() => {

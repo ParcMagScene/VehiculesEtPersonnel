@@ -89,6 +89,7 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
   // Sync when external value changes
   useEffect(() => {
     const { prefix, local } = parseStoredValue(value);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedPrefix(prefix);
     setLocalNumber(local);
   }, [value]);

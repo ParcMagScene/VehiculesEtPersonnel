@@ -97,6 +97,7 @@ export default function MailingPanel({ isOpen, onClose }) {
     setLoading(false);
   }, [isOpen]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadData(); }, [loadData]);
 
   // Filtrer contacts

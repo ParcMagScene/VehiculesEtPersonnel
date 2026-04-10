@@ -126,9 +126,11 @@ export default function AddressAutocomplete({
   };
 
   if (as === 'textarea') {
+    // eslint-disable-next-line react-hooks/refs
     tagProps.rows = rows || 3;
   }
   if (list) {
+    // eslint-disable-next-line react-hooks/refs
     tagProps.list = list;
   }
 

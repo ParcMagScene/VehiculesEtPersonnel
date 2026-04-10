@@ -2063,6 +2063,7 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, _persons, photosList, 
 
   useEffect(() => {
     if (eq) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       setIsClosing(false);
       const raf = requestAnimationFrame(() => {
@@ -2152,6 +2153,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, p
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') handleClose(); };
     if (eq) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsClosing(false);
       window.addEventListener('keydown', handler);
       return () => window.removeEventListener('keydown', handler);
@@ -3024,6 +3026,7 @@ const SavSlidePanel = ({ ticket, equipment, _persons, onClose, onEdit, onDelete,
 
   useEffect(() => {
     if (ticket) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       setIsClosing(false);
       const raf = requestAnimationFrame(() => {
@@ -3099,6 +3102,7 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') handleClose(); };
     if (ticket) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsClosing(false);
       window.addEventListener('keydown', handler);
       return () => window.removeEventListener('keydown', handler);

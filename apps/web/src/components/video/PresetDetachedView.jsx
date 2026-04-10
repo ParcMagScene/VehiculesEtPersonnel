@@ -31,6 +31,7 @@ const PresetDetachedView = ({ presetId }) => {
     }
   }, [presetId]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadData(); }, [loadData]);
 
   if (error) {

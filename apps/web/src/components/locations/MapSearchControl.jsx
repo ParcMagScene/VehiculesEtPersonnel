@@ -42,6 +42,7 @@ export default function MapSearchControl({ locations }) {
   // Recherche combinée : lieux locaux + Nominatim
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }

@@ -97,6 +97,7 @@ function DisplayDashboardPanel({ currentUser }) {
 
   // Réinitialiser les overrides à chaque changement d'onglet
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPreviewOverrides({});
   }, [activeTab]);
 

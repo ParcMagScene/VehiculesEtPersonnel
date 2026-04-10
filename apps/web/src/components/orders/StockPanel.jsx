@@ -840,7 +840,7 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
 // ═══════════════════════════════════════════════════════════════
 // Vue Mouvements globaux
 // ═══════════════════════════════════════════════════════════════
-function _MovementsView({ movements, _items, onAddMovement, _onRefresh }) {
+function MovementsView({ movements, _items, onAddMovement, _onRefresh }) {
   const [typeFilter, setTypeFilter] = useState('');
 
   const filtered = useMemo(() => {
@@ -970,6 +970,7 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
 // Modal Formulaire Article
 // ═══════════════════════════════════════════════════════════════
 function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones, onSave, onClose }) {
+  const toast = useToast();
   const [showMap, setShowMap] = useState(false);
   const [mapDepotIdx, setMapDepotIdx] = useState(0);
   const [form, setForm] = useState({
@@ -1148,6 +1149,7 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
 // Modal Formulaire Catégorie
 // ═══════════════════════════════════════════════════════════════
 function CategoryFormModal({ category, categories, onSave, onClose }) {
+  const toast = useToast();
   const [form, setForm] = useState({
     name: category?.name || '',
     description: category?.description || '',
@@ -1229,6 +1231,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
 // Modal Formulaire Mouvement
 // ═══════════════════════════════════════════════════════════════
 function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
+  const toast = useToast();
   const [form, setForm] = useState({
     stock_item_id: preselectedItem?.id || '',
     type: 'in',

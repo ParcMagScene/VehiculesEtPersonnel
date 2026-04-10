@@ -429,6 +429,7 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
 // ═══════════════════════════════════════
 
 const PersonsTab = ({ persons, setPersons, skills, positions = [], users, currentUser, personToEdit, onPersonToEditConsumed }) => {
+  const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -745,6 +746,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
 // ═══════════════════════════════════════
 
 const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) => {
+  const toast = useToast();
   const [form, setForm] = useState(() => {
     let defaultPos = [];
     if (person) {
@@ -925,6 +927,8 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
 // ═══════════════════════════════════════
 
 const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, currentDate = new Date(), setCurrentDate, googleEvents = [], onPersonEdit, onPersonCreate, navigateToPersonId, onNavigateToPersonHandled, quickAssignmentSlot, onQuickAssignmentHandled, currentUser }) => {
+  const toast = useToast();
+  const { confirm: confirmDelete, ConfirmDialogRenderer: DeleteConfirmRenderer } = useConfirmDialog();
   const scrollAreaRef = useRef(null);
   const headerScrollRef = useRef(null);
   const personColumnRef = useRef(null);
@@ -1514,10 +1518,13 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   };
 
   // Supprimer une mission
-  const handleDeleteMission = async () => {
-    if (!deleteMission) return;
+  const handleDeleteMission = async (missionToDelete) => {
+    const mission = missionToDelete || deleteMission?.mission;
+    if (!mission) return;
+    const ok = await confirmDelete(`Supprimer la mission "${mission.title}" et toutes ses affectations ?`);
+    if (!ok) { setDeleteMission(null); return; }
     try {
-      await api.deleteMission(deleteMission.mission.id);
+      await api.deleteMission(mission.id);
       setDeleteMission(null);
       loadPlanning();
     } catch (err) {
@@ -1741,7 +1748,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               <Button variant="ghost"               className="pp-assignment-delete"
               onClick={(e) => {
                 e.stopPropagation();
-                setDeleteMission({ mission: spanHere.mission, person });
+                handleDeleteMission(spanHere.mission);
               }}
  
             >
@@ -2042,19 +2049,13 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           onCreated={handleAssignmentCreated}
           onDelete={(mission) => {
             setAssignmentDialog(null);
-            setDeleteMission({ mission, person: assignmentDialog.person });
+            handleDeleteMission(mission);
           }}
         />
       )}
 
       {/* Dialog de confirmation de suppression */}
-      {deleteMission && (
-        <ConfirmDialog
-          message={`Supprimer la mission "${deleteMission.mission.title}" et toutes ses affectations ?`}
-          onConfirm={handleDeleteMission}
-          onCancel={() => setDeleteMission(null)}
-        />
-      )}
+      {DeleteConfirmRenderer}
 
       {/* Modal de demande de congé — Module Code du travail / IDCC 3252 */}
       {showLeaveModal && (

@@ -2006,9 +2006,8 @@ const Calendar = ({
                             {weeksInMonth.map((weekStart, idx) => {
                               const weekNum = getWeek(weekStart, { weekStartsOn: 1 });
                               return (
-                                <Tooltip content="Cliquer pour voir la semaine" position="bottom">
+                                <Tooltip key={idx} content="Cliquer pour voir la semaine" position="bottom">
                                   <span 
-                                  key={idx} 
                                   className="week-number-small clickable"
                                   onClick={(e) => {
                                     e.stopPropagation();

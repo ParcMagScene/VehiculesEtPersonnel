@@ -277,8 +277,8 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
         <div style={{ display: 'none' }}>
           <div ref={printRef}>
             <h1>Rapport Maintenance Matériel</h1>
-            <p class="report-subtitle">{label} — {REPORT_TYPES.find(t => t.value === reportType)?.label}</p>
-            <div class="report-meta">
+            <p className="report-subtitle">{label} — {REPORT_TYPES.find(t => t.value === reportType)?.label}</p>
+            <div className="report-meta">
               <span>Généré le {format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
               <span>{reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}</span>
             </div>
@@ -318,7 +318,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                 ))}
               </tbody>
             </Table>
-            <div class="report-footer">
+            <div className="report-footer">
               <span>Total : {reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}</span>
               <span>Coût total : {formatCost(totalCost)}</span>
             </div>

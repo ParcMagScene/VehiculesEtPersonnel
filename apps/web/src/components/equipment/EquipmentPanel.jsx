@@ -149,7 +149,6 @@ const getCategoryHierarchy = (eq, categories) => {
 
 // ═══ FILTRE CATÉGORIES EN CASCADE (hover desktop / accordion mobile) ═══
 const CategoryCascadeFilter = ({ families, subfamilies, leafCategories, value, onChange, isMobile }) => {
-  const _toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredFamily, setHoveredFamily] = useState(null);
   const [hoveredSub, setHoveredSub] = useState(null);
@@ -576,6 +575,7 @@ const EquipmentCategoriesTree = ({ families, subfamilies, leafCategories, catego
 
 // ═══ COMPOSANT PRINCIPAL ═══
 const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onCloseManagement, initialTab, isMobile }) => {
+  const toast = useToast();
   const [subTab, setSubTab] = useState(initialTab || 'inventory'); // inventory | sav
   const [equipment, setEquipment] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -2302,6 +2302,7 @@ const SavTicketsList = ({ tickets, _equipment, _persons, selectedId, onSelect, o
 
 // ═══ MODAL FORMULAIRE ÉQUIPEMENT ═══
 const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZones, allDepotZones, photosList = [], onSave, onClose }) => {
+  const toast = useToast();
   const [showMap, setShowMap] = useState(false);
   const [mapSelection, setMapSelection] = useState('');
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
@@ -2675,6 +2676,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
 
 // ═══ MODAL TICKET SAV ═══
 const SavTicketFormModal = ({ ticket, equipment, persons, categories, preselectedEquipment, onSave, onClose }) => {
+  const toast = useToast();
   const [form, setForm] = useState({
     equipment_id: ticket?.equipmentId || ticket?.equipment_id || preselectedEquipment?.id || '',
     assigned_to: ticket?.assignedTo || ticket?.assigned_to || '',

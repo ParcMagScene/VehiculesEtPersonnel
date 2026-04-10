@@ -11,7 +11,7 @@ import { capitalizeText } from '../../utils/dateUtils';
 import './AffaireDetailPanel.css';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { Avatar, Button, Input, Select, Table, Textarea, Tooltip } from '@/design-system';
+import { Avatar, Button, Input, Select, Spinner, Table, Textarea, Tooltip } from '@/design-system';
 import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
@@ -60,7 +60,7 @@ const fmtDate = (dateStr) => {
 // Extraire les URL depuis un texte (description Google Calendar)
 const extractLinksFromText = (text) => {
   if (!text) return [];
-  const urlRegex = /https?:\/\/[^\s<>"'\)]+/gi;
+  const urlRegex = /https?:\/\/[^\s<>"')]+/gi;
   const matches = text.match(urlRegex) || [];
   return [...new Set(matches)].map(url => {
     const isDrive = url.includes('drive.google.com') || url.includes('docs.google.com') || url.includes('sheets.google.com') || url.includes('slides.google.com');
@@ -622,7 +622,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
                 // Enrichir le fournisseur depuis la description (marque avant ou après •)
                 let fournisseur = item.fournisseur || null;
                 if (!fournisseur && item.description) {
-                  const before = item.description.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'.\/-]{0,30}?)\s*[•·]/);
+                  const before = item.description.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'./-]{0,30}?)\s*[•·]/);
                   if (before) { fournisseur = before[1].trim(); }
                   else {
                     const after = item.description.match(/[•·]\s*([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'./-]{1,30})\s*$/);

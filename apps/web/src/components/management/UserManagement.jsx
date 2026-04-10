@@ -688,6 +688,7 @@ const CONTRACT_TYPES = [
 ];
 
 function CreatePersonnelModal({ user, onConfirm, onCancel }) {
+  const toast = useToast();
   const [personType, setPersonType] = useState('permanent');
   const [contractType, setContractType] = useState('intermittent');
   const [loading, setLoading] = useState(false);

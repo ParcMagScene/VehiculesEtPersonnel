@@ -11,7 +11,7 @@ function staleAssetReload() {
     configurePreviewServer(server) {
       server.middlewares.use((req, res, next) => {
         // Uniquement pour les fichiers /assets/ avec hash (ex: PlanningPanel-DYyH5a4J.js)
-        if (req.url?.startsWith('/assets/') && /\-[a-zA-Z0-9_]{6,}\.(js|css)$/.test(req.url)) {
+        if (req.url?.startsWith('/assets/') && /-[a-zA-Z0-9_]{6,}\.(js|css)$/.test(req.url)) {
           const filePath = join(distAssets, req.url.replace('/assets/', ''));
           if (!existsSync(filePath)) {
             if (req.url.endsWith('.js')) {
@@ -42,7 +42,7 @@ function smartCacheHeaders() {
         res.setHeader = (name, value) => {
           if (name.toLowerCase() === 'cache-control') {
             // Assets avec hash → cache longue durée (le hash change à chaque build)
-            if (url.startsWith('/assets/') && /\-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)) {
+            if (url.startsWith('/assets/') && /-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)) {
               return origSetHeader(name, 'public, max-age=31536000, immutable');
             }
             // HTML et autres → pas de cache

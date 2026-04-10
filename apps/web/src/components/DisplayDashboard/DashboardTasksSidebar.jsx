@@ -60,7 +60,7 @@ function cleanTaskDisplayTitle(task, affaireName) {
     let t = rawTitle.replace(EMOJI_RE, '').trim();
     t = t.replace(SECTION_LABEL_RE, '').trim();
     t = stripAfNum(t, task);
-    t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
+    t = t.replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '').replace(/^[\s—–-]+/, '').replace(/\s{2,}/g, ' ').trim();
     if (t) return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
@@ -69,7 +69,7 @@ function cleanTaskDisplayTitle(task, affaireName) {
     let t = rawGev.replace(EMOJI_RE, '').trim();
     t = t.replace(SECTION_LABEL_RE, '').trim();
     t = stripAfNum(t, task);
-    t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
+    t = t.replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '').replace(/^[\s—–-]+/, '').replace(/\s{2,}/g, ' ').trim();
     if (t) return t.charAt(0).toUpperCase() + t.slice(1);
   }
 

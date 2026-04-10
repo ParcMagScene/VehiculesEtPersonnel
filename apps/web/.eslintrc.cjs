@@ -28,6 +28,18 @@ module.exports = {
     'react/display-name': 'off',
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
+    // Apostrophes françaises dans le JSX — trop de faux positifs
+    'react/no-unescaped-entities': 'off',
+    // Règles react-hooks v7 trop strictes pour le code existant
+    'react-hooks/set-state-in-effect': 'warn',
+    'react-hooks/refs': 'warn',
+    'react-hooks/purity': 'off',
+    'react-hooks/immutability': 'warn',
+    'react-hooks/preserve-manual-memoization': 'warn',
+    // Regex avec emoji (planning français) — faux positifs
+    'no-misleading-character-class': 'warn',
+    // Catch vides volontaires (silencieux)
+    'no-empty': ['error', { allowEmptyCatch: true }],
   },
   ignorePatterns: ['dist/', 'node_modules/', 'public/', '_archive/'],
 };

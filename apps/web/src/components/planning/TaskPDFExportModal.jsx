@@ -11,6 +11,7 @@ import { Button, EmptyState } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { PLANNING_SECTIONS, EVENT_TYPE_COLORS } from '../../constants/colors';
+import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 
 // ═══ Sections (depuis colorConstants) ═══
 const SECTIONS = {

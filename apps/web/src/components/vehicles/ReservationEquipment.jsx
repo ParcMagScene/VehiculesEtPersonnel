@@ -146,6 +146,7 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
 
 // ─── Dialog pour ajouter un équipement du catalogue ───
 function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
+  const toast = useToast();
   const [catalogItems, setCatalogItems] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);

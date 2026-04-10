@@ -19,8 +19,6 @@ const VehicleDetailsModal = ({
   onDeleteIntervention,
   currentUser
 }) => {
-  if (!vehicle) return null;
-  
   const [selectedIntervention, setSelectedIntervention] = useState(null);
   const [mileageHistory, setMileageHistory] = useState([]);
   
@@ -37,6 +35,8 @@ const VehicleDetailsModal = ({
       }).catch(() => {});
     }
   }, [vehicle?.id]);
+
+  if (!vehicle) return null;
   
   // Vérifier les droits d'administration
   const isAdmin = currentUser?.isAdmin === true;

@@ -518,7 +518,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
       win.document.write(
         '<html><head><title>BP Annoté</title>' +
         '<style>@media print { body { margin: 0; } } body { margin: 0; }</style>' +
-        '</head><body>' + imgsHtml + '<script>window.onload=function(){window.print();window.close();}<\/script></body></html>'
+        '</head><body>' + imgsHtml + '<script>window.onload=function(){window.print();window.close();}</scr' + 'ipt></body></html>'
       );
       win.document.close();
     }

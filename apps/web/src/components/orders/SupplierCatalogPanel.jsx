@@ -77,7 +77,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
     } finally {
       setLoading(false);
     }
-  }, [page, search, supplierFilter, brandFilter, familyFilter, categoryFilter]);
+  }, [page, search, supplierFilter, brandFilter, familyFilter, categoryFilter, toast]);
 
   useEffect(() => { loadArticles(); }, [loadArticles]);
 

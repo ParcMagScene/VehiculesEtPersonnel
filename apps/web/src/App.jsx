@@ -248,7 +248,7 @@ function AppContent() {
     else if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
     if (prefs.defaultView) setView(prefs.defaultView);
     return result;
-  }, [login]);
+  }, [login, setActiveModule]);
 
   // ═══ Navigation croisée entre modules ═══
   const handleNavigateToEntity = useCallback((type, entityData) => {
@@ -281,7 +281,7 @@ function AppContent() {
         if (found) setGlobalAffaireDialog(found);
       }).catch(() => {});
     }
-  }, [data.vehicles]);
+  }, [data.vehicles, setActiveModule]);
 
   // ═══ Actions maintenance ═══
   const handleRequestMaintenance = (vehicle) => {

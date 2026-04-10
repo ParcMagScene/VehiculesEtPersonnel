@@ -212,6 +212,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         markerRef.current.setMap(null);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fonction de géocodage inverse

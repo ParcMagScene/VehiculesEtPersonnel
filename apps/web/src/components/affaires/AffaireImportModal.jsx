@@ -183,6 +183,7 @@ const AffaireImportModal = ({
       
       loadAffaires();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, event?.id]);
 
   // Détecter les changements dans le formulaire

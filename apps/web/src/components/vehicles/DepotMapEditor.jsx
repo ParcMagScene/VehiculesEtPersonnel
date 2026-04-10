@@ -450,6 +450,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     setDragZoneStart({ ...zone.bbox });
     if (zone.clipPoints) setDragClipPointsStart(zone.clipPoints.map(p => ({ ...p })));
     else setDragClipPointsStart(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getSvgPoint, pushHistory, spaceHeld, subtractMode, subtractSourceId]);
 
   // Mouse down on resize handle
@@ -538,6 +539,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
         updateZoneSkew(selectedZoneId, skewKey, newVal);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dragMode, dragStart, dragZoneStart, dragSkewStart, selectedZoneId, getSvgPoint, updateZoneBbox, updateZoneSkew, SVG_WIDTH, SVG_HEIGHT]);
 
   const handleMouseUp = useCallback(() => {
@@ -592,6 +594,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedZoneId, zonesData, SVG_WIDTH, SVG_HEIGHT]);
 
   // Global mouse events for drag

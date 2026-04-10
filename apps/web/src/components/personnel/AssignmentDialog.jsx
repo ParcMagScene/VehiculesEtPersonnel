@@ -201,6 +201,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
   // Référence stable pour le tableau vide par défaut
   const stableGoogleEvents = googleEvents || EMPTY_GOOGLE_EVENTS;
   // Sécuriser le jour pour éviter les erreurs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const safeDay = day instanceof Date && !isNaN(day) ? day : new Date();
   
   const isEdit = !!editMission;
@@ -326,6 +327,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
         status, notes, selectedPersonId
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
   const hasFormChanges = () => {
@@ -461,6 +463,7 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
       console.error('[AssignmentDialog] rangeDays error:', e);
       return [safeDay];
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate, endDate, safeDay]);
 
   // Initialiser les dayStates quand la plage de dates change

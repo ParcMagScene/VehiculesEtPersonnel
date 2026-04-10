@@ -98,10 +98,11 @@ const VideoPanel = ({ currentUser }) => {
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    const keys = activeKeys.current;
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      activeKeys.current.clear();
+      keys.clear();
     };
   }, [selectedCamera, startMove, stopMove]);
 
@@ -136,7 +137,7 @@ const VideoPanel = ({ currentUser }) => {
         setShowSettings(false);
       },
     });
-  }, [deleteCamera]);
+  }, [deleteCamera, confirm]);
 
   const handleTestAll = useCallback(async () => {
     setTestingAll(true);

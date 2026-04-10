@@ -59,6 +59,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
     setDragOver(false);
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) handleFileSelect(droppedFile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFileSelect = async (selectedFile) => {

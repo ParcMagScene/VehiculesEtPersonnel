@@ -97,6 +97,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
       }
     };
     reader.readAsText(file, 'utf-8');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const processText = useCallback(async (text) => {

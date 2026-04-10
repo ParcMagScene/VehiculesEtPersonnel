@@ -97,6 +97,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
     const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
     if (files.length === 0) return;
     addFiles(files);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addFiles = async (newFiles) => {

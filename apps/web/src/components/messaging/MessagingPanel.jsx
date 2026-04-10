@@ -82,7 +82,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   // Charger les messages d'une conversation
   const loadMessages = useCallback(async (convId) => {
@@ -99,7 +99,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       console.error('Erreur chargement messages:', err);
       toast.error('Erreur chargement des messages');
     }
-  }, []);
+  }, [toast]);
 
   // Ouvrir quand isOpen change
   useEffect(() => {

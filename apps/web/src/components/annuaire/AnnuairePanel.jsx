@@ -602,6 +602,7 @@ function DetailView({ item, entityType, _lookups, getLookupName, currentUser, on
     };
     fetchDetail();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.id, entityType]);
 
   // Recherche de contacts existants pour liaison

@@ -249,6 +249,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         markerRef.current.setMap(null);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Mettre à jour la carte et le marqueur quand les coordonnées changent

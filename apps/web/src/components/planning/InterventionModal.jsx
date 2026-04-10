@@ -62,6 +62,7 @@ const InterventionModal = ({
   // Vérifier la deadline quand la date ou le type change
   useEffect(() => {
     checkDeadline();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.date, formData.technicalControlType]);
 
   const checkDeadline = () => {

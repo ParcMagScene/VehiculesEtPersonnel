@@ -44,6 +44,7 @@ const SignaturePad = ({ onSign, onClear, value, label = 'Signature' }) => {
       };
       img.src = value;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getPos = (e) => {

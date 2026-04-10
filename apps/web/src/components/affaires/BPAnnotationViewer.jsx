@@ -357,6 +357,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
   const [showInfo, setShowInfo] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const data = annotationResult || {};
   const { sections = [], stats = {}, infoLines = [], affaire, blImport, _kits = [] } = data;
 
@@ -464,6 +465,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
         renderTaskRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDoc, currentPage, scale, showInfo, showLegend, data, computeAutoScale, infoLines, affaire]);
 
   // ─── Rendre une page donnée avec annotations sur un canvas temporaire ───
@@ -493,6 +495,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
     }
 
     return canvas;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pdfDoc, data, showInfo, infoLines, affaire]);
 
   // ─── Impression multi-pages ───

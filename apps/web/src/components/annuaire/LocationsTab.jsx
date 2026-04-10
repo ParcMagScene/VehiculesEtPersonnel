@@ -32,7 +32,7 @@ function LocationsTab({ currentUser }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     loadLocations();

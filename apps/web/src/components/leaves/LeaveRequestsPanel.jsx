@@ -66,7 +66,7 @@ const LeaveRequestsPanel = ({
       console.error('Erreur chargement solde:', err);
       toast.error('Impossible de charger le solde de congés');
     }
-  }, [personId]);
+  }, [personId, toast]);
 
   useEffect(() => {
     loadRequests();

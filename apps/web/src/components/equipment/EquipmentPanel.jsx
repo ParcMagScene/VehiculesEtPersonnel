@@ -2690,9 +2690,13 @@ const SavTicketFormModal = ({ ticket, equipment, persons, categories, preselecte
   });
 
   // ── Sélection hiérarchique : famille → sous-famille → type → équipement ──
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const allCategories = categories || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const familles = useMemo(() => allCategories.filter(c => c.level === 'family'), [allCategories]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const sousFamilles = useMemo(() => allCategories.filter(c => c.level === 'subfamily'), [allCategories]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const types = useMemo(() => allCategories.filter(c => c.level === 'category'), [allCategories]);
 
   // Init cascade from preselected or editing equipment

@@ -91,7 +91,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
     } finally {
       setLoading(false);
     }
-  }, [stockType, debouncedSearch, categoryFilter, lowStockFilter]);
+  }, [stockType, debouncedSearch, categoryFilter, lowStockFilter, toast]);
 
   const loadMovements = useCallback(async (itemId) => {
     try {

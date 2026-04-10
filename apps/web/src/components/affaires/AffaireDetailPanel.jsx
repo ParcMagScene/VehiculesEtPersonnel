@@ -231,7 +231,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
       console.error('Erreur création réservation:', err);
       showFeedback({ type: 'error', message: 'Erreur: ' + err.message }, 4000);
     }
-  }, [onDataChanged]);
+  }, [onDataChanged, showFeedback]);
 
   // Upload de fichier
   const handleFileUpload = useCallback(async (files) => {
@@ -254,7 +254,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
     } else {
       showFeedback({ type: 'error', message: 'Erreur lors de l\'import' });
     }
-  }, [affaire.numeroAffaire, onDataChanged]);
+  }, [affaire.numeroAffaire, onDataChanged, showFeedback]);
 
   // Assigner du personnel
   const handleAssignPersonnel = useCallback(async () => {
@@ -291,7 +291,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
       console.error('Erreur affectation:', err);
       showFeedback({ type: 'error', message: 'Erreur: ' + err.message }, 4000);
     }
-  }, [selectedPersonId, missionTitle, affaire, reservations, onDataChanged]);
+  }, [selectedPersonId, missionTitle, affaire, reservations, onDataChanged, showFeedback]);
 
   // Réservations liées (par numéro d'affaire OU par googleEventId)
   const linkedReservations = useMemo(() => {
@@ -441,7 +441,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
         }
       },
     });
-  }, [affaire.id, loadLinkedAffaires, showFeedback]);
+  }, [affaire.id, loadLinkedAffaires, showFeedback, confirm]);
 
   const allLinkedAffaires = useMemo(() => [
     ...linkedAffaires.parents.map(p => ({ ...p, relation: 'parent' })),
@@ -591,6 +591,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
       }
     }
     return false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskSteps, affaireTasks]);
 
   // ═══ Articles BL (Vente uniquement : tous items des BL Vente + section VENTE/VTE des BP Location/Prestation) ═══

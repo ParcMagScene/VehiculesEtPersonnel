@@ -108,6 +108,7 @@ export default function AddTaskModal({
   }, [affaireOpen]);
 
   // Filtered affaires
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const allAffairesList = allAffaires || affaires || [];
   const filteredAffaires = useMemo(() => {
     if (!affaireSearch.trim()) return allAffairesList.slice(0, 30);
@@ -118,10 +119,12 @@ export default function AddTaskModal({
       (a.nom || '').toLowerCase().includes(q) ||
       (a.titre || '').toLowerCase().includes(q)
     ).slice(0, 30);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAffairesList, affaireSearch]);
 
   const selectedAffaire = useMemo(() => {
     return affaireNum ? allAffairesList.find(a => a.numeroAffaire === affaireNum) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAffairesList, affaireNum]);
 
   // All events for dropdown

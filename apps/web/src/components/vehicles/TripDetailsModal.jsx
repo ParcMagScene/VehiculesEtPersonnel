@@ -123,6 +123,7 @@ const TripDetailsModal = ({
         setPauses([]);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, isCombinedMode]);
 
   // Fonctions pour gérer l'historique des lieux
@@ -308,6 +309,7 @@ const TripDetailsModal = ({
     if (formData.departureLocation && formData.arrivalLocation && isGoogleMapsLoaded && googleMapsApiKey) {
       calculateDuration(formData.departureLocation, formData.arrivalLocation, 'outbound');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.departureLocation, formData.arrivalLocation, isGoogleMapsLoaded, googleMapsApiKey, vehicle?.type, pauses, pausesWithValidatedLocation]);
 
   // Calculer automatiquement la durée RETOUR quand les conditions changent
@@ -315,6 +317,7 @@ const TripDetailsModal = ({
     if (formData.returnDepartureLocation && formData.returnArrivalLocation && isGoogleMapsLoaded && googleMapsApiKey) {
       calculateDuration(formData.returnDepartureLocation, formData.returnArrivalLocation, 'return');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.returnDepartureLocation, formData.returnArrivalLocation, isGoogleMapsLoaded, googleMapsApiKey, vehicle?.type, pauses, pausesWithValidatedLocation]);
 
   // Initialiser l'autocomplétion Google Maps sur les champs principaux

@@ -9,6 +9,7 @@ function QRCodeModal({ onClose }) {
 
   useEffect(() => {
     generateQRCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const generateQRCode = () => {

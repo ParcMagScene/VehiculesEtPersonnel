@@ -158,7 +158,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
     const active = Object.keys(SECTIONS).filter(k => (groups[k] || []).length > 0);
     return { allItems: dedupedItems, grouped: groups, activeSections: active };
-  }, [tasks, affaires, displayEvents, googleRdvEvents]);
+  }, [tasks, displayEvents, googleRdvEvents]);
 
   // Initialiser avec tout sélectionné
   useEffect(() => {

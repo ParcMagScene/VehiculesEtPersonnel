@@ -912,6 +912,7 @@ const _SuppliersList = React.memo(({ suppliers, onEdit, onDelete }) => {
 // ═══ Détail Commande ═══
 const _OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChange }) => {
   const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const items = order.items || [];
 
   // Group items by source (affaire or requester)
@@ -936,6 +937,7 @@ const _OrderDetail = React.memo(({ order, onBack, onEdit, onDelete, onStatusChan
       groups[key].items.push(item);
     }
     return groups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
   return (

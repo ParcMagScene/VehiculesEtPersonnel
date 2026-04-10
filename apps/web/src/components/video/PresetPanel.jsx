@@ -33,7 +33,9 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
     }
   }, [activePresetId]);
 
-  useEffect(() => { loadPresets(); }, []);
+  useEffect(() => { loadPresets(); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const activePreset = presets.find(p => p.id === activePresetId);
   const presetCameras = activePreset
@@ -60,7 +62,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
       console.error('Erreur sauvegarde preset:', err);
       toast.error('Erreur lors de la sauvegarde');
     }
-  }, [editName, editCameraIds, creating, activePresetId, loadPresets]);
+  }, [editName, editCameraIds, creating, activePresetId, loadPresets, toast]);
 
   const handleDelete = useCallback(() => {
     if (!activePresetId) return;

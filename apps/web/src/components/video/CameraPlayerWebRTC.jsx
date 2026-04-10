@@ -22,6 +22,7 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
       connect();
     }
     return () => { disconnect(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera?.id, autoConnect]);
 
   const handleSnapshot = useCallback(async () => {
@@ -53,6 +54,7 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
     } finally {
       setSnapshotLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera?.id, camera?.name]);
 
   const statusLabel = {

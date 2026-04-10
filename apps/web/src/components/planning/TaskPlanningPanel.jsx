@@ -291,7 +291,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       }
     } catch { setIcalEvents([]); }
     finally { setIcalLoading(false); }
-  }, [selectedDate]);
+  }, [selectedDate, toast]);
 
   useEffect(() => { loadIcalCalendars(); }, [loadIcalCalendars]);
   useEffect(() => { loadIcalEvents(); }, [loadIcalEvents, icalCalendars]);
@@ -449,6 +449,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       groups[sec].push(t);
     });
     return groups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks]);
 
   // Événements d'affichage non liés à des tâches existantes

@@ -30,8 +30,9 @@ const ToastContainer = forwardRef(function ToastContainer(_, ref) {
 
   // Nettoyer les timers au démontage
   useEffect(() => {
+    const timers = timersRef.current;
     return () => {
-      Object.values(timersRef.current).forEach(clearTimeout);
+      Object.values(timers).forEach(clearTimeout);
     };
   }, []);
 

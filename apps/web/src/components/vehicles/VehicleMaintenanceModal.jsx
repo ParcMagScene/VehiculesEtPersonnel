@@ -54,6 +54,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
       
       setControles(updatedControles);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicle?.id, vehicle?.controlesTechniques]);
 
   // Tous les types de contrôles disponibles
@@ -138,6 +139,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
         }));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newControle.date, newControle.type]);
 
   const handleAddControle = () => {

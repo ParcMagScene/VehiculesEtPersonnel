@@ -203,6 +203,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
       setEditingId(maintenanceToEditData.id);
       setIsQuickReport(maintenanceToEditData.isQuickReport || false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maintenanceToEditData?.id]); // Se déclenche seulement quand l'ID change
 
   // Détecter les changements

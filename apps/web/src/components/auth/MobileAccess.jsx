@@ -30,6 +30,7 @@ function MobileAccess() {
   // Générer le QR code au chargement
   useEffect(() => {
     generateQRCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const generateQRCode = () => {

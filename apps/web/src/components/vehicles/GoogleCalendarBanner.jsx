@@ -104,6 +104,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   // Événements enrichis avec détection client/lieu/affaire
   const events = useMemo(
     () => rawEvents.map(e => analyzeEventTitle(e)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rawEvents, clients, locations]
   );
 
@@ -153,7 +154,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
       url.searchParams.delete('google_error');
       window.history.replaceState({}, '', url.pathname + url.search);
     }
-  }, []);
+  }, [toast]);
 
   // Charger l'index des affaires ayant des pièces jointes
   useEffect(() => {
@@ -488,6 +489,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     } else {
       setError('Impossible de récupérer les événements: ' + msg);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchError]);
 
   const days = useMemo(() => {

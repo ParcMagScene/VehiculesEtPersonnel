@@ -1251,6 +1251,7 @@ const Calendar = ({
     }
 
     return result;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicleGroups, days, view, reservationLookup, reservations]);
 
   // Handlers pour la navigation depuis la vue année

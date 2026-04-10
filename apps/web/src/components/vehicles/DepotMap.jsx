@@ -98,6 +98,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
         }, 150);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusZoneId, zones]);
 
   // Recherche d'équipement

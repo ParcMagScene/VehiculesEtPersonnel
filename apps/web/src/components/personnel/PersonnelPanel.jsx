@@ -476,6 +476,7 @@ const PersonsTab = ({ persons, setPersons, skills, positions = [], users, curren
       openEdit(personToEdit);
       onPersonToEditConsumed?.();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [personToEdit]);
 
   const handleSave = async (payload) => {
@@ -1070,7 +1071,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   // Slots journaliers (1 par jour, ou 1 par mois en vue année)
   const timeSlots = useMemo(() => {
     return days.map(day => ({ day }));
-  }, [days, view]);
+  }, [days]);
 
   // Charger les données du planning (missions + assignments)
   const loadPlanning = useCallback(async () => {
@@ -1084,7 +1085,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       console.error('Erreur chargement planning:', err);
       toast.error('Erreur chargement du planning');
     }
-  }, [days]);
+  }, [days, toast]);
 
   useEffect(() => {
     loadPlanning();
@@ -1456,7 +1457,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
       setResizeState(null);
       return;
     }
-  }, [dragCreate, dragMove, resizeState, days, loadPlanning]);
+  }, [dragCreate, dragMove, resizeState, days, loadPlanning, toast]);
 
   // Écouter mouseup global (au cas où la souris sort du composant)
   useEffect(() => {

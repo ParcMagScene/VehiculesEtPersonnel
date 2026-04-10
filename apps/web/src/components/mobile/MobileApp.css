@@ -1,3 +1,5 @@
+@import './PullToRefreshIndicator.css';
+
 .mobile-app {
   min-height: 100vh;
   min-height: 100dvh;
@@ -5,6 +7,26 @@
   background: var(--theme-bg-page);
   display: flex;
   flex-direction: column;
+}
+
+/* Swipe-back indicator */
+.swipe-back-indicator {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 56px;
+  background: var(--theme-bg-card, rgba(0,0,0,0.2));
+  border-radius: 0 14px 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: var(--theme-text-primary);
+  z-index: 100;
+  pointer-events: none;
+  transition: opacity 0.1s;
 }
 
 /* Header */
@@ -961,6 +983,24 @@
   overflow: hidden;
   flex-shrink: 0;
   border: 1px solid var(--shadow-sm);
+}
+
+.menu-palette-left {
+  width: 50%;
+  height: 100%;
+  border-radius: 4px 0 0 4px;
+}
+
+.menu-palette-right {
+  width: 50%;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+}
+
+.menu-theme-indicator {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--theme-text-muted);
 }
 
 /* ═══════════════════════════════════════════════

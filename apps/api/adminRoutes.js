@@ -7,6 +7,7 @@ import logger from './logger.js';
 import { getAllCacheStats, ALL_CACHES } from './cache.js';
 import { encryptPassword, decryptPassword } from './videoProxyService.js';
 import { validatePassword } from './passwordPolicy.js';
+import { auditLog, AUDIT_ACTIONS } from './auditLog.js';
 
 export function setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS }) {
 
@@ -31,6 +32,7 @@ app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (re
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
     stmt.run(passwordHash, userId);
+    auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_PASSWORD_RESET, targetType: 'user', targetId: userId, req });
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
@@ -58,6 +60,7 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const updateStmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
     updateStmt.run(passwordHash, req.user.id);
+    auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.PASSWORD_CHANGE, targetType: 'user', targetId: req.user.id, req });
     
     res.json({ success: true });
   } catch (error) {
@@ -232,6 +235,13 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
       }
     }
 
+    auditLog({
+      actorId: req.user.id, actorEmail: req.user.email,
+      action: status === 'approved' ? AUDIT_ACTIONS.ACCESS_REQUEST_APPROVE : AUDIT_ACTIONS.ACCESS_REQUEST_REJECT,
+      targetType: 'access_request', targetId: id,
+      details: { email: request.email, name: request.name },
+      req
+    });
     res.json({ 
       success: true, 
       message: `Demande ${status === 'approved' ? 'approuvée' : 'rejetée'}`,
@@ -330,6 +340,7 @@ app.post('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) =
     
     const stmt = db.prepare('INSERT INTO authorized_emails (email, status) VALUES (?, ?)');
     const result = stmt.run(email, 'pending');
+    auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.AUTHORIZED_EMAIL_ADD, targetType: 'email', targetId: result.lastInsertRowid, details: { email }, req });
     
     res.json({ id: result.lastInsertRowid, email, status: 'pending' });
   } catch (error) {
@@ -344,6 +355,7 @@ app.delete('/api/authorized-emails/:id', authenticateToken, requireAdmin, (req, 
     const { id } = req.params;
     const stmt = db.prepare('DELETE FROM authorized_emails WHERE id = ?');
     stmt.run(id);
+    auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.AUTHORIZED_EMAIL_DELETE, targetType: 'email', targetId: id, req });
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur suppression email:', error);
@@ -398,6 +410,7 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
       // Invalider toutes les sessions de cet utilisateur pour qu'il se reconnecte avec le nouveau statut
       const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
       const result = deleteSessionsStmt.run(id);
+      auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_ADMIN_TOGGLE, targetType: 'user', targetId: id, details: { isAdmin, sessionsInvalidated: result.changes }, req });
       logger.info(`🔄 Statut admin modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
     }
 
@@ -406,6 +419,7 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
       db.prepare('UPDATE users SET permissions = ? WHERE id = ?').run(permStr, id);
       // Invalider les sessions pour forcer un re-login avec les nouvelles permissions
       db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(id);
+      auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_PERMISSIONS_CHANGE, targetType: 'user', targetId: id, details: { permissions }, req });
       logger.info(`🔐 Permissions modifiées pour user ${id}`);
     }
     
@@ -422,6 +436,7 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
       // Invalider toutes les sessions lors du changement de mot de passe
       const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
       const result = deleteSessionsStmt.run(id);
+      auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_PASSWORD_CHANGE, targetType: 'user', targetId: id, details: { sessionsInvalidated: result.changes }, req });
       logger.info(`🔑 Mot de passe modifié pour user ${id} - ${result.changes} session(s) invalidée(s)`);
     }
     
@@ -449,6 +464,7 @@ app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req,
     const userStmt = db.prepare('SELECT email FROM users WHERE id = ?');
     const user = userStmt.get(id);
     
+    auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_PASSWORD_RESET, targetType: 'user', targetId: id, details: { email: user?.email }, req });
     logger.info(`🔄 Réinitialisation demandée pour user ${id}`);
     
     res.json({ 
@@ -560,6 +576,7 @@ app.post('/api/auth/set-new-password', async (req, res) => {
       VALUES (?, ?, ?)
     `);
     insertSessionStmt.run(user.id, sessionHash, expiresAt);
+    auditLog({ actorId: user.id, actorEmail: user.email, action: AUDIT_ACTIONS.PASSWORD_RESET_COMPLETE, targetType: 'user', targetId: user.id, req });
     
     logger.info('✅ Nouveau mot de passe défini');
     
@@ -631,6 +648,7 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
     });
     
     transaction();
+    auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_DELETE, targetType: 'user', targetId: id, details: { reassignedTo: adminId }, req });
     
     res.json({ success: true });
   } catch (error) {
@@ -687,6 +705,7 @@ app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
 
     // Réinitialiser le transporteur avec la nouvelle config
     initEmailTransporter(db);
+    auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.EMAIL_CONFIG_CHANGE, targetType: 'config', targetId: 'email', details: { smtp_host, smtp_port, smtp_user, enabled }, req });
 
     res.json({ success: true, message: 'Configuration email mise à jour' });
   } catch (error) {
@@ -708,7 +727,14 @@ app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, 
       host: config.smtp_host,
       port: config.smtp_port || 587,
       secure: config.smtp_secure === 1,
-      auth: { user: config.smtp_user, pass: decryptPassword(config.smtp_pass) || config.smtp_pass },
+      auth: {
+        user: config.smtp_user,
+        pass: (() => {
+          const decrypted = decryptPassword(config.smtp_pass);
+          if (!decrypted) throw new Error('SMTP password decryption failed');
+          return decrypted;
+        })(),
+      },
     });
 
     await testTransporter.sendMail({
@@ -741,6 +767,7 @@ app.post('/api/cache/clear', authenticateToken, requireAdmin, (req, res) => {
   } else {
     ALL_CACHES.forEach(c => c.clear());
   }
+  auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.CACHE_CLEAR, targetType: 'cache', targetId: name || 'all', req });
   res.json({ success: true, message: name ? `Cache '${name}' vidé` : 'Tous les caches vidés' });
 });
 

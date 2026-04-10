@@ -257,3 +257,33 @@
   border-radius: 0 0 var(--radius-md) var(--radius-md);
   margin-top: 0.25rem;
 }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .vehicle-picker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .vehicle-picker-photo-desktop {
+    width: 64px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vehicle-picker-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    padding: 0.4rem;
+  }
+
+  .vehicle-picker-card-desktop {
+    padding: 0.5rem;
+  }
+
+  .vehicle-picker-photo-desktop {
+    width: 56px;
+    height: 42px;
+  }
+}

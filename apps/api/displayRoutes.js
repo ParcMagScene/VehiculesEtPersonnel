@@ -3,7 +3,7 @@
 // (Affichage dynamique : écrans, playlists, médias, messages, templates, logs)
 // ═══════════════════════════════════════════════════════════════
 
-import { dirname, join, extname, basename } from 'path';
+import { dirname, join, extname, basename, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
@@ -165,6 +165,7 @@ function logAction(screenId, action, details, userId) {
 }
 
 import { verifyTvToken, optionalTvToken } from './middleware/tvAuth.js';
+import { getSonosNowPlaying } from './sonosRoutes.js';
 
 // ════════════════════════════════════════════════════════════════
 export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
@@ -1043,12 +1044,13 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // DELETE /api/display/location-gifs/:filename — Supprimer un GIF
-  // [AUDIT FIX CRIT-2] Protection path traversal
+  // [AUDIT FIX CRIT-2 + B3] Protection path traversal renforcée (path.resolve)
   app.delete('/api/display/location-gifs/:filename', authenticateToken, requireAdmin, (req, res) => {
     try {
       const sanitized = basename(req.params.filename);
-      const filePath = join(gifsDir, sanitized);
-      if (!filePath.startsWith(gifsDir)) return res.status(403).json({ error: 'Accès interdit' });
+      const normalizedBase = resolve(gifsDir);
+      const filePath = resolve(gifsDir, sanitized);
+      if (!filePath.startsWith(normalizedBase + '/') && filePath !== normalizedBase) return res.status(403).json({ error: 'Accès interdit' });
       if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Fichier introuvable' });
       fs.unlinkSync(filePath);
       logAction(null, 'gif_deleted', { filename: req.params.filename }, req.user.id);
@@ -1258,228 +1260,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // ──────────────────── SONOS ───────────────────────────────────
-
-  // GET /api/display/sonos-config
-  app.get('/api/display/sonos-config', authenticateToken, (_req, res) => {
-    try {
-      const row = db.prepare("SELECT value FROM display_config WHERE key = 'sonosIP'").get();
-      res.json({ sonosIP: row ? JSON.parse(row.value) : '' });
-    } catch (error) {
-      logger.error('Display sonos config get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
-    }
-  });
-
-  // POST /api/display/sonos-config
-  app.post('/api/display/sonos-config', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const { sonosIP } = req.body;
-      db.prepare(`
-        INSERT INTO display_config (key, value, updated_at) VALUES ('sonosIP', ?, datetime('now'))
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
-      `).run(JSON.stringify(sonosIP || ''));
-      logAction(null, 'sonos_config_updated', { sonosIP }, req.user.id);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error('Display sonos config save:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
-    }
-  });
-
-  // ── Helper: récupérer le favicon d'une radio via les headers ICY ──
-  const radioFaviconCache = new Map(); // streamUrl → iconUrl | null
-
-  // Logos locaux connus (évite la recherche favicon pour ces radios)
-  const KNOWN_RADIO_LOGOS = {
-    'radiomeuh': '/display-logo/logo.png',
-  };
-
-  async function getRadioFavicon(streamUrl) {
-    if (radioFaviconCache.has(streamUrl)) {
-      logger.info(`[RadioFavicon] Cache hit for ${streamUrl}: ${radioFaviconCache.get(streamUrl)}`);
-      return radioFaviconCache.get(streamUrl);
-    }
-
-    // Vérifier les logos locaux connus
-    const urlLower = streamUrl.toLowerCase();
-    for (const [keyword, logoPath] of Object.entries(KNOWN_RADIO_LOGOS)) {
-      if (urlLower.includes(keyword)) {
-        logger.info(`[RadioFavicon] Known radio "${keyword}" → ${logoPath}`);
-        radioFaviconCache.set(streamUrl, logoPath);
-        return logoPath;
-      }
-    }
-
-    try {
-      logger.info(`[RadioFavicon] Fetching ICY headers for: ${streamUrl}`);
-      // Étape 1 : Lire les headers ICY du flux via curl
-      // On utilise GET (-o /dev/null -D -) car les serveurs Shoutcast/Icecast
-      // ne renvoient les headers ICY qu'en réponse à un GET, pas un HEAD (-I)
-      const { stdout } = await execFileAsync('curl', [
-        '-s', '-o', '/dev/null', '-D', '-',
-        '-H', 'Icy-MetaData: 1', '--max-time', '5', streamUrl
-      ]);
-      logger.info(`[RadioFavicon] Raw headers:\n${stdout.slice(0, 500)}`);
-      const icyHeaders = {};
-      for (const line of stdout.split('\n')) {
-        const m = line.match(/^(icy-\w+):(.+)/i);
-        if (m) icyHeaders[m[1].toLowerCase()] = m[2].trim();
-      }
-      logger.info(`[RadioFavicon] ICY headers found: ${JSON.stringify(icyHeaders)}`);
-
-      let homepage = (icyHeaders['icy-url'] || '').trim();
-      if (!homepage) {
-        logger.info(`[RadioFavicon] No icy-url found, returning null`);
-        radioFaviconCache.set(streamUrl, null);
-        return null;
-      }
-      if (!homepage.startsWith('http')) homepage = 'https://' + homepage;
-      homepage = homepage.replace(/\/+$/, '');
-
-      // Construire les variantes de base (avec et sans www)
-      const bases = [homepage];
-      const parsed = new URL(homepage);
-      if (!parsed.hostname.startsWith('www.')) {
-        bases.push(`${parsed.protocol}//www.${parsed.hostname}`);
-      }
-
-      // Étape 2 : Tester des chemins favicon courants
-      // On utilise GET (-o /dev/null) au lieu de HEAD (-I) car certains serveurs bloquent HEAD
-      const iconPaths = [
-        '/apple-touch-icon.png',
-        '/favicon.ico',
-      ];
-      for (const base of bases) {
-        for (const path of iconPaths) {
-          try {
-            const url = base + path;
-            const { stdout: headOut } = await execFileAsync('curl', [
-              '-s', '-o', '/dev/null', '-w', '%{http_code} %{content_type}',
-              '-L', '--max-time', '4', url
-            ]);
-            const [code, ctype] = headOut.trim().split(' ');
-            if (code === '200' && ctype && ctype.startsWith('image')) {
-              radioFaviconCache.set(streamUrl, url);
-              return url;
-            }
-          } catch { /* suivant */ }
-        }
-      }
-
-      radioFaviconCache.set(streamUrl, null);
-      return null;
-    } catch {
-      radioFaviconCache.set(streamUrl, null);
-      return null;
-    }
-  }
-
-  // ── Helper: obtenir les infos Sonos (gère les groupes) ──
-  async function getSonosNowPlaying() {
-    const row = db.prepare("SELECT value FROM display_config WHERE key = 'sonosIP'").get();
-    const sonosIP = row ? JSON.parse(row.value) : '';
-    if (!sonosIP) return { playing: false, error: 'IP Sonos non configurée' };
-
-    let Sonos;
-    try {
-      const sonosModule = await import('sonos');
-      Sonos = sonosModule.Sonos || sonosModule.default?.Sonos;
-    } catch {
-      return { playing: false, error: 'Package sonos non installé' };
-    }
-
-    let device = new Sonos(sonosIP);
-    let coordinatorIP = sonosIP;
-
-    // Vérifier si ce speaker est membre d'un groupe — si oui, requêter le coordinateur
-    try {
-      const groups = await device.getAllGroups();
-      if (groups && groups.length > 0) {
-        for (const group of groups) {
-          const members = group.ZoneGroupMember || [];
-          const isMember = members.some(m => m.Location && m.Location.includes(sonosIP));
-          if (isMember && group.host && group.host !== sonosIP) {
-            // Ce speaker est dans un groupe mais n'est pas le coordinateur
-            coordinatorIP = group.host;
-            device = new Sonos(coordinatorIP);
-            break;
-          }
-        }
-      }
-    } catch { /* ignore group discovery errors */ }
-
-    const [track, state] = await Promise.all([
-      device.currentTrack().catch(() => null),
-      device.getCurrentState().catch(() => 'stopped'),
-    ]);
-
-    if (!track) return { playing: false, state };
-
-    // albumArtURL = URL complète, albumArtURI = chemin relatif
-    let artUrl = track.albumArtURL
-      || (track.albumArtURI ? `http://${coordinatorIP}:1400${track.albumArtURI}` : '');
-
-    // Radio internet : l'artwork Sonos est souvent vide ou inaccessible → chercher le favicon
-    const isRadio = track.uri && (
-      track.uri.startsWith('x-rincon-mp3radio://') ||
-      track.uri.startsWith('x-sonosapi-stream:') ||
-      track.uri.startsWith('x-sonosapi-hls-static:') ||
-      track.uri.startsWith('aac:') ||
-      track.uri.startsWith('x-rincon-stream:')
-    );
-    logger.info(`[Sonos] track.uri=${track.uri}, artUrl=${artUrl}, isRadio=${isRadio}`);
-    // Pour les radios, on tente toujours le favicon (artUrl Sonos souvent non fonctionnel)
-    if (isRadio) {
-      // Extraire l'URL de stream depuis les différents formats Sonos
-      let streamUrl = track.uri;
-      if (streamUrl.startsWith('x-rincon-mp3radio://')) {
-        // x-rincon-mp3radio://https://host/path → https://host/path
-        // x-rincon-mp3radio://host/path         → http://host/path
-        streamUrl = streamUrl.replace('x-rincon-mp3radio://', '');
-        if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
-      } else if (streamUrl.startsWith('aac://')) {
-        streamUrl = streamUrl.replace('aac://', '');
-        if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
-      } else {
-        // x-sonosapi-stream: etc. — pas d'URL directe exploitable
-        streamUrl = '';
-      }
-      logger.info(`[Sonos] Extracted streamUrl=${streamUrl}`);
-      if (streamUrl) {
-        try {
-          const favicon = await getRadioFavicon(streamUrl);
-          logger.info(`[Sonos] Favicon result: ${favicon}`);
-          if (favicon) artUrl = favicon;
-          else artUrl = ''; // Pas de favicon → laisser le frontend utiliser son fallback
-        } catch (e) { logger.error(`[Sonos] Favicon error: ${e.message}`); }
-      } else {
-        artUrl = ''; // Radio sans URL exploitable → fallback frontend
-      }
-    }
-
-    return {
-      playing: state === 'playing',
-      state,
-      title: track.title || '',
-      artist: track.artist || '',
-      album: track.album || '',
-      albumArtURI: artUrl,
-      duration: track.duration || 0,
-      position: track.position || 0,
-    };
-  }
-
-  // GET /api/display/sonos-now-playing — Titre en cours sur Sonos
-  app.get('/api/display/sonos-now-playing', optionalTvToken, async (_req, res) => {
-    try {
-      const result = await getSonosNowPlaying();
-      res.json(result);
-    } catch (error) {
-      logger.error('Display sonos now playing:', error);
-      res.json({ playing: false, error: error.message });
-    }
-  });
+  // ──────────────────── SONOS → voir sonosRoutes.js ──────────
 
   // GET /api/display/tv-state — État complet pour l'aperçu TV dans l'admin
   app.get('/api/display/tv-state', authenticateToken, async (req, res) => {
@@ -1657,12 +1438,13 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ── Servir les GIFs statiques (accès public pour l'écran TV) ──
-  // [AUDIT FIX CRIT-2] Protection path traversal
+  // [AUDIT FIX CRIT-2 + B3] Protection path traversal renforcée (path.resolve)
   app.get('/api/display/gifs/:filename', (req, res) => {
     const sanitized = basename(req.params.filename);
-    const filePath = join(gifsDir, sanitized);
+    const normalizedBase = resolve(gifsDir);
+    const filePath = resolve(gifsDir, sanitized);
     // Vérifier que le chemin résolu reste dans gifsDir
-    if (!filePath.startsWith(gifsDir)) {
+    if (!filePath.startsWith(normalizedBase + '/') && filePath !== normalizedBase) {
       return res.status(403).json({ error: 'Accès interdit' });
     }
     if (fs.existsSync(filePath)) {
@@ -2079,16 +1861,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // /api/sonos-now-playing → Sonos
-  app.get('/api/sonos-now-playing', async (_req, res) => {
-    try {
-      const data = await getSonosNowPlaying();
-      res.json(data);
-    } catch (error) {
-      logger.error('Compat /api/sonos-now-playing:', error);
-      res.json({ playing: false, error: error.message });
-    }
-  });
+  // /api/sonos-now-playing → déplacé dans sonosRoutes.js
 
   // /api/sneaky-photo/status → photo furtive
   app.get('/api/sneaky-photo/status', (_req, res) => {

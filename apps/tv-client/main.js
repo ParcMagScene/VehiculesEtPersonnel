@@ -451,7 +451,7 @@ function getWeatherIcon(iconCode) {
 // ===============================================
 async function loadSonosNowPlaying() {
   try {
-    const response = await tvFetch(`${API_BASE}/api/display/sonos-now-playing`);
+    const response = await tvFetch(`${API_BASE}/api/sonos/now-playing`);
     const data = await response.json();
     updateSonosWidget(data);
   } catch (error) {
@@ -487,17 +487,21 @@ function updateSonosWidget(data) {
       }
     }
 
-    // Radio : Sonos met souvent "Artiste - Titre" dans le champ title, avec artist vide
-    let displayTitle = data.title;
-    let displayArtist = data.artist || '';
-    if (!displayArtist && displayTitle.includes(' - ')) {
-      const parts = displayTitle.split(' - ');
-      displayArtist = parts[0].trim();
-      displayTitle = parts.slice(1).join(' - ').trim();
-    }
+    // Artiste / titre : fournis directement par le backend (parsing radio centralisé)
+    if (titleEl) titleEl.textContent = data.title || '';
+    if (artistEl) artistEl.textContent = data.artist || '';
 
-    if (titleEl) titleEl.textContent = displayTitle;
-    if (artistEl) artistEl.textContent = displayArtist;
+    // Indicateur volume
+    const volEl = document.getElementById('sonos-volume');
+    if (volEl && typeof data.volume === 'number') {
+      volEl.style.display = 'flex';
+      const volBar = volEl.querySelector('.sonos-vol-bar');
+      const volVal = volEl.querySelector('.sonos-vol-val');
+      if (volBar) volBar.style.width = `${data.volume}%`;
+      if (volVal) volVal.textContent = `${data.volume}%`;
+    } else if (volEl) {
+      volEl.style.display = 'none';
+    }
   } else {
     widget.style.display = 'none';
     if (titleEl) titleEl.textContent = '';

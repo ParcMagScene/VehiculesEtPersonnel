@@ -51,7 +51,8 @@ const getAffaireStatus = (affaire, today) => {
   return 'upcoming';
 };
 
-const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
+const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) => {
+  const isAdmin = currentUser?.isAdmin || currentUser?.role === 'admin' || currentUser?.role === 'manager';
   const [dbAffaires, setDbAffaires] = useState([]);
   const [googleAffaires, setGoogleAffaires] = useState([]);
   const [googleEventIdsMap, setGoogleEventIdsMap] = useState({}); // { AF32844: ['eventId1', 'eventId2', ...] }
@@ -116,8 +117,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     setGoogleError(null);
     try {
       // Vérifier si un token Google est disponible côté serveur
-      const tokenStatus = await api.getGoogleTokenStatus();
-      if (!tokenStatus?.hasToken) {
+      const tokenStatus = await api.getGoogleOAuthStatus();
+      if (!tokenStatus?.connected) {
         setGoogleAffaires([]);
         return;
       }
@@ -127,7 +128,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       const timeMin = startOfMonth(subMonths(now, 6));
       const timeMax = endOfMonth(addMonths(now, 6));
 
-      const data = await api.getGoogleEvents({
+      const data = await api.getGoogleEventsV2({
         timeMin: timeMin.toISOString(),
         timeMax: timeMax.toISOString(),
         singleEvents: true,
@@ -251,6 +252,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
     };
     loadAll();
   }, [loadDbAffaires, loadGoogleAffaires, loadAttachmentsIndex, loadPersonnelCounts, loadAllTasks]);
+
+  // [2.7] Deep link depuis Google Calendar badge → sélectionne/filtre l'affaire
+  useEffect(() => {
+    const handler = (e) => {
+      const { affaireNum } = e.detail || {};
+      if (!affaireNum) return;
+      setSearchTerm(affaireNum);
+    };
+    window.addEventListener('emag:navigate-affaire', handler);
+    return () => window.removeEventListener('emag:navigate-affaire', handler);
+  }, []);
 
   // Fusionner les affaires : DB prend priorité, puis réservations (source: 'auto'), puis Google
   const affaires = useMemo(() => {
@@ -1112,6 +1124,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
           onOpenDialog={(aff) => { setSelectedAffaire(null); setDialogAffaire(aff); }}
           onNavigateToEntity={onNavigateToEntity}
           onRefresh={handleRefresh}
+          currentUser={currentUser}
         />
       </div>
 
@@ -1123,9 +1136,11 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
         onClose={() => setDialogAffaire(null)}
         onDataChanged={(updatedAffaire) => { if (updatedAffaire) setDialogAffaire(updatedAffaire); loadDbAffaires(); loadAllTasks(); }}
         onNavigateToEntity={onNavigateToEntity}
+        currentUser={currentUser}
       />
 
       {/* FAB création rapide d'affaire */}
+      {isAdmin && (
       <Button variant="ghost"         className="affaire-fab-create"
         onClick={async () => {
           try {
@@ -1154,6 +1169,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity }) => {
       >
         <Plus size={22} />
       </Button>
+      )}
 
       {/* Sélecteurs de date */}
       {showMonthSelector && (

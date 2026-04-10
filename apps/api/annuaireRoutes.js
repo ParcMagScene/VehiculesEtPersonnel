@@ -527,9 +527,6 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
       const { client_id, supplier_id, prestataire_id, first_name, last_name, job_title,
               category, email, phone, phone2, is_primary, notes } = req.body;
       if (!last_name) return res.status(400).json({ error: 'Le nom est requis' });
-      if (!client_id && !supplier_id && !prestataire_id) {
-        return res.status(400).json({ error: 'Le contact doit être lié à un client, fournisseur ou prestataire' });
-      }
 
       const result = db.prepare(`
         INSERT INTO annuaire_contacts (client_id, supplier_id, prestataire_id, first_name, last_name,

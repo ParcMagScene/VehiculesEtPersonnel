@@ -5,6 +5,7 @@ import { extractTextFromPDF, smartParse, getDocTypeLabel } from '../../utils/pdf
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import AddressAutocomplete from '../AddressAutocomplete';
+import { CONF_COLORS } from '../../constants/colors';
 import './BLImportModal.css';
 import { Button, Input, ProgressBar, Tooltip } from '@/design-system';
 
@@ -292,7 +293,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,application/pdf"
-                style={{ display: 'none' }}
+                className="bl-hidden-input"
                 onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
               />
             </div>
@@ -334,7 +335,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
               {/* Type d'affaire */}
               <div className="affaire-section">
                 <label><Tag size={14} /> Type d'affaire</label>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div className="bl-type-buttons">
                   {AFFAIRE_TYPE_OPTIONS.map(opt => (
                     <Button variant="ghost"                       key={opt.value}
                       type="button"
@@ -353,13 +354,8 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                   ))}
                 </div>
                 {isBLVenteIncompat && (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '8px 12px', borderRadius: 8, marginTop: 8,
-                    background: 'rgba(239, 68, 68, 0.10)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                    color: '#ef4444', fontSize: '0.82rem', lineHeight: 1.4,
-                  }}>
-                    <ShieldAlert size={16} style={{ flexShrink: 0 }} />
+                  <div className="bl-incompat-alert">
+                    <ShieldAlert size={16} />
                     <span>
                       Un <strong>Bon de Livraison Vente</strong> ne peut pas être importé dans une affaire <strong>{affaireType}</strong>.
                       Sélectionnez <em>Vente</em> ou <em>Installation</em>.
@@ -370,7 +366,6 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
 
               {/* Résultats du parsing */}
               {parsedData && (() => {
-                const CONF_COLORS = { high: '#10b981', medium: '#f59e0b', low: '#ef4444' };
                 const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
                 const FIELD_DEFS = [
                   { key: 'numero', label: 'N° Affaire' },
@@ -388,9 +383,9 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                 return (
                   <div className="parse-results">
                     <h4>
-                      <CheckCircle size={16} style={{ color: '#10b981' }} />
+                      <CheckCircle size={16} className="bl-success-icon" />
                       Données extraites
-                      <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--theme-text-secondary)', fontWeight: 400 }}>
+                      <span className="bl-field-count">
                         {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs • {parsedData.confidence}% confiance
                       </span>
                     </h4>
@@ -406,13 +401,13 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                         color: 'var(--theme-text-primary)',
                       };
                       return (
-                        <div key={field.key} className="parsed-field" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div key={field.key} className="parsed-field">
                           <span
-                            className="conf-dot"
+                            className="conf-dot bl-conf-dot"
                             title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
-                            style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)', fontSize: '0.7rem', flexShrink: 0 }}
+                            style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)' }}
                           >●</span>
-                          <span className="field-label" style={{ minWidth: 85, flexShrink: 0 }}>{field.label}</span>
+                          <span className="field-label">{field.label}</span>
                           {field.key === 'adresse' ? (
                             <AddressAutocomplete
                               value={val}
@@ -440,10 +435,10 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
 
                     {/* Sections (Format B) */}
                     {parsedData.sections && parsedData.sections.length > 0 && (
-                      <div style={{ marginTop: 8, padding: '6px 0' }}>
-                        <h5 style={{ fontSize: '0.82rem', marginBottom: 4 }}>📂 Sections ({parsedData.sections.length})</h5>
+                      <div className="bl-sections-wrap">
+                        <h5 className="bl-sections-title">📂 Sections ({parsedData.sections.length})</h5>
                         {parsedData.sections.map((sec, idx) => (
-                          <div key={idx} style={{ fontSize: '0.78rem', color: 'var(--theme-text-secondary)', padding: '2px 8px' }}>
+                          <div key={idx} className="bl-section-item">
                             <strong>{sec.name}</strong> — {sec.items?.length || 0} article(s)
                             {sec.dateDebut && <span> • {sec.dateDebut} → {sec.dateFin}</span>}
                           </div>
@@ -453,15 +448,11 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
 
                     {/* Fournisseurs */}
                     {parsedData.fournisseurs && parsedData.fournisseurs.length > 0 && (
-                      <div style={{ marginTop: 6, padding: '4px 0' }}>
-                        <h5 style={{ fontSize: '0.82rem', marginBottom: 4 }}>🏭 Fournisseurs ({parsedData.fournisseurs.length})</h5>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', padding: '0 8px' }}>
+                      <div className="bl-suppliers-wrap">
+                        <h5 className="bl-suppliers-title">🏭 Fournisseurs ({parsedData.fournisseurs.length})</h5>
+                        <div className="bl-supplier-tags">
                           {parsedData.fournisseurs.map((f, idx) => (
-                            <span key={idx} style={{
-                              fontSize: '0.72rem', background: 'var(--theme-bg-tertiary)',
-                              color: 'var(--theme-text-primary)', padding: '2px 8px', borderRadius: 4,
-                              border: '1px solid var(--theme-border)'
-                            }}>{f}</span>
+                            <span key={idx} className="bl-supplier-tag">{f}</span>
                           ))}
                         </div>
                       </div>
@@ -472,25 +463,22 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                       <div className="parsed-items">
                         <h5>Articles ({parsedData.items.length})</h5>
                         {parsedData.items.slice(0, 30).map((item, idx) => (
-                          <div key={idx} className="parsed-item" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div key={idx} className="parsed-item">
                             <span className="item-qty">{item.quantity || item.qte || '1'}</span>
-                            <span className="item-desc" style={{ flex: 1 }}>
+                            <span className="item-desc">
                               {item.description || item.designation || item.label || JSON.stringify(item)}
-                              {item.code && <span style={{ fontSize: '0.65rem', color: 'var(--theme-text-secondary)', marginLeft: 4 }}>({item.code})</span>}
+                              {item.code && <span className="bl-item-code">({item.code})</span>}
                             </span>
                             {(item.reference || item.section) && (
-                              <span style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)', marginLeft: 4 }}>({item.reference || item.section})</span>
+                              <span className="bl-item-ref">({item.reference || item.section})</span>
                             )}
                             {item.fournisseur && (
-                              <span style={{
-                                fontSize: '0.62rem', background: 'var(--theme-info-bg, #164e63)', color: 'var(--theme-info-text, #67e8f9)',
-                                borderRadius: 3, padding: '1px 5px', whiteSpace: 'nowrap', marginLeft: 'auto'
-                              }}>{item.fournisseur}</span>
+                              <span className="bl-item-supplier">{item.fournisseur}</span>
                             )}
                           </div>
                         ))}
                         {parsedData.items.length > 30 && (
-                          <p style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)', padding: '4px 12px' }}>
+                          <p className="bl-items-more">
                             ... et {parsedData.items.length - 30} autre(s)
                           </p>
                         )}
@@ -513,17 +501,11 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
 
               {/* Pas de données */}
               {!parsing && !parsedData && rawText && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: 12, borderRadius: 8, marginTop: 12,
-                  background: 'rgba(245, 158, 11, 0.08)', color: '#f59e0b',
-                  fontSize: '0.85rem'
-                }}>
+                <div className="bl-no-data-alert">
                   <AlertTriangle size={16} />
                   Aucune donnée structurée détectée dans ce PDF.
-                  <Button variant="ghost"                     className="raw-text-toggle"
+                  <Button variant="ghost"                     className="raw-text-toggle bl-no-data-btn"
                     onClick={() => setShowRawText(!showRawText)}
-                    style={{ marginLeft: 'auto' }}
                   >
                     {showRawText ? 'Masquer' : 'Voir texte brut'}
                   </Button>
@@ -545,7 +527,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
               </span>
             )}
             {isBLVenteIncompat && (
-              <span className="status-badge" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+              <span className="status-badge bl-blocked-badge">
                 <ShieldAlert size={12} /> Import bloqué
               </span>
             )}

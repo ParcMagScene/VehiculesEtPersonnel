@@ -44,7 +44,13 @@ function getKeyBuffer() {
     }
   }
   if (!process.env.VIDEO_CIPHER_KEY) {
-    // [AUDIT FIX MED-B5] Générer et persister la clé pour éviter la perte au redémarrage
+    // [AUDIT FIX B4] En production, la clé DOIT être configurée
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('❌ FATAL: VIDEO_CIPHER_KEY non défini en production. Configurez-la dans .env');
+      logger.error('   Générez une clé: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+      process.exit(1);
+    }
+    // En dev uniquement : générer et persister
     const generated = crypto.randomBytes(32).toString('hex');
     const envPath = join(__dir, '.env');
     try {
@@ -53,7 +59,7 @@ function getKeyBuffer() {
       const line = `\nVIDEO_CIPHER_KEY=${generated}\n`;
       fs.appendFileSync(envPath, line);
       process.env.VIDEO_CIPHER_KEY = generated;
-      logger.info('🔑 VIDEO_CIPHER_KEY générée et sauvegardée dans .env');
+      logger.info('🔑 VIDEO_CIPHER_KEY générée et sauvegardée dans .env (dev uniquement)');
     } catch (writeErr) {
       logger.warn('⚠️  VIDEO_CIPHER_KEY non défini et impossible d\'écrire dans .env — les mots de passe caméra seront perdus au redémarrage');
     }

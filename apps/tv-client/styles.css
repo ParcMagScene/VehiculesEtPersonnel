@@ -376,6 +376,36 @@ footer {
   max-width: 450px;
 }
 
+/* Volume indicator */
+#sonos-volume {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 50px;
+  flex-shrink: 0;
+}
+.sonos-vol-track {
+  width: 6px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  transform: rotate(180deg);
+}
+.sonos-vol-bar {
+  width: 100%;
+  height: 50%;
+  background: var(--primary-color, #00e1ff);
+  border-radius: 3px;
+  transition: height 0.3s ease;
+}
+.sonos-vol-val {
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
 /* ═══════════ PHOTO FURTIVE ═══════════ */
 .sneaky-photo-container {
   position: fixed;

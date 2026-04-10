@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense, lazy } from 'react';
 import { format, parseISO, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './GoogleCalendarBanner.css';
 import EventDetailsModal from '../planning/EventDetailsModal';
 import api from '../../utils/api';
-import { oauthLogger } from '../../utils/logger';
 import { capitalizeText } from '../../utils/dateUtils';
 import { Search, RefreshCw, Plus, CalendarPlus } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useGoogleSync } from '../../hooks/useGoogleSync';
 import { Button, InlineAlert, LoadingOverlay, SearchBar } from '@/design-system';
 
 import { TIMING } from '../../constants';
@@ -16,23 +16,21 @@ import { TIMING } from '../../constants';
 const AffaireImportModal = lazy(() => import('../affaires/AffaireImportModal'));
 const GoogleEventFormModal = lazy(() => import('./GoogleEventFormModal'));
 
-function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire }) {
+function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire, onNavigateToAffaire }) {
   const toast = useToast();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSignedIn, setIsSignedIn] = useState(false);
-  const [tokenClient, setTokenClient] = useState(null);
+  const [googleConfigured, setGoogleConfigured] = useState(null); // null = loading, true/false
   const [displayMode, setDisplayMode] = useState('compact'); // 'closed', 'compact'
   const [bannerHeight, setBannerHeight] = useState(200);
   const [modalOpen, setModalOpen] = useState(false);
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [_clickedCell, setClickedCell] = useState(null);
-  const [googleClientId, setGoogleClientId] = useState(null);
   const [googleCalendarId, setGoogleCalendarId] = useState(null);
+  const [googleEmail, setGoogleEmail] = useState(null);
   
-  const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
+  const [affairesWithAttachments, setAffairesWithAttachments] = useState({});
   const [attachmentCounts, setAttachmentCounts] = useState({});
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
@@ -41,35 +39,120 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   const [eventFormEvent, setEventFormEvent] = useState(null);
   const searchInputRef = useRef(null);
 
-  // Cache pour éviter de recharger les mêmes données
-  const eventsCache = useRef({});
-  const fetchTimeoutRef = useRef(null);
-  // Ref pour stocker le resolver des Promises de renouvellement de token
-  const renewalResolverRef = useRef(null);
-  // Compteur d'échecs silencieux consécutifs (pour éviter les popups en boucle)
-  const silentFailCountRef = useRef(0);
-  // Guard de session pour éviter les tentatives de popup répétées
-  const popupAttemptedRef = useRef(false);
-  // Suivi expiration token (pour le timer de renouvellement)
-  const tokenExpiryRef = useRef(null);
-  const lastRefreshRef = useRef(0);
+  // ── Synchronisation intelligente via useGoogleSync ──
+  const { events: rawEvents, loading, fetchNow, lastSync, isLeader, fetchError } = useGoogleSync({
+    isSignedIn,
+    view,
+    currentDate,
+    calendarId: googleCalendarId,
+  });
 
-  // Charger la configuration Google depuis le backend
+  // Analyse le titre de l'événement pour extraire client, lieu et affaire
+  const analyzeEventTitle = (event) => {
+    const title = event.summary || '';
+    const eventLocation = event.location || '';
+    const enrichedEvent = { ...event };
+
+    // Détecter le numéro d'affaire (formats: "af 32744", "AF 32744", "af32744", "AF32744")
+    const affaireMatch = title.match(/\baf\s*(\d+)\b/i);
+    if (affaireMatch) {
+      enrichedEvent.affaire = `AF${affaireMatch[1]}`;
+    }
+
+    // Détecter un client existant (recherche insensible à la casse)
+    if (clients && clients.length > 0) {
+      const foundClient = clients.find(client => 
+        title.toLowerCase().includes(client.name.toLowerCase())
+      );
+      if (foundClient) {
+        enrichedEvent.detectedClient = foundClient.name;
+      }
+    }
+
+    // Détecter un lieu existant (recherche insensible à la casse dans le titre ET dans le champ location de l'événement)
+    if (locations && locations.length > 0) {
+      const foundLocation = locations.find(location => {
+        const titleMatch = title.toLowerCase().includes(location.name.toLowerCase());
+        const locationFieldMatch = eventLocation.toLowerCase().includes(location.name.toLowerCase());
+        
+        // Chercher aussi par adresse si elle existe
+        let addressMatch = false;
+        if (location.address && eventLocation) {
+          // Recherche partielle dans l'adresse (POI)
+          const locationParts = eventLocation.toLowerCase().split(',').map(p => p.trim());
+          const addressParts = location.address.toLowerCase().split(',').map(p => p.trim());
+          
+          // Vérifier si au moins une partie de l'adresse correspond
+          addressMatch = addressParts.some(addrPart => 
+            locationParts.some(locPart => 
+              locPart.includes(addrPart) || addrPart.includes(locPart)
+            )
+          );
+        }
+        
+        return titleMatch || locationFieldMatch || addressMatch;
+      });
+      
+      if (foundLocation) {
+        enrichedEvent.detectedLocation = foundLocation.name;
+      }
+    }
+
+    return enrichedEvent;
+  };
+
+  // Événements enrichis avec détection client/lieu/affaire
+  const events = useMemo(
+    () => rawEvents.map(e => analyzeEventTitle(e)),
+    [rawEvents, clients, locations]
+  );
+
+  // Charger la configuration Google et le statut de connexion (v2 OAuth)
   useEffect(() => {
-    const loadGoogleConfig = async () => {
+    const loadGoogleStatus = async () => {
       try {
-        const [clientIdData, calendarIdData] = await Promise.all([
-          api.getGoogleClientId(),
-          api.getGoogleCalendarId()
+        const [configuredData, calendarIdData, statusData] = await Promise.all([
+          api.getGoogleOAuthConfigured(),
+          api.getGoogleCalendarId(),
+          api.getGoogleOAuthStatus()
         ]);
-        // Extraire juste la valeur, pas l'objet entier
-        setGoogleClientId(clientIdData?.value || null);
+        setGoogleConfigured(configuredData?.configured || false);
         setGoogleCalendarId(calendarIdData?.value || null);
+        if (statusData?.connected) {
+          setIsSignedIn(true);
+          setGoogleEmail(statusData.email || null);
+        } else {
+          setIsSignedIn(false);
+        }
       } catch (error) {
-        console.error('Erreur lors du chargement de la configuration Google:', error);
+        console.error('Erreur lors du chargement du statut Google:', error);
+        setGoogleConfigured(false);
       }
     };
-    loadGoogleConfig();
+    loadGoogleStatus();
+
+    // Détecter le retour du callback OAuth (redirect depuis /api/google/callback)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('google_connected') === 'true') {
+      toast.success('Compte Google connecté avec succès');
+      // Nettoyer l'URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('google_connected');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    } else if (params.get('google_error')) {
+      const errorCode = params.get('google_error');
+      const errorMessages = {
+        'access_denied': 'Accès refusé par l\'utilisateur',
+        'invalid_state': 'Session expirée — réessayez',
+        'no_refresh_token': 'Erreur de configuration OAuth — contactez l\'administrateur',
+        'exchange_failed': 'Échec de l\'échange de code — réessayez',
+        'missing_params': 'Paramètres manquants dans le callback',
+      };
+      setError(errorMessages[errorCode] || `Erreur Google: ${errorCode}`);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('google_error');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
   }, []);
 
   // Charger l'index des affaires ayant des pièces jointes
@@ -309,21 +392,11 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
 
   const handleDeleteEvent = async (eventId) => {
     try {
-      await api.deleteGoogleEvent(eventId, googleCalendarId);
-      await fetchEvents();
+      await api.deleteGoogleEventV2(eventId, googleCalendarId);
+      fetchNow();
       setEventDetailsOpen(false);
       setSelectedEvent(null);
     } catch (error) {
-      if (error.message?.includes('401') || error.status === 401) {
-        try {
-          await renewAccessToken();
-          await api.deleteGoogleEvent(eventId, googleCalendarId);
-          await fetchEvents();
-          setEventDetailsOpen(false);
-          setSelectedEvent(null);
-          return;
-        } catch {}
-      }
       console.error('Erreur suppression événement:', error);
       toast.error('Erreur lors de la suppression de l\'événement: ' + error.message);
     }
@@ -331,18 +404,10 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
 
   const handleEventCreated = async (newEventData) => {
     try {
-      const createdEvent = await api.createGoogleEvent(newEventData, googleCalendarId);
-      await fetchEvents();
+      const createdEvent = await api.createGoogleEventV2(newEventData, googleCalendarId);
+      fetchNow();
       return createdEvent;
     } catch (error) {
-      if (error.message?.includes('401') || error.status === 401) {
-        try {
-          await renewAccessToken();
-          const createdEvent = await api.createGoogleEvent(newEventData, googleCalendarId);
-          await fetchEvents();
-          return createdEvent;
-        } catch {}
-      }
       console.error('Erreur création événement:', error);
       toast.error('Erreur lors de la création de l\'événement: ' + error.message);
       throw error;
@@ -353,17 +418,9 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     try {
       const eventToUpdate = events.find(e => e.id === eventId);
       if (!eventToUpdate) return;
-      await api.updateGoogleEvent(eventId, updates, googleCalendarId);
-      await fetchEvents();
+      await api.updateGoogleEventV2(eventId, updates, googleCalendarId);
+      fetchNow();
     } catch (error) {
-      if (error.message?.includes('401') || error.status === 401) {
-        try {
-          await renewAccessToken();
-          await api.updateGoogleEvent(eventId, updates, googleCalendarId);
-          await fetchEvents();
-          return;
-        } catch {}
-      }
       console.error('Erreur mise à jour événement:', error);
       toast.error('Erreur lors de la mise à jour de l\'événement: ' + error.message);
       throw error;
@@ -392,366 +449,57 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Vérifier le token Google côté serveur au démarrage
-  useEffect(() => {
-    const checkToken = async () => {
-      try {
-        const status = await api.getGoogleTokenStatus();
-        if (status?.hasToken) {
-          setIsSignedIn(true);
-          if (googleCalendarId) fetchEvents();
-        } else {
-          setIsSignedIn(false);
-        }
-      } catch {
-        setIsSignedIn(false);
-      }
-    };
-    checkToken();
-  }, [tokenClient, googleCalendarId]);
+  // La récupération des événements est gérée par useGoogleSync (timer, IDB, BroadcastChannel)
 
-  // Configurer le renouvellement automatique du token avant expiration
-  useEffect(() => {
-    if (!isSignedIn || !tokenClient || !tokenExpiryRef.current) return;
-
-    const expiryTime = tokenExpiryRef.current;
-    const now = Date.now();
-    const timeUntilExpiry = expiryTime - now;
-    
-    oauthLogger.log('⏰ Token expire dans:', Math.round(timeUntilExpiry / 1000 / 60), 'minutes');
-    
-    if (timeUntilExpiry <= 0) return;
-    
-    // Renouveler 15 minutes avant l'expiration
-    const renewalTime = Math.max(0, timeUntilExpiry - 15 * 60 * 1000);
-    
-    const timer = setTimeout(async () => {
-      oauthLogger.log('⏰ Renouvellement programmé déclenché (silencieux)');
-      try {
-        await renewAccessToken();
-        oauthLogger.log('✅ Renouvellement programmé réussi');
-      } catch (err) {
-        oauthLogger.log('❌ Échec du renouvellement programmé:', err.message);
-      }
-    }, renewalTime);
-
-    return () => clearTimeout(timer);
-  }, [isSignedIn, tokenClient]);
-
-  const renewAccessToken = () => {
-    if (tokenClient) {
-      oauthLogger.log('🔄 Renouvellement du token...');
-      const now = Date.now();
-      
-      // Éviter les renouvellements trop fréquents (minimum 30 secondes entre chaque)
-      if ((now - lastRefreshRef.current) < 30000) {
-        oauthLogger.log('⏳ Renouvellement trop récent, on attend...');
-        return Promise.reject(new Error('Renouvellement trop récent'));
-      }
-      
-      return new Promise((resolve, reject) => {
-        try {
-          renewalResolverRef.current = { resolve, reject };
-          lastRefreshRef.current = now;
-          tokenClient.requestAccessToken({ prompt: '' });
-        } catch (err) {
-          oauthLogger.log('❌ Exception renouvellement:', err);
-          renewalResolverRef.current = null;
-          reject(err);
-        }
-      });
-    } else {
-      oauthLogger.warn('⚠️ Token client non disponible pour le renouvellement');
-      return Promise.reject(new Error('Token client non disponible'));
-    }
-  };
-
-  useEffect(() => {
-    if (!googleClientId) return;
-
-    // Charger le script Google Identity Services
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = initializeGIS;
-    document.body.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, [googleClientId]);
-
-  const initializeGIS = () => {
-    if (!window.google || !googleClientId) return;
-
-    try {
-      const client = window.google.accounts.oauth2.initTokenClient({
-        client_id: googleClientId,
-        scope: 'https://www.googleapis.com/auth/calendar',
-        ux_mode: 'popup',
-        callback: async (response) => {
-          if (response.error) {
-            console.error('❌ Erreur OAuth:', response.error);
-            
-            // Si une Promise de renouvellement est en attente, la rejeter
-            if (renewalResolverRef.current) {
-              renewalResolverRef.current.reject(new Error(response.error));
-              renewalResolverRef.current = null;
-            }
-            
-            // Si c'est une erreur de consentement et que ce n'est pas un renouvellement silencieux
-            if (response.error === 'access_denied') {
-              oauthLogger.log('⚠️ Accès refusé par l\'utilisateur');
-              localStorage.removeItem('google_auto_signin');
-              setError('Accès refusé. Veuillez autoriser l\'accès à Google Calendar.');
-            } else if (response.error === 'popup_closed_by_user') {
-              oauthLogger.log('⚠️ Popup fermée par l\'utilisateur');
-              setError('Connexion annulée');
-            } else if (response.error === 'immediate_failed') {
-              // Le renouvellement silencieux a échoué — NE PAS supprimer google_auto_signin
-              // L'utilisateur a déjà autorisé l'app, on garde cette info pour la prochaine tentative
-              silentFailCountRef.current += 1;
-              oauthLogger.log('🔄 Renouvellement silencieux échoué (tentative', silentFailCountRef.current, ') — on réessaiera');
-            }
-            return;
-          }
-          
-          oauthLogger.log('✅ Token reçu, expiration dans:', response.expires_in, 'secondes (≈', Math.round(response.expires_in / 60), 'minutes)');
-          
-          // Réinitialiser le compteur d'échecs silencieux
-          silentFailCountRef.current = 0;
-          popupAttemptedRef.current = false;
-          
-          // Envoyer le token au backend pour stockage sécurisé
-          const expiryTime = Date.now() + (response.expires_in || 3600) * 1000;
-          tokenExpiryRef.current = expiryTime;
-          lastRefreshRef.current = Date.now();
-          localStorage.setItem('google_auto_signin', 'true');
-          
-          try {
-            await api.storeGoogleToken(response.access_token, expiryTime);
-          } catch (storeErr) {
-            oauthLogger.log('❌ Erreur stockage token backend:', storeErr.message);
-          }
-          
-          setIsSignedIn(true);
-          setError(null);
-          fetchEvents();
-          
-          // Si une Promise de renouvellement est en attente, la résoudre
-          if (renewalResolverRef.current) {
-            oauthLogger.log('✅ Résolution de la Promise de renouvellement');
-            renewalResolverRef.current.resolve(true);
-            renewalResolverRef.current = null;
-          }
-        } });
-
-      setTokenClient(client);
-      
-      // Auto-reconnexion : le startup useEffect gère déjà la vérification backend
-      // On garde juste la trace de google_auto_signin pour l'UX
-    } catch (err) {
-      setError('Erreur d\'initialisation: ' + err.message);
-    }
-  };
-
-  // Refetch events when view or currentDate changes
-  useEffect(() => {
-    if (!isSignedIn) return;
-    
-    // Debouncing - attendre 300ms avant de charger
-    if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-    }
-    
-    fetchTimeoutRef.current = setTimeout(() => {
-      // Créer une clé de cache basée sur la vue et la date
-      const cacheKey = `${view}-${format(currentDate, 'yyyy-MM-dd')}`;
-      
-      // Vérifier si on a déjà ces données en cache
-      if (eventsCache.current[cacheKey]) {
-        setEvents(eventsCache.current[cacheKey]);
-        return;
-      }
-      
-      fetchEvents();
-    }, 300);
-    
-    return () => {
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current);
-      }
-    };
-  }, [view, currentDate, isSignedIn, googleCalendarId]);
-
-  const handleSignIn = () => {
-    if (tokenClient) {
-      setError(null);
-      const hasAuthorized = localStorage.getItem('google_auto_signin');
-      let promptType;
-      if (hasAuthorized === 'true' && !popupAttemptedRef.current) {
-        // Déjà autorisé et pas encore tenté cette session : tentative silencieuse unique
-        promptType = '';
-        popupAttemptedRef.current = true;
-      } else {
-        // Soit jamais autorisé, soit la tentative silencieuse a déjà échoué → consent direct
-        promptType = 'consent';
-      }
-      oauthLogger.log('🔐 Connexion Google - prompt:', promptType || 'silencieux');
-      tokenClient.requestAccessToken({ prompt: promptType });
-    }
-  };
-
-  const handleReconnect = () => {
-    if (tokenClient) {
-      setError(null);
-      oauthLogger.log('🔄 Reconnexion Google - sélection du compte');
-      // Forcer la sélection du compte Google
-      tokenClient.requestAccessToken({ prompt: 'select_account' });
-    }
-  };
-
-  const _handleSignOut = async () => {
-    // Supprimer le token du backend
-    try {
-      await api.deleteGoogleToken();
-    } catch (err) {
-      oauthLogger.log('⚠️ Erreur suppression token backend:', err.message);
-    }
-    // Supprimer les marqueurs UI de localStorage
-    localStorage.removeItem('google_auto_signin');
-    tokenExpiryRef.current = null;
-    setIsSignedIn(false);
-    setEvents([]);
-  };
-
-  const fetchEvents = async (retryCount = 0) => {
-    setLoading(true);
+  const handleSignIn = async () => {
     setError(null);
-
     try {
-      let timeMin, timeMax;
-
-      if (view === 'week') {
-        timeMin = startOfWeek(currentDate, { weekStartsOn: 1 });
-        timeMax = endOfWeek(currentDate, { weekStartsOn: 1 });
-      } else if (view === 'month') {
-        timeMin = startOfMonth(currentDate);
-        timeMax = endOfMonth(currentDate);
-      } else if (view === 'year') {
-        timeMin = startOfYear(currentDate);
-        timeMax = endOfYear(currentDate);
+      const data = await api.getGoogleOAuthUrl();
+      if (data?.url) {
+        window.location.href = data.url;
       } else {
-        setEvents([]);
-        setLoading(false);
-        return;
+        setError('Impossible d\'obtenir l\'URL d\'autorisation Google');
       }
-
-      const calendarId = googleCalendarId || 'primary';
-      const params = {
-        calendarId,
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        singleEvents: true,
-        maxResults: 2500,
-        orderBy: 'startTime' };
-
-      const data = await api.getGoogleEvents(params);
-      
-      let filteredItems = data.items || [];
-      const enrichedEvents = filteredItems.map(event => analyzeEventTitle(event));
-      setEvents(enrichedEvents);
-      
-      // Mettre en cache les événements
-      const cacheKey = `${view}-${format(currentDate, 'yyyy-MM-dd')}`;
-      eventsCache.current[cacheKey] = enrichedEvents;
     } catch (err) {
-      // Token expiré → tenter renouvellement GIS puis retry
-      if (err.message?.includes('google_token_expired') && retryCount === 0) {
-        oauthLogger.log('⚠️ Token expiré (401), tentative de renouvellement...');
-        try {
-          await renewAccessToken();
-          return fetchEvents(retryCount + 1);
-        } catch (renewErr) {
-          oauthLogger.log('❌ Échec du renouvellement:', renewErr.message);
-          setIsSignedIn(false);
-          setError('Session expirée. Veuillez vous reconnecter.');
-          return;
-        }
-      }
-      // Calendrier introuvable → tenter ajout automatique puis retry
-      if (err.message?.includes('404') && googleCalendarId && googleCalendarId !== 'primary' && retryCount === 0) {
-        console.warn('⚠️ Calendrier', googleCalendarId, 'introuvable (404). Tentative d\'ajout automatique...');
-        try {
-          await api.addGoogleCalendar({ id: googleCalendarId });
-          return fetchEvents(retryCount + 1);
-        } catch (addErr) {
-          console.warn('⚠️ Impossible d\'ajouter le calendrier:', addErr.message);
-        }
-      }
-      console.error('❌ Erreur fetchEvents:', err);
-      setError('Impossible de récupérer les événements: ' + err.message);
-    } finally {
-      setLoading(false);
+      setError('Erreur lors de la connexion: ' + err.message);
     }
   };
 
-  // Analyse le titre de l'événement pour extraire client, lieu et affaire
-  const analyzeEventTitle = (event) => {
-    const title = event.summary || '';
-    const eventLocation = event.location || '';
-    const enrichedEvent = { ...event };
-
-    // Détecter le numéro d'affaire (formats: "af 32744", "AF 32744", "af32744", "AF32744")
-    const affaireMatch = title.match(/\baf\s*(\d+)\b/i);
-    if (affaireMatch) {
-      enrichedEvent.affaire = `AF${affaireMatch[1]}`;
-    }
-
-    // Détecter un client existant (recherche insensible à la casse)
-    if (clients && clients.length > 0) {
-      const foundClient = clients.find(client => 
-        title.toLowerCase().includes(client.name.toLowerCase())
-      );
-      if (foundClient) {
-        enrichedEvent.detectedClient = foundClient.name;
-      }
-    }
-
-    // Détecter un lieu existant (recherche insensible à la casse dans le titre ET dans le champ location de l'événement)
-    if (locations && locations.length > 0) {
-      const foundLocation = locations.find(location => {
-        const titleMatch = title.toLowerCase().includes(location.name.toLowerCase());
-        const locationFieldMatch = eventLocation.toLowerCase().includes(location.name.toLowerCase());
-        
-        // Chercher aussi par adresse si elle existe
-        let addressMatch = false;
-        if (location.address && eventLocation) {
-          // Recherche partielle dans l'adresse (POI)
-          const locationParts = eventLocation.toLowerCase().split(',').map(p => p.trim());
-          const addressParts = location.address.toLowerCase().split(',').map(p => p.trim());
-          
-          // Vérifier si au moins une partie de l'adresse correspond
-          addressMatch = addressParts.some(addrPart => 
-            locationParts.some(locPart => 
-              locPart.includes(addrPart) || addrPart.includes(locPart)
-            )
-          );
-        }
-        
-        return titleMatch || locationFieldMatch || addressMatch;
-      });
-      
-      if (foundLocation) {
-        enrichedEvent.detectedLocation = foundLocation.name;
-      }
-    }
-
-    return enrichedEvent;
+  const handleReconnect = async () => {
+    // Déconnexion puis reconnexion
+    try {
+      await api.disconnectGoogle();
+    } catch {}
+    handleSignIn();
   };
+
+  const handleSignOut = async () => {
+    try {
+      await api.disconnectGoogle();
+    } catch (err) {
+      console.warn('Erreur déconnexion Google:', err.message);
+    }
+    setIsSignedIn(false);
+    setGoogleEmail(null);
+    // events nettoyés automatiquement par useGoogleSync quand isSignedIn → false
+  };
+
+  // Gérer les erreurs de sync (déconnexion, calendrier introuvable)
+  useEffect(() => {
+    if (!fetchError) return;
+    const msg = fetchError.message || '';
+    if (msg.includes('google_not_connected') || msg.includes('401')) {
+      setIsSignedIn(false);
+      setError('Session Google expirée. Veuillez vous reconnecter.');
+    } else if (msg.includes('404') && googleCalendarId && googleCalendarId !== 'primary') {
+      // Tentative d'ajout automatique du calendrier
+      api.addGoogleCalendarV2({ id: googleCalendarId })
+        .then(() => fetchNow())
+        .catch(() => {});
+    } else {
+      setError('Impossible de récupérer les événements: ' + msg);
+    }
+  }, [fetchError]);
 
   const days = useMemo(() => {
     if (view === 'week') {
@@ -768,7 +516,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
         start: startOfYear(currentDate),
         end: endOfYear(currentDate)
       });
-      oauthLogger.log('📅 Mois affichés en vue année:', months.length, 'Premier:', format(months[0], 'yyyy-MM-dd'), 'Dernier:', format(months[11], 'yyyy-MM-dd'));
+      // Diagnostic supprimé (Phase D cleanup)
       return months;
     }
     return [];
@@ -851,7 +599,6 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
         });
 
         if (startMonthIndex !== -1) {
-          oauthLogger.log('📅 Événement année:', event.summary, 'Début:', eventStart.toISOString().slice(0,10), 'Fin:', eventEnd.toISOString().slice(0,10), 'StartIndex:', startMonthIndex, 'Span:', span);
           
           // Nettoyer le titre en supprimant le numéro d'affaire
           let cleanTitle = event.summary || '(Sans titre)';
@@ -921,15 +668,15 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     return eventBlocks;
   }, [view, currentDate, events, days, searchFilter, activeModule]);
 
-  // Toujours afficher le banner, même sans clientId configuré (pour permettre la configuration)
-  if (!googleClientId) {
+  // Afficher un message si le module Google n'est pas configuré côté serveur
+  if (googleConfigured === false) {
     return (
       <div className="google-calendar-banner auth">
         <div className="banner-content">
           <div className="auth-prompt">
             <h3>📅 Synchronisation Google Calendar</h3>
             <p>⚠️ Configuration manquante</p>
-            <p>Veuillez configurer le Client ID Google dans le panneau de gestion (onglet Config Google)</p>
+            <p>Le module Google OAuth n'est pas configuré sur le serveur (variables GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET manquantes)</p>
           </div>
         </div>
       </div>
@@ -946,9 +693,9 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
             <Button variant="ghost" 
               onClick={handleSignIn} 
               className="signin-button"
-              disabled={!tokenClient}
+              disabled={googleConfigured === null}
             >
-              {tokenClient ? 'Se connecter avec Google' : 'Chargement...'}
+              {googleConfigured === null ? 'Chargement...' : 'Se connecter avec Google'}
             </Button>
             {error && (
               <InlineAlert>{error}</InlineAlert>
@@ -997,10 +744,10 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
                   <span>Installations</span>
                   <Button variant="ghost"                     className="banner-reconnect-google"
                     onClick={handleReconnect}
-                    title="Reconnecter / changer de compte Google"
+                    title={googleEmail ? `Connecté : ${googleEmail} — Cliquer pour changer de compte` : 'Reconnecter / changer de compte Google'}
                   >
                     <RefreshCw size={12} />
-                    <span>Compte Google</span>
+                    <span>{googleEmail ? googleEmail : 'Compte Google'}</span>
                   </Button>
                 </div>
               )}
@@ -1151,7 +898,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
                           <span className="attachment-count">{attachmentCounts[eventBlock.affaire]}</span>
                         </span>
                       )}
-                      {eventBlock.affaire && <span className="event-affaire">{eventBlock.affaire}</span>}
+                      {eventBlock.affaire && <span className="event-affaire" style={{ cursor: onNavigateToAffaire ? 'pointer' : 'default', textDecoration: 'underline' }} onClick={(e) => { if (onNavigateToAffaire) { e.stopPropagation(); onNavigateToAffaire(eventBlock.affaire); } }}>{eventBlock.affaire}</span>}
                       {eventBlock.time && <span className="event-time">{eventBlock.time}</span>}
                     </div>
                   </div>

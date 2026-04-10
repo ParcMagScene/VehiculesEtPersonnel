@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useCallback, memo } from 'react';
-import { Palette, Sun, Music, Eye, Save } from 'lucide-react';
+import { Palette, Sun, Eye, Save } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { Button, Input, Select, Checkbox, SectionHeader } from '@/design-system';
@@ -33,19 +33,16 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoPath, setLogoPath] = useState(null);
-  const [sonosIP, setSonosIP] = useState('');
 
   const loadConfig = useCallback(async () => {
     try {
       setLoading(true);
-      const [appearance, logo, sonos] = await Promise.all([
+      const [appearance, logo] = await Promise.all([
         api.getDisplayAppearance(),
         api.getDisplayLogo(),
-        api.getDisplaySonosConfig(),
       ]);
       setConfig(appearance);
       setLogoPath(logo.path);
-      setSonosIP(sonos.sonosIP || '');
     } catch {
       toast.error('Erreur chargement config');
     } finally {
@@ -69,17 +66,14 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
   const handleSave = useCallback(async () => {
     try {
       setSaving(true);
-      await Promise.all([
-        api.saveDisplayAppearance(config),
-        api.saveDisplaySonosConfig(sonosIP),
-      ]);
+      await api.saveDisplayAppearance(config);
       toast.success('Configuration enregistrée');
     } catch {
       toast.error('Erreur enregistrement');
     } finally {
       setSaving(false);
     }
-  }, [config, sonosIP, toast]);
+  }, [config, toast]);
 
   const handleLogoUpload = useCallback(async (e) => {
     const file = e.target.files?.[0];
@@ -173,16 +167,6 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
             <Input type="text" value={config.weatherCity} onChange={e => handleChange('weatherCity', e.target.value)}
               placeholder="Saint-Denis,RE,FR" />
           </div>
-        </div>
-      </div>
-
-      {/* Sonos */}
-      <div className="dtv-section">
-        <SectionHeader className="dtv-section-title" icon={<Music size={16} />} title="Sonos" />
-        <div className="dtv-form-group">
-          <label>Adresse IP du Sonos</label>
-          <Input type="text" value={sonosIP} onChange={e => setSonosIP(e.target.value)}
-            placeholder="192.168.1.xxx" />
         </div>
       </div>
 

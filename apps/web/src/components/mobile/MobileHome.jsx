@@ -2,7 +2,11 @@ import { Truck, Users, Package, ShoppingCart, Palmtree, Map, Wrench, Briefcase, 
 import { Button } from '@/design-system';
 import './MobileHome.css';
 
-function MobileHome({ onNavigate }) {
+function MobileHome({ onNavigate, currentUser }) {
+  const isAdmin = !!currentUser?.isAdmin;
+  const canManageEquipment = isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance;
+  const canManageCatalog = isAdmin || currentUser?.permissions?.can_manage_catalog;
+
   return (
     <div className="mobile-home">
       {/* Grille d'icônes modules */}
@@ -23,18 +27,24 @@ function MobileHome({ onNavigate }) {
           <Users size={28} />
           <span>Personnel</span>
         </Button>
+        {canManageEquipment && (
         <Button variant="ghost" className="home-grid-item equipment" onClick={() => onNavigate('equipment')}>
           <Package size={28} />
           <span>Équipements</span>
         </Button>
+        )}
+        {canManageEquipment && (
         <Button variant="ghost" className="home-grid-item sav" onClick={() => onNavigate('sav')}>
           <Wrench size={28} />
           <span>SAV</span>
         </Button>
+        )}
+        {canManageCatalog && (
         <Button variant="ghost" className="home-grid-item orders" onClick={() => onNavigate('orders')}>
           <ShoppingCart size={28} />
           <span>Commandes</span>
         </Button>
+        )}
         <Button variant="ghost" className="home-grid-item leaves" onClick={() => onNavigate('leaves')}>
           <Palmtree size={28} />
           <span>Congés</span>

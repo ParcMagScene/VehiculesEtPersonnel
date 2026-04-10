@@ -14,6 +14,7 @@ import AffaireBadge from '../AffaireBadge';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
 import './ReservationModal.css';
 import { useToast } from '../../hooks/useToast';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 
 import { STATUS } from '../../constants';
 
@@ -94,9 +95,8 @@ const ReservationModal = ({
     isTournee: reservation?.isTournee || false, // Nouvelle option Tournée
   });
 
-  const [initialFormData, setInitialFormData] = useState(null);
-  const [hasChanges, setHasChanges] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const { isDirty } = useDirtyForm(formData);
 
   // Fermeture sécurisée avec avertissement si modifications
   const handleSafeClose = () => {
@@ -107,7 +107,7 @@ const ReservationModal = ({
         setShowUnsavedWarning(true);
         return;
       }
-    } else if (hasChanges) {
+    } else if (isDirty) {
       setShowUnsavedWarning(true);
       return;
     }
@@ -338,21 +338,6 @@ const ReservationModal = ({
 
   // État pour le dropdown personnalisé des événements Google
   const [isEventDropdownOpen, setIsEventDropdownOpen] = useState(false);
-
-  // Initialiser initialFormData au montage pour la réservation en édition
-  useEffect(() => {
-    if (isEdit && reservation && !initialFormData) {
-      setInitialFormData({...formData});
-    }
-  }, [isEdit, reservation]);
-
-  // Détecter les changements
-  useEffect(() => {
-    if (isEdit && initialFormData) {
-      const changed = JSON.stringify(formData) !== JSON.stringify(initialFormData);
-      setHasChanges(changed);
-    }
-  }, [formData, initialFormData, isEdit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -980,7 +965,6 @@ const ReservationModal = ({
                           setLocationSearch(e.target.value);
                           setShowLocationDropdown(true);
                           setFormData(prev => ({ ...prev, locationName: e.target.value }));
-                          setHasChanges(true);
                         }}
                         onFocus={() => {
                           setLocationSearch(formData.locationName || '');
@@ -1002,7 +986,6 @@ const ReservationModal = ({
                                 setFormData(prev => ({ ...prev, locationName: location.name }));
                                 setLocationSearch('');
                                 setShowLocationDropdown(false);
-                                setHasChanges(true);
                               }}
                               className="reservation-location-item"
                             >
@@ -1670,7 +1653,7 @@ const ReservationModal = ({
               {currentUser?.isAdmin ? 'Créer' : 'Demander'}
             </Button>
           )}
-          {isEdit && !isReadOnly && (hasChanges || formData.isTournee) && (
+          {isEdit && !isReadOnly && (isDirty || formData.isTournee) && (
             <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
               Valider les modifications
             </Button>

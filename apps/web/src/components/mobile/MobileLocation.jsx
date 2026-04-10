@@ -6,6 +6,8 @@ import api from '../../utils/api';
 import { getZonePoints, hasSkew, computeZonesBounds } from '../vehicles/DepotMapEditor';
 import './MobileLocation.css';
 import { Button, SearchBar } from '@/design-system';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 import { STATUS } from '../../constants';
 
@@ -41,6 +43,8 @@ function MobileLocation({ onBack }) {
   }, [depot]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadData);
 
   // Charger les équipements d'une zone sélectionnée
   useEffect(() => {
@@ -133,7 +137,8 @@ function MobileLocation({ onBack }) {
   }
 
   return (
-    <div className="mobile-location">
+    <div className="mobile-location" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="mobile-module-header">
         <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
         <h2>📍 Localisation</h2>

@@ -45,6 +45,7 @@ const PlanningPanel = lazy(() => import('./components/planning/PlanningPanel'));
 const MessagingPanel = lazy(() => import('./components/messaging/MessagingPanel'));
 const MailingPanel = lazy(() => import('./components/mailing/MailingPanel'));
 const AnnuairePanel = lazy(() => import('./components/annuaire/AnnuairePanel'));
+const LocationsTab = lazy(() => import('./components/annuaire/LocationsTab'));
 const VideoPanel = lazy(() => import('./components/video/VideoPanel'));
 const AffaireDetailDialog = lazy(() => import('./components/affaires/AffaireDetailPanel').then(m => ({ default: m.AffaireDetailDialog })));
 const UserPreferencesModal = lazy(() => import('./components/auth/UserPreferencesModal'));
@@ -446,13 +447,15 @@ function AppContent() {
             endPeriod: 'afternoon',
           });
         }}
-        onNewAssignment={() => {
+        onNewAssignment={(event) => {
           setActiveModule('planning');
           setShowManagement(false);
           setShowSettings(false);
           setQuickAssignmentSlot({
-            day: new Date().toISOString().slice(0, 10),
+            day: event?.start ? new Date(event.start).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
             period: 'AM',
+            title: event?.summary || '',
+            affaire: event?.affaire || '',
           });
         }}
         onNewAffaire={async () => {
@@ -476,6 +479,15 @@ function AppContent() {
             console.error('Erreur création affaire:', err);
             toast.error('Erreur lors de la création de l\'affaire');
           }
+        }}
+        onNavigateToAffaire={(affaireNum) => {
+          setActiveModule('affaires');
+          setShowManagement(false);
+          setShowSettings(false);
+          // Le numéro d'affaire sera traité par AffairesPanel comme filtre/sélection
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('emag:navigate-affaire', { detail: { affaireNum } }));
+          }, 100);
         }}
       />
       </Suspense>
@@ -574,6 +586,7 @@ function AppContent() {
           <AffairesPanel
             reservations={data.reservations}
             onNavigateToEntity={handleNavigateToEntity}
+            currentUser={currentUser}
           />
         </Suspense>
         </ErrorBoundary>
@@ -661,6 +674,14 @@ function AppContent() {
         <ErrorBoundary moduleName="Annuaire">
         <Suspense fallback={<LoadingOverlay label="Chargement de l'Annuaire..." />}>
           <AnnuairePanel currentUser={currentUser} />
+        </Suspense>
+        </ErrorBoundary>
+      )}
+
+      {activeModule === 'lieux' && (
+        <ErrorBoundary moduleName="Lieux">
+        <Suspense fallback={<LoadingOverlay label="Chargement des Lieux..." />}>
+          <LocationsTab currentUser={currentUser} />
         </Suspense>
         </ErrorBoundary>
       )}

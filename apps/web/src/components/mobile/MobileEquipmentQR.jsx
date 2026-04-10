@@ -5,18 +5,11 @@ import './MobileEquipmentQR.css';
 import { useToast } from '../../hooks/useToast';
 import { Button, InlineAlert, Input, Select, Spinner, Textarea } from '@/design-system';
 
-import { STATUS } from '../../constants';
+import { STATUS, EQUIPMENT_STATUS } from '../../constants';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX
 // Affiche un menu multi-choix pour l'équipement scanné
-
-const EQUIPMENT_STATUS = {
-  available: { label: 'Disponible', color: '#10b981', icon: '✅' },
-  in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
-  maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
-  retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
-};
 
 const SAV_STATUS = {
   open: { label: 'Ouvert', color: '#ef4444' },

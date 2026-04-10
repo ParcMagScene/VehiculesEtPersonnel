@@ -170,8 +170,7 @@ function MobilePlanning({
     return allElements;
   };
 
-  const _getClient = (clientId) => clients.find(c => c.id === clientId);
-  const _getDriver = (driverId) => drivers.find(d => d.id === driverId);
+
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -229,26 +228,17 @@ function MobilePlanning({
     return () => clearTimeout(timer);
   }, [selectedMonth, monthDays]);
 
-  // Debug - compter les réservations du mois
-  const _monthReservationsCount = useMemo(() => {
-    return reservations.filter(r => {
-      const resDate = new Date(r.startDate);
-      return resDate.getMonth() === selectedMonth.getMonth() && 
-             resDate.getFullYear() === selectedMonth.getFullYear();
-    }).length;
-  }, [reservations, selectedMonth]);
-
   return (
     <div className="mobile-planning">
       <div className="mobile-planning-header">
         <div className="month-navigation">
-          <Button variant="ghost" className="month-nav-btn" onClick={goToPreviousMonth}>
+          <Button variant="ghost" className="month-nav-btn" onClick={goToPreviousMonth} aria-label="Mois précédent">
             <ChevronLeft size={20} />
           </Button>
           <h2 onClick={goToCurrentMonth} style={{ cursor: 'pointer' }}>
             {format(selectedMonth, 'MMMM yyyy', { locale: fr })}
           </h2>
-          <Button variant="ghost" className="month-nav-btn" onClick={goToNextMonth}>
+          <Button variant="ghost" className="month-nav-btn" onClick={goToNextMonth} aria-label="Mois suivant">
             <ChevronRight size={20} />
           </Button>
  <Tooltip content="Aller à aujourd'hui" position="bottom">
@@ -258,7 +248,7 @@ function MobilePlanning({
           </Button>
  </Tooltip>
         </div>
-        <Button variant="ghost" className="close-button" onClick={onClose}>
+        <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer le planning">
           <X size={24} />
         </Button>
       </div>

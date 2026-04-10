@@ -8,16 +8,17 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import './AnnuairePanel.css';
 import { useToast } from '../../hooks/useToast';
+import { ANNUAIRE_TAB_COLORS } from '../../constants/colors';
 import LocationsTab from './LocationsTab';
 
 // ═══ Constantes ═══
 const ENTITY_TABS = [
-  { id: 'clients', label: 'Clients', icon: Building2, color: '#3b82f6' },
-  { id: 'suppliers', label: 'Fournisseurs', icon: Building, color: '#10b981' },
-  { id: 'prestataires', label: 'Prestataires', icon: UserCheck, color: '#8b5cf6' },
-  { id: 'contacts', label: 'Contacts', icon: Contact, color: '#f59e0b' },
-  { id: 'lieux', label: 'Lieux', icon: MapPin, color: '#10b981' },
-  { id: 'referentiels', label: 'Référentiels', icon: BookOpen, color: '#64748b' },
+  { id: 'clients', label: 'Clients', icon: Building2, color: ANNUAIRE_TAB_COLORS.clients },
+  { id: 'suppliers', label: 'Fournisseurs', icon: Building, color: ANNUAIRE_TAB_COLORS.suppliers },
+  { id: 'prestataires', label: 'Prestataires', icon: UserCheck, color: ANNUAIRE_TAB_COLORS.prestataires },
+  { id: 'contacts', label: 'Contacts', icon: Contact, color: ANNUAIRE_TAB_COLORS.contacts },
+  { id: 'lieux', label: 'Lieux', icon: MapPin, color: ANNUAIRE_TAB_COLORS.lieux },
+  { id: 'referentiels', label: 'Référentiels', icon: BookOpen, color: ANNUAIRE_TAB_COLORS.referentiels },
 ];
 
 const CLIENT_TYPES = [
@@ -511,7 +512,7 @@ function EntityTable({ data, entityType, currentUser, _getLookupName, onSelect, 
                 <td>{c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : '—'}</td>
                 <td>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : '—'}</td>
                 <td className="actions-cell">
-                  <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(c)}><Edit2 size={14} /></Button></Tooltip>
+                  {currentUser?.isAdmin && <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(c)}><Edit2 size={14} /></Button></Tooltip>}
                   {currentUser?.isAdmin && <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(c)}><Trash2 size={14} /></Button></Tooltip>}
                 </td>
               </tr>
@@ -559,7 +560,7 @@ function EntityTable({ data, entityType, currentUser, _getLookupName, onSelect, 
               <td className="count-cell">{item.contact_count || 0}</td>
               <td className="actions-cell">
                 <Tooltip content="Voir"><Button variant="ghost" onClick={() => onSelect(item)}><Eye size={14} /></Button></Tooltip>
-                <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(item)}><Edit2 size={14} /></Button></Tooltip>
+                {currentUser?.isAdmin && <Tooltip content="Modifier"><Button variant="ghost" onClick={() => onEdit(item)}><Edit2 size={14} /></Button></Tooltip>}
                 {currentUser?.isAdmin && <Tooltip content="Supprimer"><Button variant="danger" iconOnly onClick={() => onDelete(item)}><Trash2 size={14} /></Button></Tooltip>}
               </td>
             </tr>
@@ -573,9 +574,12 @@ function EntityTable({ data, entityType, currentUser, _getLookupName, onSelect, 
 // ═══════════════════════════════════════════════════════════════
 // DETAIL VIEW
 // ═══════════════════════════════════════════════════════════════
-function DetailView({ item, entityType, _lookups, getLookupName, _currentUser, onBack, onEdit, onAddContact, toast }) {
+function DetailView({ item, entityType, _lookups, getLookupName, currentUser, onBack, onEdit, onAddContact, toast }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [linkSearch, setLinkSearch] = useState('');
+  const [linkResults, setLinkResults] = useState([]);
+  const [showLinkSearch, setShowLinkSearch] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -600,6 +604,43 @@ function DetailView({ item, entityType, _lookups, getLookupName, _currentUser, o
     return () => { cancelled = true; };
   }, [item.id, entityType]);
 
+  // Recherche de contacts existants pour liaison
+  useEffect(() => {
+    if (!showLinkSearch || linkSearch.length < 2) { setLinkResults([]); return; }
+    const timer = setTimeout(async () => {
+      try {
+        const result = await api.getAnnuaireContacts({ search: linkSearch, limit: 10 });
+        // Exclure ceux déjà liés à cette entité
+        const existingIds = new Set((detail?.contacts || []).map(c => c.id));
+        setLinkResults((result.data || []).filter(c => !existingIds.has(c.id)));
+      } catch { setLinkResults([]); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [linkSearch, showLinkSearch, detail]);
+
+  const handleLinkContact = async (contact) => {
+    const parentType = entityType === 'clients' ? 'client' : entityType === 'suppliers' ? 'supplier' : 'prestataire';
+    const idField = parentType === 'client' ? 'client_id' : parentType === 'supplier' ? 'supplier_id' : 'prestataire_id';
+    try {
+      await api.updateAnnuaireContact(contact.id, { [idField]: detail.id });
+      // Refresh
+      let d;
+      switch (entityType) {
+        case 'clients': d = await api.getAnnuaireClient(detail.id); break;
+        case 'suppliers': d = await api.getAnnuaireSupplier(detail.id); break;
+        case 'prestataires': d = await api.getAnnuairePrestataire(detail.id); break;
+        default: d = detail;
+      }
+      setDetail(d);
+      setShowLinkSearch(false);
+      setLinkSearch('');
+      setLinkResults([]);
+      toast?.success(`${contact.first_name || ''} ${contact.last_name} lié avec succès`);
+    } catch {
+      toast?.error('Erreur lors de la liaison');
+    }
+  };
+
   if (loading || !detail) return <div className="annuaire-loading"><Spinner size="lg" /></div>;
 
   const serviceTypes = (() => {
@@ -619,7 +660,7 @@ function DetailView({ item, entityType, _lookups, getLookupName, _currentUser, o
           {detail.code_libre && <span className="code-badge">{detail.code_libre}</span>}
           {detail.is_active === 0 && <span className="inactive-badge">Inactif</span>}
         </div>
-        <Button variant="secondary" onClick={() => onEdit(detail)}><Edit2 size={14} /> Modifier</Button>
+        {currentUser?.isAdmin && <Button variant="secondary" onClick={() => onEdit(detail)}><Edit2 size={14} /> Modifier</Button>}
       </div>
 
       <div className="detail-grid">
@@ -645,7 +686,7 @@ function DetailView({ item, entityType, _lookups, getLookupName, _currentUser, o
             {detail.phone && <div className="field"><label><Phone size={13} /> Tél.</label><a href={`tel:${detail.phone}`}>{detail.phone}</a></div>}
             {detail.phone2 && <div className="field"><label><Phone size={13} /> Tél. 2</label><a href={`tel:${detail.phone2}`}>{detail.phone2}</a></div>}
             {detail.email && <div className="field"><label><Mail size={13} /> Email</label><a href={`mailto:${detail.email}`}>{detail.email}</a></div>}
-            {detail.website && <div className="field"><label><Globe size={13} /> Site web</label><a href={detail.website.startsWith('http') ? detail.website : `https://${detail.website}`} target="_blank" rel="noreferrer">{detail.website}</a></div>}
+            {detail.website && (() => { try { const url = detail.website.startsWith('http') ? detail.website : `https://${detail.website}`; const parsed = new URL(url); if (!['http:', 'https:'].includes(parsed.protocol)) return <div className="field"><label><Globe size={13} /> Site web</label><span>{detail.website}</span></div>; return <div className="field"><label><Globe size={13} /> Site web</label><a href={url} target="_blank" rel="noreferrer">{detail.website}</a></div>; } catch { return <div className="field"><label><Globe size={13} /> Site web</label><span>{detail.website}</span></div>; } })()}
           </div>
         </div>
 
@@ -675,11 +716,39 @@ function DetailView({ item, entityType, _lookups, getLookupName, _currentUser, o
             as="h4"
             title={`Contacts (${detail.contacts?.length || 0})`}
             actions={
-              <Button variant="primary" size="sm" onClick={() => onAddContact(parentType, detail.id)}>
-                <Plus size={13} /> Ajouter
-              </Button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <Button variant="ghost" size="sm" onClick={() => setShowLinkSearch(s => !s)}>
+                  <Contact size={13} /> Lier existant
+                </Button>
+                <Button variant="primary" size="sm" onClick={() => onAddContact(parentType, detail.id)}>
+                  <Plus size={13} /> Ajouter
+                </Button>
+              </div>
             }
           />
+          {showLinkSearch && (
+            <div className="link-contact-search">
+              <Input
+                value={linkSearch}
+                onChange={e => setLinkSearch(e.target.value)}
+                placeholder="Rechercher un contact existant..."
+                autoFocus
+              />
+              {linkResults.length > 0 && (
+                <div className="link-contact-results">
+                  {linkResults.map(c => (
+                    <div key={c.id} className="link-contact-item" onClick={() => handleLinkContact(c)}>
+                      <span>{c.first_name} <strong>{c.last_name}</strong></span>
+                      {c.job_title && <span className="link-contact-job">{c.job_title}</span>}
+                      {(c.client_name || c.supplier_name || c.prestataire_name) && (
+                        <span className="link-contact-entity">{c.client_name || c.supplier_name || c.prestataire_name}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {detail.contacts?.length > 0 ? (
             <div className="contacts-grid">
               {detail.contacts.map(c => (
@@ -772,6 +841,52 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
     };
   });
 
+  // Recherche d'entités pour le sélecteur de liaison contact
+  const [entitySearch, setEntitySearch] = useState('');
+  const [entitySearchResults, setEntitySearchResults] = useState([]);
+  const [entitySearchLoading, setEntitySearchLoading] = useState(false);
+  const [selectedParentType, setSelectedParentType] = useState(
+    contactParentType || (item?.client_id ? 'client' : item?.supplier_id ? 'supplier' : item?.prestataire_id ? 'prestataire' : '')
+  );
+  const [selectedParentLabel, setSelectedParentLabel] = useState(
+    item?.client_name || item?.supplier_name || item?.prestataire_name || ''
+  );
+  const hasPresetParent = !!(contactParentType && contactParentId);
+
+  // Recherche debounced d'entités
+  useEffect(() => {
+    if (!isContact || hasPresetParent || !selectedParentType || entitySearch.length < 2) {
+      setEntitySearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setEntitySearchLoading(true);
+      try {
+        let result;
+        const params = { search: entitySearch, limit: 10 };
+        if (selectedParentType === 'client') result = await api.getAnnuaireClients(params);
+        else if (selectedParentType === 'supplier') result = await api.getAnnuaireSuppliers(params);
+        else result = await api.getAnnuairePrestataires(params);
+        setEntitySearchResults(result.data || []);
+      } catch { setEntitySearchResults([]); }
+      finally { setEntitySearchLoading(false); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [entitySearch, selectedParentType, isContact, hasPresetParent]);
+
+  const handleSelectParentEntity = (entity) => {
+    const idField = selectedParentType === 'client' ? 'client_id' : selectedParentType === 'supplier' ? 'supplier_id' : 'prestataire_id';
+    setForm(prev => ({ ...prev, client_id: '', supplier_id: '', prestataire_id: '', [idField]: entity.id }));
+    setSelectedParentLabel(entity.name);
+    setEntitySearch('');
+    setEntitySearchResults([]);
+  };
+
+  const handleClearParentEntity = () => {
+    setForm(prev => ({ ...prev, client_id: '', supplier_id: '', prestataire_id: '' }));
+    setSelectedParentLabel('');
+  };
+
   const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
 
   const toggleServiceType = (code) => {
@@ -818,6 +933,51 @@ function EntityFormModal({ entityType, item, lookups, contactParentType, contact
           {isContact ? (
             // ─── Contact form ───
             <>
+              {/* Sélecteur d'entité parente (si pas pré-défini) */}
+              {!hasPresetParent && (
+                <div className="contact-parent-selector">
+                  <FormField className="form-group" label="Rattacher à">
+                    <div className="contact-parent-row">
+                      <Select value={selectedParentType} onChange={e => { setSelectedParentType(e.target.value); handleClearParentEntity(); setEntitySearch(''); }}>
+                        <option value="">— Aucun (contact libre) —</option>
+                        <option value="client">Client</option>
+                        <option value="supplier">Fournisseur</option>
+                        <option value="prestataire">Prestataire</option>
+                      </Select>
+                    </div>
+                  </FormField>
+                  {selectedParentType && (
+                    <FormField className="form-group" label={selectedParentLabel ? 'Entité liée' : 'Rechercher...'}>
+                      {selectedParentLabel ? (
+                        <div className="contact-parent-selected">
+                          <span className={`entity-tag ${selectedParentType}`}>{selectedParentLabel}</span>
+                          <Button variant="ghost" type="button" onClick={handleClearParentEntity}><X size={14} /></Button>
+                        </div>
+                      ) : (
+                        <div className="contact-parent-search-wrapper">
+                          <Input
+                            value={entitySearch}
+                            onChange={e => setEntitySearch(e.target.value)}
+                            placeholder={`Rechercher un ${selectedParentType === 'client' ? 'client' : selectedParentType === 'supplier' ? 'fournisseur' : 'prestataire'}...`}
+                            autoFocus
+                          />
+                          {entitySearchLoading && <Spinner size="sm" />}
+                          {entitySearchResults.length > 0 && (
+                            <div className="contact-parent-results">
+                              {entitySearchResults.map(e => (
+                                <div key={e.id} className="contact-parent-result-item" onClick={() => handleSelectParentEntity(e)}>
+                                  <strong>{e.name}</strong>
+                                  {e.city && <span className="result-city">{e.city}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </FormField>
+                  )}
+                </div>
+              )}
               <div className="form-row">
                 <FormField className="form-group" label="Prénom">
                   <Input maxLength={100} value={form.first_name || ''} onChange={e => handleChange('first_name', e.target.value)} />

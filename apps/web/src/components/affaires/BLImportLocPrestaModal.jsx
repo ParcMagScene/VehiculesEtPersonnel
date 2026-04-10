@@ -4,6 +4,7 @@ import api from '../../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
 import { useToast } from '../../hooks/useToast';
 import AddressAutocomplete from '../AddressAutocomplete';
+import { CONF_COLORS } from '../../constants/colors';
 import './BLImportLocPrestaModal.css';
 import { Button, Input, ProgressBar, InlineAlert, Tooltip } from '@/design-system';
 
@@ -380,7 +381,6 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
   // ─── Rendering helpers ───
   const getVal = (key) => editedFields[key] !== undefined ? editedFields[key] : (parsedData?.[key] || '');
 
-  const CONF_COLORS = { high: '#10b981', medium: '#f59e0b', low: '#ef4444' };
   const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
 
   const FIELD_DEFS = [

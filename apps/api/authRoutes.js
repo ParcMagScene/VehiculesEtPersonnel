@@ -6,6 +6,7 @@ import { getTransporter } from './emailService.js';
 import logger from './logger.js';
 import { authCache } from './cache.js';
 import { validatePassword } from './passwordPolicy.js';
+import { auditLog, AUDIT_ACTIONS } from './auditLog.js';
 
 export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev }) {
 
@@ -13,7 +14,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
 const cookieOptions = {
   httpOnly: true,
   sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production' && !process.env.ALLOW_HTTP,
+  secure: process.env.NODE_ENV === 'production',
   path: '/',
   maxAge: JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
 };
@@ -49,6 +50,7 @@ app.post('/api/auth/register', async (req, res) => {
     updateStmt.run('activated', email);
     
     logger.info('✅ Nouvel utilisateur enregistré');
+    auditLog({ actorId: result.lastInsertRowid, actorEmail: email, action: AUDIT_ACTIONS.REGISTER, targetType: 'user', targetId: result.lastInsertRowid, details: { name, isAdmin: isAdmin === 1 }, req });
     
     res.json({ id: result.lastInsertRowid, email, name, isAdmin: isAdmin === 1 });
   } catch (error) {
@@ -101,7 +103,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         }
       }
       if (isDev) {
-        logger.info(`DEV OTP pour ${user.email}: ${otp}`);
+        logger.info(`DEV OTP pour ${user.email}: ${otp.slice(0, 2)}****`);
       }
       logger.info('🔑 Mot de passe oublié — OTP généré');
     }
@@ -117,10 +119,10 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 });
 
 // Réinitialisation directe du mot de passe (self-service, sans ancien mot de passe)
-// [AUDIT FIX CRIT-1] Sécurisé : OTP 6 chiffres envoyé par email, token hashé en DB, expire en 15min
+// Mode simplifié : email + nom + newPassword → reset direct (pas d'OTP)
 app.post('/api/auth/self-reset-password', async (req, res) => {
   try {
-    const { email, name } = req.body;
+    const { email, name, newPassword } = req.body;
 
     if (!email || !name) {
       return res.status(400).json({ error: 'Email et nom requis' });
@@ -136,6 +138,28 @@ app.post('/api/auth/self-reset-password', async (req, res) => {
     const nameMatch = user.name.trim().toLowerCase() === name.trim().toLowerCase();
     if (!nameMatch) {
       return res.status(400).json({ error: 'Les informations saisies ne correspondent à aucun compte' });
+    }
+
+    // Mode direct : si newPassword fourni, réinitialiser immédiatement (pas d'OTP)
+    if (newPassword) {
+      const pwError = validatePassword(newPassword);
+      if (pwError) {
+        return res.status(400).json({ error: pwError });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      db.prepare('UPDATE users SET password_hash = ?, password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?')
+        .run(hashedPassword, user.id);
+
+      // Fermer les sessions existantes
+      db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
+
+      logger.info(`🔑 Mot de passe réinitialisé (direct) pour user ${user.id}`);
+
+      return res.json({
+        success: true,
+        message: 'Mot de passe réinitialisé avec succès. Vous pouvez vous connecter.'
+      });
     }
 
     // [AUDIT FIX CRIT-1] Générer un OTP 6 chiffres et l'envoyer par email
@@ -176,11 +200,11 @@ app.post('/api/auth/self-reset-password', async (req, res) => {
         logger.warn('Erreur envoi OTP email:', emailErr.message);
       }
     } else {
-      logger.warn(`🔑 OTP généré pour user ${user.id} mais email non configuré. OTP (dev): ${isDev ? otp : '[masqué]'}`);
+      logger.warn(`🔑 OTP généré pour user ${user.id} mais email non configuré. OTP (dev): ${isDev ? otp.slice(0, 2) + '****' : '[masqué]'}`);
     }
 
     if (isDev) {
-      logger.info(`DEV OTP pour ${user.email}: ${otp}`);
+      logger.info(`DEV OTP pour ${user.email}: ${otp.slice(0, 2)}****`);
     }
 
     res.json({
@@ -204,6 +228,7 @@ app.post('/api/auth/login', async (req, res) => {
     const user = stmt.get(email);
     
     if (!user) {
+      auditLog({ actorId: null, actorEmail: email, action: AUDIT_ACTIONS.LOGIN_FAILED, targetType: 'user', targetId: null, details: { reason: 'unknown_email' }, req });
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
     
@@ -220,6 +245,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
+      auditLog({ actorId: user.id, actorEmail: email, action: AUDIT_ACTIONS.LOGIN_FAILED, targetType: 'user', targetId: user.id, details: { reason: 'wrong_password' }, req });
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
     
@@ -236,9 +262,9 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
     
-    // PERMETTRE LES SESSIONS MULTIPLES
-    // Les utilisateurs peuvent maintenant se connecter sur plusieurs appareils simultanément
-    // Pas de vérification de session active, on crée simplement un nouveau token
+    // PERMETTRE LES SESSIONS MULTIPLES (max 10 par utilisateur)
+    // [AUDIT FIX C2] Limite de sessions pour éviter l'accumulation
+    const MAX_SESSIONS_PER_USER = 10;
     
     // Parser les permissions
     let perms = {};
@@ -259,9 +285,21 @@ app.post('/api/auth/login', async (req, res) => {
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
     
+    // Supprimer les sessions les plus anciennes si la limite est dépassée
+    const sessionCount = db.prepare('SELECT COUNT(*) as cnt FROM active_sessions WHERE user_id = ?').get(user.id).cnt;
+    if (sessionCount > MAX_SESSIONS_PER_USER) {
+      db.prepare(`DELETE FROM active_sessions WHERE id IN (
+        SELECT id FROM active_sessions WHERE user_id = ? ORDER BY last_activity ASC, expires_at ASC LIMIT ?
+      )`).run(user.id, sessionCount - MAX_SESSIONS_PER_USER);
+    }
+    auditLog({ actorId: user.id, actorEmail: user.email, action: AUDIT_ACTIONS.LOGIN_SUCCESS, targetType: 'session', targetId: user.id, req });
+    
     // [AUDIT Phase 3] Token envoyé en cookie httpOnly (plus sûr que localStorage)
     res.cookie('auth_token', token, cookieOptions);
-    res.json({ user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms } });
+    res.json({
+      user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: perms },
+      requires2FA: user.totp_enabled === 1
+    });
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Erreur serveur interne' });
@@ -314,11 +352,13 @@ app.post('/api/auth/force-login', async (req, res) => {
       VALUES (?, ?, ?)
     `);
     insertSessionStmt.run(user.id, tokenHash, expiresAt);
+    auditLog({ actorId: user.id, actorEmail: user.email, action: AUDIT_ACTIONS.LOGIN_SUCCESS, targetType: 'session', targetId: user.id, details: { forceLogin: true }, req });
     
     // [AUDIT Phase 3] Token envoyé en cookie httpOnly
     res.cookie('auth_token', token, cookieOptions);
     res.json({ 
       user: { id: user.id, email: user.email, name: user.name, isAdmin: user.is_admin === 1, avatar: user.avatar || null, permissions: forcePerms },
+      requires2FA: user.totp_enabled === 1,
       message: 'Toutes les autres sessions ont été fermées'
     });
   } catch (error) {
@@ -340,6 +380,7 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
     authCache.clear();
     
     logger.info(`🚪 Déconnexion: ${result.changes} session(s) fermée(s)`);
+    auditLog({ actorId: userId, actorEmail: req.user.email, action: AUDIT_ACTIONS.LOGOUT, targetType: 'session', targetId: userId, details: { sessionsClosed: result.changes }, req });
     
     // [AUDIT Phase 3] Effacer le cookie httpOnly
     res.clearCookie('auth_token', { path: '/' });

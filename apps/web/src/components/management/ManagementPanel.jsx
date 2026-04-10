@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react';
-import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, MapPin, Cloud, Gauge } from 'lucide-react';
+import { X, Plus, Edit2, Trash2, Truck, Calendar, ChevronUp, ChevronDown, RefreshCw, GripVertical, Upload, Download, Shield, Lock, Settings, Smartphone, UserCircle2, MapPin, Cloud, Gauge, Map } from 'lucide-react';
 import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../../utils/photoList';
 import { formatPhoneDisplay } from '../PhoneInput';
@@ -14,6 +14,7 @@ import LocationDialog from '../vehicles/LocationDialog';
 import ClientDialog from '../vehicles/ClientDialog';
 import ReservationRequestsPanel from '../vehicles/ReservationRequestsPanel';
 import VehicleMaintenanceModal from '../vehicles/VehicleMaintenanceModal';
+import LocationsMapPanel from '../locations/LocationsMapPanel';
 import api from '../../utils/api';
 const PersonnelPanel = React.lazy(() => import('../personnel/PersonnelPanel'));
 import './ManagementPanel.css';
@@ -73,6 +74,7 @@ const ManagementPanel = ({
   const [importStatus, setImportStatus] = useState('');
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [locationToEdit, setLocationToEdit] = useState(null);
+  const [showMapPanel, setShowMapPanel] = useState(false);
   const [showClientDialog, setShowClientDialog] = useState(false);
   const [clientToEdit, setClientToEdit] = useState(null);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
@@ -739,22 +741,29 @@ const ManagementPanel = ({
             <div className="add-section">
               <div className="add-section-header">
                 <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : 'un lieu'}</h3>
-                <Button variant="ghost" 
-                  className="toggle-add-form-btn"
-                  onClick={() => {
-                    if (activeTab === 'locations') {
-                      handleAddLocation();
-                    } else if (activeTab === 'clients') {
-                      setClientToEdit(null);
-                      setShowClientDialog(true);
-                    } else {
-                      setShowAddForm(!showAddForm);
-                    }
-                  }}
-                  title={activeTab === 'locations' ? 'Ajouter un lieu' : activeTab === 'clients' ? 'Ajouter un client' : (showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire')}
-                >
-                  {(activeTab === 'locations' || activeTab === 'clients') ? <Plus size={20} /> : (showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
-                </Button>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  {activeTab === 'locations' && (
+                    <Button variant="ghost" onClick={() => setShowMapPanel(true)} title="Voir sur la carte">
+                      <Map size={20} />
+                    </Button>
+                  )}
+                  <Button variant="ghost" 
+                    className="toggle-add-form-btn"
+                    onClick={() => {
+                      if (activeTab === 'locations') {
+                        handleAddLocation();
+                      } else if (activeTab === 'clients') {
+                        setClientToEdit(null);
+                        setShowClientDialog(true);
+                      } else {
+                        setShowAddForm(!showAddForm);
+                      }
+                    }}
+                    title={activeTab === 'locations' ? 'Ajouter un lieu' : activeTab === 'clients' ? 'Ajouter un client' : (showAddForm ? 'Masquer le formulaire' : 'Afficher le formulaire')}
+                  >
+                    {(activeTab === 'locations' || activeTab === 'clients') ? <Plus size={20} /> : (showAddForm ? <ChevronUp size={20} /> : <ChevronDown size={20} />)}
+                  </Button>
+                </div>
               </div>
             {showAddForm && activeTab !== 'locations' && activeTab !== 'clients' && (
               <div className="add-form">
@@ -1544,6 +1553,19 @@ const ManagementPanel = ({
           onClose={() => {
             setShowMaintenanceModal(false);
             setVehicleToMaintain(null);
+          }}
+        />
+      )}
+
+      {/* Panneau cartographie des lieux */}
+      {showMapPanel && (
+        <LocationsMapPanel
+          locations={getCurrentList()}
+          onClose={() => setShowMapPanel(false)}
+          onEditLocation={(loc) => {
+            setShowMapPanel(false);
+            setLocationToEdit(loc);
+            setShowLocationDialog(true);
           }}
         />
       )}

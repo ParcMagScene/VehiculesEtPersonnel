@@ -57,41 +57,44 @@ export function registerAdminMethods(ApiClient) {
       return this.request('/config/google/maps-api-key', { method: 'POST', body: JSON.stringify({ value }) });
     },
 
-    // Google Calendar Proxy
-    async storeGoogleToken(accessToken, expiresAt) {
-      return this.request('/google-calendar/token', { method: 'POST', body: JSON.stringify({ accessToken, expiresAt }) });
+    // Google OAuth2 v2 (Authorization Code Flow — backend-managed tokens)
+    async getGoogleOAuthConfigured() {
+      return this.request('/google/configured');
     },
-    async getGoogleTokenStatus() {
-      return this.request('/google-calendar/token-status');
+    async getGoogleOAuthStatus() {
+      return this.request('/google/status');
     },
-    async deleteGoogleToken() {
-      return this.request('/google-calendar/token', { method: 'DELETE' });
+    async getGoogleOAuthUrl() {
+      return this.request('/google/auth');
     },
-    async getGoogleCalendars() {
-      return this.request('/google-calendar/calendars');
+    async disconnectGoogle() {
+      return this.request('/google/disconnect', { method: 'DELETE' });
     },
-    async addGoogleCalendar(body) {
-      return this.request('/google-calendar/calendars', { method: 'POST', body: JSON.stringify(body) });
+    async getGoogleCalendarsV2() {
+      return this.request('/google/calendars');
     },
-    async getGoogleEvents(params = {}) {
+    async addGoogleCalendarV2(body) {
+      return this.request('/google/calendars', { method: 'POST', body: JSON.stringify(body) });
+    },
+    async getGoogleEventsV2(params = {}) {
       const qs = new URLSearchParams(params).toString();
-      return this.request(`/google-calendar/events${qs ? '?' + qs : ''}`);
+      return this.request(`/google/events${qs ? '?' + qs : ''}`);
     },
-    async getGoogleEvent(eventId, calendarId) {
+    async getGoogleEventV2(eventId, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`);
+      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`);
     },
-    async createGoogleEvent(eventData, calendarId) {
+    async createGoogleEventV2(eventData, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google-calendar/events${qs}`, { method: 'POST', body: JSON.stringify(eventData) });
+      return this.request(`/google/events${qs}`, { method: 'POST', body: JSON.stringify(eventData) });
     },
-    async updateGoogleEvent(eventId, eventData, calendarId) {
+    async updateGoogleEventV2(eventId, eventData, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`, { method: 'PATCH', body: JSON.stringify(eventData) });
+      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, { method: 'PATCH', body: JSON.stringify(eventData) });
     },
-    async deleteGoogleEvent(eventId, calendarId) {
+    async deleteGoogleEventV2(eventId, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`, { method: 'DELETE' });
+      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, { method: 'DELETE' });
     },
 
     // Demandes d'accès

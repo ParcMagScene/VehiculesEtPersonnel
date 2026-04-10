@@ -42,3 +42,11 @@ export const VALIDATION = {
   MAX_NAME_LENGTH: 100,
   MAX_EMAIL_LENGTH: 254,
 };
+
+// Statuts équipement (couleurs et labels pour UI mobile)
+export const EQUIPMENT_STATUS = {
+  available: { label: 'Disponible', color: '#10b981', icon: '✅' },
+  in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
+  maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
+  retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
+};

@@ -1334,14 +1334,14 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
                   <div className="eq-management-section">
                     <h3><Upload size={18} /> Import CSV Inventaire</h3>
                     <p>Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent). Les familles, catégories et types seront automatiquement créés.</p>
-                    <Button variant="primary" onClick={() => { onCloseManagement(); setShowImportModal(true); }} style={{ marginTop: 12 }}>
+                    <Button variant="primary" className="eq-mgmt-import-btn" onClick={() => { onCloseManagement(); setShowImportModal(true); }}>
                       <Upload size={16} /> Importer un fichier CSV
                     </Button>
                   </div>
                   <div className="eq-management-section">
                     <h3><Wrench size={18} /> Import Interventions SAV</h3>
                     <p>Importez les interventions SAV depuis un fichier CSV Locmat. Les interventions seront automatiquement liées aux équipements via leur numéro de série.</p>
-                    <Button variant="primary" onClick={() => { onCloseManagement(); setShowSavImportModal(true); }} style={{ marginTop: 12 }}>
+                    <Button variant="primary" className="eq-mgmt-import-btn" onClick={() => { onCloseManagement(); setShowSavImportModal(true); }}>
                       <Upload size={16} /> Importer les interventions
                     </Button>
                   </div>
@@ -1562,7 +1562,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
           type="file"
           accept="image/*"
           multiple
-          style={{ display: 'none' }}
+          className="eq-media-file-input"
           onChange={(e) => handleUpload(e.target.files)}
         />
       </div>
@@ -1597,16 +1597,16 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                   </div>
                   <div className="eq-media-card-info">
                     {renamingPhoto === p ? (
-                      <div style={{ display: 'flex', gap: 3, width: '100%' }}>
+                      <div className="eq-media-rename-row">
                         <Input
                           type="text"
                           value={renameValue}
                           onChange={e => setRenameValue(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setRenamingPhoto(null); }}
-                          style={{ flex: 1, fontSize: 11, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--theme-border-medium)', minWidth: 0 }}
+                          className="eq-media-rename-input"
                           autoFocus
                         />
-                        <Button variant="ghost" onClick={handleRename} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--theme-primary)', color: 'var(--theme-text-inverse)', border: 'none', cursor: 'pointer' }}>OK</Button>
+                        <Button variant="ghost" onClick={handleRename} className="eq-media-rename-ok">OK</Button>
                       </div>
                     ) : (
                       <span className="eq-media-card-name" title={p}>{p.length > 20 ? p.slice(0, 17) + '...' : p}</span>
@@ -1616,40 +1616,38 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                         <Link2 size={10} /> {cleanName(linkedEq.name).slice(0, 18)}
                       </span>
                     ) : linkingPhoto === p ? (
-                      <div className="eq-media-link-picker" style={{ width: '100%' }}>
+                      <div className="eq-media-link-picker">
                         <Input
                           type="text"
                           placeholder="Rechercher équipement..."
                           value={linkSearch}
                           onChange={e => setLinkSearch(e.target.value)}
-                          style={{ width: '100%', fontSize: 10, padding: '2px 4px', borderRadius: 4, border: '1px solid var(--theme-border-medium)', marginBottom: 3 }}
+                          className="eq-media-link-search"
                           autoFocus
                         />
-                        <div style={{ maxHeight: 100, overflowY: 'auto', fontSize: 10 }}>
+                        <div className="eq-media-link-results">
                           {linkFilteredEquipment.map(eq => (
                             <div
                               key={eq.id}
                               onClick={() => handleManualLink(p, eq)}
-                              style={{ padding: '3px 4px', cursor: 'pointer', borderRadius: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                              onMouseEnter={e => e.target.style.background = 'var(--theme-bg-tertiary)'}
-                              onMouseLeave={e => e.target.style.background = 'transparent'}
+                              className="eq-media-link-item"
                             >
                               {eq.reference ? `${eq.reference} — ` : ''}{cleanName(eq.name)}
                             </div>
                           ))}
-                          {linkFilteredEquipment.length === 0 && <div style={{ padding: 4, opacity: 0.5 }}>Aucun résultat</div>}
+                          {linkFilteredEquipment.length === 0 && <div className="eq-media-link-empty">Aucun résultat</div>}
                         </div>
-                        <Button variant="ghost" onClick={() => { setLinkingPhoto(null); setLinkSearch(''); }} style={{ fontSize: 9, padding: '1px 6px', marginTop: 2, borderRadius: 3, background: 'var(--theme-bg-tertiary)', border: '1px solid var(--theme-border-medium)', cursor: 'pointer' }}>Annuler</Button>
+                        <Button variant="ghost" onClick={() => { setLinkingPhoto(null); setLinkSearch(''); }} className="eq-media-link-cancel">Annuler</Button>
                       </div>
                     ) : (
  <Tooltip content="Cliquer pour associer manuellement" position="bottom">
-   <span className="eq-media-card-nolink" role="button" tabIndex={0} onClick={() => setLinkingPhoto(p)} style={{ cursor: 'pointer' }}>
+   <span className="eq-media-card-nolink" role="button" tabIndex={0} onClick={() => setLinkingPhoto(p)}>
                         Non associé
                       </span>
  </Tooltip>
                     )}
                   </div>
-                  <div className="eq-media-card-actions" style={{ display: 'flex', gap: 2 }}>
+                  <div className="eq-media-card-actions">
                     <Tooltip content="Renommer">
                       <Button variant="ghost" className="eq-media-card-action-btn" onClick={() => { setRenamingPhoto(p); setRenameValue(p.replace(/\.[^.]+$/, '')); }}>
                         <Edit2 size={12} />
@@ -1741,7 +1739,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
       <Table className="eq-table">
         <thead>
           <tr>
-            <th style={{ width: 50 }}></th>
+            <th className="eq-table-th-check"></th>
             <th>Nom</th>
             <th>UID</th>
             <th>Référence</th>
@@ -2032,7 +2030,7 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
           <>
             {activeTickets.length > 0 && (
               <div className="eq-detail-section">
-                <h3 style={{ color: '#f59e0b' }}><Wrench size={16} /> Interventions en cours ({activeTickets.length})</h3>
+                <h3 className="eq-interventions-title"><Wrench size={16} /> Interventions en cours ({activeTickets.length})</h3>
                 <div className="eq-detail-list">{activeTickets.map(renderTicket)}</div>
               </div>
             )}
@@ -2044,7 +2042,7 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
                 <div className="eq-detail-list">
                   {(compact ? historyTickets.slice(0, 5) : historyTickets).map(renderTicket)}
                   {compact && historyTickets.length > 5 && (
-                    <p className="eq-detail-empty" style={{ fontSize: 11 }}>+ {historyTickets.length - 5} autre(s)… Double-cliquez pour tout voir</p>
+                    <p className="eq-detail-empty eq-detail-empty-more">+ {historyTickets.length - 5} autre(s)… Double-cliquez pour tout voir</p>
                   )}
                 </div>
               )}
@@ -2167,15 +2165,15 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, p
   return (
     <div className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
       <div className="eq-dialog">
-        <div className="eq-dialog-header" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div className="eq-dialog-title-row" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <div className="eq-dialog-header">
+          <div className="eq-dialog-title-row">
             <span className="eq-dialog-name">{eq.reference || cleanName(eq.name)}</span>
             <span className="eq-dialog-cat" style={{ background: (eq.categoryColor || eq.category_color || '#6366f1') }}>
               {eq.categoryIcon || eq.category_icon || '📦'} {eq.categoryName || eq.category_name || ''}
             </span>
           </div>
           <Tooltip content="Fermer">
-            <Button variant="ghost" className="eq-dialog-close" onClick={handleClose} style={{ flexShrink: 0, marginLeft: '12px' }}>
+            <Button variant="ghost" className="eq-dialog-close" onClick={handleClose}>
               <X size={20} />
             </Button>
           </Tooltip>
@@ -2269,11 +2267,11 @@ const SavTicketsList = ({ tickets, _equipment, _persons, selectedId, onSelect, o
             const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
             const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
             return (
-              <tr key={t.id} className={selectedId === t.id ? 'selected' : ''} onClick={() => onSelect && onSelect(t)} onDoubleClick={() => onDoubleClick && onDoubleClick(t)} style={{ cursor: 'pointer' }}>
+              <tr key={t.id} className={`eq-sav-row-clickable${selectedId === t.id ? ' selected' : ''}`} onClick={() => onSelect && onSelect(t)} onDoubleClick={() => onDoubleClick && onDoubleClick(t)}>
                 <td><span className="eq-pri-dot" style={{ background: pri.color }} title={pri.label} /></td>
                 <td className="eq-ticket-title-cell">{t.title}</td>
                 <td>
-                  <span className="eq-ticket-eq">{t.categoryIcon} {t.equipmentName || t.importName || <em style={{ color: 'var(--theme-text-muted)' }}>Non lié</em>}</span>
+                  <span className="eq-ticket-eq">{t.categoryIcon} {t.equipmentName || t.importName || <em className="eq-ticket-unlinked">Non lié</em>}</span>
                 </td>
                 <td className="sav-col-ref">{t.equipmentReference || t.importCode || '—'}</td>
                 <td className="sav-col-uid"><code>{t.equipmentUid || '—'}</code></td>
@@ -2600,7 +2598,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                       title={<>
                         <MapPin size={18} /> Choisir la localisation sur le plan
                         {depotsList.length > 1 && (
-                          <div className="eq-form-map-tabs" style={{ position: 'static', margin: '0 auto 0 16px' }}>
+                          <div className="eq-form-map-tabs">
                             {depotsList.map((d, i) => (
                               <Button variant="ghost" key={d.id || i} type="button" className={`eq-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
                                 {d.name || `Dépôt ${d.id || i + 1}`}
@@ -2616,7 +2614,7 @@ const EquipmentFormModal = ({ equipment: eq, categories, brandsList = [], depotZ
                           const z = currentDepotData.zones?.find(z => z.id === mapSelection);
                           return <span className="eq-depot-map-modal-zone-label" style={{ borderLeftColor: z?.color || 'var(--theme-primary)' }}>{z?.label || mapSelection}</span>;
                         })()}
-                        <div style={{ flex: 1 }} />
+                        <div className="eq-flex-spacer" />
                         <Button variant="ghost" onClick={() => { setMapSelection(''); setShowMap(false); }}>Annuler</Button>
                         <Button variant="primary" disabled={!mapSelection} onClick={() => {
                           const zoneObj = currentDepotData.zones?.find(z => z.id === mapSelection);
@@ -2912,30 +2910,30 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
         </>
       }
     >
-        <form id="mobile-sav-form" onSubmit={handleSubmit} style={{ overflowY: 'auto', flex: 1 }}>
+        <form id="mobile-sav-form" onSubmit={handleSubmit}>
           {/* Sélection équipement */}
-          <div className="eq-form-field eq-form-full" style={{ marginBottom: '1rem', position: 'relative', zIndex: 100 }}>
+          <div className="eq-form-field eq-form-full eq-sav-equip-field">
             <label>Équipement *</label>
             {selectedEquipment ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem', background: 'var(--theme-bg-secondary)', borderRadius: 8, border: '1px solid var(--theme-border)' }}>
+              <div className="eq-sav-selected-card">
                 <span>{selectedEquipment.category_icon || selectedEquipment.categoryIcon || '📦'}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{selectedEquipment.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
+                <div className="eq-sav-selected-info">
+                  <div className="eq-sav-selected-name">{selectedEquipment.name}</div>
+                  <div className="eq-sav-selected-meta">
                     {selectedEquipment.uid}{selectedEquipment.reference ? ` — ${selectedEquipment.reference}` : ''}
                   </div>
                   {selectedEquipment.serialNumber && (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--theme-accent, #2563eb)', fontWeight: 500 }}>S/N {selectedEquipment.serialNumber}</div>
+                    <div className="eq-sav-selected-serial">S/N {selectedEquipment.serialNumber}</div>
                   )}
                 </div>
-                <Button variant="ghost" type="button" onClick={() => setSelectedEquipment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--theme-text-muted)', padding: '4px' }}>
+                <Button variant="ghost" type="button" onClick={() => setSelectedEquipment(null)} className="eq-sav-clear-btn">
                   <X size={16} />
                 </Button>
               </div>
             ) : (
-              <div style={{ position: 'relative', zIndex: 100 }}>
-                <div style={{ position: 'relative' }}>
-                  <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--theme-text-muted)', pointerEvents: 'none' }} />
+              <div className="eq-sav-search-wrap">
+                <div className="eq-sav-search-inner">
+                  <Search size={16} className="eq-sav-search-icon" />
                   <Input
                     ref={searchRef}
                     type="text"
@@ -2943,28 +2941,28 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
                     onChange={(e) => { setSearch(e.target.value); setShowResults(true); }}
                     onFocus={() => search.length >= 2 && setShowResults(true)}
                     placeholder="Rechercher un équipement (nom, UID, réf…)"
-                    style={{ paddingLeft: 32, width: '100%' }}
+                    className="eq-sav-search-input"
                     autoFocus
                   />
                 </div>
                 {showResults && filtered.length > 0 && (
                   <div
+                    className="eq-sav-dropdown"
                     onTouchMove={(e) => {
                       const el = e.currentTarget;
                       if (el.scrollHeight > el.clientHeight) e.stopPropagation();
                     }}
-                    style={{ position: 'absolute', left: 0, right: 0, zIndex: 200, marginTop: -1, background: 'var(--theme-bg-card, #fff)', border: '1px solid var(--theme-border)', borderTop: 'none', borderRadius: '0 0 10px 10px', maxHeight: 280, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}
                   >
                     {filtered.map(eq => (
-                      <div key={eq.id} role="button" tabIndex={0} onClick={() => handleSelect(eq)} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.65rem 0.75rem', width: '100%', textAlign: 'left', background: 'var(--theme-bg-card, #fff)', border: 'none', borderBottom: '1px solid var(--theme-border)', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--theme-text-primary)' }}>
-                        <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{eq.category_icon || eq.categoryIcon || '📦'}</span>
-                        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                          <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{eq.name}</div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div key={eq.id} role="button" tabIndex={0} onClick={() => handleSelect(eq)} className="eq-sav-dropdown-item">
+                        <span className="eq-sav-dropdown-icon">{eq.category_icon || eq.categoryIcon || '📦'}</span>
+                        <div className="eq-sav-dropdown-info">
+                          <div className="eq-sav-dropdown-name">{eq.name}</div>
+                          <div className="eq-sav-dropdown-ref">
                             {eq.uid}{eq.reference ? ` — ${eq.reference}` : ''}
                           </div>
                           {eq.serialNumber ? (
-                            <div style={{ fontSize: '0.7rem', color: 'var(--theme-accent, #2563eb)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div className="eq-sav-dropdown-serial">
                               S/N {eq.serialNumber}
                             </div>
                           ) : null}
@@ -2974,7 +2972,7 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
                   </div>
                 )}
                 {showResults && search.length >= 2 && filtered.length === 0 && (
-                  <div style={{ position: 'relative', zIndex: 200, marginTop: -1, background: 'var(--theme-bg-card, #fff)', border: '1px solid var(--theme-border)', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '0.75rem', textAlign: 'center', color: 'var(--theme-text-muted)', fontSize: '0.85rem', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
+                  <div className="eq-sav-dropdown-empty">
                     Aucun résultat
                   </div>
                 )}
@@ -3051,7 +3049,7 @@ const SavSlidePanel = ({ ticket, equipment, _persons, onClose, onEdit, onDelete,
     <div className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
       <div className="eq-slide-header">
         <div className="eq-slide-title-row">
-          <span className="eq-slide-name" style={{ fontSize: 15 }}>🔧 {t.title}</span>
+          <span className="eq-slide-name">🔧 {t.title}</span>
           <span className="eq-slide-status" style={{ background: tst.color }}>{tst.label}</span>
         </div>
         <Tooltip content="Fermer">
@@ -3073,11 +3071,11 @@ const SavSlidePanel = ({ ticket, equipment, _persons, onClose, onEdit, onDelete,
         {t.resolution && <div className="eq-detail-notes"><h4>✅ Résolution</h4><p>{t.resolution}</p></div>}
       </div>
       <div className="eq-slide-footer">
-        <Button variant="secondary" onClick={() => onEdit(t)} style={{ flex: 1 }}><Edit2 size={14} /> Modifier</Button>
-        <Button variant="ghost" className="eq-slide-open-btn" onClick={() => onOpenDialog(t)} style={{ flex: 1 }}>
+        <Button variant="secondary" onClick={() => onEdit(t)} className="eq-slide-btn-flex"><Edit2 size={14} /> Modifier</Button>
+        <Button variant="ghost" className="eq-slide-open-btn eq-slide-btn-flex" onClick={() => onOpenDialog(t)}>
           <ExternalLink size={14} /> Fiche complète
         </Button>
-        {onDelete && <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(t.id)} style={{ padding: '6px 10px' }}><Trash2 size={14} /></Button></Tooltip>}
+        {onDelete && <Tooltip content="Supprimer"><Button variant="danger" size="sm" iconOnly onClick={() => onDelete(t.id)} className="eq-slide-btn-compact"><Trash2 size={14} /></Button></Tooltip>}
       </div>
     </div>
   );
@@ -3113,7 +3111,7 @@ const SavDetailDialog = ({ ticket, equipment, persons, isAdmin, onClose, onEdit,
 
   return (
     <div className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
-      <div className="eq-dialog" style={{ maxWidth: 600 }}>
+      <div className="eq-dialog eq-dialog-sav">
         <div className="eq-dialog-header">
           <div className="eq-dialog-title-row">
             <span className="eq-dialog-cat" style={{ background: tst.color }}>

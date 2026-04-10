@@ -1948,6 +1948,194 @@
   color: var(--btn-danger-color);
 }
 
+/* ─── Sonos Controls ─── */
+.dtv-sonos-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--theme-border);
+}
+.dtv-sonos-transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.dtv-sonos-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--theme-border);
+  border-radius: 50%;
+  background: var(--theme-bg-secondary);
+  color: var(--theme-text-dark);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.dtv-sonos-btn:hover:not(:disabled) {
+  background: var(--theme-bg-hover);
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+}
+.dtv-sonos-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.dtv-sonos-btn-main {
+  width: 44px;
+  height: 44px;
+  background: var(--theme-primary);
+  color: #fff;
+  border-color: var(--theme-primary);
+}
+.dtv-sonos-btn-main:hover:not(:disabled) {
+  background: var(--theme-primary-hover, var(--theme-primary));
+  color: #fff;
+}
+.dtv-sonos-btn-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+.dtv-sonos-muted {
+  color: var(--btn-danger-color);
+  border-color: var(--btn-danger-color);
+}
+.dtv-sonos-volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dtv-sonos-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--theme-border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.dtv-sonos-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--theme-primary);
+  border: none;
+  cursor: pointer;
+}
+.dtv-sonos-vol-label {
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+  min-width: 32px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Sonos Zones ─── */
+.dtv-sonos-zones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.dtv-sonos-zone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md-lg);
+  background: var(--theme-bg-secondary);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--theme-text-dark);
+  transition: border-color 0.15s, background 0.15s;
+}
+.dtv-sonos-zone:hover {
+  border-color: var(--theme-primary);
+  background: var(--theme-bg-hover);
+}
+.dtv-sonos-zone-active {
+  border-color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+}
+.dtv-sonos-zone-name {
+  font-weight: 600;
+}
+.dtv-sonos-zone-members {
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+}
+
+/* ─── Sonos Favorites ─── */
+.dtv-sonos-favorites {
+  display: flex;
+  flex-direction: column;
+}
+.dtv-sonos-fav-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--theme-text-dark);
+}
+.dtv-sonos-fav-toggle:hover {
+  color: var(--theme-primary);
+}
+.dtv-sonos-fav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.dtv-sonos-fav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  background: var(--theme-bg-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.dtv-sonos-fav-item:hover {
+  border-color: var(--theme-primary);
+  background: var(--theme-bg-hover);
+}
+.dtv-sonos-fav-art {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.dtv-sonos-fav-title {
+  font-size: var(--font-sm);
+  color: var(--theme-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dtv-sonos-fav-empty {
+  font-size: var(--font-sm);
+  color: var(--theme-text-muted);
+  padding: 8px 0;
+}
+
 /* ─── Responsive DTV ─── */
 @media (max-width: 768px) {
   .dtv-form-grid {
@@ -1962,6 +2150,12 @@
   .dtv-sonos-playing {
     flex-direction: column;
     text-align: center;
+  }
+  .dtv-sonos-zones {
+    flex-direction: column;
+  }
+  .dtv-sonos-transport {
+    gap: 6px;
   }
   .dtv-mosaic-grid {
     grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));

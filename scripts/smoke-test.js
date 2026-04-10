@@ -21,11 +21,20 @@ async function run() {
   await testPublicEndpoint('/debug/route-test');
   await testPublicEndpoint('/debug/routes');
 
+  // Sonos endpoints (lecture publique via TV token optionnel)
+  await testPublicEndpoint('/sonos/now-playing');
+  await testPublicEndpoint('/display/sonos-now-playing');    // compat
+  await testPublicEndpoint('/sonos-now-playing');             // legacy compat
+
   if (email && password) {
     console.log('\n🔐 Test auth (login)');
     const token = await testLogin(email, password);
     if (token) {
       await testAuthEndpoint('/debug/session', token);
+      // Sonos auth endpoints
+      await testAuthEndpoint('/sonos/config', token);
+      await testAuthEndpoint('/sonos/zones', token);
+      await testAuthEndpoint('/sonos/favorites', token);
     }
   } else {
     console.log('\nℹ️  Aucune paire SMOKE_EMAIL/SMOKE_PASSWORD fournie, tests login désactivés');

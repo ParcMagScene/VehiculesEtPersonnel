@@ -1,26 +1,193 @@
 // ═══════════════════════════════════════════════════════════════
-// SonosTab — Configuration et monitoring Sonos
-// Affichage du titre en cours, et configuration IP
+// SonosTab — Configuration, contrôles et monitoring Sonos
+// Zones, lecture en cours, volume, favoris
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useCallback, memo, useRef } from 'react';
-import { Music, Wifi, RefreshCw, Disc } from 'lucide-react';
+import {
+  Music, Wifi, RefreshCw, Disc, Play, Pause, SkipBack, SkipForward,
+  Volume2, VolumeX, Heart, Layers, ChevronDown, ChevronUp,
+} from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { Button, Input, Checkbox, InlineAlert, SectionHeader } from '@/design-system';
 
-function SonosTab({ _currentUser, refreshKey }) {
+// ── Helpers ──
+const formatTime = (seconds) => {
+  if (!seconds) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+// ── Sous-composant : Contrôles de lecture ──
+function PlaybackControls({ zone, state, volume, muted, onRefresh, isAdmin }) {
+  const toast = useToast();
+  const [vol, setVol] = useState(volume ?? 50);
+  const [isMuted, setIsMuted] = useState(muted ?? false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { if (volume != null) setVol(volume); }, [volume]);
+  useEffect(() => { if (muted != null) setIsMuted(muted); }, [muted]);
+
+  const exec = useCallback(async (fn, label) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fn();
+      setTimeout(onRefresh, 400);
+    } catch {
+      toast.error(`Erreur ${label}`);
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, onRefresh, toast]);
+
+  if (!isAdmin) return null;
+
+  return (
+    <div className="dtv-sonos-controls">
+      <div className="dtv-sonos-transport">
+        <button className="dtv-sonos-btn" onClick={() => exec(() => api.sonosPrevious(zone), 'previous')} disabled={busy} title="Précédent">
+          <SkipBack size={16} />
+        </button>
+        {state === 'playing' ? (
+          <button className="dtv-sonos-btn dtv-sonos-btn-main" onClick={() => exec(() => api.sonosPause(zone), 'pause')} disabled={busy} title="Pause">
+            <Pause size={20} />
+          </button>
+        ) : (
+          <button className="dtv-sonos-btn dtv-sonos-btn-main" onClick={() => exec(() => api.sonosPlay(zone), 'play')} disabled={busy} title="Lecture">
+            <Play size={20} />
+          </button>
+        )}
+        <button className="dtv-sonos-btn" onClick={() => exec(() => api.sonosNext(zone), 'next')} disabled={busy} title="Suivant">
+          <SkipForward size={16} />
+        </button>
+      </div>
+      <div className="dtv-sonos-volume">
+        <button
+          className={`dtv-sonos-btn dtv-sonos-btn-sm${isMuted ? ' dtv-sonos-muted' : ''}`}
+          onClick={() => {
+            const fn = isMuted ? () => api.sonosUnmute(zone) : () => api.sonosMute(zone);
+            setIsMuted(!isMuted);
+            exec(fn, 'mute');
+          }}
+          disabled={busy}
+          title={isMuted ? 'Réactiver le son' : 'Couper le son'}
+        >
+          {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+        </button>
+        <input
+          type="range" min={0} max={100} value={vol}
+          className="dtv-sonos-slider"
+          onChange={e => setVol(Number(e.target.value))}
+          onMouseUp={() => exec(() => api.sonosSetVolume(zone, vol), 'volume')}
+          onTouchEnd={() => exec(() => api.sonosSetVolume(zone, vol), 'volume')}
+        />
+        <span className="dtv-sonos-vol-label">{vol}%</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Sous-composant : Carte zone ──
+function ZoneCard({ zone, isActive, onClick }) {
+  return (
+    <button
+      className={`dtv-sonos-zone${isActive ? ' dtv-sonos-zone-active' : ''}`}
+      onClick={() => onClick(zone.coordinator)}
+    >
+      <Layers size={14} />
+      <span className="dtv-sonos-zone-name">{zone.name}</span>
+      <span className="dtv-sonos-zone-members">{zone.members?.length || 1} enceinte{(zone.members?.length || 1) > 1 ? 's' : ''}</span>
+    </button>
+  );
+}
+
+// ── Sous-composant : Favoris ──
+function FavoritesList({ zone, isAdmin }) {
+  const toast = useToast();
+  const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const loadFavorites = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.getSonosFavorites();
+      setFavorites(data.favorites || []);
+    } catch {
+      toast.error('Erreur chargement favoris');
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => { if (open && favorites.length === 0) loadFavorites(); }, [open, favorites.length, loadFavorites]);
+
+  const playFavorite = useCallback(async (fav) => {
+    try {
+      await api.sonosPlayFavorite(zone, fav.uri, fav.title);
+      toast.success(`Lecture : ${fav.title}`);
+    } catch {
+      toast.error('Erreur lecture favori');
+    }
+  }, [zone, toast]);
+
+  if (!isAdmin) return null;
+
+  return (
+    <div className="dtv-sonos-favorites">
+      <button className="dtv-sonos-fav-toggle" onClick={() => setOpen(o => !o)}>
+        <Heart size={14} />
+        <span>Favoris Sonos</span>
+        {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+      </button>
+      {open && (
+        <div className="dtv-sonos-fav-list">
+          {loading ? (
+            <span className="dtv-sonos-fav-empty">Chargement…</span>
+          ) : favorites.length === 0 ? (
+            <span className="dtv-sonos-fav-empty">Aucun favori Sonos configuré</span>
+          ) : (
+            favorites.map((fav, i) => (
+              <button key={i} className="dtv-sonos-fav-item" onClick={() => playFavorite(fav)} title={`Lire : ${fav.title}`}>
+                {fav.albumArtURI ? (
+                  <img src={fav.albumArtURI} alt="" className="dtv-sonos-fav-art" loading="lazy" />
+                ) : (
+                  <Music size={14} />
+                )}
+                <span className="dtv-sonos-fav-title">{fav.title}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// Composant principal
+// ══════════════════════════════════════════════════════════════
+function SonosTab({ currentUser, _currentUser, refreshKey }) {
   const toast = useToast();
   const [sonosIP, setSonosIP] = useState('');
   const [nowPlaying, setNowPlaying] = useState(null);
   const [loading, setLoading] = useState(true);
   const [polling, setPolling] = useState(false);
+  const [zones, setZones] = useState([]);
+  const [activeZone, setActiveZone] = useState(null);
+  const [zoneState, setZoneState] = useState(null);
+  const [zonesOpen, setZonesOpen] = useState(false);
   const intervalRef = useRef(null);
+
+  const isAdmin = currentUser?.role === 'admin' || _currentUser?.role === 'admin';
 
   const loadConfig = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await api.getDisplaySonosConfig();
+      const data = await api.getSonosConfig();
       setSonosIP(data.sonosIP || '');
     } catch {
       toast.error('Erreur chargement config Sonos');
@@ -31,41 +198,74 @@ function SonosTab({ _currentUser, refreshKey }) {
 
   const loadNowPlaying = useCallback(async () => {
     try {
-      const data = await api.getDisplaySonosNowPlaying();
+      const data = await api.getSonosNowPlaying();
       setNowPlaying(data);
     } catch {
       setNowPlaying({ playing: false, error: 'Erreur de connexion' });
     }
   }, []);
 
+  const loadZones = useCallback(async () => {
+    try {
+      const data = await api.getSonosZones();
+      setZones(data.zones || []);
+    } catch { /* zones indisponibles */ }
+  }, []);
+
+  const loadZoneState = useCallback(async (zoneIP) => {
+    if (!zoneIP) return;
+    try {
+      const data = await api.getSonosState(zoneIP);
+      setZoneState(data);
+    } catch {
+      setZoneState(null);
+    }
+  }, []);
+
   useEffect(() => { loadConfig(); }, [loadConfig, refreshKey]);
+
+  // Quand l'IP est configurée, charger les zones
+  useEffect(() => {
+    if (sonosIP) loadZones();
+  }, [sonosIP, loadZones]);
 
   // Polling toutes les 5s quand activé
   useEffect(() => {
     if (polling) {
       loadNowPlaying();
-      intervalRef.current = setInterval(loadNowPlaying, 5000);
+      if (activeZone) loadZoneState(activeZone);
+      intervalRef.current = setInterval(() => {
+        loadNowPlaying();
+        if (activeZone) loadZoneState(activeZone);
+      }, 5000);
     }
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [polling, loadNowPlaying]);
+  }, [polling, loadNowPlaying, activeZone, loadZoneState]);
 
   const handleSave = useCallback(async () => {
     try {
-      await api.saveDisplaySonosConfig(sonosIP);
+      await api.saveSonosConfig(sonosIP);
       toast.success('Configuration Sonos enregistrée');
+      if (sonosIP) loadZones();
     } catch {
       toast.error('Erreur enregistrement');
     }
-  }, [sonosIP, toast]);
+  }, [sonosIP, toast, loadZones]);
 
-  const formatTime = (seconds) => {
-    if (!seconds) return '0:00';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
+  const handleZoneSelect = useCallback((zoneIP) => {
+    setActiveZone(zoneIP);
+    loadZoneState(zoneIP);
+  }, [loadZoneState]);
+
+  const handleRefresh = useCallback(() => {
+    loadNowPlaying();
+    if (activeZone) loadZoneState(activeZone);
+  }, [loadNowPlaying, activeZone, loadZoneState]);
 
   if (loading) return <div className="display-loading">Chargement config Sonos…</div>;
+
+  const displayState = activeZone && zoneState ? zoneState : nowPlaying;
+  const controlZone = activeZone || sonosIP;
 
   return (
     <div className="dtv-sonos">
@@ -73,12 +273,10 @@ function SonosTab({ _currentUser, refreshKey }) {
       <div className="dtv-section">
         <SectionHeader className="dtv-section-title" icon={<Wifi size={16} />} title="Configuration Sonos" />
         <p className="dtv-hint">Entrez l'adresse IP de votre enceinte Sonos sur le réseau local.</p>
-
         <div className="dtv-form-row">
           <div className="dtv-form-group" style={{ flex: 1 }}>
             <label>Adresse IP Sonos</label>
-            <Input type="text" value={sonosIP} onChange={e => setSonosIP(e.target.value)}
-              placeholder="192.168.1.xxx" />
+            <Input type="text" value={sonosIP} onChange={e => setSonosIP(e.target.value)} placeholder="192.168.1.xxx" />
           </div>
           <Button variant="primary" size="sm" onClick={handleSave} style={{ alignSelf: 'flex-end' }}>
             Enregistrer
@@ -86,52 +284,95 @@ function SonosTab({ _currentUser, refreshKey }) {
         </div>
       </div>
 
-      {/* Monitoring */}
+      {/* Zones */}
+      {zones.length > 0 && (
+        <div className="dtv-section">
+          <SectionHeader
+            className="dtv-section-title"
+            icon={<Layers size={16} />}
+            title={`Zones (${zones.length})`}
+            action={<button className="dtv-sonos-btn dtv-sonos-btn-sm" onClick={() => setZonesOpen(o => !o)}>{zonesOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</button>}
+          />
+          {zonesOpen && (
+            <div className="dtv-sonos-zones">
+              {zones.map((z, i) => (
+                <ZoneCard key={i} zone={z} isActive={activeZone === z.coordinator} onClick={handleZoneSelect} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Monitoring + Contrôles */}
       <div className="dtv-section">
         <SectionHeader className="dtv-section-title" icon={<Music size={16} />} title="Lecture en cours" />
-
         <div className="dtv-form-group dtv-toggle-row">
           <label>
             <Checkbox checked={polling} onChange={e => setPolling(e.target.checked)} />
-            Activer le monitoring temps réel (polling 5s)
+            Monitoring temps réel (5s)
           </label>
         </div>
-
-        <Button variant="secondary" size="sm" onClick={loadNowPlaying} style={{ marginBottom: 12 }}>
-          <RefreshCw size={14} /> Rafraîchir maintenant
+        <Button variant="secondary" size="sm" onClick={handleRefresh} style={{ marginBottom: 12 }}>
+          <RefreshCw size={14} /> Rafraîchir
         </Button>
 
-        {nowPlaying && (
+        {displayState && (
           <div className="dtv-sonos-widget">
-            {nowPlaying.error ? (
-              <InlineAlert>{nowPlaying.error}</InlineAlert>
-            ) : nowPlaying.playing ? (
-              <div className="dtv-sonos-playing">
-                {nowPlaying.albumArtURI && (
-                  <img src={nowPlaying.albumArtURI} alt="Album art" loading="lazy" className="dtv-sonos-art" />
-                )}
-                <div className="dtv-sonos-info">
-                  <div className="dtv-sonos-title">{nowPlaying.title}</div>
-                  <div className="dtv-sonos-artist">{nowPlaying.artist}</div>
-                  {nowPlaying.album && <div className="dtv-sonos-album">{nowPlaying.album}</div>}
-                  <div className="dtv-sonos-time">
-                    {formatTime(nowPlaying.position)} / {formatTime(nowPlaying.duration)}
+            {displayState.error ? (
+              <InlineAlert>{displayState.error}</InlineAlert>
+            ) : displayState.playing || displayState.state === 'paused' ? (
+              <>
+                <div className="dtv-sonos-playing">
+                  {displayState.albumArtURI && (
+                    <img src={displayState.albumArtURI} alt="Album art" loading="lazy" className="dtv-sonos-art" />
+                  )}
+                  <div className="dtv-sonos-info">
+                    <div className="dtv-sonos-title">{displayState.title}</div>
+                    <div className="dtv-sonos-artist">{displayState.artist}</div>
+                    {displayState.album && <div className="dtv-sonos-album">{displayState.album}</div>}
+                    <div className="dtv-sonos-time">
+                      {formatTime(displayState.position)} / {formatTime(displayState.duration)}
+                    </div>
+                  </div>
+                  <div className="dtv-sonos-state">
+                    {displayState.playing ? (
+                      <>
+                        <Disc size={18} className="dtv-sonos-spinning" />
+                        <span>En lecture</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pause size={18} />
+                        <span>En pause</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <div className="dtv-sonos-state">
-                  <Disc size={18} className="dtv-sonos-spinning" />
-                  <span>En lecture</span>
-                </div>
-              </div>
+                <PlaybackControls
+                  zone={controlZone}
+                  state={displayState.state}
+                  volume={displayState.volume ?? zoneState?.volume}
+                  muted={displayState.muted ?? zoneState?.muted}
+                  onRefresh={handleRefresh}
+                  isAdmin={isAdmin}
+                />
+              </>
             ) : (
               <div className="dtv-sonos-stopped">
                 <Music size={24} />
-                <span>Aucune lecture en cours ({nowPlaying.state || 'arrêté'})</span>
+                <span>Aucune lecture en cours ({displayState.state || 'arrêté'})</span>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Favoris */}
+      {sonosIP && (
+        <div className="dtv-section">
+          <FavoritesList zone={controlZone} isAdmin={isAdmin} />
+        </div>
+      )}
     </div>
   );
 }

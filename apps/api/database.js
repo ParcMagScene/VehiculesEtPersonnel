@@ -1080,6 +1080,13 @@ function initializeDatabase() {
       db.prepare("ALTER TABLE users ADD COLUMN reset_token_expires TEXT").run();
       logger.info('✅ Colonnes reset_token_hash/expires ajoutées à users');
     }
+    // [AUDIT FIX C5] Colonnes 2FA/TOTP
+    const hasTotp = userColumns.some(col => col.name === 'totp_secret');
+    if (!hasTotp) {
+      db.prepare("ALTER TABLE users ADD COLUMN totp_secret TEXT").run();
+      db.prepare("ALTER TABLE users ADD COLUMN totp_enabled INTEGER DEFAULT 0").run();
+      logger.info('✅ Colonnes totp_secret/totp_enabled ajoutées à users');
+    }
   } catch (error) {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }

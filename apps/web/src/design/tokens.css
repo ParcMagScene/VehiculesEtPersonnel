@@ -188,6 +188,39 @@
   /* ─── Misc overlays ────────────────────────────────── */
   --gray-overlay:         rgba(120, 120, 120, 0.6);
 
+  /* ─── Status colors (sémantiques) ────────────────── */
+  --status-success:      var(--theme-success-alt, #10b981);
+  --status-success-soft: var(--theme-success, #22c55e);
+  --status-danger:       var(--theme-danger, #ef4444);
+  --status-danger-dark:  var(--theme-danger-dark, #dc2626);
+  --status-warning:      var(--theme-warning, #f59e0b);
+  --status-warning-dark: var(--theme-warning-dark, #d97706);
+  --status-info:         var(--theme-info, #3b82f6);
+  --status-info-dark:    var(--theme-info-dark, #2563eb);
+  --status-neutral:      #64748b;
+  --status-neutral-soft: #6b7280;
+  --status-pending:      var(--theme-warning, #f59e0b);
+
+  /* ─── Accent colors (sémantiques) ──────────────── */
+  --color-violet:        #8b5cf6;
+  --color-indigo:        var(--theme-indigo, #6366f1);
+  --color-indigo-dark:   #3730a3;
+  --color-cyan:          var(--theme-cyan, #06b6d4);
+  --color-cyan-dark:     var(--theme-cyan-dark, #0891b2);
+  --color-pink:          #ec4899;
+  --color-orange:        #f97316;
+  --color-amber:         #eab308;
+
+  /* ─── Entity type colors (annuaire) ────────────── */
+  --entity-client-bg:       var(--theme-info-bg-strong, #dbeafe);
+  --entity-client-text:     var(--theme-info-text, #1d4ed8);
+  --entity-supplier-bg:     #d1fae5;
+  --entity-supplier-text:   #047857;
+  --entity-prestataire-bg:  #ede9fe;
+  --entity-prestataire-text: #6d28d9;
+  --entity-sous-traitant-bg: #fce7f3;
+  --entity-sous-traitant-text: #9d174d;
+
   /* ─── Animations ────────────────────────────────────── */
   --motion-fast:         var(--duration-fast) var(--ease-in-out);
   --motion-normal:       var(--duration-normal) var(--ease-in-out);

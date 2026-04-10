@@ -132,7 +132,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
               setOpenedDirectly(false);
               onBack();
             }
-          }}>
+          }} aria-label="Retour">
             <ArrowLeft size={24} />
           </Button>
           <h2>{currentUser?.isAdmin ? 'Nouvelle réservation' : 'Nouvelle demande'}</h2>
@@ -175,7 +175,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
 
             {/* Vehicle picker modal */}
             {showVehiclePicker && (
-              <div className="vehicle-picker-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowVehiclePicker(false)}>
+              <div className="vehicle-picker-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowVehiclePicker(false)} onKeyDown={(e) => { if (e.key === 'Escape') setShowVehiclePicker(false); }}>
                 <div className="vehicle-picker-modal" onClick={e => e.stopPropagation()}>
                   <div className="vehicle-picker-modal-header">
                     <h3>Choisir un véhicule</h3>
@@ -296,11 +296,11 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
   return (
     <div className="mobile-reservations">
       <div className="screen-header">
-        <Button variant="ghost" className="back-button" onClick={onBack}>
+        <Button variant="ghost" className="back-button" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={24} />
         </Button>
         <h2>Réservations</h2>
-        <Button variant="ghost" className="add-button" onClick={() => setShowForm(true)}>
+        <Button variant="ghost" className="add-button" onClick={() => setShowForm(true)} aria-label="Nouvelle réservation">
           <Plus size={24} />
         </Button>
       </div>

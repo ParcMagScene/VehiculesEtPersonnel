@@ -31,7 +31,7 @@ import logger from './logger.js';
 // ── Configs & Middlewares extraits ──
 import { helmetConditional } from './config/helmet.js';
 import { corsMiddleware } from './config/cors.js';
-import { authLimiter, generalLimiter, sensitiveEndpointLimiter } from './config/rateLimiter.js';
+import { authLimiter, generalLimiter, sensitiveEndpointLimiter, googleCalendarLimiter } from './config/rateLimiter.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
 import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess } from './middleware/authorize.js';
 import { xssSanitize } from './middleware/sanitize.js';
@@ -49,17 +49,19 @@ import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockImportRoutes, setupStockStatsRoutes } from './stockRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { setupDisplayRoutes } from './displayRoutes.js';
+import { setupSonosRoutes } from './sonosRoutes.js';
 import { setupAnnuaireClientsRoutes, setupAnnuaireSuppliersRoutes, setupAnnuairePrestatairesRoutes, setupAnnuaireContactsRoutes, setupAnnuaireLookupsRoutes, setupAnnuaireSearchRoutes, setupAnnuaireImportRoutes } from './annuaireRoutes.js';
 import { setupAuthRoutes } from './authRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupAdminRoutes } from './adminRoutes.js';
+import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupAffairesRoutes } from './affairesRoutes.js';
 import { setupProfileRoutes } from './profileRoutes.js';
 import { setupAttachmentsRoutes } from './attachmentsRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupInventoryRoutes } from './inventoryRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
-import { setupGoogleCalendarRoutes } from './googleCalendarRoutes.js';
+import { setupGoogleRoutes } from './googleRoutes.js';
 import { initEmailTransporter } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -110,14 +112,15 @@ app.get('/api/health', (req, res) => {
   }
 });
 
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/force-login', authLimiter);
+// Rate limiters auth — login/force-login désactivés (réseau local de confiance)
+// app.use('/api/auth/login', authLimiter);
+// app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
-app.use('/api/auth/set-new-password', authLimiter);
-app.use('/api/auth/self-reset-password', authLimiter);
-app.use('/api/auth/forgot-password', authLimiter);
+// [SEC-9.1] Rate limiters sur endpoints sensibles publics
+app.use('/api/auth/forgot-password', sensitiveEndpointLimiter);
 app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
-// [AUDIT FIX MED-B4/B6] Rate limiters sur endpoints sensibles (POST publics uniquement)
+app.use('/api/auth/set-new-password', sensitiveEndpointLimiter);
+app.use('/api/auth/self-reset-password', sensitiveEndpointLimiter);
 // Les GET /api/access-requests/* sont protégés par authenticateToken+requireAdmin
 app.post('/api/access-requests', sensitiveEndpointLimiter);
 app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);
@@ -231,6 +234,9 @@ setupPlanningRoutes(app, authenticateToken, requireAdmin);
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);
 
+// Routes Module Sonos (contrôle enceintes, zones, favoris, now-playing)
+setupSonosRoutes(app, authenticateToken, requireAdmin);
+
 // Routes Module Annuaire (Clients enrichis, Fournisseurs enrichis, Prestataires, Contacts, Référentiels, Import CSV)
 setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin);
 setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmin);
@@ -244,6 +250,7 @@ setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin);
 setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev });
 setupVehicleRoutes(app, authenticateToken, requireAdmin, requireMaintenanceAccess);
 setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS });
+setupTOTPRoutes(app, authenticateToken, requireAdmin);
 setupAffairesRoutes(app, authenticateToken, requireAdmin);
 setupProfileRoutes(app, authenticateToken, requireAdmin);
 setupAttachmentsRoutes(app, authenticateToken, requireAdmin);
@@ -254,8 +261,9 @@ setupInventoryRoutes(app, authenticateToken);
 // Routes Module Surveillance Vidéo (caméras CRUD, WebRTC, PTZ, snapshots, logs)
 setupVideoRoutes(app, authenticateToken, requireAdmin);
 
-// Routes Google Calendar Proxy (CRIT-11: tokens Google côté serveur)
-setupGoogleCalendarRoutes(app, authenticateToken);
+// Routes Google Calendar OAuth2 v2 (Authorization Code Flow)
+app.use('/api/google', googleCalendarLimiter);
+setupGoogleRoutes(app, authenticateToken);
 
 // Debug endpoints
 if (isDev) {

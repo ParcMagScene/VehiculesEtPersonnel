@@ -191,3 +191,21 @@
   color: var(--theme-text-secondary);
   margin-top: 12px;
 }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .sav-import-link-modal {
+    width: 95%;
+    padding: 16px;
+    max-height: 70vh;
+  }
+
+  .sav-import-status-list {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sav-import-dup-box {
+    padding: 8px 10px;
+  }
+}

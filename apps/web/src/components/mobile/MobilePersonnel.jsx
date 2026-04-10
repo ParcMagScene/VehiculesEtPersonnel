@@ -6,6 +6,8 @@ import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import './MobilePersonnel.css';
 import { Avatar, Button, Spinner } from '@/design-system';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 import { STATUS } from '../../constants';
 
@@ -103,6 +105,8 @@ function MobilePersonnel({ onBack, currentUser }) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadData);
+
   // Missions d'une personne pour un jour
   const getMissionsForPersonDay = useCallback((personId, day) => {
     return planning.missions.filter(m => {
@@ -150,7 +154,7 @@ function MobilePersonnel({ onBack, currentUser }) {
     return (
       <div className="mobile-personnel">
         <div className="mpers-header">
-          <Button variant="ghost" className="mpers-back" onClick={() => setSelectedPerson(null)}>
+          <Button variant="ghost" className="mpers-back" onClick={() => setSelectedPerson(null)} aria-label="Retour">
             <ArrowLeft size={20} />
           </Button>
           <h2>{fullName || `Personnel #${p.id}`}</h2>
@@ -238,9 +242,10 @@ function MobilePersonnel({ onBack, currentUser }) {
   const isToday = isSameDay(currentDate, new Date());
 
   return (
-    <div className="mobile-personnel">
+    <div className="mobile-personnel" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="mpers-header">
-        <Button variant="ghost" className="mpers-back" onClick={onBack}>
+        <Button variant="ghost" className="mpers-back" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
         <h2>{isSimpleUser ? 'Mon planning' : 'Personnel'}</h2>
@@ -445,7 +450,7 @@ function MobilePersonnel({ onBack, currentUser }) {
             const tasks = getTasksForPersonDay(p.id, currentDate);
             const isUnavailable = unavail.length > 0;
             return (
-              <div key={p.id} className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`} role="button" tabIndex={0} onClick={() => setSelectedPerson(p)}>
+              <div key={p.id} className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`} role="button" tabIndex={0} onClick={() => setSelectedPerson(p)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPerson(p); } }}>
                 {p.photo ? (
                   <img src={`/avatars/${p.photo}`} alt="" className="mpers-avatar-img" loading="lazy" />
                 ) : (
@@ -492,7 +497,7 @@ function MobilePersonnel({ onBack, currentUser }) {
               {permanentPersons.map(p => {
                 const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
                 return (
-                  <div key={p.id} className="mpers-week-person" role="button" tabIndex={0} onClick={() => setSelectedPerson(p)}>
+                  <div key={p.id} className="mpers-week-person" role="button" tabIndex={0} onClick={() => setSelectedPerson(p)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPerson(p); } }}>
                     {p.photo ? (
                       <img src={`/avatars/${p.photo}`} alt="" loading="lazy" className="mpers-week-avatar-img" />
                     ) : (

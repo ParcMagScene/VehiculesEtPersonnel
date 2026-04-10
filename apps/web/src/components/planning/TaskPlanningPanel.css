@@ -2456,3 +2456,40 @@
   font-size: 0.82rem;
   color: var(--theme-text-secondary, var(--theme-text-muted));
 }
+
+/* ═══ PHASE D — Inline styles migration ═══ */
+
+.task-planning-panel .affaire-row,
+.task-planning-panel .rdv-row {
+  flex-wrap: wrap;
+}
+
+.task-planning-panel .ev-col-nom[role="button"] {
+  cursor: pointer;
+}
+
+.link-no-results-more {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.wk-card.wk-affaire,
+.wk-card.wk-google {
+  cursor: pointer;
+}
+
+.wk-card svg {
+  flex-shrink: 0;
+}
+
+.wk-expanded-section-label.wk-section-google {
+  color: #4285f4;
+}
+
+.wk-expanded-section-label.wk-section-affaires {
+  color: var(--theme-primary, #3b82f6);
+}
+
+.wk-expanded-section-label.wk-section-display {
+  color: var(--theme-text-secondary);
+}

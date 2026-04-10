@@ -27,7 +27,7 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
   return (
     <div className="mobile-parc-dashboard">
       <div className="mparc-header">
-        <Button variant="ghost" className="mparc-back" onClick={onBack}>
+        <Button variant="ghost" className="mparc-back" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
         <h2>Parc véhicules</h2>
@@ -35,12 +35,12 @@ function MobileParcDashboard({ vehicles, reservations, maintenances, onNavigate,
 
       {/* Statistiques */}
       <div className="mparc-stats">
-        <div className="mparc-stat green" role="button" tabIndex={0} onClick={() => onNavigate('availability')}>
+        <div className="mparc-stat green" role="button" tabIndex={0} onClick={() => onNavigate('availability')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('availability'); } }}>
           <Car size={24} />
           <span className="mparc-stat-val">{availableVehicles}</span>
           <span className="mparc-stat-label">Disponibles</span>
         </div>
-        <div className="mparc-stat blue" role="button" tabIndex={0} onClick={() => onNavigate('planning')}>
+        <div className="mparc-stat blue" role="button" tabIndex={0} onClick={() => onNavigate('planning')} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNavigate('planning'); } }}>
           <Calendar size={24} />
           <span className="mparc-stat-val">{activeReservations}</span>
           <span className="mparc-stat-label">Réservations</span>

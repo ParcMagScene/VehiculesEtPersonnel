@@ -786,3 +786,30 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .bl-multi-import-modal {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .bl-multi-import-modal .modal-header {
+    padding: var(--space-3);
+  }
+
+  .bl-multi-import-modal .modal-header h3 {
+    font-size: var(--font-base);
+  }
+
+  .bl-multi-import-modal .modal-body {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .bl-multi-import-modal .modal-footer {
+    flex-wrap: wrap;
+    padding: var(--space-2) var(--space-3);
+  }
+}

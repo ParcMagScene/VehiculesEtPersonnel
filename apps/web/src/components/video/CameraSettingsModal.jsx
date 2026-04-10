@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Trash2, TestTube2 } from 'lucide-react';
 import { Button, FormField, ModalLayout, Input, Textarea, Select, Checkbox } from '@/design-system';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 
 const BRANDS = [
   'generic', 'Hikvision', 'Dahua', 'Ezviz', 'Amcrest', 'Axis', 'ONVIF'
@@ -12,39 +13,18 @@ const BRANDS = [
 
 const CameraSettingsModal = ({ camera, onSave, onDelete, onTest, onClose }) => {
   const [form, setForm] = useState({
-    name: '', brand: 'generic', model: '', ip: '', rtspUrl: '',
-    rtspPort: 554, httpPort: 80, channel: 1, username: 'admin', password: '',
-    ptzSupported: false, location: '', affaireId: '', zone: '',
-    enabled: true, streamProfile: 'main', snapshotPath: '', notes: '',
+    name: camera?.name || '', brand: camera?.brand || 'generic', model: camera?.model || '', ip: camera?.ip || '', rtspUrl: camera?.rtspUrl || '',
+    rtspPort: camera?.rtspPort || 554, httpPort: camera?.httpPort || 80, channel: camera?.channel || 1, username: camera?.username || 'admin', password: '',
+    ptzSupported: !!camera?.ptzSupported, location: camera?.location || '', affaireId: camera?.affaireId || '', zone: camera?.zone || '',
+    enabled: camera?.enabled !== false, streamProfile: camera?.streamProfile || 'main', snapshotPath: camera?.snapshotPath || '', notes: camera?.notes || '',
   });
+  const { guardClose } = useDirtyForm(form);
+  const safeClose = guardClose(onClose);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (camera) {
-      setForm({
-        name: camera.name || '',
-        brand: camera.brand || 'generic',
-        model: camera.model || '',
-        ip: camera.ip || '',
-        rtspUrl: camera.rtspUrl || '',
-        rtspPort: camera.rtspPort || 554,
-        httpPort: camera.httpPort || 80,
-        channel: camera.channel || 1,
-        username: camera.username || 'admin',
-        password: '', // Ne jamais pré-remplir le mot de passe
-        ptzSupported: !!camera.ptzSupported,
-        location: camera.location || '',
-        affaireId: camera.affaireId || '',
-        zone: camera.zone || '',
-        enabled: camera.enabled !== false,
-        streamProfile: camera.streamProfile || 'main',
-        snapshotPath: camera.snapshotPath || '',
-        notes: camera.notes || '',
-      });
-    }
-  }, [camera]);
+
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -78,7 +58,7 @@ const CameraSettingsModal = ({ camera, onSave, onDelete, onTest, onClose }) => {
   return (
     <ModalLayout
       open
-      onClose={onClose}
+      onClose={safeClose}
       title={camera?.id ? 'Modifier la caméra' : 'Ajouter une caméra'}
       size="lg"
       bodyClassName="camera-settings-form"
@@ -94,7 +74,7 @@ const CameraSettingsModal = ({ camera, onSave, onDelete, onTest, onClose }) => {
           </Button>
         )}
         <div style={{ flex: 1 }} />
-        <Button variant="ghost" onClick={onClose} type="button">Annuler</Button>
+        <Button variant="ghost" onClick={safeClose} type="button">Annuler</Button>
         <Button variant="primary" onClick={handleSubmit} disabled={saving || !form.name || !form.ip}>
           <Save size={16} /> {saving ? 'Enregistrement...' : 'Enregistrer'}
         </Button>

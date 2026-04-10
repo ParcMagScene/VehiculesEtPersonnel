@@ -10,6 +10,10 @@ import api from '../../utils/api';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import './MobileAffaires.css';
 import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import useSwipeAction from '../../hooks/useSwipeAction';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
+import SwipeableRow from './SwipeableRow';
 
 import { STATUS } from '../../constants';
 
@@ -50,6 +54,9 @@ function MobileAffaires({ onBack }) {
   }, []);
 
   useEffect(() => { loadAffaires(); }, [loadAffaires]);
+
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadAffaires);
+  const { getSwipeProps, swipeState, resetSwipe } = useSwipeAction();
 
   // Filtrer : affaires en cours ou à venir dans la semaine suivante depuis la date courante
   const filteredAffaires = useMemo(() => {
@@ -146,7 +153,7 @@ function MobileAffaires({ onBack }) {
     return (
       <div className="mobile-affaires">
         <div className="maff-header">
-          <Button variant="ghost" className="maff-back" onClick={() => { setSelectedAffaire(null); setDetailData(null); }}>
+          <Button variant="ghost" className="maff-back" onClick={() => { setSelectedAffaire(null); setDetailData(null); }} aria-label="Retour">
             <ArrowLeft size={20} />
           </Button>
           <h2>{a.numeroAffaire || 'Affaire'}</h2>
@@ -323,14 +330,14 @@ function MobileAffaires({ onBack }) {
             <div className="maff-detail-section">
               <h4><Briefcase size={16} /> Affaires liées</h4>
               {detailData.links.parents.map(p => (
-                <div key={p.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(p)}>
+                <div key={p.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(p)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(p); } }}>
                   <span className="maff-linked-label">Parent</span>
                   <span className="maff-linked-num">{p.numeroAffaire}</span>
                   <span className="maff-linked-name">{p.nom || p.client || ''}</span>
                 </div>
               ))}
               {detailData.links.children.map(c => (
-                <div key={c.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(c)}>
+                <div key={c.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(c)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(c); } }}>
                   <span className="maff-linked-label">Enfant</span>
                   <span className="maff-linked-num">{c.numeroAffaire}</span>
                   <span className="maff-linked-name">{c.nom || c.client || ''}</span>
@@ -351,9 +358,10 @@ function MobileAffaires({ onBack }) {
 
   // ═══ Vue Liste ═══
   return (
-    <div className="mobile-affaires">
+    <div className="mobile-affaires" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="maff-header">
-        <Button variant="ghost" className="maff-back" onClick={onBack}>
+        <Button variant="ghost" className="maff-back" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
         <h2>Affaires</h2>
@@ -429,10 +437,31 @@ function MobileAffaires({ onBack }) {
             const typeInfo = getTypeInfo(a.type);
             const isActive = status === STATUS.ACTIVE;
             return (
-              <div
+              <SwipeableRow
                 key={a.id || a.numeroAffaire}
+                itemId={a.id || a.numeroAffaire}
+                swipeState={swipeState}
+                getSwipeProps={getSwipeProps}
+                onReset={resetSwipe}
+                leftAction={a.clientTel ? {
+                  label: 'Appeler',
+                  icon: '📞',
+                  color: '#10b981',
+                  onClick: () => { window.location.href = `tel:${a.clientTel}`; },
+                } : null}
+                rightAction={a.adresseLivraison ? {
+                  label: 'Itinéraire',
+                  icon: '🗺️',
+                  color: '#3b82f6',
+                  onClick: () => { window.open(`https://maps.google.com/maps?q=${encodeURIComponent(a.adresseLivraison)}`, '_blank'); },
+                } : null}
+              >
+              <div
                 className={`maff-card ${isActive ? 'active' : ''}`}
+                role="button"
+                tabIndex={0}
                 onClick={() => openDetail(a)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(a); } }}
               >
                 <div className="maff-card-header">
                   <span className="maff-card-type" style={{ background: typeInfo.color }}>
@@ -483,6 +512,7 @@ function MobileAffaires({ onBack }) {
                   </div>
                 )}
               </div>
+              </SwipeableRow>
             );
           })}
         </div>

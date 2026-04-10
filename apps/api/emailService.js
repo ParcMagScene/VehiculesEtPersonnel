@@ -45,7 +45,14 @@ export function initEmailTransporter(db) {
       secure: config.smtp_secure === 1,
       auth: {
         user: config.smtp_user,
-        pass: decryptPassword(config.smtp_pass) || config.smtp_pass,
+        pass: (() => {
+          const decrypted = decryptPassword(config.smtp_pass);
+          if (!decrypted) {
+            logger.error('❌ SMTP: déchiffrement du mot de passe échoué — vérifiez la configuration');
+            throw new Error('SMTP password decryption failed');
+          }
+          return decrypted;
+        })(),
       },
     });
 

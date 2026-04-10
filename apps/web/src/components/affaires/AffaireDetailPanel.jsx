@@ -82,7 +82,7 @@ const extractLinksFromText = (text) => {
 // Contenu partagé (sections de détail)
 // ═══════════════════════════════════════
 
-const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity, isEditing = false, editForm = null, setEditForm = null }) => {
+const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _persons = [], googleEventIds = [], editable = false, onDataChanged, onNavigateToEntity, isEditing = false, editForm = null, setEditForm = null, currentUser }) => {
   const typeInfo = getTypeInfo(isEditing && editForm ? editForm.type : affaire.type);
 
   // ═══ États pour les actions (mode éditable) ═══
@@ -163,12 +163,12 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
     const fetchEvents = async () => {
       setIsLoadingEvents(true);
       try {
-        const tokenStatus = await api.getGoogleTokenStatus();
-        if (!tokenStatus?.hasToken) { setGoogleEvents([]); setIsLoadingEvents(false); return; }
+        const tokenStatus = await api.getGoogleOAuthStatus();
+        if (!tokenStatus?.connected) { setGoogleEvents([]); setIsLoadingEvents(false); return; }
         const events = [];
         for (const eventId of googleEventIds) {
           try {
-            const ev = await api.getGoogleEvent(eventId);
+            const ev = await api.getGoogleEventV2(eventId);
             ev.affaire = affaire.numeroAffaire;
             events.push(ev);
           } catch {}
@@ -1704,7 +1704,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
             onSave={handleSaveReservation}
             onDelete={() => {}}
             onClose={() => setShowReservationModal(false)}
-            currentUser={{ isAdmin: true }}
+            currentUser={currentUser}
           />
         </Suspense>
       )}
@@ -1740,7 +1740,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
               }
             }}
             onClose={() => setViewedReservation(null)}
-            currentUser={{ isAdmin: true }}
+            currentUser={currentUser}
           />
         </Suspense>
       )}
@@ -1753,7 +1753,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
             onClose={() => setViewedEvent(null)}
             event={viewedEvent}
             reservations={reservations}
-            currentUser={{ isAdmin: true }}
+            currentUser={currentUser}
           />
         </Suspense>
       )}
@@ -1790,7 +1790,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
 // Volet glissant (panneau droit)
 // ═══════════════════════════════════════
 
-const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose, onOpenDialog, onNavigateToEntity, onRefresh }) => {
+const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose, onOpenDialog, onNavigateToEntity, onRefresh, currentUser }) => {
   const [missions, setMissions] = useState([]);
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -1864,7 +1864,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
         </Button></Tooltip>
       </div>
       <div className="slide-panel-body">
-        <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={onRefresh} onNavigateToEntity={onNavigateToEntity} />
+        <AffaireDetailContent affaire={currentAffaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={true} onDataChanged={onRefresh} onNavigateToEntity={onNavigateToEntity} currentUser={currentUser} />
       </div>
       <div className="slide-panel-footer">
         <Button variant="ghost" className="slide-panel-bl-btn" onClick={() => setShowBLImport(true)} title={hasBLImports ? "Mettre à jour le BL/BP" : "Importer un BL/BP"}>
@@ -1911,7 +1911,7 @@ const AffaireSlidePanel = ({ affaire, reservations, googleEventIds = [], onClose
 // Dialog (modal plein écran)
 // ═══════════════════════════════════════
 
-const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClose, onDataChanged, onNavigateToEntity }) => {
+const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClose, onDataChanged, onNavigateToEntity, currentUser }) => {
   const [missions, setMissions] = useState([]);
   const [isClosing, setIsClosing] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
@@ -2099,7 +2099,7 @@ const AffaireDetailDialog = ({ affaire, reservations, googleEventIds = [], onClo
           </div>
         </div>
         <div className="dialog-body">
-          <AffaireDetailContent affaire={affaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={!isEditing} onDataChanged={handleDataChanged} onNavigateToEntity={onNavigateToEntity} isEditing={isEditing} editForm={editForm} setEditForm={setEditForm} />
+          <AffaireDetailContent affaire={affaire} reservations={reservations} missions={missions} googleEventIds={googleEventIds} editable={!isEditing} onDataChanged={handleDataChanged} onNavigateToEntity={onNavigateToEntity} isEditing={isEditing} editForm={editForm} setEditForm={setEditForm} currentUser={currentUser} />
         </div>
       </div>
 

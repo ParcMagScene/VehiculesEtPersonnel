@@ -350,3 +350,31 @@
     border-color: rgba(220, 38, 38, 0.3);
   }
 }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .csv-import-dialog {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .csv-import-content {
+    padding: 12px;
+  }
+
+  .csv-dropzone {
+    padding: 24px 12px;
+  }
+
+  .csv-preview-table td {
+    max-width: 120px;
+    font-size: var(--font-xs);
+  }
+
+  .csv-preview-table th {
+    padding: 6px 8px;
+    font-size: var(--font-2xs);
+  }
+}

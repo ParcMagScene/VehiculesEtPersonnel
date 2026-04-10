@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Send, Paperclip, Plus, MessageSquare, File, Image, Download, Users } from 'lucide-react';
 import { Button, Input, ModalLayout, Spinner } from '@/design-system';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 import api, { getApiUrl } from '../../utils/api';
+import { AVATAR_COLORS } from '../../constants/colors';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './MobileMessaging.css';
@@ -43,8 +46,7 @@ const getAvatarColor = (name) => {
   if (!name) return 'var(--theme-text-muted)';
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-  return colors[Math.abs(hash) % colors.length];
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 };
 
 const formatFileSize = (bytes) => {
@@ -94,6 +96,8 @@ function MobileMessaging({ currentUser, onBack }) {
     loadConversations();
   }, [loadConversations]);
 
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadConversations, { disabled: !!activeConversation });
+
   // Polling
   useEffect(() => {
     pollRef.current = setInterval(() => {
@@ -140,6 +144,12 @@ function MobileMessaging({ currentUser, onBack }) {
     const file = e.target.files?.[0];
     if (!file || !activeConversation) return;
     e.target.value = '';
+
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_FILE_SIZE) {
+      window.alert('Le fichier dépasse la taille maximale autorisée (10 Mo)');
+      return;
+    }
 
     try {
       const reader = new FileReader();
@@ -202,7 +212,7 @@ function MobileMessaging({ currentUser, onBack }) {
     return (
       <div className="mobile-messaging-chat">
         <div className="mmsg-chat-header">
-          <Button variant="ghost" className="mmsg-back" onClick={() => { setActiveConversation(null); setMessages([]); }}>
+          <Button variant="ghost" className="mmsg-back" onClick={() => { setActiveConversation(null); setMessages([]); }} aria-label="Retour aux conversations">
             <ArrowLeft size={20} />
           </Button>
           <div className="mmsg-chat-avatar" style={{ background: getAvatarColor(getConversationName(activeConversation)) }}>
@@ -258,7 +268,7 @@ function MobileMessaging({ currentUser, onBack }) {
         </div>
 
         <div className="mmsg-input-area">
-          <Button variant="ghost" className="mmsg-attach" onClick={() => fileInputRef.current?.click()}>
+          <Button variant="ghost" className="mmsg-attach" onClick={() => fileInputRef.current?.click()} aria-label="Joindre un fichier">
             <Paperclip size={20} />
           </Button>
           <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
@@ -269,7 +279,7 @@ function MobileMessaging({ currentUser, onBack }) {
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
             placeholder="Écrire un message…"
           />
-          <Button variant="ghost" className="mmsg-send" onClick={handleSend} disabled={!inputText.trim()}>
+          <Button variant="ghost" className="mmsg-send" onClick={handleSend} disabled={!inputText.trim()} aria-label="Envoyer">
             <Send size={18} />
           </Button>
         </div>
@@ -279,13 +289,14 @@ function MobileMessaging({ currentUser, onBack }) {
 
   // Vue Liste des conversations
   return (
-    <div className="mobile-messaging">
+    <div className="mobile-messaging" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="mmsg-header">
-        <Button variant="ghost" className="mmsg-back" onClick={onBack}>
+        <Button variant="ghost" className="mmsg-back" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
         <h2>Messages {totalUnread > 0 && <span className="mmsg-total-badge">{totalUnread}</span>}</h2>
-        <Button variant="ghost" className="mmsg-new-btn" onClick={openNewConvModal}>
+        <Button variant="ghost" className="mmsg-new-btn" onClick={openNewConvModal} aria-label="Nouvelle conversation">
           <Plus size={20} />
         </Button>
       </div>
@@ -309,7 +320,10 @@ function MobileMessaging({ currentUser, onBack }) {
             <div
               key={conv.id}
               className={`mmsg-conv-item ${conv.unread_count > 0 ? 'unread' : ''}`}
+              role="button"
+              tabIndex={0}
               onClick={() => { setActiveConversation(conv); loadMessages(conv.id); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveConversation(conv); loadMessages(conv.id); } }}
             >
               <div className="mmsg-conv-avatar" style={{ background: getAvatarColor(getConversationName(conv)) }}>
                 {conv.type === 'group' ? <Users size={16} /> : getInitials(getConversationName(conv))}
@@ -356,7 +370,10 @@ function MobileMessaging({ currentUser, onBack }) {
                 <div
                   key={user.id}
                   className={`mmsg-user-item ${selectedUserId === user.id ? 'selected' : ''}`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedUserId(user.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedUserId(user.id); } }}
                 >
                   <div className="mmsg-user-avatar" style={{ background: getAvatarColor(user.name) }}>
                     {getInitials(user.name)}

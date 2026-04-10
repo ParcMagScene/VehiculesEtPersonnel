@@ -3,6 +3,10 @@ import { ArrowLeft, CheckCircle, Clock, Circle, XCircle, RefreshCw, Briefcase, M
 import api from '../../utils/api';
 import { Accordion, Button, ProgressBar } from '@/design-system';
 import { ROLES, STATUS } from '../../constants';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import useSwipeAction from '../../hooks/useSwipeAction';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
+import SwipeableRow from './SwipeableRow';
 
 import './MobileTasks.css';
 
@@ -74,6 +78,9 @@ function MobileTasks({ currentUser, onBack }) {
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadTasks);
+  const { getSwipeProps, swipeState, resetSwipe } = useSwipeAction();
+
   const handleValidate = async (task) => {
     const newStatus = task.status === STATUS.DONE ? 'pending' : 'done';
     setUpdating(task.id);
@@ -135,7 +142,8 @@ function MobileTasks({ currentUser, onBack }) {
       )}
 
       {/* Liste */}
-      <div className="mobile-tasks-list">
+      <div className="mobile-tasks-list" {...ptrProps}>
+        <PullToRefreshIndicator indicator={ptrIndicator} />
         {loading && tasks.length === 0 ? (
           <div className="mobile-tasks-empty">
             <RefreshCw size={32} className="spin" />
@@ -169,7 +177,20 @@ function MobileTasks({ currentUser, onBack }) {
                       const isUpdating = updating === task.id;
 
                       return (
-                        <div key={task.id} className={`mobile-task-card ${isDone ? 'done' : ''} ${isUpdating ? 'updating' : ''}`}>
+                        <SwipeableRow
+                          key={task.id}
+                          itemId={task.id}
+                          swipeState={swipeState}
+                          getSwipeProps={getSwipeProps}
+                          onReset={resetSwipe}
+                          leftAction={{
+                            label: isDone ? 'À faire' : 'Valider',
+                            icon: isDone ? '↩️' : '✅',
+                            color: isDone ? '#f59e0b' : '#10b981',
+                            onClick: () => handleValidate(task),
+                          }}
+                        >
+                        <div className={`mobile-task-card ${isDone ? 'done' : ''} ${isUpdating ? 'updating' : ''}`}>
                           <Button variant="ghost"                             className={`mobile-task-status-btn ${task.status}`}
                             onClick={() => handleValidate(task)}
                             disabled={isUpdating}
@@ -190,6 +211,7 @@ function MobileTasks({ currentUser, onBack }) {
                             {task.notes && <p className="mobile-task-notes">{task.notes}</p>}
                           </div>
                         </div>
+                        </SwipeableRow>
                       );
                     })}
                   </div>

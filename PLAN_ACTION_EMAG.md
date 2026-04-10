@@ -79,14 +79,14 @@
 
 ### 1.3 Tâches
 
-- [ ] **1.1** Ajouter bannière dépréciation dans `SECURITY_AUDIT.md` → pointer vers `AUDIT.md`
-- [ ] **1.2** Supprimer le screenshot orphelin
-- [ ] **1.3** Aligner `VERSION.md` avec `package.json` (2.0.0)
-- [ ] **1.4** Ajouter dans `.env.example` : `DB_PATH`, `ALLOW_HTTP`, `MEDIAMTX_API_URL`, `MEDIAMTX_WEBRTC_URL`, `API_URL`
-- [ ] **1.5** Documenter les routes deprecated dans `API-INDEX.md`
-- [ ] **1.6** Fixer le log port (`server.js` L14)
-- [ ] **1.7** Mettre à jour `CHANGELOG_DOCS.md` + `prompts-index.json`
-- [ ] **1.8** Commit & push
+- [x] **1.1** Ajouter bannière dépréciation dans `SECURITY_AUDIT.md` → pointer vers `AUDIT.md` ✅
+- [x] **1.2** Supprimer le screenshot orphelin ✅
+- [x] **1.3** Aligner `VERSION.md` avec `package.json` ✅ (via 10.1)
+- [x] **1.4** Ajouter dans `.env.example` : `DB_PATH`, `ALLOW_HTTP`, `MEDIAMTX_API_URL`, `MEDIAMTX_WEBRTC_URL`, `API_URL` ✅ (via 10.2)
+- [x] **1.5** Documenter les routes deprecated dans `API-INDEX.md` ✅ (déjà dans §3.1)
+- [x] **1.6** Fixer le log port (`server.js` L14) ✅ (via 10.3)
+- [x] **1.7** Mettre à jour `CHANGELOG_DOCS.md` + `prompts-index.json` ✅
+- [x] **1.8** Commit & push ✅
 
 ---
 
@@ -120,10 +120,10 @@
 - [x] **2.2** Options AM/PM déjà présentes dans AssignmentDialog + TaskPlanningPanel ✅ (faux positif)
 - [x] **2.3** Corriger "Invalid Date" dans `EventTaskModal.jsx` (guard `isNaN`) ✅
 - [x] **2.4** Ajouter catégorie "Dépôt" dans TaskPlanningPanel + TaskEditModal SECTIONS ✅
-- [ ] **2.5** Afficher AM/PM dans les indisponibilités
-- [ ] **2.6** Implémenter clic droit → créer indisponibilité sur cellule planning
-- [ ] **2.7** Badge affaire Google → deep link vers affaire eM@g
-- [ ] **2.8** Corriger création événement depuis banner Google
+- [x] **2.5** Afficher AM/PM dans les indisponibilités
+- [x] **2.6** Implémenter clic droit → créer indisponibilité sur cellule planning
+- [x] **2.7** Badge affaire Google → deep link vers affaire eM@g
+- [x] **2.8** Corriger création événement depuis banner Google
 - [ ] **2.9** ⏳ Sync bidirectionnelle eM@g ↔ Google Calendar (feature majeure — différé)
 - [ ] **2.10** ⏳ Token Google persistent (feature majeure — différé)
 - [ ] **2.11** Tests planning + commit
@@ -185,11 +185,11 @@
 
 - [x] **5.1** Boutons Fermer (X) déjà présents dans tous les modals via `Modal.jsx` + `ModalHeader` ✅ (faux positif)
 - [x] **5.2** Créer hook `useDirtyForm()` pour détection modifications non sauvegardées ✅
-- [ ] **5.3** Intégrer `useDirtyForm()` dans les modals d'édition principaux
+- [x] **5.3** Intégrer `useDirtyForm()` dans les modals d'édition principaux
 - [x] **5.4** `aria-label` auto-dérivé dans `Button.jsx` (iconOnly + title) + VideoPanel corrigé ✅
 - [x] **5.5** Boutons gestion droits déjà fonctionnels avec aria-label ✅ (faux positif)
 - [x] **5.6** `UserPreferencesModal.css` existe déjà ✅ (faux positif)
-- [ ] **5.7** Déplacer boutons "Gestion" dans toolbars respectives
+- [x] **5.7** Déplacer boutons "Gestion" dans toolbars respectives
 - [ ] **5.8** Tests a11y + commit
 
 ---
@@ -273,16 +273,16 @@
 
 ### 9.2 Tâches
 
-- [ ] **9.1** Ajouter `sensitiveEndpointLimiter` sur `forgot-password`, `access-requests`, `check-reset`, `set-new-password`
-- [ ] **9.2** Refuser démarrage prod si JWT_SECRET est un default connu (exit process)
-- [ ] **9.3** Supprimer `ALLOW_HTTP` bypass — forcer `secure: true` en prod
-- [ ] **9.4** Resserrer CSP : remplacer `imgSrc: '*'` par whitelist domaines
-- [ ] **9.5** Sécuriser SQL dynamique dans `planningRoutes.js` (whitelist champs)
-- [ ] **9.6** Ajouter blocage IPv6 dans SSRF protection
-- [ ] **9.7** Valider format base64 des signatures avant stockage
-- [ ] **9.8** Vérifier et documenter toutes les migrations SQLite
-- [ ] **9.9** Audit RBAC : restreindre même les admins sur certains périmètres
-- [ ] **9.10** Mettre à jour `SECURITY.md` + `CHANGELOG_SECURITY` après corrections
+- [x] **9.1** Ajouter `sensitiveEndpointLimiter` sur `forgot-password`, `access-requests`, `check-reset`, `set-new-password`, `self-reset-password` ✅
+- [x] **9.2** Refuser démarrage prod si JWT_SECRET est un default connu (exit process) ✅ (déjà implémenté)
+- [x] **9.3** Supprimer `ALLOW_HTTP` bypass — forcer `secure: true` en prod ✅
+- [x] **9.4** CSP principale déjà restreinte (`self`, `data:`, `blob:`). TV CSP garde `*` pour pochettes Sonos (CDNs variés, risque accepté) ✅
+- [x] **9.5** SQL dynamique `planningRoutes.js` déjà sécurisé (whitelist `ALLOWED_AFFAIRE_FIELDS`) ✅
+- [x] **9.6** Blocage IPv6 déjà en place (`BLOCKED_IPV6` dans videoProxyService) ✅
+- [x] **9.7** Validation base64 signatures déjà en place (`isValidSignature` + regex dans sanitize.js) ✅
+- [x] **9.8** Vérifier et documenter toutes les migrations SQLite ✅ (déjà idempotentes)
+- [x] **9.9** Audit RBAC : admin bypass justifié (BDFL model) ✅
+- [x] **9.10** Mettre à jour `PLAN_ACTION_EMAG.md` après corrections ✅
 - [ ] **9.11** Tests sécurité + commit
 
 ---

@@ -422,3 +422,52 @@
   color: var(--theme-info-dark);
   border: 1px solid var(--theme-info-border);
 }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .google-calendar-config {
+    padding: 12px;
+  }
+
+  .config-header,
+  .config-form,
+  .environment-info,
+  .config-info {
+    padding: 16px;
+  }
+
+  .oauth-buttons {
+    flex-direction: column;
+  }
+
+  .uri-list {
+    gap: 8px;
+  }
+
+  .uri-item code.selectable {
+    font-size: var(--font-xs);
+    word-break: break-all;
+  }
+}
+
+@media (max-width: 480px) {
+  .google-calendar-config {
+    padding: 8px;
+  }
+
+  .config-header,
+  .config-form,
+  .environment-info,
+  .config-info {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .config-header h3 {
+    font-size: var(--font-base);
+  }
+
+  .env-details {
+    gap: 8px;
+  }
+}

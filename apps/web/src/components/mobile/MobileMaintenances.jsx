@@ -102,7 +102,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
               setOpenedDirectly(false);
               onBack();
             }
-          }}>
+          }} aria-label="Retour">
             <ArrowLeft size={24} />
           </Button>
           <h2>Type d'intervention</h2>
@@ -141,7 +141,7 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
     return (
       <div className="mobile-maintenances">
         <div className="screen-header">
-          <Button variant="ghost" className="back-button" onClick={() => setFormType('')}>
+          <Button variant="ghost" className="back-button" onClick={() => setFormType('')} aria-label="Retour">
             <ArrowLeft size={24} />
           </Button>
           <h2>
@@ -231,11 +231,11 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
   return (
     <div className="mobile-maintenances">
       <div className="screen-header">
-        <Button variant="ghost" className="back-button" onClick={onBack}>
+        <Button variant="ghost" className="back-button" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={24} />
         </Button>
         <h2>Interventions</h2>
-        <Button variant="ghost" className="add-button" onClick={() => setShowForm(true)}>
+        <Button variant="ghost" className="add-button" onClick={() => setShowForm(true)} aria-label="Nouvelle intervention">
           <Plus size={24} />
         </Button>
       </div>

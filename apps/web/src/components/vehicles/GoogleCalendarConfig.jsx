@@ -71,26 +71,20 @@ const GoogleCalendarConfig = () => {
   const handleRevokeOAuth = () => {
     confirm({
       title: 'Déconnexion Google',
-      message: '⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nVous devrez autoriser à nouveau l\'accès après cette action.',
+      message: '⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nLe token sera révoqué côté Google et supprimé du serveur. Vous devrez autoriser à nouveau l\'accès après cette action.',
       variant: 'warning',
       confirmLabel: 'Déconnecter',
       onConfirm: async () => {
-        // Supprimer le token du backend
         try {
-          await api.deleteGoogleToken();
+          await api.disconnectGoogle();
+          toast.success('Déconnexion effectuée. La page va se recharger.');
         } catch (err) {
-          console.warn('Erreur suppression token:', err.message);
+          toast.success('Déconnexion effectuée malgré l\'erreur. La page va se recharger.');
         }
-        // Supprimer les marqueurs UI locaux
-        localStorage.removeItem('google_auto_signin');
         
-        // Révoquer l'accès sur le compte Google
-        toast.success('Déconnexion effectuée Veuillez : 1. Recharger la page (F5)\n2. Aller sur https://myaccount.google.com/permissions\n3. Révoquer l\'accès à cette application\n4. Revenir et vous reconnecter avec le nouveau Client ID');
-        
-        // Recharger après 2 secondes
         setTimeout(() => {
           window.location.reload();
-        }, 2000);
+        }, 1500);
       },
     });
   };
@@ -158,14 +152,15 @@ const GoogleCalendarConfig = () => {
                 </Button>
               </div>
               <div className="uri-item">
-                <strong>URI de redirection autorisés :</strong>
-                <code className="selectable">{window.location.origin}</code>
+                <strong>URI de redirection autorisés (backend callback) :</strong>
+                <code className="selectable">{`${window.location.protocol}//${window.location.hostname}:${window.location.hostname === 'localhost' ? '3003' : window.location.port || '443'}/api/google/callback`}</code>
                 <Button variant="ghost" 
                   type="button"
                   className="btn-copy-small"
                   onClick={() => {
-                    navigator.clipboard.writeText(window.location.origin);
-                    toast.success('URL copiée dans le presse-papiers');
+                    const redirectUri = `${window.location.protocol}//${window.location.hostname}:${window.location.hostname === 'localhost' ? '3003' : window.location.port || '443'}/api/google/callback`;
+                    navigator.clipboard.writeText(redirectUri);
+                    toast.success('URI de redirection copiée dans le presse-papiers');
                   }}
                 >
                   📋 Copier
@@ -173,7 +168,7 @@ const GoogleCalendarConfig = () => {
               </div>
             </div>
             <small>
-              👆 Ajoutez cette URL exactement dans les deux sections de votre OAuth Client ID
+              👆 Ajoutez ces URI dans votre OAuth Client ID (Google Cloud Console → Credentials)
             </small>
           </InlineAlert>
         </div>

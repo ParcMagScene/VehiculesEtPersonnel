@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Settings, Monitor, Layout, Bell, Palette, Check, Volume2, VolumeX, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, Truck, Users, Briefcase, Package, ShoppingCart, BookOpen, Boxes, Sun, Moon, Radio } from 'lucide-react';
 import api from '../../utils/api';
 import { playNotificationSound, requestNotificationPermission, showBrowserNotification, playSound, setVolume, SOUND_TYPES } from '../../utils/notificationSound';
@@ -6,6 +6,7 @@ import { PALETTES } from '../../hooks/useTheme';
 import { Button, Dialog, Select, Toggle } from '@/design-system';
 import './UserPreferencesModal.css';
 import { useToast } from '../../hooks/useToast';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 
 const ALL_MODULES = [
   { id: 'vehicles', label: 'Parc', icon: Truck, locked: true },
@@ -40,12 +41,12 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [originalPrefs, setOriginalPrefs] = useState(null);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const { isDirty, resetDirty } = useDirtyForm(prefs);
+  const needsResetRef = useRef(false);
 
   const handleSafeClose = () => {
-    if (hasChanges) {
+    if (isDirty) {
       setShowUnsavedWarning(true);
       return;
     }
@@ -68,8 +69,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
         // Nettoyer hiddenTabs des modules supprimés
         merged.hiddenTabs = (merged.hiddenTabs || []).filter(id => VALID_MODULE_IDS.has(id));
         setPrefs(merged);
-        setOriginalPrefs(merged);
-        setHasChanges(false);
+        needsResetRef.current = true;
         setSaved(false);
       } catch (err) {
         console.error('Erreur chargement préférences:', err);
@@ -78,10 +78,17 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
     fetchPrefs();
   }, [isOpen]);
 
+  // Reset dirty tracking after initial fetch
+  useEffect(() => {
+    if (needsResetRef.current) {
+      needsResetRef.current = false;
+      resetDirty();
+    }
+  }, [prefs, resetDirty]);
+
   const updatePref = (key, value) => {
     const newPrefs = { ...prefs, [key]: value };
     setPrefs(newPrefs);
-    setHasChanges(JSON.stringify(newPrefs) !== JSON.stringify(originalPrefs));
     setSaved(false);
   };
 
@@ -94,11 +101,10 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
       if (newIdx < 0 || newIdx >= order.length) return prev;
       [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
       const newPrefs = { ...prev, tabOrder: order };
-      setHasChanges(JSON.stringify(newPrefs) !== JSON.stringify(originalPrefs));
       setSaved(false);
       return newPrefs;
     });
-  }, [originalPrefs]);
+  }, []);
 
   const toggleTabVisibility = useCallback((tabId) => {
     setPrefs(prev => {
@@ -110,11 +116,10 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
         hidden.push(tabId);
       }
       const newPrefs = { ...prev, hiddenTabs: hidden };
-      setHasChanges(JSON.stringify(newPrefs) !== JSON.stringify(originalPrefs));
       setSaved(false);
       return newPrefs;
     });
-  }, [originalPrefs]);
+  }, []);
 
   const orderedModules = (prefs.tabOrder || DEFAULT_TAB_ORDER).map(id => ALL_MODULES.find(m => m.id === id)).filter(Boolean);
 
@@ -122,8 +127,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
     setSaving(true);
     try {
       await api.savePreferences(prefs);
-      setOriginalPrefs(prefs);
-      setHasChanges(false);
+      resetDirty();
       setSaved(true);
       if (onPreferencesChange) onPreferencesChange(prefs);
       setTimeout(() => setSaved(false), 2000);
@@ -384,7 +388,7 @@ const UserPreferencesModal = ({ isOpen, onClose, onPreferencesChange, palette, o
             </span>
           )}
           <Button variant="ghost" onClick={handleSafeClose}>Fermer</Button>
-          <Button variant="primary" onClick={handleSave} disabled={!hasChanges || saving}>
+          <Button variant="primary" onClick={handleSave} disabled={!isDirty || saving}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>
         </div>

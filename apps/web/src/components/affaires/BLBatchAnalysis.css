@@ -179,6 +179,28 @@
   font-size: var(--font-sm);
 }
 
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .bl-batch-file-select {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bl-batch-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bl-batch-field-label {
+    width: 70px;
+    font-size: 0.7rem;
+  }
+
+  .bl-batch-result-summary {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
+
 .bl-batch-result-doctype {
   padding: 2px 8px;
   border-radius: var(--radius-md);

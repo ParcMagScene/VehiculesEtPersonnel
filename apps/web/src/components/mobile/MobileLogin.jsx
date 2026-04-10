@@ -66,7 +66,7 @@ function MobileLogin({ onLogin }) {
           <h1>Connexion eM@g</h1>
           <p>{mode === 'register' ? 'Créer un compte' : 'Connectez-vous pour continuer'}</p>
           {mode === 'register' && (
-            <small style={{ color: 'var(--theme-text-gray)', fontSize: '12px', display: 'block', marginTop: '8px' }}>
+            <small className="login-register-warning">
               ⚠️ Email autorisé requis
             </small>
           )}
@@ -174,7 +174,7 @@ function MobileLogin({ onLogin }) {
 
       {/* Modal Réinitialisation directe du mot de passe */}
       {showResetPassword && (
-        <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowResetPassword(false); }}>
+        <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowResetPassword(false); }} onKeyDown={(e) => { if (e.key === 'Escape') setShowResetPassword(false); }}>
           <div className="mobile-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
             <div className="mobile-sheet-handle" />
             <h3 className="mobile-sheet-title">🔑 Réinitialiser le mot de passe</h3>

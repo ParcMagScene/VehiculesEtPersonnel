@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Car, Settings, LogOut, Home, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase, ClipboardList } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
@@ -19,8 +19,9 @@ import MobileAffaires from './MobileAffaires';
 import MobileTasks from './MobileTasks';
 import MobileLogin from './MobileLogin';
 import { useTheme, PALETTES } from '../../hooks/useTheme';
+import useSwipeBack from '../../hooks/useSwipeBack';
+import { useMessagingSSE } from '../../hooks/useMessagingSSE';
 import api from '../../utils/api';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../../utils/notificationSound';
 import './MobileApp.css';
 import { Button, Spinner } from '@/design-system';
 
@@ -41,15 +42,40 @@ function MobileApp({ onSwitchToDesktop }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = !!currentUser?.isAdmin;
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [msgToast, setMsgToast] = useState(null);
   
+  // Swipe-back : retour à l'écran précédent
+  const goBack = useCallback(() => {
+    if (currentScreen === 'home') return;
+    // Écrans parc → dashboard parc, le reste → home
+    const parcScreens = ['planning', 'reservations', 'maintenances', 'availability'];
+    setCurrentScreen(parcScreens.includes(currentScreen) ? 'parc-dashboard' : 'home');
+  }, [currentScreen]);
+  const { swipeBackProps, swipeProgress } = useSwipeBack(goBack, { disabled: currentScreen === 'home' });
+
   // Refs pour contrôler les formulaires
   const reservationFormRef = useRef(null);
   const maintenanceFormRef = useRef(null);
-  const prevUnreadRef = useRef(-1);
   const msgToastTimerRef = useRef(null);
   const currentScreenRef = useRef('home');
+
+  // SSE messagerie temps réel (fallback polling auto)
+  const handleNewMessage = useCallback((msg) => {
+    if (currentScreenRef.current !== 'messaging') {
+      if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
+      const label = msg.type === 'text'
+        ? `💬 ${msg.sender_name}: ${msg.content?.substring(0, 50) || ''}`
+        : `📎 ${msg.sender_name} a envoyé un fichier`;
+      setMsgToast(label);
+      msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
+    }
+  }, []);
+
+  const { unreadMsgCount } = useMessagingSSE({
+    currentUser: isAuthenticated ? currentUser : null,
+    onNewMessage: handleNewMessage,
+    isMessagingOpen: currentScreenRef.current === 'messaging',
+  });
 
   // Vérifier l'authentification
   useEffect(() => {
@@ -121,54 +147,7 @@ function MobileApp({ onSwitchToDesktop }) {
     return () => window.removeEventListener('hashchange', checkQrHash);
   }, []);
 
-  // Polling notifications messages non lus
-  useEffect(() => {
-    if (!isAuthenticated || !currentUser) return;
-
-    // Demander permission navigateur
-    requestNotificationPermission();
-
-    const fetchUnread = async () => {
-      try {
-        const data = await api.getUnreadCount();
-        const newCount = data.unread || 0;
-        const prevCount = prevUnreadRef.current;
-
-        if (newCount > prevCount && prevCount !== -1) {
-          const diff = newCount - prevCount;
-
-          // Son
-          playNotificationSound();
-
-          // Toast in-app (sauf si on est déjà dans la messagerie)
-          if (currentScreenRef.current !== 'messaging') {
-            if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
-            setMsgToast(`${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`);
-            msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
-          }
-
-          // Notification navigateur
-          if (currentScreenRef.current !== 'messaging') {
-            showBrowserNotification(
-              `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
-              { body: 'Cliquez pour ouvrir la messagerie eM@g' }
-            );
-          }
-        }
-
-        prevUnreadRef.current = newCount;
-        setUnreadMsgCount(newCount);
-      } catch (e) { /* silencieux */ }
-    };
-
-    prevUnreadRef.current = -1;
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 10000);
-    return () => {
-      clearInterval(interval);
-      if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
-    };
-  }, [isAuthenticated, currentUser]);
+  // Polling notifications messages non lus — remplacé par SSE (useMessagingSSE)
 
   const handleLogin = (user) => {
     setIsAuthenticated(true);
@@ -230,13 +209,14 @@ function MobileApp({ onSwitchToDesktop }) {
     <div className="mobile-app">
       {/* Header */}
       <header className="mobile-header">
-        <Button variant="ghost" className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+        <Button variant="ghost" className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}>
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </Button>
         <img src="/Logos/LogoEmagTransp.png" alt="eM@g" className="mobile-header-logo" />
         <div className="user-info">
           <Button variant="ghost"             className="header-msg-btn"
             onClick={() => { setCurrentScreen('messaging'); currentScreenRef.current = 'messaging'; }}
+            aria-label="Messagerie"
           >
             <MessageSquare size={20} />
             {unreadMsgCount > 0 && (
@@ -246,6 +226,7 @@ function MobileApp({ onSwitchToDesktop }) {
           <Button variant="ghost" 
             className="user-initial"
             onClick={() => setShowUserMenu(!showUserMenu)}
+            aria-label="Menu utilisateur"
           >
             {currentUser?.name?.charAt(0)}
           </Button>
@@ -254,7 +235,7 @@ function MobileApp({ onSwitchToDesktop }) {
 
       {/* User menu bottom-sheet */}
       {showUserMenu && (
-        <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowUserMenu(false); }}>
+        <div className="mobile-sheet-overlay" role="dialog" aria-modal="true" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowUserMenu(false); }} onKeyDown={(e) => { if (e.key === 'Escape') setShowUserMenu(false); }}>
           <div className="mobile-sheet">
             <div className="mobile-sheet-handle" />
             <div className="mobile-sheet-user">
@@ -280,7 +261,7 @@ function MobileApp({ onSwitchToDesktop }) {
 
       {/* Menu latéral */}
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-        <div className="menu-overlay" onMouseDown={() => setMenuOpen(false)}></div>
+        <div className="menu-overlay" onMouseDown={() => setMenuOpen(false)} onKeyDown={(e) => { if (e.key === 'Escape') setMenuOpen(false); }}></div>
         <div className="menu-content">
           <div className="menu-user">
             <div className="menu-avatar">{currentUser?.name?.charAt(0)}</div>
@@ -290,7 +271,7 @@ function MobileApp({ onSwitchToDesktop }) {
             </div>
           </div>
           
-          <nav className="menu-nav">
+          <nav className="menu-nav" role="navigation" aria-label="Menu principal">
             <Button variant="ghost"               className={currentScreen === 'home' ? 'active' : ''}
               onClick={() => { setCurrentScreen('home'); setMenuOpen(false); }}
             >
@@ -395,7 +376,7 @@ function MobileApp({ onSwitchToDesktop }) {
             <Button variant="ghost" onClick={() => setShowThemePanel(!showThemePanel)}>
               <Palette size={20} />
               <span>Thème & couleurs</span>
-              <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
+              <span className="menu-theme-indicator">
                 {isDark ? '🌙' : '☀️'}
               </span>
             </Button>
@@ -425,8 +406,8 @@ function MobileApp({ onSwitchToDesktop }) {
                         title={p.name}
                       >
                         <div className="menu-palette-preview">
-                          <div style={{ background: colors.primary, width: '50%', height: '100%', borderRadius: '4px 0 0 4px' }} />
-                          <div style={{ background: colors.accent, width: '50%', height: '100%', borderRadius: '0 4px 4px 0' }} />
+                          <div className="menu-palette-left" style={{ background: colors.primary }} />
+                          <div className="menu-palette-right" style={{ background: colors.accent }} />
                         </div>
                         <span>{p.name.replace('Flat ', '')}</span>
                       </Button>
@@ -451,7 +432,12 @@ function MobileApp({ onSwitchToDesktop }) {
       </div>
 
       {/* Contenu principal */}
-      <main className="mobile-content">
+      <main className="mobile-content" {...swipeBackProps}>
+        {swipeProgress > 0 && (
+          <div className="swipe-back-indicator" style={{ opacity: swipeProgress, transform: `translateX(${swipeProgress * 20 - 20}px)` }}>
+            ‹
+          </div>
+        )}
         {currentScreen === 'home' && (
           <MobileHome
             vehicles={vehicles}
@@ -604,7 +590,7 @@ function MobileApp({ onSwitchToDesktop }) {
 
       {/* Toast notification messages */}
       {msgToast && (
-        <div className="mobile-msg-toast" role="button" tabIndex={0} onClick={() => { setMsgToast(null); setCurrentScreen('messaging'); }}>
+        <div className="mobile-msg-toast" role="button" tabIndex={0} onClick={() => { setMsgToast(null); setCurrentScreen('messaging'); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMsgToast(null); setCurrentScreen('messaging'); } }}>
           <MessageSquare size={16} />
           <span>{msgToast}</span>
         </div>

@@ -1,4 +1,26 @@
 import db from '../database.js';
+import logger from '../logger.js';
+
+// [AUDIT FIX B1] Liste blanche des clés de permissions autorisées
+const VALID_PERMISSION_KEYS = new Set([
+  'can_manage_catalog',
+  'can_manage_vehicle_maintenance',
+  'can_manage_maintenance',
+  'can_manage_equipment_maintenance',
+  'can_manage_trucks',
+  'can_manage_stock',
+  'can_manage_orders',
+  'can_manage_inventory',
+  'can_manage_personnel',
+  'can_manage_planning',
+  'can_manage_leaves',
+  'can_manage_affaires',
+  'can_manage_display',
+  'can_manage_mailing',
+  'can_manage_annuaire',
+  'can_manage_video',
+  'can_manage_messaging',
+]);
 
 /**
  * Résoudre permissions depuis JWT ou DB (fallback pour anciens tokens)
@@ -17,12 +39,25 @@ function resolvePermissions(req) {
 }
 
 /**
- * Parse les permissions JSON depuis l'objet user DB
+ * Parse et valide les permissions JSON depuis l'objet user DB
+ * [AUDIT FIX B1] Seules les clés whitelistées sont conservées, valeurs forcées en boolean
  */
 function parsePermissions(user) {
   try {
-    return user.permissions ? JSON.parse(user.permissions) : {};
+    const raw = user.permissions ? JSON.parse(user.permissions) : {};
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+      logger.warn(`[AUTH] Permissions invalides (pas un objet) pour user — reset à {}`);
+      return {};
+    }
+    const sanitized = {};
+    for (const [key, value] of Object.entries(raw)) {
+      if (VALID_PERMISSION_KEYS.has(key)) {
+        sanitized[key] = !!value;
+      }
+    }
+    return sanitized;
   } catch {
+    logger.warn(`[AUTH] Erreur parsing permissions JSON — reset à {}`);
     return {};
   }
 }

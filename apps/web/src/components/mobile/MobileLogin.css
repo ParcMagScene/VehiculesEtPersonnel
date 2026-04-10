@@ -209,3 +209,10 @@
   color: var(--theme-text-muted);
   font-size: var(--font-sm);
 }
+
+.login-register-warning {
+  color: var(--theme-text-gray);
+  font-size: 12px;
+  display: block;
+  margin-top: 8px;
+}

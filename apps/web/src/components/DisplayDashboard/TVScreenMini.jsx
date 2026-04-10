@@ -135,14 +135,9 @@ function TVScreenMini({ state = {} }) {
   const regularTasks = tasks.filter(t => !t.is_recurrent);
   const recurrentTasks = tasks.filter(t => t.is_recurrent);
 
-  // Sonos : parsing radio "Artiste - Titre" (comme le vrai TV)
-  let sonosTitle = state.sonos?.title || '';
-  let sonosArtist = state.sonos?.artist || '';
-  if (!sonosArtist && sonosTitle.includes(' - ')) {
-    const parts = sonosTitle.split(' - ');
-    sonosArtist = parts[0].trim();
-    sonosTitle = parts.slice(1).join(' - ').trim();
-  }
+  // Sonos : artiste/titre fournis directement par le backend
+  const sonosTitle = state.sonos?.title || '';
+  const sonosArtist = state.sonos?.artist || '';
 
   return (
     <div className="tv-mini-screen" style={{ background: eventBgColor, fontFamily }}>

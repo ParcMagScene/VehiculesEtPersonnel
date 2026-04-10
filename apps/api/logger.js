@@ -9,13 +9,13 @@ const timestamp = () => new Date().toISOString().slice(11, 23);
 
 const logger = {
   // Infos opérationnelles essentielles — toujours affiché
-  info: (...args) => console.log(isDev ? `[${timestamp()}] ℹ️` : '[INFO]', ...args),
+  info: (...args) => console.log(`[${timestamp()}]`, isDev ? 'ℹ️' : '[INFO]', ...args),
 
   // Avertissements — toujours affiché
-  warn: (...args) => console.warn(isDev ? `[${timestamp()}] ⚠️` : '[WARN]', ...args),
+  warn: (...args) => console.warn(`[${timestamp()}]`, isDev ? '⚠️' : '[WARN]', ...args),
 
   // Erreurs — toujours affiché
-  error: (...args) => console.error(isDev ? `[${timestamp()}] ❌` : '[ERROR]', ...args),
+  error: (...args) => console.error(`[${timestamp()}]`, isDev ? '❌' : '[ERROR]', ...args),
 
   // Debug — uniquement en développement
   debug: (...args) => {
@@ -23,7 +23,7 @@ const logger = {
   },
 
   // Succès — toujours affiché (startup, migrations)
-  success: (...args) => console.log(isDev ? `[${timestamp()}] ✅` : '[OK]', ...args),
+  success: (...args) => console.log(`[${timestamp()}]`, isDev ? '✅' : '[OK]', ...args),
 };
 
 export default logger;

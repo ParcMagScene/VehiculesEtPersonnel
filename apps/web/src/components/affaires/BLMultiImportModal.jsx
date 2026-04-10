@@ -15,6 +15,7 @@ import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import { useToast } from '../../hooks/useToast';
 import { Button, Input, ProgressBar } from '@/design-system';
 import { STATUS } from '../../constants';
+import { CONF_COLORS } from '../../constants/colors';
 
 import './BLMultiImportModal.css';
 
@@ -43,7 +44,6 @@ const FIELD_DEFS = [
   { key: 'tel', label: 'Téléphone' },
 ];
 
-const CONF_COLORS = { high: '#10b981', medium: '#f59e0b', low: '#ef4444' };
 const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
 
 const SECTION_COLORS = {

@@ -62,7 +62,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
   return (
     <div className="mobile-availability">
       <div className="availability-header">
-        <Button variant="ghost" className="back-button" onClick={onClose}>
+        <Button variant="ghost" className="back-button" onClick={onClose} aria-label="Retour">
           <ChevronLeft size={24} />
         </Button>
         <h2>Disponibilités</h2>
@@ -70,7 +70,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
 
       {/* Navigation par jour */}
       <div className="day-navigation">
-        <Button variant="ghost" className="nav-button" onClick={goToPreviousDay}>
+        <Button variant="ghost" className="nav-button" onClick={goToPreviousDay} aria-label="Jour précédent">
           <ChevronLeft size={20} />
         </Button>
         
@@ -83,7 +83,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
           </div>
         </div>
 
-        <Button variant="ghost" className="nav-button" onClick={goToNextDay}>
+        <Button variant="ghost" className="nav-button" onClick={goToNextDay} aria-label="Jour suivant">
           <ChevronRight size={20} />
         </Button>
       </div>

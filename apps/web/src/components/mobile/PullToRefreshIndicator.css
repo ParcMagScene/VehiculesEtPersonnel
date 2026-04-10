@@ -1,0 +1,31 @@
+/* Pull-to-refresh indicator */
+.ptr-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: height 0.2s ease, opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ptr-indicator .ptr-icon {
+  color: var(--color-text-secondary, #6b7280);
+  transition: color 0.2s;
+}
+
+.ptr-indicator.ptr-triggered .ptr-icon {
+  color: var(--color-primary, #3b82f6);
+}
+
+.ptr-indicator.ptr-refreshing {
+  height: 40px !important;
+  opacity: 1 !important;
+}
+
+.ptr-icon.ptr-spin {
+  animation: ptr-spin 0.8s linear infinite;
+}
+
+@keyframes ptr-spin {
+  to { transform: rotate(360deg); }
+}

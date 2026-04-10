@@ -1229,10 +1229,18 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         const eIdx = endIdx === -1 ? startIdx : endIdx;
 
         for (let i = startIdx; i <= eIdx; i++) {
+          // [2.5] Déterminer la période pour ce jour spécifique
+          const isFirstDay = (i === startIdx && isSameDay(clampedStart, aStart));
+          const isLastDay = (i === endIdx && isSameDay(clampedEnd, aEnd));
+          const sp = isFirstDay ? (avail.start_period || avail.startPeriod || 'AM') : 'AM';
+          const ep = isLastDay ? (avail.end_period || avail.endPeriod || 'PM') : 'PM';
+          // period: 'AM' = matin seul, 'PM' = après-midi seul, 'FULL' = journée entière
+          const period = (sp === 'AM' && ep === 'PM') ? 'FULL' : (sp === 'PM' ? 'PM' : 'AM');
           map[`${personId}_${i}`] = {
             type: avail.type || 'unavailable',
             reason: avail.reason,
             status: avail.status || 'approved',
+            period,
           };
         }
       } catch { /* ignore */ }
@@ -1484,12 +1492,12 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   };
 
   // Clic simple sur cellule vide (fallback si pas eu de drag)
-  const handleSlotClick = (person, day, slotIndex) => {
+  const handleSlotClick = (person, day, slotIndex, period) => {
     if (view === 'year') return;
     if (dragCreate || dragMove || resizeState) return;
     const covered = coveredSlotsForPerson(person.id);
     if (covered.has(slotIndex)) return;
-    setAssignmentDialog({ person, day, period: 'AM' });
+    setAssignmentDialog({ person, day, period: period || 'AM' });
   };
 
   // Vérifier si un slot est dans la sélection drag-to-create
@@ -1587,18 +1595,25 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           const hasAbsence = !!absence;
           const absenceColor = hasAbsence ? LEAVE_TYPE_COLORS[absence.type] || 'var(--theme-text-muted)' : null;
           const absenceLabel = hasAbsence ? LEAVE_TYPE_LABELS[absence.type] || '' : '';
+          const absencePeriodLabel = hasAbsence && absence.period !== 'FULL' ? ` (${absence.period})` : '';
           const absenceTooltip = hasAbsence
-            ? `${absenceLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === STATUS.PENDING ? ' (en attente)' : ''}`
+            ? `${absenceLabel}${absencePeriodLabel}${absence.reason ? ' — ' + absence.reason : ''}${absence.status === STATUS.PENDING ? ' (en attente)' : ''}`
             : '';
 
-          // Tâches assignées sur ce slot ?
-          const tasksHere = taskSlots[absenceKey] || [];
+          // Absence partielle (AM/PM) ne bloque pas entièrement le slot
+          const isFullAbsence = hasAbsence && absence.period === 'FULL';
 
           return (
             <div
               key={slotIndex}
               className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isHovered ? ' pp-cell-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}${hasAbsence ? ' pp-slot-absence' : ''}`}
-              onMouseDown={(e) => !isCovered && !hasAbsence && handleSlotMouseDown(person, slotIndex, e)}
+              onMouseDown={(e) => !isCovered && !isFullAbsence && handleSlotMouseDown(person, slotIndex, e)}
+              onContextMenu={(e) => {
+                // [2.6] Clic droit sur cellule → menu contextuel avec date pré-remplie
+                if (isCovered) return;
+                e.preventDefault();
+                setContextMenu({ x: e.clientX, y: e.clientY, person, day: slot.day });
+              }}
               onMouseEnter={() => {
                 handleSlotMouseEnter(person, slotIndex);
                 if (!anyDragActive) setHoveredSlot({ personId: person.id, slotIndex });
@@ -1606,23 +1621,32 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
               onMouseLeave={() => { if (!anyDragActive) setHoveredSlot(null); }}
               onMouseUp={handleGlobalMouseUp}
               onClick={(e) => {
-                if (isCovered || hasAbsence || wasDraggedRef.current) { wasDraggedRef.current = false; return; }
+                if (isCovered || isFullAbsence || wasDraggedRef.current) { wasDraggedRef.current = false; return; }
                 e.stopPropagation();
-                handleSlotClick(person, slot.day, slotIndex);
+                // Si demi-journée absence AM, proposer PM, et inversement
+                const period = hasAbsence ? (absence.period === 'AM' ? 'PM' : 'AM') : undefined;
+                handleSlotClick(person, slot.day, slotIndex, period);
               }}
               data-emag-tooltip={isHovered && !anyDragActive ? (hasAbsence ? `${personName} — ${absenceTooltip}` : `${personName} — ${dayLabel}`) : undefined}
               style={{
-                cursor: view !== 'year' && !isCovered && !hasAbsence ? 'crosshair' : 'default',
+                cursor: view !== 'year' && !isCovered && !isFullAbsence ? 'crosshair' : 'default',
                 ...(hasAbsence ? {
-                  backgroundColor: absenceColor + (absence.status === STATUS.PENDING ? '30' : '40'),
-                  backgroundImage: absence.status === STATUS.PENDING ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)` : 'none',
+                  // [2.5] AM = moitié haut, PM = moitié bas, FULL = tout
+                  backgroundColor: absence.period === 'FULL' ? absenceColor + (absence.status === STATUS.PENDING ? '30' : '40') : 'transparent',
+                  backgroundImage: absence.period === 'AM'
+                    ? `linear-gradient(to bottom, ${absenceColor}${absence.status === STATUS.PENDING ? '30' : '40'} 50%, transparent 50%)`
+                    : absence.period === 'PM'
+                    ? `linear-gradient(to bottom, transparent 50%, ${absenceColor}${absence.status === STATUS.PENDING ? '30' : '40'} 50%)`
+                    : absence.status === STATUS.PENDING
+                    ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)`
+                    : 'none',
                 } : {}),
               }}
             >
               {/* Label absence */}
               {hasAbsence && !isCovered && (
                 <span className="pp-absence-label" style={{ color: absenceColor }}>
-                  {absenceLabel}
+                  {absenceLabel}{absencePeriodLabel}
                 </span>
               )}
               {/* Tâches assignées (affichées sous les missions ou seules) */}
@@ -2072,11 +2096,12 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           y={contextMenu.y}
           person={contextMenu.person}
           onSelect={(type, person) => {
+            const day = contextMenu.day; // [2.6] date de la cellule clic-droit
             setContextMenu(null);
             if (type === 'conge_paye') {
-              setShowLeaveModal({ person });
+              setShowLeaveModal({ person, day });
             } else {
-              setPeriodCalendar({ person, type });
+              setPeriodCalendar({ person, type, day });
             }
           }}
           onClose={() => setContextMenu(null)}
@@ -2088,6 +2113,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
         <PeriodCalendarModal
           person={periodCalendar.person}
           periodType={periodCalendar.type}
+          initialDate={periodCalendar.day}
           isAdmin={false}
           onClose={() => setPeriodCalendar(null)}
           onCreated={() => loadPlanning()}

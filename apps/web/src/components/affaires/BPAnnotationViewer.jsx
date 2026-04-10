@@ -3,6 +3,7 @@
 // Surlignage automatique par famille métier (Sono, Lumière, etc.)
 // ═══════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { AVATAR_COLORS } from '../../constants/colors';
 import * as pdfjsLib from 'pdfjs-dist';
 import {
   X, Download, Printer, ZoomIn, ZoomOut,
@@ -282,7 +283,7 @@ function drawInfoBlock(ctx, canvasWidth, lines, affaireData, scale) {
   const y = 125 * s;
 
   // Couleurs pour les avatars personnel (rotation)
-  const avatarColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+  const avatarColors = AVATAR_COLORS;
   let avatarIdx = 0;
 
   let cy = y;

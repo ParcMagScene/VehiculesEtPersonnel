@@ -4,6 +4,8 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, DetailRow, Textarea, InlineAlert} from '@/design-system';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import { ROLES, STATUS } from '../../constants';
 
@@ -45,6 +47,8 @@ function MobileLeaves({ currentUser, onBack }) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadData);
+
   const handleLeaveCreated = () => {
     setView('list');
     loadData();
@@ -80,7 +84,7 @@ function MobileLeaves({ currentUser, onBack }) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
-          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></Button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')} aria-label="Retour"><ChevronLeft size={20} /></Button>
           <h2>Détail demande</h2>
         </div>
         <LeaveDetail 
@@ -101,7 +105,7 @@ function MobileLeaves({ currentUser, onBack }) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
-          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></Button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')} aria-label="Retour"><ChevronLeft size={20} /></Button>
           <h2>Nouvelle demande</h2>
         </div>
         <LeaveForm 
@@ -118,7 +122,7 @@ function MobileLeaves({ currentUser, onBack }) {
     return (
       <div className="mobile-leaves">
         <div className="mobile-module-header">
-          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')}><ChevronLeft size={20} /></Button>
+          <Button variant="ghost" className="mobile-back-btn" onClick={() => setView('list')} aria-label="Retour"><ChevronLeft size={20} /></Button>
           <h2>Validations ({pendingCount})</h2>
         </div>
         <LeaveAdminList 
@@ -133,11 +137,12 @@ function MobileLeaves({ currentUser, onBack }) {
 
   // ─── Vue liste principale ───
   return (
-    <div className="mobile-leaves">
+    <div className="mobile-leaves" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="mobile-module-header">
         <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
         <h2>🏖️ Congés</h2>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+        <div className="ml-header-actions">
           {isAdmin && pendingCount > 0 && (
             <Button variant="ghost" className="ml-admin-btn" onClick={() => setView('admin')}>
               <Clock size={16} />
@@ -206,7 +211,7 @@ function MobileLeaves({ currentUser, onBack }) {
       </div>
 
       {/* FAB pour nouvelle demande */}
-      <Button variant="ghost" className="ml-fab" onClick={() => setView('form')}>
+      <Button variant="ghost" className="ml-fab" onClick={() => setView('form')} aria-label="Nouvelle demande de congé">
         <Plus size={24} />
       </Button>
     </div>
@@ -227,7 +232,7 @@ function LeaveCard({ leave, onClick }) {
   const days = leave.working_days || leave.workingDays || '?';
 
   return (
-    <div className="ml-leave-card" role="button" tabIndex={0} onClick={onClick}>
+    <div className="ml-leave-card" role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}>
       <div className="ml-leave-type" style={{ background: typeInfo.color + '20', color: typeInfo.color }}>
         <span>{typeInfo.icon}</span>
       </div>
@@ -324,8 +329,8 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
 
       {/* Dates */}
       <div className="ml-form-group">
-        <label>Date de début</label>
-        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="ml-input" />
+        <label htmlFor="leave-start-date">Date de début</label>
+        <input id="leave-start-date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="ml-input" />
         <div className="ml-half-day">
           {['full', 'morning', 'afternoon'].map(h => (
             <Button variant="ghost" key={h} className={`ml-half-btn ${startHalf === h ? 'active' : ''}`} onClick={() => setStartHalf(h)}>
@@ -336,8 +341,8 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
       </div>
 
       <div className="ml-form-group">
-        <label>Date de fin</label>
-        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="ml-input" />
+        <label htmlFor="leave-end-date">Date de fin</label>
+        <input id="leave-end-date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="ml-input" />
         <div className="ml-half-day">
           {['full', 'morning', 'afternoon'].map(h => (
             <Button variant="ghost" key={h} className={`ml-half-btn ${endHalf === h ? 'active' : ''}`} onClick={() => setEndHalf(h)}>
@@ -480,7 +485,7 @@ function LeaveAdminList({ pendingLeaves, onDecision, onSelect, onRefresh }) {
           
           return (
             <div key={leave.id} className="ml-leave-card ml-admin-card">
-              <div className="ml-leave-card-top" role="button" tabIndex={0} onClick={() => onSelect(leave)}>
+              <div className="ml-leave-card-top" role="button" tabIndex={0} onClick={() => onSelect(leave)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(leave); } }}>
                 <div className="ml-leave-type" style={{ background: typeInfo.color + '20', color: typeInfo.color }}>
                   <span>{typeInfo.icon}</span>
                 </div>

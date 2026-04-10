@@ -6,9 +6,8 @@ import { useState, useCallback } from 'react';
 import { Upload, FileText, AlertTriangle, BarChart2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button, ModalLayout } from '@/design-system';
 import { batchParsePDFs } from '../../utils/pdfParser';
+import { CONF_COLORS } from '../../constants/colors';
 import './BLBatchAnalysis.css';
-
-const CONF_COLORS = { high: '#10b981', medium: '#f59e0b', low: '#ef4444' };
 
 const FIELD_KEYS = [
   'numero', 'client', 'date', 'type', 'nomAffaire',

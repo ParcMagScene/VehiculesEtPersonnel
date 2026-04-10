@@ -17,6 +17,7 @@ import EventTaskModal from './EventTaskModal';
 import TaskEditModal from './TaskEditModal';
 import AddTaskModal from './AddTaskModal';
 import { STATUS } from '../../constants';
+import { PLANNING_SECTIONS, EVENT_TYPE_COLORS } from '../../constants/colors';
 
 import './TaskPlanningPanel.css';
 
@@ -24,43 +25,15 @@ const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
 // ═══ Constantes ═══
 const SECTIONS = {
-  rdv:                { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
-  evenements:         { label: 'Événements Google',    emoji: '📌', color: '#64748b' },
-  // — Prioritaires & Courses en premier —
-  taches_prioritaires:{ label: 'Tâches Prioritaires',  emoji: '🔴', color: '#ef4444' },
-  courses:            { label: 'Courses',              emoji: '🚗', color: '#8b5cf6' },
-  // — Préparations —
-  prep_locations:     { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  prep_prestations:   { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6', affaireOnly: true },
-  prep_ventes:        { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981', affaireOnly: true },
-  prep_installations: { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6', affaireOnly: true },
-  prep_tournees:      { label: 'Préparations Tournées',       emoji: '🚐', color: '#ec4899', affaireOnly: true },
-  // — Autres étapes opérationnelles —
-  chargement:         { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  depart:             { label: 'Départ',               emoji: '🚀', color: '#3b82f6', affaireOnly: true },
-  installation:       { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
-  montage:            { label: 'Montage',              emoji: '🔩', color: '#0891b2', affaireOnly: true },
-  demontage:          { label: 'Démontage',            emoji: '🔧', color: '#dc2626', affaireOnly: true },
-  depot:              { label: 'Dépôt',                emoji: '🏠', color: '#6366f1' },
-  // — En bas —
-  taches_secondaires: { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
-  manual:             { label: 'Autres',               emoji: '📋', color: 'var(--theme-text-secondary)' },
+  ...PLANNING_SECTIONS,
+  manual: { ...PLANNING_SECTIONS.manual, color: 'var(--theme-text-secondary)' },
 };
 
 // Sections événements (haut) vs opérationnelles (bas)
 const EVENT_SECTION_KEYS = ['rdv', 'evenements'];
 const OPS_SECTION_KEYS = Object.keys(SECTIONS).filter(k => !EVENT_SECTION_KEYS.includes(k));
 
-const EVENT_TYPES = {
-  preparation:  { label: 'Préparation',  emoji: '🔧', color: '#6366f1' },
-  enlevement:   { label: 'Enlèvement',   emoji: '📦', color: '#f59e0b' },
-  livraison:    { label: 'Livraison',     emoji: '🚚', color: '#10b981' },
-  depart:       { label: 'Départ',        emoji: '🚀', color: '#3b82f6' },
-  retour:       { label: 'Retour',        emoji: '↩️', color: '#8b5cf6' },
-  recuperation: { label: 'Récupération',  emoji: '📥', color: '#ef4444' },
-  montage:      { label: 'Montage',       emoji: '🔩', color: '#0891b2' },
-  demontage:    { label: 'Démontage',     emoji: '🔧', color: '#dc2626' },
-};
+const EVENT_TYPES = EVENT_TYPE_COLORS;
 
 const mapEventToSection = (event) => {
   const type = event.type;
@@ -1279,7 +1252,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
                       <span className="link-option-client">{a.client || a.titre || 'Sans client'}</span>
                     </Button>
                   ))}
-                  {filtered.length > 10 && <div className="link-no-results" style={{ fontSize: '0.7rem', opacity: 0.6 }}>+{filtered.length - 10} autres…</div>}
+                  {filtered.length > 10 && <div className="link-no-results link-no-results-more">+{filtered.length - 10} autres…</div>}
                 </div>
               ) : (
                 <div className="link-no-results">Aucune affaire trouvée</div>
@@ -1407,7 +1380,6 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       <div
         key={`aff-${affaire.numeroAffaire}`}
         className={`task-row event-row-cols affaire-row ${isDone ? 'task-done-row' : ''} ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}
-        style={{ flexWrap: 'wrap' }}
       >
         <Button variant="ghost"           className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
           title={`Statut: ${planningStatus} — cliquer pour changer`}
@@ -1421,7 +1393,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => { onNavigateToEntity('affaire', { numero: num }); } : undefined} />
         </span>
 
-        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
           {affaire._linkedGoogleEvent && <Tooltip content="Lié à un événement Google Calendar" position="bottom"><span className="google-linked-badge">G</span></Tooltip>}
         </span>
@@ -1511,7 +1483,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={[displayNom, location && '📍 ' + location].filter(Boolean).join('\n')} style={{ cursor: 'pointer' }} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={[displayNom, location && '📍 ' + location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(event)}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -1615,13 +1587,13 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     ].filter(Boolean).join('\n');
 
     return (
-      <div key={`rdv-${affaire.numeroAffaire}`} className={`task-row event-row-cols rdv-row ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`} style={{ flexWrap: 'wrap' }}>
+      <div key={`rdv-${affaire.numeroAffaire}`} className={`task-row event-row-cols rdv-row ${affaire._linkedGoogleEvent ? 'google-linked' : ''}`}>
 
         <span className="ev-col ev-col-affaire">
           <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} />
         </span>
 
-        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} style={{ cursor: 'pointer' }} onClick={() => openAffaireTaskModal(affaire)}>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={tooltipParts} onClick={() => openAffaireTaskModal(affaire)}>
           {displayNom}
           {affaire._linkedGoogleEvent && <Tooltip content="Lié à un événement Google Calendar" position="bottom"><span className="google-linked-badge">G</span></Tooltip>}
         </span>
@@ -1723,7 +1695,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <span className="ev-col ev-col-affaire">
           {affaireNum ? <AffaireBadge numero={affaireNum} type={linkedAff?.type} size="sm" onNavigate={onNavigateToEntity ? (num) => onNavigateToEntity('affaire', { numero: num }) : undefined} /> : null}
         </span>
-        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={[displayNom, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))} style={{ cursor: 'pointer' }}>{displayNom}</span>
+        <span className="ev-col ev-col-nom" role="button" tabIndex={0} title={[displayNom, event.location && '📍 ' + event.location].filter(Boolean).join('\n')} onClick={() => setEventTaskModalEvent(icalToGoogleLike(event))}>{displayNom}</span>
         <span className="ev-col ev-col-client" title={affaireClient}>{affaireClient}</span>
         <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
@@ -1878,7 +1850,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           className={`wk-card wk-event ${item.visible === 0 ? 'hidden-display' : ''}`}
           style={{ borderLeftColor: typeInfo.color }}
         >
-          <Monitor size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
+          <Monitor size={10} style={{ color: typeInfo.color }} />
           <span className="wk-title" title={`${typeInfo.label}${item.client ? ' — ' + item.client : ''}`}>
             {typeInfo.emoji} {item.client || typeInfo.label}
           </span>
@@ -1904,10 +1876,10 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <div
           key={`wa-${item.numeroAffaire}`}
           className={`wk-card wk-affaire ${isProcessed ? 'processed' : 'pending'} ${item._linkedGoogleEvent ? 'google-linked' : ''}`}
-          style={{ borderLeftColor: typeInfo.color, cursor: 'pointer' }}
+          style={{ borderLeftColor: typeInfo.color }}
           onClick={() => openAffaireTaskModal(item)}
         >
-          <Briefcase size={10} style={{ color: typeInfo.color, flexShrink: 0 }} />
+          <Briefcase size={10} style={{ color: typeInfo.color }} />
           <span className="wk-title" title={`${item.numeroAffaire}${item.client ? ' — ' + item.client : ''}${item.event_name || item.titre ? ' • ' + (item.event_name || item.titre) : ''}${item._googleTime ? ' • ' + item._googleTime : ''}`}>
             {typeInfo.emoji} {item.client || item.numeroAffaire}{(item.event_name || item.titre) ? ` · ${(item.event_name || item.titre).slice(0, 15)}${(item.event_name || item.titre).length > 15 ? '…' : ''}` : ''}
           </span>
@@ -1935,10 +1907,10 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <div
           key={`wg-${item.id}`}
           className={`wk-card wk-google ${isProcessed ? 'processed' : 'pending'}`}
-          style={{ borderLeftColor: isProcessed ? '#10b981' : '#4285f4', cursor: 'pointer' }}
+          style={{ borderLeftColor: isProcessed ? '#10b981' : '#4285f4' }}
           onClick={() => setEventTaskModalEvent(item)}
         >
-          <Calendar size={10} style={{ color: '#4285f4', flexShrink: 0 }} />
+          <Calendar size={10} style={{ color: '#4285f4' }} />
           <span className="wk-title" title={summary}>{summary.slice(0, 22)}{summary.length > 22 ? '…' : ''}</span>
           {timeStr && <span className="wk-time">{timeStr}</span>}
           <span className={`wk-status-dot ${isProcessed ? 'done' : ''}`}>{isProcessed ? '✓' : '⚙'}</span>
@@ -1957,19 +1929,19 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       <div className="wk-day-expanded">
         {dayData.googleEvents.length > 0 && (
           <div className="wk-expanded-section">
-            <div className="wk-expanded-section-label" style={{ color: '#4285f4' }}>📅 Google Calendar</div>
+            <div className="wk-expanded-section-label wk-section-google">📅 Google Calendar</div>
             {dayData.googleEvents.map(ev => renderWeekMiniCard(ev, 'google'))}
           </div>
         )}
         {dayData.affaires.length > 0 && (
           <div className="wk-expanded-section">
-            <div className="wk-expanded-section-label" style={{ color: 'var(--theme-primary, #3b82f6)' }}>📋 Affaires</div>
+            <div className="wk-expanded-section-label wk-section-affaires">📋 Affaires</div>
             {dayData.affaires.map(a => renderWeekMiniCard(a, 'affaire'))}
           </div>
         )}
         {dayData.events.length > 0 && (
           <div className="wk-expanded-section">
-            <div className="wk-expanded-section-label" style={{ color: 'var(--theme-text-secondary)' }}>📺 Écran</div>
+            <div className="wk-expanded-section-label wk-section-display">📺 Écran</div>
             {dayData.events.map(ev => renderWeekMiniCard(ev, 'event'))}
           </div>
         )}

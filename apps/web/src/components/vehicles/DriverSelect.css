@@ -211,3 +211,25 @@
 .driver-select-dropdown::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .driver-select-dropdown {
+    max-height: 220px;
+  }
+
+  .driver-select-option {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .driver-select-trigger {
+    min-height: 44px;
+    font-size: var(--font-base);
+  }
+
+  .driver-select-dropdown {
+    max-height: 200px;
+  }
+}

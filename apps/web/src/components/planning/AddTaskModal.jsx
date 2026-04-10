@@ -9,26 +9,13 @@ import { useToast } from '../../hooks/useToast';
 import { safeParseDate } from '../../utils/dateUtils';
 import { Button, Input, Select } from '@/design-system';
 import { STATUS } from '../../constants';
+import { PLANNING_SECTIONS } from '../../constants/colors';
 
 import './AddTaskModal.css';
 
-// ═══ Constantes (miroir de TaskPlanningPanel) ═══
-const SECTIONS = {
-  taches_prioritaires: { label: 'Tâches Prioritaires', emoji: '🔴', color: '#ef4444' },
-  courses:             { label: 'Courses',              emoji: '🚗', color: '#8b5cf6' },
-  prep_locations:      { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  prep_prestations:    { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6', affaireOnly: true },
-  prep_ventes:         { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981', affaireOnly: true },
-  prep_installations:  { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6', affaireOnly: true },
-  prep_tournees:       { label: 'Préparations Tournées',       emoji: '🚐', color: '#ec4899', affaireOnly: true },
-  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6', affaireOnly: true },
-  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
-  montage:             { label: 'Montage',              emoji: '🔩', color: '#0891b2', affaireOnly: true },
-  demontage:           { label: 'Démontage',            emoji: '🔧', color: '#dc2626', affaireOnly: true },
-  taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
-  manual:              { label: 'Autres',               emoji: '📋', color: '#64748b' },
-};
+// ═══ Constantes (depuis colorConstants) ═══
+const { rdv, evenements, depot, ...ADD_TASK_SECTIONS } = PLANNING_SECTIONS;
+const SECTIONS = ADD_TASK_SECTIONS;
 
 const EVENT_TYPES = {
   preparation:  { label: 'Préparation',  emoji: '🔧' },

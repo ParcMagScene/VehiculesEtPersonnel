@@ -196,16 +196,8 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/weather');
     },
 
-    // Sonos
-    async getDisplaySonosConfig() {
-      return this.request('/display/sonos-config');
-    },
-    async saveDisplaySonosConfig(sonosIP) {
-      return this.request('/display/sonos-config', { method: 'POST', body: JSON.stringify({ sonosIP }) });
-    },
-    async getDisplaySonosNowPlaying() {
-      return this.request('/display/sonos-now-playing');
-    },
+    // Sonos → voir api/sonos.js
+
     async getDisplayTVState() {
       return this.request('/display/tv-state');
     },

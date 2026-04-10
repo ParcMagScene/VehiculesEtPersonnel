@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MapPin, Plus, Edit2, Trash2, ExternalLink } from 'lucide-react';
+import { MapPin, Plus, Edit2, Trash2, ExternalLink, Map } from 'lucide-react';
+import LocationsMapPanel from '../locations/LocationsMapPanel';
 import api from '../../utils/api';
 import LocationDialog from '../vehicles/LocationDialog';
 import { Button, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
@@ -16,6 +17,7 @@ function LocationsTab({ currentUser }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDialog, setShowDialog] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
+  const [showMapPanel, setShowMapPanel] = useState(false);
   const [companyAddress, setCompanyAddress] = useState('');
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
@@ -86,6 +88,9 @@ function LocationsTab({ currentUser }) {
         <div className="annuaire-toolbar-actions-row">
           <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un lieu..." />
           <div className="annuaire-toolbar-actions">
+            <Button variant="secondary" onClick={() => setShowMapPanel(true)} title="Voir sur la carte">
+              <Map size={15} /> Carte
+            </Button>
             <Button variant="primary" onClick={() => { setEditingLocation(null); setShowDialog(true); }}>
               <Plus size={15} /> Nouveau lieu
             </Button>
@@ -165,6 +170,18 @@ function LocationsTab({ currentUser }) {
           onSave={handleSave}
           onClose={() => { setShowDialog(false); setEditingLocation(null); }}
           companyAddress={companyAddress}
+        />
+      )}
+
+      {showMapPanel && (
+        <LocationsMapPanel
+          locations={allLocations}
+          onClose={() => setShowMapPanel(false)}
+          onEditLocation={(loc) => {
+            setShowMapPanel(false);
+            setEditingLocation(loc);
+            setShowDialog(true);
+          }}
         />
       )}
 

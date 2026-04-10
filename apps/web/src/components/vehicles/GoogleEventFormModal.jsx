@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { Calendar, MapPin, Save, Clock, Type, AlignLeft } from 'lucide-react';
 import './GoogleEventFormModal.css';
 import { Button, Input, Textarea, Toggle } from '@/design-system';
 import { useToast } from '../../hooks/useToast';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import AddressAutocomplete from '../AddressAutocomplete';
 
 function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDate }) {
@@ -19,6 +20,9 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
     location: ''
   });
   const [saving, setSaving] = useState(false);
+  const { resetDirty, guardClose } = useDirtyForm(formData);
+  const safeClose = guardClose(onClose);
+  const needsResetRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -56,7 +60,16 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         location: ''
       });
     }
+    needsResetRef.current = true;
   }, [isOpen, mode, event, currentDate]);
+
+  // Reset dirty tracking after initial form data load
+  useEffect(() => {
+    if (needsResetRef.current) {
+      needsResetRef.current = false;
+      resetDirty();
+    }
+  }, [formData, resetDirty]);
 
   const toLocalInput = (isoString) => {
     const d = new Date(isoString);
@@ -131,12 +144,12 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
   if (!isOpen) return null;
 
   return (
-    <div className="event-form-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="event-form-overlay" onMouseDown={(e) => e.target === e.currentTarget && safeClose()}>
       <div className="event-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="event-form-header">
           <Calendar size={20} />
           <h2>{mode === 'edit' ? 'Modifier l\'événement' : 'Nouvel événement Google'}</h2>
-          <Button variant="ghost" className="event-form-close" onClick={onClose}>×</Button>
+          <Button variant="ghost" className="event-form-close" onClick={safeClose}>×</Button>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -230,7 +243,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
           </div>
 
           <div className="event-form-footer">
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="ghost" onClick={safeClose}>
               Annuler
             </Button>
             <Button variant="primary" type="submit" disabled={saving}>

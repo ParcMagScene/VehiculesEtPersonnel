@@ -2,18 +2,12 @@ import { useState, useEffect } from 'react';
 import { Package, Home, ArrowRight } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, InlineAlert, Spinner } from '@/design-system';
+import { EQUIPMENT_STATUS } from '../../constants';
 import './MobileQRLanding.css';
 
 // ═══ PAGE D'ATTERRISSAGE QR — CHOIX MATÉRIEL OU ACCUEIL ═══
 // Affiché quand un utilisateur scanne le QR code d'un équipement
 // Propose : "Aller au matériel" ou "Accueil eM@g"
-
-const EQUIPMENT_STATUS = {
-  available: { label: 'Disponible', color: '#10b981', icon: '✅' },
-  in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
-  maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
-  retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
-};
 
 function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
   const [equipment, setEquipment] = useState(null);

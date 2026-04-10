@@ -13,6 +13,7 @@ import { registerStockMethods } from './stock.js';
 import { registerPlanningMethods } from './planning.js';
 import { registerAnnuaireMethods } from './annuaire.js';
 import { registerDisplayMethods } from './display.js';
+import { registerSonosMethods } from './sonos.js';
 import { registerInventoryMethods } from './inventory.js';
 import { registerVideoMethods } from './video.js';
 
@@ -30,6 +31,7 @@ registerStockMethods(ApiClient);
 registerPlanningMethods(ApiClient);
 registerAnnuaireMethods(ApiClient);
 registerDisplayMethods(ApiClient);
+registerSonosMethods(ApiClient);
 registerInventoryMethods(ApiClient);
 registerVideoMethods(ApiClient);
 

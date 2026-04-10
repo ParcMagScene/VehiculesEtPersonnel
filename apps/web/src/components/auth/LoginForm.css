@@ -122,17 +122,20 @@
 }
 
 .access-request-button {
-  background: transparent;
-  border: 2px dashed var(--theme-border);
-  color: var(--theme-text-secondary);
+  background: var(--theme-bg-secondary);
+  border: 2px solid var(--theme-border-medium);
+  color: var(--theme-text-body);
   cursor: pointer;
   font-size: var(--font-base);
   padding: 0.75rem;
   border-radius: var(--btn-radius);
-  margin-top: 0.5rem;
   transition: var(--btn-transition);
   font-weight: var(--btn-font-weight);
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .forgot-password-link {
@@ -159,6 +162,89 @@
   background: var(--theme-bg-hover);
 }
 
+/* Séparateur "Pas encore de compte ?" */
+.login-separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+
+.login-separator::before,
+.login-separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--theme-border);
+}
+
+.login-separator span {
+  font-size: var(--font-sm);
+  color: var(--theme-text-gray);
+  white-space: nowrap;
+}
+
+/* États d'email */
+.login-email-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+  animation: loginStatusFadeIn 0.2s ease;
+}
+
+@keyframes loginStatusFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-email-status > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.login-email-status strong {
+  font-weight: 600;
+}
+
+.login-email-status span {
+  font-size: var(--font-sm);
+}
+
+.login-email-authorized {
+  background: var(--theme-success-bg, #ecfdf5);
+  border: 1px solid var(--theme-success, #10b981);
+  color: var(--theme-success-dark, #065f46);
+}
+
+.login-email-unknown {
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border-medium);
+  color: var(--theme-text-body);
+}
+
+.login-setup-password-btn {
+  margin-top: 4px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.login-request-access-inline-btn {
+  margin-top: 4px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 /* Media query pour smartphones */
 @media (max-width: 480px) {
   .login-container {
@@ -178,7 +264,10 @@
     font-size: var(--font-base);
     padding: 0.875rem;
     border-width: 2px;
-    margin-top: 0.75rem;
+  }
+
+  .login-email-status {
+    padding: 10px;
   }
 }
 

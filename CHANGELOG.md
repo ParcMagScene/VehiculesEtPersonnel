@@ -8,6 +8,127 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.4.0] — 2026-04-09
+
+### Added — Module Sonos complet
+
+Extraction et enrichissement complet du module Sonos : passage d'un simple « now playing » lecture seule à un module autonome avec contrôles complets, gestion multi-zone, favoris, et widget TV enrichi.
+
+#### Phase A — Backend (`sonosRoutes.js`, ~730 lignes)
+- **`apps/api/sonosRoutes.js`** (nouveau) : module autonome extrait de `displayRoutes.js`
+- 18 endpoints dédiés `/api/sonos/*` : config, now-playing, zones, state, play/pause/next/previous, volume, mute/unmute, seek, shuffle, repeat, favorites
+- Rate limiting : `sonosReadLimiter` (120/min), `sonosCommandLimiter` (60/min)
+- Auth : `requireAdmin` pour commandes, `authenticateToken` pour config, `optionalTvToken` pour now-playing
+- Export `getSonosNowPlaying()` partagé avec `displayRoutes.js` (tv-state)
+- Routes compat `/api/display/sonos-*` conservées avec headers `X-Deprecated` + `Sunset: 2026-07-01`
+
+#### Phase B — API Client (`api/sonos.js`)
+- **`apps/web/src/utils/api/sonos.js`** (nouveau) : 20 méthodes client
+- Enregistrement via `registerSonosMethods(ApiClient)` dans `index.js`
+- Suppression des 3 méthodes legacy de `display.js`
+
+#### Phase C — Frontend
+- **`SonosTab.jsx`** : réécriture complète (139→290 lignes) — `PlaybackControls`, `ZoneCard`, `FavoritesList`
+- Contrôles transport (play/pause/next/prev), volume slider, mute/unmute, sélection de zone, favoris 1-click
+- **`AppearanceTab.jsx`** : suppression section Sonos IP (doublon éliminé)
+- CSS : ~170 lignes ajoutées (contrôles, zones, favoris, responsive)
+
+#### Phase D — TV-client & Dashboard
+- **`tv-client/main.js`** : migration vers `/api/sonos/now-playing`, gestion volume
+- **`tv-client/index.html`** + **`styles.css`** : barre de volume verticale animée dans le widget Sonos
+- **`sonosRoutes.js`** : `getSonosNowPlaying()` retourne maintenant le volume
+- **`DashboardTasksSidebar.jsx`** : migration `getDisplaySonosNowPlaying` → `getSonosNowPlaying`
+
+#### Phase E — Sécurité & robustesse
+- Validation IPv4 stricte (`isValidIPv4` regex, bloque `999.999`, `1.2.3.4.5`)
+- Timeout UPnP 8s (`withTimeout()`) sur tous les appels Sonos — plus de hang
+- Parsing radio « Artiste - Titre » centralisé backend, supprimé de TV-client et TVScreenMini
+- Limites entrées : URI favori 2048 car., titre 256 car., seek 0-86400s
+- Protection SSRF sur `getRadioFavicon()` (IP privées/locales bloquées)
+
+### Changed
+- `displayRoutes.js` : ~250 lignes Sonos retirées, import `getSonosNowPlaying` depuis `sonosRoutes`
+- `server.js` : enregistrement `setupSonosRoutes`
+
+### Removed
+- 3 méthodes API legacy Sonos dans `display.js` (`getDisplaySonosConfig`, `saveDisplaySonosConfig`, `getDisplaySonosNowPlaying`)
+- Section config IP Sonos dans `AppearanceTab.jsx` (doublon)
+- Parsing radio dupliqué côté client (TV-client, TVScreenMini)
+
+---
+
+## [2.3.0] — 2026-04-09
+
+### Changed — Refactoring Google Calendar OAuth2
+
+Migration complète du flux d'authentification Google Calendar : passage du flux implicite GIS (frontend) à l'Authorization Code Flow (backend). Les tokens sont désormais gérés côté serveur avec chiffrement AES-256-GCM.
+
+#### Phase A — Infrastructure
+- **`apps/api/googleTokenManager.js`** (nouveau) : chiffrement AES-256-GCM des refresh_tokens, OAuth2 client factory via `googleapis`, cache access_token en mémoire (5 min), auto-refresh transparent
+- **`apps/api/migrations.js`** : table `google_oauth_tokens` (user_id PK, refresh_token chiffré, email, scopes, timestamps)
+- **`apps/api/config/rateLimiter.js`** : `googleCalendarLimiter` — 60 req/min (120 en dev)
+- Dépendance : `googleapis@^171.4.0`
+
+#### Phase B — Backend Authorization Code Flow
+- **`apps/api/googleRoutes.js`** (nouveau) : 10 routes `/api/google/*`
+  - `/auth` — URL d'autorisation avec state CSRF (TTL 10 min)
+  - `/callback` — échange code, stockage refresh_token, redirect `/?google_connected=true`
+  - `/status`, `/configured` — état de connexion et configuration
+  - `/disconnect` — révocation + suppression tokens
+  - `/events`, `/events/:id`, `/calendars` — proxy avec auto-refresh
+
+#### Phase C — Simplification frontend
+- **`GoogleCalendarBanner.jsx`** : supprimé ~120 lignes (chargement script GIS, tokenClient, renewAccessToken, initializeGIS, retry 401, 6 refs). Nouveau flux : redirect OAuth2 backend
+- **`GoogleCalendarConfig.jsx`** : v2 disconnect, URI redirect backend
+- **`admin.js`** : 12 méthodes API v2 ajoutées
+
+#### Phase D — Sync intelligente multi-tab
+- **`apps/web/src/hooks/useGoogleSync.js`** (nouveau, ~300 lignes) :
+  - Leader election via `BroadcastChannel` (heartbeat 15s, timeout 30s)
+  - Cache IndexedDB dédié (`emagGoogleSync`) — survit aux reloads
+  - Diff engine : pas de re-render si les événements n'ont pas changé
+  - Polling silencieux toutes les 5 min (leader seulement)
+  - Broadcast des événements frais aux autres onglets
+- **`GoogleCalendarBanner.jsx`** : intégration du hook, suppression du fetchEvents interne, enrichissement via `useMemo`
+
+#### Phase E — Stabilisation & sécurité
+- Migration des 4 consommateurs restants (`PeriodCalendarModal`, `AffairesPanel`, `AffaireDetailPanel`, `GoogleCalendarConfig`) de legacy → v2
+- Suppression des 11 méthodes API legacy (`storeGoogleToken`, `getGoogleTokenStatus`, etc.)
+- Retrait de `googleCalendarRoutes.js` du serveur (archivé en `.legacy.js`)
+- Migration : suppression automatique de la table `google_tokens` (remplacée par `google_oauth_tokens`)
+- Hardening routes v2 : sanitisation `calendarId` (regex email), validation `eventId` (path traversal), nettoyage périodique states CSRF
+
+### Removed
+- Flux implicite GIS (Google Identity Services) frontend
+- Table `google_tokens` (access_token en clair, non chiffré)
+- 11 méthodes API legacy `/api/google-calendar/*`
+- `oauthLogger` (références orphelines nettoyées)
+
+### Security
+- Refresh tokens chiffrés AES-256-GCM (IV + auth tag) — plus jamais de tokens en clair en DB
+- CSRF state sur le callback OAuth2 (TTL 10 min, in-memory)
+- Validation `eventId` contre path traversal
+- Sanitisation `calendarId` (format email ou 'primary')
+
+---
+
+## [2.2.0] — 2026-04-08
+
+### Added
+- **Module Cartographie des lieux** — nouvelle fonctionnalité complète
+  - **Carte générale** : affichage de tous les lieux géolocalisés avec `fitBounds` automatique
+  - **Carte locale** : vue centrée sur le dépôt Mag Scène dans un rayon de 2 km (Haversine)
+  - **Marqueurs SVG stylisés** : icônes colorées par type de lieu (Dépôt, Salle de spectacle, Prestataire, Garage, Autre) + marqueur gradient pour le siège
+  - **Popups DS** : affichage nom, type, adresse, coordonnées, lien Google Maps, bouton modifier
+  - **Impression/Export** : impression A4/A3 (portrait/paysage) avec en-tête eM@g, export PNG
+  - **Mode sombre** : bascule entre tiles OpenStreetMap (clair) et CartoDB dark matter
+  - **Légende** intégrée, responsive mobile
+  - **Intégration ManagementPanel** : bouton 🗺️ dans l'onglet Lieux pour ouvrir la cartographie
+- Dépendances : `leaflet@^1.9.4`, `react-leaflet@^4.2.1`
+- 8 fichiers créés dans `apps/web/src/components/locations/`
+
+---
+
 ## [2.1.12] — 2026-04-07
 
 ### Changed

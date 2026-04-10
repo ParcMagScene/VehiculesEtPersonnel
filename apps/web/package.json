@@ -18,11 +18,14 @@
   "dependencies": {
     "date-fns": "^3.3.1",
     "dompurify": "^3.3.1",
+    "html2canvas": "^1.4.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
     "pdfjs-dist": "^5.4.530",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",

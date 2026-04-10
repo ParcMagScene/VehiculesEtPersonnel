@@ -16,24 +16,20 @@ import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import { Accordion, Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { PLANNING_SECTIONS } from '../../constants/colors';
 
-// ─── Sections (mêmes que TaskPlanningPanel, sans rdv/evenements) ───
-const SECTIONS = {
-  taches_prioritaires: { label: 'Prioritaires',        emoji: '🔴', color: '#ef4444' },
-  courses:             { label: 'Courses',              emoji: '🚗', color: '#8b5cf6' },
-  prep_locations:      { label: 'Prépa Locations',      emoji: '📦', color: '#f59e0b' },
-  prep_prestations:    { label: 'Prépa Prestations',    emoji: '🎤', color: '#3b82f6' },
-  prep_ventes:         { label: 'Prépa Ventes',         emoji: '🏷️', color: '#10b981' },
-  prep_installations:  { label: 'Prépa Installations',  emoji: '⚙️', color: '#8b5cf6' },
-  prep_tournees:       { label: 'Prépa Tournées',       emoji: '🚐', color: '#ec4899' },
-  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b' },
-  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6' },
-  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981' },
-  montage:             { label: 'Montage',              emoji: '🔩', color: '#0891b2' },
-  demontage:           { label: 'Démontage',            emoji: '🔧', color: '#dc2626' },
-  taches_secondaires:  { label: 'Secondaires',          emoji: '🟡', color: '#f59e0b' },
-  manual:              { label: 'Autres',               emoji: '📋', color: '#64748b' },
-};
+// ─── Sections (depuis colorConstants, labels courts pour sidebar) ───
+const SECTIONS = Object.fromEntries(
+  Object.entries(PLANNING_SECTIONS)
+    .filter(([k]) => k !== 'rdv' && k !== 'evenements' && k !== 'depot')
+    .map(([k, v]) => [k, {
+      ...v,
+      label: k === 'taches_prioritaires' ? 'Prioritaires'
+           : k === 'taches_secondaires' ? 'Secondaires'
+           : k.startsWith('prep_') ? v.label.replace('Préparations ', 'Prépa ')
+           : v.label,
+    }])
+);
 
 const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation: 'courses' };
 const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
@@ -137,7 +133,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   // ─── Sonos now playing ───
   const loadNowPlaying = useCallback(async () => {
     try {
-      const data = await api.getDisplaySonosNowPlaying();
+      const data = await api.getSonosNowPlaying();
       setNowPlaying(data);
     } catch {
       setNowPlaying({ playing: false, error: 'Erreur de connexion' });

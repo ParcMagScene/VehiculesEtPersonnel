@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ChevronDown, User } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { ChevronDown, User, KeyRound, UserPlus, LogIn } from 'lucide-react';
 import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
 import './LoginForm.css';
@@ -20,11 +20,34 @@ const LoginForm = ({ onLogin }) => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetFormEmail, setResetFormEmail] = useState('');
   const [resetFormName, setResetFormName] = useState('');
-  const [resetToken, setResetToken] = useState('');
-  const [resetStep, setResetStep] = useState('request'); // 'request' or 'confirm'
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetError, setResetError] = useState('');
+  // État de vérification email
+  const [emailStatus, setEmailStatus] = useState(null); // null | 'checking' | 'authorized' | 'unknown' | 'already-registered'
+  const [emailCheckName, setEmailCheckName] = useState('');
+
+  // Vérifier l'email pour savoir si autorisé / déjà inscrit
+  const checkEmail = useCallback(async (emailToCheck) => {
+    if (!emailToCheck || !emailToCheck.includes('@')) {
+      setEmailStatus(null);
+      return;
+    }
+    setEmailStatus('checking');
+    try {
+      const data = await api.checkEmailAccessRequest(emailToCheck);
+      if (data.authorized) {
+        setEmailStatus('authorized');
+        if (data.name) setEmailCheckName(data.name);
+      } else if (data.reason === 'already_registered') {
+        setEmailStatus('already-registered');
+      } else {
+        setEmailStatus('unknown');
+      }
+    } catch (_err) {
+      setEmailStatus(null);
+    }
+  }, []);
 
   // Détecter le paramètre URL ?setup=email pour ouvrir le modal de création directe
   useEffect(() => {
@@ -51,6 +74,16 @@ const LoginForm = ({ onLogin }) => {
     loadUsers();
   }, []);
 
+  // Debounce check email (800ms après arrêt de saisie)
+  useEffect(() => {
+    if (!email || !email.includes('@')) {
+      setEmailStatus(null);
+      return;
+    }
+    const timer = setTimeout(() => checkEmail(email), 800);
+    return () => clearTimeout(timer);
+  }, [email, checkEmail]);
+
   const handleUserSelect = (user) => {
     setSelectedUser(user);
     setEmail(user.email || '');
@@ -74,12 +107,10 @@ const LoginForm = ({ onLogin }) => {
       // Vérifier si c'est une demande de réinitialisation de mot de passe
       else if (err.response?.status === 403 && err.response?.data?.error === 'PASSWORD_RESET_REQUIRED') {
         setResetFormEmail(email);
-        setResetStep('request');
-        setResetToken('');
         setNewPassword('');
         setNewPasswordConfirm('');
         setShowResetPassword(true);
-        setResetError('Votre compte nécessite une réinitialisation du mot de passe. Demandez un code et suivez les instructions.');
+        setResetError('Votre compte nécessite une réinitialisation du mot de passe.');
         setError('');
       } 
       else {
@@ -110,35 +141,22 @@ const LoginForm = ({ onLogin }) => {
     e.preventDefault();
     setResetError('');
 
-    // Étape 1 : Demander un code de vérification (OTP) par email
-    if (resetStep === 'request') {
-      try {
-        await api.selfResetPassword(resetFormEmail, resetFormName);
-        setResetStep('confirm');
-        setResetError('Un code de vérification a été envoyé à votre email.');
-      } catch (err) {
-        setResetError(err.message);
-      }
-
-      return;
-    }
-
-    // Étape 2 : Confirmer le code OTP et définir le nouveau mot de passe
     if (newPassword !== newPasswordConfirm) {
       setResetError('Les mots de passe ne correspondent pas');
       return;
     }
 
-    if (!resetToken) {
-      setResetError('Veuillez saisir le code de vérification (OTP) reçu par email.');
+    if (newPassword.length < 10) {
+      setResetError('Le mot de passe doit contenir au moins 10 caractères');
       return;
     }
 
     setLoading(true);
     try {
-      const _data = await api.setNewPassword(resetFormEmail, resetToken, newPassword);
+      await api.selfResetPasswordWithNewPassword(resetFormEmail, resetFormName, newPassword);
       setShowResetPassword(false);
-      window.location.reload();
+      setResetError('');
+      setError('Mot de passe réinitialisé — connectez-vous avec votre nouveau mot de passe.');
     } catch (err) {
       setResetError(err.message);
     } finally {
@@ -150,7 +168,7 @@ const LoginForm = ({ onLogin }) => {
       <div className="login-container">
         <div className="login-header">
           <img src="/Logos/LogoEmag.png" alt="eM@g Scene" className="login-logo" />
-          <p>Connexion</p>
+          <p>Connexion à votre espace</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -202,52 +220,103 @@ const LoginForm = ({ onLogin }) => {
             <Input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setError(''); }}
               required
               placeholder="email@exemple.com"
               autoComplete="username"
             />
           </FormField>
 
-          <FormField className="form-group" label="Mot de passe">
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="••••••••"
-              minLength={6}
-              autoComplete="current-password"
-            />
-          </FormField>
+          {/* Indicateur d'état de l'email */}
+          {emailStatus === 'authorized' && (
+            <div className="login-email-status login-email-authorized">
+              <KeyRound size={16} />
+              <div>
+                <strong>Email autorisé !</strong>
+                <span>Vous pouvez créer votre mot de passe pour activer votre compte.</span>
+              </div>
+              <Button
+                variant="primary"
+                type="button"
+                className="login-setup-password-btn"
+                onClick={() => {
+                  setSetupEmail(email);
+                  setShowAccessRequest(true);
+                }}
+              >
+                <KeyRound size={14} />
+                Définir mon mot de passe
+              </Button>
+            </div>
+          )}
 
-          {error && <InlineAlert>{error}</InlineAlert>}
+          {emailStatus === 'unknown' && (
+            <div className="login-email-status login-email-unknown">
+              <UserPlus size={16} />
+              <div>
+                <span>Cet email n'est pas encore enregistré.</span>
+              </div>
+              <Button
+                variant="secondary"
+                type="button"
+                className="login-request-access-inline-btn"
+                onClick={() => setShowAccessRequest(true)}
+              >
+                <UserPlus size={14} />
+                Demander un accès
+              </Button>
+            </div>
+          )}
 
-          <Button variant="ghost" type="submit" className="login-button" disabled={loading}>
-            {loading ? 'Chargement...' : 'Se connecter'}
-          </Button>
+          {emailStatus !== 'authorized' && (
+            <>
+              <FormField className="form-group" label="Mot de passe">
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  required
+                  placeholder="••••••••"
+                  minLength={6}
+                  autoComplete="current-password"
+                />
+              </FormField>
 
-          <Button variant="ghost"             type="button"
-            className="forgot-password-link"
-            onClick={() => {
-              setShowResetPassword(true);
-              setResetStep('request');
-              setResetFormEmail(email || '');
-              setResetFormName('');
-              setResetToken('');
-              setNewPassword('');
-              setNewPasswordConfirm('');
-              setResetError('');
-            }}
-          >
-            Mot de passe oublié ?
-          </Button>
+              {error && <InlineAlert>{error}</InlineAlert>}
 
-          <Button variant="ghost"             type="button"
+              <Button variant="ghost" type="submit" className="login-button" disabled={loading}>
+                <LogIn size={18} />
+                {loading ? 'Connexion...' : 'Se connecter'}
+              </Button>
+
+              <Button variant="ghost" type="button"
+                className="forgot-password-link"
+                onClick={() => {
+                  setShowResetPassword(true);
+                  setResetFormEmail(email || '');
+                  setResetFormName('');
+                  setNewPassword('');
+                  setNewPasswordConfirm('');
+                  setResetError('');
+                }}
+              >
+                Mot de passe oublié ?
+              </Button>
+            </>
+          )}
+
+          <div className="login-separator">
+            <span>Pas encore de compte ?</span>
+          </div>
+
+          <Button
+            variant="secondary"
+            type="button"
             className="access-request-button"
             onClick={() => setShowAccessRequest(true)}
           >
-            Pas encore de compte ? Demander un accès
+            <UserPlus size={18} />
+            Demander un accès
           </Button>
         </form>
 
@@ -309,8 +378,6 @@ const LoginForm = ({ onLogin }) => {
             onMouseDown={(e) => {
               if (e.target === e.currentTarget) {
                 setShowResetPassword(false);
-                setResetStep('request');
-                setResetToken('');
                 setResetError('');
               }
             }}
@@ -321,9 +388,7 @@ const LoginForm = ({ onLogin }) => {
               </div>
               <div className="modal-body">
                 <p className="login-modal-text">
-                  {resetStep === 'request'
-                    ? 'Entrez votre adresse email et votre nom complet pour recevoir un code de vérification par email.'
-                    : 'Entrez le code de vérification reçu par email et choisissez un nouveau mot de passe.'}
+                  Entrez votre adresse email, votre nom complet, puis choisissez un nouveau mot de passe.
                 </p>
                 
                 <form onSubmit={handleSelfResetPassword}>
@@ -351,20 +416,6 @@ const LoginForm = ({ onLogin }) => {
                       className="login-reset-input"
                     />
                   </FormField>
-
-                  {resetStep === 'confirm' && (
-                    <FormField className="form-group login-form-field-spacing" label="Code de vérification (OTP)" htmlFor="reset-token">
-                      <Input
-                        id="reset-token"
-                        type="text"
-                        value={resetToken}
-                        onChange={(e) => setResetToken(e.target.value)}
-                        placeholder="Entrez le code reçu par email"
-                        required
-                        className="login-reset-input"
-                      />
-                    </FormField>
-                  )}
 
                   <FormField className="form-group login-form-field-spacing" label="Nouveau mot de passe" htmlFor="new-password">
                     <Input
@@ -394,22 +445,6 @@ const LoginForm = ({ onLogin }) => {
                     />
                   </FormField>
 
-                  {resetStep === 'confirm' && (
-                    <div className="login-resend-text">
-                      <span>Vous n'avez pas reçu le code ? </span>
-                      <Button variant="ghost"                         type="button"
-                        onClick={() => {
-                          setResetStep('request');
-                          setResetToken('');
-                          setResetError('');
-                        }}
-                        className="login-resend-link"
-                      >
-                        Réessayer
-                      </Button>
-                    </div>
-                  )}
-
                   {resetError && (
                     <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>
                   )}
@@ -419,8 +454,6 @@ const LoginForm = ({ onLogin }) => {
                       variant="ghost"
                       onClick={() => {
                         setShowResetPassword(false);
-                        setResetStep('request');
-                        setResetToken('');
                         setResetError('');
                       }}
                       disabled={loading}
@@ -434,14 +467,11 @@ const LoginForm = ({ onLogin }) => {
                         loading ||
                         !resetFormEmail ||
                         !resetFormName ||
-                        (resetStep === 'confirm' && (!resetToken || newPassword.length < 6 || newPasswordConfirm !== newPassword))
+                        newPassword.length < 10 ||
+                        newPasswordConfirm !== newPassword
                       }
                     >
-                      {loading
-                        ? 'Réinitialisation...'
-                        : resetStep === 'request'
-                        ? 'Envoyer le code'
-                        : 'Réinitialiser'}
+                      {loading ? 'Réinitialisation...' : 'Réinitialiser'}
                     </Button>
                   </div>
                 </form>

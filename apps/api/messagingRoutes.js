@@ -4,6 +4,42 @@ import { dirname, join, basename, extname } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import logger from './logger.js';
 
+// ═══════════════════════════════════════
+// SSE — Server-Sent Events pour la messagerie temps réel
+// ═══════════════════════════════════════
+const sseClients = new Map(); // userId → Set<res>
+
+export function notifyUser(userId, event, data) {
+  const clients = sseClients.get(userId);
+  if (!clients) return;
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const res of clients) {
+    try { res.write(payload); } catch { clients.delete(res); }
+  }
+}
+
+function getConversationParticipantIds(conversationId) {
+  return db.prepare(
+    'SELECT user_id FROM conversation_participants WHERE conversation_id = ?'
+  ).all(conversationId).map(r => r.user_id);
+}
+
+function getUnreadCountForUser(userId) {
+  const result = db.prepare(`
+    SELECT COALESCE(SUM(
+      (SELECT COUNT(*) FROM messages m 
+       WHERE m.conversation_id = c.id 
+       AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
+       AND m.sender_id != ?
+      )
+    ), 0) as total_unread
+    FROM conversations c
+    JOIN conversation_participants cp ON c.id = cp.conversation_id
+    WHERE cp.user_id = ?
+  `).get(userId, userId);
+  return result.total_unread;
+}
+
 // [AUDIT Phase 4] Types MIME autorisés pour les uploads messagerie
 const MESSAGING_ALLOWED_MIMES = new Set([
   'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -25,6 +61,43 @@ const UPLOADS_DIR = join(__dirname, '..', '..', 'public', 'messaging-uploads');
 if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true });
 
 export function setupMessagingRoutes(app, authenticateToken) {
+
+  // ═══════════════════════════════════════
+  // SSE ENDPOINT
+  // ═══════════════════════════════════════
+  app.get('/api/messaging/sse', authenticateToken, (req, res) => {
+    const userId = req.user.id;
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+
+    // Heartbeat toutes les 30s pour garder la connexion
+    const heartbeat = setInterval(() => {
+      try { res.write(':heartbeat\n\n'); } catch { /* noop */ }
+    }, 30000);
+
+    // Enregistrer le client
+    if (!sseClients.has(userId)) sseClients.set(userId, new Set());
+    sseClients.get(userId).add(res);
+
+    // Envoyer le compteur non-lu initial
+    try {
+      const unread = getUnreadCountForUser(userId);
+      res.write(`event: unread_update\ndata: ${JSON.stringify({ unread })}\n\n`);
+    } catch { /* silencieux */ }
+
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      const clients = sseClients.get(userId);
+      if (clients) {
+        clients.delete(res);
+        if (clients.size === 0) sseClients.delete(userId);
+      }
+    });
+  });
 
   // ═══════════════════════════════════════
   // CONVERSATIONS
@@ -221,6 +294,21 @@ export function setupMessagingRoutes(app, authenticateToken) {
         created_at: new Date().toISOString(),
         attachments: [],
       });
+
+      // SSE — notifier les autres participants
+      const participants = getConversationParticipantIds(convId);
+      for (const pid of participants) {
+        if (pid === req.user.id) continue;
+        const unread = getUnreadCountForUser(pid);
+        notifyUser(pid, 'new_message', {
+          conversation_id: parseInt(convId),
+          sender_id: req.user.id,
+          sender_name: req.user.name,
+          content,
+          type,
+        });
+        notifyUser(pid, 'unread_update', { unread });
+      }
     } catch (error) {
       logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });
@@ -310,6 +398,21 @@ export function setupMessagingRoutes(app, authenticateToken) {
           size: buffer.length,
         }],
       });
+
+      // SSE — notifier les autres participants
+      const participants = getConversationParticipantIds(convId);
+      for (const pid of participants) {
+        if (pid === req.user.id) continue;
+        const unread = getUnreadCountForUser(pid);
+        notifyUser(pid, 'new_message', {
+          conversation_id: parseInt(convId),
+          sender_id: req.user.id,
+          sender_name: req.user.name,
+          content: filename,
+          type: msgType,
+        });
+        notifyUser(pid, 'unread_update', { unread });
+      }
     } catch (error) {
       logger.error(error);
       res.status(500).json({ error: 'Erreur serveur interne' });

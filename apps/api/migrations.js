@@ -667,4 +667,34 @@ try {
   logger.warn('⚠️ Migration cleanup serialize names:', e.message);
 }
 
+// ═══ Google OAuth2 — Table tokens avec refresh_token chiffré (Phase A) ═══
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS google_oauth_tokens (
+      user_id INTEGER PRIMARY KEY,
+      refresh_token_encrypted TEXT NOT NULL,
+      refresh_token_iv TEXT NOT NULL,
+      refresh_token_tag TEXT NOT NULL,
+      google_email TEXT,
+      scopes TEXT,
+      connected_at INTEGER,
+      last_sync_at INTEGER
+    )
+  `);
+  // Ne pas loguer si la table existait déjà (CREATE IF NOT EXISTS est silencieux)
+} catch (e) {
+  logger.warn('⚠️ Migration google_oauth_tokens:', e.message);
+}
+
+// ═══ Cleanup : suppression de l'ancienne table google_tokens (flux implicite GIS, remplacé par google_oauth_tokens) ═══
+try {
+  const legacyTableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='google_tokens'").get();
+  if (legacyTableExists) {
+    db.exec('DROP TABLE google_tokens');
+    logger.info('✅ Table legacy google_tokens supprimée (remplacée par google_oauth_tokens)');
+  }
+} catch (e) {
+  logger.warn('⚠️ Migration drop google_tokens:', e.message);
+}
+
 } // fin runPostInitMigrations

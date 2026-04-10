@@ -4,6 +4,7 @@ import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select } from 
 import './InterventionModal.css';
 import { useToast } from '../../hooks/useToast';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
@@ -30,18 +31,10 @@ const InterventionModal = ({
     technicalControlType: intervention?.technicalControlType || null
   });
 
-  const initialFormDataRef = useRef(JSON.stringify({
-    date: intervention?.date || '',
-    type: intervention?.type || '',
-    status: intervention?.status || '',
-    description: intervention?.description || '',
-    garage: intervention?.garage || '',
-    cost: intervention?.cost || '',
-    technicalControlType: intervention?.technicalControlType || null
-  }));
+  const { isDirty } = useDirtyForm(formData);
 
   const handleSafeClose = () => {
-    if (JSON.stringify(formData) !== initialFormDataRef.current) {
+    if (isDirty) {
       setShowUnsavedWarning(true);
       return;
     }

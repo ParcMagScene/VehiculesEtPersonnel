@@ -19,10 +19,10 @@ const countBusinessDays = (start, end) => {
   return days.filter(d => !isWeekend(d)).length;
 };
 
-const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin = false }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin = false, initialDate }) => {
+  const [currentMonth, setCurrentMonth] = useState(initialDate || new Date());
+  const [startDate, setStartDate] = useState(initialDate || null);
+  const [endDate, setEndDate] = useState(initialDate || null);
   const [hoverDate, setHoverDate] = useState(null);
   const [startPeriod, setStartPeriod] = useState('AM'); // AM = journée entière, PM = après-midi
   const [endPeriod, setEndPeriod] = useState('PM'); // PM = journée entière, AM = matin
@@ -43,7 +43,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   const [hasGoogleToken, setHasGoogleToken] = useState(true);
 
   useEffect(() => {
-    if (isRdv) api.getGoogleTokenStatus().then(s => setHasGoogleToken(!!s?.hasToken)).catch(() => setHasGoogleToken(false));
+    if (isRdv) api.getGoogleOAuthStatus().then(s => setHasGoogleToken(!!s?.connected)).catch(() => setHasGoogleToken(false));
   }, [isRdv]);
 
   const periodInfo = PERIOD_MENU_ITEMS.find(p => p.type === periodType) || PERIOD_MENU_ITEMS[0];
@@ -129,8 +129,8 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   // ═══ Google Calendar sync for RDV ═══
   const createGoogleCalendarEvent = async (dateStr, endDateStr) => {
     try {
-      const tokenStatus = await api.getGoogleTokenStatus();
-      if (!tokenStatus?.hasToken) return null;
+      const tokenStatus = await api.getGoogleOAuthStatus();
+      if (!tokenStatus?.connected) return null;
 
       const categoryLabel = rdvCategory === 'pro' ? '🏢 Pro' : '🏠 Perso';
       const summary = `${categoryLabel} — RDV ${person.firstName} ${person.lastName || ''}`.trim();
@@ -144,7 +144,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
         colorId: rdvCategory === 'pro' ? '9' : '2', // Blueberry / Sage
       };
 
-      const created = await api.createGoogleEvent(eventData);
+      const created = await api.createGoogleEventV2(eventData);
       return created.id; // google_event_id
     } catch (err) {
       console.warn('Google Calendar sync error:', err);

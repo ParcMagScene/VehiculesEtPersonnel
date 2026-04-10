@@ -1,6 +1,6 @@
 # 🏗️ Architecture Complète — eM@g
 
-> **Dernière mise à jour** : 8 avril 2026 (Audit qualité 6 phases + tests)
+> **Dernière mise à jour** : 9 avril 2026 (Module Sonos complet v2.4.0)
 > **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
 > **Domaine** : (configurable via .env)
 
@@ -72,7 +72,7 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 | `date-fns` | Manipulation de dates |
 | `xlsx` | Import/export Excel |
 | `pdfjs-dist` | Lecture PDF côté client |
-| `@react-oauth/google` | OAuth2 Google |
+| `@react-oauth/google` | ~~Supprimé v2.3.0~~ — remplacé par OAuth2 Authorization Code Flow backend |
 | `canvas` | Rendu canvas (PDF) |
 
 ### Librairies backend
@@ -86,6 +86,8 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 | `multer` | Upload de fichiers |
 | `node-fetch` | Requêtes HTTP côté serveur |
 | `nodemailer` | Envoi d'emails (module mailing) |
+| `sonos` | Contrôle enceintes Sonos (UPnP/SOAP LAN) |
+| `googleapis` | Google Calendar API (OAuth2 Authorization Code Flow) |
 | `compression` | Compression gzip des réponses HTTP |
 | `helmet` | Headers de sécurité HTTP |
 
@@ -128,6 +130,7 @@ eM@g/
 │   ├── hooks/                      # 10 hooks React custom
 │   │   ├── useAppData.js           # Données métier (véhicules, réservations, clients…) + IndexedDB sync
 │   │   ├── useGoogleCalendar.js    # Google Calendar events, sync affaires
+│   │   ├── useGoogleSync.js        # Sync Google Calendar (leader election, IndexedDB, polling)
 │   │   ├── useMessagingPolling.js   # Polling messages non lus + notifications
 │   │   ├── useAutocomplete.js
 │   │   ├── useDraggableModals.js
@@ -153,7 +156,8 @@ eM@g/
 │       │   ├── messaging.js        # Conversations, messages
 │       │   ├── mailing.js          # Templates, envoi, historique
 │       │   ├── annuaire.js         # Clients, fournisseurs, prestataires, contacts
-│       │   ├── display.js          # Écrans, playlists, médias, apparence, sonos, TV
+│       │   ├── display.js          # Écrans, playlists, médias, apparence, TV
+│       │   ├── sonos.js            # Contrôle Sonos (20 méthodes)
 │       │   └── index.js            # Assemblage mixins + singleton export
 │       ├── deepLinking.js          # URL builders, ouverture protocole Chargement 3D
 │       ├── dateUtils.js            # Utilitaires de dates
@@ -199,7 +203,8 @@ eM@g/
 │   ├── stockRoutes.js              # Routes stock (~433 lignes)
 │   ├── mailingRoutes.js            # Routes mailing (~299 lignes)
 │   ├── messagingRoutes.js          # Routes messagerie (~368 lignes)
-│   ├── displayRoutes.js            # Routes Dashboard écrans (~1965 lignes)
+│   ├── displayRoutes.js            # Routes Dashboard écrans (~1710 lignes, Sonos extrait)
+│   ├── sonosRoutes.js              # Routes Sonos (~730 lignes — contrôles, zones, favoris)
 │   ├── annuaireRoutes.js           # Routes annuaire (~1069 lignes)
 │   ├── attachmentsRoutes.js        # Routes pièces jointes (~251 lignes)
 │   ├── profileRoutes.js            # Routes profil utilisateur (~178 lignes)
@@ -288,7 +293,8 @@ Client HTTP
 │  │     tasks, planning, PDF export)         │    │
 │  │                                          │    │
 │  │  + catalogRoutes, equipmentRoutes,       │    │
-│  │  displayRoutes, annuaireRoutes,          │    │
+│  │  displayRoutes, sonosRoutes,              │    │
+│  │  annuaireRoutes,          │    │
 │  │  leaveRoutes, ordersRoutes, stockRoutes, │    │
 │  │  mailingRoutes, messagingRoutes,         │    │
 │  │  attachmentsRoutes, profileRoutes        │    │
@@ -323,7 +329,8 @@ Client HTTP
 | `planningRoutes.js` | ~2668 | Planning & communication (événements, tâches, affaires, PDF, BL imports) |
 | `leaveRoutes.js` | ~1346 | Congés (demandes, approbation, solde, planning) |
 | `equipmentRoutes.js` | ~1299 | Équipements individualisés (UID, SAV, localisation multi-dépôt) |
-| `displayRoutes.js` | ~1965 | Dashboard écrans (screens, playlists, médias, sonos, apparence) |
+| `displayRoutes.js` | ~1710 | Dashboard écrans (screens, playlists, médias, apparence) |
+| `sonosRoutes.js` | ~730 | Module Sonos (config, now-playing, zones, contrôles, favoris) |
 | `ordersRoutes.js` | ~1377 | Commandes fournisseurs |
 | `annuaireRoutes.js` | ~1069 | Annuaire (clients, fournisseurs, prestataires, contacts, import) |
 | `catalogRoutes.js` | ~775 | Catalogue (équipements, flight-cases, camions) |
@@ -371,6 +378,7 @@ main.jsx
             ├─ useAuth()              ← Contexte auth (login/logout, prefs)
             ├─ useAppData()           ← Données métier + IndexedDB sync (useMemo optimisé Phase 4)
             ├─ useGoogleCalendar()    ← Google Calendar events, sync affaires
+            ├─ useGoogleSync()        ← Sync leader election, IndexedDB cache, polling 5min
             ├─ useMessagingPolling()   ← Polling messages + notifications
             │
             ├─ Détection mobile → MobileApp (si /mobile ou #/mobile)
@@ -813,10 +821,10 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 ### 📺 Module Dashboard TV (Affichage dynamique)
 - **Composants** : 21 composants dans `DisplayDashboard/`
   - **Onglets principaux** : `ScreensTab`, `PlaylistsTab`, `MediaTab`, `MessagesTab`, `TemplatesTab`, `LogsTab`
-  - **Onglets avancés** : `AppearanceTab` (apparence), `ColorRulesTab` (règles couleurs), `SonosTab` (contrôle Sonos), `SneakyTab` (GIFs furtifs), `WelcomeMessagesTab` (messages bienvenue), `LocationIconsTab` (icônes localisation)
+  - **Onglets avancés** : `AppearanceTab` (apparence), `ColorRulesTab` (règles couleurs), `SonosTab` (contrôle Sonos — playback, volume, zones, favoris), `SneakyTab` (GIFs furtifs), `WelcomeMessagesTab` (messages bienvenue), `LocationIconsTab` (icônes localisation)
   - **Modales** : `ScreenFormModal`, `PlaylistFormModal`, `MediaUploadModal`, `MessageFormModal`, `TemplateFormModal`
   - **Prévisualisation** : `TVPreviewPanel` (aperçu complet), `TVScreenMini` (mini-aperçu), `DashboardTasksSidebar` (sidebar tâches)
-- **Backend** : `displayRoutes.js` (~1955 lignes) — API complète : screens, playlists, médias, messages, templates, logs, sonos now-playing, sneaky GIFs, sidebar-config, tv-state, apparence, couleurs, bienvenue, icônes localisation, alarme
+- **Backend** : `displayRoutes.js` (~1710 lignes) + `sonosRoutes.js` (~730 lignes) — API complète : screens, playlists, médias, messages, templates, logs, sonos (config, now-playing, contrôles, zones, favoris), sneaky GIFs, sidebar-config, tv-state, apparence, couleurs, bienvenue, icônes localisation, alarme
 - **Nettoyage titres TV** : `cleanTvTitle()` supprime emojis, labels de section et numéros AF des titres affichés sur les écrans TV
 - **Sidebar tâches** : `DashboardTasksSidebar` avec `cleanTaskDisplayTitle()` (logique 2 étapes : google_event_title vs title brut, notes affichées)
 - **Alarme SNCF** : Alarme sonore à l'échéance des tâches + bouton test admin + endpoint `/api/display/tv/test-alarm`
@@ -848,7 +856,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 ### ⚙️ Module Configuration
 - **Composants** : `GoogleCalendarConfig`, `ManagementPanel` (multi-onglets)
 - **Onglets** : Véhicules, Clients, Conducteurs, Lieux, Personnel, Mon compte, Demandes, Utilisateurs, Import/Export, Config Google, Accès Mobile, Plan Dépôt
-- **Configuration stockée** : Google Client ID, Calendar ID, Maps API Key, adresse entreprise
+- **Configuration stockée** : Calendar ID, Maps API Key, adresse entreprise (Google OAuth2 côté serveur via `googleapis`, voir `GUIDE_GOOGLE_OAUTH2.md`)
 
 ### 📒 Module Annuaire
 - **Composants** : `AnnuairePanel` (~1112 lignes, 6 sous-composants)

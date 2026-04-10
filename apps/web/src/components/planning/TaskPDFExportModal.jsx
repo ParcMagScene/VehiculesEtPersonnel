@@ -10,37 +10,21 @@ import './TaskPDFExportModal.css';
 import { Button, EmptyState } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { PLANNING_SECTIONS, EVENT_TYPE_COLORS } from '../../constants/colors';
 
-// ═══ Constantes sections (identiques au planning) ═══
+// ═══ Sections (depuis colorConstants) ═══
 const SECTIONS = {
-  rdv:                 { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
-  taches_prioritaires: { label: 'Tâches Prioritaires',  emoji: '🔴', color: '#ef4444' },
-  courses:             { label: 'Courses',               emoji: '🚗', color: '#8b5cf6' },
-  prep_locations:      { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b' },
-  prep_prestations:    { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6' },
-  prep_ventes:         { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981' },
-  prep_installations:  { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6' },
-  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b' },
-  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6' },
-  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981' },
-  montage:             { label: 'Montage',              emoji: '🔩', color: '#0891b2' },
-  demontage:           { label: 'Démontage',            emoji: '🔧', color: '#dc2626' },
-  evenements:          { label: 'Autres Événements',    emoji: '📌', color: '#64748b' },
-  taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
-  manual:              { label: 'Autres',                emoji: '📋', color: 'var(--theme-text-secondary)' },
+  ...PLANNING_SECTIONS,
+  evenements: { label: 'Autres Événements', emoji: '📌', color: '#64748b' },
+  manual: { ...PLANNING_SECTIONS.manual, color: 'var(--theme-text-secondary)' },
 };
 
-// Aliases de section (identiques au planning)
 const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation: 'courses' };
 const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
 
 const EVENT_TYPES = {
-  preparation:  { label: 'Préparation',  emoji: '🔧', color: '#0891b2' },
-  enlevement:   { label: 'Enlèvement',   emoji: '📦', color: '#f59e0b' },
-  livraison:    { label: 'Livraison',     emoji: '🚚', color: '#10b981' },
-  depart:       { label: 'Départ',        emoji: '🚀', color: '#3b82f6' },
-  retour:       { label: 'Retour',        emoji: '↩️', color: '#8b5cf6' },
-  recuperation: { label: 'Récupération',  emoji: '📥', color: '#ef4444' },
+  ...EVENT_TYPE_COLORS,
+  preparation: { ...EVENT_TYPE_COLORS.preparation, color: '#0891b2' },
 };
 
 const STATUS_ICONS = {

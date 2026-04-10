@@ -1,5 +1,4 @@
 // API — Parc Matériel (Catégories, Items, SAV, Listes, Photos, Assignments)
-import { API_URL } from './base.js';
 
 export function registerEquipmentMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
@@ -103,14 +102,10 @@ export function registerEquipmentMethods(ApiClient) {
     // PDF SAV
     async exportSavReportPdf(start, end, type = 'all') {
       const qs = new URLSearchParams({ start, end, type }).toString();
-      const resp = await fetch(`${API_URL}/sav-tickets/report/pdf?${qs}`, { credentials: 'include' });
-      if (!resp.ok) throw new Error('Erreur export PDF rapport maintenance');
-      return resp.blob();
+      return this.requestBlob(`/sav-tickets/report/pdf?${qs}`);
     },
     async exportSavActivePdf() {
-      const resp = await fetch(`${API_URL}/sav-tickets/active/pdf`, { credentials: 'include' });
-      if (!resp.ok) throw new Error('Erreur export PDF matériel en SAV');
-      return resp.blob();
+      return this.requestBlob('/sav-tickets/active/pdf');
     },
 
     // Listes Favoris / Surveillance
@@ -133,16 +128,7 @@ export function registerEquipmentMethods(ApiClient) {
       for (const file of files) {
         formData.append('photos', file);
       }
-      const res = await fetch(`${API_URL}/equipment-photos/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Erreur upload');
-      }
-      return res.json();
+      return this.requestFormData('/equipment-photos/upload', formData);
     },
     async deleteEquipmentPhoto(filename) {
       return this.request(`/equipment-photos/${encodeURIComponent(filename)}`, { method: 'DELETE' });

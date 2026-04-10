@@ -200,11 +200,7 @@ export class ApiClient {
 
   async logout() {
     try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include', // [AUDIT Phase 3] Cookie httpOnly envoyé automatiquement
-        headers: { 'Content-Type': 'application/json' }
-      });
+      await this.request('/auth/logout', { method: 'POST' });
     } catch (err) {
       console.error('❌ Erreur lors de la déconnexion côté serveur:', err);
     }
@@ -252,16 +248,7 @@ export class ApiClient {
     const formData = new FormData();
     formData.append('avatar', file);
     const endpoint = userId ? `/users/${userId}/avatar` : '/users/me/avatar';
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || 'Erreur upload');
-    }
-    return response.json();
+    return this.requestFormData(endpoint, formData);
   }
 
   async deleteAvatar(userId = null) {
@@ -276,5 +263,95 @@ export class ApiClient {
 
   getCurrentUser() {
     return this.user;
+  }
+
+  // ── Helpers pour fetch directs (uploads FormData, downloads blob) ──
+
+  /**
+   * Gestion commune des erreurs auth sur fetch directs.
+   * @private
+   */
+  _handleAuthError(response, endpoint) {
+    const isAuthEndpoint = endpoint.startsWith('/auth/');
+    if (response.status === 401 && !isAuthEndpoint) {
+      this.clearAuth();
+      window.location.reload();
+      throw new Error('Session expirée');
+    }
+    if (response.status === 403 && !isAuthEndpoint) {
+      this.clearAuth();
+      window.location.reload();
+      throw new Error('Accès refusé');
+    }
+  }
+
+  /**
+   * Upload FormData (pas de Content-Type JSON, le navigateur met multipart).
+   * Centralise credentials, timeout 60s et gestion 401/403.
+   */
+  async requestFormData(endpoint, formData, options = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    let response;
+    try {
+      response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+        signal: controller.signal,
+        ...options,
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        const error = new Error('Upload — délai dépassé (60s)');
+        error.isTimeoutError = true;
+        throw error;
+      }
+      const error = new Error('Erreur réseau — vérifiez votre connexion');
+      error.isNetworkError = true;
+      throw error;
+    }
+    clearTimeout(timeoutId);
+    this._handleAuthError(response, endpoint);
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || `Erreur upload (${response.status})`);
+    }
+    return response.json();
+  }
+
+  /**
+   * Téléchargement binaire (PDF, CSV, image…).
+   * Centralise credentials, timeout 30s et gestion 401/403.
+   * @returns {Promise<Blob>}
+   */
+  async requestBlob(endpoint, options = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    let response;
+    try {
+      response = await fetch(`${API_URL}${endpoint}`, {
+        credentials: 'include',
+        signal: controller.signal,
+        ...options,
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        const error = new Error('Téléchargement — délai dépassé (30s)');
+        error.isTimeoutError = true;
+        throw error;
+      }
+      const error = new Error('Erreur réseau — vérifiez votre connexion');
+      error.isNetworkError = true;
+      throw error;
+    }
+    clearTimeout(timeoutId);
+    this._handleAuthError(response, endpoint);
+    if (!response.ok) {
+      throw new Error(`Erreur téléchargement (${response.status})`);
+    }
+    return response.blob();
   }
 }

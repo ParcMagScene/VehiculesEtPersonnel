@@ -1,5 +1,5 @@
 // API — Planning (Events, BL Imports, Tâches, Récurrences, Affaires Planning, Assignments, iCal)
-import { API_URL, toCamelCase } from './base.js';
+import { toCamelCase } from './base.js';
 
 export function registerPlanningMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
@@ -37,32 +37,14 @@ export function registerPlanningMethods(ApiClient) {
       return this.request(`/planning/bl-imports/${id}`);
     },
     async uploadBLImport(formData) {
-      const response = await fetch(`${API_URL}/planning/bl-imports`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Erreur upload BL');
-      }
-      const data = await response.json();
+      const data = await this.requestFormData('/planning/bl-imports', formData);
       return toCamelCase(data);
     },
     async deleteBLImport(id) {
       return this.request(`/planning/bl-imports/${id}`, { method: 'DELETE' });
     },
     async uploadBLImportBatch(formData) {
-      const response = await fetch(`${API_URL}/planning/bl-imports/batch`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Erreur import batch');
-      }
-      return response.json();
+      return this.requestFormData('/planning/bl-imports/batch', formData);
     },
 
     // Articles BP (liaison matériel)
@@ -122,19 +104,16 @@ export function registerPlanningMethods(ApiClient) {
 
     // Export PDF tâches
     async exportTasksPdf(date, taskIds, affaireIds, eventIds, gcalEvents) {
-      let url = `${API_URL}/planning/tasks/export-pdf?date=${date}`;
-      if (taskIds && taskIds.length > 0) url += `&taskIds=${taskIds.join(',')}`;
-      if (affaireIds && affaireIds.length > 0) url += `&affaireIds=${affaireIds.join(',')}`;
-      if (eventIds && eventIds.length > 0) url += `&eventIds=${eventIds.join(',')}`;
+      let endpoint = `/planning/tasks/export-pdf?date=${date}`;
+      if (taskIds && taskIds.length > 0) endpoint += `&taskIds=${taskIds.join(',')}`;
+      if (affaireIds && affaireIds.length > 0) endpoint += `&affaireIds=${affaireIds.join(',')}`;
+      if (eventIds && eventIds.length > 0) endpoint += `&eventIds=${eventIds.join(',')}`;
       const body = (gcalEvents && gcalEvents.length > 0) ? JSON.stringify({ gcalEvents }) : undefined;
-      const resp = await fetch(url, {
+      return this.requestBlob(endpoint, {
         method: body ? 'POST' : 'GET',
         headers: body ? { 'Content-Type': 'application/json' } : {},
-        credentials: 'include',
         ...(body ? { body } : {}),
       });
-      if (!resp.ok) throw new Error('Erreur export PDF');
-      return resp.blob();
     },
 
     // Affaires pour planning

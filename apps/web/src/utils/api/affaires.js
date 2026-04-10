@@ -1,5 +1,4 @@
 // API — Module Affaires + Liaisons + Pièces jointes
-import { API_URL } from './base.js';
 
 export function registerAffairesMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
@@ -50,16 +49,7 @@ export function registerAffairesMethods(ApiClient) {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('affaireId', affaireId);
-      const response = await fetch(`${API_URL}/upload-attachment`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || `Échec de l'upload de ${file.name}`);
-      }
-      return response.json();
+      return this.requestFormData('/upload-attachment', formData);
     },
     async deleteAttachment(affaireId, filename) {
       return this.request(`/attachments/${encodeURIComponent(affaireId)}/${encodeURIComponent(filename)}`, { method: 'DELETE' });
@@ -68,16 +58,7 @@ export function registerAffairesMethods(ApiClient) {
       const formData = new FormData();
       formData.append('pdf', file);
       formData.append('affaireId', affaireId);
-      const response = await fetch(`${API_URL}/upload-bl`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Erreur upload BL');
-      }
-      return response.json();
+      return this.requestFormData('/upload-bl', formData);
     },
   });
 }

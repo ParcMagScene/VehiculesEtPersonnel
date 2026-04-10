@@ -1,5 +1,4 @@
 // API — Display Dashboard (Écrans, Playlists, Médias, Messages, Templates, Logs, Stats, TV Config)
-import { API_URL } from './base.js';
 
 export function registerDisplayMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
@@ -50,16 +49,7 @@ export function registerDisplayMethods(ApiClient) {
       return this.request(`/display/media${query}`);
     },
     async uploadDisplayMedia(formData) {
-      const response = await fetch(`${API_URL}/display/media`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || `Erreur ${response.status}`);
-      }
-      return response.json();
+      return this.requestFormData('/display/media', formData);
     },
     async deleteDisplayMedia(id) {
       return this.request(`/display/media/${id}`, { method: 'DELETE' });
@@ -143,9 +133,7 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/location-gifs');
     },
     async uploadDisplayLocationGif(formData) {
-      const response = await fetch(`${API_URL}/display/location-gifs`, { method: 'POST', credentials: 'include', body: formData });
-      if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
-      return response.json();
+      return this.requestFormData('/display/location-gifs', formData);
     },
     async deleteDisplayLocationGif(filename) {
       return this.request(`/display/location-gifs/${encodeURIComponent(filename)}`, { method: 'DELETE' });
@@ -162,16 +150,12 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/logo');
     },
     async uploadDisplayLogo(formData) {
-      const response = await fetch(`${API_URL}/display/logo`, { method: 'POST', credentials: 'include', body: formData });
-      if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
-      return response.json();
+      return this.requestFormData('/display/logo', formData);
     },
 
     // Photo furtive
     async uploadDisplaySneakyPhoto(formData) {
-      const response = await fetch(`${API_URL}/display/sneaky-photo`, { method: 'POST', credentials: 'include', body: formData });
-      if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
-      return response.json();
+      return this.requestFormData('/display/sneaky-photo', formData);
     },
     async getDisplaySneakyPhotoStatus() {
       return this.request('/display/sneaky-photo/status');

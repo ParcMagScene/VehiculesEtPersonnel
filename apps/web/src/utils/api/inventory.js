@@ -74,11 +74,7 @@ export function registerInventoryMethods(ApiClient) {
 
     // ── Exports ──
     async exportInventoryCSV() {
-      const resp = await fetch(`${this.baseUrl}/inventory/export/csv`, {
-        credentials: 'include',
-      });
-      if (!resp.ok) throw new Error('Export CSV échoué');
-      return resp.blob();
+      return this.requestBlob('/inventory/export/csv');
     },
     async exportInventoryJSON() {
       return this.request('/inventory/export/json', { skipCamelCase: true });

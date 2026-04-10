@@ -64,11 +64,7 @@ export function registerVideoMethods(ApiClient) {
   };
 
   ApiClient.prototype.getSnapshot = async function (cameraId) {
-    const response = await fetch(`${API_URL}/video/cameras/${cameraId}/snapshot`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Snapshot indisponible');
-    const blob = await response.blob();
+    const blob = await this.requestBlob(`/video/cameras/${cameraId}/snapshot`);
     return URL.createObjectURL(blob);
   };
 

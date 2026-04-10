@@ -83,5 +83,5 @@ Phase E              : audit/tests
 | A — Robustesse + Planning | ✅ DONE (merge `e1c6b91` + `a25df74`) |
 | B — Sécurité + Imports | ✅ DONE (merge `40fc034` + `537fe60`) |
 | C — CSS + UI | ✅ DONE (merge `49ad2d8` + `84f0bc3`) |
-| D — Vidéo | ⬜ TODO |
-| E — Tests/CI | ⬜ TODO |
+| D — Vidéo | ✅ DONE (merge `669aa61` + backlog `2755ad8`) |
+| E — Tests/CI | ✅ DONE (Husky `669aa61`, 85 tests pass) |

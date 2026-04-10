@@ -60,6 +60,12 @@ export default defineConfig(({ mode }) => ({
   plugins: [react(), staleAssetReload(), smartCacheHeaders()],
   // Le dossier public est à la racine du monorepo
   publicDir: '../../public',
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+    css: false,
+  },
   build: {
     // Supprimer console.log et debugger en production
     minify: 'esbuild',

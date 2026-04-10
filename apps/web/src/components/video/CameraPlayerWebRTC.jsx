@@ -34,13 +34,13 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
       window.open(url, '_blank');
     } catch {
       // Fallback: essayer de capturer le canvas vidéo
-      if (videoRef.current) {
+      if (videoRef.current && videoRef.current.videoWidth > 0) {
         const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth || 640;
-        canvas.height = videoRef.current.videoHeight || 480;
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
         canvas.toBlob(blob => {
-          if (blob) {
+          if (blob && blob.size > 0) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

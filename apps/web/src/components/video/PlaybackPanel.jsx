@@ -27,6 +27,7 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
   const pcRef = useRef(null);
   const sessionTokenRef = useRef(null);
   const connectingRef = useRef(false);
+  const retryCountRef = useRef(0);
 
   // Filtrer les caméras qui supportent le playback (NVR avec enregistrement)
   const nvrCameras = cameras.filter(c => c.enabled && c.supportsPlayback);
@@ -97,9 +98,23 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
 
       pc.oniceconnectionstatechange = () => {
         const state = pc.iceConnectionState;
+        if (state === 'connected') {
+          retryCountRef.current = 0;
+        }
         if (state === 'failed' || state === 'disconnected') {
-          setPlaybackError('Connexion perdue');
-          setPlaying(false);
+          if (retryCountRef.current < 3) {
+            retryCountRef.current++;
+            setPlaybackError(`Connexion perdue — tentative ${retryCountRef.current}/3...`);
+            setPlaying(false);
+            setTimeout(() => {
+              if (pcRef.current === pc) {
+                startPlayback(startTime, endTime);
+              }
+            }, 2000);
+          } else {
+            setPlaybackError('Connexion perdue — échec après 3 tentatives');
+            setPlaying(false);
+          }
         }
       };
 

@@ -47,6 +47,7 @@ const MailingPanel = lazy(() => import('./components/mailing/MailingPanel'));
 const AnnuairePanel = lazy(() => import('./components/annuaire/AnnuairePanel'));
 const LocationsTab = lazy(() => import('./components/annuaire/LocationsTab'));
 const VideoPanel = lazy(() => import('./components/video/VideoPanel'));
+const SonosPanel = lazy(() => import('./components/DisplayDashboard/SonosTab'));
 const AffaireDetailDialog = lazy(() => import('./components/affaires/AffaireDetailPanel').then(m => ({ default: m.AffaireDetailDialog })));
 const UserPreferencesModal = lazy(() => import('./components/auth/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
@@ -690,6 +691,14 @@ function AppContent() {
         <ErrorBoundary moduleName="Vidéo">
         <Suspense fallback={<LoadingOverlay label="Chargement de la surveillance vidéo..." />}>
           <VideoPanel currentUser={currentUser} />
+        </Suspense>
+        </ErrorBoundary>
+      )}
+
+      {activeModule === 'sonos' && (
+        <ErrorBoundary moduleName="Sonos">
+        <Suspense fallback={<LoadingOverlay label="Chargement du module Sonos..." />}>
+          <SonosPanel currentUser={currentUser} />
         </Suspense>
         </ErrorBoundary>
       )}

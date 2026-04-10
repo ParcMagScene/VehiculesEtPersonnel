@@ -326,8 +326,8 @@ App.jsx                   ← MODIFIÉ (ajout route module Sonos)
 - [x] C4. ~~SonosPresets~~ → consolidé dans SonosTab.jsx (FavoritesList)
 - [x] C5. ~~SonosPanel~~ → consolidé dans SonosTab.jsx (module complet dans DisplayDashboard)
 - [x] C6. ~~SonosPanel.css~~ → styles intégrés dans DisplayDashboardPanel.css
-- [ ] C7. Ajouter onglet Sonos dans Header.jsx *(optionnel — accessible via Dashboard Écrans)*
-- [ ] C8. Ajouter route module dans App.jsx *(optionnel — accessible via Dashboard Écrans)*
+- [x] C7. Ajouter onglet Sonos dans Header.jsx (icône `Music` de lucide-react)
+- [x] C8. Ajouter route module dans App.jsx (lazy import SonosTab)
 
 ### Phase D — Intégration Display Dashboard & TV-client
 - [x] D1. Simplifier `SonosTab.jsx` → embed `SonosNowPlaying` + lien vers panel

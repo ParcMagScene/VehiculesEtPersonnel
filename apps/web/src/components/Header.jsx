@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video, MapPin } from 'lucide-react';
+import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video, MapPin, Music } from 'lucide-react';
 import api from '../utils/api';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -250,6 +250,7 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
                 { id: 'annuaire', label: 'Annuaire', icon: Building2 },
                 { id: 'lieux', label: 'Lieux', icon: MapPin },
                 { id: 'video', label: 'Vidéo', icon: Video },
+                { id: 'sonos', label: 'Sonos', icon: Music },
               ];
               const hiddenTabs = tabPrefs.hiddenTabs || [];
               const tabOrder = tabPrefs.tabOrder || allTabs.map(t => t.id);

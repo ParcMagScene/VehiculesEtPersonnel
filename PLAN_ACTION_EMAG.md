@@ -126,7 +126,7 @@
 - [x] **2.8** Corriger création événement depuis banner Google
 - [ ] **2.9** ⏳ Sync bidirectionnelle eM@g ↔ Google Calendar (feature majeure — différé)
 - [ ] **2.10** ⏳ Token Google persistent (feature majeure — différé)
-- [ ] **2.11** Tests planning + commit
+- [x] **2.11** Tests planning + commit ✅ (63/63 pass, commit a30e952)
 
 ---
 
@@ -144,7 +144,7 @@
 
 - [ ] **3.1** Vérifier accessibilité `magsav.duckdns.org:3003/tv` (DNS, firewall, port forwarding) — infra
 - [x] **3.2** Masquer sections sans tâches (display: none si tasks.length === 0) ✅
-- [ ] **3.3** Tests TV-Client + commit
+- [x] **3.3** Tests TV-Client + commit ✅ (commit a30e952)
 
 ---
 
@@ -164,7 +164,7 @@
 - [x] **4.2** Toolbars EquipmentPanel : structure flex-wrap cohérente ✅
 - [x] **4.3** Toolbar Référentiels Annuaire : alignement corrigé (flex-end → align-items center + gap) ✅
 - [x] **4.4** Alignement toolbar Référentiels corrigé ✅
-- [ ] **4.5** Tests visuels + commit
+- [x] **4.5** Tests visuels + commit ✅ (commit a30e952)
 
 ---
 
@@ -190,7 +190,7 @@
 - [x] **5.5** Boutons gestion droits déjà fonctionnels avec aria-label ✅ (faux positif)
 - [x] **5.6** `UserPreferencesModal.css` existe déjà ✅ (faux positif)
 - [x] **5.7** Déplacer boutons "Gestion" dans toolbars respectives
-- [ ] **5.8** Tests a11y + commit
+- [x] **5.8** Tests a11y + commit ✅ (commit a30e952)
 
 ---
 
@@ -228,7 +228,7 @@
 - [x] **7.1** Filtrage modules mobiles selon permissions (Matériel, Commandes, Inventaire) ✅
 - [x] **7.2** Permissions : can_manage_equipment_maintenance → Matériel/Inventaire, can_manage_catalog → Commandes ✅
 - [x] **7.3** Modules de base (Planning, Tâches, Congés, Messagerie, Localisation) restent accessibles à tous ✅
-- [ ] **7.4** Tests mobile + commit
+- [x] **7.4** Tests mobile + commit ✅ (commit a30e952)
 
 ---
 
@@ -250,7 +250,7 @@
 - [x] **8.3** Logging import enrichi (total ajouté aux stats) ✅
 - [x] **8.4** Collisions détaillées retournées en mode preview ✅
 - [x] **8.5** Import personnel : collision code_libre + nom_prenom déjà implémentée avec détection de conflits ✅ (faux positif)
-- [ ] **8.6** Tests imports + commit
+- [x] **8.6** Tests imports + commit ✅ (commit a30e952)
 
 ---
 
@@ -283,7 +283,7 @@
 - [x] **9.8** Vérifier et documenter toutes les migrations SQLite ✅ (déjà idempotentes)
 - [x] **9.9** Audit RBAC : admin bypass justifié (BDFL model) ✅
 - [x] **9.10** Mettre à jour `PLAN_ACTION_EMAG.md` après corrections ✅
-- [ ] **9.11** Tests sécurité + commit
+- [x] **9.11** Tests sécurité + commit ✅ (commit a30e952)
 
 ---
 
@@ -308,7 +308,7 @@
 - [x] **10.4** PM2 déjà documenté dans GUIDE_DEVELOPPEUR + CHECKLIST_PRODUCTION ✅ (faux positif)
 - [x] **10.5** CI GitHub Actions créée (`.github/workflows/ci.yml`) ✅
 - [x] **10.6** Rapport : tous les écarts identifiés ont été corrigés (10.1–10.5) ✅
-- [ ] **10.7** Commit & push
+- [x] **10.7** Commit & push ✅ (a30e952 → origin/dev)
 
 ---
 
@@ -324,7 +324,7 @@ Ce fichier EST le plan d'action. Il sera mis à jour après chaque étape.
 - [x] Incrémenter version SemVer dans `package.json` + `VERSION.md` → 2.1.0 ✅
 - [x] Mettre à jour changelogs (`CHANGELOG_API.md`, `CHANGELOG_UI.md`, `CHANGELOG_DB.md`, `CHANGELOG_DOCS.md`) ✅
 - [x] Mettre à jour la documentation impactée ✅
-- [ ] Mettre à jour `prompts-index.json` si nécessaire
+- [x] Mettre à jour `prompts-index.json` si nécessaire ✅ (déjà à jour)
 - [x] Mettre à jour `docs/API-INDEX.md` ✅
 
 ---

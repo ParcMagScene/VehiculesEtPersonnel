@@ -20,6 +20,7 @@ const VALID_PERMISSION_KEYS = new Set([
   'can_manage_annuaire',
   'can_manage_video',
   'can_manage_messaging',
+  'read_only',
 ]);
 
 /**
@@ -141,6 +142,23 @@ export const requireCatalogAccess = requirePermission(
   'Accès réservé — permission catalogue requise',
   'canManageCatalog'
 );
+
+/**
+ * Middleware écriture générale (admin OU utilisateur non read_only)
+ */
+export function requireNotReadOnly(req, res, next) {
+  const user = resolvePermissions(req);
+  if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
+  const perms = parsePermissions(user);
+
+  if (user.is_admin || !perms.read_only) {
+    req.user.isAdmin = !!user.is_admin;
+    req.user.permissions = perms;
+    return next();
+  }
+
+  return res.status(403).json({ error: 'Accès en écriture refusé (compte lecture seule)' });
+}
 
 /**
  * Middleware camions/modèles (admin OU permission spécifique)

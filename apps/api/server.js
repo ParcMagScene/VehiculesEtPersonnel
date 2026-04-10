@@ -33,7 +33,7 @@ import { helmetConditional } from './config/helmet.js';
 import { corsMiddleware } from './config/cors.js';
 import { authLimiter, generalLimiter, sensitiveEndpointLimiter, googleCalendarLimiter } from './config/rateLimiter.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
-import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess } from './middleware/authorize.js';
+import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess, requireNotReadOnly } from './middleware/authorize.js';
 import { xssSanitize } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -248,7 +248,7 @@ setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin);
 
 // Routes extraites de server.js — Phase 2 Refactoring
 setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev });
-setupVehicleRoutes(app, authenticateToken, requireAdmin, requireMaintenanceAccess);
+setupVehicleRoutes(app, authenticateToken, requireAdmin, requireMaintenanceAccess, requireNotReadOnly);
 setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS });
 setupTOTPRoutes(app, authenticateToken, requireAdmin);
 setupAffairesRoutes(app, authenticateToken, requireAdmin);

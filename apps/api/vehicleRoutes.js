@@ -17,7 +17,7 @@ function parseDriveLinks(value) {
   }
 }
 
-export function setupVehicleRoutes(app, authenticateToken, requireAdmin, requireMaintenanceAccess) {
+export function setupVehicleRoutes(app, authenticateToken, requireAdmin, requireMaintenanceAccess, requireNotReadOnly = requireAdmin) {
 
 // ============ VÉHICULES ============
 
@@ -349,7 +349,7 @@ app.post('/api/reservations', authenticateToken, requireAdmin, validate(reservat
   }
 });
 
-app.put('/api/reservations/:id', authenticateToken, requireAdmin, validate(reservationSchema), (req, res) => {
+app.put('/api/reservations/:id', authenticateToken, requireNotReadOnly, validate(reservationSchema), (req, res) => {
   try {
     const reservation = req.body;
 

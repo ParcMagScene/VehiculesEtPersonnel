@@ -241,8 +241,9 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
   const updateReservation = useCallback(async (id, updatedReservation) => {
     logger.log('📝 updateReservation appelé - ID:', id, 'Objet:', updatedReservation);
 
-    if (!currentUser?.isAdmin) {
-      toast.warning('Seuls les administrateurs peuvent modifier des réservations.');
+    const canEditReservation = !!(currentUser?.isAdmin || !currentUser?.permissions?.read_only);
+    if (!canEditReservation) {
+      toast.warning('Votre compte est en lecture seule pour les réservations.');
       return false;
     }
 

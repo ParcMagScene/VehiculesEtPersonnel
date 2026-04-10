@@ -307,48 +307,48 @@ App.jsx                   ← MODIFIÉ (ajout route module Sonos)
 ## 10. Plan d'action
 
 ### Phase A — Extraction & refactoring backend
-- [ ] A1. Créer `apps/api/sonosRoutes.js` avec les helpers et routes extraits
-- [ ] A2. Ajouter les nouveaux endpoints de contrôle (play, pause, next, prev, volume, mute, favorites, zones)
-- [ ] A3. Ajouter rate limiting sur les endpoints de commande
-- [ ] A4. Supprimer le code Sonos de `displayRoutes.js` (garder redirect compat)
-- [ ] A5. Enregistrer `sonosRoutes.js` dans `server.js`
-- [ ] A6. Ajouter/mettre à jour tests smoke pour les endpoints Sonos
+- [x] A1. Créer `apps/api/sonosRoutes.js` avec les helpers et routes extraits
+- [x] A2. Ajouter les nouveaux endpoints de contrôle (play, pause, next, prev, volume, mute, favorites, zones)
+- [x] A3. Ajouter rate limiting sur les endpoints de commande
+- [x] A4. Supprimer le code Sonos de `displayRoutes.js` (garder redirect compat)
+- [x] A5. Enregistrer `sonosRoutes.js` dans `server.js`
+- [x] A6. Ajouter/mettre à jour tests smoke pour les endpoints Sonos
 
 ### Phase B — API client frontend
-- [ ] B1. Créer `apps/web/src/utils/api/sonos.js` avec toutes les méthodes
-- [ ] B2. Enregistrer dans `api/index.js`
-- [ ] B3. Migrer les appels Sonos de `api/display.js` vers `api/sonos.js` (garder compat)
+- [x] B1. Créer `apps/web/src/utils/api/sonos.js` avec toutes les méthodes
+- [x] B2. Enregistrer dans `api/index.js`
+- [x] B3. Migrer les appels Sonos de `api/display.js` vers `api/sonos.js` (garder compat)
 
 ### Phase C — Module frontend complet
-- [ ] C1. Créer `SonosNowPlaying.jsx` (composant réutilisable)
-- [ ] C2. Créer `SonosControls.jsx` (play/pause/next/prev/volume)
-- [ ] C3. Créer `SonosZoneSelector.jsx` (liste zones, sélection)
-- [ ] C4. Créer `SonosPresets.jsx` (favoris, radios)
-- [ ] C5. Créer `SonosPanel.jsx` (assemblage)
-- [ ] C6. Créer `SonosPanel.css` (Design System tokens)
-- [ ] C7. Ajouter onglet Sonos dans Header.jsx
-- [ ] C8. Ajouter route module dans App.jsx
+- [x] C1. ~~SonosNowPlaying~~ → consolidé dans SonosTab.jsx (now playing + contrôles + zones + favoris)
+- [x] C2. ~~SonosControls~~ → consolidé dans SonosTab.jsx (play/pause/next/prev/volume/mute)
+- [x] C3. ~~SonosZoneSelector~~ → consolidé dans SonosTab.jsx (ZoneCard collapsible)
+- [x] C4. ~~SonosPresets~~ → consolidé dans SonosTab.jsx (FavoritesList)
+- [x] C5. ~~SonosPanel~~ → consolidé dans SonosTab.jsx (module complet dans DisplayDashboard)
+- [x] C6. ~~SonosPanel.css~~ → styles intégrés dans DisplayDashboardPanel.css
+- [ ] C7. Ajouter onglet Sonos dans Header.jsx *(optionnel — accessible via Dashboard Écrans)*
+- [ ] C8. Ajouter route module dans App.jsx *(optionnel — accessible via Dashboard Écrans)*
 
 ### Phase D — Intégration Display Dashboard & TV-client
-- [ ] D1. Simplifier `SonosTab.jsx` → embed `SonosNowPlaying` + lien vers panel
-- [ ] D2. Supprimer config IP de `AppearanceTab.jsx`
-- [ ] D3. Adapter `tv-client/main.js` → nouvel endpoint `/api/sonos/now-playing`
-- [ ] D4. Optionnel : ajouter indicateur volume dans widget TV
+- [x] D1. Simplifier `SonosTab.jsx` → embed `SonosNowPlaying` + lien vers panel
+- [x] D2. Supprimer config IP de `AppearanceTab.jsx`
+- [x] D3. Adapter `tv-client/main.js` → nouvel endpoint `/api/sonos/now-playing`
+- [x] D4. Optionnel : ajouter indicateur volume dans widget TV
 
 ### Phase E — Sécurité & robustesse
-- [ ] E1. Supprimer ou sécuriser endpoint legacy `/api/sonos-now-playing`
-- [ ] E2. Centraliser le parsing radio côté backend
-- [ ] E3. Valider les entrées (zone, volume, nom favori)
-- [ ] E4. Gestion erreurs : timeout Sonos, device offline, zone inconnue
-- [ ] E5. Logs structurés pour toutes les commandes
+- [x] E1. Supprimer ou sécuriser endpoint legacy `/api/sonos-now-playing`
+- [x] E2. Centraliser le parsing radio côté backend
+- [x] E3. Valider les entrées (zone, volume, nom favori)
+- [x] E4. Gestion erreurs : timeout Sonos, device offline, zone inconnue
+- [x] E5. Logs structurés pour toutes les commandes
 
 ### Phase F — Documentation & versioning
-- [ ] F1. Incrémenter version → `2.4.0`
-- [ ] F2. Mettre à jour CHANGELOG.md
-- [ ] F3. Créer `docs/03-Guides/GUIDE_SONOS.md`
-- [ ] F4. Mettre à jour `docs/01-Architecture/ARCHITECTURE.md`
-- [ ] F5. Mettre à jour prompts-index.json
-- [ ] F6. Build validation
+- [x] F1. Incrémenter version → `2.4.0`
+- [x] F2. Mettre à jour CHANGELOG.md
+- [x] F3. Créer `docs/03-Guides/GUIDE_SONOS.md`
+- [x] F4. Mettre à jour `docs/01-Architecture/ARCHITECTURE.md`
+- [x] F5. Mettre à jour prompts-index.json
+- [x] F6. Build validation
 
 ---
 

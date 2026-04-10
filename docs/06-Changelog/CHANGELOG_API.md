@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.1.1] — 2026-04-10
+
+### Fixed
+- `schemas/imports.js` : middleware `validate()` rendu compatible Zod (`error.issues` + fallback `error.errors`) pour éviter `TypeError: undefined.map` sur `PUT /api/reservations/:id`.
+- `vehicleRoutes.js` : mise à jour réservation non bloquée admin-only, accès ouvert aux utilisateurs non `read_only` via middleware dédié.
+
+### Added
+- `authorize.js` : nouveau middleware `requireNotReadOnly`.
+- `authorize.js` : ajout de `read_only` à la whitelist des permissions validées.
+
+---
+
 ## [1.1.0] — 2026-04-08
 
 ### Security

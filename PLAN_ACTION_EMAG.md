@@ -142,7 +142,7 @@
 
 ### 3.2 Tâches
 
-- [ ] **3.1** Vérifier accessibilité `magsav.duckdns.org:3003/tv` (DNS, firewall, port forwarding) — infra
+- [x] **3.1** Vérifier accessibilité `magsav.duckdns.org:3003/tv` (DNS, firewall, port forwarding) — infra ✅ (`curl -I` + `nc` OK le 10/04/2026)
 - [x] **3.2** Masquer sections sans tâches (display: none si tasks.length === 0) ✅
 - [x] **3.3** Tests TV-Client + commit ✅ (commit a30e952)
 
@@ -207,8 +207,8 @@
 ### 6.2 Tâches
 
 - [x] **6.1** ~~Créer table `camera_presets`~~ → Ajout colonne `channel` (INTEGER DEFAULT 1) sur table `cameras` ✅
-- [ ] **6.2** ⏳ Ajouter onglet Preset dans `VideoPanel.jsx` (sélection de 4 caméras) — feature future
-- [ ] **6.3** ⏳ Rendre l'onglet détachable via `window.open()` + BroadcastChannel — feature future
+- [x] **6.2** Ajouter onglet Preset dans `VideoPanel.jsx` (sélection de 4 caméras) ✅ (`PresetPanel.jsx` + toggle `viewMode === 'preset'`)
+- [x] **6.3** Rendre l'onglet détachable via `window.open()` + query `detached-preset` ✅ (`PresetDetachedView` dans `App.jsx`)
 - [x] **6.4** Multi-channel par caméra : `videoProxyService.js` + `videoRoutes.js` + `CameraSettingsModal.jsx` ✅
 - [x] **6.5** Tests vidéo + commit ✅
 
@@ -387,5 +387,5 @@ Ce fichier EST le plan d'action. Il sera mis à jour après chaque étape.
 
 ---
 
-> **Statut** : ⏳ EN ATTENTE DE VALIDATION  
-> Aucune modification ne sera effectuée avant accord explicite.
+> **Statut** : ✅ EXÉCUTION EN COURS (phases actionnables)  
+> Les éléments marqués « feature future / différé » restent planifiés pour itérations ultérieures.

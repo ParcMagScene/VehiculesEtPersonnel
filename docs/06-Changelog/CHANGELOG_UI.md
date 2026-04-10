@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.2.1] — 2026-04-10
+
+### Fixed
+- `useAppData.js` : normalisation payload `updateReservation` (`startDate/startPeriod` depuis `date/period`) pour supprimer les `400 Données invalides` côté production.
+- `DepotMap.jsx` : suppression de l'attribut `className` dupliqué sur un élément `<g>` (warning build).
+- `ManagementPanel.css` : suppression d'une accolade fermante en trop (erreur CSS minification `Unexpected "}"`).
+
+### Changed
+- Édition réservation côté UI alignée sur le backend : autorisée pour utilisateurs non `read_only` (et non uniquement admins).
+
+---
+
 ## [2.2.0] — 2026-04-08
 
 ### Added

@@ -8,6 +8,21 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.4.1] — 2026-04-10
+
+### Fixed
+- Réservations véhicules : correction du crash backend sur validation (`error.issues` avec fallback `error.errors`) dans `apps/api/schemas/imports.js`.
+- Réservations véhicules : correction du `400 Données invalides` à la modification via normalisation du payload (`startDate/startPeriod`) dans `apps/web/src/hooks/useAppData.js`.
+- Droits collaborateurs : édition des réservations autorisée aux comptes non `read_only` (backend `requireNotReadOnly` + garde frontend alignée).
+- Build frontend : suppression warning JSX `Duplicate className` (`apps/web/src/components/vehicles/DepotMap.jsx`).
+- Build frontend : suppression erreur CSS de minification (`Unexpected "}"`) dans `apps/web/src/components/management/ManagementPanel.css`.
+
+### Changed
+- Plan de phases mis à jour : vérification infra TV `magsav.duckdns.org:3003/tv` validée (`curl` + `nc`).
+- Plan vidéo actualisé : onglet Preset multi-caméras et vue détachable marqués implémentés.
+
+---
+
 ## [2.4.0] — 2026-04-09
 
 ### Added — Module Sonos complet

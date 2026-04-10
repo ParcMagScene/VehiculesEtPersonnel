@@ -3,6 +3,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOf
 import { fr } from 'date-fns/locale';
 import { X } from 'lucide-react';
 import { Button } from '@/design-system';
+import { STATUS_COLORS } from '../constants/colors';
 import './WeekSelector.css';
 
 function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], vehicles = [] }) {
@@ -93,7 +94,7 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
               dayReservations.forEach(r => {
                 const vehicle = vehicles.find(v => v.id === r.vehicleId);
                 if (vehicle) {
-                  colors.add(vehicle.displayColor || vehicle.color || '#3b82f6');
+                  colors.add(vehicle.displayColor || vehicle.color || STATUS_COLORS.info);
                 }
               });
 

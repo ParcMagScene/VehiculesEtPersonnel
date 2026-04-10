@@ -16,6 +16,7 @@ import { formatDateSimple } from '../../utils/formatUtils';
 import './InventoryPanel.css';
 import { Button, Card, Input, Select, Spinner, Tab, TabList, TabPanel, Table, Tabs, Tooltip } from '@/design-system';
 import { formatDateTime } from '../../utils/formatUtils';
+import { STATUS_COLORS } from '../../constants/colors';
 
 // ═══════ SUB-VIEWS (inline pour éviter le surcoût de fichiers séparés) ═══════
 
@@ -476,10 +477,10 @@ function CountView({ onSubmitCount }) {
 
 // ── Mouvements View (données issues du stock) ──
 const MOVEMENT_TYPES = {
-  in: { label: 'Entrée', color: '#10b981', icon: '📥' },
-  out: { label: 'Sortie', color: '#ef4444', icon: '📤' },
-  adjustment: { label: 'Ajustement', color: '#f59e0b', icon: '🔧' },
-  return: { label: 'Retour', color: '#3b82f6', icon: '↩️' },
+  in: { label: 'Entrée', color: STATUS_COLORS.success, icon: '📥' },
+  out: { label: 'Sortie', color: STATUS_COLORS.danger, icon: '📤' },
+  adjustment: { label: 'Ajustement', color: STATUS_COLORS.warning, icon: '🔧' },
+  return: { label: 'Retour', color: STATUS_COLORS.info, icon: '↩️' },
 };
 
 function MovementsView() {

@@ -10,13 +10,13 @@ import './TaskPDFExportModal.css';
 import { Button, EmptyState } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { PLANNING_SECTIONS, EVENT_TYPE_COLORS } from '../../constants/colors';
+import { PLANNING_SECTIONS, EVENT_TYPE_COLORS, STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 
 // ═══ Sections (depuis colorConstants) ═══
 const SECTIONS = {
   ...PLANNING_SECTIONS,
-  evenements: { label: 'Autres Événements', emoji: '📌', color: '#64748b' },
+  evenements: { label: 'Autres Événements', emoji: '📌', color: STATUS_COLORS.neutral },
   manual: { ...PLANNING_SECTIONS.manual, color: 'var(--theme-text-secondary)' },
 };
 
@@ -25,7 +25,7 @@ const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
 
 const EVENT_TYPES = {
   ...EVENT_TYPE_COLORS,
-  preparation: { ...EVENT_TYPE_COLORS.preparation, color: '#0891b2' },
+  preparation: { ...EVENT_TYPE_COLORS.preparation, color: ACCENT_COLORS.cyanDark },
 };
 
 const STATUS_ICONS = {

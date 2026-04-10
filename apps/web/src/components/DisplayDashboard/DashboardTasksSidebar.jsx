@@ -16,7 +16,7 @@ import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import { Accordion, Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { PLANNING_SECTIONS } from '../../constants/colors';
+import { PLANNING_SECTIONS, STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 // ─── Sections (depuis colorConstants, labels courts pour sidebar) ───
 const SECTIONS = Object.fromEntries(
@@ -177,17 +177,17 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       // Fallback : essayer depuis event_category
       if (task.event_category) {
         const cat = task.event_category.toLowerCase();
-        if (cat === 'prestation') return '#3b82f6';
-        if (cat === 'location') return '#f59e0b';
-        if (cat === 'installation') return '#10b981';
-        if (cat === 'vente') return '#8b5cf6';
-        if (cat.includes('tourn')) return '#ec4899';
+        if (cat === 'prestation') return STATUS_COLORS.info;
+        if (cat === 'location') return STATUS_COLORS.warning;
+        if (cat === 'installation') return STATUS_COLORS.success;
+        if (cat === 'vente') return ACCENT_COLORS.violet;
+        if (cat.includes('tourn')) return ACCENT_COLORS.pink;
       }
     }
     // 2. Couleur de la section
     const sec = normalizeSection(task.section || 'manual');
     const sectionInfo = SECTIONS[sec];
-    return sectionInfo ? sectionInfo.color : '#64748b';
+    return sectionInfo ? sectionInfo.color : STATUS_COLORS.neutral;
   }, [affairesMap]);
 
   // ─── Grouper par section ───
@@ -267,7 +267,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     const affaire = affairesMap[affNum];
     const typeInfo = affaire?.type ? AFFAIRE_TYPE_MAP[affaire.type] : null;
     const name = (affaire?.nom || affaire?.titre || affaire?.client || task.eventClient || '').trim();
-    return { num: affNum, name, color: typeInfo?.color || '#6366f1', icon: typeInfo?.icon || '📋' };
+    return { num: affNum, name, color: typeInfo?.color || ACCENT_COLORS.indigo, icon: typeInfo?.icon || '📋' };
   }, [affairesMap]);
 
   return (

@@ -10,6 +10,7 @@ import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS } from '../../constants/colors';
 
 const TripDetailsModal = ({
   event,
@@ -670,7 +671,7 @@ const TripDetailsModal = ({
   // Style pour les champs sauvegardés
   const savedFieldStyle = isSaved ? {
     background: 'var(--theme-success-bg)',
-    borderColor: '#10b981',
+    borderColor: STATUS_COLORS.success,
     borderWidth: '2px'
   } : {};
 
@@ -968,7 +969,7 @@ const TripDetailsModal = ({
             <div style={{
               padding: '0.5rem 0.75rem',
               background: 'var(--theme-success-bg)',
-              border: '2px solid #10b981',
+              border: `2px solid ${STATUS_COLORS.success}`,
               borderRadius: '0.375rem',
               display: 'flex',
               alignItems: 'center',

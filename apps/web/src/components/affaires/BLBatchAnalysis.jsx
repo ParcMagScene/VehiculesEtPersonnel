@@ -6,7 +6,7 @@ import { useState, useCallback } from 'react';
 import { Upload, FileText, AlertTriangle, BarChart2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button, ModalLayout } from '@/design-system';
 import { batchParsePDFs } from '../../utils/pdfParser';
-import { CONF_COLORS } from '../../constants/colors';
+import { CONF_COLORS, STATUS_COLORS } from '../../constants/colors';
 import './BLBatchAnalysis.css';
 
 const FIELD_KEYS = [
@@ -159,7 +159,7 @@ export default function BLBatchAnalysis({ onClose }) {
                 <h5 className="bl-batch-section-title">Couverture par champ</h5>
                 {FIELD_KEYS.map(k => {
                   const pct = stats.fieldCoverage[k];
-                  const barColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+                  const barColor = pct >= 80 ? STATUS_COLORS.success : pct >= 50 ? STATUS_COLORS.warning : STATUS_COLORS.danger;
                   return (
                     <div key={k} className="bl-batch-field-row">
                       <span className="bl-batch-field-label">{FIELD_LABELS[k]}</span>
@@ -189,7 +189,7 @@ export default function BLBatchAnalysis({ onClose }) {
                       onClick={() => setExpandedIdx(isExpanded ? null : idx)}
                     >
                       {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      <FileText size={14} className="u-flex-shrink-0" style={{ color: r.error ? '#ef4444' : '#3b82f6' }} />
+                      <FileText size={14} className="u-flex-shrink-0" style={{ color: r.error ? STATUS_COLORS.danger : STATUS_COLORS.info }} />
                       <span className="bl-batch-result-filename">
                         {r.file.name}
                       </span>
@@ -202,7 +202,7 @@ export default function BLBatchAnalysis({ onClose }) {
                           <span className="bl-batch-result-doctype">
                             {r.docTypeLabel}
                           </span>
-                          <span className="u-font-xs" style={{ color: r.confidence >= 70 ? '#10b981' : '#f59e0b' }}>
+                          <span className="u-font-xs" style={{ color: r.confidence >= 70 ? STATUS_COLORS.success : STATUS_COLORS.warning }}>
                             {r.confidence}%
                           </span>
                           <span className="bl-batch-result-fields">

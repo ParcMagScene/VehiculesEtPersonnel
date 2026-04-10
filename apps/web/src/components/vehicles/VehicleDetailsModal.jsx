@@ -4,6 +4,7 @@ import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import InterventionModal from '../planning/InterventionModal';
 import { Button } from '@/design-system';
+import { STATUS_COLORS } from '../../constants/colors';
 import { formatDateSimple } from '../../utils/formatUtils';
 import './VehicleDetailsModal.css';
 
@@ -164,7 +165,7 @@ const VehicleDetailsModal = ({
           <div className="header-content">
             <div 
               className="vehicle-color-indicator"
-              style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
+              style={{ backgroundColor: vehicle.displayColor || vehicle.color || STATUS_COLORS.info }}
             />
             <div className="header-info">
               <h2>{vehicle.name}</h2>

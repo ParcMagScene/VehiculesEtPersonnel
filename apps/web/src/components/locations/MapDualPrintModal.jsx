@@ -17,6 +17,7 @@ import {
   filterNearby,
 } from './map-utils';
 import { createLocationIcon, createHQIcon } from './MapMarkers';
+import { STATUS_COLORS } from '../../constants/colors';
 
 // ── Composant interne : ajuster les bounds automatiquement ──
 function FitBounds({ locations }) {
@@ -372,10 +373,10 @@ export default function MapDualPrintModal({ locations, onClose }) {
         {/* Légende */}
         <div className="dual-print-legend">
           <span className="dual-print-legend-dot" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }} /> Siège
-          <span className="dual-print-legend-dot" style={{ background: '#22c55e' }} /> Dépôt
-          <span className="dual-print-legend-dot" style={{ background: '#3b82f6' }} /> Salle de spectacle
-          <span className="dual-print-legend-dot" style={{ background: '#f59e0b' }} /> Prestataire
-          <span className="dual-print-legend-dot" style={{ background: '#ef4444' }} /> Garage
+          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.successSoft }} /> Dépôt
+          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.info }} /> Salle de spectacle
+          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.warning }} /> Prestataire
+          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.danger }} /> Garage
           <span className="dual-print-legend-dot" style={{ background: '#94a3b8' }} /> Autre
         </div>
       </div>

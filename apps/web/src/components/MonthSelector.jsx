@@ -3,6 +3,7 @@ import { format, eachMonthOfInterval, startOfYear, endOfYear, startOfMonth, endO
 import { fr } from 'date-fns/locale';
 import { X } from 'lucide-react';
 import { Button } from '@/design-system';
+import { STATUS_COLORS } from '../constants/colors';
 import './MonthSelector.css';
 
 function MonthSelector({ currentDate, onSelectMonth, onClose, reservations = [], vehicles = [] }) {
@@ -53,7 +54,7 @@ function MonthSelector({ currentDate, onSelectMonth, onClose, reservations = [],
         dayReservations.forEach(r => {
           const vehicle = vehicles.find(v => v.id === r.vehicleId);
           if (vehicle) {
-            colors.add(vehicle.displayColor || vehicle.color || '#3b82f6');
+            colors.add(vehicle.displayColor || vehicle.color || STATUS_COLORS.info);
           }
         });
 

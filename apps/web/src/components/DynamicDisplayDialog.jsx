@@ -5,22 +5,23 @@ import { useToast } from '../hooks/useToast';
 import AddressAutocomplete from './AddressAutocomplete';
 import './DynamicDisplayDialog.css';
 import { Button, Input, Textarea, FormField } from '@/design-system';
+import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {
-  preparation:  { label: 'Préparation',  color: '#6366f1', emoji: '🔧' },
-  enlevement:   { label: 'Enlèvement',   color: '#f59e0b', emoji: '📦' },
-  livraison:    { label: 'Livraison',     color: '#10b981', emoji: '🚚' },
-  depart:       { label: 'Départ',        color: '#3b82f6', emoji: '🚀' },
-  retour:       { label: 'Retour',        color: '#8b5cf6', emoji: '↩️' },
-  recuperation: { label: 'Récupération',  color: '#ef4444', emoji: '📥' },
+  preparation:  { label: 'Préparation',  color: ACCENT_COLORS.indigo, emoji: '🔧' },
+  enlevement:   { label: 'Enlèvement',   color: STATUS_COLORS.warning, emoji: '📦' },
+  livraison:    { label: 'Livraison',     color: STATUS_COLORS.success, emoji: '🚚' },
+  depart:       { label: 'Départ',        color: STATUS_COLORS.info, emoji: '🚀' },
+  retour:       { label: 'Retour',        color: ACCENT_COLORS.violet, emoji: '↩️' },
+  recuperation: { label: 'Récupération',  color: STATUS_COLORS.danger, emoji: '📥' },
 };
 
 const EVENT_CATEGORIES = {
-  vente:        { label: 'Vente',        color: '#8b5cf6' },
-  location:     { label: 'Location',     color: '#f59e0b' },
-  prestation:   { label: 'Prestation',   color: '#3b82f6' },
-  installation: { label: 'Installation', color: '#10b981' },
+  vente:        { label: 'Vente',        color: ACCENT_COLORS.violet },
+  location:     { label: 'Location',     color: STATUS_COLORS.warning },
+  prestation:   { label: 'Prestation',   color: STATUS_COLORS.info },
+  installation: { label: 'Installation', color: STATUS_COLORS.success },
 };
 
 // ═══ Composant Principal ═══

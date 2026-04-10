@@ -8,6 +8,7 @@ import './MobileLocation.css';
 import { Button, SearchBar } from '@/design-system';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
+import { STATUS_COLORS } from '../../constants/colors';
 
 import { STATUS } from '../../constants';
 
@@ -166,7 +167,7 @@ function MobileLocation({ onBack }) {
               <div key={zone} className="mloc-search-group">
                 <div 
                   className="mloc-search-zone" 
-                  style={{ borderLeftColor: zoneInfo?.color || '#6b7280' }}
+                  style={{ borderLeftColor: zoneInfo?.color || STATUS_COLORS.neutralSoft }}
                   onClick={() => { setSelectedZone(zone); setSearch(''); setSearchResults(null); }}
                 >
                   <MapPin size={14} />
@@ -259,7 +260,7 @@ function MobileLocation({ onBack }) {
                   : null;
 
                 const shapeProps = {
-                  fill: zone.color || '#6b7280',
+                  fill: zone.color || STATUS_COLORS.neutralSoft,
                   opacity,
                   stroke: isSelected ? '#ffffff' : 'rgba(255,255,255,0.3)',
                   strokeWidth: isSelected ? 3 : 1,
@@ -347,7 +348,7 @@ function MobileLocation({ onBack }) {
                   className={`mloc-zone-item ${isSelected ? 'selected' : ''}`}
                   onClick={() => handleZoneClick(zone.id)}
                 >
-                  <div className="mloc-zone-color" style={{ background: zone.color || '#6b7280' }} />
+                  <div className="mloc-zone-color" style={{ background: zone.color || STATUS_COLORS.neutralSoft }} />
                   <div className="mloc-zone-info">
                     <div className="mloc-zone-name">{zone.label}</div>
                     <div className="mloc-zone-floor">{zone.floor} · {zone.id}</div>

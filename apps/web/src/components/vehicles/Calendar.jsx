@@ -38,6 +38,7 @@ import { Button , Tooltip} from '@/design-system';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 import { STATUS, TIMING } from '../../constants';
+import { STATUS_COLORS } from '../../constants/colors';
 
 // Fonction pour obtenir les initiales d'un utilisateur
 const getUserInitials = (userId, currentUser, users = []) => {
@@ -2098,7 +2099,7 @@ const Calendar = ({
                   >
                     <div
                       className="vehicle-color"
-                      style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
+                      style={{ backgroundColor: vehicle.displayColor || vehicle.color || STATUS_COLORS.info }}
                     />
                     <div className="vehicle-photo">
                       {vehicle.photo ? (
@@ -2171,7 +2172,7 @@ const Calendar = ({
                   >
                     <div
                       className="vehicle-color"
-                      style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
+                      style={{ backgroundColor: vehicle.displayColor || vehicle.color || STATUS_COLORS.info }}
                     />
                     <div className="vehicle-photo">
                       {vehicle.photo ? (
@@ -2305,8 +2306,8 @@ const Calendar = ({
                         <div
                           className={`reservation u-relative ${isBeingResized ? 'resizing' : ''} ${isBeingDragged ? 'block-drag-ghost' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
                           style={{
-                            backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
-                            border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
+                            backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || STATUS_COLORS.info) + '40',
+                            border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || STATUS_COLORS.info}`,
                             color: 'var(--theme-text-primary)',
                           }}
                         >
@@ -2501,8 +2502,8 @@ const Calendar = ({
                         <div
                           className={`reservation u-relative ${isBeingResized ? 'resizing' : ''} ${isBeingDragged ? 'block-drag-ghost' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
                           style={{
-                            backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
-                            border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
+                            backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || STATUS_COLORS.info) + '40',
+                            border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || STATUS_COLORS.info}`,
                             color: 'var(--theme-text-primary)',
                           }}
                         >

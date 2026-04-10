@@ -8,20 +8,21 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import { Button, Dialog, InlineAlert, Input, Spinner, Textarea } from '@/design-system';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import './AssignmentDialog.css';
 
 const POSITION_CATEGORIES = [
   { value: 'administratif', label: 'Administration', color: '#7c3aed' },
-  { value: 'direction', label: 'Direction technique', color: '#dc2626' },
-  { value: 'son', label: 'Son', color: '#3b82f6' },
-  { value: 'lumiere', label: 'Lumière', color: '#eab308' },
-  { value: 'video', label: 'Vidéo', color: '#8b5cf6' },
-  { value: 'plateau', label: 'Plateau', color: '#ef4444' },
-  { value: 'backline', label: 'Backline', color: '#f97316' },
-  { value: 'costumes', label: 'Costumes', color: '#ec4899' },
-  { value: 'electricite', label: 'Électricité', color: '#06b6d4' },
-  { value: 'logistique', label: 'Logistique', color: '#10b981' },
-  { value: 'captation', label: 'Captation', color: '#6366f1' },
+  { value: 'direction', label: 'Direction technique', color: STATUS_COLORS.dangerDark },
+  { value: 'son', label: 'Son', color: STATUS_COLORS.info },
+  { value: 'lumiere', label: 'Lumière', color: ACCENT_COLORS.amber },
+  { value: 'video', label: 'Vidéo', color: ACCENT_COLORS.violet },
+  { value: 'plateau', label: 'Plateau', color: STATUS_COLORS.danger },
+  { value: 'backline', label: 'Backline', color: ACCENT_COLORS.orange },
+  { value: 'costumes', label: 'Costumes', color: ACCENT_COLORS.pink },
+  { value: 'electricite', label: 'Électricité', color: ACCENT_COLORS.cyan },
+  { value: 'logistique', label: 'Logistique', color: STATUS_COLORS.success },
+  { value: 'captation', label: 'Captation', color: ACCENT_COLORS.indigo },
   { value: 'production', label: 'Production', color: '#78716c' },
   { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
@@ -172,13 +173,13 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
 };
 
 const SKILL_CATEGORIES = [
-  { value: 'son', label: 'Son', color: '#3b82f6' },
-  { value: 'lumière', label: 'Lumière', color: '#eab308' },
-  { value: 'vidéo', label: 'Vidéo', color: '#8b5cf6' },
-  { value: 'plateau', label: 'Plateau', color: '#ef4444' },
-  { value: 'régie', label: 'Régie', color: '#f97316' },
-  { value: 'conduite', label: 'Conduite', color: '#06b6d4' },
-  { value: 'logistique', label: 'Logistique', color: '#10b981' },
+  { value: 'son', label: 'Son', color: STATUS_COLORS.info },
+  { value: 'lumière', label: 'Lumière', color: ACCENT_COLORS.amber },
+  { value: 'vidéo', label: 'Vidéo', color: ACCENT_COLORS.violet },
+  { value: 'plateau', label: 'Plateau', color: STATUS_COLORS.danger },
+  { value: 'régie', label: 'Régie', color: ACCENT_COLORS.orange },
+  { value: 'conduite', label: 'Conduite', color: ACCENT_COLORS.cyan },
+  { value: 'logistique', label: 'Logistique', color: STATUS_COLORS.success },
   { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
 
@@ -1065,8 +1066,8 @@ const AssignmentDialog = ({ person, day, endDay, period, skills, positions = [],
                 <label>Statut de l'affectation</label>
                 <div className="asd-status-options">
                   {[
-                    { value: 'confirmed', label: 'Confirmé', color: '#10b981' },
-                    { value: 'option', label: 'Option', color: '#f59e0b' },
+                    { value: 'confirmed', label: 'Confirmé', color: STATUS_COLORS.success },
+                    { value: 'option', label: 'Option', color: STATUS_COLORS.warning },
                     { value: 'proposed', label: 'Proposé', color: 'var(--theme-text-gray)' },
                   ].map(opt => (
                     <Button variant="ghost"                       key={opt.value}

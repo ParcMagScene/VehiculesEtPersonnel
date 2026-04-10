@@ -7,22 +7,23 @@ import { Button, ModalLayout, Input, Textarea, Select, Table, EntityCombobox, Sp
 import './StockPanel.css';
 import { useToast } from '../../hooks/useToast';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import { extractTextFromPDF } from '../../utils/pdfParser';
 import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
 
 // ═══ Constantes ═══
 const MOVEMENT_TYPES = {
-  in: { label: 'Entrée', color: '#10b981', icon: '📥', Icon: ArrowDownCircle },
-  out: { label: 'Sortie', color: '#ef4444', icon: '📤', Icon: ArrowUpCircle },
-  adjustment: { label: 'Ajustement', color: '#f59e0b', icon: '🔧', Icon: RotateCcw },
-  return: { label: 'Retour', color: '#3b82f6', icon: '↩️', Icon: RotateCcw } };
+  in: { label: 'Entrée', color: STATUS_COLORS.success, icon: '📥', Icon: ArrowDownCircle },
+  out: { label: 'Sortie', color: STATUS_COLORS.danger, icon: '📤', Icon: ArrowUpCircle },
+  adjustment: { label: 'Ajustement', color: STATUS_COLORS.warning, icon: '🔧', Icon: RotateCcw },
+  return: { label: 'Retour', color: STATUS_COLORS.info, icon: '↩️', Icon: RotateCcw } };
 
 const UNITS = ['u', 'm', 'm²', 'm³', 'kg', 'L', 'h', 'j', 'lot', 'forfait', 'paire', 'rouleau', 'boîte'];
 
 const CATEGORY_COLORS = [
-  '#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#64748b'
+  ACCENT_COLORS.indigo, STATUS_COLORS.info, STATUS_COLORS.success, STATUS_COLORS.warning, STATUS_COLORS.danger,
+  ACCENT_COLORS.violet, ACCENT_COLORS.pink, '#14b8a6', ACCENT_COLORS.orange, STATUS_COLORS.neutral
 ];
 
 const CATEGORY_ICONS = ['📦', '🔧', '⚡', '🔩', '🛠️', '📐', '🧰', '💡', '🔌', '🧲', '🪛', '⛓️'];
@@ -454,28 +455,28 @@ function _DashboardView({ stats, _items, onSelectItem }) {
       {/* KPIs */}
       <div className="stock-kpis">
         <div className="stock-kpi">
-          <div className="kpi-icon" style={{ background: 'var(--theme-info-bg-strong)' }}><Package size={20} color="#3b82f6" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--theme-info-bg-strong)' }}><Package size={20} color={STATUS_COLORS.info} /></div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.totalItems}</span>
             <span className="kpi-label">Articles actifs</span>
           </div>
         </div>
         <div className="stock-kpi">
-          <div className="kpi-icon" style={{ background: 'var(--theme-success-bg-strong)' }}><Euro size={20} color="#10b981" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--theme-success-bg-strong)' }}><Euro size={20} color={STATUS_COLORS.success} /></div>
           <div className="kpi-info">
             <span className="kpi-value">{formatCurrency(stats.totalValue)}</span>
             <span className="kpi-label">Valeur du stock</span>
           </div>
         </div>
         <div className="stock-kpi warning">
-          <div className="kpi-icon" style={{ background: 'var(--btn-warning-bg)' }}><AlertTriangle size={20} color="#f59e0b" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--btn-warning-bg)' }}><AlertTriangle size={20} color={STATUS_COLORS.warning} /></div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.lowStockCount}</span>
             <span className="kpi-label">Stock bas</span>
           </div>
         </div>
         <div className="stock-kpi danger">
-          <div className="kpi-icon" style={{ background: 'var(--btn-danger-bg)' }}><Archive size={20} color="#ef4444" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--btn-danger-bg)' }}><Archive size={20} color={STATUS_COLORS.danger} /></div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.outOfStockCount}</span>
             <span className="kpi-label">Rupture</span>

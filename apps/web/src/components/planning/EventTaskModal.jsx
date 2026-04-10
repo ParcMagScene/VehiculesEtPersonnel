@@ -11,19 +11,20 @@ import './EventTaskModal.css';
 import { Button, Input, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 // ═══ Définition des étapes opérationnelles ═══
 const TASK_STEPS = [
-  { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: '#6366f1', defaultSection: 'prep_locations' },
-  { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: '#f59e0b', defaultSection: 'chargement' },
-  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: '#3b82f6', defaultSection: 'depart' },
-  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: '#f97316', defaultSection: 'courses' },
-  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: '#10b981', defaultSection: 'courses' },
-  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: '#8b5cf6', defaultSection: 'courses' },
-  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'courses' },
-  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: '#10b981', defaultSection: 'installation' },
-  { key: 'montage',      label: 'Montage',      emoji: '🔩', icon: Wrench,      color: '#0891b2', defaultSection: 'montage' },
-  { key: 'demontage',    label: 'Démontage',    emoji: '🔧', icon: Wrench,      color: '#dc2626', defaultSection: 'demontage' },
+  { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: ACCENT_COLORS.indigo, defaultSection: 'prep_locations' },
+  { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: STATUS_COLORS.warning, defaultSection: 'chargement' },
+  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: STATUS_COLORS.info, defaultSection: 'depart' },
+  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: ACCENT_COLORS.orange, defaultSection: 'courses' },
+  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: STATUS_COLORS.success, defaultSection: 'courses' },
+  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: ACCENT_COLORS.violet, defaultSection: 'courses' },
+  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: STATUS_COLORS.danger, defaultSection: 'courses' },
+  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: STATUS_COLORS.success, defaultSection: 'installation' },
+  { key: 'montage',      label: 'Montage',      emoji: '🔩', icon: Wrench,      color: ACCENT_COLORS.cyanDark, defaultSection: 'montage' },
+  { key: 'demontage',    label: 'Démontage',    emoji: '🔧', icon: Wrench,      color: STATUS_COLORS.dangerDark, defaultSection: 'demontage' },
 ];
 
 // Toutes les étapes sont disponibles pour tous les types d'événement

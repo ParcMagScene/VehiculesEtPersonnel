@@ -11,6 +11,7 @@ import { useGoogleSync } from '../../hooks/useGoogleSync';
 import { Button, InlineAlert, LoadingOverlay, SearchBar } from '@/design-system';
 
 import { TIMING } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('../affaires/AffaireImportModal'));
@@ -542,7 +543,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     };
 
     // Couleurs de repli si pas de colorId
-    const fallbackColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+    const fallbackColors = [STATUS_COLORS.info, STATUS_COLORS.success, STATUS_COLORS.warning, STATUS_COLORS.danger, ACCENT_COLORS.violet, ACCENT_COLORS.pink, '#14b8a6', ACCENT_COLORS.orange];
     let colorIndex = 0;
 
     // Filtrer par recherche (nom ou numéro d'affaire)

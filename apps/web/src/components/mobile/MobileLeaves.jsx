@@ -8,6 +8,7 @@ import usePullToRefresh from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import { ROLES, STATUS } from '../../constants';
+import { STATUS_COLORS } from '../../constants/colors';
 
 import './MobileLeaves.css';
 
@@ -160,7 +161,7 @@ function MobileLeaves({ currentUser, onBack }) {
           <h3>Soldes</h3>
           <div className="ml-balances-grid">
             {balances.length > 0 ? balances.map((b, i) => {
-              const typeInfo = LEAVE_TYPE_LABELS[b.leave_type || b.leaveType] || { label: b.leave_type || b.leaveType, icon: '📋', color: '#6b7280' };
+              const typeInfo = LEAVE_TYPE_LABELS[b.leave_type || b.leaveType] || { label: b.leave_type || b.leaveType, icon: '📋', color: STATUS_COLORS.neutralSoft };
               return (
                 <div key={i} className="ml-balance-chip" style={{ borderLeftColor: typeInfo.color }}>
                   <span className="ml-balance-icon">{typeInfo.icon}</span>
@@ -221,7 +222,7 @@ function MobileLeaves({ currentUser, onBack }) {
 
 // ─── Carte de congé ────────────────────────────────
 function LeaveCard({ leave, onClick }) {
-  const typeInfo = LEAVE_TYPE_LABELS[leave.leave_type || leave.leaveType] || { label: leave.leave_type || 'Congé', icon: '📋', color: '#6b7280' };
+  const typeInfo = LEAVE_TYPE_LABELS[leave.leave_type || leave.leaveType] || { label: leave.leave_type || 'Congé', icon: '📋', color: STATUS_COLORS.neutralSoft };
   const statusInfo = STATUS_CONFIG[leave.status] || STATUS_CONFIG.pending;
   const StatusIcon = statusInfo.icon;
   
@@ -386,7 +387,7 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
 
 // ─── Détail d'une demande ────────────────────────────────
 function LeaveDetail({ leave, isAdmin, onDecision, onCancel }) {
-  const typeInfo = LEAVE_TYPE_LABELS[leave.leave_type || leave.leaveType] || { label: 'Congé', icon: '📋', color: '#6b7280' };
+  const typeInfo = LEAVE_TYPE_LABELS[leave.leave_type || leave.leaveType] || { label: 'Congé', icon: '📋', color: STATUS_COLORS.neutralSoft };
   const statusInfo = STATUS_CONFIG[leave.status] || STATUS_CONFIG.pending;
   const StatusIcon = statusInfo.icon;
   const [rejectReason, setRejectReason] = useState('');
@@ -481,7 +482,7 @@ function LeaveAdminList({ pendingLeaves, onDecision, onSelect, onRefresh }) {
     <div className="ml-content">
       <div className="ml-leaves-list">
         {pendingLeaves.map(leave => {
-          const typeInfo = LEAVE_TYPE_LABELS[leave.leave_type || leave.leaveType] || { label: 'Congé', icon: '📋', color: '#6b7280' };
+          const typeInfo = LEAVE_TYPE_LABELS[leave.leave_type || leave.leaveType] || { label: 'Congé', icon: '📋', color: STATUS_COLORS.neutralSoft };
           const formatDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—';
           
           return (

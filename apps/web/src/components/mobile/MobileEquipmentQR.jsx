@@ -6,16 +6,17 @@ import { useToast } from '../../hooks/useToast';
 import { Button, InlineAlert, Input, Select, Spinner, Textarea } from '@/design-system';
 
 import { STATUS, EQUIPMENT_STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX
 // Affiche un menu multi-choix pour l'équipement scanné
 
 const SAV_STATUS = {
-  open: { label: 'Ouvert', color: '#ef4444' },
-  in_progress: { label: 'En cours', color: '#f59e0b' },
-  waiting_parts: { label: 'Attente pièces', color: '#8b5cf6' },
-  resolved: { label: 'Résolu', color: '#10b981' },
+  open: { label: 'Ouvert', color: STATUS_COLORS.danger },
+  in_progress: { label: 'En cours', color: STATUS_COLORS.warning },
+  waiting_parts: { label: 'Attente pièces', color: ACCENT_COLORS.violet },
+  resolved: { label: 'Résolu', color: STATUS_COLORS.success },
   closed: { label: 'Clôturé', color: 'var(--theme-text-gray)' },
 };
 
@@ -139,7 +140,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-error">
-          <AlertTriangle size={48} color="#ef4444" />
+          <AlertTriangle size={48} color={STATUS_COLORS.danger} />
           <h2>Équipement introuvable</h2>
           <p>UID : <code>{uid}</code></p>
           <p>{error}</p>
@@ -198,7 +199,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           {/* Tickets SAV actifs */}
           {activeTickets.length > 0 && (
             <div className="m-eq-qr-section">
-              <h4 style={{ color: '#f59e0b' }}>🔧 Interventions en cours ({activeTickets.length})</h4>
+              <h4 style={{ color: STATUS_COLORS.warning }}>🔧 Interventions en cours ({activeTickets.length})</h4>
               {activeTickets.map(t => {
                 const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
                 return (
@@ -332,7 +333,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
 
       {/* Carte de l'équipement */}
       <div className="m-eq-qr-card">
-        <div className="m-eq-qr-card-icon" style={{ background: equipment.categoryColor || equipment.category_color || '#6366f1' }}>
+        <div className="m-eq-qr-card-icon" style={{ background: equipment.categoryColor || equipment.category_color || ACCENT_COLORS.indigo }}>
           {equipment.categoryIcon || equipment.category_icon || '📦'}
         </div>
         <div className="m-eq-qr-card-info">

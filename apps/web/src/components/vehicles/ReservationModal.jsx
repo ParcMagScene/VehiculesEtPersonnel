@@ -17,6 +17,7 @@ import { useToast } from '../../hooks/useToast';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS } from '../../constants/colors';
 
 const ReservationEquipment = lazy(() => import('./ReservationEquipment'));
 
@@ -794,7 +795,7 @@ const ReservationModal = ({
     
     return event.colorId && googleColorMap[event.colorId] 
       ? googleColorMap[event.colorId]
-      : '#3b82f6';
+      : STATUS_COLORS.info;
   };
 
   const _selectedVehicle = vehicles.find(v => v.id === parseInt(formData.vehicleId));
@@ -1354,7 +1355,7 @@ const ReservationModal = ({
                       backgroundColor: hasTripDetails ? 'var(--theme-success-bg)' : getEventColor(event) + '20',
                       padding: '0.75rem',
                       borderRadius: isInGroup ? '0' : '0.375rem',
-                      border: hasTripDetails ? '2px solid #10b981' : '1px solid ' + getEventColor(event) + '40',
+                      border: hasTripDetails ? `2px solid ${STATUS_COLORS.success}` : '1px solid ' + getEventColor(event) + '40',
                       borderBottom: isInGroup ? 'none' : undefined,
                       display: 'flex',
                       flexDirection: 'column',

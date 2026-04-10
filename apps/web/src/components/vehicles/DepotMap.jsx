@@ -11,6 +11,7 @@ import api from '../../utils/api';
 import { getZonePoints, hasSkew, computeZonesBounds } from './DepotMapEditor';
 import './DepotMap.css';
 import { Button, SearchBar, Tooltip } from '@/design-system';
+import { STATUS_COLORS } from '../../constants/colors';
 
 const DepotMapEditor = lazy(() => import('./DepotMapEditor'));
 
@@ -607,7 +608,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                   x={x - 2} y={y - 2}
                   width={width + 4} height={height + 4}
                   rx="8" fill="none"
-                  stroke="#ef4444" strokeWidth="2.5"
+                  stroke={STATUS_COLORS.danger} strokeWidth="2.5"
                   strokeDasharray="8 4"
                   className="focus-zone-border"
                 />
@@ -623,22 +624,22 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                     {/* Pin body — drop/teardrop path pointing downward */}
                     <path
                       d="M0,0 C-2,-4 -11,-16 -11,-24 A11,11 0 1,1 11,-24 C11,-16 2,-4 0,0 Z"
-                      fill="#ef4444" stroke="#fff" strokeWidth="2"
+                      fill={STATUS_COLORS.danger} stroke="#fff" strokeWidth="2"
                     />
                     {/* Inner white dot */}
                     <circle cx="0" cy="-24" r="5" fill="#fff" />
                     {/* Inner red dot */}
-                    <circle cx="0" cy="-24" r="3" fill="#ef4444" />
+                    <circle cx="0" cy="-24" r="3" fill={STATUS_COLORS.danger} />
                     </g>
                   </g>
                 </g>
 
                 {/* Pulsing ring at pin base */}
                 <circle cx={cx} cy={pinTip} r="5" fill="none"
-                  stroke="#ef4444" strokeWidth="2"
+                  stroke={STATUS_COLORS.danger} strokeWidth="2"
                   className="focus-pulse-ring" />
                 <circle cx={cx} cy={pinTip} r="10" fill="none"
-                  stroke="#ef4444" strokeWidth="1"
+                  stroke={STATUS_COLORS.danger} strokeWidth="1"
                   className="focus-pulse-ring-outer" />
 
                 {/* Equipment name label above pin */}
@@ -649,7 +650,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                       x={cx - labelW / 2} y={pinTip - 58 * pinScale - 26}
                       width={labelW} height={22}
                       rx="11" fill="#1e293b" fillOpacity="0.95"
-                      stroke="#ef4444" strokeWidth="1.5"
+                      stroke={STATUS_COLORS.danger} strokeWidth="1.5"
                     />
                     {/* Pointer triangle */}
                     <polygon

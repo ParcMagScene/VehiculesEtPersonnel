@@ -16,6 +16,7 @@ import './ReportsPanel.css';
 import { Button, InlineAlert, SectionHeader, Table, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 // ═══════════════════════════════════════
 // Helpers
@@ -82,12 +83,12 @@ const openPrintWindow = (title, htmlContent) => {
 // ═══════════════════════════════════════
 
 const REPORT_SECTIONS = [
-  { id: 'fleet', label: 'Parc véhicules', icon: Truck, color: '#3b82f6' },
-  { id: 'maintenance', label: 'Maintenances', icon: Wrench, color: '#f59e0b' },
-  { id: 'personnel', label: 'Personnel', icon: Users, color: '#10b981' },
-  { id: 'orders', label: 'Commandes', icon: ShoppingCart, color: '#8b5cf6' },
-  { id: 'affaires', label: 'Affaires', icon: Briefcase, color: '#f97316' },
-  { id: 'exports', label: 'Exports CSV', icon: FileSpreadsheet, color: '#06b6d4' },
+  { id: 'fleet', label: 'Parc véhicules', icon: Truck, color: STATUS_COLORS.info },
+  { id: 'maintenance', label: 'Maintenances', icon: Wrench, color: STATUS_COLORS.warning },
+  { id: 'personnel', label: 'Personnel', icon: Users, color: STATUS_COLORS.success },
+  { id: 'orders', label: 'Commandes', icon: ShoppingCart, color: ACCENT_COLORS.violet },
+  { id: 'affaires', label: 'Affaires', icon: Briefcase, color: ACCENT_COLORS.orange },
+  { id: 'exports', label: 'Exports CSV', icon: FileSpreadsheet, color: ACCENT_COLORS.cyan },
 ];
 
 // ═══════════════════════════════════════
@@ -485,27 +486,27 @@ const ReportsPanel = ({ _currentUser }) => {
           } />
 
           <div className="rp-kpi-grid">
-            <div className="rp-kpi" style={{ borderColor: '#3b82f6' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.info }}>
               <span className="rp-kpi-val">{fleetReport.total}</span>
               <span className="rp-kpi-lbl">Véhicules</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#10b981' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.success }}>
               <span className="rp-kpi-val">{fleetReport.active}</span>
               <span className="rp-kpi-lbl">Actifs</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#f59e0b' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.warning }}>
               <span className="rp-kpi-val">{fleetReport.inMaint}</span>
               <span className="rp-kpi-lbl">En maintenance</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#8b5cf6' }}>
+            <div className="rp-kpi" style={{ borderColor: ACCENT_COLORS.violet }}>
               <span className="rp-kpi-val">{fleetReport.periodRes.length}</span>
               <span className="rp-kpi-lbl">Réservations</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#06b6d4' }}>
+            <div className="rp-kpi" style={{ borderColor: ACCENT_COLORS.cyan }}>
               <span className="rp-kpi-val">{fleetReport.totalDays}j</span>
               <span className="rp-kpi-lbl">Jours réservés</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#f97316' }}>
+            <div className="rp-kpi" style={{ borderColor: ACCENT_COLORS.orange }}>
               <span className="rp-kpi-val">{fleetReport.avgUtilization}j</span>
               <span className="rp-kpi-lbl">Moy. / véhicule</span>
             </div>
@@ -521,7 +522,7 @@ const ReportsPanel = ({ _currentUser }) => {
                   <div key={type} className="rp-bar-row">
                     <span className="rp-bar-label">{type}</span>
                     <div className="rp-bar-track">
-                      <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: '#3b82f6' }} />
+                      <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: STATUS_COLORS.info }} />
                     </div>
                     <span className="rp-bar-val">{count}</span>
                   </div>
@@ -547,23 +548,23 @@ const ReportsPanel = ({ _currentUser }) => {
           } />
 
           <div className="rp-kpi-grid">
-            <div className="rp-kpi" style={{ borderColor: '#3b82f6' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.info }}>
               <span className="rp-kpi-val">{maintReport.total}</span>
               <span className="rp-kpi-lbl">Interventions</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#10b981' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.success }}>
               <span className="rp-kpi-val">{maintReport.completed}</span>
               <span className="rp-kpi-lbl">Terminées</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#f59e0b' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.warning }}>
               <span className="rp-kpi-val">{maintReport.pending}</span>
               <span className="rp-kpi-lbl">En attente</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#ef4444' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.danger }}>
               <span className="rp-kpi-val">{maintReport.reported}</span>
               <span className="rp-kpi-lbl">Signalées</span>
             </div>
-            <div className="rp-kpi cost" style={{ borderColor: '#8b5cf6' }}>
+            <div className="rp-kpi cost" style={{ borderColor: ACCENT_COLORS.violet }}>
               <span className="rp-kpi-val">{fmtCurrency(maintReport.totalCost)}</span>
               <span className="rp-kpi-lbl">Coût total</span>
             </div>
@@ -578,7 +579,7 @@ const ReportsPanel = ({ _currentUser }) => {
                   <div key={type} className="rp-bar-row">
                     <span className="rp-bar-label">{type}</span>
                     <div className="rp-bar-track">
-                      <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: '#f59e0b' }} />
+                      <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: STATUS_COLORS.warning }} />
                     </div>
                     <span className="rp-bar-val">{count}</span>
                   </div>
@@ -635,11 +636,11 @@ const ReportsPanel = ({ _currentUser }) => {
           } />
 
           <div className="rp-kpi-grid">
-            <div className="rp-kpi" style={{ borderColor: '#10b981' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.success }}>
               <span className="rp-kpi-val">{personnelReport.total}</span>
               <span className="rp-kpi-lbl">Effectif total</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#3b82f6' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.info }}>
               <span className="rp-kpi-val">{personnelReport.active}</span>
               <span className="rp-kpi-lbl">Actifs</span>
             </div>
@@ -659,7 +660,7 @@ const ReportsPanel = ({ _currentUser }) => {
                     <div key={type} className="rp-bar-row">
                       <span className="rp-bar-label">{type}</span>
                       <div className="rp-bar-track">
-                        <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: '#10b981' }} />
+                        <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: STATUS_COLORS.success }} />
                       </div>
                       <span className="rp-bar-val">{count}</span>
                     </div>
@@ -676,7 +677,7 @@ const ReportsPanel = ({ _currentUser }) => {
                     <div key={type} className="rp-bar-row">
                       <span className="rp-bar-label">{type}</span>
                       <div className="rp-bar-track">
-                        <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: '#8b5cf6' }} />
+                        <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: ACCENT_COLORS.violet }} />
                       </div>
                       <span className="rp-bar-val">{count}</span>
                     </div>
@@ -700,11 +701,11 @@ const ReportsPanel = ({ _currentUser }) => {
           } />
 
           <div className="rp-kpi-grid">
-            <div className="rp-kpi" style={{ borderColor: '#8b5cf6' }}>
+            <div className="rp-kpi" style={{ borderColor: ACCENT_COLORS.violet }}>
               <span className="rp-kpi-val">{ordersReport.total}</span>
               <span className="rp-kpi-lbl">Commandes</span>
             </div>
-            <div className="rp-kpi cost" style={{ borderColor: '#10b981' }}>
+            <div className="rp-kpi cost" style={{ borderColor: STATUS_COLORS.success }}>
               <span className="rp-kpi-val">{fmtCurrency(ordersReport.totalAmount)}</span>
               <span className="rp-kpi-lbl">Montant total</span>
             </div>
@@ -720,7 +721,7 @@ const ReportsPanel = ({ _currentUser }) => {
                     <div key={status} className="rp-bar-row">
                       <span className="rp-bar-label">{status}</span>
                       <div className="rp-bar-track">
-                        <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: '#8b5cf6' }} />
+                        <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: ACCENT_COLORS.violet }} />
                       </div>
                       <span className="rp-bar-val">{count}</span>
                     </div>
@@ -758,11 +759,11 @@ const ReportsPanel = ({ _currentUser }) => {
           } />
 
           <div className="rp-kpi-grid">
-            <div className="rp-kpi" style={{ borderColor: '#f97316' }}>
+            <div className="rp-kpi" style={{ borderColor: ACCENT_COLORS.orange }}>
               <span className="rp-kpi-val">{affairesReport.total}</span>
               <span className="rp-kpi-lbl">Sur la période</span>
             </div>
-            <div className="rp-kpi" style={{ borderColor: '#3b82f6' }}>
+            <div className="rp-kpi" style={{ borderColor: STATUS_COLORS.info }}>
               <span className="rp-kpi-val">{affairesReport.all}</span>
               <span className="rp-kpi-lbl">Total</span>
             </div>
@@ -778,7 +779,7 @@ const ReportsPanel = ({ _currentUser }) => {
                     <div key={status} className="rp-bar-row">
                       <span className="rp-bar-label">{status}</span>
                       <div className="rp-bar-track">
-                        <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: '#f97316' }} />
+                        <div className="rp-bar-fill" style={{ width: `${(count / max * 100)}%`, background: ACCENT_COLORS.orange }} />
                       </div>
                       <span className="rp-bar-val">{count}</span>
                     </div>

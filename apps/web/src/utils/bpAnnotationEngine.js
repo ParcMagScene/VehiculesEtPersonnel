@@ -1,4 +1,5 @@
 import { STATUS } from '../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
 // ═══════════════════════════════════════════════════════════════
 // bpAnnotationEngine.js — Moteur d'annotation des BP eM@g
 // Détection familles, kits, couleurs, bloc infos affaire
@@ -6,19 +7,19 @@ import { STATUS } from '../constants';
 
 // ─── Couleurs par famille métier (taxonomie unifiée) ───
 export const FAMILY_COLORS = {
-  sonorisation:       { bg: 'rgba(59, 130, 246, 0.7)',  border: '#3b82f6', label: 'Sonorisation',           emoji: '🔊' },
-  eclairage:          { bg: 'rgba(234, 179, 8, 0.7)',   border: '#eab308', label: 'Éclairage',              emoji: '💡' },
-  audiovisuel:        { bg: 'rgba(236, 72, 153, 0.7)',  border: '#ec4899', label: 'Audiovisuel',            emoji: '🎥' },
-  structure:          { bg: 'rgba(34, 197, 94, 0.7)',   border: '#22c55e', label: 'Structure',              emoji: '🏗️' },
-  distribution_elec:  { bg: 'rgba(239, 68, 68, 0.7)',   border: '#ef4444', label: 'Distribution Élec.',     emoji: '⚡' },
-  backline:           { bg: 'rgba(16, 185, 129, 0.7)',  border: '#10b981', label: 'Backline',               emoji: '🎸' },
-  rideau_machinerie:  { bg: 'rgba(236, 72, 153, 0.6)',  border: '#ec4899', label: 'Rideau-Machinerie',      emoji: '🎭' },
-  informatique:       { bg: 'rgba(6, 182, 212, 0.7)',   border: '#06b6d4', label: 'Informatique',           emoji: '💻' },
+  sonorisation:       { bg: 'rgba(59, 130, 246, 0.7)',  border: STATUS_COLORS.info, label: 'Sonorisation',           emoji: '🔊' },
+  eclairage:          { bg: 'rgba(234, 179, 8, 0.7)',   border: ACCENT_COLORS.amber, label: 'Éclairage',              emoji: '💡' },
+  audiovisuel:        { bg: 'rgba(236, 72, 153, 0.7)',  border: ACCENT_COLORS.pink, label: 'Audiovisuel',            emoji: '🎥' },
+  structure:          { bg: 'rgba(34, 197, 94, 0.7)',   border: STATUS_COLORS.successSoft, label: 'Structure',              emoji: '🏗️' },
+  distribution_elec:  { bg: 'rgba(239, 68, 68, 0.7)',   border: STATUS_COLORS.danger, label: 'Distribution Élec.',     emoji: '⚡' },
+  backline:           { bg: 'rgba(16, 185, 129, 0.7)',  border: STATUS_COLORS.success, label: 'Backline',               emoji: '🎸' },
+  rideau_machinerie:  { bg: 'rgba(236, 72, 153, 0.6)',  border: ACCENT_COLORS.pink, label: 'Rideau-Machinerie',      emoji: '🎭' },
+  informatique:       { bg: 'rgba(6, 182, 212, 0.7)',   border: ACCENT_COLORS.cyan, label: 'Informatique',           emoji: '💻' },
   regie:              { bg: 'rgba(168, 85, 247, 0.7)',  border: '#a855f7', label: 'Régie',                  emoji: '🎛️' },
   accroche:           { bg: 'rgba(20, 184, 166, 0.7)',  border: '#14b8a6', label: 'Accroche',               emoji: '🔗' },
-  motorisation:       { bg: 'rgba(249, 115, 22, 0.7)',  border: '#f97316', label: 'Motorisation',           emoji: '⚙️' },
-  mobilier:           { bg: 'rgba(107, 114, 128, 0.7)', border: '#6b7280', label: 'Mobilier',               emoji: '🪑' },
-  outillage:          { bg: 'rgba(245, 158, 11, 0.7)',  border: '#f59e0b', label: 'Outillage & EPI',        emoji: '🔧' },
+  motorisation:       { bg: 'rgba(249, 115, 22, 0.7)',  border: ACCENT_COLORS.orange, label: 'Motorisation',           emoji: '⚙️' },
+  mobilier:           { bg: 'rgba(107, 114, 128, 0.7)', border: STATUS_COLORS.neutralSoft, label: 'Mobilier',               emoji: '🪑' },
+  outillage:          { bg: 'rgba(245, 158, 11, 0.7)',  border: STATUS_COLORS.warning, label: 'Outillage & EPI',        emoji: '🔧' },
   divers:             { bg: 'rgba(156, 163, 175, 0.6)', border: '#9ca3af', label: 'Divers',                 emoji: '📦' },
   vente:              { bg: 'rgba(251, 191, 36, 0.6)',  border: '#fbbf24', label: 'Vente',                  emoji: '🛒' },
 };

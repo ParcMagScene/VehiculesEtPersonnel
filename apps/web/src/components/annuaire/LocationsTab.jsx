@@ -7,6 +7,7 @@ import { Button, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
 import { useToast } from '../../hooks/useToast';
+import { STATUS_COLORS } from '../../constants/colors';
 
 const LOCATION_TYPES = ['Salle de spectacle', 'Prestataire', 'Dépôt', 'Garage', 'Autre'];
 
@@ -123,7 +124,7 @@ function LocationsTab({ currentUser }) {
                     {locs.map(loc => (
                       <tr key={loc.id} className={loc.isCompanyLocation ? 'company-location-row' : ''}>
                         <td className="name-cell">
-                          <MapPin size={14} style={{ color: '#10b981', verticalAlign: -2, marginRight: 6 }} />
+                          <MapPin size={14} style={{ color: STATUS_COLORS.success, verticalAlign: -2, marginRight: 6 }} />
                           {loc.name}
                           {loc.isCompanyLocation && <span className="company-badge">Siège</span>}
                         </td>

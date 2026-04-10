@@ -18,6 +18,7 @@ import { Button, ModalLayout, Input, Textarea, Select, Table, Checkbox, Spinner,
 import { resolveGenericImage, getAllGenericImages, GENERIC_IMAGES } from '../../utils/genericImages';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1", "A3" → "A1")
 const findZone = (zoneList, zid) => {
@@ -30,25 +31,25 @@ const findZone = (zoneList, zid) => {
 
 // ═══ CONSTANTES ═══
 const EQUIPMENT_STATUS = {
-  available: { label: 'Disponible', color: '#10b981', icon: '✅' },
-  in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
-  maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
+  available: { label: 'Disponible', color: STATUS_COLORS.success, icon: '✅' },
+  in_use: { label: 'En service', color: STATUS_COLORS.info, icon: '🔄' },
+  maintenance: { label: 'En maintenance', color: STATUS_COLORS.warning, icon: '🔧' },
   retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 
 const SAV_STATUS = {
-  open: { label: 'Ouvert', color: '#ef4444' },
-  in_progress: { label: 'En cours', color: '#f59e0b' },
-  waiting_parts: { label: 'Attente pièces', color: '#8b5cf6' },
-  resolved: { label: 'Résolu', color: '#10b981' },
+  open: { label: 'Ouvert', color: STATUS_COLORS.danger },
+  in_progress: { label: 'En cours', color: STATUS_COLORS.warning },
+  waiting_parts: { label: 'Attente pièces', color: ACCENT_COLORS.violet },
+  resolved: { label: 'Résolu', color: STATUS_COLORS.success },
   closed: { label: 'Clôturé', color: 'var(--theme-text-gray)' },
 };
 
 const SAV_PRIORITY = {
   low: { label: 'Basse', color: 'var(--theme-text-gray)' },
-  medium: { label: 'Moyenne', color: '#f59e0b' },
-  high: { label: 'Haute', color: '#ef4444' },
-  urgent: { label: 'Urgente', color: '#dc2626' },
+  medium: { label: 'Moyenne', color: STATUS_COLORS.warning },
+  high: { label: 'Haute', color: STATUS_COLORS.danger },
+  urgent: { label: 'Urgente', color: STATUS_COLORS.dangerDark },
 };
 
 const SAV_TYPES = {
@@ -1310,11 +1311,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
             {/* Onglets de gestion */}
             <div className="eq-mgmt-tabs">
               {[
-                { id: 'imports', label: 'Imports', icon: Upload, color: '#3b82f6' },
-                { id: 'categories', label: 'Familles et catégories', icon: Tag, color: '#8b5cf6' },
-                { id: 'labels', label: 'Étiquettes', icon: Printer, color: '#f97316' },
-                { id: 'stats', label: 'Statistiques', icon: Hash, color: '#10b981' },
-                { id: 'media', label: 'Médias', icon: ImageIcon, color: '#ec4899' },
+                { id: 'imports', label: 'Imports', icon: Upload, color: STATUS_COLORS.info },
+                { id: 'categories', label: 'Familles et catégories', icon: Tag, color: ACCENT_COLORS.violet },
+                { id: 'labels', label: 'Étiquettes', icon: Printer, color: ACCENT_COLORS.orange },
+                { id: 'stats', label: 'Statistiques', icon: Hash, color: STATUS_COLORS.success },
+                { id: 'media', label: 'Médias', icon: ImageIcon, color: ACCENT_COLORS.pink },
               ].map(tab => (
                 <Button variant="ghost"                   key={tab.id}
                   className={`eq-mgmt-tab ${mgmtTab === tab.id ? 'active' : ''}`}
@@ -1785,7 +1786,7 @@ const EquipmentGrid = ({ equipment, depotZones, allDepotZones, selectedId, photo
                 <td className="eq-table-uid"><code>{eq.uid || '—'}</code></td>
                 <td className="eq-table-ref">{eq.reference || '—'}</td>
                 <td>
-                  <span className="eq-table-cat" style={{ background: eq.categoryColor || '#6366f1' }}>
+                  <span className="eq-table-cat" style={{ background: eq.categoryColor || ACCENT_COLORS.indigo }}>
                     {eq.categoryIcon || '📦'} {eq.categoryName || '—'}
                   </span>
                 </td>
@@ -1879,7 +1880,7 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
                 <>
                   <Tooltip content={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
                     <Button variant="ghost" className={`eq-btn-list-star ${isFav ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'favorite'); }}>
-                      <Star size={16} fill={isFav ? '#f59e0b' : 'none'} />
+                      <Star size={16} fill={isFav ? STATUS_COLORS.warning : 'none'} />
                     </Button>
                   </Tooltip>
                   <Tooltip content={isWatch ? 'Retirer de la surveillance' : 'Mettre en surveillance'}>
@@ -1904,7 +1905,7 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
       {hierarchy && (
         <div className="eq-detail-hierarchy">
           {hierarchy.family && (
-            <span className="eq-hier-badge eq-hier-family" style={{ background: hierarchy.family.color || '#6366f1' }}>
+            <span className="eq-hier-badge eq-hier-family" style={{ background: hierarchy.family.color || ACCENT_COLORS.indigo }}>
               {hierarchy.family.icon || '📦'} {hierarchy.family.name}
             </span>
           )}
@@ -2170,7 +2171,7 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, p
         <div className="eq-dialog-header">
           <div className="eq-dialog-title-row">
             <span className="eq-dialog-name">{eq.reference || cleanName(eq.name)}</span>
-            <span className="eq-dialog-cat" style={{ background: (eq.categoryColor || eq.category_color || '#6366f1') }}>
+            <span className="eq-dialog-cat" style={{ background: (eq.categoryColor || eq.category_color || ACCENT_COLORS.indigo) }}>
               {eq.categoryIcon || eq.category_icon || '📦'} {eq.categoryName || eq.category_name || ''}
             </span>
           </div>

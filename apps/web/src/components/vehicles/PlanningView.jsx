@@ -4,6 +4,7 @@ import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, Users, Briefcase, Clock, Ban } from 'lucide-react';
 import api from '../../utils/api';
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import { Button } from '@/design-system';
 import './PlanningView.css';
@@ -107,12 +108,12 @@ function PlanningView({
   // Obtenir la couleur de statut
   const getStatusColor = (status) => {
     switch(status) {
-      case 'reported': return '#ef4444';
-      case 'scheduled': return '#f59e0b';
-      case 'in_progress': return '#3b82f6';
-      case 'pending': return '#8b5cf6';
-      case 'completed': return '#10b981';
-      case 'rescheduled': return '#f97316';
+      case 'reported': return STATUS_COLORS.danger;
+      case 'scheduled': return STATUS_COLORS.warning;
+      case 'in_progress': return STATUS_COLORS.info;
+      case 'pending': return ACCENT_COLORS.violet;
+      case 'completed': return STATUS_COLORS.success;
+      case 'rescheduled': return ACCENT_COLORS.orange;
       default: return 'var(--theme-text-gray)';
     }
   };
@@ -120,11 +121,11 @@ function PlanningView({
   // Couleur par type de mission
   const getMissionColor = (type) => {
     switch (type) {
-      case 'intervention': return '#3b82f6';
-      case 'livraison': return '#10b981';
-      case 'installation': return '#8b5cf6';
-      case 'maintenance': return '#f59e0b';
-      case 'depannage': return '#ef4444';
+      case 'intervention': return STATUS_COLORS.info;
+      case 'livraison': return STATUS_COLORS.success;
+      case 'installation': return ACCENT_COLORS.violet;
+      case 'maintenance': return STATUS_COLORS.warning;
+      case 'depannage': return STATUS_COLORS.danger;
       default: return 'var(--theme-text-gray)';
     }
   };

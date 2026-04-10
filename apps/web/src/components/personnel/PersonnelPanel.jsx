@@ -37,6 +37,7 @@ import LeavesTab from '../leaves/LeavesTab';
 import SkillsTab from './SkillsTab';
 import PositionsTab from './PositionsTab';
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import {
   PERSON_TYPES, CONTRACT_TYPES, SKILL_LEVELS,
@@ -169,12 +170,12 @@ const PersonnelPanel = ({ currentUser, mode = 'standalone', view, setView, curre
 
   // Sous-onglets (filtrés selon le mode)
   const allSubTabs = [
-    { id: 'persons', label: 'Personnel', icon: Users, color: '#3b82f6' },
-    { id: 'skills', label: 'Compétences', icon: Award, color: '#8b5cf6' },
-    { id: 'positions', label: 'Postes', icon: Briefcase, color: '#f97316' },
-    { id: 'planning', label: 'Planning', icon: CalendarDays, color: '#10b981' },
-    { id: 'agenda', label: 'Agenda', icon: Clock, color: '#06b6d4' },
-    { id: 'leaves', label: 'Congés', icon: CalendarOff, color: '#ef4444' },
+    { id: 'persons', label: 'Personnel', icon: Users, color: STATUS_COLORS.info },
+    { id: 'skills', label: 'Compétences', icon: Award, color: ACCENT_COLORS.violet },
+    { id: 'positions', label: 'Postes', icon: Briefcase, color: ACCENT_COLORS.orange },
+    { id: 'planning', label: 'Planning', icon: CalendarDays, color: STATUS_COLORS.success },
+    { id: 'agenda', label: 'Agenda', icon: Clock, color: ACCENT_COLORS.cyan },
+    { id: 'leaves', label: 'Congés', icon: CalendarOff, color: STATUS_COLORS.danger },
   ];
   const subTabs = mode === 'management'
     ? allSubTabs.filter(t => t.id !== 'planning')
@@ -1188,11 +1189,11 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
     rtt: '#a78bfa',          // violet
     maladie: '#f87171',      // rouge
     sans_solde: '#fb923c',   // orange
-    formation: '#8b5cf6',    // violet foncé
-    entreprise: '#3b82f6',   // bleu
-    workshop: '#f59e0b',     // ambre
-    examen: '#10b981',       // vert
-    rdv: '#06b6d4',          // cyan
+    formation: ACCENT_COLORS.violet,    // violet foncé
+    entreprise: STATUS_COLORS.info,   // bleu
+    workshop: STATUS_COLORS.warning,     // ambre
+    examen: STATUS_COLORS.success,       // vert
+    rdv: ACCENT_COLORS.cyan,          // cyan
     repos: '#fbbf24',        // jaune
     autre: 'var(--theme-text-muted)',        // gris
   };
@@ -1538,10 +1539,10 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
   // Obtenir la couleur d'un statut d'affectation
   const getStatusColor = (status) => {
     switch (status) {
-      case 'confirmed': return '#10b981';
-      case 'option': return '#f59e0b';
+      case 'confirmed': return STATUS_COLORS.success;
+      case 'option': return STATUS_COLORS.warning;
       case 'proposed': return 'var(--theme-text-gray)';
-      case 'refused': return '#ef4444';
+      case 'refused': return STATUS_COLORS.danger;
       case 'cancelled': return 'var(--theme-text-muted)';
       default: return '#667eea';
     }

@@ -3,6 +3,7 @@ import { format, addDays, startOfMonth, endOfMonth, startOfDay, addMonths, subMo
 import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import { Button , Tooltip} from '@/design-system';
 import './MobilePlanning.css';
@@ -174,15 +175,15 @@ function MobilePlanning({
 
   const getStatusColor = (status) => {
     switch(status) {
-      case 'reported': return '#ef4444';
-      case 'scheduled': return '#f59e0b';
+      case 'reported': return STATUS_COLORS.danger;
+      case 'scheduled': return STATUS_COLORS.warning;
       case 'in_progress':
-      case 'IN_PROGRESS': return '#3b82f6';
+      case 'IN_PROGRESS': return STATUS_COLORS.info;
       case 'pending':
-      case 'PENDING': return '#8b5cf6';
+      case 'PENDING': return ACCENT_COLORS.violet;
       case 'completed':
-      case 'COMPLETED': return '#10b981';
-      case 'rescheduled': return '#f97316';
+      case 'COMPLETED': return STATUS_COLORS.success;
+      case 'rescheduled': return ACCENT_COLORS.orange;
       default: return 'var(--theme-text-gray)';
     }
   };
@@ -309,7 +310,7 @@ function MobilePlanning({
                             style={{ 
                               gridColumn: `${reservation.dayIndex + 1} / span ${reservation.duration}`,
                               gridRow: reservation.row,
-                              backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6'
+                              backgroundColor: vehicle.displayColor || vehicle.color || STATUS_COLORS.info
                             }}
                           >
                             <div className="mobile-reservation-content-wrapper">

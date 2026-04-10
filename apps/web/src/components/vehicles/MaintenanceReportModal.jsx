@@ -5,6 +5,7 @@ import { X, Printer, FileText, ChevronLeft, ChevronRight, Download } from 'lucid
 import api from '../../utils/api';
 import './MaintenanceReportModal.css';
 import { Button, Select, Table , Tooltip} from '@/design-system';
+import { STATUS_COLORS } from '../../constants/colors';
 import { formatDateTime, formatDateSimple } from '../../utils/formatUtils';
 
 const PERIOD_MODES = [
@@ -133,7 +134,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
           td { padding: 5px 8px; border: 1px solid #d1d5db; vertical-align: top; }
           tr:nth-child(even) { background: #f9fafb; }
           .entry-badge { color: #059669; font-weight: 600; }
-          .exit-badge { color: #dc2626; font-weight: 600; }
+          .exit-badge { color: ${STATUS_COLORS.dangerDark}; font-weight: 600; }
           .both-badge { color: #7c3aed; font-weight: 600; }
           .report-footer { margin-top: 16px; display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; border-top: 2px solid #333; padding-top: 8px; }
           @media print { body { padding: 10px; } }

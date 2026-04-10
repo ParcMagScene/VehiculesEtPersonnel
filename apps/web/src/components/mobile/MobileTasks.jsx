@@ -7,30 +7,31 @@ import usePullToRefresh from '../../hooks/usePullToRefresh';
 import useSwipeAction from '../../hooks/useSwipeAction';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 import SwipeableRow from './SwipeableRow';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import './MobileTasks.css';
 
 const SECTIONS = {
-  rdv: { label: 'Rendez-vous', emoji: '📅', color: '#3b82f6' },
-  courses: { label: 'Courses', emoji: '🚗', color: '#f59e0b' },
-  prep_locations: { label: 'Prép. Locations', emoji: '📦', color: '#8b5cf6' },
-  prep_prestations: { label: 'Prép. Prestations', emoji: '🎤', color: '#ec4899' },
+  rdv: { label: 'Rendez-vous', emoji: '📅', color: STATUS_COLORS.info },
+  courses: { label: 'Courses', emoji: '🚗', color: STATUS_COLORS.warning },
+  prep_locations: { label: 'Prép. Locations', emoji: '📦', color: ACCENT_COLORS.violet },
+  prep_prestations: { label: 'Prép. Prestations', emoji: '🎤', color: ACCENT_COLORS.pink },
   prep_ventes: { label: 'Prép. Ventes', emoji: '🏷️', color: '#14b8a6' },
-  chargement: { label: 'Chargement', emoji: '📦', color: '#6366f1' },
+  chargement: { label: 'Chargement', emoji: '📦', color: ACCENT_COLORS.indigo },
   depart: { label: 'Départ', emoji: '🚀', color: '#0ea5e9' },
-  installation: { label: 'Installation', emoji: '🛠️', color: '#10b981' },
+  installation: { label: 'Installation', emoji: '🛠️', color: STATUS_COLORS.success },
   montage: { label: 'Montage', emoji: '🔩', color: '#059669' },
-  demontage: { label: 'Démontage', emoji: '🔧', color: '#d97706' },
-  taches_prioritaires: { label: 'Prioritaires', emoji: '🔴', color: '#ef4444' },
-  taches_secondaires: { label: 'Secondaires', emoji: '🟡', color: '#eab308' },
-  manual: { label: 'Autres', emoji: '📋', color: '#6b7280' },
+  demontage: { label: 'Démontage', emoji: '🔧', color: STATUS_COLORS.warningDark },
+  taches_prioritaires: { label: 'Prioritaires', emoji: '🔴', color: STATUS_COLORS.danger },
+  taches_secondaires: { label: 'Secondaires', emoji: '🟡', color: ACCENT_COLORS.amber },
+  manual: { label: 'Autres', emoji: '📋', color: STATUS_COLORS.neutralSoft },
 };
 
 const STATUS_INFO = {
   pending: { label: 'À faire', icon: Circle, color: '#94a3b8' },
-  in_progress: { label: 'En cours', icon: Clock, color: '#f59e0b' },
-  done: { label: 'Validée', icon: CheckCircle, color: '#10b981' },
-  cancelled: { label: 'Annulée', icon: XCircle, color: '#ef4444' },
+  in_progress: { label: 'En cours', icon: Clock, color: STATUS_COLORS.warning },
+  done: { label: 'Validée', icon: CheckCircle, color: STATUS_COLORS.success },
+  cancelled: { label: 'Annulée', icon: XCircle, color: STATUS_COLORS.danger },
 };
 
 function MobileTasks({ currentUser, onBack }) {
@@ -187,7 +188,7 @@ function MobileTasks({ currentUser, onBack }) {
                           leftAction={{
                             label: isDone ? 'À faire' : 'Valider',
                             icon: isDone ? '↩️' : '✅',
-                            color: isDone ? '#f59e0b' : '#10b981',
+                            color: isDone ? STATUS_COLORS.warning : STATUS_COLORS.success,
                             onClick: () => handleValidate(task),
                           }}
                         >

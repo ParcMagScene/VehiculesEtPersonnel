@@ -20,6 +20,7 @@ const PersonnelPanel = React.lazy(() => import('../personnel/PersonnelPanel'));
 import './ManagementPanel.css';
 import { useToast } from '../../hooks/useToast';
 import { Button, Input, Select } from '@/design-system';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 const ManagementPanel = ({
@@ -55,7 +56,7 @@ const ManagementPanel = ({
   const [newItem, setNewItem] = useState({ 
     name: '', 
     type: '', 
-    color: '#3b82f6',
+    color: STATUS_COLORS.info,
     immatriculation: '',
     marque: '',
     couleurVehicule: '',
@@ -163,17 +164,17 @@ const ManagementPanel = ({
   const tabs = panelType === 'settings' ? [
     { id: 'account', label: 'Mon compte', icon: Lock, color: 'var(--theme-text-gray)' },
     ...(currentUser?.isAdmin ? [
-      { id: 'users', label: 'Utilisateurs', icon: Shield, color: '#ef4444' },
-      { id: 'sync', label: 'Import/Export', icon: Cloud, color: '#ec4899' },
+      { id: 'users', label: 'Utilisateurs', icon: Shield, color: STATUS_COLORS.danger },
+      { id: 'sync', label: 'Import/Export', icon: Cloud, color: ACCENT_COLORS.pink },
       { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
       { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
-      { id: 'depot-map', label: 'Plan Dépôt', icon: MapPin, color: '#10b981' },
+      { id: 'depot-map', label: 'Plan Dépôt', icon: MapPin, color: STATUS_COLORS.success },
     ] : []),
   ] : [
-    { id: 'vehicles', label: 'Véhicules', icon: Truck, color: '#3b82f6' },
-    { id: 'clients', label: 'Clients', icon: UserCircle2, color: '#8b5cf6' },
+    { id: 'vehicles', label: 'Véhicules', icon: Truck, color: STATUS_COLORS.info },
+    { id: 'clients', label: 'Clients', icon: UserCircle2, color: ACCENT_COLORS.violet },
     ...(currentUser?.isAdmin ? [
-      { id: 'requests', label: 'Demandes', icon: Calendar, color: '#f97316' },
+      { id: 'requests', label: 'Demandes', icon: Calendar, color: ACCENT_COLORS.orange },
     ] : []),
   ];
 
@@ -296,7 +297,7 @@ const ManagementPanel = ({
     setNewItem({ 
       name: '', 
       type: '', 
-      color: '#3b82f6',
+      color: STATUS_COLORS.info,
       immatriculation: '',
       marque: '',
       couleurVehicule: '',
@@ -948,7 +949,7 @@ const ManagementPanel = ({
                     borderRadius: 8,
                     border: activeDepot === 1 ? '2px solid #10b981' : '1px solid #334155',
                     background: activeDepot === 1 ? 'rgba(16,185,129,0.15)' : 'rgba(30,41,59,0.5)',
-                    color: activeDepot === 1 ? '#10b981' : 'var(--theme-text-muted)',
+                    color: activeDepot === 1 ? STATUS_COLORS.success : 'var(--theme-text-muted)',
                     fontWeight: activeDepot === 1 ? 600 : 400,
                     fontSize: '0.9rem',
                     transition: 'all 0.2s'
@@ -962,7 +963,7 @@ const ManagementPanel = ({
                     borderRadius: 8,
                     border: activeDepot === 2 ? '2px solid #3b82f6' : '1px solid #334155',
                     background: activeDepot === 2 ? 'rgba(59,130,246,0.15)' : 'rgba(30,41,59,0.5)',
-                    color: activeDepot === 2 ? '#3b82f6' : 'var(--theme-text-muted)',
+                    color: activeDepot === 2 ? STATUS_COLORS.info : 'var(--theme-text-muted)',
                     fontWeight: activeDepot === 2 ? 600 : 400,
                     fontSize: '0.9rem',
                     transition: 'all 0.2s'
@@ -1098,7 +1099,7 @@ const ManagementPanel = ({
                     <>
                       <div className="item-info">
                         {activeTab === 'vehicles' && (
-                          <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || '#3b82f6' }} />
+                          <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || STATUS_COLORS.info }} />
                         )}
                         {activeTab === 'vehicles' && (
                           <div className="item-photo">
@@ -1296,7 +1297,7 @@ const ManagementPanel = ({
                         ) : (
                           <>
                             <div className="item-info">
-                              <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || '#3b82f6' }} />
+                              <div className="item-color" style={{ backgroundColor: item.displayColor || item.color || STATUS_COLORS.info }} />
                               <div className="item-photo">
                                 {item.photo ? (
                                   <img src={`/Photos/${item.photo}`} alt={item.name} loading="lazy" />

@@ -2,6 +2,8 @@
 // map-utils.js — Constantes et helpers pour le module cartographie
 // ═══════════════════════════════════════════════════════════════
 
+import { STATUS_COLORS } from '../../constants/colors';
+
 /** Centre de Mag Scène */
 export const MAG_SCENE = [45.4303156, 4.3728596];
 
@@ -34,10 +36,10 @@ export const TILE_DARK = {
  * Les couleurs utilisent les tokens DS quand possible.
  */
 export const LOCATION_TYPES = {
-  'Dépôt':              { color: '#22c55e', label: 'Dépôt',              iconPath: 'M3 21V8l9-5 9 5v13H3z M9 21v-6h6v6' },
-  'Salle de spectacle': { color: '#3b82f6', label: 'Salle de spectacle', iconPath: 'M2 16s0-6 4-6 4 6 4 6 4 0 4-6 4-6 4 6h0 M12 4v4 M10 2h4' },
-  'Prestataire':        { color: '#f59e0b', label: 'Prestataire',        iconPath: 'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2 M9 11a4 4 0 100-8 4 4 0 000 8 M22 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75' },
-  'Garage':             { color: '#ef4444', label: 'Garage',             iconPath: 'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z' },
+  'Dépôt':              { color: STATUS_COLORS.successSoft, label: 'Dépôt',              iconPath: 'M3 21V8l9-5 9 5v13H3z M9 21v-6h6v6' },
+  'Salle de spectacle': { color: STATUS_COLORS.info, label: 'Salle de spectacle', iconPath: 'M2 16s0-6 4-6 4 6 4 6 4 0 4-6 4-6 4 6h0 M12 4v4 M10 2h4' },
+  'Prestataire':        { color: STATUS_COLORS.warning, label: 'Prestataire',        iconPath: 'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2 M9 11a4 4 0 100-8 4 4 0 000 8 M22 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75' },
+  'Garage':             { color: STATUS_COLORS.danger, label: 'Garage',             iconPath: 'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z' },
   'Autre':              { color: '#94a3b8', label: 'Autre',              iconPath: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z M12 13a3 3 0 100-6 3 3 0 000 6z' },
 };
 

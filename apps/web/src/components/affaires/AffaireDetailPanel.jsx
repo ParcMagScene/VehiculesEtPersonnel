@@ -15,6 +15,7 @@ import { Avatar, Button, Input, Select, Spinner, Table, Textarea, Tooltip } from
 import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 const ReservationModal = lazy(() => import('../vehicles/ReservationModal'));
 const EventDetailsModal = lazy(() => import('../planning/EventDetailsModal'));
@@ -28,16 +29,16 @@ const API_BASE_URL = getApiUrl();
 
 // ═══ Étapes de tâches opérationnelles ═══
 const TASK_STEPS = [
-  { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: '#6366f1', defaultSection: 'prep_locations' },
-  { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: '#f59e0b', defaultSection: 'chargement' },
-  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: '#3b82f6', defaultSection: 'depart' },
-  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: '#f97316', defaultSection: 'courses' },
-  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: '#10b981', defaultSection: 'enlevement' },
-  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: '#8b5cf6', defaultSection: 'retour' },
-  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: '#ef4444', defaultSection: 'recuperation' },
-  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: '#10b981', defaultSection: 'installation' },
-  { key: 'montage',      label: 'Montage',      emoji: '🔩', icon: Wrench,      color: '#0891b2', defaultSection: 'montage' },
-  { key: 'demontage',    label: 'Démontage',    emoji: '🔧', icon: Wrench,      color: '#dc2626', defaultSection: 'demontage' },
+  { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: ACCENT_COLORS.indigo, defaultSection: 'prep_locations' },
+  { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: STATUS_COLORS.warning, defaultSection: 'chargement' },
+  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: STATUS_COLORS.info, defaultSection: 'depart' },
+  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: ACCENT_COLORS.orange, defaultSection: 'courses' },
+  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: STATUS_COLORS.success, defaultSection: 'enlevement' },
+  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: ACCENT_COLORS.violet, defaultSection: 'retour' },
+  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: STATUS_COLORS.danger, defaultSection: 'recuperation' },
+  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: STATUS_COLORS.success, defaultSection: 'installation' },
+  { key: 'montage',      label: 'Montage',      emoji: '🔩', icon: Wrench,      color: ACCENT_COLORS.cyanDark, defaultSection: 'montage' },
+  { key: 'demontage',    label: 'Démontage',    emoji: '🔧', icon: Wrench,      color: STATUS_COLORS.dangerDark, defaultSection: 'demontage' },
 ];
 
 // Toutes les étapes sont disponibles pour tous les types d'affaire
@@ -45,9 +46,9 @@ const getVisibleSteps = () => TASK_STEPS;
 
 const TASK_STATUS_MAP = {
   pending:     { label: 'En attente', color: '#94a3b8', bg: '#f1f5f9' },
-  in_progress: { label: 'En cours',  color: '#f59e0b', bg: '#fef3c7' },
-  done:        { label: 'Terminé',   color: '#10b981', bg: '#d1fae5' },
-  cancelled:   { label: 'Annulé',    color: '#ef4444', bg: '#fee2e2' },
+  in_progress: { label: 'En cours',  color: STATUS_COLORS.warning, bg: '#fef3c7' },
+  done:        { label: 'Terminé',   color: STATUS_COLORS.success, bg: '#d1fae5' },
+  cancelled:   { label: 'Annulé',    color: STATUS_COLORS.danger, bg: '#fee2e2' },
 };
 
 const fmtDate = (dateStr) => {
@@ -1585,7 +1586,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
                               <LinkIcon size={11} /> {item.catalogReference || 'Lié'}
                             </span>
                           ) : (
-                            <span style={{ fontSize: 11, color: '#d97706' }}>Non lié</span>
+                            <span style={{ fontSize: 11, color: STATUS_COLORS.warningDark }}>Non lié</span>
                           )}
                         </td>
                       </tr>
@@ -1660,7 +1661,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
                               <LinkIcon size={11} /> {item.stockItemRef || 'Stock'}
                             </span>
                           ) : (
-                            <span style={{ fontSize: 11, color: '#d97706' }}>Non lié</span>
+                            <span style={{ fontSize: 11, color: STATUS_COLORS.warningDark }}>Non lié</span>
                           )}
                         </td>
                       </tr>

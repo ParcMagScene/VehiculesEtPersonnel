@@ -12,6 +12,7 @@ import './AffairesPanel.css';
 import { Button, Checkbox, Divider, EmptyState, InlineAlert, SearchBar, Spinner, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));
@@ -1070,25 +1071,25 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
                         if (t.status === STATUS.DONE) groups[s].done++;
                       }
                       const SECTION_META = {
-                        prep_locations: { e: '📦', c: '#f59e0b', l: 'Prép. Loc' },
-                        prep_prestations: { e: '🎤', c: '#3b82f6', l: 'Prép. Presta' },
-                        prep_ventes: { e: '🏷️', c: '#10b981', l: 'Prép. Ventes' },
-                        prep_installations: { e: '⚙️', c: '#8b5cf6', l: 'Prép. Instal.' },
-                        prep_tournees: { e: '🚐', c: '#ec4899', l: 'Prép. Tournées' },
-                        chargement: { e: '📦', c: '#f59e0b', l: 'Chargement' },
-                        depart: { e: '🚀', c: '#3b82f6', l: 'Départ' },
-                        installation: { e: '🛠️', c: '#10b981', l: 'Installation' },
-                        montage: { e: '🔩', c: '#0891b2', l: 'Montage' },
-                        demontage: { e: '🔧', c: '#dc2626', l: 'Démontage' },
-                        courses: { e: '🚗', c: '#8b5cf6', l: 'Courses' },
-                        taches_prioritaires: { e: '🔴', c: '#ef4444', l: 'Prioritaire' },
-                        taches_secondaires: { e: '🟡', c: '#f59e0b', l: 'Secondaire' },
-                        manual: { e: '📋', c: '#64748b', l: 'Autre' },
+                        prep_locations: { e: '📦', c: STATUS_COLORS.warning, l: 'Prép. Loc' },
+                        prep_prestations: { e: '🎤', c: STATUS_COLORS.info, l: 'Prép. Presta' },
+                        prep_ventes: { e: '🏷️', c: STATUS_COLORS.success, l: 'Prép. Ventes' },
+                        prep_installations: { e: '⚙️', c: ACCENT_COLORS.violet, l: 'Prép. Instal.' },
+                        prep_tournees: { e: '🚐', c: ACCENT_COLORS.pink, l: 'Prép. Tournées' },
+                        chargement: { e: '📦', c: STATUS_COLORS.warning, l: 'Chargement' },
+                        depart: { e: '🚀', c: STATUS_COLORS.info, l: 'Départ' },
+                        installation: { e: '🛠️', c: STATUS_COLORS.success, l: 'Installation' },
+                        montage: { e: '🔩', c: ACCENT_COLORS.cyanDark, l: 'Montage' },
+                        demontage: { e: '🔧', c: STATUS_COLORS.dangerDark, l: 'Démontage' },
+                        courses: { e: '🚗', c: ACCENT_COLORS.violet, l: 'Courses' },
+                        taches_prioritaires: { e: '🔴', c: STATUS_COLORS.danger, l: 'Prioritaire' },
+                        taches_secondaires: { e: '🟡', c: STATUS_COLORS.warning, l: 'Secondaire' },
+                        manual: { e: '📋', c: STATUS_COLORS.neutral, l: 'Autre' },
                         rdv: { e: '📅', c: '#059669', l: 'RDV' },
-                        evenements: { e: '📌', c: '#64748b', l: 'Événement' },
+                        evenements: { e: '📌', c: STATUS_COLORS.neutral, l: 'Événement' },
                       };
                       return Object.entries(groups).map(([sec, { count, done }]) => {
-                        const meta = SECTION_META[sec] || { e: '📋', c: '#64748b', l: sec };
+                        const meta = SECTION_META[sec] || { e: '📋', c: STATUS_COLORS.neutral, l: sec };
                         const allDone = done === count;
                         return (
                           <span

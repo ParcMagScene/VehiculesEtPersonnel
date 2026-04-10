@@ -17,7 +17,7 @@ import EventTaskModal from './EventTaskModal';
 import TaskEditModal from './TaskEditModal';
 import AddTaskModal from './AddTaskModal';
 import { STATUS } from '../../constants';
-import { PLANNING_SECTIONS, EVENT_TYPE_COLORS } from '../../constants/colors';
+import { PLANNING_SECTIONS, EVENT_TYPE_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 import './TaskPlanningPanel.css';
 
@@ -1706,7 +1706,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <span className="ev-col ev-col-spacer" />
         <span className="ev-col ev-col-time"><Clock size={11} /> {timeStr}</span>
         <div className="task-actions">
-          <span className="ical-origin-badge" style={{ borderColor: event.calendarColor || '#3b82f6', color: event.calendarColor || '#3b82f6' }} title={event.calendarName}>
+          <span className="ical-origin-badge" style={{ borderColor: event.calendarColor || STATUS_COLORS.info, color: event.calendarColor || STATUS_COLORS.info }} title={event.calendarName}>
             {(event.calendarName || 'iCal').slice(0, 3)}
           </span>
           <span className={`ev-col ev-col-status google-status-badge ${isProcessed ? 'done' : 'pending'}`}>
@@ -1915,7 +1915,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         <div
           key={`wg-${item.id}`}
           className={`wk-card wk-google ${isProcessed ? 'processed' : 'pending'}`}
-          style={{ borderLeftColor: isProcessed ? '#10b981' : '#4285f4' }}
+          style={{ borderLeftColor: isProcessed ? STATUS_COLORS.success : '#4285f4' }}
           onClick={() => setEventTaskModalEvent(item)}
         >
           <Calendar size={10} style={{ color: '#4285f4' }} />
@@ -2481,7 +2481,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
               <div className="ical-manager-panel">
                 <div className="ical-manager-header">
                   <h5><Link size={14} /> Calendriers iCal</h5>
-                  <Button variant="primary" size="sm" onClick={() => setIcalForm({ name: '', url: '', color: '#3b82f6' })}>
+                  <Button variant="primary" size="sm" onClick={() => setIcalForm({ name: '', url: '', color: STATUS_COLORS.info })}>
                     <Plus size={14} /> Ajouter
                   </Button>
                 </div>
@@ -2491,7 +2491,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
                     <Input type="text" placeholder="Nom du calendrier" value={icalForm.name} onChange={e => setIcalForm(f => ({ ...f, name: e.target.value }))} autoFocus />
                     <Input type="url" placeholder="URL iCal (.ics)" value={icalForm.url} onChange={e => setIcalForm(f => ({ ...f, url: e.target.value }))} />
                     <div className="ical-form-row">
-                      <input type="color" value={icalForm.color || '#3b82f6'} onChange={e => setIcalForm(f => ({ ...f, color: e.target.value }))} title="Couleur" />
+                      <input type="color" value={icalForm.color || STATUS_COLORS.info} onChange={e => setIcalForm(f => ({ ...f, color: e.target.value }))} title="Couleur" />
                       <div className="form-actions">
                         <Button variant="success" size="sm" iconOnly onClick={handleSaveIcal} aria-label="Enregistrer"><Check size={14} /></Button>
                         <Button variant="ghost" size="sm" iconOnly onClick={() => setIcalForm(null)} aria-label="Annuler"><X size={14} /></Button>
@@ -2506,7 +2506,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
                   )}
                   {icalCalendars.map(cal => (
                     <div key={cal.id} className={`ical-calendar-item ${cal.lastSyncError ? 'has-error' : ''}`}>
-                      <span className="ical-color-dot" style={{ background: cal.color || '#3b82f6' }} />
+                      <span className="ical-color-dot" style={{ background: cal.color || STATUS_COLORS.info }} />
                       <div className="ical-cal-info">
                         <span className="ical-cal-name">{cal.name}</span>
                         <span className="ical-cal-url" title={cal.url}>{cal.url.length > 50 ? cal.url.slice(0, 50) + '…' : cal.url}</span>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
 import { Button, Dialog, FormField, Input, Select } from '@/design-system';
+import { STATUS_COLORS } from '../../constants/colors';
 import './VehicleMaintenanceModal.css';
 import { useToast } from '../../hooks/useToast';
 import { formatDateSimple } from '../../utils/formatUtils';
@@ -199,11 +200,11 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     const diffDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) {
-      return { status: 'expired', message: `Expiré depuis ${Math.abs(diffDays)} jours`, color: '#ef4444' };
+      return { status: 'expired', message: `Expiré depuis ${Math.abs(diffDays)} jours`, color: STATUS_COLORS.danger };
     } else if (diffDays <= 30) {
-      return { status: 'warning', message: `Expire dans ${diffDays} jours`, color: '#f59e0b' };
+      return { status: 'warning', message: `Expire dans ${diffDays} jours`, color: STATUS_COLORS.warning };
     } else {
-      return { status: 'ok', message: `Valide encore ${diffDays} jours`, color: '#10b981' };
+      return { status: 'ok', message: `Valide encore ${diffDays} jours`, color: STATUS_COLORS.success };
     }
   };
 

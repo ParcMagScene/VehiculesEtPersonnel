@@ -4,7 +4,7 @@ import api from '../../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
 import { useToast } from '../../hooks/useToast';
 import AddressAutocomplete from '../AddressAutocomplete';
-import { CONF_COLORS } from '../../constants/colors';
+import { CONF_COLORS, STATUS_COLORS } from '../../constants/colors';
 import './BLImportLocPrestaModal.css';
 import { Button, Input, ProgressBar, InlineAlert, Tooltip } from '@/design-system';
 
@@ -13,8 +13,8 @@ const ALLOWED_TYPES = ['Location', 'Prestation'];
 
 // Types d'affaire disponibles (restreints)
 const TYPE_OPTIONS = [
-  { value: 'Prestation', label: 'Prestation', color: '#3b82f6', icon: '🎭' },
-  { value: 'Location', label: 'Location', color: '#f59e0b', icon: '🏗️' },
+  { value: 'Prestation', label: 'Prestation', color: STATUS_COLORS.info, icon: '🎭' },
+  { value: 'Location', label: 'Location', color: STATUS_COLORS.warning, icon: '🏗️' },
 ];
 
 // Couleurs de section
@@ -500,7 +500,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                 return (
                   <div className="bl-loc-results">
                     <h4>
-                      <CheckCircle size={16} style={{ color: '#10b981' }} />
+                      <CheckCircle size={16} style={{ color: STATUS_COLORS.success }} />
                       Données extraites
                       <span className="bl-loc-results-meta">
                         {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs • {parsedData.confidence}% confiance
@@ -595,7 +595,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                                       <span className="bl-loc-col-match">
                                         {match ? (
                                           <span title={`✅ ${match.name} (${match.family || ''})`} style={{ cursor: 'help' }}>
-                                            <Link2 size={13} style={{ color: '#10b981' }} />
+                                            <Link2 size={13} style={{ color: STATUS_COLORS.success }} />
                                           </span>
                                         ) : item.reference ? (
                                           <Tooltip content="Référence non trouvée dans le catalogue" position="bottom"><span className="u-opacity-30">—</span></Tooltip>
@@ -626,7 +626,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                           return (
                           <div key={idx} className={`bl-loc-item-row flat ${match ? 'matched' : ''}`}>
                             <span className="bl-loc-col-match">
-                              {match ? <Link2 size={13} style={{ color: '#10b981' }} title={`✅ ${match.name}`} /> : null}
+                              {match ? <Link2 size={13} style={{ color: STATUS_COLORS.success }} title={`✅ ${match.name}`} /> : null}
                             </span>
                             <span className="bl-loc-col-ref">{item.reference || '—'}</span>
                             <span className="bl-loc-col-desc">{item.description || '—'}</span>
@@ -680,7 +680,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
               </span>
             )}
             {isWrongDocType && (
-              <span className="bl-loc-badge" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+              <span className="bl-loc-badge" style={{ background: 'rgba(239,68,68,0.12)', color: STATUS_COLORS.danger }}>
                 <ShieldAlert size={12} /> Type de document incompatible
               </span>
             )}

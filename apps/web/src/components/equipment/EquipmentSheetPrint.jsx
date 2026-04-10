@@ -1,5 +1,6 @@
 import { safeDate, formatDateSimple } from '../../utils/formatUtils';
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -10,10 +11,10 @@ const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').
 const APP_BASE_URL = window.location.origin;
 
 const SAV_STATUS = {
-  open: { label: 'Ouvert', color: '#3b82f6' },
-  in_progress: { label: 'En cours', color: '#f59e0b' },
-  waiting_parts: { label: 'Attente pièces', color: '#8b5cf6' },
-  resolved: { label: 'Résolu', color: '#10b981' },
+  open: { label: 'Ouvert', color: STATUS_COLORS.info },
+  in_progress: { label: 'En cours', color: STATUS_COLORS.warning },
+  waiting_parts: { label: 'Attente pièces', color: ACCENT_COLORS.violet },
+  resolved: { label: 'Résolu', color: STATUS_COLORS.success },
   closed: { label: 'Clôturé', color: 'var(--theme-text-gray)' },
 };
 
@@ -26,15 +27,15 @@ const SAV_TYPES = {
 
 const SAV_PRIORITY = {
   low: { label: 'Basse', color: 'var(--theme-text-gray)' },
-  medium: { label: 'Moyenne', color: '#f59e0b' },
-  high: { label: 'Haute', color: '#ef4444' },
-  urgent: { label: 'Urgente', color: '#dc2626' },
+  medium: { label: 'Moyenne', color: STATUS_COLORS.warning },
+  high: { label: 'Haute', color: STATUS_COLORS.danger },
+  urgent: { label: 'Urgente', color: STATUS_COLORS.dangerDark },
 };
 
 const EQUIPMENT_STATUS = {
-  available: { label: 'Disponible', color: '#10b981', icon: '✅' },
-  in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
-  maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
+  available: { label: 'Disponible', color: STATUS_COLORS.success, icon: '✅' },
+  in_use: { label: 'En service', color: STATUS_COLORS.info, icon: '🔄' },
+  maintenance: { label: 'En maintenance', color: STATUS_COLORS.warning, icon: '🔧' },
   retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 

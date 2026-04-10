@@ -3,13 +3,15 @@
  * Source unique de vérité pour types, couleurs, emojis et sections planning.
  */
 
+import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
+
 // ═══ Types d'affaire avec métadonnées ═══
 export const AFFAIRE_TYPES = [
-  { value: 'Prestation',   label: 'Prestation',   color: '#3b82f6', icon: '🎭' },
-  { value: 'Location',     label: 'Location',     color: '#f59e0b', icon: '🏗️' },
-  { value: 'Installation', label: 'Installation', color: '#10b981', icon: '⚙️' },
-  { value: 'Vente',        label: 'Vente',        color: '#8b5cf6', icon: '💰' },
-  { value: 'Tournée',      label: 'Tournée',      color: '#ec4899', icon: '🚐' },
+  { value: 'Prestation',   label: 'Prestation',   color: STATUS_COLORS.info, icon: '🎭' },
+  { value: 'Location',     label: 'Location',     color: STATUS_COLORS.warning, icon: '🏗️' },
+  { value: 'Installation', label: 'Installation', color: STATUS_COLORS.success, icon: '⚙️' },
+  { value: 'Vente',        label: 'Vente',        color: ACCENT_COLORS.violet, icon: '💰' },
+  { value: 'Tournée',      label: 'Tournée',      color: ACCENT_COLORS.pink, icon: '🚐' },
 ];
 
 // ═══ Lookup rapide par valeur ═══

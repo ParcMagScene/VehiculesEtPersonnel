@@ -4,6 +4,7 @@ import { X, HelpCircle, Download, Truck, Users, Briefcase, MessageSquare, Keyboa
 import { SHORTCUTS, SHORTCUT_CATEGORIES } from '../hooks/useKeyboardShortcuts';
 import './HelpModal.css';
 import { Accordion, Button, Card, EmptyState, SearchBar, Tab, TabList, TabPanel, Tabs , Tooltip} from '@/design-system';
+import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
 
 // ═══ FAQ Data ═══
 const FAQ_ITEMS = [
@@ -22,7 +23,7 @@ const FAQ_ITEMS = [
 // ═══ Guides par module ═══
 const MODULE_GUIDES = [
   {
-    id: 'parc', icon: Truck, title: 'Module Parc', color: '#3b82f6',
+    id: 'parc', icon: Truck, title: 'Module Parc', color: STATUS_COLORS.info,
     tips: [
       { title: 'Créer une réservation', text: 'Cliquez sur une case vide du calendrier ou utilisez le bouton + en haut. Remplissez le formulaire avec le véhicule, les dates et le chauffeur.' },
       { title: 'Déplacer une réservation', text: "Glissez horizontalement pour changer les dates, ou verticalement pour changer de véhicule. Un indicateur rouge signale un conflit." },
@@ -30,7 +31,7 @@ const MODULE_GUIDES = [
     ]
   },
   {
-    id: 'personnel', icon: Users, title: 'Module Personnel', color: '#10b981',
+    id: 'personnel', icon: Users, title: 'Module Personnel', color: STATUS_COLORS.success,
     tips: [
       { title: 'Planning du personnel', text: "Visualisez les affectations de chaque personne. Cliquez sur un nom pour voir le détail (compétences, missions, documents)." },
       { title: 'Gestion des congés', text: "Depuis la fiche d'une personne, accédez à l'onglet Disponibilités pour gérer les congés et absences." },
@@ -38,21 +39,21 @@ const MODULE_GUIDES = [
     ]
   },
   {
-    id: 'affaires', icon: Briefcase, title: 'Module Affaires', color: '#f59e0b',
+    id: 'affaires', icon: Briefcase, title: 'Module Affaires', color: STATUS_COLORS.warning,
     tips: [
       { title: 'Vue des affaires', text: "Consultez les affaires en cours avec leurs réservations et personnel associé. Utilisez les filtres par date ou par type." },
       { title: 'Navigation croisée', text: "Cliquez sur un nom de véhicule ou de personne dans une affaire pour naviguer directement vers sa fiche détaillée." },
     ]
   },
   {
-    id: 'materiel', icon: Package, title: 'Module Équipements', color: '#8b5cf6',
+    id: 'materiel', icon: Package, title: 'Module Équipements', color: ACCENT_COLORS.violet,
     tips: [
       { title: 'Équipements', text: "Gérez votre parc de matériel avec catégories, statuts et emplacements. Assignez du matériel à des personnes ou des affaires." },
       { title: 'Tickets SAV', text: "Créez des tickets pour les pannes, entretiens et calibrages. Suivez leur résolution et les coûts associés." },
     ]
   },
   {
-    id: 'commandes', icon: ShoppingCart, title: 'Module Commandes', color: '#ec4899',
+    id: 'commandes', icon: ShoppingCart, title: 'Module Commandes', color: ACCENT_COLORS.pink,
     tips: [
       { title: 'Bons de commande', text: "Créez des bons de commande avec référencement automatique (BC-YYYY-NNN). Suivez le statut de chaque commande jusqu'à la réception." },
       { title: 'Devis', text: "Établissez des devis clients avec calcul automatique HT/TTC. Les devis acceptés peuvent être convertis en commandes en un clic." },
@@ -60,7 +61,7 @@ const MODULE_GUIDES = [
     ]
   },
   {
-    id: 'maintenance', icon: Wrench, title: 'Maintenance & Interventions', color: '#ef4444',
+    id: 'maintenance', icon: Wrench, title: 'Maintenance & Interventions', color: STATUS_COLORS.danger,
     tips: [
       { title: 'Planifier un entretien', text: "Depuis la fiche véhicule ou le panneau de gestion, planifiez des maintenances préventives avec rappels automatiques." },
       { title: 'Signaler une panne', text: "Même les utilisateurs sans droits admin peuvent signaler des pannes. L'accès à la gestion complète des maintenances peut être accordé par l'administrateur." },

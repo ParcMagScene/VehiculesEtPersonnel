@@ -3,6 +3,7 @@ import { Link as LinkIcon, QrCode, Copy, Check, Printer } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './MobileAccess.css';
 import { Button, Input } from '@/design-system';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 // Fonctionnalités mobiles à afficher sur l'affichette
 const MOBILE_FEATURES = [
@@ -117,7 +118,7 @@ function MobileAccess() {
         .poster:last-child { page-break-after: auto; }
         .poster-header {
           display: flex; align-items: center; gap: 16px;
-          padding-bottom: 14px; border-bottom: 3px solid #6366f1;
+          padding-bottom: 14px; border-bottom: 3px solid ${ACCENT_COLORS.indigo};
           margin-bottom: 18px;
         }
         .poster-logo { height: ${posterFormat === 'A5' ? '50px' : '72px'}; width: auto; }
@@ -126,7 +127,7 @@ function MobileAccess() {
           font-size: ${titleSize}; color: #1e293b; font-weight: 800; line-height: 1.1;
         }
         .poster-subtitle {
-          font-size: ${subSize}; color: #6366f1; font-weight: 600; margin-top: 4px;
+          font-size: ${subSize}; color: ${ACCENT_COLORS.indigo}; font-weight: 600; margin-top: 4px;
         }
         .poster-body {
           flex: 1; display: flex; gap: 24px; align-items: flex-start;
@@ -137,7 +138,7 @@ function MobileAccess() {
           ${isLandscape ? 'flex-shrink: 0;' : ''}
         }
         .qr-frame {
-          border: 4px solid #6366f1; border-radius: 16px; padding: 12px;
+          border: 4px solid ${ACCENT_COLORS.indigo}; border-radius: 16px; padding: 12px;
           background: white; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
         }
         .qr-img { width: ${qrSize}px; height: ${qrSize}px; display: block; }
@@ -145,7 +146,7 @@ function MobileAccess() {
           font-size: ${subSize}; color: #475569; font-weight: 600; text-align: center;
         }
         .url-box {
-          font-family: monospace; font-size: ${urlSize}; color: #6366f1;
+          font-family: monospace; font-size: ${urlSize}; color: ${ACCENT_COLORS.indigo};
           background: #f1f5f9; padding: 6px 14px; border-radius: 8px;
           text-align: center; word-break: break-all; font-weight: 600;
         }
@@ -167,13 +168,13 @@ function MobileAccess() {
         }
         .feat-icon { font-size: ${featIconSize}; flex-shrink: 0; }
         .feat strong { display: block; font-size: ${featSize}; color: #1e293b; line-height: 1.2; }
-        .feat-desc { font-size: ${posterFormat === 'A5' ? '7pt' : '9pt'}; color: #64748b; }
+        .feat-desc { font-size: ${posterFormat === 'A5' ? '7pt' : '9pt'}; color: ${STATUS_COLORS.neutral}; }
         .poster-footer {
           margin-top: 18px; padding-top: 10px; border-top: 2px solid #e2e8f0;
           text-align: center;
         }
         .poster-footer p { font-size: ${posterFormat === 'A5' ? '8pt' : '10pt'}; color: #94a3b8; }
-        .footer-brand { font-weight: 700; color: #6366f1 !important; margin-top: 4px; }
+        .footer-brand { font-weight: 700; color: ${ACCENT_COLORS.indigo} !important; margin-top: 4px; }
       </style>
     </head><body>${posters.join('')}</body></html>`;
 

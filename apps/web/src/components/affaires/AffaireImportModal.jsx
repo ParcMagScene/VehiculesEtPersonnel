@@ -8,6 +8,7 @@ import PhoneInput from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
 import { Button, FormField, ModalLayout, Input, Textarea, Select, Spinner, ProgressBar } from '@/design-system';
+import { STATUS_COLORS } from '../../constants/colors';
 
 const AffaireImportModal = ({ 
   isOpen, 
@@ -616,9 +617,9 @@ const AffaireImportModal = ({
   };
 
   const getConfidenceColor = (confidence) => {
-    if (confidence >= 70) return '#10b981';
-    if (confidence >= 40) return '#f59e0b';
-    return '#ef4444';
+    if (confidence >= 70) return STATUS_COLORS.success;
+    if (confidence >= 40) return STATUS_COLORS.warning;
+    return STATUS_COLORS.danger;
   };
 
   const getConfidenceLabel = (confidence) => {

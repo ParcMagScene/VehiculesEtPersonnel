@@ -14,6 +14,7 @@ import usePullToRefresh from '../../hooks/usePullToRefresh';
 import useSwipeAction from '../../hooks/useSwipeAction';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 import SwipeableRow from './SwipeableRow';
+import { STATUS_COLORS } from '../../constants/colors';
 
 import { STATUS } from '../../constants';
 
@@ -446,13 +447,13 @@ function MobileAffaires({ onBack }) {
                 leftAction={a.clientTel ? {
                   label: 'Appeler',
                   icon: '📞',
-                  color: '#10b981',
+                  color: STATUS_COLORS.success,
                   onClick: () => { window.location.href = `tel:${a.clientTel}`; },
                 } : null}
                 rightAction={a.adresseLivraison ? {
                   label: 'Itinéraire',
                   icon: '🗺️',
-                  color: '#3b82f6',
+                  color: STATUS_COLORS.info,
                   onClick: () => { window.open(`https://maps.google.com/maps?q=${encodeURIComponent(a.adresseLivraison)}`, '_blank'); },
                 } : null}
               >

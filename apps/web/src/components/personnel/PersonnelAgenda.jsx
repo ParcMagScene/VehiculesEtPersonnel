@@ -13,13 +13,14 @@ import './PersonnelAgenda.css';
 import { Avatar, Button, EmptyState, SearchBar } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS } from '../../constants/colors';
 
 // Couleurs par type d'événement
 const EVENT_COLORS = {
-  mission: { bg: 'var(--theme-info-bg-strong)', border: '#3b82f6', text: 'var(--theme-info-text)' },
-  leave: { bg: 'var(--theme-success-bg-strong)', border: '#10b981', text: 'var(--theme-success-text)' },
-  unavailability: { bg: 'var(--btn-danger-bg)', border: '#ef4444', text: 'var(--theme-danger-text)' },
-  google: { bg: 'var(--btn-warning-bg)', border: '#f59e0b', text: 'var(--theme-warning-text)' },
+  mission: { bg: 'var(--theme-info-bg-strong)', border: STATUS_COLORS.info, text: 'var(--theme-info-text)' },
+  leave: { bg: 'var(--theme-success-bg-strong)', border: STATUS_COLORS.success, text: 'var(--theme-success-text)' },
+  unavailability: { bg: 'var(--btn-danger-bg)', border: STATUS_COLORS.danger, text: 'var(--theme-danger-text)' },
+  google: { bg: 'var(--btn-warning-bg)', border: STATUS_COLORS.warning, text: 'var(--theme-warning-text)' },
 };
 
 const MISSION_TYPE_LABELS = {

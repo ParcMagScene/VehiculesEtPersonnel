@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef, memo } from 'react';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 const SAMPLE_TASKS = [
   { time: '07:00', period: 'AM', title: 'Prépa sono festival Dupont', section: 'prep_locations', sectionLabel: 'Prépa Location', status: STATUS.PENDING, affaireNum: 'AF32887', affaireType: 'Location' },
@@ -90,8 +91,8 @@ function TVScreenMini({ state = {} }) {
 
   // Couleurs par type d'affaire (aligné sur AffaireBadge / affaireConstants)
   const AFFAIRE_TYPE_COLORS = {
-    Prestation: '#3b82f6', Location: '#f59e0b', Installation: '#10b981',
-    Vente: '#8b5cf6', 'Tournée': '#ec4899',
+    Prestation: STATUS_COLORS.info, Location: STATUS_COLORS.warning, Installation: STATUS_COLORS.success,
+    Vente: ACCENT_COLORS.violet, 'Tournée': ACCENT_COLORS.pink,
   };
 
   const completed = state.completedEvents || [];
@@ -108,7 +109,7 @@ function TVScreenMini({ state = {} }) {
       : (task.period === 'AM' ? 'Matin' : task.period === 'PM' ? 'Après-midi' : '');
     const affNum = task.affaireNum || task.affaire_num || '';
     const affType = task.affaireType || task.affaire_type || '';
-    const badgeColor = AFFAIRE_TYPE_COLORS[affType] || '#3b82f6';
+    const badgeColor = AFFAIRE_TYPE_COLORS[affType] || STATUS_COLORS.info;
     return (
       <div
         key={i}

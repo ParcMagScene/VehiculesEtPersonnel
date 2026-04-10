@@ -4,6 +4,7 @@ import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import { Avatar, Button, SectionHeader, Tag , Tooltip} from '@/design-system';
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import './PersonnelDetailPanel.css';
 
@@ -18,16 +19,16 @@ const CONTRACT_TYPES = [
 
 const POSITION_CATEGORIES = [
   { value: 'administratif', label: 'Administration & Direction', color: '#7c3aed' },
-  { value: 'direction', label: 'Direction technique & Régie', color: '#dc2626' },
-  { value: 'son', label: 'Son (Audio)', color: '#3b82f6' },
-  { value: 'lumiere', label: 'Lumière', color: '#eab308' },
-  { value: 'video', label: 'Vidéo & Média', color: '#8b5cf6' },
-  { value: 'plateau', label: 'Plateau, Décors & Machinerie', color: '#ef4444' },
-  { value: 'backline', label: 'Backline', color: '#f97316' },
-  { value: 'costumes', label: 'Costumes, Maquillage & Habillage', color: '#ec4899' },
-  { value: 'electricite', label: 'Électricité & Réseaux', color: '#06b6d4' },
-  { value: 'logistique', label: 'Logistique & Transport', color: '#10b981' },
-  { value: 'captation', label: 'Audiovisuel & Captation', color: '#6366f1' },
+  { value: 'direction', label: 'Direction technique & Régie', color: STATUS_COLORS.dangerDark },
+  { value: 'son', label: 'Son (Audio)', color: STATUS_COLORS.info },
+  { value: 'lumiere', label: 'Lumière', color: ACCENT_COLORS.amber },
+  { value: 'video', label: 'Vidéo & Média', color: ACCENT_COLORS.violet },
+  { value: 'plateau', label: 'Plateau, Décors & Machinerie', color: STATUS_COLORS.danger },
+  { value: 'backline', label: 'Backline', color: ACCENT_COLORS.orange },
+  { value: 'costumes', label: 'Costumes, Maquillage & Habillage', color: ACCENT_COLORS.pink },
+  { value: 'electricite', label: 'Électricité & Réseaux', color: ACCENT_COLORS.cyan },
+  { value: 'logistique', label: 'Logistique & Transport', color: STATUS_COLORS.success },
+  { value: 'captation', label: 'Audiovisuel & Captation', color: ACCENT_COLORS.indigo },
   { value: 'production', label: 'Production & Coordination', color: '#78716c' },
   { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
@@ -52,7 +53,7 @@ const LEAVE_TYPE_LABELS = {
   repos: 'Repos', autre: 'Autre',
 };
 const STATUS_LABELS = { pending: 'En attente', approved: 'Approuvé', rejected: 'Refusé' };
-const STATUS_COLORS = { pending: '#f59e0b', approved: '#10b981', rejected: '#ef4444' };
+const LEAVE_APPROVAL_COLORS = { pending: STATUS_COLORS.warning, approved: STATUS_COLORS.success, rejected: STATUS_COLORS.danger };
 
 const PersonnelDetailContent = ({ person, positions = [], _skills = [], onRequestLeave }) => {
   if (!person) return null;
@@ -214,7 +215,7 @@ const PersonnelAbsences = ({ personId, onRequestLeave }) => {
             const leaveColor = LEAVE_TYPE_COLORS[a.type] || 'var(--theme-text-muted)';
             const leaveLabel = LEAVE_TYPE_LABELS[a.type] || a.type;
             const statusLabel = STATUS_LABELS[a.status] || a.status;
-            const statusColor = STATUS_COLORS[a.status] || 'var(--theme-text-muted)';
+            const statusColor = LEAVE_APPROVAL_COLORS[a.status] || 'var(--theme-text-muted)';
             const start = new Date(a.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
             const end = new Date(a.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
             return (

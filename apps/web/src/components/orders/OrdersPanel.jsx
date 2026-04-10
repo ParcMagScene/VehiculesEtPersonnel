@@ -17,6 +17,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import AffaireBadge from '../AffaireBadge';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 // Helper : grouper les articles par demandeur (affaire ou personne physique)
 function groupItemsByRequester(items) {
@@ -47,35 +48,35 @@ function groupItemsByRequester(items) {
 // ═══ Constantes ═══
 const ORDER_STATUS = {
   draft: { label: 'Brouillon', color: 'var(--theme-text-muted)', icon: '📝' },
-  sent: { label: 'Envoyée', color: '#3b82f6', icon: '📤' },
-  confirmed: { label: 'Confirmée', color: '#8b5cf6', icon: '✅' },
-  partial: { label: 'Reçue partiellement', color: '#f59e0b', icon: '📦' },
-  received: { label: 'Réceptionnée', color: '#10b981', icon: '✔️' },
-  cancelled: { label: 'Annulée', color: '#ef4444', icon: '❌' },
+  sent: { label: 'Envoyée', color: STATUS_COLORS.info, icon: '📤' },
+  confirmed: { label: 'Confirmée', color: ACCENT_COLORS.violet, icon: '✅' },
+  partial: { label: 'Reçue partiellement', color: STATUS_COLORS.warning, icon: '📦' },
+  received: { label: 'Réceptionnée', color: STATUS_COLORS.success, icon: '✔️' },
+  cancelled: { label: 'Annulée', color: STATUS_COLORS.danger, icon: '❌' },
 };
 
 const QUOTE_STATUS = {
   draft: { label: 'Brouillon', color: 'var(--theme-text-muted)', icon: '📝' },
-  sent: { label: 'Envoyé', color: '#3b82f6', icon: '📤' },
-  accepted: { label: 'Accepté', color: '#10b981', icon: '✅' },
-  refused: { label: 'Refusé', color: '#ef4444', icon: '❌' },
+  sent: { label: 'Envoyé', color: STATUS_COLORS.info, icon: '📤' },
+  accepted: { label: 'Accepté', color: STATUS_COLORS.success, icon: '✅' },
+  refused: { label: 'Refusé', color: STATUS_COLORS.danger, icon: '❌' },
   expired: { label: 'Expiré', color: 'var(--theme-text-gray)', icon: '⏰' },
 };
 
 const UNITS = ['u', 'm', 'm²', 'm³', 'kg', 'L', 'h', 'j', 'lot', 'forfait'];
 
 const REQUEST_STATUS = {
-  pending: { label: 'En attente', color: '#f59e0b', icon: '⏳' },
-  approved: { label: 'Validée', color: '#10b981', icon: '✅' },
-  rejected: { label: 'Refusée', color: '#ef4444', icon: '❌' },
-  ordered: { label: 'Commandée', color: '#3b82f6', icon: '📦' },
+  pending: { label: 'En attente', color: STATUS_COLORS.warning, icon: '⏳' },
+  approved: { label: 'Validée', color: STATUS_COLORS.success, icon: '✅' },
+  rejected: { label: 'Refusée', color: STATUS_COLORS.danger, icon: '❌' },
+  ordered: { label: 'Commandée', color: STATUS_COLORS.info, icon: '📦' },
 };
 
 const REQUEST_PRIORITY = {
-  low: { label: 'Basse', color: '#6b7280', icon: '🔵' },
-  normal: { label: 'Normale', color: '#3b82f6', icon: '🟢' },
-  high: { label: 'Haute', color: '#f59e0b', icon: '🟡' },
-  urgent: { label: 'Urgente', color: '#ef4444', icon: '🔴' },
+  low: { label: 'Basse', color: STATUS_COLORS.neutralSoft, icon: '🔵' },
+  normal: { label: 'Normale', color: STATUS_COLORS.info, icon: '🟢' },
+  high: { label: 'Haute', color: STATUS_COLORS.warning, icon: '🟡' },
+  urgent: { label: 'Urgente', color: STATUS_COLORS.danger, icon: '🔴' },
 };
 
 const DESTINATIONS = ['SAV', 'Pièces', 'Stock', 'Autre'];
@@ -1462,7 +1463,7 @@ const MyLinkedOrdersList = React.memo(({ orders, loading }) => {
             </div>
             {/* Barre de progression */}
             <div className="u-overflow-hidden" style={{ background: 'var(--theme-bg-secondary, #f3f4f6)', borderRadius: 6, height: 8 }}>
-              <div style={{ height: '100%', width: `${completion}%`, borderRadius: 6, background: completion === 100 ? '#10b981' : '#3b82f6', transition: 'width 0.3s ease' }} />
+              <div style={{ height: '100%', width: `${completion}%`, borderRadius: 6, background: completion === 100 ? STATUS_COLORS.success : STATUS_COLORS.info, transition: 'width 0.3s ease' }} />
             </div>
             <div className="u-text-muted u-text-right u-mt-1" style={{ fontSize: '0.7rem' }}>
               {completion}% réceptionné

@@ -9,10 +9,10 @@ const getInitials = (name) => {
 };
 
 // Générer une couleur unique basée sur le nom
-import { AVATAR_COLORS } from '../constants/colors';
+import { AVATAR_COLORS, STATUS_COLORS } from '../constants/colors';
 
 const getColorFromName = (name) => {
-  if (!name) return '#6b7280';
+  if (!name) return STATUS_COLORS.neutralSoft;
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);

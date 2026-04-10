@@ -3,6 +3,7 @@ import { X, Wrench, AlertTriangle, Calendar, Gauge, User, ExternalLink } from 'l
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import { Button, Tag } from '@/design-system';
+import { STATUS_COLORS } from '../../constants/colors';
 import { formatDateSimple } from '../../utils/formatUtils';
 import './VehicleDetailPanel.css';
 
@@ -273,7 +274,7 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
         <div className="vdp-slide-title-row">
           <div
             className="vdp-slide-color"
-            style={{ backgroundColor: currentVehicle.displayColor || currentVehicle.color || '#3b82f6' }}
+            style={{ backgroundColor: currentVehicle.displayColor || currentVehicle.color || STATUS_COLORS.info }}
           />
           <div className="vdp-slide-title-info">
             <span className="vdp-slide-name">{currentVehicle.name}</span>

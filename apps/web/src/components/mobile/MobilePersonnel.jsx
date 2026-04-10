@@ -8,6 +8,7 @@ import './MobilePersonnel.css';
 import { Avatar, Button, Spinner } from '@/design-system';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import { STATUS } from '../../constants';
 
@@ -20,16 +21,16 @@ const skillIcon = (skillName) => {
 };
 
 const MISSION_COLORS = {
-  confirmed: '#10b981',
+  confirmed: STATUS_COLORS.success,
   draft: '#94a3b8',
-  cancelled: '#ef4444',
+  cancelled: STATUS_COLORS.danger,
 };
 
 const TASK_SOURCE_COLORS = {
-  affaire: '#3b82f6',
-  manual: '#f59e0b',
-  display_event: '#8b5cf6',
-  google_event: '#06b6d4',
+  affaire: STATUS_COLORS.info,
+  manual: STATUS_COLORS.warning,
+  display_event: ACCENT_COLORS.violet,
+  google_event: ACCENT_COLORS.cyan,
 };
 
 function MobilePersonnel({ onBack, currentUser }) {
@@ -335,7 +336,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                   <div className="mpers-my-section">
                     <h4>Missions</h4>
                     {missions.map(m => (
-                      <div key={m.id} className="mpers-my-mission-card" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
+                      <div key={m.id} className="mpers-my-mission-card" style={{ borderLeftColor: MISSION_COLORS[m.status] || STATUS_COLORS.info }}>
                         <div className="mpers-my-mission-title">{m.title || m.affaire || 'Mission'}</div>
                         {(m.clientName || m.client_name) && (
                           <div className="mpers-my-mission-client">{m.clientName || m.client_name}</div>
@@ -358,7 +359,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                   <div className="mpers-my-section">
                     <h4>Tâches</h4>
                     {tasks.map(ta => (
-                      <div key={ta.id} className="mpers-my-task-card" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                      <div key={ta.id} className="mpers-my-task-card" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || STATUS_COLORS.warning }}>
                         <div className="mpers-my-task-title">{ta.title || ta.affaire_num || 'Tâche'}</div>
                         {ta.section && <div className="mpers-my-task-section">{ta.section}</div>}
                         {ta.period && <div className="mpers-my-task-period">{ta.period}</div>}
@@ -414,12 +415,12 @@ function MobilePersonnel({ onBack, currentUser }) {
                         ) : hasContent ? (
                           <>
                             {missions.map(m => (
-                              <div key={m.id} className="mpers-my-week-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
+                              <div key={m.id} className="mpers-my-week-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || STATUS_COLORS.info }}>
                                 {m.title || m.affaire || 'Mission'}
                               </div>
                             ))}
                             {tasks.map(ta => (
-                              <div key={ta.id} className="mpers-my-week-task" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                              <div key={ta.id} className="mpers-my-week-task" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || STATUS_COLORS.warning }}>
                                 {ta.title || ta.affaire_num || 'Tâche'}
                               </div>
                             ))}
@@ -463,7 +464,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                   ) : (missions.length > 0 || tasks.length > 0) ? (
                     <div className="mpers-day-missions">
                       {missions.map(m => (
-                        <div key={m.id} className="mpers-mission-chip" style={{ '--mission-color': MISSION_COLORS[m.status] || '#3b82f6' }}>
+                        <div key={m.id} className="mpers-mission-chip" style={{ '--mission-color': MISSION_COLORS[m.status] || STATUS_COLORS.info }}>
                           <span className="mpers-mission-dot" />
                           <span className="mpers-mission-title">{m.title || m.affaire || 'Mission'}</span>
                           {(m.startTime || m.start_time) && (
@@ -472,7 +473,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                         </div>
                       ))}
                       {tasks.map(ta => (
-                        <div key={ta.id} className="mpers-task-chip" style={{ '--task-color': TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                        <div key={ta.id} className="mpers-task-chip" style={{ '--task-color': TASK_SOURCE_COLORS[ta.source_type] || STATUS_COLORS.warning }}>
                           <span className="mpers-task-dot" />
                           <span className="mpers-mission-title">{ta.title || ta.affaire_num || 'Tâche'}</span>
                           {ta.period && <span className="mpers-mission-time">{ta.period}</span>}
@@ -549,7 +550,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                           ) : hasContent ? (
                             <>
                               {missions.map(m => (
-                                <div key={m.id} className="mpers-cell-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
+                                <div key={m.id} className="mpers-cell-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || STATUS_COLORS.info }}>
                                   <span className="mpers-cell-mission-title">{m.title || m.affaire || 'Mission'}</span>
                                   {(m.clientName || m.client_name) && (
                                     <span className="mpers-cell-mission-client">{m.clientName || m.client_name}</span>
@@ -557,7 +558,7 @@ function MobilePersonnel({ onBack, currentUser }) {
                                 </div>
                               ))}
                               {tasks.map(ta => (
-                                <div key={ta.id} className="mpers-cell-mission" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                                <div key={ta.id} className="mpers-cell-mission" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || STATUS_COLORS.warning }}>
                                   <span className="mpers-cell-mission-title">{ta.title || ta.affaire_num || 'Tâche'}</span>
                                 </div>
                               ))}

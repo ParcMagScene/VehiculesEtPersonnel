@@ -10,6 +10,7 @@ import { useToast } from '../hooks/useToast';
 import { useConfirmDialog } from '../hooks/useConfirmDialog';
 import { Avatar, Button, Textarea , Tooltip} from '@/design-system';
 import { STATUS } from '../constants';
+import { STATUS_COLORS } from '../constants/colors';
 
 import './Header.css';
 
@@ -979,7 +980,7 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
                   style={{
                     top: '-4px',
                     right: '-4px',
-                    background: '#ef4444',
+                    background: STATUS_COLORS.danger,
                     color: 'white',
                     width: '20px',
                     height: '20px',

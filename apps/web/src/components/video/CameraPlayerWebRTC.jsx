@@ -7,6 +7,7 @@ import { useWebRTCStream } from '../../hooks/useWebRTCStream';
 import { Maximize, Minimize, Camera, RefreshCw, WifiOff, Film } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Spinner, Tooltip } from '@/design-system';
+import { STATUS_COLORS } from '../../constants/colors';
 
 const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFullscreen, isFullscreen = false, onSelect, isSelected = false, onPlayback }) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
@@ -66,9 +67,9 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
 
   const statusColor = {
     idle: '#888',
-    connecting: '#f59e0b',
-    streaming: '#22c55e',
-    error: '#ef4444',
+    connecting: STATUS_COLORS.warning,
+    streaming: STATUS_COLORS.successSoft,
+    error: STATUS_COLORS.danger,
   }[status];
 
   return (

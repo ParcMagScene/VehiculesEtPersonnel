@@ -10,6 +10,7 @@ import './MaintenanceDialog.css';
 import { useToast } from '../../hooks/useToast';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garages = [], reservations = [], maintenanceToEdit = null, actionType = null, currentUser = null }) {
   // Trouver la maintenance à éditer dès le départ
@@ -366,15 +367,15 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
 
   const getStatusColor = (status) => {
     const colors = {
-      scheduled: '#3b82f6',
-      in_progress: '#f59e0b',
-      IN_PROGRESS: '#f59e0b',
-      completed: '#10b981',
-      COMPLETED: '#10b981',
-      reported: '#ef4444',
-      pending: '#8b5cf6',
-      PENDING: '#8b5cf6',
-      rescheduled: '#f97316',
+      scheduled: STATUS_COLORS.info,
+      in_progress: STATUS_COLORS.warning,
+      IN_PROGRESS: STATUS_COLORS.warning,
+      completed: STATUS_COLORS.success,
+      COMPLETED: STATUS_COLORS.success,
+      reported: STATUS_COLORS.danger,
+      pending: ACCENT_COLORS.violet,
+      PENDING: ACCENT_COLORS.violet,
+      rescheduled: ACCENT_COLORS.orange,
       cancelled: 'var(--theme-text-gray)'
     };
     return colors[status] || 'var(--theme-text-gray)';

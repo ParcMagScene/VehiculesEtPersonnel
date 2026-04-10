@@ -3,6 +3,7 @@ import { Upload, FileText, CheckCircle, X, Eye, Download, Link2, Search, AlertCi
 import { Button, ModalLayout, Input, Table, Spinner, InlineAlert } from '@/design-system';
 import api from '../../utils/api';
 import { STATUS } from '../../constants';
+import { STATUS_COLORS } from '../../constants/colors';
 import { formatDateSimple } from '../../utils/formatUtils';
 
 import '../equipment/EquipmentImportModal.css'; // réutilise le même CSS
@@ -65,8 +66,8 @@ function parseCSV(text, separator = ';') {
 
 const STATUS_MAP = {
   closed: { label: 'Clôturée', color: 'var(--theme-text-gray)', icon: '✅' },
-  in_progress: { label: 'En cours', color: '#f59e0b', icon: '🔧' },
-  open: { label: 'Ouverte', color: '#ef4444', icon: '🔴' },
+  in_progress: { label: 'En cours', color: STATUS_COLORS.warning, icon: '🔧' },
+  open: { label: 'Ouverte', color: STATUS_COLORS.danger, icon: '🔴' },
 };
 
 const SavImportModal = ({ onClose, onImportDone }) => {
@@ -215,12 +216,12 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                   <span className="eq-import-stat-value">{preview.totalRows}</span>
                   <span className="eq-import-stat-label">Interventions</span>
                 </div>
-                <div className="eq-import-stat" style={{ borderColor: '#10b981' }}>
-                  <span className="eq-import-stat-value" style={{ color: '#10b981' }}>{preview.matched + Object.keys(manualLinks).length}</span>
+                <div className="eq-import-stat" style={{ borderColor: STATUS_COLORS.success }}>
+                  <span className="eq-import-stat-value" style={{ color: STATUS_COLORS.success }}>{preview.matched + Object.keys(manualLinks).length}</span>
                   <span className="eq-import-stat-label">✅ Liées</span>
                 </div>
-                <div className="eq-import-stat" style={{ borderColor: remainingUnlinked > 0 ? '#f59e0b' : '#10b981' }}>
-                  <span className="eq-import-stat-value" style={{ color: remainingUnlinked > 0 ? '#f59e0b' : '#10b981' }}>{remainingUnlinked}</span>
+                <div className="eq-import-stat" style={{ borderColor: remainingUnlinked > 0 ? STATUS_COLORS.warning : STATUS_COLORS.success }}>
+                  <span className="eq-import-stat-value" style={{ color: remainingUnlinked > 0 ? STATUS_COLORS.warning : STATUS_COLORS.success }}>{remainingUnlinked}</span>
                   <span className="eq-import-stat-label">⚠️ Non liées</span>
                 </div>
                 <div className="eq-import-stat">
@@ -228,8 +229,8 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                   <span className="eq-import-stat-label">Coût total</span>
                 </div>
                 {preview.duplicatesCount > 0 && (
-                  <div className="eq-import-stat" style={{ borderColor: '#ef4444' }}>
-                    <span className="eq-import-stat-value" style={{ color: '#ef4444' }}>{preview.duplicatesCount}</span>
+                  <div className="eq-import-stat" style={{ borderColor: STATUS_COLORS.danger }}>
+                    <span className="eq-import-stat-value" style={{ color: STATUS_COLORS.danger }}>{preview.duplicatesCount}</span>
                     <span className="eq-import-stat-label">🔁 Doublons</span>
                   </div>
                 )}
@@ -300,7 +301,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                           <td>{row.code_article}</td>
                           <td className="eq-import-name-cell">{row.nom_article}</td>
                           <td className="sav-import-small">{row.parsedSerial || row.serial}</td>
-                          <td style={{ fontSize: 11, color: row.parsedUid ? '#3b82f6' : 'var(--theme-text-muted)', fontWeight: row.parsedUid ? 600 : 400 }}>{row.parsedUid || '—'}</td>
+                          <td style={{ fontSize: 11, color: row.parsedUid ? STATUS_COLORS.info : 'var(--theme-text-muted)', fontWeight: row.parsedUid ? 600 : 400 }}>{row.parsedUid || '—'}</td>
                           <td>{formatDateSimple(row.startDate)}</td>
                           <td>{formatDateSimple(row.endDate)}</td>
                           <td>{row.cost > 0 ? `${row.cost.toFixed(2)} €` : '—'}</td>
@@ -451,7 +452,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                   <span>Interventions importées</span>
                 </div>
                 <div className="eq-import-result-stat">
-                  <span className="eq-import-result-value" style={{ color: '#10b981' }}>{result.createdLinked}</span>
+                  <span className="eq-import-result-value" style={{ color: STATUS_COLORS.success }}>{result.createdLinked}</span>
                   <span>✅ Liées à un équipement</span>
                 </div>
                 {result.createdUnlinked > 0 && (
@@ -462,7 +463,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                 )}
                 {result.updatedDuplicates > 0 && (
                   <div className="eq-import-result-stat">
-                    <span className="eq-import-result-value" style={{ color: '#3b82f6' }}>{result.updatedDuplicates}</span>
+                    <span className="eq-import-result-value" style={{ color: STATUS_COLORS.info }}>{result.updatedDuplicates}</span>
                     <span>🔄 Tickets mis à jour</span>
                   </div>
                 )}

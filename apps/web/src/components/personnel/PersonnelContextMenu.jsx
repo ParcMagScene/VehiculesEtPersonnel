@@ -1,16 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { Calendar, GraduationCap, Building2, Wrench, FileCheck, Clock } from 'lucide-react';
 import { Button, Divider, Tag } from '@/design-system';
+import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import './PersonnelContextMenu.css';
 
 // Types de périodes disponibles dans le menu contextuel
 export const PERIOD_MENU_ITEMS = [
-  { type: 'conge_paye', label: 'Congés', icon: Calendar, color: '#ef4444', emoji: '🏖️', requiresApproval: true },
-  { type: 'formation', label: 'Formation', icon: GraduationCap, color: '#8b5cf6', emoji: '🎓', requiresApproval: false },
-  { type: 'entreprise', label: 'Entreprise', icon: Building2, color: '#3b82f6', emoji: '🏢', requiresApproval: false },
-  { type: 'workshop', label: 'Workshop', icon: Wrench, color: '#f59e0b', emoji: '🔧', requiresApproval: false },
-  { type: 'examen', label: 'Examen', icon: FileCheck, color: '#10b981', emoji: '📝', requiresApproval: false },
-  { type: 'rdv', label: 'RDV', icon: Clock, color: '#06b6d4', emoji: '📅', requiresApproval: false },
+  { type: 'conge_paye', label: 'Congés', icon: Calendar, color: STATUS_COLORS.danger, emoji: '🏖️', requiresApproval: true },
+  { type: 'formation', label: 'Formation', icon: GraduationCap, color: ACCENT_COLORS.violet, emoji: '🎓', requiresApproval: false },
+  { type: 'entreprise', label: 'Entreprise', icon: Building2, color: STATUS_COLORS.info, emoji: '🏢', requiresApproval: false },
+  { type: 'workshop', label: 'Workshop', icon: Wrench, color: STATUS_COLORS.warning, emoji: '🔧', requiresApproval: false },
+  { type: 'examen', label: 'Examen', icon: FileCheck, color: STATUS_COLORS.success, emoji: '📝', requiresApproval: false },
+  { type: 'rdv', label: 'RDV', icon: Clock, color: ACCENT_COLORS.cyan, emoji: '📅', requiresApproval: false },
 ];
 
 const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {

@@ -9,6 +9,7 @@ import { Save, X, Undo2, Redo2, Maximize2, Plus, Trash2, RotateCcw, Eye, EyeOff,
 import api from '../../utils/api';
 import './DepotMapEditor.css';
 import { Button, Input, Select, Tooltip } from '@/design-system';
+import { STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 const HANDLE_SIZE = 8;
@@ -840,7 +841,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
             width={HANDLE_SIZE + 2}
             height={HANDLE_SIZE + 2}
             fill="#fbbf24"
-            stroke="#f59e0b"
+            stroke={STATUS_COLORS.warning}
             strokeWidth="1.5"
             rx="2"
             style={{ cursor: 'grab' }}
@@ -858,7 +859,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
           width={HANDLE_SIZE}
           height={HANDLE_SIZE}
           fill="#ffffff"
-          stroke="#3b82f6"
+          stroke={STATUS_COLORS.info}
           strokeWidth="1.5"
           style={{ cursor: cursors[h.id] }}
           onMouseDown={(e) => handleHandleMouseDown(e, zone, h.id)}
@@ -1272,7 +1273,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                   const shapeProps = {
                     fill: zone.color,
                     fillOpacity: isSelected ? 0.7 : 0.5,
-                    stroke: isSubtractHighlight ? '#f59e0b' : isSelected ? '#ffffff' : zone.color,
+                    stroke: isSubtractHighlight ? STATUS_COLORS.warning : isSelected ? '#ffffff' : zone.color,
                     strokeWidth: isSubtractHighlight ? 2.5 : isSelected ? 2 : 1,
                     strokeDasharray: isSubtractHighlight ? '6 3' : undefined,
                     style: { cursor: subtractMode === 'pick-target' && zone.id !== subtractSourceId ? 'crosshair' : 'move' },

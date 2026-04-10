@@ -1,2 +1,2 @@
-cd apps/web && npx eslint src/ --quiet && cd ../..
+cd apps/web && npx eslint src/ --quiet && npx vitest run && cd ../..
 npm test

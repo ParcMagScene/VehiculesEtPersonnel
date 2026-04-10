@@ -101,8 +101,9 @@ function showAlarmFlash(event) {
   document.body.classList.add('alarm-flash');
   setTimeout(() => document.body.classList.remove('alarm-flash'), 3000);
 
-  // Mettre en surbrillance l'événement concerné
-  const eventEl = document.querySelector(`[data-event-id="${event.id}"]`);
+  // Mettre en surbrillance l'événement concerné (sanitize l'ID pour éviter injection querySelector)
+  const safeId = CSS.escape(String(event.id));
+  const eventEl = document.querySelector(`[data-event-id="${safeId}"]`);
   if (eventEl) {
     eventEl.classList.add('alarm-active');
     setTimeout(() => eventEl.classList.remove('alarm-active'), 10000);
@@ -197,13 +198,19 @@ async function loadTVState() {
 // ===============================================
 //  APPLIQUER LA CONFIGURATION VISUELLE
 // ===============================================
+/** Valide qu'une valeur est un token CSS sûr (couleur hex, rgb, hsl, mot-clé simple) */
+function isSafeCSSValue(value) {
+  if (!value || typeof value !== 'string') return false;
+  return /^(#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|rgba\([^)]+\)|hsl\([^)]+\)|hsla\([^)]+\)|[a-zA-Z\- ]{1,50})$/.test(value.trim());
+}
+
 function applyConfig(config) {
   const root = document.documentElement;
-  if (config.primaryColor) root.style.setProperty('--primary-color', config.primaryColor);
-  if (config.secondaryColor) root.style.setProperty('--secondary-color', config.secondaryColor);
-  if (config.eventBgColor) root.style.setProperty('--event-bg-color', config.eventBgColor);
-  if (config.eventTextColor) root.style.setProperty('--event-text-color', config.eventTextColor);
-  if (config.fontFamily) root.style.setProperty('--font-family', config.fontFamily);
+  if (isSafeCSSValue(config.primaryColor)) root.style.setProperty('--primary-color', config.primaryColor);
+  if (isSafeCSSValue(config.secondaryColor)) root.style.setProperty('--secondary-color', config.secondaryColor);
+  if (isSafeCSSValue(config.eventBgColor)) root.style.setProperty('--event-bg-color', config.eventBgColor);
+  if (isSafeCSSValue(config.eventTextColor)) root.style.setProperty('--event-text-color', config.eventTextColor);
+  if (config.fontFamily && isSafeCSSValue(config.fontFamily)) root.style.setProperty('--font-family', config.fontFamily);
 
   // Overscan TV : ?overscan=XX dans l'URL (en px), ou auto-détection Raspberry Pi
   const params = new URLSearchParams(window.location.search);
@@ -211,7 +218,7 @@ function applyConfig(config) {
   if (isNaN(overscan)) {
     // Auto-détection : appliquer une marge par défaut sur les navigateurs embarqués (Pi, etc.)
     const ua = navigator.userAgent.toLowerCase();
-    if (ua.includes('raspbian') || ua.includes('raspberry') || ua.includes('chromium') && ua.includes('linux armv')) {
+    if (ua.includes('raspbian') || ua.includes('raspberry') || (ua.includes('chromium') && ua.includes('linux armv'))) {
       overscan = 24;
     }
   }
@@ -509,6 +516,8 @@ let sneakyPhotoContainer = null;
 
 function showSneakyPhoto(photoPath) {
   if (sneakyPhotoContainer) return;
+  // Valider que le path est une URL relative sûre (pas de protocol injection)
+  if (!photoPath || typeof photoPath !== 'string' || /^[a-z]+:/i.test(photoPath)) return;
 
   sneakyPhotoContainer = document.createElement('div');
   sneakyPhotoContainer.className = 'sneaky-photo-container';

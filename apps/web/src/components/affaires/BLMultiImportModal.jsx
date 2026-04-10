@@ -29,8 +29,8 @@ const formatFileSize = (bytes) => {
 
 const STATUS_ICONS = {
   pending: <Loader size={14} className="spin-slow" />,
-  parsed: <CheckCircle size={14} style={{ color: '#10b981' }} />,
-  error: <AlertTriangle size={14} style={{ color: '#ef4444' }} />,
+  parsed: <CheckCircle size={14} className="u-text-success" />,
+  error: <AlertTriangle size={14} className="u-text-danger" />,
 };
 
 const FIELD_DEFS = [
@@ -282,7 +282,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
               type="file"
               accept=".pdf,application/pdf"
               multiple
-              style={{ display: 'none' }}
+              className="u-hidden"
               onChange={e => {
                 const files = Array.from(e.target.files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
                 if (files.length > 0) addFiles(files);
@@ -425,7 +425,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                       {/* ─── Full field grid with confidence ─── */}
                       <div className="detail-fields-grid">
                         <div className="detail-fields-header">
-                          <CheckCircle size={13} style={{ color: '#10b981' }} />
+                          <CheckCircle size={13} className="u-text-success" />
                           <span>Données extraites</span>
                           <span className="detail-fields-meta">
                             {item.parsedData.fieldsFound}/{item.parsedData.fieldsTotal} champs • {item.parsedData.confidence}%

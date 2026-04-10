@@ -1858,7 +1858,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
           icon={<CalendarDays size={48} />}
           title="Ajoutez du personnel pour afficher le planning"
           action={onPersonCreate && (
-            <Button variant="ghost" className="personnel-add-btn" onClick={onPersonCreate} style={{ marginTop: 12 }}>
+            <Button variant="ghost" className="personnel-add-btn u-mt-3" onClick={onPersonCreate}>
               <Plus size={16} /> Ajouter une personne
             </Button>
           )}
@@ -1925,7 +1925,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
             <div className="pp-person-column" ref={personColumnRef}>
               {/* Section Permanents */}
               {!collapsedSections.permanents && permanents.map(person => (
-                <div key={person.id} className={`pp-person-cell${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}`}
+                <div key={person.id} className={`pp-person-cell u-cursor-pointer${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}`}
                   onClick={() => {
                     if (clickTimerRef.current) return;
                     clickTimerRef.current = setTimeout(() => {
@@ -1942,7 +1942,6 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                     e.preventDefault();
                     setContextMenu({ x: e.clientX, y: e.clientY, person });
                   }}
-                  style={{ cursor: 'pointer' }}
                 >
                   <span className="pp-person-name">{person.firstName} {person.lastName || ''}</span>
                   <span className={`person-type-badge mini type-${person.type}`}>
@@ -1963,7 +1962,7 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                 </div>
               )}
               {!collapsedSections.nonPermanents && nonPermanents.map(person => (
-                <div key={person.id} className={`pp-person-cell${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}${favoriteIds.includes(person.id) ? ' pp-person-favorite' : ''}`}
+                <div key={person.id} className={`pp-person-cell u-cursor-pointer${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}${favoriteIds.includes(person.id) ? ' pp-person-favorite' : ''}`}
                   onClick={() => {
                     if (clickTimerRef.current) return;
                     clickTimerRef.current = setTimeout(() => {
@@ -1980,7 +1979,6 @@ const PlanningTab = ({ persons, skills, positions = [], view = 'week', setView, 
                     e.preventDefault();
                     setContextMenu({ x: e.clientX, y: e.clientY, person });
                   }}
-                  style={{ cursor: 'pointer' }}
                 >
                   <Button variant="ghost"                     className={`pp-fav-star${favoriteIds.includes(person.id) ? ' active' : ''}`}
                     onClick={(e) => { e.stopPropagation(); toggleFavorite(person.id); }}

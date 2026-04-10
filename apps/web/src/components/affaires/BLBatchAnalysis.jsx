@@ -105,7 +105,7 @@ export default function BLBatchAnalysis({ onClose }) {
                 type="file"
                 accept=".pdf"
                 multiple
-                style={{ display: 'none' }}
+                className="u-hidden"
                 onChange={handleFiles}
               />
             </label>
@@ -189,7 +189,7 @@ export default function BLBatchAnalysis({ onClose }) {
                       onClick={() => setExpandedIdx(isExpanded ? null : idx)}
                     >
                       {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      <FileText size={14} style={{ color: r.error ? '#ef4444' : '#3b82f6', flexShrink: 0 }} />
+                      <FileText size={14} className="u-flex-shrink-0" style={{ color: r.error ? '#ef4444' : '#3b82f6' }} />
                       <span className="bl-batch-result-filename">
                         {r.file.name}
                       </span>
@@ -202,7 +202,7 @@ export default function BLBatchAnalysis({ onClose }) {
                           <span className="bl-batch-result-doctype">
                             {r.docTypeLabel}
                           </span>
-                          <span style={{ fontSize: '0.75rem', color: r.confidence >= 70 ? '#10b981' : '#f59e0b' }}>
+                          <span className="u-font-xs" style={{ color: r.confidence >= 70 ? '#10b981' : '#f59e0b' }}>
                             {r.confidence}%
                           </span>
                           <span className="bl-batch-result-fields">

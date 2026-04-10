@@ -792,7 +792,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
                 ))}
               </Select>
             </div>
-            <div className="detail-field" ref={clientDropdownRef} style={{ position: 'relative' }}>
+            <div className="detail-field u-relative" ref={clientDropdownRef}>
               <label>Client</label>
               <Input
                 type="text"
@@ -823,7 +823,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
                 </ul>
               )}
             </div>
-            <div className="detail-field" ref={contactDropdownRef} style={{ position: 'relative' }}>
+            <div className="detail-field u-relative" ref={contactDropdownRef}>
               <label>Interlocuteur</label>
               <Input
                 type="text"
@@ -1192,7 +1192,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
 
       {/* ═══ Section 2b : Planification opérationnelle (rétractable) ═══ */}
       <section className="detail-section">
-        <h3 className="detail-section-title collapsible" onClick={() => setPlanningOpen(v => !v)} style={{ cursor: 'pointer', userSelect: 'none' }}>
+        <h3 className="detail-section-title collapsible u-cursor-pointer u-select-none" onClick={() => setPlanningOpen(v => !v)}>
           <ClipboardList size={15} /> Planification
           <span className="section-count">{enabledStepCount}/{visibleSteps.length}</span>
           <ChevronDown size={16} className={`section-toggle-icon${planningOpen ? ' open' : ''}`} />
@@ -1209,7 +1209,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
               const statusInfo = TASK_STATUS_MAP[s.status] || TASK_STATUS_MAP.pending;
               return (
                 <div key={step.key} className={`task-step-item ${s.enabled ? 'enabled' : ''}`} style={s.enabled ? { borderLeftColor: step.color } : {}}>
-                  <div className="task-step-header" role="button" tabIndex={0} onClick={(e) => toggleTaskStep(step.key, e)} style={{ cursor: 'pointer' }}>
+                  <div className="task-step-header u-cursor-pointer" role="button" tabIndex={0} onClick={(e) => toggleTaskStep(step.key, e)}>
                     <div className="task-step-check" style={s.enabled ? { background: step.color, borderColor: step.color } : {}}>
                       {s.enabled && <Check size={10} color="#fff" />}
                     </div>
@@ -1556,7 +1556,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
                   background: 'var(--theme-bg-tertiary)', borderRadius: 6, marginBottom: 6,
                   color: 'var(--theme-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px'
                 }}>
-                  {section} <span style={{ fontWeight: 400, opacity: 0.7 }}>({items.length})</span>
+                  {section} <span className="u-opacity-70" style={{ fontWeight: 400 }}>({items.length})</span>
                 </div>
                 <Table className="articles-table">
                   <thead>
@@ -1624,7 +1624,7 @@ const AffaireDetailContent = ({ affaire, reservations = [], missions = [], _pers
                   background: 'var(--theme-bg-tertiary)', borderRadius: 6, marginBottom: 6,
                   color: 'var(--theme-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px'
                 }}>
-                  {section} <span style={{ fontWeight: 400, opacity: 0.7 }}>({items.length})</span>
+                  {section} <span className="u-opacity-70" style={{ fontWeight: 400 }}>({items.length})</span>
                 </div>
                 <Table className="articles-table">
                   <thead>

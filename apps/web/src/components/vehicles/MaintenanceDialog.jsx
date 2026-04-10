@@ -675,7 +675,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                           ) : null;
                         })()}
                         {!formData.technicalControlType && (
-                          <small style={{ color: 'var(--theme-text-secondary)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                          <small className="u-text-secondary u-font-xs u-mt-1" style={{ display: 'block' }}>
                             ℹ️ Sélectionnez un type pour voir sa périodicité
                           </small>
                         )}
@@ -704,14 +704,14 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                 <>
                   <div className="form-row">
                     <FormField className="form-group" label="Date de début" required>
-                      <div style={{ display: 'flex', gap: '10px' }}>
+                      <div className="u-flex" style={{ gap: '10px' }}>
                         <input
                           ref={startDateInputRef}
                           type="date"
                           value={formData.startDate}
                           onChange={(e) => handleChange('startDate', e.target.value)}
                           required
-                          style={{ flex: 1 }}
+                          className="u-flex-1"
                         />
                         <Select
                           value={formData.startDatePeriod}
@@ -725,14 +725,14 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                     </FormField>
 
                     <FormField className="form-group" label="Date de fin" required>
-                      <div style={{ display: 'flex', gap: '10px' }}>
+                      <div className="u-flex" style={{ gap: '10px' }}>
                         <input
                           type="date"
                           value={formData.endDate}
                           onChange={(e) => handleChange('endDate', e.target.value)}
                           min={formData.startDate}
                           required
-                          style={{ flex: 1 }}
+                          className="u-flex-1"
                         />
                         <Select
                           value={formData.endDatePeriod}
@@ -812,7 +812,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
 
               {/* Formulaire motif d'annulation (affiché au-dessus des boutons) */}
               {editingId && canManageMaintenance && showCancelForm && formData.status !== STATUS.CANCELLED && (
-                <div className="status-reason-field" style={{ marginBottom: '12px' }}>
+                <div className="status-reason-field u-mb-3">
                   <label>❌ Motif d'annulation :</label>
                   <Textarea
                     value={statusReason}
@@ -821,7 +821,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                     placeholder="Pourquoi annuler cette intervention ?"
                     autoFocus
                   />
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
+                  <div className="u-flex u-gap-2 u-mt-2" style={{ justifyContent: 'flex-end' }}>
                     <Button
                       variant="ghost"
                       onClick={() => {
@@ -850,13 +850,13 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
           <TabPanel value="km-history">
             <div className="maintenance-history">
               {/* En-tête avec immatriculation */}
-              <div className="km-history-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '10px 14px', background: 'var(--theme-bg-tertiary)', borderRadius: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="km-history-header u-flex-between u-mb-4 u-rounded" style={{ padding: '10px 14px', background: 'var(--theme-bg-tertiary)' }}>
+                <div className="u-flex-center u-gap-2">
                   <Gauge size={18} />
                   <strong>Historique des relevés kilométriques</strong>
                 </div>
                 {vehicle.registration && (
-                  <span style={{ fontSize: '0.9em', color: 'var(--theme-text-subtle)', fontWeight: 600, background: 'var(--theme-bg-tertiary)', padding: '3px 10px', borderRadius: '6px' }}>
+                  <span className="u-font-semibold" style={{ fontSize: '0.9em', color: 'var(--theme-text-subtle)', background: 'var(--theme-bg-tertiary)', padding: '3px 10px', borderRadius: '6px' }}>
                     🚛 {vehicle.registration}
                   </span>
                 )}
@@ -871,7 +871,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                     <div key={entry.id || idx} className="maintenance-card" style={{ borderLeft: '4px solid var(--theme-primary)' }}>
                       <div className="maintenance-card-header">
                         <div className="maintenance-card-title">
-                          <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <h3 className="u-flex-center" style={{ gap: '6px' }}>
                             <Gauge size={16} />
                             {entry.parsed.newKilometrage ? parseInt(entry.parsed.newKilometrage).toLocaleString('fr-FR') + ' km' : 'Relevé'}
                           </h3>
@@ -891,7 +891,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
                           {entry.parsed.newKilometrage !== undefined && (
                             <div className="detail-item">
                               <span className="detail-label">Nouveau km :</span>
-                              <span className="detail-value" style={{ fontWeight: 600 }}>{parseInt(entry.parsed.newKilometrage).toLocaleString('fr-FR')} km</span>
+                              <span className="detail-value u-font-semibold">{parseInt(entry.parsed.newKilometrage).toLocaleString('fr-FR')} km</span>
                             </div>
                           )}
                           {entry.parsed.oldKilometrage !== undefined && entry.parsed.newKilometrage !== undefined && (
@@ -926,8 +926,8 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
             <div className="maintenance-history">
               {/* En-tête avec immatriculation */}
               {vehicle.registration && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px', padding: '6px 12px', background: 'var(--theme-bg-tertiary)', borderRadius: '6px', width: 'fit-content' }}>
-                  <span style={{ fontSize: '0.9em', color: 'var(--theme-text-subtle)', fontWeight: 600 }}>🚛 {vehicle.registration}</span>
+                <div className="u-flex-center u-mb-3" style={{ gap: '6px', padding: '6px 12px', background: 'var(--theme-bg-tertiary)', borderRadius: '6px', width: 'fit-content' }}>
+                  <span className="u-font-semibold" style={{ fontSize: '0.9em', color: 'var(--theme-text-subtle)' }}>🚛 {vehicle.registration}</span>
                 </div>
               )}
               {vehicleMaintenances.length === 0 ? (
@@ -1038,7 +1038,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
         {activeTab === 'new' && (
           <div className="form-actions">
             {isViewMode ? (
-              <div className="form-actions-right" style={{ marginLeft: 'auto' }}>
+              <div className="form-actions-right u-ml-auto">
                 <Button variant="ghost" type="button" className="submit-button" onClick={onClose}>Fermer</Button>
               </div>
             ) : editingId ? (

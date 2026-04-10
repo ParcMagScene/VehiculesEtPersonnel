@@ -1431,20 +1431,20 @@ const MyLinkedOrdersList = React.memo(({ orders, loading }) => {
     <div className="orders-empty" style={{ padding: '2rem 1rem' }}>
       <Package size={32} />
       <p>Aucune commande en cours liée à vos demandes</p>
-      <p style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)', marginTop: '0.5rem' }}>
+      <p className="u-text-muted u-mt-2" style={{ fontSize: '0.8rem' }}>
         Les commandes créées à partir de vos demandes apparaîtront ici
       </p>
     </div>
   );
   return (
-    <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+    <div className="u-flex-col u-gap-3" style={{ padding: '0.5rem' }}>
       {orders.map(order => {
         const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
         const completion = order.item_count > 0 ? Math.round((order.completed_items / order.item_count) * 100) : 0;
         return (
           <div key={order.id} style={{ background: 'var(--theme-bg-card, #fff)', border: '1px solid var(--theme-border)', borderRadius: 10, padding: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}>
+            <div className="u-flex-between u-mb-2">
+              <span className="u-font-bold" style={{ fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}>
                 <Hash size={14} style={{ verticalAlign: -2 }} /> {order.reference}
               </span>
               <StatusBadge color={status.color} size="sm">
@@ -1452,19 +1452,19 @@ const MyLinkedOrdersList = React.memo(({ orders, loading }) => {
               </StatusBadge>
             </div>
             {order.supplier_name && (
-              <div style={{ fontSize: '0.8rem', color: 'var(--theme-text-muted)', marginBottom: '0.4rem' }}>
+              <div className="u-text-muted" style={{ fontSize: '0.8rem', marginBottom: '0.4rem' }}>
                 <Building2 size={13} style={{ verticalAlign: -2 }} /> {order.supplier_name}
               </div>
             )}
-            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: 'var(--theme-text-muted)', marginBottom: '0.5rem' }}>
+            <div className="u-flex u-gap-4 u-text-muted u-mb-2" style={{ fontSize: '0.75rem' }}>
               <span>{order.item_count} article(s)</span>
               {order.order_date && <span>{formatDate(order.order_date)}</span>}
             </div>
             {/* Barre de progression */}
-            <div style={{ background: 'var(--theme-bg-secondary, #f3f4f6)', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+            <div className="u-overflow-hidden" style={{ background: 'var(--theme-bg-secondary, #f3f4f6)', borderRadius: 6, height: 8 }}>
               <div style={{ height: '100%', width: `${completion}%`, borderRadius: 6, background: completion === 100 ? '#10b981' : '#3b82f6', transition: 'width 0.3s ease' }} />
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)', marginTop: '0.25rem', textAlign: 'right' }}>
+            <div className="u-text-muted u-text-right u-mt-1" style={{ fontSize: '0.7rem' }}>
               {completion}% réceptionné
             </div>
           </div>
@@ -1484,34 +1484,34 @@ const MaterialRequestsList = React.memo(({ requests, isAdmin, isSimpleUser, onVa
   // Mode carte mobile pour utilisateurs simples
   if (isSimpleUser) {
     return (
-      <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+      <div className="u-flex-col" style={{ padding: '0.5rem', gap: '0.6rem' }}>
         {requests.map(req => {
           const status = REQUEST_STATUS[req.status] || REQUEST_STATUS.pending;
           const priority = REQUEST_PRIORITY[req.priority] || REQUEST_PRIORITY.normal;
           return (
-            <div key={req.id} role="button" tabIndex={0} onClick={() => onClick?.(req)}
-              style={{ background: 'var(--theme-bg-card, #fff)', border: `1px solid ${selectedId === req.id ? 'var(--theme-accent, #2563eb)' : 'var(--theme-border)'}`, borderRadius: 10, padding: '0.8rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}>{req.article}</div>
-                  {req.ref_code && <div style={{ fontSize: '0.7rem', color: 'var(--theme-text-muted)' }}>Réf: {req.ref_code}</div>}
+            <div key={req.id} className="u-cursor-pointer" role="button" tabIndex={0} onClick={() => onClick?.(req)}
+              style={{ background: 'var(--theme-bg-card, #fff)', border: `1px solid ${selectedId === req.id ? 'var(--theme-accent, #2563eb)' : 'var(--theme-border)'}`, borderRadius: 10, padding: '0.8rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <div className="u-flex" style={{ justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                <div className="u-flex-1" style={{ minWidth: 0 }}>
+                  <div className="u-font-bold" style={{ fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}>{req.article}</div>
+                  {req.ref_code && <div className="u-text-muted" style={{ fontSize: '0.7rem' }}>Réf: {req.ref_code}</div>}
                 </div>
-                <StatusBadge color={status.color} size="sm" style={{ flexShrink: 0 }}>
+                <StatusBadge className="u-flex-shrink-0" color={status.color} size="sm">
                   {status.icon} {status.label}
                 </StatusBadge>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
+              <div className="u-flex u-flex-wrap u-gap-2 u-text-muted" style={{ fontSize: '0.75rem' }}>
                 <span>Qté: {req.quantity}</span>
                 <span style={{ color: priority.color }}>{priority.icon} {priority.label}</span>
                 {req.supplier_name && <span>📦 {req.supplier_name}</span>}
                 <span>📍 {req.destination === 'Autre' ? req.destination_other || 'Autre' : req.destination}</span>
               </div>
               {req.order_id && (
-                <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: 'var(--theme-accent, #2563eb)', fontWeight: 600 }}>
+                <div className="u-font-semibold" style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: 'var(--theme-accent, #2563eb)' }}>
                   → Commande #{req.order_id}
                 </div>
               )}
-              {req.notes && <div style={{ marginTop: '0.3rem', fontSize: '0.7rem', color: 'var(--theme-text-muted)', fontStyle: 'italic' }}>{req.notes}</div>}
+              {req.notes && <div className="u-text-muted" style={{ marginTop: '0.3rem', fontSize: '0.7rem', fontStyle: 'italic' }}>{req.notes}</div>}
             </div>
           );
         })}
@@ -2304,7 +2304,7 @@ const RequestSlidePanel = React.memo(({ request, onClose, onOpenDialog, isAdmin,
       <div className="slide-panel-header">
         <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
         <h3>{request.article}</h3>
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div className="u-flex u-gap-1">
           <Tooltip content="Modifier" position="bottom"><Button variant="ghost" className="action-btn small" onClick={() => onEdit(request)}><Edit2 size={14} /></Button></Tooltip>
           <Tooltip content="Ouvrir en détail" position="bottom"><Button variant="ghost" className="action-btn small" onClick={() => onOpenDialog(request)}><Eye size={14} /></Button></Tooltip>
         </div>

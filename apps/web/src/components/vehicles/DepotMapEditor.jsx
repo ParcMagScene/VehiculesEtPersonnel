@@ -848,7 +848,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
             onTouchStart={(e) => handleHandleMouseDown(e, zone, h.id)}
           />
           <text x={h.cx} y={h.cy + 1} textAnchor="middle" dominantBaseline="middle"
-            fill="#000" fontSize="6" fontWeight="700" style={{ pointerEvents: 'none' }}>◆</text>
+            fill="#000" fontSize="6" fontWeight="700" className="u-pointer-events-none">◆</text>
         </g>
       ) : (
         <rect
@@ -933,8 +933,8 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                   <span>{Math.round(overlayOpacity * 100)}%</span>
                 </div>
               </div>
-              <Button variant="ghost" className={`dep-ed-btn-sm ${showGrid ? 'active' : ''}`}
-                onClick={() => setShowGrid(!showGrid)} style={{ marginTop: 4 }}>
+              <Button variant="ghost" className={`dep-ed-btn-sm ${showGrid ? 'active' : ''} u-mt-1`}
+                onClick={() => setShowGrid(!showGrid)}>
                 <Grid3X3 size={14} /> Grille
               </Button>
             </div>
@@ -1216,7 +1216,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                       {subtractTargetId}
                     </Button>
                   </div>
-                  <Button variant="ghost" className="dep-ed-btn-sm" onClick={cancelSubtract} style={{ marginTop: 8 }}>Annuler</Button>
+                  <Button variant="ghost" className="dep-ed-btn-sm u-mt-2" onClick={cancelSubtract}>Annuler</Button>
                 </div>
               </div>
             )}
@@ -1229,10 +1229,10 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
               <svg
                 ref={svgRef}
                 viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`}
-                className="depot-editor-svg"
+                className="depot-editor-svg u-w-full"
                 onClick={handleSvgClick}
                 overflow="hidden"
-                style={{ width: '100%', height: 'auto', aspectRatio: `${bounds.w} / ${bounds.h}` }}
+                style={{ height: 'auto', aspectRatio: `${bounds.w} / ${bounds.h}` }}
               >
                 {/* Background */}
                 <rect data-bg="true" x={bounds.x} y={bounds.y} width={bounds.w} height={bounds.h} rx="4"
@@ -1246,7 +1246,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                     width={SVG_WIDTH} height={SVG_HEIGHT}
                     opacity={overlayOpacity}
                     preserveAspectRatio="xMidYMid meet"
-                    style={{ pointerEvents: 'none' }}
+                    className="u-pointer-events-none"
                   />
                 )}
 
@@ -1307,7 +1307,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                         fill={zone.textColor || '#ffffff'}
                         fontSize={Math.min(13, width / 5)}
                         fontWeight="600"
-                        style={{ pointerEvents: 'none', userSelect: 'none' }}
+                        className="u-pointer-events-none u-select-none"
                       >
                         {zone.id}
                       </text>
@@ -1324,14 +1324,14 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                     {Array.from({ length: Math.floor(bounds.w / 100) + 1 }, (_, i) => {
                       const lx = Math.round((bounds.x + i * 100) / 100) * 100;
                       return <text key={`lx${i}`} x={lx + 2} y={bounds.y + 12}
-                        fill="#9ca3af" fontSize="8" style={{ pointerEvents: 'none' }}>
+                        fill="#9ca3af" fontSize="8" className="u-pointer-events-none">
                         {lx}
                       </text>;
                     })}
                     {Array.from({ length: Math.floor(bounds.h / 100) + 1 }, (_, i) => {
                       const ly = Math.round((bounds.y + i * 100) / 100) * 100;
                       return <text key={`ly${i}`} x={bounds.x + 2} y={ly + 10}
-                        fill="#9ca3af" fontSize="8" style={{ pointerEvents: 'none' }}>
+                        fill="#9ca3af" fontSize="8" className="u-pointer-events-none">
                         {ly}
                       </text>;
                     })}

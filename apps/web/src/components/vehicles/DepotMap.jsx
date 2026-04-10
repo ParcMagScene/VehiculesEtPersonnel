@@ -381,7 +381,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
       </div>
 
       {/* SVG Map */}
-      <div className="depot-map-svg-wrapper" style={{ position: 'relative' }}>
+      <div className="depot-map-svg-wrapper u-relative">
         <svg
           ref={svgRef}
           viewBox={viewBox}
@@ -441,7 +441,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                 onDoubleClick={() => handleZoneDblClick(zone)}
                 onMouseEnter={(e) => handleZoneHover(zone, e)}
                 onMouseLeave={handleZoneLeave}
-                style={{ cursor: 'pointer' }}
+                className="u-cursor-pointer"
               >
                 {/* Highlight glow for search results */}
                 {(isHighlighted || hasSearchResult) && (
@@ -496,8 +496,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                   fill={zone.textColor || '#ffffff'}
                   fontSize="13"
                   fontWeight="600"
-                  className="depot-zone-label"
-                  style={{ pointerEvents: 'none' }}
+                  className="depot-zone-label u-pointer-events-none"
                 >
                   {zone.label}
                 </text>
@@ -511,7 +510,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                   fill={zone.textColor || '#ffffff'}
                   fontSize="10"
                   opacity="0.7"
-                  style={{ pointerEvents: 'none' }}
+                  className="u-pointer-events-none"
                 >
                   {zone.id}
                 </text>
@@ -527,7 +526,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                       rx="9"
                       fill="#0f172a"
                       fillOpacity="0.8"
-                      style={{ pointerEvents: 'none' }}
+                      className="u-pointer-events-none"
                     />
                     <text
                       x={x + width - 19}
@@ -537,7 +536,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                       fill="#fbbf24"
                       fontSize="10"
                       fontWeight="700"
-                      style={{ pointerEvents: 'none' }}
+                      className="u-pointer-events-none"
                     >
                       {count}
                     </text>
@@ -554,7 +553,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                       height="18"
                       rx="9"
                       fill="#fbbf24"
-                      style={{ pointerEvents: 'none' }}
+                      className="u-pointer-events-none"
                     />
                     <text
                       x={x + 21}
@@ -564,7 +563,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                       fill="#0f172a"
                       fontSize="10"
                       fontWeight="700"
-                      style={{ pointerEvents: 'none' }}
+                      className="u-pointer-events-none"
                     >
                       {searchResults[zone.id]}
                     </text>
@@ -580,7 +579,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
                   fill={zone.textColor || '#ffffff'}
                   fontSize="9"
                   opacity="0.5"
-                  style={{ pointerEvents: 'none' }}
+                  className="u-pointer-events-none"
                 >
                   {(zone.codes || []).join(' · ')}
                 </text>
@@ -602,7 +601,7 @@ export default function DepotMap({ zones, stats, selectedZone, onZoneSelect, onZ
               : null;
             const labelW = labelText ? Math.min(labelText.length * 7 + 28, 260) : 0;
             return (
-              <g className="depot-focus-indicator" style={{ pointerEvents: 'none' }}>
+              <g className="depot-focus-indicator u-pointer-events-none">
                 {/* Zone highlight border */}
                 <rect
                   x={x - 2} y={y - 2}

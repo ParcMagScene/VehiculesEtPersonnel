@@ -411,7 +411,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       return (
         <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
-          <Briefcase size={11} style={{ color: 'var(--theme-purple-accent)', flexShrink: 0 }} />
+          <Briefcase size={11} className="u-flex-shrink-0" style={{ color: 'var(--theme-purple-accent)' }} />
           <span className="task-cb-title">{ti.emoji} {a.numeroAffaire} — {a.client || 'Sans client'}</span>
           {assignments.length > 0 ? (
             <span className="task-cb-persons">
@@ -465,7 +465,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       return (
         <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
-          <Calendar size={11} style={{ color: 'var(--theme-primary)', flexShrink: 0 }} />
+          <Calendar size={11} className="u-flex-shrink-0" style={{ color: 'var(--theme-primary)' }} />
           <span className="task-cb-title">
             {ev.affaire && <strong style={{ color: '#059669' }}>{ev.affaire} </strong>}
             {ev.summary || 'RDV'}

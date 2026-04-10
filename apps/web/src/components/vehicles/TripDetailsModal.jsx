@@ -908,14 +908,14 @@ const TripDetailsModal = ({
     }}>
       <div className="trip-details-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
-          <div style={{ flex: 1 }}>
+          <div className="u-flex-1">
             <h2>📍 {isCombinedMode ? 'Trajets liés' : 'Détails du trajet'}</h2>
             {/* Événement info (mode simple) */}
             {!isCombinedMode && (
               <div className="event-info" style={{ margin: '0.5rem 0 0 0', background: 'transparent', padding: 0 }}>
                 <h3 style={{ margin: 0, fontSize: '1rem' }}>{currentEvent.summary}</h3>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-                  {currentEvent.affaire && <span style={{ fontSize: '0.875rem' }}>{currentEvent.affaire}</span>}
+                <div className="u-flex-center u-flex-wrap u-gap-2 u-mt-1">
+                  {currentEvent.affaire && <span className="u-font-sm">{currentEvent.affaire}</span>}
                   {vehicle && (
                     <span style={{
                       padding: '0.25rem 0.5rem',

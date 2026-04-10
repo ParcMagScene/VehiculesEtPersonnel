@@ -105,7 +105,7 @@ function ParserLearningTab() {
           {file && <small>{file.name} — {(file.size / 1024 / 1024).toFixed(1)} Mo</small>}
         </div>
         {!compareMode && (
-          <div className="catalog-form-group" style={{ flex: 1 }}>
+          <div className="catalog-form-group u-flex-1">
             <label>Parser</label>
             <Select value={parserId} onChange={e => setParserId(e.target.value)}>
               {AVAILABLE_PARSERS.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
@@ -120,10 +120,9 @@ function ParserLearningTab() {
         </div>
       </div>
 
-      <Button variant="ghost"         className="catalog-btn catalog-btn-primary"
+      <Button variant="ghost"         className="catalog-btn catalog-btn-primary u-mt-2"
         onClick={handleAnalyze}
         disabled={!file || analyzing}
-        style={{ marginTop: '0.5rem' }}
       >
         {analyzing ? <><RefreshCw size={16} className="spin" /> Analyse en cours…</> : <><BarChart3 size={16} /> Lancer l'analyse</>}
       </Button>
@@ -175,7 +174,7 @@ function SingleParserReport({ report }) {
       {analysis.falsePositiveCount > 0 && (
         <div className="parser-section">
           <Accordion title={<><AlertTriangle size={14} /> {analysis.falsePositiveCount} faux positifs potentiels</>}>
-            <Table className="catalog-table" style={{ marginTop: 8 }}>
+            <Table className="catalog-table u-mt-2">
               <thead>
                 <tr><th>Réf.</th><th>Désignation</th><th>Prix</th><th>Problèmes</th></tr>
               </thead>
@@ -263,7 +262,7 @@ function MultiParserComparison({ reports }) {
           {reports.map((r, i) => {
             const m = r.analysis?.metrics;
             if (!m) return (
-              <tr key={i} style={{ opacity: 0.5 }}>
+              <tr key={i} className="u-opacity-50">
                 <td>{r.label}</td>
                 <td colSpan={6} className="text-center">Erreur ou aucun résultat</td>
               </tr>
@@ -290,8 +289,8 @@ function MultiParserComparison({ reports }) {
                     </div>
                   </td>
                   <td>
-                    <Button variant="ghost"                       className="catalog-btn catalog-btn-secondary"
-                      style={{ padding: '2px 8px', fontSize: '0.75rem' }}
+                    <Button variant="ghost"                       className="catalog-btn catalog-btn-secondary u-font-xs"
+                      style={{ padding: '2px 8px' }}
                       onClick={() => setExpandedParser(expandedParser === i ? null : i)}
                     >
                       {expandedParser === i ? 'Masquer' : 'Détails'}
@@ -379,7 +378,7 @@ function TaxonomyTab() {
       </p>
 
       {/* Stats globales */}
-      <div className="parser-metrics-grid" style={{ marginBottom: '1rem' }}>
+      <div className="parser-metrics-grid u-mb-4">
         <MetricCard label="Articles total" value={taxonomy.totalArticles} />
         <MetricCard label="Avec famille" value={taxonomy.withFamily} />
         <MetricCard label="Avec catégorie" value={taxonomy.withCategory} />
@@ -420,7 +419,7 @@ function TaxonomyTab() {
           ))}
         </div>
       ) : (
-        <div className="catalog-import-empty" style={{ padding: '2rem', textAlign: 'center' }}>
+        <div className="catalog-import-empty u-text-center" style={{ padding: '2rem' }}>
           <CheckCircle2 size={36} className="icon-success" />
           <p>Aucun regroupement suggéré — la taxonomie semble propre !</p>
         </div>
@@ -429,7 +428,7 @@ function TaxonomyTab() {
       {/* Liste complète */}
       <details className="taxonomy-full-list">
         <summary>Voir toutes les {activeSection === 'families' ? 'familles' : 'catégories'} ({items?.length || 0})</summary>
-        <Table className="catalog-table" style={{ marginTop: 8 }}>
+        <Table className="catalog-table u-mt-2">
           <thead>
             <tr><th>Nom</th><th className="text-right">Articles</th><th>Fournisseurs</th></tr>
           </thead>
@@ -482,15 +481,15 @@ function TaxonomyGroup({ group, type, selectedRules, onToggle }) {
                     onChange={() => onToggle(type, member.name, group.canonical)}
                   />
                   <span className="taxonomy-member-name">{member.name}</span>
-                  <ArrowRight size={12} style={{ opacity: 0.5 }} />
+                  <ArrowRight size={12} className="u-opacity-50" />
                   <span className="taxonomy-member-target">{group.canonical}</span>
-                  <Tag color="neutral" size="sm" style={{ marginLeft: 'auto' }}>{member.count}</Tag>
+                  <Tag color="neutral" size="sm" className="u-ml-auto">{member.count}</Tag>
                 </label>
               ) : (
                 <div className="taxonomy-canonical-content">
                   <CheckCircle2 size={14} className="icon-success" />
                   <span className="taxonomy-member-name"><strong>{member.name}</strong> (référence)</span>
-                  <Tag color="neutral" size="sm" style={{ marginLeft: 'auto' }}>{member.count}</Tag>
+                  <Tag color="neutral" size="sm" className="u-ml-auto">{member.count}</Tag>
                 </div>
               )}
             </div>

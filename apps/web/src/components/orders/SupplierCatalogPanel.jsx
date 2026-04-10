@@ -206,7 +206,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
       {/* ── Header ── */}
       <div className="panel-header">
         <h2><FileText size={24} /> Articles Fournisseurs</h2>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div className="u-flex-center u-gap-2">
           {/* Sous-navigation */}
           <Button variant="ghost"             className={`catalog-btn ${view === 'articles' ? 'catalog-btn-primary' : 'catalog-btn-secondary'}`}
             onClick={() => setView('articles')}
@@ -292,17 +292,17 @@ export default function SupplierCatalogPanel({ currentUser }) {
                 allowClear
               />
             )}
-            <span style={{ fontSize: '0.85rem', color: 'var(--theme-text-secondary)', whiteSpace: 'nowrap' }}>
+            <span className="u-text-secondary" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
               {total} article{total > 1 ? 's' : ''}
             </span>
           </div>
 
           {/* Table */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem' }}>Chargement…</div>
+            <div className="u-text-center" style={{ padding: '3rem' }}>Chargement…</div>
           ) : articles.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--theme-text-secondary)' }}>
-              <Package size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+            <div className="u-text-center u-text-secondary" style={{ padding: '3rem' }}>
+              <Package size={48} className="u-opacity-30 u-mb-4" />
               <p>Aucun article fournisseur</p>
               {canWrite && <p style={{ fontSize: '0.85rem' }}>Importez un catalogue PDF pour commencer</p>}
             </div>
@@ -316,7 +316,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
                     <th>Marque</th>
                     <th>Modèle</th>
                     <th>Famille</th>
-                    <th style={{ textAlign: 'right' }}>Prix HT</th>
+                    <th className="u-text-right">Prix HT</th>
                     <th>Fournisseur</th>
                     {canWrite && <th style={{ width: 50 }}></th>}
                   </tr>
@@ -329,7 +329,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
                       <td>{(a.brand_canonical || a.brand) && <Tag color="primary" size="sm">{a.brand_canonical || a.brand}</Tag>}</td>
                       <td style={{ fontSize: '0.85rem' }}>{a.model || ''}</td>
                       <td style={{ fontSize: '0.85rem' }}>{a.family || ''}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmtPrice(a.price_ht)}</td>
+                      <td className="u-text-right u-font-semibold" style={{ whiteSpace: 'nowrap' }}>{fmtPrice(a.price_ht)}</td>
                       <td style={{ fontSize: '0.85rem' }}>{a.supplier_name || ''}</td>
                       {canWrite && (
                         <td>
@@ -349,7 +349,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="pagination" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
+            <div className="pagination u-flex-center u-gap-3 u-mt-4" style={{ justifyContent: 'center' }}>
               <Button variant="secondary" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
                 <ChevronLeft size={16} />
               </Button>
@@ -366,8 +366,8 @@ export default function SupplierCatalogPanel({ currentUser }) {
       {view === 'imports' && (
         <div>
           {imports.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--theme-text-secondary)' }}>
-              <History size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
+            <div className="u-text-center u-text-secondary" style={{ padding: '3rem' }}>
+              <History size={48} className="u-opacity-30 u-mb-4" />
               <p>Aucun import réalisé</p>
             </div>
           ) : (
@@ -389,8 +389,8 @@ export default function SupplierCatalogPanel({ currentUser }) {
                     <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>{formatDateTime(imp.created_at)}</td>
                     <td><FileText size={14} style={{ marginRight: 4, verticalAlign: 'text-bottom' }} />{imp.filename}</td>
                     <td>{imp.supplier_name || '—'}</td>
-                    <td style={{ textAlign: 'center' }}>{imp.page_count || '?'}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 600 }}>{imp.items_count}</td>
+                    <td className="u-text-center">{imp.page_count || '?'}</td>
+                    <td className="u-text-center u-font-semibold">{imp.items_count}</td>
                     <td style={{ fontSize: '0.85rem' }}>{imp.imported_by_name || '—'}</td>
                     {canWrite && (
                       <td>
@@ -411,12 +411,12 @@ export default function SupplierCatalogPanel({ currentUser }) {
 
       {/* ═══ VUE STATS ═══ */}
       {view === 'stats' && stats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+        <div className="u-gap-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
           <div className="supplier-stat-card">
             <h3>Vue d'ensemble</h3>
             <div className="supplier-stat-number">{stats.totalArticles}</div>
             <div className="supplier-stat-label">articles fournisseurs</div>
-            <div style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--theme-text-secondary)' }}>
+            <div className="u-text-secondary u-mt-2" style={{ fontSize: '0.85rem' }}>
               {stats.totalImports} import{stats.totalImports > 1 ? 's' : ''} réalisé{stats.totalImports > 1 ? 's' : ''}
             </div>
           </div>
@@ -424,7 +424,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
           <div className="supplier-stat-card">
             <h3>Par fournisseur</h3>
             {stats.bySupplier?.map((s, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid var(--theme-border-light)' }}>
+              <div key={i} className="u-flex" style={{ justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid var(--theme-border-light)' }}>
                 <span>{s.name}</span>
                 <strong>{s.count}</strong>
               </div>
@@ -434,7 +434,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
           <div className="supplier-stat-card">
             <h3>Top marques</h3>
             {stats.byBrand?.slice(0, 10).map((b, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid var(--theme-border-light)' }}>
+              <div key={i} className="u-flex" style={{ justifyContent: 'space-between', padding: '0.25rem 0', borderBottom: '1px solid var(--theme-border-light)' }}>
                 <span>{b.brand}</span>
                 <strong>{b.count}</strong>
               </div>
@@ -676,7 +676,7 @@ function ImportPDFModal({ onDone, onClose }) {
                               <th>Marque</th>
                               <th>Modèle</th>
                               <th>Famille</th>
-                              <th style={{ textAlign: 'right' }}>Prix HT</th>
+                              <th className="u-text-right">Prix HT</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -687,7 +687,7 @@ function ImportPDFModal({ onDone, onClose }) {
                                 <td>{a.brand || ''}</td>
                                 <td>{a.model || ''}</td>
                                 <td>{a.family || ''}</td>
-                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                <td className="u-text-right" style={{ whiteSpace: 'nowrap' }}>
                                   {(a.priceHt ?? a.price_ht) != null
                                     ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(a.priceHt ?? a.price_ht)
                                     : '—'}
@@ -697,7 +697,7 @@ function ImportPDFModal({ onDone, onClose }) {
                           </tbody>
                         </Table>
                         {pr.result.items.length > 20 && (
-                          <p className="catalog-import-hint" style={{ textAlign: 'center', marginTop: 4 }}>
+                          <p className="catalog-import-hint u-text-center u-mt-1">
                             …et {pr.result.items.length - 20} autres articles
                           </p>
                         )}

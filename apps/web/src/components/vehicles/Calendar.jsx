@@ -458,8 +458,7 @@ const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartInd
       });
 
       return (
-        <div style={{ 
-          position: 'absolute',
+        <div className="u-absolute" style={{ 
           top: 'auto',
           left: 0,
           right: 0,
@@ -2207,7 +2206,7 @@ const Calendar = ({
 
           {/* Grille scrollable à droite */}
           <div className="calendar-scroll-area" onScroll={handleScroll}>
-            <div className={`calendar-grid ${view}-view`} style={{ gridTemplateColumns: gridColumns, position: 'relative' }}>
+            <div className={`calendar-grid ${view}-view u-relative`} style={{ gridTemplateColumns: gridColumns }}>
               {/* Lignes véhicules - Section entreprise */}
               {!collapsedSections.company && vehicleGroups.companyVehicles.map((vehicle) => {
             // Utiliser les blocs pré-calculés au lieu de recalculer à chaque render
@@ -2263,9 +2262,9 @@ const Calendar = ({
                     return (
                       <div
                         key={`${vehicle.id}-${slotIndex}`}
-                        className={`time-slot reserved period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''}`}
+                        className={`time-slot reserved period-${slot.period.toLowerCase()} u-relative ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''}`}
                         style={{ 
-                          gridColumn: `span ${block.span}`, position: 'relative',
+                          gridColumn: `span ${block.span}`,
                           cursor: block.isMaintenance ? 'pointer' : (currentUser?.isAdmin ? 'grab' : 'pointer')
                         }}
                         onMouseDown={(e) => {
@@ -2304,11 +2303,11 @@ const Calendar = ({
                         data-reservation-id={block.id}
                       >
                         <div
-                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${isBeingDragged ? 'block-drag-ghost' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
+                          className={`reservation u-relative ${isBeingResized ? 'resizing' : ''} ${isBeingDragged ? 'block-drag-ghost' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
                           style={{
                             backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
                             border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
-                            color: 'var(--theme-text-primary)', position: 'relative',
+                            color: 'var(--theme-text-primary)',
                           }}
                         >
                           {/* Pastille utilisateur créateur */}
@@ -2459,9 +2458,9 @@ const Calendar = ({
                     return (
                       <div
                         key={`${vehicle.id}-${slotIndex}`}
-                        className={`time-slot reserved period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''}`}
+                        className={`time-slot reserved period-${slot.period.toLowerCase()} u-relative ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''}`}
                         style={{ 
-                          gridColumn: `span ${block.span}`, position: 'relative',
+                          gridColumn: `span ${block.span}`,
                           cursor: block.isMaintenance ? 'pointer' : (currentUser?.isAdmin ? 'grab' : 'pointer')
                         }}
                         onMouseDown={(e) => {
@@ -2500,11 +2499,11 @@ const Calendar = ({
                         data-reservation-id={block.id}
                       >
                         <div
-                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${isBeingDragged ? 'block-drag-ghost' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
+                          className={`reservation u-relative ${isBeingResized ? 'resizing' : ''} ${isBeingDragged ? 'block-drag-ghost' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
                           style={{
                             backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
                             border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
-                            color: 'var(--theme-text-primary)', position: 'relative',
+                            color: 'var(--theme-text-primary)',
                           }}
                         >
                           {/* Pastille utilisateur créateur */}

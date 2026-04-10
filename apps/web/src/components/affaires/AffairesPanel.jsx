@@ -902,19 +902,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
           </Button>
           {/* Import BL/BP unifié */}
           <Tooltip content="Importer un ou plusieurs BL / BP" position="bottom">
-            <Button variant="ghost"             className="affaires-tb-bl-import-btn multi-import"
+            <Button variant="ghost"             className="affaires-tb-bl-import-btn multi-import u-gap-1"
             onClick={() => setShowMultiImport(true)}
  
-            style={{ gap: 4 }}
           >
             <PackagePlus size={14} /> Import BL/BP
           </Button>
           </Tooltip>
           <Tooltip content="Analyse batch des BL PDF" position="bottom">
-            <Button variant="ghost"             className="affaires-tb-bl-import-btn"
+            <Button variant="ghost"             className="affaires-tb-bl-import-btn u-gap-1"
             onClick={() => setShowBatchAnalysis(true)}
  
-            style={{ gap: 4 }}
           >
             <BarChart2 size={14} /> Analyse batch
           </Button>
@@ -924,10 +922,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
 
           {/* Stats */}
           <Tooltip content="Rafraîchir les affaires" position="bottom">
-            <Button variant="ghost"             className="affaires-tb-nav-btn"
+            <Button variant="ghost"             className="affaires-tb-nav-btn u-flex-center u-gap-1"
             onClick={handleRefresh}
  
-            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
           >
             <RefreshCw size={14} />
           </Button>

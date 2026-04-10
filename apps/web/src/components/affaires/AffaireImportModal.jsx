@@ -748,7 +748,7 @@ const AffaireImportModal = ({
                   Glissez-déposez un ou plusieurs PDF ici
                 </p>
                 <p className="drop-zone-or">ou</p>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <div className="u-flex" style={{ gap: '10px', justifyContent: 'center' }}>
                   <Button variant="ghost" 
                     className="browse-button"
                     onClick={() => fileInputRef.current?.click()}
@@ -769,7 +769,7 @@ const AffaireImportModal = ({
                   ref={fileInputRef}
                   type="file"
                   accept=".pdf"
-                  style={{ display: 'none' }}
+                  className="u-hidden"
                   onChange={(e) => {
                     const files = e.target.files;
                     if (files.length > 1) {
@@ -845,7 +845,7 @@ const AffaireImportModal = ({
               <p className="warning-text">
                 ⚠️ Le BL <strong>{replaceConfirm.numeroAffaire}</strong> existe déjà pour cet événement
               </p>
-              <p style={{ marginBottom: '16px', color: 'var(--theme-text-secondary)' }}>
+              <p className="u-mb-4 u-text-secondary">
                 Que souhaitez-vous faire ?
               </p>
               <div className="button-group">
@@ -865,7 +865,7 @@ const AffaireImportModal = ({
                   🔄 Remplacer les données existantes
                 </Button>
               </div>
-              <p style={{ fontSize: '12px', color: 'var(--theme-text-muted)', marginTop: '12px' }}>
+              <p className="u-font-xs u-text-muted u-mt-3">
                 <strong>Ajouter :</strong> Crée une nouvelle affaire avec ce BL, liée à cet événement<br/>
                 <strong>Remplacer :</strong> Met à jour les données de l'affaire existante avec ce BL
               </p>
@@ -885,7 +885,7 @@ const AffaireImportModal = ({
                   fontSize: '14px',
                   border: '1px solid var(--theme-info-border)'
                 }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '8px', color: 'var(--theme-info-text)' }}>
+                  <div className="u-font-bold u-mb-2" style={{ color: 'var(--theme-info-text)' }}>
                     📅 Événement Google Calendar
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -897,7 +897,7 @@ const AffaireImportModal = ({
                     </div>
                   </div>
                   {event.location && (
-                    <div style={{ marginTop: '8px' }}>
+                    <div className="u-mt-2">
                       <strong>Lieu :</strong> {event.location}
                     </div>
                   )}
@@ -920,9 +920,9 @@ const AffaireImportModal = ({
               )}
 
               {pdfFile && (
-                <div className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="pdf-indicator u-flex-between">
                   <span>✅ PDF analysé: {pdfFile.name}</span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="u-flex u-gap-2">
                     <Button variant="ghost" 
                       className="btn-view-pdf"
                       onClick={() => setShowPreview(!showPreview)}
@@ -963,7 +963,7 @@ const AffaireImportModal = ({
               
               {/* Afficher le BL existant */}
               {!pdfFile && existingAffaires.length > 0 && existingAffaires[0].pdfData && (
-                <div className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="pdf-indicator u-flex-between">
                   <span>📄 BL principal: {existingAffaires[0].pdfFileName}</span>
                   <Button variant="ghost" 
                     className="btn-view-pdf"
@@ -990,9 +990,9 @@ const AffaireImportModal = ({
                 <div className="additional-bls-list">
                   <h4>BL additionnels ({additionalBLs.length})</h4>
                   {additionalBLs.map((bl, index) => (
-                    <div key={index} className="pdf-indicator" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                    <div key={index} className="pdf-indicator u-flex-between u-mt-2">
                       <span>📎 {bl.fileName}</span>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div className="u-flex u-gap-2">
                         <Button variant="ghost" 
                           className="btn-view-pdf"
                           onClick={() => {
@@ -1085,7 +1085,7 @@ const AffaireImportModal = ({
                     value={formData.dateDebut}
                     onChange={(e) => setFormData(prev => ({ ...prev, dateDebut: e.target.value }))}
                   />
-                  <small style={{ color: 'var(--theme-text-gray)', fontSize: '12px' }}>
+                  <small className="u-font-xs" style={{ color: 'var(--theme-text-gray)' }}>
                     Date de la prestation (doit être dans la période de l'événement)
                   </small>
                 </FormField>
@@ -1139,7 +1139,7 @@ const AffaireImportModal = ({
           {/* Étape 4: Upload BL additionnel */}
           {step === 'upload-additional' && !isProcessing && (
             <div className="upload-additional-step">
-              <p style={{ marginBottom: '20px', color: 'var(--theme-text-secondary)' }}>
+              <p className="u-text-secondary" style={{ marginBottom: '20px' }}>
                 Ajoutez des BL supplémentaires sans analyse automatique
               </p>
               <div 
@@ -1157,7 +1157,7 @@ const AffaireImportModal = ({
                   type="file"
                   accept=".pdf"
                   multiple
-                  style={{ display: 'none' }}
+                  className="u-hidden"
                   onChange={(e) => {
                     const files = Array.from(e.target.files);
                     files.forEach(file => handleAdditionalBLUpload(file));

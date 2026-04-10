@@ -1380,10 +1380,10 @@ const ReservationModal = ({
                         {event.affaire && (
                           <span className="reservation-event-affaire-badge">
                             {affairesWithAttachments.includes(event.affaire) && (
-                              <Paperclip size={11} style={{ opacity: 0.7 }} title={`${attachmentCounts[event.affaire] || ''} pièce(s) jointe(s)`} />
+                              <Paperclip size={11} className="u-opacity-70" title={`${attachmentCounts[event.affaire] || ''} pièce(s) jointe(s)`} />
                             )}
                             {affairesWithAttachments.includes(event.affaire) && attachmentCounts[event.affaire] && (
-                              <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>{attachmentCounts[event.affaire]}</span>
+                              <span className="u-opacity-70" style={{ fontSize: '0.6rem' }}>{attachmentCounts[event.affaire]}</span>
                             )}
                             {event.affaire}
                           </span>

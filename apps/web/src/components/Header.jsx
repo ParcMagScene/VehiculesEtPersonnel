@@ -880,12 +880,11 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
             {/* Badge 1: Pannes signalées (reported) */}
             {currentUser?.isAdmin && reportedMaintenances.length > 0 && (
               <div 
-                className="notification-badge unified has-reported"
+                className="notification-badge unified has-reported u-relative"
                 onClick={() => {
                   setNotificationFilter('reported');
                   setShowNotificationsPopup(true);
                 }}
-                style={{ position: 'relative' }}
                 title={`${reportedMaintenances.length} panne(s) signalée(s)`}
               >
                 <AlertTriangle size={16} strokeWidth={2.5} />
@@ -901,12 +900,11 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
             {/* Badge 2: Demandes d'intervention / CT (pending) */}
             {currentUser?.isAdmin && pendingMaintenances.length > 0 && (
               <div 
-                className="notification-badge unified has-pending"
+                className="notification-badge unified has-pending u-relative"
                 onClick={() => {
                   setNotificationFilter('pending');
                   setShowNotificationsPopup(true);
                 }}
-                style={{ position: 'relative' }}
                 title={`${pendingMaintenances.length} demande(s) d'intervention/CT`}
               >
                 <ClipboardList size={16} strokeWidth={2.5} />
@@ -917,12 +915,11 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
             {/* Badge 3: Demandes de réservation (admin) */}
             {currentUser?.isAdmin && pendingRequestsCounts.reservationRequests > 0 && (
               <div 
-                className="notification-badge unified requests-badge"
+                className="notification-badge unified requests-badge u-relative"
                 onClick={() => {
                   setNotificationFilter('reservations');
                   setShowNotificationsPopup(true);
                 }}
-                style={{ position: 'relative' }}
                 title={`${pendingRequestsCounts.reservationRequests} demande(s) de réservation`}
               >
                 <CalendarCheck size={16} strokeWidth={2.5} />
@@ -937,12 +934,11 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
                   overdueInterventions.length > 0 ? 'has-overdue' : 
                   conflictingMaintenances.length > 0 ? 'has-conflict' : 
                   'has-scheduled'
-                }`}
+                } u-relative`}
                 onClick={() => {
                   setNotificationFilter('active');
                   setShowNotificationsPopup(true);
                 }}
-                style={{ position: 'relative' }}
                 title={`${activeInterventions.length} intervention(s) active(s)`}
               >
                 <Bell size={16} strokeWidth={2.5} />
@@ -972,28 +968,22 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
             )}
 
             <Button variant="ghost" 
-              className="settings-button" 
+              className="settings-button u-relative" 
               onClick={onOpenSettings} 
               aria-label="Ouvrir les paramètres"
-              style={{ position: 'relative' }}
             >
               <Settings size={18} />
               {currentUser?.isAdmin && pendingAccessRequests > 0 && (
                 <span 
+                  className="u-absolute u-rounded-full u-flex-center u-font-bold"
                   style={{
-                    position: 'absolute',
                     top: '-4px',
                     right: '-4px',
                     background: '#ef4444',
                     color: 'white',
-                    borderRadius: '50%',
                     width: '20px',
                     height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     fontSize: '11px',
-                    fontWeight: 'bold',
                     border: '2px solid white',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                   }}
@@ -1004,24 +994,19 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
             </Button>
 
             {currentUser && (
-              <div style={{ position: 'relative' }}>
+              <div className="u-relative">
                 <Button variant="ghost"                   onClick={() => setShowUserMenu(!showUserMenu)}
                   title={currentUser.name}
                   aria-label={`Menu utilisateur (${currentUser.name})`}
+                  className="u-rounded-full u-flex-center u-cursor-pointer u-overflow-hidden"
                   style={{
                     width: '40px',
                     height: '40px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                     border: '2px solid rgba(255, 255, 255, 0.3)',
                     boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
-                    cursor: 'pointer',
                     transition: 'all 0.2s',
                     padding: 0,
-                    background: 'transparent',
-                    overflow: 'hidden'
+                    background: 'transparent'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'scale(1.1)';

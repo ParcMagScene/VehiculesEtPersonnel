@@ -2223,7 +2223,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             </Button>
           </div>
           {totalTasks > 0 && (
-            <span style={{ fontSize: '0.82rem', color: 'var(--theme-text-secondary)' }}>
+            <span className="u-text-secondary" style={{ fontSize: '0.82rem' }}>
               {doneTasks}/{totalTasks} terminée{doneTasks > 1 ? 's' : ''}
             </span>
           )}

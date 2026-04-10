@@ -1542,7 +1542,7 @@ function ImportStockModal({ onDone, onClose }) {
         ) : null
       }
     >
-        <div className="stock-modal-body" style={{ maxHeight: '70vh', overflow: 'auto' }}>
+        <div className="stock-modal-body u-overflow-auto" style={{ maxHeight: '70vh' }}>
           {error && (
             <InlineAlert>{error}</InlineAlert>
           )}
@@ -1580,12 +1580,12 @@ function ImportStockModal({ onDone, onClose }) {
 
               <div className="stock-form-field">
                 <label>Mode d'import</label>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                <div className="u-flex u-gap-3">
+                  <label className="u-flex-center u-gap-1 u-cursor-pointer">
                     <input type="radio" name="importMode" value="upsert" checked={importMode === 'upsert'} onChange={() => setImportMode('upsert')} />
                     Créer + mettre à jour
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                  <label className="u-flex-center u-gap-1 u-cursor-pointer">
                     <input type="radio" name="importMode" value="insert_only" checked={importMode === 'insert_only'} onChange={() => setImportMode('insert_only')} />
                     Créer uniquement (ignorer les existants)
                   </label>
@@ -1637,8 +1637,8 @@ function ImportStockModal({ onDone, onClose }) {
                       <th>Nom</th>
                       <th>Catégorie</th>
                       <th>Emplacement</th>
-                      <th style={{ textAlign: 'right' }}>Qté</th>
-                      <th style={{ textAlign: 'right' }}>Valeur unit.</th>
+                      <th className="u-text-right">Qté</th>
+                      <th className="u-text-right">Valeur unit.</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1648,8 +1648,8 @@ function ImportStockModal({ onDone, onClose }) {
                         <td>{item.name}</td>
                         <td>{item.category_name || '—'}</td>
                         <td>{item.location || '—'}</td>
-                        <td style={{ textAlign: 'right' }}>{item.quantity}</td>
-                        <td style={{ textAlign: 'right' }}>
+                        <td className="u-text-right">{item.quantity}</td>
+                        <td className="u-text-right">
                           {item.unit_price ? item.unit_price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '—'}
                         </td>
                       </tr>
@@ -1657,7 +1657,7 @@ function ImportStockModal({ onDone, onClose }) {
                   </tbody>
                 </Table>
                 {parsedItems.length > 30 && (
-                  <p className="stock-import-hint" style={{ textAlign: 'center', marginTop: 8 }}>
+                  <p className="stock-import-hint u-text-center u-mt-2">
                     …et {parsedItems.length - 30} autres articles
                   </p>
                 )}

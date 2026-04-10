@@ -695,7 +695,7 @@ const ManagementPanel = ({
               <X size={24} />
             </Button>
           </div>
-          <Suspense fallback={<div style={{padding:'2rem',textAlign:'center'}}>Chargement…</div>}>
+          <Suspense fallback={<div className="u-text-center" style={{padding:'2rem'}}>Chargement…</div>}>
             <PersonnelPanel currentUser={currentUser} mode="management" />
           </Suspense>        </div>
       </div>
@@ -741,7 +741,7 @@ const ManagementPanel = ({
             <div className="add-section">
               <div className="add-section-header">
                 <h3>Ajouter {activeTab === 'vehicles' ? 'un véhicule' : activeTab === 'clients' ? 'un client' : activeTab === 'drivers' ? 'un conducteur' : 'un lieu'}</h3>
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <div className="u-flex-center u-gap-1">
                   {activeTab === 'locations' && (
                     <Button variant="ghost" onClick={() => setShowMapPanel(true)} title="Voir sur la carte">
                       <Map size={20} />
@@ -882,7 +882,7 @@ const ManagementPanel = ({
                     type="file" 
                     ref={fileInputRef}
                     accept=".json"
-                    style={{ display: 'none' }}
+                    className="u-hidden"
                     onChange={handleImportData}
                   />
                   <Button variant="ghost" className="import-button" onClick={() => fileInputRef.current?.click()}>
@@ -941,8 +941,8 @@ const ManagementPanel = ({
           {activeTab === 'depot-map' && currentUser?.isAdmin && (
             <div className="depot-map-settings-wrapper" style={{ padding: '0 8px' }}>
               {/* Sélecteur de dépôt */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-                <Button variant="ghost"                   onClick={() => setActiveDepot(1)}
+              <div className="u-flex-center u-gap-2 u-mb-3">
+                <Button variant="ghost" className="u-cursor-pointer"                  onClick={() => setActiveDepot(1)}
                   style={{
                     padding: '8px 18px',
                     borderRadius: 8,
@@ -950,14 +950,13 @@ const ManagementPanel = ({
                     background: activeDepot === 1 ? 'rgba(16,185,129,0.15)' : 'rgba(30,41,59,0.5)',
                     color: activeDepot === 1 ? '#10b981' : 'var(--theme-text-muted)',
                     fontWeight: activeDepot === 1 ? 600 : 400,
-                    cursor: 'pointer',
                     fontSize: '0.9rem',
                     transition: 'all 0.2s'
                   }}
                 >
                   Dépôt 1 — Événementiel
                 </Button>
-                <Button variant="ghost"                   onClick={() => setActiveDepot(2)}
+                <Button variant="ghost" className="u-cursor-pointer"                  onClick={() => setActiveDepot(2)}
                   style={{
                     padding: '8px 18px',
                     borderRadius: 8,
@@ -965,7 +964,6 @@ const ManagementPanel = ({
                     background: activeDepot === 2 ? 'rgba(59,130,246,0.15)' : 'rgba(30,41,59,0.5)',
                     color: activeDepot === 2 ? '#3b82f6' : 'var(--theme-text-muted)',
                     fontWeight: activeDepot === 2 ? 600 : 400,
-                    cursor: 'pointer',
                     fontSize: '0.9rem',
                     transition: 'all 0.2s'
                   }}
@@ -982,7 +980,7 @@ const ManagementPanel = ({
                   onZoneFilter={() => {}}
                 />
               ) : (
-                <div style={{ padding: 32, textAlign: 'center', color: 'var(--theme-text-muted)' }}>
+                <div className="u-text-center u-text-muted" style={{ padding: 32 }}>
                   Chargement du plan...
                 </div>
               )}
@@ -1397,14 +1395,11 @@ const ManagementPanel = ({
                                         <div className="item-name">
                                           {item.name}
                                           {item.isCompanyLocation && (
-                                            <span style={{ 
+                                            <span className="u-font-xs u-font-semibold u-rounded-sm" style={{ 
                                               marginLeft: '8px', 
                                               padding: '2px 8px', 
                                               background: 'var(--theme-gradient)', 
-                                              color: 'var(--theme-text-inverse)', 
-                                              borderRadius: '4px', 
-                                              fontSize: '0.75rem',
-                                              fontWeight: '600'
+                                              color: 'var(--theme-text-inverse)'
                                             }}>
                                               Lieu principal
                                             </span>

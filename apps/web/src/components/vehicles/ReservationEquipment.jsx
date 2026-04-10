@@ -77,7 +77,7 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
             <span className="summary-value">{summary.totalVolume} m³</span>
             <span className="summary-label">Volume total</span>
           </div>
-          <div style={{ marginLeft: 'auto' }}>
+          <div className="u-ml-auto">
             <Button variant="ghost" className="catalog-btn catalog-btn-3d" onClick={handleOpenChargement}>
               <Box size={16} /> Ouvrir dans Chargement 3D
             </Button>
@@ -86,7 +86,7 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
       )}
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+      <div className="u-flex u-gap-2 u-mb-3">
         <Button variant="primary" size="sm" onClick={() => setShowAddDialog(true)}>
           <Plus size={14} /> Ajouter du matériel
         </Button>
@@ -120,7 +120,7 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
                 )}
               </div>
               <span className="eq-qty">×{item.quantity}</span>
-              {item.weight && <span style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>{item.weight * item.quantity} kg</span>}
+              {item.weight && <span className="u-text-secondary" style={{ fontSize: '0.8rem' }}>{item.weight * item.quantity} kg</span>}
               <Tooltip content="Retirer">
                 <Button variant="danger" size="sm" iconOnly aria-label="Retirer" onClick={() => handleRemove(item.id)}>
                   <Trash2 size={14} />
@@ -210,8 +210,8 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
           {/* Search */}
           <div className="catalog-form-group">
             <label>Rechercher dans le catalogue</label>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--theme-text-muted)' }} />
+            <div className="u-relative">
+              <Search size={16} className="u-absolute u-text-muted" style={{ left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
               <Input
                 type="text"
                 value={search}
@@ -224,11 +224,11 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
           </div>
 
           {/* Results */}
-          <div style={{ maxHeight: '250px', overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--theme-border)' }}>
+          <div className="u-rounded" style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--theme-border)' }}>
             {loading ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-muted)' }}>Recherche…</div>
+              <div className="u-text-center u-text-muted" style={{ padding: '1rem' }}>Recherche…</div>
             ) : catalogItems.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-muted)' }}>Aucun résultat</div>
+              <div className="u-text-center u-text-muted" style={{ padding: '1rem' }}>Aucun résultat</div>
             ) : (
               catalogItems.map(item => (
                 <div
@@ -242,8 +242,8 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
                     borderLeft: selectedItem?.id === item.id ? '3px solid var(--theme-primary)' : '3px solid transparent',
                   }}
                 >
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>
+                  <div className="u-font-semibold" style={{ fontSize: '0.9rem' }}>{item.name}</div>
+                  <div className="u-text-secondary" style={{ fontSize: '0.8rem' }}>
                     {item.reference || 'Sans réf.'} · {item.family || ''} · {formatDimensions(item.dimensions)}
                   </div>
                 </div>
@@ -253,11 +253,11 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
 
           {/* Quantity */}
           {selectedItem && (
-            <div className="catalog-form-group" style={{ marginTop: '0.75rem' }}>
+            <div className="catalog-form-group u-mt-3">
               <label>Quantité pour « {selectedItem.name} »</label>
               <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} style={{ maxWidth: '120px' }} />
               {selectedItem.defaultFlightcaseId && (
-                <div style={{ fontSize: '0.8rem', color: '#059669', marginTop: '0.25rem' }}>
+                <div className="u-mt-1" style={{ fontSize: '0.8rem', color: '#059669' }}>
                   <Box size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
                   Flight-case par défaut sera automatiquement assigné
                 </div>

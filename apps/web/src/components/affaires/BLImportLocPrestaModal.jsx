@@ -425,7 +425,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,application/pdf"
-                style={{ display: 'none' }}
+                className="u-hidden"
                 onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
               />
             </div>
@@ -598,7 +598,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                                             <Link2 size={13} style={{ color: '#10b981' }} />
                                           </span>
                                         ) : item.reference ? (
-                                          <Tooltip content="Référence non trouvée dans le catalogue" position="bottom"><span style={{ opacity: 0.3 }}>—</span></Tooltip>
+                                          <Tooltip content="Référence non trouvée dans le catalogue" position="bottom"><span className="u-opacity-30">—</span></Tooltip>
                                         ) : null}
                                       </span>
                                       <span className="bl-loc-col-ref">{item.reference || '—'}</span>
@@ -659,7 +659,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
                 <div className="bl-loc-no-data">
                   <AlertTriangle size={16} />
                   Aucune donnée structurée détectée dans ce PDF.
-                  <Button variant="ghost" className="bl-loc-raw-toggle" onClick={() => setShowRawText(!showRawText)} style={{ marginLeft: 'auto' }}>
+                  <Button variant="ghost" className="bl-loc-raw-toggle u-ml-auto" onClick={() => setShowRawText(!showRawText)}>
                     {showRawText ? 'Masquer' : 'Voir texte brut'}
                   </Button>
                 </div>

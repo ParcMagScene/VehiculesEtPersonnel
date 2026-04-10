@@ -412,11 +412,11 @@ async function loadWeather() {
       const desc = data.weather?.[0]?.description || '';
       const icon = getWeatherIcon(data.weather?.[0]?.icon);
       const wind = data.wind?.speed ? Math.round(data.wind.speed * 3.6) : null;
-      let text = `${icon} ${temp}°C`;
-      if (desc) text += ` • ${desc}`;
-      if (wind) text += ` • ${wind} km/h`;
-      weatherEl.textContent = text;
-      weatherEl.style.display = 'block';
+      const line1 = `${icon} ${temp}°C`;
+      const details = [desc, wind ? `${wind} km/h` : ''].filter(Boolean).join(' • ');
+      weatherEl.innerHTML = `<div class="weather-line1">${line1}</div>` +
+        (details ? `<div class="weather-line2">${details}</div>` : '');
+      weatherEl.style.display = 'flex';
     } else if (weatherEl) {
       weatherEl.textContent = '';
     }

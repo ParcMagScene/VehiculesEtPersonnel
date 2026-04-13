@@ -1167,9 +1167,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         prep_prestations:    { label: 'Préparations Prestations' },
         prep_ventes:         { label: 'Préparations Ventes' },
         prep_installations:  { label: 'Préparations Installations' },
+        prep_tournees:       { label: 'Préparations Tournées' },
         chargement:          { label: 'Chargement' },
         depart:              { label: 'Départ' },
         installation:        { label: 'Installation' },
+        montage:             { label: 'Montage' },
+        demontage:           { label: 'Démontage' },
+        depot:               { label: 'Dépôt' },
         evenements:          { label: 'Autres Événements' },
         taches_secondaires:  { label: 'Tâches Secondaires' },
         manual:              { label: 'Autres' },
@@ -1194,15 +1198,15 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         prep_prestations:    [59, 130, 246],
         prep_ventes:         [16, 185, 129],
         prep_installations:  [139, 92, 246],
+        prep_tournees:       [236, 72, 153],
         chargement:          [245, 158, 11],
         depart:              [59, 130, 246],
-        enlevement:          [16, 185, 129],
-        retour:              [139, 92, 246],
-        recuperation:        [239, 68, 68],
         installation:        [16, 185, 129],
+        montage:             [8, 145, 178],
+        demontage:           [220, 38, 38],
+        depot:               [99, 102, 241],
         taches_prioritaires: [239, 68, 68],
         taches_secondaires:  [245, 158, 11],
-        prep_tournees:       [236, 72, 153],
         courses:             [139, 92, 246],
         manual:              [100, 116, 139],
       };
@@ -1277,7 +1281,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         // 2. Retirer le label de section (redondant avec le bandeau)
         if (AFFAIRE_ONLY_SECTIONS.has(sectionKey)) {
           title = title
-            .replace(/^(Preparation|Préparation|Chargement|Depart|Départ|Enlevement|Enlèvement|Retour|Recuperation|Récupération|Installation|Livraison)\s*[—–\-:]?\s*/i, '')
+            .replace(/^(Preparation|Préparation|Chargement|Depart|Départ|Enlevement|Enlèvement|Retour|Recuperation|Récupération|Installation|Livraison|Montage|Demontage|Démontage|Dépôt|Depot)\s*[—–\-:]?\s*/i, '')
             .trim();
           // Si vide, utiliser le google_event_title ou les notes
           if (!title) {

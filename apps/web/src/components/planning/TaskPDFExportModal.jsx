@@ -52,12 +52,14 @@ const mapEventToSection = (event) => {
     if (cat === 'installation') return 'prep_installations';
     return 'prep_locations';
   }
-  if (type === 'enlevement') return 'enlevement';
+  if (type === 'enlevement') return 'courses';
   if (type === 'depart') return 'depart';
-  if (type === 'livraison') return 'chargement';
-  if (type === 'retour') return 'retour';
-  if (type === 'recuperation') return 'recuperation';
+  if (type === 'livraison') return 'courses';
+  if (type === 'retour') return 'courses';
+  if (type === 'recuperation') return 'courses';
   if (type === 'installation') return 'installation';
+  if (type === 'montage') return 'montage';
+  if (type === 'demontage') return 'demontage';
   return 'evenements';
 };
 

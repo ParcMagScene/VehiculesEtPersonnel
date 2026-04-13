@@ -8,6 +8,40 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.5.0] — 2026-04-11
+
+### Added — Synchronisation bidirectionnelle Google Calendar
+
+Implémentation complète de la synchronisation bidirectionnelle entre les réservations eM@g et Google Calendar, avec session persistante pour une expérience sans flash.
+
+#### Phase 2.9.1 — Push eM@g → Google Calendar
+- **`googleBidirectionalSync.js`** (nouveau) : service de synchronisation bidirectionnelle avec feature flag `GOOGLE_BIDIRECTIONAL_SYNC`
+- `syncReservationToGoogle()` : création/mise à jour automatique d'événements Google Calendar lors du CRUD réservations
+- `deleteReservationFromGoogle()` : suppression de l'événement Google lié lors de la suppression d'une réservation
+- `buildGoogleEventPayload()` : mapping intelligent réservation → événement Google (all-day vs dateTime, périodes AM/PM)
+- Propriétés privées `emagReservationId` + `emagSource` pour traçabilité
+- Intégration best-effort (try/catch) dans `vehicleRoutes.js` — un échec Google ne bloque pas le CRUD local
+
+#### Phase 2.9.2 — Pull Google → eM@g (réconciliation)
+- `pullReservationsFromGoogle()` : moteur de réconciliation — fenêtre -7j / +90j avec pagination
+- Stratégie Google-wins : si les dates divergent, la réservation locale est mise à jour
+- Nettoyage d'orphelins : si l'événement Google a été supprimé, le `google_event_id` est effacé sans supprimer la réservation
+- Endpoint `POST /api/google/sync/pull-reservations` avec authentification
+- Bouton « Réconcilier depuis Google » dans `GoogleCalendarConfig.jsx` avec badges de résultat (updated/orphaned/errors)
+- Client API `syncPullReservations(days)` dans `admin.js`
+
+#### Phase 2.10 — Session Google persistante
+- Persistance `isSignedIn` / `googleEmail` / `calendarId` dans `localStorage` (clé `emag_google_state`)
+- `GoogleCalendarBanner.jsx` : initialisation instantanée depuis le cache, confirmation async via `/api/google/status`
+- Plus de flash « Connectez-vous à Google » au chargement de page
+- Nettoyage du cache lors de la révocation OAuth
+
+### Changed
+- Plan d'action complet (12 étapes, 49 findings) marqué 100% terminé
+- Bump version 2.4.1 → 2.5.0
+
+---
+
 ## [2.4.1] — 2026-04-10
 
 ### Fixed

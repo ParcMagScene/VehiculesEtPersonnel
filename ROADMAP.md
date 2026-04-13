@@ -1,7 +1,7 @@
 # Roadmap — eM@g
 
-> **Version** : 1.0.0  
-> **Dernière MÀJ** : 7 avril 2026
+> **Version** : 2.5.0  
+> **Dernière MÀJ** : 11 avril 2026
 
 ---
 
@@ -14,7 +14,7 @@
 
 ---
 
-## v2.0.0 — Fondations Open-Source (actuel)
+## v2.0.0 — Fondations Open-Source ✅
 
 ### Sécurité ✅
 - [x] Audit sécurité complet (88 findings)
@@ -36,19 +36,63 @@
 
 ---
 
-## v2.1.0 — Qualité & CI/CD 📋
+## v2.1.0 — Qualité & Nettoyage ✅
 
-### Tests
-- [ ] Setup vitest (frontend)
-- [ ] Tests unitaires composants critiques
-- [ ] Tests API (supertest)
-- [ ] Coverage > 60%
+### Qualité de code ✅
+- [x] Nettoyage dead code — 523 warnings `no-unused-vars` → 0
+- [x] Tests frontend Vitest — 355 tests, 0 fail
+- [x] Tests backend node:test — 63 tests, 0 fail
+- [x] Pre-commit hooks — tests auto avant chaque commit
+- [x] Script `safe-deploy.sh` — build + PM2 restart + smoke test
+
+---
+
+## v2.2.0 — Cartographie & UI ✅
+
+- [x] Module cartographie des lieux (Leaflet) — carte générale + locale
+- [x] Impression A4/A3, marqueurs SVG stylisés Design System
+- [x] Hook `useDirtyForm` — détection modifications non sauvegardées
+- [x] Catégorie « Dépôt » dans le planning
+- [x] RBAC mobile — filtrage modules selon permissions
+
+---
+
+## v2.3.0 — Google Calendar OAuth2 ✅
+
+- [x] Migration vers Authorization Code Flow (remplacement implicit)
+- [x] Refresh token chiffré AES-256-GCM en SQLite
+- [x] Sync intelligente multi-tab (IndexedDB + BroadcastChannel + leader election)
+- [x] Auto-refresh access_token côté backend
+
+---
+
+## v2.4.0 — Module Sonos ✅
+
+- [x] Module autonome extrait de `displayRoutes.js` — 18 endpoints `/api/sonos/*`
+- [x] Contrôles lecture/pause/next/prev, volume, mute, shuffle, repeat
+- [x] Gestion multi-zone, favoris 1-click
+- [x] Widget TV enrichi (barre de volume animée)
+- [x] Validation IPv4 stricte, timeout UPnP 8s
+
+---
+
+## v2.5.0 — Sync bidirectionnelle Google Calendar (actuel) ✅
+
+- [x] Push eM@g → Google Calendar (create/update/delete réservations)
+- [x] Pull Google → eM@g (réconciliation, Google-wins, nettoyage orphelins)
+- [x] Feature flag `GOOGLE_BIDIRECTIONAL_SYNC` pour activation contrôlée
+- [x] Session Google persistante via localStorage (suppression flash UI)
+- [x] Audit global 12 étapes / 49 findings — 100% terminé
+
+---
+
+## v2.6.0 — CI/CD & Automatisation 📋
 
 ### CI/CD
 - [ ] GitHub Actions : lint + build + test sur PR
 - [ ] GitHub Actions : deploy automatique main → production
-- [ ] Pre-commit hooks (husky + lint-staged)
 - [ ] Vérification Conventional Commits
+- [ ] Coverage reporting (> 60%)
 
 ### Qualité
 - [ ] ESLint config unifiée (monorepo)
@@ -57,27 +101,9 @@
 
 ---
 
-## v2.2.0 — Améliorations fonctionnelles 📋
-
-### Planning
-- [ ] Vue Gantt améliorée
-- [ ] Drag & drop tâches
-- [ ] Notifications push (WebSocket)
-
-### Matériel
-- [ ] QR codes pour inventaire
-- [ ] Scan mobile natif
-- [ ] Photos multi-angles
-
-### Congés
-- [ ] Calendrier équipe visuel
-- [ ] Export comptable
-
----
-
 ## v3.0.0 — Architecture 💡
 
-### Phase 3 frontend (du plan 12 phases)
+### Frontend
 - [ ] Migration composants → Design System complet
 - [ ] Responsive mobile-first
 - [ ] PWA offline-first (Service Worker avancé)
@@ -101,6 +127,10 @@
 - [ ] Module vidéo WebRTC complet (spec existante)
 - [ ] Export PDF avancé (rapports, factures)
 - [ ] Intégration comptabilité (API externe)
+- [ ] QR codes pour inventaire + scan mobile natif
+- [ ] Vue Gantt améliorée + drag & drop tâches
+- [ ] Notifications push (WebSocket)
+- [ ] Calendrier congés équipe visuel + export comptable
 - [ ] Mode multi-tenant
 - [ ] App mobile React Native
 - [ ] Dashboard analytics

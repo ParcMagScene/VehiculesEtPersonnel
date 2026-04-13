@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.3.0] — 2026-04-11
+
+### Added
+- `GoogleCalendarConfig.jsx` : section « Synchronisation bidirectionnelle » avec bouton « Réconcilier depuis Google » et badges résultat (updated/orphaned/errors)
+- `GoogleCalendarConfig.css` : styles `.btn-pull-sync`, `.pull-result`, `.pull-stat`, `.pull-stat--warn/muted/error`
+- `admin.js` : méthode `syncPullReservations(days)` pour l'API client
+
+### Changed
+- `GoogleCalendarBanner.jsx` : session Google persistante via `localStorage` (clé `emag_google_state`) — initialisation instantanée, plus de flash au chargement
+- `GoogleCalendarConfig.jsx` : nettoyage `localStorage` lors de la révocation OAuth
+
+---
+
 ## [2.2.1] — 2026-04-10
 
 ### Fixed

@@ -10,6 +10,29 @@
   min-width: 400px;
 }
 
+/* ═══ Close button (local — ne dépend pas d'AffaireDetailPanel.css) ═══ */
+.vehicle-slide-panel .slide-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: var(--close-btn-radius);
+  border: 1px solid var(--close-btn-border);
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  padding: 0;
+}
+.vehicle-slide-panel .slide-panel-close:hover {
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
+  color: var(--theme-text-inverse);
+}
+
 /* ═══ Header ═══ */
 .vdp-slide-header {
   display: flex;

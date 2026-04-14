@@ -428,13 +428,8 @@ async function loadWeather() {
 
     if (weatherEl && data && !data.error && data.main) {
       const temp = Math.round(data.main.temp);
-      const desc = escapeHtml(data.weather?.[0]?.description || '');
       const icon = getWeatherIcon(data.weather?.[0]?.icon);
-      const wind = data.wind?.speed ? Math.round(data.wind.speed * 3.6) : null;
-      const line1 = `${icon} ${temp}°C`;
-      const details = [desc, wind ? `${wind} km/h` : ''].filter(Boolean).join(' • ');
-      weatherEl.innerHTML = `<div class="weather-line1">${line1}</div>` +
-        (details ? `<div class="weather-line2">${details}</div>` : '');
+      weatherEl.innerHTML = `<div class="weather-line1">${icon} ${temp}°C</div>`;
       weatherEl.style.display = 'flex';
     } else if (weatherEl) {
       weatherEl.textContent = '';
@@ -479,8 +474,10 @@ function updateSonosWidget(data) {
 
   if (!widget) return;
 
-  if (data && data.playing && data.title) {
+  // Afficher le widget dès qu'il y a un titre (même en pause)
+  if (data && data.title) {
     widget.style.display = 'flex';
+    widget.style.opacity = data.playing ? '1' : '0.6';
     if (albumArt) {
       const artUrl = data.albumArtURI || data.albumArt || '/display-logo/logo.png';
       // Éviter de re-tenter les URLs en 404 (ex: RadioMeuh.png manquant)

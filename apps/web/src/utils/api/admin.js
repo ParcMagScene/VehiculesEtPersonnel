@@ -24,8 +24,8 @@ export function registerAdminMethods(ApiClient) {
     async getUsers() {
       return this.request('/users');
     },
-    async createUser(email, name, password, { isAdmin = false, readOnly = false } = {}) {
-      return this.request('/users', { method: 'POST', body: JSON.stringify({ email, name, password, isAdmin, readOnly }) });
+    async createUser(email, name, password, { isAdmin = false, readOnly = false, permissions } = {}) {
+      return this.request('/users', { method: 'POST', body: JSON.stringify({ email, name, password, isAdmin, readOnly, permissions }) });
     },
     async updateUser(id, updates) {
       return this.request(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });

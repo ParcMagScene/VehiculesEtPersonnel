@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-tooltip);
+  z-index: var(--z-overlay);
 }
 
 .login-container {
@@ -272,7 +272,7 @@
 }
 
 /* Modal de conflit de session */
-.login-overlay {
+.login-container > .login-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -282,7 +282,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-tooltip);
+  z-index: var(--z-modal);
   isolation: isolate;
 }
 

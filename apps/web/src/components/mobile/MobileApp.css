@@ -1,12 +1,12 @@
 @import './PullToRefreshIndicator.css';
 
 .mobile-app {
-  min-height: 100vh;
-  min-height: 100dvh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   background: var(--theme-bg-page);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Swipe-back indicator */
@@ -406,11 +406,13 @@
   border: none;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: var(--space-4);
   font-size: var(--font-md);
   color: var(--theme-text-body);
   cursor: pointer;
   transition: background 0.2s;
+  text-align: left;
 }
 
 .menu-nav button:hover {

@@ -250,7 +250,7 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
   const handleClose = useCallback(() => {
     setIsOpen(false);
     setIsClosing(true);
-    setTimeout(() => onClose(), 350);
+    setTimeout(() => onClose(), 300);
   }, [onClose]);
 
   // Clic extérieur
@@ -259,8 +259,9 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
     const handler = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) handleClose();
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    // Utiliser 'click' au lieu de 'mousedown' pour éviter les conflits
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
   }, [isOpen, handleClose]);
 
   if (!isVisible && !vehicle) return null;

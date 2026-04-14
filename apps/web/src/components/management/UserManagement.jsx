@@ -22,7 +22,11 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const [personModal, setPersonModal] = useState(null); // { user } pour création de fiche personnel
   const [personsMap, setPersonsMap] = useState({}); // user_id -> person
   const [showCreateUser, setShowCreateUser] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: '', name: '', password: '', readOnly: false });
+  const [createForm, setCreateForm] = useState({
+    email: '', name: '', password: '', isAdmin: false, readOnly: false,
+    can_manage_vehicle_maintenance: false, can_manage_equipment_maintenance: false,
+    can_manage_catalog: false, can_manage_trucks: false
+  });
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   useEffect(() => {
@@ -253,10 +257,25 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
-      await api.createUser(createForm.email, createForm.name, createForm.password, { readOnly: createForm.readOnly });
+      const permissions = {};
+      if (createForm.readOnly) permissions.read_only = true;
+      if (createForm.can_manage_vehicle_maintenance) permissions.can_manage_vehicle_maintenance = true;
+      if (createForm.can_manage_equipment_maintenance) permissions.can_manage_equipment_maintenance = true;
+      if (createForm.can_manage_catalog) permissions.can_manage_catalog = true;
+      if (createForm.can_manage_trucks) permissions.can_manage_trucks = true;
+
+      await api.createUser(createForm.email, createForm.name, createForm.password, {
+        isAdmin: createForm.isAdmin,
+        readOnly: createForm.readOnly,
+        permissions
+      });
       toast.success('Utilisateur créé avec succès');
       setShowCreateUser(false);
-      setCreateForm({ email: '', name: '', password: '', readOnly: false });
+      setCreateForm({
+        email: '', name: '', password: '', isAdmin: false, readOnly: false,
+        can_manage_vehicle_maintenance: false, can_manage_equipment_maintenance: false,
+        can_manage_catalog: false, can_manage_trucks: false
+      });
       loadData();
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
@@ -309,6 +328,36 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                 onChange={(e) => setCreateForm(prev => ({ ...prev, readOnly: e.target.checked }))}
                 label="Compte en lecture seule"
               />
+              <Checkbox
+                checked={createForm.isAdmin}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, isAdmin: e.target.checked }))}
+                label="Administrateur"
+              />
+              {!createForm.isAdmin && !createForm.readOnly && (
+                <div className="create-user-permissions">
+                  <span className="create-user-permissions-label">Permissions :</span>
+                  <Checkbox
+                    checked={createForm.can_manage_vehicle_maintenance}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, can_manage_vehicle_maintenance: e.target.checked }))}
+                    label="🚗 Maint. Véhicules"
+                  />
+                  <Checkbox
+                    checked={createForm.can_manage_equipment_maintenance}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, can_manage_equipment_maintenance: e.target.checked }))}
+                    label="🔧 Maint. Matériel"
+                  />
+                  <Checkbox
+                    checked={createForm.can_manage_catalog}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, can_manage_catalog: e.target.checked }))}
+                    label="📦 Catalogue"
+                  />
+                  <Checkbox
+                    checked={createForm.can_manage_trucks}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, can_manage_trucks: e.target.checked }))}
+                    label="🚛 Camions"
+                  />
+                </div>
+              )}
               <div className="create-user-actions">
                 <Button variant="primary" type="submit">Créer</Button>
                 <Button variant="ghost" type="button" onClick={() => setShowCreateUser(false)}>Annuler</Button>

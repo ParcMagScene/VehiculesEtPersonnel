@@ -383,7 +383,7 @@ app.get('/api/users/names', authenticateToken, (req, res) => {
 // Création directe d'un utilisateur par l'admin
 app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { email, name, password, isAdmin = false, readOnly = false } = req.body;
+    const { email, name, password, isAdmin = false, readOnly = false, permissions: rawPermissions } = req.body;
     if (!email || !name || !password) {
       return res.status(400).json({ error: 'Email, nom et mot de passe requis' });
     }
@@ -394,11 +394,21 @@ app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
     if (existing) return res.status(409).json({ error: 'Un utilisateur avec cet email existe déjà' });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const permissions = readOnly ? JSON.stringify({ read_only: true }) : '{}';
+    // Construire les permissions : lecture seule OU permissions granulaires
+    let permissions = {};
+    if (readOnly) {
+      permissions = { read_only: true };
+    } else if (rawPermissions && typeof rawPermissions === 'object') {
+      const allowedKeys = ['can_manage_vehicle_maintenance', 'can_manage_equipment_maintenance', 'can_manage_catalog', 'can_manage_trucks', 'read_only'];
+      for (const key of allowedKeys) {
+        if (rawPermissions[key]) permissions[key] = true;
+      }
+    }
+    const permissionsJson = JSON.stringify(permissions);
 
     const result = db.prepare(
       'INSERT INTO users (email, name, password_hash, is_admin, permissions) VALUES (?, ?, ?, ?, ?)'
-    ).run(email, name.trim(), passwordHash, isAdmin ? 1 : 0, permissions);
+    ).run(email, name.trim(), passwordHash, isAdmin ? 1 : 0, permissionsJson);
 
     // Ajouter aussi dans authorized_emails pour ne pas bloquer une future reconnexion
     const emailExists = db.prepare('SELECT id FROM authorized_emails WHERE email = ?').get(email);

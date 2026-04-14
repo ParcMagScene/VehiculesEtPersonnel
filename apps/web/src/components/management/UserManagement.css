@@ -768,3 +768,18 @@
   display: flex;
   gap: 8px;
 }
+
+.create-user-permissions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+}
+.create-user-permissions-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--theme-text-gray);
+  margin-right: 4px;
+}

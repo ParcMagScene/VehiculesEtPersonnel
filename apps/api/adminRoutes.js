@@ -411,9 +411,11 @@ app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
     ).run(email, name.trim(), passwordHash, isAdmin ? 1 : 0, permissionsJson);
 
     // Ajouter aussi dans authorized_emails pour ne pas bloquer une future reconnexion
-    const emailExists = db.prepare('SELECT id FROM authorized_emails WHERE email = ?').get(email);
+    const emailExists = db.prepare('SELECT id, status FROM authorized_emails WHERE email = ?').get(email);
     if (!emailExists) {
-      db.prepare('INSERT INTO authorized_emails (email, status) VALUES (?, ?)').run(email, 'activated');
+      db.prepare('INSERT INTO authorized_emails (email, status, activated_at) VALUES (?, ?, CURRENT_TIMESTAMP)').run(email, 'activated');
+    } else if (emailExists.status !== 'activated') {
+      db.prepare('UPDATE authorized_emails SET status = ?, activated_at = CURRENT_TIMESTAMP WHERE email = ?').run('activated', email);
     }
 
     auditLog(AUDIT_ACTIONS.USER_CREATE, req.user?.id, { targetUserId: result.lastInsertRowid, email });

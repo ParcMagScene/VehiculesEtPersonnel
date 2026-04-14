@@ -145,10 +145,10 @@ function MobileLocation({ onBack }) {
         <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
         <h2>📍 Localisation</h2>
         <div className="mloc-view-toggle">
-          <Button variant="ghost" className={viewMode === 'map' ? 'active' : ''} onClick={() => setViewMode('map')}>
+          <Button variant="ghost" className={viewMode === 'map' ? 'active' : ''} onClick={() => setViewMode('map')} aria-label="Vue carte">
             <MapPin size={16} />
           </Button>
-          <Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')}>
+          <Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} aria-label="Vue liste">
             <Layers size={16} />
           </Button>
         </div>
@@ -370,7 +370,7 @@ function MobileLocation({ onBack }) {
               </h3>
               <span className="mloc-panel-count">{zoneEquipments.length} équipement{zoneEquipments.length > 1 ? 's' : ''}</span>
             </div>
-            <Button variant="ghost" onClick={() => setSelectedZone(null)}><X size={20} /></Button>
+            <Button variant="ghost" onClick={() => setSelectedZone(null)} aria-label="Fermer"><X size={20} /></Button>
           </div>
           <div className="mloc-panel-list">
             {loadingEquipments ? (

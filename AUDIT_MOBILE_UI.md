@@ -479,15 +479,15 @@ L'application eM@g utilise une **architecture duale** :
 
 ### Phase B — Accessibilité (WCAG 2.1 AA)
 
-| # | Action | Fichier(s) | Effort |
-|---|---|---|---|
-| B1 | Ajouter `aria-label` sur tous les boutons icon-only (~15) | mobile/*.jsx | S |
-| B2 | Ajouter `onKeyDown` (Enter/Space) sur tous `role="button" tabIndex={0}` | mobile/*.jsx, vehicles/*.jsx | M |
-| B3 | Ajouter fermeture Escape sur overlays/modales | MobileApp, MobileReservations, MobileLogin | S |
-| B4 | Ajouter `role="navigation"` au menu latéral | MobileApp.jsx | S |
-| B5 | Ajouter `tabIndex={0}` sur les éléments interactifs de vehicles/ | vehicles/*.jsx | M |
-| B6 | Corriger `role="checkbox"` + `aria-checked` | TaskPDFExportModal.jsx | S |
-| B7 | Associer `<label htmlFor>` aux inputs date natifs | Mobile*.jsx (5+ fichiers) | S |
+| # | Action | Fichier(s) | Effort | Statut |
+|---|---|---|---|---|
+| B1 | Ajouter `aria-label` sur tous les boutons icon-only (~15) | mobile/*.jsx | S | ✅ Done |
+| B2 | Ajouter `onKeyDown` (Enter/Space) sur tous `role="button" tabIndex={0}` | mobile/*.jsx, vehicles/*.jsx | M | ✅ Déjà OK |
+| B3 | Ajouter fermeture Escape sur overlays/modales | MobileApp, MobileReservations, MobileLogin | S | ✅ Déjà OK |
+| B4 | Ajouter `role="navigation"` au menu latéral | MobileApp.jsx | S | ⬜ |
+| B5 | Ajouter `tabIndex={0}` sur les éléments interactifs de vehicles/ | vehicles/*.jsx | M | ⬜ |
+| B6 | Corriger `role="checkbox"` + `aria-checked` | TaskPDFExportModal.jsx | S | ⬜ |
+| B7 | Associer `<label htmlFor>` aux inputs date natifs | Mobile*.jsx (5+ fichiers) | S | ⬜ |
 
 ### Phase C — CSS responsive (11 fichiers manquants)
 
@@ -518,12 +518,12 @@ L'application eM@g utilise une **architecture duale** :
 
 ### Phase F — Touch & UX mobile
 
-| # | Action | Fichier(s) | Effort |
-|---|---|---|---|
-| F1 | Ajouter pull-to-refresh hook (`usePullToRefresh`) | Hook partagé + tous les écrans mobile/ | M |
-| F2 | Ajouter swipe-back navigation dans MobileApp | MobileApp.jsx | M |
-| F3 | Remplacer polling messagerie 5s par WebSocket/SSE | MobileMessaging.jsx + backend | L |
-| F4 | Ajouter gestes swipe sur listes (slide-to-action) | MobileAffaires, MobileLeaves, MobileTasks | M |
+| # | Action | Fichier(s) | Effort | Statut |
+|---|---|---|---|---|
+| F1 | Ajouter pull-to-refresh hook (`usePullToRefresh`) | Hook partagé + tous les écrans mobile/ | M | ✅ Done (Affaires, Tasks, Leaves, Personnel, Reservations, Maintenances, Planning) |
+| F2 | Ajouter swipe-back navigation dans MobileApp | MobileApp.jsx | M | ✅ Déjà OK |
+| F3 | Remplacer polling messagerie 5s par WebSocket/SSE | MobileMessaging.jsx + backend | L | ✅ Déjà OK (useMessagingSSE) |
+| F4 | Ajouter gestes swipe sur listes (slide-to-action) | MobileAffaires, MobileLeaves, MobileTasks | M | ✅ Done |
 
 ### Phase G — Adoption Design System (modules desktop)
 

@@ -100,43 +100,42 @@ function MobileApp({ onSwitchToDesktop }) {
   };
 
   // Charger les données
+  const loadParcData = useCallback(async () => {
+    try {
+      const [
+        vehiclesData,
+        reservationsData,
+        maintenancesData,
+        clientsData,
+        driversData,
+        garagesData
+      ] = await Promise.all([
+        api.getVehicles(),
+        api.getReservations(),
+        api.getMaintenances(),
+        api.getClients(),
+        api.getDrivers(),
+        api.getGarages()
+      ]);
+
+      setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
+      setReservations(reservationsData);
+      setMaintenances(maintenancesData);
+      setClients(clientsData);
+      setDrivers(driversData);
+      setGarages(garagesData);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      if (error.message.includes('authentification') || error.message.includes('401')) {
+        handleLogout();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
-
-    const loadData = async () => {
-      try {
-        const [
-          vehiclesData,
-          reservationsData,
-          maintenancesData,
-          clientsData,
-          driversData,
-          garagesData
-        ] = await Promise.all([
-          api.getVehicles(),
-          api.getReservations(),
-          api.getMaintenances(),
-          api.getClients(),
-          api.getDrivers(),
-          api.getGarages()
-        ]);
-
-        setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
-        setReservations(reservationsData);
-        setMaintenances(maintenancesData);
-        setClients(clientsData);
-        setDrivers(driversData);
-        setGarages(garagesData);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-        if (error.message.includes('authentification') || error.message.includes('401')) {
-          handleLogout();
-        }
-      }
-    };
-
-    loadData();
-  }, [isAuthenticated, isLoading]);
+    loadParcData();
+  }, [isAuthenticated, isLoading, loadParcData]);
 
   // Sync currentScreen ref
   useEffect(() => { currentScreenRef.current = currentScreen; }, [currentScreen]);
@@ -480,6 +479,7 @@ function MobileApp({ onSwitchToDesktop }) {
             onClose={() => setCurrentScreen('parc-dashboard')}
             clients={clients}
             drivers={drivers}
+            onRefresh={loadParcData}
           />
         )}
         
@@ -505,6 +505,7 @@ function MobileApp({ onSwitchToDesktop }) {
             currentUser={currentUser}
             onReservationCreated={handleReservationCreated}
             onBack={() => setCurrentScreen('parc-dashboard')}
+            onRefresh={loadParcData}
           />
         )}
         
@@ -517,6 +518,7 @@ function MobileApp({ onSwitchToDesktop }) {
             currentUser={currentUser}
             onMaintenanceCreated={handleMaintenanceCreated}
             onBack={() => setCurrentScreen('parc-dashboard')}
+            onRefresh={loadParcData}
           />
         )}
 

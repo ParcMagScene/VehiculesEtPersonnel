@@ -9,7 +9,7 @@ function MobileEquipment({ onBack, initialTab = 'inventory', currentUser }) {
   return (
     <div className="mobile-module-wrapper">
       <div className="mobile-module-header">
-        <Button variant="ghost" className="mobile-back-btn" onClick={onBack}>
+        <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
         <h2>{title}</h2>

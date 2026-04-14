@@ -160,7 +160,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
-          <Button variant="ghost" onClick={() => setScreen('menu')}><ArrowLeft size={20} /></Button>
+          <Button variant="ghost" onClick={() => setScreen('menu')} aria-label="Retour"><ArrowLeft size={20} /></Button>
           <h2>Fiche Équipement</h2>
         </div>
         <div className="m-eq-qr-fiche">
@@ -225,7 +225,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
-          <Button variant="ghost" onClick={() => setScreen('menu')}><ArrowLeft size={20} /></Button>
+          <Button variant="ghost" onClick={() => setScreen('menu')} aria-label="Retour"><ArrowLeft size={20} /></Button>
           <h2>⚠️ Signaler un défaut</h2>
         </div>
         {submitSuccess ? (
@@ -252,7 +252,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
-          <Button variant="ghost" onClick={() => setScreen('menu')}><ArrowLeft size={20} /></Button>
+          <Button variant="ghost" onClick={() => setScreen('menu')} aria-label="Retour"><ArrowLeft size={20} /></Button>
           <h2>🔧 Demande de SAV</h2>
         </div>
         {submitSuccess ? (
@@ -293,7 +293,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     return (
       <div className="m-eq-qr">
         <div className="m-eq-qr-header">
-          <Button variant="ghost" onClick={() => setScreen('menu')}><ArrowLeft size={20} /></Button>
+          <Button variant="ghost" onClick={() => setScreen('menu')} aria-label="Retour"><ArrowLeft size={20} /></Button>
           <h2>⚙️ Intervention directe</h2>
         </div>
         {submitSuccess ? (

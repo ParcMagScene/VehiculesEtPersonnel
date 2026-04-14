@@ -5,6 +5,8 @@ import { ArrowLeft, Car, Calendar, Users, Plus, ChevronRight, Check } from 'luci
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import api from '../../utils/api';
 import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 import './MobileReservations.css';
 import { useToast } from '../../hooks/useToast';
 
@@ -21,11 +23,13 @@ const safeFormatDate = (dateValue, formatStr = 'dd MMM yyyy') => {
   }
 };
 
-const MobileReservations = forwardRef(({ vehicles, reservations, clients, drivers, currentUser, onReservationCreated, onBack }, ref) => {
+const MobileReservations = forwardRef(({ vehicles, reservations, clients, drivers, currentUser, onReservationCreated, onBack, onRefresh }, ref) => {
   const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [openedDirectly, setOpenedDirectly] = useState(false);
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
+
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(onRefresh, { disabled: !onRefresh });
   
   // Exposer la méthode openForm au parent
   useImperativeHandle(ref, () => ({
@@ -179,7 +183,7 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
                 <div className="vehicle-picker-modal" onClick={e => e.stopPropagation()}>
                   <div className="vehicle-picker-modal-header">
                     <h3>Choisir un véhicule</h3>
-                    <Button variant="ghost" type="button" onClick={() => setShowVehiclePicker(false)}>✕</Button>
+                    <Button variant="ghost" type="button" onClick={() => setShowVehiclePicker(false)} aria-label="Fermer">✕</Button>
                   </div>
                   <div className="vehicle-picker-list">
                     {availableVehicles.map(vehicle => (
@@ -294,7 +298,8 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
   }
 
   return (
-    <div className="mobile-reservations">
+    <div className="mobile-reservations" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="screen-header">
         <Button variant="ghost" className="back-button" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={24} />

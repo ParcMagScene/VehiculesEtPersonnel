@@ -370,7 +370,7 @@ function MobileAffaires({ onBack }) {
 
       {/* Navigation date */}
       <div className="maff-date-nav">
-        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(-1)}>
+        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(-1)} aria-label="Jour précédent">
           <ChevronLeft size={20} />
         </Button>
         <Button variant="ghost"           className={`maff-date-label ${isToday ? 'today' : ''}`}
@@ -378,7 +378,7 @@ function MobileAffaires({ onBack }) {
         >
           {format(currentDate, 'EEEE d MMMM', { locale: fr })}
         </Button>
-        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(1)}>
+        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(1)} aria-label="Jour suivant">
           <ChevronRight size={20} />
         </Button>
       </div>

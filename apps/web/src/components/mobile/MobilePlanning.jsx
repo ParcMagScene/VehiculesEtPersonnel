@@ -4,6 +4,8 @@ import { fr } from 'date-fns/locale';
 import { Wrench, AlertTriangle, Calendar, X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { STATUS } from '../../constants';
 import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 import { Button , Tooltip} from '@/design-system';
 import './MobilePlanning.css';
@@ -15,10 +17,13 @@ function MobilePlanning({
   currentDate,
   onClose,
   clients: _clients = [],
-  drivers: _drivers = []
+  drivers: _drivers = [],
+  onRefresh
 }) {
   const [selectedMonth, setSelectedMonth] = useState(currentDate);
   const scrollWrapperRef = useRef(null);
+
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(onRefresh, { disabled: !onRefresh });
 
 
 
@@ -231,7 +236,8 @@ function MobilePlanning({
   }, [selectedMonth, monthDays]);
 
   return (
-    <div className="mobile-planning">
+    <div className="mobile-planning" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="mobile-planning-header">
         <div className="month-navigation">
           <Button variant="ghost" className="month-nav-btn" onClick={goToPreviousMonth} aria-label="Mois précédent">

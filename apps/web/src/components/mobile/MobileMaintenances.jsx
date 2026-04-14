@@ -5,14 +5,16 @@ import { ArrowLeft, Settings, AlertTriangle, Calendar, Plus, MapPin } from 'luci
 import api from '../../utils/api';
 import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';
 import { STATUS } from '../../constants';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 import './MobileMaintenances.css';
 
-const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, currentUser, onMaintenanceCreated, onBack }, ref) => {
+const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, currentUser, onMaintenanceCreated, onBack, onRefresh }, ref) => {
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState(''); // 'scheduled', 'request', 'breakdown'
   const [openedDirectly, setOpenedDirectly] = useState(false);
-  
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(onRefresh, { disabled: !onRefresh });  
   // Exposer la méthode openForm au parent
   useImperativeHandle(ref, () => ({
     openForm: () => {
@@ -229,7 +231,8 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
   }
 
   return (
-    <div className="mobile-maintenances">
+    <div className="mobile-maintenances" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="screen-header">
         <Button variant="ghost" className="back-button" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={24} />

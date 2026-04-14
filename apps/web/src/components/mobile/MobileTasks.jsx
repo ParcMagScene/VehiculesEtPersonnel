@@ -121,7 +121,7 @@ function MobileTasks({ currentUser, onBack }) {
       <div className="mobile-tasks-header">
         <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ArrowLeft size={20} /></Button>
         <h2>Tâches du jour</h2>
-        <Button variant="ghost" className="mobile-tasks-refresh" onClick={loadTasks} disabled={loading}>
+        <Button variant="ghost" className="mobile-tasks-refresh" onClick={loadTasks} disabled={loading} aria-label="Actualiser">
           <RefreshCw size={18} className={loading ? 'spin' : ''} />
         </Button>
       </div>

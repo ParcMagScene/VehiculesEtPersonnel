@@ -5,7 +5,9 @@ import {
 import api from '../../utils/api';
 import { Button, DetailRow, Textarea, InlineAlert} from '@/design-system';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
+import useSwipeAction from '../../hooks/useSwipeAction';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
+import SwipeableRow from './SwipeableRow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
 import { ROLES, STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
@@ -50,6 +52,12 @@ function MobileLeaves({ currentUser, onBack }) {
   useEffect(() => { loadData(); }, [loadData]);
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadData);
+  const { getSwipeProps, swipeState, resetSwipe } = useSwipeAction();
+
+  const handleCancelLeave = async (leaveId) => {
+    try { await api.cancelLeave(leaveId); loadData(); }
+    catch (e) { alert('Erreur annulation: ' + (e.message || '')); }
+  };
 
   const handleLeaveCreated = () => {
     setView('list');
@@ -146,7 +154,7 @@ function MobileLeaves({ currentUser, onBack }) {
         <h2>🏖️ Congés</h2>
         <div className="ml-header-actions">
           {isAdmin && pendingCount > 0 && (
-            <Button variant="ghost" className="ml-admin-btn" onClick={() => setView('admin')}>
+            <Button variant="ghost" className="ml-admin-btn" onClick={() => setView('admin')} aria-label={`Validations en attente (${pendingCount})`}>
               <Clock size={16} />
               <span className="ml-admin-badge">{pendingCount}</span>
             </Button>
@@ -203,11 +211,24 @@ function MobileLeaves({ currentUser, onBack }) {
               <p>Aucune demande de congé</p>
             </div>
           ) : filteredLeaves.map(leave => (
-            <LeaveCard 
-              key={leave.id} 
-              leave={leave} 
-              onClick={() => { setSelectedLeave(leave); setView('detail'); }}
-            />
+            <SwipeableRow
+              key={leave.id}
+              itemId={leave.id}
+              swipeState={swipeState}
+              getSwipeProps={getSwipeProps}
+              onReset={resetSwipe}
+              rightAction={leave.status === 'pending' ? {
+                label: 'Annuler',
+                icon: '✕',
+                color: STATUS_COLORS.danger || '#e74c3c',
+                onClick: () => handleCancelLeave(leave.id),
+              } : null}
+            >
+              <LeaveCard 
+                leave={leave} 
+                onClick={() => { setSelectedLeave(leave); setView('detail'); }}
+              />
+            </SwipeableRow>
           ))}
         </div>
       </div>

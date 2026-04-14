@@ -229,8 +229,9 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
           </FormField>
 
           <div className="form-row">
-            <FormField className="form-group" label={<><Calendar size={18} /> Début</>}>
+            <FormField className="form-group" label={<><Calendar size={18} /> Début</>} htmlFor="resa-start-date">
               <input
+                id="resa-start-date"
                 type="date"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
@@ -238,8 +239,9 @@ const MobileReservations = forwardRef(({ vehicles, reservations, clients, driver
               />
             </FormField>
 
-            <FormField className="form-group" label={<><Calendar size={18} /> Fin</>}>
+            <FormField className="form-group" label={<><Calendar size={18} /> Fin</>} htmlFor="resa-end-date">
               <input
+                id="resa-end-date"
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}

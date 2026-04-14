@@ -172,8 +172,9 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
           {formType === STATUS.SCHEDULED && (
             <>
               <div className="form-row">
-                <FormField className="form-group" label={<><Calendar size={18} /> Début</>}>
+                <FormField className="form-group" label={<><Calendar size={18} /> Début</>} htmlFor="maint-start-date">
                   <input
+                    id="maint-start-date"
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
@@ -181,8 +182,9 @@ const MobileMaintenances = forwardRef(({ vehicles, maintenances, garages, curren
                   />
                 </FormField>
 
-                <FormField className="form-group" label={<><Calendar size={18} /> Fin</>}>
+                <FormField className="form-group" label={<><Calendar size={18} /> Fin</>} htmlFor="maint-end-date">
                   <input
+                    id="maint-end-date"
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}

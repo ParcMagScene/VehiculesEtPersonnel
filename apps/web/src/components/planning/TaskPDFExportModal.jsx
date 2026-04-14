@@ -378,7 +378,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const assignments = getAssignments('task', task.id);
       const courseInfo = courseType ? EVENT_TYPES[courseType] : null;
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
+        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`} role="checkbox" aria-checked={checked} tabIndex={0} onClick={() => toggleItem(item.uid)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleItem(item.uid); } }}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <span className="task-cb-status" title={STATUS_LABELS[task.status]}>{STATUS_ICONS[task.status]}</span>
           {affaireNum && <span className="task-cb-affaire" title={affaireNum}>{affaireNum}</span>}
@@ -411,7 +411,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const ti = AFFAIRE_TYPE_INFO[a.type] || { label: a.type || 'Affaire', emoji: '📋' };
       const assignments = getAssignments('affaire', a.id);
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
+        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" aria-checked={checked} tabIndex={0} onClick={() => toggleItem(item.uid)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleItem(item.uid); } }}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <Briefcase size={11} className="u-flex-shrink-0" style={{ color: 'var(--theme-purple-accent)' }} />
           <span className="task-cb-title">{ti.emoji} {a.numeroAffaire} — {a.client || 'Sans client'}</span>
@@ -439,7 +439,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
         ? [ev.affaireId, ev.client].filter(Boolean).join(' — ') || ti.label
         : `${ti.label} ${ev.affaireId ? `(${ev.affaireId})` : ''} ${ev.client ? `— ${ev.client}` : ''}`;
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
+        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" aria-checked={checked} tabIndex={0} onClick={() => toggleItem(item.uid)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleItem(item.uid); } }}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <span className="task-cb-status">{isAffaireOnly ? '' : ti.emoji}</span>
           <span className="task-cb-title">{displayText}</span>
@@ -465,7 +465,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
         ? safeParseDate(startDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || ''
         : '';
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
+        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" aria-checked={checked} tabIndex={0} onClick={() => toggleItem(item.uid)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleItem(item.uid); } }}>
           <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
           <Calendar size={11} className="u-flex-shrink-0" style={{ color: 'var(--theme-primary)' }} />
           <span className="task-cb-title">
@@ -521,7 +521,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
                 return (
                   <div key={sectionKey} className="selection-section">
-                    <div className="section-checkbox-row" role="checkbox" tabIndex={0} onClick={() => toggleSection(sectionKey)}>
+                    <div className="section-checkbox-row" role="checkbox" aria-checked={state === 'all' ? 'true' : state === 'partial' ? 'mixed' : 'false'} tabIndex={0} onClick={() => toggleSection(sectionKey)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(sectionKey); } }}>
                       <span className="section-cb" style={{ borderColor: info.color }}>
                         {state === 'all' && <Check size={12} style={{ color: info.color }} />}
                         {state === 'partial' && <Minus size={12} style={{ color: info.color }} />}

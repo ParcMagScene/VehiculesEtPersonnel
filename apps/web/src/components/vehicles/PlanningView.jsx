@@ -226,7 +226,10 @@ function PlanningView({
                             <div
                               key={reservation.id}
                               className="planning-reservation"
+                              role="button"
+                              tabIndex={0}
                               onClick={() => onOpenReservation && onOpenReservation(reservation)}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenReservation?.(reservation); } }}
                               title={`${client?.name || 'Client'} - ${driver?.name || 'Conducteur'}`}
                             >
                               <div className="planning-reservation-icon">
@@ -249,8 +252,11 @@ function PlanningView({
                           <div
                             key={maintenance.id}
                             className={`planning-maintenance planning-maintenance-${maintenance.status}`}
+                            role="button"
+                            tabIndex={0}
                             style={{ borderLeftColor: getStatusColor(maintenance.status) }}
                             onClick={() => onOpenMaintenance && onOpenMaintenance(vehicle, maintenance.id)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenMaintenance?.(vehicle, maintenance.id); } }}
                             title={maintenance.description}
                           >
                             <div className="planning-maintenance-icon">

@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useState, memo } from 'react';
-import { Radio, ListMusic, Music, Star, ChevronLeft, ChevronRight, Folder, Loader, Book, Server, Info } from 'lucide-react';
+import { Radio, ListMusic, Music, Star, ChevronLeft, ChevronRight, Folder, Loader, Book, Server, Info, Podcast } from 'lucide-react';
 
 const SERVICE_ICONS = {
   star: <Star size={16} />,
@@ -13,6 +13,7 @@ const SERVICE_ICONS = {
   music: <Music size={16} />,
   book: <Book size={16} />,
   server: <Server size={16} />,
+  podcast: <Podcast size={16} />,
 };
 
 function SonosSources({

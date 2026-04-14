@@ -856,65 +856,62 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
         parseString(xml, { explicitArray: false }, (err, data) => err ? reject(err) : resolve(data));
       });
 
-      // --- 1) ListAvailableServices : découvrir les services musicaux (Tidal, Sonos Radio, etc.) ---
-      try {
+      // Lancer les 2 enrichissements en parallèle pour réduire le temps de réponse
+      const enrichMusicServices = async () => {
         const MusicServices = lib.Services?.MusicServices;
-        if (MusicServices) {
-          const ms = new MusicServices(activeIP, 1400);
-          const msResult = await withTimeout(ms.ListAvailableServices({}), 6000);
+        if (!MusicServices) return;
+        const ms = new MusicServices(activeIP, 1400);
+        const msResult = await withTimeout(ms.ListAvailableServices({}), 5000);
 
-          if (msResult?.AvailableServiceDescriptorList) {
-            const parsed = await parseXmlAsync(msResult.AvailableServiceDescriptorList);
-            const services = parsed?.Services?.Service;
-            const serviceList = Array.isArray(services) ? services : services ? [services] : [];
+        if (!msResult?.AvailableServiceDescriptorList) return;
+        const parsed = await parseXmlAsync(msResult.AvailableServiceDescriptorList);
+        const services = parsed?.Services?.Service;
+        const serviceList = Array.isArray(services) ? services : services ? [services] : [];
 
-            // Map des icônes par nom de service connu
-            const iconMap = {
-              'sonos radio': 'radio',
-              'tidal': 'music',
-              'spotify': 'music',
-              'deezer': 'music',
-              'apple music': 'music',
-              'amazon music': 'music',
-              'youtube music': 'music',
-              'radio france': 'radio',
-              'tunein': 'radio',
-              'radio paradise': 'radio',
-              'soundcloud': 'music',
-              'audible': 'book',
-              'plex': 'server',
-            };
+        // Whitelist : services pertinents à afficher (ID → icône)
+        // ListAvailableServices retourne ~90 services, on ne garde que les principaux
+        const knownServices = {
+          303: 'radio',    // Sonos Radio
+          585: 'radio',    // Radio France
+          266: 'radio',    // Les Indés Radios
+          308: 'radio',    // Radio Paradise
+          174: 'music',    // TIDAL
+          9:   'music',    // Spotify
+          2:   'music',    // Deezer
+          204: 'music',    // Apple Music
+          201: 'music',    // Amazon Music
+          284: 'music',    // YouTube Music
+          31:  'music',    // Qobuz
+          160: 'music',    // SoundCloud
+          212: 'server',   // Plex
+          239: 'book',     // Audible
+          233: 'podcast',  // Pocket Casts
+        };
 
-            for (const svc of serviceList) {
-              const attrs = svc.$ || svc;
-              const name = attrs.Name || '';
-              const id = attrs.Id || '';
-              if (!name || !id) continue;
+        for (const svc of serviceList) {
+          const attrs = svc.$ || svc;
+          const name = attrs.Name || '';
+          const id = attrs.Id || '';
+          if (!name || !id) continue;
 
-              // Éviter les doublons avec les sources de base
-              const nameLower = name.toLowerCase();
-              if (nameLower === 'tunein') continue; // déjà dans R:0/0
+          const numId = parseInt(id, 10);
+          const icon = knownServices[numId];
+          if (!icon) continue; // service non dans la whitelist
 
-              const icon = iconMap[nameLower] || 'music';
-              sources.push({
-                id: `MS:${id}`,
-                title: name,
-                icon,
-                serviceId: id,
-                type: 'music-service',
-              });
-            }
-          }
+          sources.push({
+            id: `MS:${id}`,
+            title: name,
+            icon,
+            serviceId: id,
+            type: 'music-service',
+          });
         }
-      } catch (msErr) {
-        logger.warn('Sonos music-services: ListAvailableServices échoué:', msErr.message);
-      }
+      };
 
-      // --- 2) Browse R: pour enrichir les catégories radio ---
-      try {
+      const enrichRadioCategories = async () => {
         const cds = device.contentDirectoryService();
         const result = await new Promise((resolve, reject) => {
-          const timer = setTimeout(() => reject(new Error('timeout')), 5000);
+          const timer = setTimeout(() => reject(new Error('timeout')), 4000);
           cds.Browse({
             ObjectID: 'R:',
             BrowseFlag: 'BrowseDirectChildren',
@@ -935,7 +932,6 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
           ? (Array.isArray(root.container) ? root.container : [root.container])
           : [];
 
-        // Remplacer "Radios TuneIn" générique par les vraies catégories radio
         if (rawContainers.length > 0) {
           const idx = sources.findIndex(s => s.id === 'R:0/0');
           if (idx >= 0) sources.splice(idx, 1);
@@ -953,8 +949,17 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
             }
           }
         }
-      } catch (browseErr) {
-        logger.warn('Sonos music-services: browse R: échoué, sources de base utilisées:', browseErr.message);
+      };
+
+      // Lancer les 2 enrichissements en parallèle (non-bloquant)
+      const results = await Promise.allSettled([
+        enrichMusicServices(),
+        enrichRadioCategories(),
+      ]);
+      for (const r of results) {
+        if (r.status === 'rejected') {
+          logger.warn('Sonos music-services enrichment failed:', r.reason?.message);
+        }
       }
 
       res.json({ sources });

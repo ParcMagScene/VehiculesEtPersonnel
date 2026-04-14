@@ -78,7 +78,8 @@ const ChangePassword = ({ currentUser }) => {
             <h3><Shield size={20} /> Mon mot de passe administrateur</h3>
             <p className="admin-password-hint">Définissez directement un nouveau mot de passe sans saisir l’ancien</p>
           </div>
-          <div className="admin-password-form">
+          <form className="admin-password-form" onSubmit={(e) => { e.preventDefault(); handleAdminSetPassword(); }}>
+            <input type="text" autoComplete="username" value={currentUser?.email || ''} readOnly hidden />
             <FormField className="form-group" label="Nouveau mot de passe" htmlFor="adminNewPassword">
               <div className="password-input-wrapper">
                 <Input
@@ -102,14 +103,14 @@ const ChangePassword = ({ currentUser }) => {
             <div className="form-actions">
               <Button
                 variant="primary"
-                onClick={handleAdminSetPassword}
+                type="submit"
                 disabled={isSavingAdmin || adminNewPassword.length < 10}
               >
                 <KeyRound size={16} />
                 {isSavingAdmin ? 'Application...' : 'Appliquer le mot de passe'}
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -118,6 +119,7 @@ const ChangePassword = ({ currentUser }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="change-password-form">
+        <input type="text" autoComplete="username" value={currentUser?.email || ''} readOnly hidden />
         <FormField className="form-group" label="Mot de passe actuel" htmlFor="currentPassword" required>
           <Input
             id="currentPassword"

@@ -69,5 +69,19 @@ export function registerSonosMethods(ApiClient) {
     async sonosRepeat(zone, mode) {
       return this.request(`/sonos/repeat/${zone}`, { method: 'POST', body: JSON.stringify({ mode }) });
     },
+
+    // ── Sources / Browse ──
+    async getSonosMusicServices() {
+      return this.request('/sonos/music-services');
+    },
+    async getSonosRadioStations() {
+      return this.request('/sonos/radio-stations');
+    },
+    async browseSonos(objectId) {
+      return this.request(`/sonos/browse/${encodeURIComponent(objectId)}`);
+    },
+    async getSonosQueue() {
+      return this.request('/sonos/queue');
+    },
   });
 }

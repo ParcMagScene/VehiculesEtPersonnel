@@ -14,7 +14,7 @@ const WelcomeMessagesTab = lazy(() => import('./WelcomeMessagesTab'));
 const ColorRulesTab = lazy(() => import('./ColorRulesTab'));
 const LocationIconsTab = lazy(() => import('./LocationIconsTab'));
 const SneakyTab = lazy(() => import('./SneakyTab'));
-const SonosTab = lazy(() => import('./SonosTab'));
+const SonosTab = lazy(() => import('../sonos/SonosPanel'));
 const TVPreviewPanel = lazy(() => import('./TVPreviewPanel'));
 const DashboardTasksSidebar = lazy(() => import('./DashboardTasksSidebar'));
 
@@ -161,7 +161,7 @@ function DisplayDashboardPanel({ currentUser }) {
             <SneakyTab currentUser={currentUser} refreshKey={refreshKey} />
           </TabPanel>
           <TabPanel value="sonos">
-            <SonosTab currentUser={currentUser} refreshKey={refreshKey} />
+            <SonosTab currentUser={currentUser} />
           </TabPanel>
         </Suspense>
       </div>

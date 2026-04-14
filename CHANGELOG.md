@@ -8,6 +8,39 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [2.6.0] — 2026-04-13
+
+### Added — GUI Sonos complète (Desktop + Mobile)
+
+Refactoring complet du module Sonos : architecture modulaire, hook partagé, composants desktop et mobile dédiés.
+
+#### Architecture
+- **`useSonos.js`** (nouveau hook) : logique centralisée (config, zones, polling 5s, contrôles, favoris, busy-lock)
+- **Barrel `sonos/index.js`** : export unifié des 7 composants desktop
+- **`SonosPanel.css`** : CSS dédié (migration `dtv-sonos-*` → `sonos-*`)
+
+#### Desktop (7 composants)
+- `SonosPanel` — Container principal, orchestre le hook + sous-composants
+- `SonosZoneSelector` — Sélecteur de zones avec cards expandable
+- `SonosNowPlaying` — Pochette, titre, artiste, progression, disque animé
+- `SonosControls` — Transport (play/pause/prev/next), seek bar, shuffle/repeat
+- `SonosVolumeSlider` — Volume + mute, état local synchronisé
+- `SonosFavorites` — Liste pliable avec recherche et indicateur lecture
+- `SonosSources` — Catégorisation Radio/Playlist/Autre par heuristique URI
+
+#### Mobile (5 composants)
+- `MobileSonos` — Shell mobile avec header, zone pills scroll-snap, refresh
+- `MobileSonosNowPlaying` — Pochette 70vw, swipe gauche/droite pour next/prev
+- `MobileSonosControls` — Touch targets 48px+, bouton principal 64px, seek
+- `MobileSonosVolume` — Slider pleine largeur, mute 40px
+- `MobileSonosFavorites` — Liste scrollable, chargement auto, recherche
+
+#### Tests
+- 47 nouveaux tests Vitest (hook + composants desktop + composants mobile)
+- Suite complète : 402 tests, 0 échec
+
+---
+
 ## [2.5.0] — 2026-04-11
 
 ### Added — Synchronisation bidirectionnelle Google Calendar

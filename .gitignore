@@ -122,3 +122,6 @@ public/Logos/*.svg
 
 # Scripts internes de nettoyage
 scripts/_cleanup-*.cjs
+
+# Certificats SSL/TLS
+ssl/

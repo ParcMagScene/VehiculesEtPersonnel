@@ -5,6 +5,7 @@ import helmet from 'helmet';
  */
 export const helmetMiddleware = helmet({
   contentSecurityPolicy: {
+    useDefaults: false,
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
@@ -16,11 +17,12 @@ export const helmetMiddleware = helmet({
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
+      // Pas de upgrade-insecure-requests : le frontend Vite est servi en HTTP,
+      // le proxy transmet les headers API au navigateur → upgrade casserait tout
     },
   },
   crossOriginEmbedderPolicy: false,
-  // HSTS désactivé — le serveur est HTTP uniquement, pas de terminaison SSL.
-  // Activer HSTS sans HTTPS force les navigateurs à upgrader en https:// → ERR_SSL_PROTOCOL_ERROR
+  // HSTS désactivé — le frontend est HTTP (Vite preview), HTTPS uniquement sur l'API directe
   hsts: false,
 });
 

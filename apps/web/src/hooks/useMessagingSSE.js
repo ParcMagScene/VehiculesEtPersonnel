@@ -90,12 +90,18 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
         eventSourceRef.current = null;
         retriesRef.current++;
 
-        if (retriesRef.current <= 3) {
-          // Reconnexion avec backoff
-          setTimeout(connectSSE, retriesRef.current * 2000);
+        if (retriesRef.current <= 8) {
+          // Reconnexion avec backoff exponentiel plafonné à 30s
+          const delay = Math.min(retriesRef.current * 2000, 30000);
+          setTimeout(connectSSE, delay);
         } else {
-          // SSE définitivement en échec → fallback polling
+          // SSE en échec → fallback polling, retenter SSE après 2 min
           startPolling();
+          setTimeout(() => {
+            retriesRef.current = 0;
+            stopPolling();
+            connectSSE();
+          }, 120000);
         }
       };
     };

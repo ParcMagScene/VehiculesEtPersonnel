@@ -69,6 +69,8 @@ export class ApiClient {
     if (!this.user) {
       this._recoverFromIDB();
     }
+    // Mutex : une seule tentative de refresh à la fois
+    this._refreshPromise = null;
   }
 
   async _recoverFromIDB() {
@@ -95,7 +97,58 @@ export class ApiClient {
     clearAllIndexedDB().catch(() => {});
   }
 
-  async request(endpoint, options = {}) {
+  /**
+   * Tente un refresh silencieux du token.
+   * Mutualisé : si un refresh est déjà en cours, on attend le même résultat.
+   * @returns {Promise<boolean>} true si le refresh a réussi
+   */
+  async _tryRefreshToken() {
+    // Si un refresh est déjà en cours, attendre son résultat
+    if (this._refreshPromise) return this._refreshPromise;
+
+    this._refreshPromise = (async () => {
+      try {
+        const response = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        if (!response.ok) return false;
+        const data = await response.json();
+        if (data?.user) {
+          this.setAuth(data.user);
+          return true;
+        }
+        return false;
+      } catch {
+        return false;
+      } finally {
+        this._refreshPromise = null;
+      }
+    })();
+
+    return this._refreshPromise;
+  }
+
+  /**
+   * Gestion commune 401/403 : tente refresh silencieux avant de forcer un reload.
+   * @returns {boolean} true si la requête peut être rejouée (refresh OK)
+   */
+  async _handle401(endpoint) {
+    const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register'
+      || endpoint === '/auth/force-login' || endpoint === '/auth/refresh';
+    if (isAuthEndpoint) return false;
+
+    const refreshed = await this._tryRefreshToken();
+    if (refreshed) return true; // le caller doit relancer la requête
+
+    // Refresh échoué → déconnexion définitive
+    this.clearAuth();
+    window.location.reload();
+    throw new Error('Session expirée');
+  }
+
+  async request(endpoint, options = {}, _isRetry = false) {
     const skipCamelCase = options.skipCamelCase;
     if (skipCamelCase) delete options.skipCamelCase;
 
@@ -129,9 +182,17 @@ export class ApiClient {
     }
     clearTimeout(timeoutId);
 
-    const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/force-login';
+    const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/force-login' || endpoint === '/auth/refresh';
 
-    if (response.status === 401 && !isAuthEndpoint) {
+    // 401 : tenter refresh silencieux puis retry (une seule fois)
+    if (response.status === 401 && !isAuthEndpoint && !_isRetry) {
+      const canRetry = await this._handle401(endpoint);
+      if (canRetry) {
+        return this.request(endpoint, { ...options, skipCamelCase }, true);
+      }
+    }
+    // 401 après retry → déconnexion
+    if (response.status === 401 && !isAuthEndpoint && _isRetry) {
       this.clearAuth();
       window.location.reload();
       throw new Error('Session expirée');
@@ -268,28 +329,36 @@ export class ApiClient {
   // ── Helpers pour fetch directs (uploads FormData, downloads blob) ──
 
   /**
-   * Gestion commune des erreurs auth sur fetch directs.
+   * Gestion commune des erreurs auth sur fetch directs (FormData, Blob).
+   * Tente refresh silencieux avant déconnexion.
    * @private
+   * @returns {Promise<boolean>} true si refresh réussi (caller doit retry)
    */
-  _handleAuthError(response, endpoint) {
+  async _handleAuthError(response, endpoint) {
     const isAuthEndpoint = endpoint.startsWith('/auth/');
     if (response.status === 401 && !isAuthEndpoint) {
-      this.clearAuth();
-      window.location.reload();
-      throw new Error('Session expirée');
+      const canRetry = await this._handle401(endpoint);
+      if (canRetry) return true; // indique au caller de retry
+      // _handle401 fait déjà clearAuth + reload si refresh échoue
     }
     if (response.status === 403 && !isAuthEndpoint) {
+      const data = await response.json().catch(() => ({}));
+      if (data.error === 'Token invalide') {
+        const canRetry = await this._handle401(endpoint);
+        if (canRetry) return true;
+      }
       this.clearAuth();
       window.location.reload();
       throw new Error('Accès refusé');
     }
+    return false;
   }
 
   /**
    * Upload FormData (pas de Content-Type JSON, le navigateur met multipart).
    * Centralise credentials, timeout 60s et gestion 401/403.
    */
-  async requestFormData(endpoint, formData, options = {}) {
+  async requestFormData(endpoint, formData, options = {}, _isRetry = false) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
     let response;
@@ -313,7 +382,10 @@ export class ApiClient {
       throw error;
     }
     clearTimeout(timeoutId);
-    this._handleAuthError(response, endpoint);
+    if (!_isRetry) {
+      const shouldRetry = await this._handleAuthError(response, endpoint);
+      if (shouldRetry) return this.requestFormData(endpoint, formData, options, true);
+    }
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(data.error || `Erreur upload (${response.status})`);
@@ -326,7 +398,7 @@ export class ApiClient {
    * Centralise credentials, timeout 30s et gestion 401/403.
    * @returns {Promise<Blob>}
    */
-  async requestBlob(endpoint, options = {}) {
+  async requestBlob(endpoint, options = {}, _isRetry = false) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     let response;
@@ -348,7 +420,10 @@ export class ApiClient {
       throw error;
     }
     clearTimeout(timeoutId);
-    this._handleAuthError(response, endpoint);
+    if (!_isRetry) {
+      const shouldRetry = await this._handleAuthError(response, endpoint);
+      if (shouldRetry) return this.requestBlob(endpoint, options, true);
+    }
     if (!response.ok) {
       throw new Error(`Erreur téléchargement (${response.status})`);
     }

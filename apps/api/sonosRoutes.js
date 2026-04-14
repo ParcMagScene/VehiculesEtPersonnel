@@ -47,12 +47,59 @@ const sonosCommandLimiter = rateLimit({
 });
 
 // ── Logos locaux connus (évite la recherche favicon pour ces radios) ──
+// Matching par mot-clé dans l'URI stream OU le titre du favori (case-insensitive)
 const KNOWN_RADIO_LOGOS = {
-  'radiomeuh': '/display-logo/logo.png',
+  'radiomeuh':      '/radio-logos/radiomeuh.svg',
+  'fip':            '/radio-logos/fip.svg',
+  'franceinter':    '/radio-logos/franceinter.svg',
+  'france inter':   '/radio-logos/franceinter.svg',
+  'franceinfo':     '/radio-logos/franceinfo.svg',
+  'france info':    '/radio-logos/franceinfo.svg',
+  'franceculture':  '/radio-logos/franceculture.svg',
+  'france culture': '/radio-logos/franceculture.svg',
+  'francemusique':  '/radio-logos/francemusique.svg',
+  'france musique': '/radio-logos/francemusique.svg',
+  'nova':           '/radio-logos/nova.svg',
+  'radio nova':     '/radio-logos/nova.svg',
+  'rtl':            '/radio-logos/rtl.svg',
+  'nrj':            '/radio-logos/nrj.svg',
+  'nostalgie':      '/radio-logos/nostalgie.svg',
+  'rfm':            '/radio-logos/rfm.svg',
+  'skyrock':        '/radio-logos/skyrock.svg',
+  'cherie':         '/radio-logos/cheriefm.svg',
+  'chérie':         '/radio-logos/cheriefm.svg',
+  'rmc':            '/radio-logos/rmc.svg',
+  'europe 1':       '/radio-logos/europe1.svg',
+  'europe1':        '/radio-logos/europe1.svg',
+  'tsf jazz':       '/radio-logos/tsfjazz.svg',
+  'tsfjazz':        '/radio-logos/tsfjazz.svg',
+  'jazz radio':     '/radio-logos/jazzradio.svg',
+  'jazzradio':      '/radio-logos/jazzradio.svg',
+  'mouv':           '/radio-logos/mouv.svg',
+  'oui fm':         '/radio-logos/ouifm.svg',
+  'ouifm':          '/radio-logos/ouifm.svg',
+  'rtl2':           '/radio-logos/rtl2.svg',
+  'virgin':         '/radio-logos/virgin.svg',
+  'funradio':       '/radio-logos/funradio.svg',
+  'fun radio':      '/radio-logos/funradio.svg',
+  'rire et chansons': '/radio-logos/rireetchansons.svg',
+  'sud radio':      '/radio-logos/sudradio.svg',
 };
 
 // ── Cache favicon radio ──
 const radioFaviconCache = new Map();
+
+/**
+ * Cherche un logo local connu en matchant uri et/ou titre (case-insensitive)
+ * @returns {string|null} chemin local du logo ou null
+ */
+function matchKnownRadioLogo(uri, title) {
+  const haystack = `${(uri || '').toLowerCase()} ${(title || '').toLowerCase()}`;
+  for (const [keyword, logoPath] of Object.entries(KNOWN_RADIO_LOGOS)) {
+    if (haystack.includes(keyword)) return logoPath;
+  }
+  return null;
+}
 
 // ══════════════════════════════════════════════════════════════
 // HELPERS
@@ -136,12 +183,10 @@ async function getRadioFavicon(streamUrl) {
   }
 
   // Vérifier les logos locaux connus
-  const urlLower = streamUrl.toLowerCase();
-  for (const [keyword, logoPath] of Object.entries(KNOWN_RADIO_LOGOS)) {
-    if (urlLower.includes(keyword)) {
-      radioFaviconCache.set(streamUrl, logoPath);
-      return logoPath;
-    }
+  const knownLogo = matchKnownRadioLogo(streamUrl, null);
+  if (knownLogo) {
+    radioFaviconCache.set(streamUrl, knownLogo);
+    return knownLogo;
   }
 
   try {
@@ -211,6 +256,11 @@ async function resolveArtwork(track, coordinatorIP) {
   );
 
   if (isRadio) {
+    // 1) Essayer le matching local par URI + titre
+    const knownLogo = matchKnownRadioLogo(track.uri, track.title);
+    if (knownLogo) return knownLogo;
+
+    // 2) Tenter le favicon ICY via le stream URL
     let streamUrl = track.uri;
     if (streamUrl.startsWith('x-rincon-mp3radio://')) {
       streamUrl = streamUrl.replace('x-rincon-mp3radio://', '');
@@ -588,14 +638,52 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       const sonosIP = getSonosIP();
       if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
 
-      const device = new lib.Sonos(sonosIP);
+      const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
       const favs = await device.getFavorites();
 
-      const favorites = (favs?.items || []).map(f => ({
-        title: f.title || '',
-        uri: f.uri || '',
-        albumArtURI: f.albumArtURI || '',
-        description: f.description || '',
+      const items = favs?.items || [];
+      const favorites = await Promise.all(items.map(async (f) => {
+        const uri = f.uri || '';
+        const title = f.title || '';
+        let albumArtURI = f.albumArtURI || '';
+
+        // Détection radio
+        const isRadio = uri.startsWith('x-rincon-mp3radio://') ||
+          uri.startsWith('x-sonosapi-stream:') ||
+          uri.startsWith('x-sonosapi-hls-static:') ||
+          uri.startsWith('aac:') ||
+          uri.startsWith('x-rincon-stream:');
+
+        if (isRadio) {
+          // 1) Logo local connu (par URI + titre)
+          const knownLogo = matchKnownRadioLogo(uri, title);
+          if (knownLogo) {
+            albumArtURI = knownLogo;
+          } else {
+            // 2) Tenter getRadioFavicon via le stream URL
+            let streamUrl = uri;
+            if (streamUrl.startsWith('x-rincon-mp3radio://')) {
+              streamUrl = streamUrl.replace('x-rincon-mp3radio://', '');
+              if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
+            } else if (streamUrl.startsWith('aac://')) {
+              streamUrl = streamUrl.replace('aac://', '');
+              if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
+            } else {
+              streamUrl = '';
+            }
+            if (streamUrl) {
+              try {
+                const favicon = await getRadioFavicon(streamUrl);
+                if (favicon) albumArtURI = favicon;
+              } catch { /* garder albumArtURI d'origine */ }
+            }
+          }
+        } else if (albumArtURI && !albumArtURI.startsWith('http')) {
+          // Artwork relatif Sonos → préfixer avec l'IP coordinateur
+          albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
+        }
+
+        return { title, uri, albumArtURI, description: f.description || '' };
       }));
 
       res.json({ favorites });
@@ -605,7 +693,244 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // POST /api/sonos/favorite/:zone — body: { uri, title? }
+  // GET /api/sonos/radio-stations — Stations radio configurées (TuneIn / My Radio Stations)
+  app.get('/api/sonos/radio-stations', authenticateToken, sonosReadLimiter, async (_req, res) => {
+    try {
+      const lib = await loadSonosLib();
+      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      const sonosIP = getSonosIP();
+      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+
+      const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
+
+      const stations = await device.getFavoritesRadioStations().catch(() => ({ items: [] }));
+      const items = (stations?.items || []).map(s => {
+        let albumArtURI = s.albumArtURI || '';
+        const knownLogo = matchKnownRadioLogo(s.uri || '', s.title || '');
+        if (knownLogo) {
+          albumArtURI = knownLogo;
+        } else if (albumArtURI && !albumArtURI.startsWith('http')) {
+          albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
+        }
+        return {
+          title: s.title || '',
+          uri: s.uri || '',
+          albumArtURI,
+        };
+      });
+
+      res.json({ stations: items });
+    } catch (error) {
+      logger.error('Sonos radio-stations:', error);
+      res.status(500).json({ error: 'Impossible de lister les stations radio' });
+    }
+  });
+
+  // GET /api/sonos/browse/:objectId — Parcourir le ContentDirectory Sonos
+  // objectId exemples: "R:0/0" (radios), "SQ:" (saved queues), "A:" (music library), "FV:2" (favorites)
+  app.get('/api/sonos/browse/:objectId(*)', authenticateToken, sonosReadLimiter, async (req, res) => {
+    try {
+      const lib = await loadSonosLib();
+      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      const sonosIP = getSonosIP();
+      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+
+      const objectId = req.params.objectId;
+      if (!objectId || objectId.length > 256) {
+        return res.status(400).json({ error: 'objectId requis (max 256 car.)' });
+      }
+
+      const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
+      const cds = device.contentDirectoryService();
+
+      const result = await new Promise((resolve, reject) => {
+        cds.Browse({
+          ObjectID: objectId,
+          BrowseFlag: 'BrowseDirectChildren',
+          Filter: '*',
+          StartingIndex: 0,
+          RequestedCount: 100,
+          SortCriteria: '',
+        }, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
+      });
+
+      // Parse le XML DIDL-Lite retourné
+      const { parseString } = await import('xml2js');
+      const parsed = await new Promise((resolve, reject) => {
+        parseString(result.Result, { explicitArray: false }, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
+      });
+
+      const containers = [];
+      const items = [];
+      const root = parsed?.['DIDL-Lite'];
+      if (!root) return res.json({ containers, items, total: 0 });
+
+      // Conteneurs (dossiers / catégories)
+      const rawContainers = root.container
+        ? (Array.isArray(root.container) ? root.container : [root.container])
+        : [];
+      for (const c of rawContainers) {
+        containers.push({
+          id: c.$?.id || '',
+          title: c['dc:title'] || '',
+          albumArtURI: c['upnp:albumArtURI'] || '',
+          childCount: parseInt(c.$?.childCount, 10) || 0,
+        });
+      }
+
+      // Items (morceaux / stations)
+      const rawItems = root.item
+        ? (Array.isArray(root.item) ? root.item : [root.item])
+        : [];
+      for (const it of rawItems) {
+        let albumArtURI = it['upnp:albumArtURI'] || '';
+        const uri = it.res?._  || it.res || '';
+        const title = it['dc:title'] || '';
+
+        // Résoudre les logos radio
+        const knownLogo = matchKnownRadioLogo(typeof uri === 'string' ? uri : '', title);
+        if (knownLogo) {
+          albumArtURI = knownLogo;
+        } else if (albumArtURI && !albumArtURI.startsWith('http')) {
+          albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
+        }
+
+        items.push({
+          title,
+          uri: typeof uri === 'string' ? uri : '',
+          albumArtURI,
+          artist: it['dc:creator'] || '',
+          album: it['upnp:album'] || '',
+          class: it['upnp:class'] || '',
+        });
+      }
+
+      res.json({
+        containers,
+        items,
+        total: parseInt(result.TotalMatches, 10) || containers.length + items.length,
+      });
+    } catch (error) {
+      logger.error('Sonos browse:', error);
+      res.status(500).json({ error: 'Impossible de parcourir les sources Sonos' });
+    }
+  });
+
+  // GET /api/sonos/music-services — Liste des services musicaux disponibles sur le Sonos
+  app.get('/api/sonos/music-services', authenticateToken, sonosReadLimiter, async (_req, res) => {
+    try {
+      const lib = await loadSonosLib();
+      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      const sonosIP = getSonosIP();
+      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+
+      // Sources de base toujours disponibles
+      const sources = [
+        { id: 'FV:2', title: 'Favoris Sonos', icon: 'star' },
+        { id: 'SQ:', title: 'Playlists sauvées', icon: 'list-music' },
+        { id: 'R:0/0', title: 'Radios TuneIn', icon: 'radio' },
+      ];
+
+      // Essayer d'enrichir depuis le ContentDirectory (non bloquant)
+      try {
+        const { device } = await getSonosDevice(lib.Sonos, sonosIP);
+        const cds = device.contentDirectoryService();
+        const result = await new Promise((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('timeout')), 5000);
+          cds.Browse({
+            ObjectID: 'R:',
+            BrowseFlag: 'BrowseDirectChildren',
+            Filter: '*',
+            StartingIndex: 0,
+            RequestedCount: 100,
+            SortCriteria: '',
+          }, (err, data) => {
+            clearTimeout(timer);
+            if (err) reject(err);
+            else resolve(data);
+          });
+        });
+
+        const { parseString } = await import('xml2js');
+        const parsed = await new Promise((resolve, reject) => {
+          parseString(result.Result, { explicitArray: false }, (err, data) => {
+            if (err) reject(err);
+            else resolve(data);
+          });
+        });
+
+        const root = parsed?.['DIDL-Lite'];
+        const rawContainers = root?.container
+          ? (Array.isArray(root.container) ? root.container : [root.container])
+          : [];
+
+        // Remplacer "Radios TuneIn" générique par les vraies catégories radio
+        if (rawContainers.length > 0) {
+          // Retirer le placeholder générique
+          const idx = sources.findIndex(s => s.id === 'R:0/0');
+          if (idx >= 0) sources.splice(idx, 1);
+
+          for (const c of rawContainers) {
+            const id = c.$?.id || '';
+            const title = c['dc:title'] || '';
+            if (id && title) {
+              sources.push({
+                id,
+                title,
+                icon: 'radio',
+                childCount: parseInt(c.$?.childCount, 10) || 0,
+              });
+            }
+          }
+        }
+      } catch (browseErr) {
+        logger.warn('Sonos music-services: browse R: échoué, sources de base utilisées:', browseErr.message);
+      }
+
+      res.json({ sources });
+    } catch (error) {
+      logger.error('Sonos music-services:', error);
+      res.status(500).json({ error: 'Impossible de lister les services musicaux' });
+    }
+  });
+  // GET /api/sonos/queue — File de lecture actuelle
+  app.get('/api/sonos/queue', authenticateToken, sonosReadLimiter, async (_req, res) => {
+    try {
+      const lib = await loadSonosLib();
+      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      const sonosIP = getSonosIP();
+      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+
+      const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
+      const queue = await withTimeout(device.getQueue(), 8000).catch(() => null);
+
+      if (!queue || !Array.isArray(queue)) {
+        return res.json({ items: [] });
+      }
+
+      const items = queue.map(item => ({
+        title: item.title || '',
+        artist: item.artist || '',
+        album: item.album || '',
+        albumArtURI: item.albumArtURI
+          ? (item.albumArtURI.startsWith('http') ? item.albumArtURI : `http://${coordinatorIP}:1400${item.albumArtURI}`)
+          : null,
+        uri: item.uri || '',
+      }));
+
+      res.json({ items });
+    } catch (error) {
+      logger.error('Sonos queue:', error);
+      res.status(500).json({ error: 'Impossible de récupérer la file de lecture' });
+    }
+  });
+
   app.post('/api/sonos/favorite/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
     const zone = validateZone(req, res);
     if (!zone) return;

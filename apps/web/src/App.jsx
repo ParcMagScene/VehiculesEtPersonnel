@@ -47,7 +47,7 @@ const MailingPanel = lazy(() => import('./components/mailing/MailingPanel'));
 const AnnuairePanel = lazy(() => import('./components/annuaire/AnnuairePanel'));
 const LocationsTab = lazy(() => import('./components/annuaire/LocationsTab'));
 const VideoPanel = lazy(() => import('./components/video/VideoPanel'));
-const SonosPanel = lazy(() => import('./components/DisplayDashboard/SonosTab'));
+const SonosPanel = lazy(() => import('./components/sonos/SonosPanel'));
 const AffaireDetailDialog = lazy(() => import('./components/affaires/AffaireDetailPanel').then(m => ({ default: m.AffaireDetailDialog })));
 const UserPreferencesModal = lazy(() => import('./components/auth/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));

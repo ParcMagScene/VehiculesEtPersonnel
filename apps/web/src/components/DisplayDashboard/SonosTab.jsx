@@ -219,7 +219,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
   const [zonesOpen, setZonesOpen] = useState(false);
   const intervalRef = useRef(null);
 
-  const isAdmin = currentUser?.role === 'admin' || _currentUser?.role === 'admin';
+  const isAdmin = !!currentUser?.isAdmin || !!_currentUser?.isAdmin;
 
   const loadConfig = useCallback(async () => {
     try {

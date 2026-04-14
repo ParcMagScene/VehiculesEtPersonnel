@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Car, Settings, LogOut, Home, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase, ClipboardList } from 'lucide-react';
+import { Car, Settings, LogOut, Home, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase, ClipboardList, Music } from 'lucide-react';
 import MobileHome from './MobileHome';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileReservations from './MobileReservations';
@@ -15,6 +15,7 @@ import MobileOrders from './MobileOrders';
 import MobileLeaves from './MobileLeaves';
 import MobileInventory from './MobileInventory';
 import MobileLocation from './MobileLocation';
+import MobileSonos from './MobileSonos';
 import MobileAffaires from './MobileAffaires';
 import MobileTasks from './MobileTasks';
 import MobileLogin from './MobileLogin';
@@ -372,6 +373,15 @@ function MobileApp({ onSwitchToDesktop }) {
             </Button>
             )}
 
+            {/* ── Multimédia ── */}
+            <div className="menu-section-label">Multimédia</div>
+            <Button variant="ghost"               className={currentScreen === 'sonos' ? 'active' : ''}
+              onClick={() => { setCurrentScreen('sonos'); setMenuOpen(false); }}
+            >
+              <Music size={20} />
+              <span>Sonos</span>
+            </Button>
+
             {/* ── Thème ── */}
             <div className="menu-section-label">Apparence</div>
             <Button variant="ghost" onClick={() => setShowThemePanel(!showThemePanel)}>
@@ -584,6 +594,13 @@ function MobileApp({ onSwitchToDesktop }) {
 
         {currentScreen === 'location' && (
           <MobileLocation
+            onBack={() => setCurrentScreen('home')}
+          />
+        )}
+
+        {currentScreen === 'sonos' && (
+          <MobileSonos
+            currentUser={currentUser}
             onBack={() => setCurrentScreen('home')}
           />
         )}

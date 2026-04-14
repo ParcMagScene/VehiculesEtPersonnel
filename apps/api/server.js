@@ -19,6 +19,7 @@ if (isDev) {
 }
 
 import http from 'http';
+import https from 'https';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
@@ -148,6 +149,7 @@ app.use('/display-logo', express.static(path.join(__dirname, '..', '..', 'public
 app.use('/display-sneaky', express.static(path.join(__dirname, '..', '..', 'public', 'display-sneaky'), staticCacheOpts));
 app.use('/display-media', express.static(path.join(__dirname, '..', '..', 'public', 'display-media'), staticCacheOpts));
 app.use('/Logos', express.static(path.join(__dirname, '..', '..', 'public', 'Logos'), staticCacheOpts));
+app.use('/radio-logos', express.static(path.join(__dirname, '..', '..', 'public', 'radio-logos'), staticCacheOpts));
 app.get('/SNCF.wav', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'public', 'SNCF.wav'));
 });
@@ -304,19 +306,52 @@ app.use(errorHandler);
 
 const SERVER_HOST = process.env.SERVER_HOST || '0.0.0.0';
 
-app.listen(PORT, '0.0.0.0', () => {
-  logger.info(`🚀 Serveur backend démarré sur http://0.0.0.0:${PORT}`);
-  logger.info(`📡 Accessible depuis le réseau sur http://${SERVER_HOST}:${PORT}`);
-  // Initialiser le service email
-  initEmailTransporter(db);
-  // Lancer le nettoyage périodique des fichiers TEMP
-  cleanTempFiles();
-  setInterval(cleanTempFiles, 6 * 60 * 60 * 1000); // toutes les 6h
+// ── SSL/TLS — Certificats Let's Encrypt (production uniquement) ──
+const sslDir = path.join(__dirname, '..', '..', 'ssl');
+const sslKeyPath = path.join(sslDir, 'privkey.pem');
+const sslCertPath = path.join(sslDir, 'fullchain.pem');
+const hasSSL = !isDev && fs.existsSync(sslKeyPath) && fs.existsSync(sslCertPath);
 
-  // Nettoyage périodique des sessions expirées (toutes les 30 min)
-  cleanExpiredSessions();
-  setInterval(cleanExpiredSessions, 30 * 60 * 1000);
-});
+if (hasSSL) {
+  const sslOptions = {
+    key: fs.readFileSync(sslKeyPath),
+    cert: fs.readFileSync(sslCertPath),
+  };
+  const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
+  const httpsServer = https.createServer(sslOptions, app);
+  httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
+    logger.info(`🔒 Serveur HTTPS démarré sur https://0.0.0.0:${HTTPS_PORT}`);
+    logger.info(`📡 Accessible sur https://${SERVER_HOST}:${HTTPS_PORT}`);
+    initEmailTransporter(db);
+    cleanTempFiles();
+    setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
+    cleanExpiredSessions();
+    setInterval(cleanExpiredSessions, 30 * 60 * 1000);
+  });
+
+  // HTTP → HTTPS redirect (port 3002 redirige vers HTTPS)
+  const redirectApp = express();
+  redirectApp.all('*', (req, res) => {
+    const host = req.headers.host?.replace(`:${PORT}`, HTTPS_PORT === 443 ? '' : `:${HTTPS_PORT}`);
+    res.redirect(301, `https://${host}${req.url}`);
+  });
+  redirectApp.listen(PORT, '0.0.0.0', () => {
+    logger.info(`🔀 HTTP :${PORT} → HTTPS :${HTTPS_PORT} (redirection)`);
+  });
+} else {
+  logger.warn('⚠️  Certificats SSL non trouvés dans ssl/ — démarrage en HTTP uniquement');
+  logger.warn(`   Attendus : ${sslKeyPath}`);
+  logger.warn(`              ${sslCertPath}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    logger.info(`🚀 Serveur HTTP démarré sur http://0.0.0.0:${PORT}`);
+    logger.info(`📡 Accessible depuis le réseau sur http://${SERVER_HOST}:${PORT}`);
+    initEmailTransporter(db);
+    cleanTempFiles();
+    setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
+    cleanExpiredSessions();
+    setInterval(cleanExpiredSessions, 30 * 60 * 1000);
+  });
+}
 
 // ── Serveur secondaire sur port 3001 — Client TV standalone ──
 // Rétrocompatibilité avec les navigateurs des écrans TV (ex calendar-dashboard)

@@ -13,7 +13,7 @@ export default {
       listen_timeout: 10000,
       env: {
         NODE_ENV: "production",
-        ALLOWED_ORIGINS: "http://localhost:4173,http://127.0.0.1:4173,http://magsav.duckdns.org:4173"
+        ALLOWED_ORIGINS: "http://localhost:4173,http://127.0.0.1:4173,http://magsav.duckdns.org:4173,https://magsav.duckdns.org:3443"
       },
       // Logs structurés
       error_file: "./apps/api/logs/backend-error.log",

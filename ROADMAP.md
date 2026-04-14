@@ -86,9 +86,17 @@
 
 ---
 
-## v2.6.0 — CI/CD & Automatisation 📋
+## v2.6.0 — GUI Sonos complète + CI/CD 🔄
 
-### CI/CD
+### GUI Sonos complète ✅
+- [x] Hook partagé `useSonos` (config, zones, polling, contrôles, favoris, busy-lock)
+- [x] 7 composants desktop modulaires (Panel, ZoneSelector, NowPlaying, Controls, VolumeSlider, Favorites, Sources)
+- [x] 5 composants mobile tactiles (Shell, NowPlaying swipe, Controls 64px, Volume, Favorites)
+- [x] Intégration App.jsx + DisplayDashboardPanel + MobileApp (lazy loading)
+- [x] CSS dédié desktop + mobile (touch targets 48px+, scroll-snap zones)
+- [x] 47 tests Vitest (hook + composants desktop + mobile)
+
+### CI/CD 📋
 - [ ] GitHub Actions : lint + build + test sur PR
 - [ ] GitHub Actions : deploy automatique main → production
 - [ ] Vérification Conventional Commits

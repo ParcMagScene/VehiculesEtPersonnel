@@ -34,16 +34,16 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     
     // Rafraîchir les données toutes les 30 secondes
     const interval = setInterval(() => {
-      loadData();
+      loadData(true);
     }, 30000);
     
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const [emailsData, usersData, requestsData, personsData] = await Promise.all([
         api.getAuthorizedEmails(),
         api.getUsers(),
@@ -76,7 +76,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     try {
       await api.addAuthorizedEmail(newEmail);
       setNewEmail('');
-      loadData();
+      loadData(true);
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
     }
@@ -91,7 +91,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       onConfirm: async () => {
         try {
           await api.removeAuthorizedEmail(id);
-          loadData();
+          loadData(true);
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -110,7 +110,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         try {
           await api.updateUser(userId, { isAdmin: !currentIsAdmin });
           toast.success('Droits modifiés avec succès');
-          loadData();
+          loadData(true);
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -125,7 +125,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     
     try {
       await api.updateUser(userId, { permissions: updatedPerms });
-      loadData();
+      loadData(true);
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
     }
@@ -141,7 +141,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         try {
           await api.deleteUser(userId);
           toast.success('Utilisateur supprimé avec succès');
-          loadData();
+          loadData(true);
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -163,7 +163,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
           const data = response;
           toast.success(`Réinitialisation demandée L'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`);
-          loadData();
+          loadData(true);
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -190,7 +190,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         try {
           await api.updateUser(userId, { isBlocked: !currentlyBlocked });
           toast.success(`Utilisateur ${currentlyBlocked ? 'débloqué' : 'bloqué'} avec succès`);
-          loadData();
+          loadData(true);
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -228,7 +228,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       }
       
       setApproveModal(null);
-      loadData();
+      loadData(true);
       onAccessRequestChange?.();
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
@@ -245,7 +245,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         try {
           await api.updateAccessRequest(requestId, 'rejected');
           toast.success('Demande rejetée');
-          loadData();
+          loadData(true);
           onAccessRequestChange?.();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
@@ -276,7 +276,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         can_manage_vehicle_maintenance: false, can_manage_equipment_maintenance: false,
         can_manage_catalog: false, can_manage_trucks: false
       });
-      loadData();
+      loadData(true);
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
     }
@@ -708,7 +708,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           onClose={() => setEditingUser(null)}
           onUserUpdate={() => {
             setEditingUser(null);
-            loadData();
+            loadData(true);
           }}
         />
       )}
@@ -730,7 +730,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
             try {
               await api.createPerson(personData);
               setPersonModal(null);
-              loadData();
+              loadData(true);
             } catch (err) {
               toast.error('Erreur lors de la création : ' + (err.message || err));
             }

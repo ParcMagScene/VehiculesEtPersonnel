@@ -426,6 +426,24 @@ app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// Map camelCase permission keys → snake_case (legacy compat)
+const PERM_KEY_MAP = {
+  canManageMaintenance: 'can_manage_vehicle_maintenance',
+  canManageVehicleMaintenance: 'can_manage_vehicle_maintenance',
+  canManageEquipmentMaintenance: 'can_manage_equipment_maintenance',
+  canManageCatalog: 'can_manage_catalog',
+  canManageTrucks: 'can_manage_trucks',
+  readOnly: 'read_only',
+};
+function normalizePermissions(raw) {
+  const out = {};
+  for (const [k, v] of Object.entries(raw)) {
+    const normalized = PERM_KEY_MAP[k] || k;
+    if (v) out[normalized] = true;
+  }
+  return out;
+}
+
 app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
   try {
     const stmt = db.prepare('SELECT id, email, name, is_admin, is_blocked, avatar, permissions, created_at FROM users ORDER BY created_at DESC');
@@ -433,6 +451,7 @@ app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
     res.json(users.map(u => {
       let perms = {};
       try { perms = u.permissions ? JSON.parse(u.permissions) : {}; } catch { perms = {}; }
+      perms = normalizePermissions(perms);
       return {
         ...u,
         isAdmin: u.is_admin === 1,
@@ -477,11 +496,14 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
     }
 
     if (permissions !== undefined) {
-      const permStr = typeof permissions === 'string' ? permissions : JSON.stringify(permissions);
+      const normalized = typeof permissions === 'string'
+        ? normalizePermissions(JSON.parse(permissions))
+        : normalizePermissions(permissions);
+      const permStr = JSON.stringify(normalized);
       db.prepare('UPDATE users SET permissions = ? WHERE id = ?').run(permStr, id);
       // Invalider les sessions pour forcer un re-login avec les nouvelles permissions
       db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(id);
-      auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_PERMISSIONS_CHANGE, targetType: 'user', targetId: id, details: { permissions }, req });
+      auditLog({ actorId: req.user.id, actorEmail: req.user.email, action: AUDIT_ACTIONS.USER_PERMISSIONS_CHANGE, targetType: 'user', targetId: id, details: { permissions: normalized }, req });
       logger.info(`🔐 Permissions modifiées pour user ${id}`);
     }
     

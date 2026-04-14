@@ -11,10 +11,9 @@ export const getApiUrl = () => {
     return '/api';
   }
 
-  // Sinon, construire l'URL du backend à partir du hostname courant
-  // [PHASE 5] Port configurable via VITE_API_PORT (défaut : 3002)
-  const apiPort = import.meta.env.VITE_API_PORT || '3002';
-  return `http://${window.location.hostname}:${apiPort}/api`;
+  // Sinon, requêtes same-origin (ex: accès direct au backend sur :3002 ou :3443)
+  // Utiliser le même protocole/host/port que la page courante
+  return `${window.location.origin}/api`;
 };
 
 export const API_URL = getApiUrl();
@@ -100,6 +99,7 @@ export class ApiClient {
   /**
    * Tente un refresh silencieux du token.
    * Mutualisé : si un refresh est déjà en cours, on attend le même résultat.
+   * Inclut 1 retry avec délai si erreur réseau (ex: restart PM2).
    * @returns {Promise<boolean>} true si le refresh a réussi
    */
   async _tryRefreshToken() {
@@ -107,27 +107,33 @@ export class ApiClient {
     if (this._refreshPromise) return this._refreshPromise;
 
     this._refreshPromise = (async () => {
-      try {
-        const response = await fetch(`${API_URL}/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        });
-        if (!response.ok) return false;
-        const data = await response.json();
-        if (data?.user) {
-          this.setAuth(data.user);
-          return true;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const response = await fetch(`${API_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+          });
+          if (!response.ok) return false;
+          const data = await response.json();
+          if (data?.user) {
+            this.setAuth(data.user);
+            return true;
+          }
+          return false;
+        } catch {
+          // Erreur réseau : retry 1 fois après 2s (le serveur redémarre peut-être)
+          if (attempt === 0) {
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
+          return false;
         }
-        return false;
-      } catch {
-        return false;
-      } finally {
-        this._refreshPromise = null;
       }
+      return false;
     })();
 
-    return this._refreshPromise;
+    return this._refreshPromise.finally(() => { this._refreshPromise = null; });
   }
 
   /**

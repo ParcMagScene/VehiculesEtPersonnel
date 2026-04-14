@@ -128,8 +128,6 @@ function AppContent() {
   const [selectedVehicleForKilometrageControl, setSelectedVehicleForKilometrageControl] = useState(null);
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [globalAffaireDialog, setGlobalAffaireDialog] = useState(null);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showPwaInstall, setShowPwaInstall] = useState(false);
   const openEventDetailsModalRef = useRef(null);
 
   // ═══ Messaging polling (hook) ═══
@@ -152,27 +150,6 @@ function AppContent() {
       window.location.hash = '#/mobile';
     }
   }, [isMobile]);
-
-  // ═══ PWA install prompt ═══
-  useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowPwaInstall(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
-
-  const handlePwaInstall = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === STATUS.ACCEPTED) {
-      setShowPwaInstall(false);
-    }
-    setDeferredPrompt(null);
-  };
 
   // ═══ Raccourcis clavier ═══
   useKeyboardShortcuts({
@@ -403,15 +380,6 @@ function AppContent() {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
-
-      {/* Bannière installation PWA */}
-      {showPwaInstall && (
-        <div className="pwa-install-banner">
-          <span>📱 Installer eM@g sur votre appareil pour un accès rapide</span>
-          <Button variant="ghost" className="pwa-install-btn" onClick={handlePwaInstall}>Installer</Button>
-          <Button variant="ghost" className="pwa-dismiss-btn" onClick={() => setShowPwaInstall(false)}>✕</Button>
-        </div>
-      )}
       
       {activeModule === 'vehicles' && (
       <Suspense fallback={null}>

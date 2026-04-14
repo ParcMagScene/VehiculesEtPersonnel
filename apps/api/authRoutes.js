@@ -13,10 +13,12 @@ import { registerSchema, loginSchema, forgotPasswordSchema, selfResetPasswordSch
 export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev }) {
 
 // Options cookie httpOnly pour les tokens JWT
+// secure=true seulement si les clients accèdent via HTTPS
+// Détection via COOKIE_SECURE env (défaut: false car le frontend Vite preview sert en HTTP)
 const cookieOptions = {
   httpOnly: true,
   sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
+  secure: process.env.COOKIE_SECURE === 'true',
   path: '/',
   maxAge: JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
 };

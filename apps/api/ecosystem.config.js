@@ -13,15 +13,15 @@ export default {
       listen_timeout: 10000,
       env: {
         NODE_ENV: "production",
-        ALLOWED_ORIGINS: "http://localhost:4173,http://127.0.0.1:4173,http://magsav.duckdns.org:4173,https://magsav.duckdns.org:3443"
+        ALLOWED_ORIGINS: "http://localhost:4173,http://127.0.0.1:4173,http://magsav.duckdns.org:4173,https://magsav.duckdns.org:3443,http://magsav.duckdns.org:3002,https://magsav.duckdns.org",
+        COOKIE_SECURE: "false"
       },
       // Logs structurés
       error_file: "./apps/api/logs/backend-error.log",
       out_file: "./apps/api/logs/backend-out.log",
       merge_logs: true,
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // Sauvegarde automatique toutes les 6 heures
-      cron_restart: "0 */6 * * *",
+      // Backup DB toutes les 6h (sans restart du process)
       // Script à exécuter après le redémarrage
       post_update: ["../../scripts/backup-databases.sh"],
       // Graceful shutdown

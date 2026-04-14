@@ -1002,11 +1002,6 @@
 /* ─────────────────────────────────────────
    11. SUPPRESSION EFFETS — Gradients, transitions, animations
    ───────────────────────────────────────── */
-/* Désactiver les gradients dans les backgrounds */
-[data-palette^="vscode"] .pwa-install-banner {
-  background: var(--theme-bg-secondary);
-  border: 1px solid var(--theme-border);
-}
 
 /* Skip link */
 [data-palette^="vscode"] .skip-link {

@@ -1246,53 +1246,6 @@
   color: var(--theme-text-inverse);
 }
 
-/* Bannière installation PWA */
-.pwa-install-banner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: var(--theme-gradient-alt);
-  color: var(--theme-text-inverse);
-  font-size: var(--font-base);
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from { transform: translateY(-100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-.pwa-install-btn {
-  background: var(--theme-bg-card);
-  color: var(--theme-indigo);
-  border: none;
-  padding: 4px 14px;
-  border-radius: var(--radius-sm);
-  font-size: var(--font-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.pwa-install-btn:hover {
-  transform: scale(1.05);
-}
-
-.pwa-dismiss-btn {
-  background: none;
-  border: none;
-  color: var(--glass-opaque);
-  cursor: pointer;
-  font-size: var(--font-md);
-  padding: 2px;
-}
-
-.pwa-dismiss-btn:hover {
-  color: var(--theme-text-inverse);
-}
-
 .qr-button {
   padding: 0.5rem;
   background: var(--theme-success-alt);
@@ -1835,11 +1788,6 @@
 [data-theme="dark"] .notification-status.conflict {
   background: var(--theme-danger-bg) !important;
   color: var(--theme-danger) !important;
-}
-
-[data-theme="dark"] .pwa-install-btn {
-  background: var(--theme-bg-card);
-  color: var(--theme-primary);
 }
 
 [data-theme="dark"] .calendar {

@@ -38,8 +38,8 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
         try {
           const data = await api.getPendingRequestsCount();
           setPendingRequestsCounts(data);
-        } catch (error) {
-          console.error('Erreur chargement comptage demandes:', error);
+        } catch {
+          // Silencieux : valeurs initiales conservées (badge = 0)
         }
       }
     };
@@ -56,8 +56,8 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
         try {
           const data = await api.getPendingReservationRequests();
           setPendingReservationRequests(data);
-        } catch (error) {
-          console.error('Erreur chargement demandes de réservation:', error);
+        } catch {
+          // Silencieux : liste vide conservée
         }
       }
     };
@@ -71,8 +71,8 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
         try {
           const data = await api.getPendingAccessRequestsCount();
           setPendingAccessRequests(data.count || 0);
-        } catch (error) {
-          console.error('Erreur chargement demandes:', error);
+        } catch {
+          // Silencieux : compteur à 0 conservé
         }
       }
     };

@@ -154,7 +154,8 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
           clearGoogleStateFromStorage();
         }
       } catch (error) {
-        console.error('Erreur lors du chargement du statut Google:', error);
+        // Google non configuré → silencieux (AUDIT_GOOGLE)
+        console.debug('Google status non disponible:', error.message);
         setGoogleConfigured(false);
       }
     };

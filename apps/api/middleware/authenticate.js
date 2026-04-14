@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import db from '../database.js';
 import { authCache } from '../cache.js';
+import logger from '../logger.js';
 
 /**
  * Middleware d'authentification — vérifie JWT + session active en DB
@@ -14,11 +15,15 @@ export function createAuthenticateToken(JWT_SECRET) {
     const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.auth_token;
 
     if (!token) {
+      logger.warn(`🔒 Token manquant sur ${req.method} ${req.path}`);
       return res.status(401).json({ error: 'Token manquant' });
     }
 
     jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, user) => {
-      if (err) return res.status(403).json({ error: 'Token invalide' });
+      if (err) {
+        logger.warn(`🔒 Token invalide sur ${req.method} ${req.path}: ${err.message}`);
+        return res.status(403).json({ error: 'Token invalide' });
+      }
 
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
 
@@ -33,6 +38,7 @@ export function createAuthenticateToken(JWT_SECRET) {
         'SELECT 1 FROM active_sessions WHERE token_hash = ? AND expires_at > datetime(\'now\')'
       ).get(tokenHash);
       if (!session) {
+        logger.warn(`🔒 Session expirée/révoquée pour user ${user.id} sur ${req.method} ${req.path} (hash prefix: ${tokenHash.substring(0, 8)}…)`);
         return res.status(401).json({ error: 'Session expirée ou révoquée' });
       }
 

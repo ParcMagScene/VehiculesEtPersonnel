@@ -426,10 +426,12 @@ app.get('/api/auth/users-public', (req, res) => {
 app.post('/api/auth/refresh', authenticateToken, (req, res) => {
   try {
     const userId = req.user.id;
+    logger.info(`🔄 Refresh token demandé pour user ${userId}`);
 
     // Récupérer les infos fraîches depuis la DB (permissions, nom, avatar peuvent avoir changé)
     const user = db.prepare('SELECT id, email, name, is_admin, avatar, permissions FROM users WHERE id = ?').get(userId);
     if (!user) {
+      logger.warn(`🔄 Refresh échoué: user ${userId} introuvable en DB`);
       return res.status(401).json({ error: 'Utilisateur introuvable' });
     }
 
@@ -458,6 +460,7 @@ app.post('/api/auth/refresh', authenticateToken, (req, res) => {
     ).run(newTokenHash, newExpiresAt, oldTokenHash);
 
     if (updated.changes === 0) {
+      logger.warn(`🔄 Refresh échoué: session introuvable pour user ${userId} (old hash prefix: ${oldTokenHash.substring(0, 8)}…)`);
       return res.status(401).json({ error: 'Session introuvable' });
     }
 
@@ -466,6 +469,7 @@ app.post('/api/auth/refresh', authenticateToken, (req, res) => {
 
     // Envoyer le nouveau cookie
     res.cookie('auth_token', newToken, cookieOptions);
+    logger.info(`🔄 Refresh réussi pour user ${userId}`);
     res.json({
       user: {
         id: user.id,

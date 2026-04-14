@@ -13,14 +13,20 @@ export function AuthProvider({ children }) {
   const [tabPrefs, setTabPrefs] = useState({ tabOrder: null, hiddenTabs: [] });
   const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: true });
 
-  // Vérifier l'authentification au démarrage
+  // Vérifier l'authentification au démarrage — attend la récupération async (IDB / refresh)
   useEffect(() => {
-    if (api.isAuthenticated()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsAuthenticated(true);
-      setCurrentUser(api.getCurrentUser());
-    }
-    setIsAuthLoading(false);
+    let cancelled = false;
+    (async () => {
+      // Attendre que la récupération auth (IDB + refresh silencieux) soit terminée
+      await api.waitReady();
+      if (cancelled) return;
+      if (api.isAuthenticated()) {
+        setIsAuthenticated(true);
+        setCurrentUser(api.getCurrentUser());
+      }
+      setIsAuthLoading(false);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const applyTabPrefs = useCallback((prefs) => {

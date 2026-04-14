@@ -65,21 +65,47 @@ export class ApiClient {
     // Migration: nettoyer l'ancien token si présent
     localStorage.removeItem('auth_token');
     // Récupération async depuis IndexedDB si localStorage vidé
-    if (!this.user) {
-      this._recoverFromIDB();
-    }
+    // → _initReady est résolu quand l'auth est stabilisée (IDB recovery OU refresh silencieux)
+    this._initReady = this.user ? Promise.resolve() : this._recoverAuth();
     // Mutex : une seule tentative de refresh à la fois
     this._refreshPromise = null;
   }
 
-  async _recoverFromIDB() {
+  /**
+   * Tente de récupérer l'auth : d'abord depuis IndexedDB, puis via refresh silencieux (cookie httpOnly)
+   * Résout _initReady une fois l'auth stabilisée.
+   */
+  async _recoverAuth() {
+    // 1. Essayer IndexedDB
     try {
       const user = await loadAuthFromIDB();
       if (user && !this.user) {
         this.user = user;
         localStorage.setItem('auth_user', JSON.stringify(user));
+        console.warn('[Auth] Récupération depuis IndexedDB OK');
+        return;
       }
     } catch { /* silencieux */ }
+
+    // 2. Si toujours pas d'user, tenter un refresh silencieux (le cookie httpOnly peut encore être valide)
+    try {
+      const refreshed = await this._tryRefreshToken();
+      if (refreshed) {
+        console.warn('[Auth] Récupération par refresh silencieux OK');
+      } else {
+        console.warn('[Auth] Pas de session récupérable (cookie absent ou expiré)');
+      }
+    } catch {
+      console.warn('[Auth] Échec de la tentative de refresh au démarrage');
+    }
+  }
+
+  /**
+   * Attendre que l'initialisation auth soit terminée (IDB / refresh silencieux)
+   * @returns {Promise<void>}
+   */
+  async waitReady() {
+    return this._initReady;
   }
 
   setAuth(user) {
@@ -89,6 +115,7 @@ export class ApiClient {
   }
 
   clearAuth() {
+    console.warn('[Auth] clearAuth() appelé —', new Error().stack?.split('\n')[2]?.trim());
     this.user = null;
     localStorage.removeItem('auth_user');
     localStorage.removeItem('auth_token'); // nettoyage migration
@@ -114,15 +141,21 @@ export class ApiClient {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
           });
-          if (!response.ok) return false;
+          if (!response.ok) {
+            console.warn(`[Auth] Refresh échoué: HTTP ${response.status} (tentative ${attempt + 1})`);
+            return false;
+          }
           const data = await response.json();
           if (data?.user) {
             this.setAuth(data.user);
+            console.warn('[Auth] Refresh réussi — session prolongée');
             return true;
           }
+          console.warn('[Auth] Refresh: réponse OK mais pas de user dans la réponse');
           return false;
-        } catch {
+        } catch (err) {
           // Erreur réseau : retry 1 fois après 2s (le serveur redémarre peut-être)
+          console.warn(`[Auth] Refresh erreur réseau (tentative ${attempt + 1}):`, err.message);
           if (attempt === 0) {
             await new Promise(r => setTimeout(r, 2000));
             continue;
@@ -145,10 +178,12 @@ export class ApiClient {
       || endpoint === '/auth/force-login' || endpoint === '/auth/refresh';
     if (isAuthEndpoint) return false;
 
+    console.warn(`[Auth] 401 reçu sur ${endpoint} — tentative de refresh silencieux`);
     const refreshed = await this._tryRefreshToken();
     if (refreshed) return true; // le caller doit relancer la requête
 
     // Refresh échoué → déconnexion définitive
+    console.warn('[Auth] Refresh échoué après 401 → déconnexion forcée');
     this.clearAuth();
     window.location.reload();
     throw new Error('Session expirée');

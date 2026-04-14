@@ -59,8 +59,9 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
 
         if (failed.length > 0) {
           logger.warn(`${failed.length}/10 endpoints échoués au chargement initial`);
-          const authFail = failed.find(r => r.reason?.message?.includes('401') || r.reason?.message?.includes('authentification'));
-          if (authFail) { onAuthError(); return; }
+          // Note: les erreurs 401 sont déjà gérées par api.request() (refresh + retry ou clearAuth + reload).
+          // On ne déclenche PAS onAuthError ici pour éviter un double-logout (qui supprime la session en DB
+          // pendant que d'autres requêtes tentent encore un refresh).
         }
 
         setVehicles((get(0) || []).sort((a, b) => (a.order || 0) - (b.order || 0)));
@@ -80,9 +81,8 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         }
       } catch (error) {
         console.error('❌ Erreur lors du chargement des données:', error);
-        if (error.message?.includes('authentification') || error.message?.includes('401')) {
-          onAuthError();
-        }
+        // Les erreurs auth (401/403) sont gérées en amont par api.request()
+        // On ne déclenche plus onAuthError ici (cf. double-logout fix)
       } finally {
         setIsDataLoading(false);
       }

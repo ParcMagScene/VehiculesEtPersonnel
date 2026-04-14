@@ -675,6 +675,18 @@
   color: var(--theme-text-secondary);
   text-align: center;
 }
+.sonos-sources-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px;
+  font-size: 0.82rem;
+  color: var(--theme-text-secondary);
+  background: var(--theme-bg-secondary, rgba(255,255,255,0.04));
+  border-radius: 6px;
+  margin: 8px 6px;
+  line-height: 1.4;
+}
 .sonos-sources-list {
   display: flex;
   flex-direction: column;

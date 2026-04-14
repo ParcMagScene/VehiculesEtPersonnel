@@ -113,8 +113,9 @@ async function loadSonosLib() {
   try {
     const sonosModule = await import('sonos');
     const Sonos = sonosModule.Sonos || sonosModule.default?.Sonos;
+    const Services = sonosModule.Services || sonosModule.default?.Services;
     if (!Sonos) throw new Error('Sonos class not found in module');
-    return { Sonos };
+    return { Sonos, Services };
   } catch {
     return null;
   }
@@ -740,6 +741,16 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ error: 'objectId requis (max 256 car.)' });
       }
 
+      // Les services musicaux (MS:xxx) ne sont pas browsables via ContentDirectory
+      if (objectId.startsWith('MS:')) {
+        return res.json({
+          containers: [],
+          items: [],
+          total: 0,
+          message: 'Ce service est disponible sur votre Sonos. Utilisez l\'application Sonos officielle pour naviguer dans son contenu.',
+        });
+      }
+
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
       const cds = device.contentDirectoryService();
 
@@ -830,16 +841,77 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       const sonosIP = getSonosIP();
       if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
 
+      const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
+      const activeIP = coordinatorIP || sonosIP;
+
       // Sources de base toujours disponibles
       const sources = [
         { id: 'FV:2', title: 'Favoris Sonos', icon: 'star' },
-        { id: 'SQ:', title: 'Playlists sauvées', icon: 'list-music' },
+        { id: 'SQ:', title: 'Playlists Sonos', icon: 'list-music' },
         { id: 'R:0/0', title: 'Radios TuneIn', icon: 'radio' },
       ];
 
-      // Essayer d'enrichir depuis le ContentDirectory (non bloquant)
+      const { parseString } = await import('xml2js');
+      const parseXmlAsync = (xml) => new Promise((resolve, reject) => {
+        parseString(xml, { explicitArray: false }, (err, data) => err ? reject(err) : resolve(data));
+      });
+
+      // --- 1) ListAvailableServices : découvrir les services musicaux (Tidal, Sonos Radio, etc.) ---
       try {
-        const { device } = await getSonosDevice(lib.Sonos, sonosIP);
+        const MusicServices = lib.Services?.MusicServices;
+        if (MusicServices) {
+          const ms = new MusicServices(activeIP, 1400);
+          const msResult = await withTimeout(ms.ListAvailableServices({}), 6000);
+
+          if (msResult?.AvailableServiceDescriptorList) {
+            const parsed = await parseXmlAsync(msResult.AvailableServiceDescriptorList);
+            const services = parsed?.Services?.Service;
+            const serviceList = Array.isArray(services) ? services : services ? [services] : [];
+
+            // Map des icônes par nom de service connu
+            const iconMap = {
+              'sonos radio': 'radio',
+              'tidal': 'music',
+              'spotify': 'music',
+              'deezer': 'music',
+              'apple music': 'music',
+              'amazon music': 'music',
+              'youtube music': 'music',
+              'radio france': 'radio',
+              'tunein': 'radio',
+              'radio paradise': 'radio',
+              'soundcloud': 'music',
+              'audible': 'book',
+              'plex': 'server',
+            };
+
+            for (const svc of serviceList) {
+              const attrs = svc.$ || svc;
+              const name = attrs.Name || '';
+              const id = attrs.Id || '';
+              if (!name || !id) continue;
+
+              // Éviter les doublons avec les sources de base
+              const nameLower = name.toLowerCase();
+              if (nameLower === 'tunein') continue; // déjà dans R:0/0
+
+              const icon = iconMap[nameLower] || 'music';
+              sources.push({
+                id: `MS:${id}`,
+                title: name,
+                icon,
+                serviceId: id,
+                type: 'music-service',
+              });
+            }
+          }
+        }
+      } catch (msErr) {
+        logger.warn('Sonos music-services: ListAvailableServices échoué:', msErr.message);
+      }
+
+      // --- 2) Browse R: pour enrichir les catégories radio ---
+      try {
         const cds = device.contentDirectoryService();
         const result = await new Promise((resolve, reject) => {
           const timer = setTimeout(() => reject(new Error('timeout')), 5000);
@@ -857,14 +929,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
           });
         });
 
-        const { parseString } = await import('xml2js');
-        const parsed = await new Promise((resolve, reject) => {
-          parseString(result.Result, { explicitArray: false }, (err, data) => {
-            if (err) reject(err);
-            else resolve(data);
-          });
-        });
-
+        const parsed = await parseXmlAsync(result.Result);
         const root = parsed?.['DIDL-Lite'];
         const rawContainers = root?.container
           ? (Array.isArray(root.container) ? root.container : [root.container])
@@ -872,7 +937,6 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
 
         // Remplacer "Radios TuneIn" générique par les vraies catégories radio
         if (rawContainers.length > 0) {
-          // Retirer le placeholder générique
           const idx = sources.findIndex(s => s.id === 'R:0/0');
           if (idx >= 0) sources.splice(idx, 1);
 

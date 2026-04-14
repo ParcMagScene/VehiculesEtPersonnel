@@ -4,12 +4,15 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useState, memo } from 'react';
-import { Radio, ListMusic, Music, Star, ChevronLeft, ChevronRight, Folder, Loader } from 'lucide-react';
+import { Radio, ListMusic, Music, Star, ChevronLeft, ChevronRight, Folder, Loader, Book, Server, Info } from 'lucide-react';
 
 const SERVICE_ICONS = {
   star: <Star size={16} />,
   'list-music': <ListMusic size={16} />,
   radio: <Radio size={16} />,
+  music: <Music size={16} />,
+  book: <Book size={16} />,
+  server: <Server size={16} />,
 };
 
 function SonosSources({
@@ -155,6 +158,16 @@ function ServiceList({ services, onBrowse, search }) {
 /** Contenu d'un browse (conteneurs + items jouables) */
 function BrowseContent({ data, onBrowse, onPlay, search }) {
   if (!data) return null;
+
+  // Message pour les services non-browsables (ex: Tidal, Sonos Radio via MS:xxx)
+  if (data.message) {
+    return (
+      <div className="sonos-sources-message">
+        <Info size={18} />
+        <span>{data.message}</span>
+      </div>
+    );
+  }
 
   let { containers = [], items = [] } = data;
 

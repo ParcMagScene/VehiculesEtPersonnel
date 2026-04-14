@@ -82,6 +82,7 @@ function ProgressBar({ position, duration, onSeek }) {
   );
 }
 
-SonosControls.ProgressBar = memo(ProgressBar);
+const MemoSonosControls = memo(SonosControls);
+MemoSonosControls.ProgressBar = memo(ProgressBar);
 
-export default memo(SonosControls);
+export default MemoSonosControls;

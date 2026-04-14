@@ -291,7 +291,6 @@ const LoginForm = ({ onLogin }) => {
                   onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   required
                   placeholder="••••••••"
-                  minLength={10}
                   autoComplete="current-password"
                 />
               </FormField>

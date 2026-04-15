@@ -21,15 +21,17 @@ import MobileTasks from './MobileTasks';
 import MobileLogin from './MobileLogin';
 import { useTheme, PALETTES } from '../../hooks/useTheme';
 import useSwipeBack from '../../hooks/useSwipeBack';
+import useMobileRouter from '../../hooks/useMobileRouter';
 import { useMessagingSSE } from '../../hooks/useMessagingSSE';
 import api from '../../utils/api';
 import './MobileApp.css';
-import { Button, Spinner } from '@/design-system';
+import { Button, Spinner, BottomSheet, Skeleton } from '@/design-system';
 
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('home');
+  const { currentScreen, qrUid: routerQrUid, navigate, goBack } = useMobileRouter();
+  const setCurrentScreen = navigate; // Bridge — migration progressive
   const [qrEquipmentUid, setQrEquipmentUid] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
@@ -45,13 +47,7 @@ function MobileApp({ onSwitchToDesktop }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [msgToast, setMsgToast] = useState(null);
   
-  // Swipe-back : retour à l'écran précédent
-  const goBack = useCallback(() => {
-    if (currentScreen === 'home') return;
-    // Écrans parc → dashboard parc, le reste → home
-    const parcScreens = ['planning', 'reservations', 'maintenances', 'availability'];
-    setCurrentScreen(parcScreens.includes(currentScreen) ? 'parc-dashboard' : 'home');
-  }, [currentScreen]);
+  // Swipe-back : retour à l'écran précédent (goBack fourni par useMobileRouter)
   const { swipeBackProps, swipeProgress } = useSwipeBack(goBack, { disabled: currentScreen === 'home' });
 
   // Refs pour contrôler les formulaires
@@ -140,20 +136,10 @@ function MobileApp({ onSwitchToDesktop }) {
   // Sync currentScreen ref
   useEffect(() => { currentScreenRef.current = currentScreen; }, [currentScreen]);
 
-  // Détection QR code dans le hash : #/mobile/equipment/EMAG-XXXXX
+  // Sync QR UID depuis le router hash
   useEffect(() => {
-    const checkQrHash = () => {
-      const hash = window.location.hash;
-      const match = hash.match(/#\/mobile\/equipment\/(EMAG-\d+)/i);
-      if (match) {
-        setQrEquipmentUid(match[1]);
-        setCurrentScreen('qr-landing');
-      }
-    };
-    checkQrHash();
-    window.addEventListener('hashchange', checkQrHash);
-    return () => window.removeEventListener('hashchange', checkQrHash);
-  }, []);
+    if (routerQrUid) setQrEquipmentUid(routerQrUid);
+  }, [routerQrUid]);
 
   // Polling notifications messages non lus — remplacé par SSE (useMessagingSSE)
 
@@ -184,8 +170,8 @@ function MobileApp({ onSwitchToDesktop }) {
     return (
       <div className="mobile-app">
         <div className="mobile-loading">
-          <Spinner size="lg" />
-          <p>Chargement...</p>
+          <Skeleton width="60%" height={28} style={{ marginBottom: 16 }} />
+          <Skeleton count={3} width="100%" height={64} gap={12} style={{ borderRadius: 12 }} />
         </div>
       </div>
     );
@@ -201,7 +187,7 @@ function MobileApp({ onSwitchToDesktop }) {
       <MobileQRLanding
         uid={qrEquipmentUid}
         onGoToEquipment={() => setCurrentScreen('equipment-qr')}
-        onGoHome={() => { setQrEquipmentUid(null); setCurrentScreen('home'); window.location.hash = '#/mobile'; }}
+        onGoHome={() => { setQrEquipmentUid(null); navigate('home'); }}
       />
     );
   }
@@ -235,30 +221,25 @@ function MobileApp({ onSwitchToDesktop }) {
       </header>
 
       {/* User menu bottom-sheet */}
-      {showUserMenu && (
-        <div className="mobile-sheet-overlay" role="dialog" aria-modal="true" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowUserMenu(false); }} onKeyDown={(e) => { if (e.key === 'Escape') setShowUserMenu(false); }}>
-          <div className="mobile-sheet">
-            <div className="mobile-sheet-handle" />
-            <div className="mobile-sheet-user">
-              <div className="mobile-sheet-avatar">{currentUser?.name?.charAt(0)}</div>
-              <div>
-                <div className="mobile-sheet-name">{currentUser?.name}</div>
-                <div className="mobile-sheet-email">{currentUser?.email}</div>
-              </div>
-            </div>
-            <div className="mobile-sheet-actions">
-              <Button variant="ghost" onClick={() => { setShowUserMenu(false); window.location.reload(); }}>
-                <LayoutGrid size={18} />
-                Changer d'utilisateur
-              </Button>
-              <Button variant="ghost" className="danger" onClick={() => { setShowUserMenu(false); handleLogout(); }}>
-                <LogOut size={18} />
-                Se déconnecter
-              </Button>
-            </div>
+      <BottomSheet open={showUserMenu} onClose={() => setShowUserMenu(false)} title="">
+        <div className="mobile-sheet-user">
+          <div className="mobile-sheet-avatar">{currentUser?.name?.charAt(0)}</div>
+          <div>
+            <div className="mobile-sheet-name">{currentUser?.name}</div>
+            <div className="mobile-sheet-email">{currentUser?.email}</div>
           </div>
         </div>
-      )}
+        <div className="mobile-sheet-actions">
+          <Button variant="ghost" onClick={() => { setShowUserMenu(false); window.location.reload(); }}>
+            <LayoutGrid size={18} />
+            Changer d'utilisateur
+          </Button>
+          <Button variant="ghost" className="danger" onClick={() => { setShowUserMenu(false); handleLogout(); }}>
+            <LogOut size={18} />
+            Se déconnecter
+          </Button>
+        </div>
+      </BottomSheet>
 
       {/* Menu latéral */}
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
@@ -569,8 +550,8 @@ function MobileApp({ onSwitchToDesktop }) {
           <MobileEquipmentQR
             uid={qrEquipmentUid}
             currentUser={currentUser}
-            onBack={() => { setQrEquipmentUid(null); setCurrentScreen('equipment'); window.location.hash = '#/mobile'; }}
-            onNavigateHome={() => { setQrEquipmentUid(null); setCurrentScreen('home'); window.location.hash = '#/mobile'; }}
+            onBack={() => { setQrEquipmentUid(null); navigate('equipment'); }}
+            onNavigateHome={() => { setQrEquipmentUid(null); navigate('home'); }}
           />
         )}
 

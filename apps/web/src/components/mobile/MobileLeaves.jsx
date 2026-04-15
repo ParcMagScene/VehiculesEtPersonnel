@@ -9,10 +9,11 @@ import useSwipeAction from '../../hooks/useSwipeAction';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 import SwipeableRow from './SwipeableRow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
-import { ROLES, STATUS } from '../../constants';
+import { ROLES, STATUS } from '../../constants';\nimport MobileListSkeleton from './MobileListSkeleton';\nimport './MobileListSkeleton.css';
 import { STATUS_COLORS } from '../../constants/colors';
 
 import './MobileLeaves.css';
+import './MobileModuleWrapper.css';
 
 // ─── Composant principal ────────────────────────────────
 function MobileLeaves({ currentUser, onBack }) {
@@ -84,7 +85,7 @@ function MobileLeaves({ currentUser, onBack }) {
           <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour"><ChevronLeft size={20} /></Button>
           <h2>🏖️ Congés</h2>
         </div>
-        <div className="mobile-module-loading">Chargement...</div>
+        <MobileListSkeleton rows={5} variant="list" />
       </div>
     );
   }

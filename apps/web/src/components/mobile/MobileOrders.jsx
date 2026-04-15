@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/design-system';
+import './MobileModuleWrapper.css';
 const OrdersPanel = lazy(() => import('../orders/OrdersPanel'));
 
 function MobileOrders({ onBack, currentUser }) {

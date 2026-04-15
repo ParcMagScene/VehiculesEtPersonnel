@@ -2,6 +2,9 @@ import { Suspense, lazy } from 'react';
 import { ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/design-system';
+import MobileListSkeleton from './MobileListSkeleton';
+import './MobileListSkeleton.css';
+import './MobileModuleWrapper.css';
 const InventoryPanel = lazy(() => import('../inventory/InventoryPanel'));
 
 function MobileInventory({ onBack }) {
@@ -14,7 +17,7 @@ function MobileInventory({ onBack }) {
         <h2>Inventaire</h2>
       </div>
       <div className="mobile-module-content">
-        <Suspense fallback={<div className="mobile-module-loading">Chargement...</div>}>
+        <Suspense fallback={<MobileListSkeleton rows={6} variant="cards" />}>
           <InventoryPanel />
         </Suspense>
       </div>

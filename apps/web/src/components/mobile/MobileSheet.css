@@ -1,0 +1,69 @@
+/* ══════════════════════════════════════════
+   MobileSheet — Styles formulaire bottom sheet
+   Utilisé par MobileLogin (réinitialisation mdp)
+   ══════════════════════════════════════════ */
+.mobile-sheet-title {
+  margin: 0;
+  padding: var(--space-1) var(--space-5) var(--space-3);
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--theme-text-primary);
+  border-bottom: 1px solid var(--theme-border-light);
+}
+
+.mobile-sheet-desc {
+  margin: 0 0 var(--space-3);
+  color: var(--theme-text-body);
+  font-size: var(--font-base);
+  line-height: 1.5;
+}
+
+.mobile-sheet-form {
+  padding: var(--space-4) var(--space-5) var(--space-1);
+}
+
+.mobile-sheet-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  margin-bottom: var(--space-3);
+}
+
+.mobile-sheet-form .form-group label {
+  font-weight: 600;
+  color: var(--theme-text-body);
+  font-size: var(--font-base);
+}
+
+.mobile-sheet-form .form-group input {
+  padding: var(--space-3) 14px;
+  border: 2px solid var(--theme-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-md);
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-page);
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.mobile-sheet-form .form-group input:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: var(--focus-ring);
+}
+
+.mobile-sheet-form-actions {
+  display: flex;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.mobile-sheet-form-actions button {
+  flex: 1;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}

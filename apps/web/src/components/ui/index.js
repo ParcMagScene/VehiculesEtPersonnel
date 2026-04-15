@@ -41,6 +41,8 @@ export { default as EmptyState } from './EmptyState';
 import './InlineAlert.css';
 export { default as InlineAlert } from './InlineAlert';
 export { Spinner, LoadingOverlay } from './Loader';
+import './Skeleton.css';
+export { default as Skeleton } from './Skeleton';
 
 /* ─── [DS] Molécules Étape 4 ─── */
 import './DropdownMenu.css';
@@ -63,6 +65,7 @@ export { default as EntityCombobox } from './EntityCombobox';
 import './Modal.css';
 import './Dialog.css';
 import './Drawer.css';
+import './BottomSheet.css';
 import './PageHeader.css';
 import './FormLayout.css';
 import './ModuleLayout.css';
@@ -71,6 +74,7 @@ export { Modal, ModalHeader, ModalBody, ModalFooter } from './Modal';
 export { default as ModalLayout } from '../../layouts/ModalLayout';
 export { default as Dialog } from './Dialog';
 export { default as Drawer } from './Drawer';
+export { default as BottomSheet } from './BottomSheet';
 export { default as PageHeader } from './PageHeader';
 export { FormLayout, FormSection, FormRow, FormActions } from './FormLayout';
 export { ModuleLayout, ModuleToolbar, ModuleContent, ModuleFooter, SplitLayout } from './ModuleLayout';

@@ -143,3 +143,29 @@
 @keyframes ui-btn-spin {
   to { transform: rotate(360deg); }
 }
+
+/* ─── Responsive mobile ─── */
+@media (max-width: 640px) {
+  .ui-btn--sm {
+    min-height: 40px;
+    padding: var(--btn-padding-md);
+    font-size: var(--btn-font-size-sm);
+  }
+  .ui-btn--md {
+    min-height: 44px;
+  }
+  .ui-btn--lg {
+    min-height: 48px;
+  }
+}
+
+@media (pointer: coarse) {
+  .ui-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .ui-btn--xs {
+    min-height: 36px;
+    min-width: 36px;
+  }
+}

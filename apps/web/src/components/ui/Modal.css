@@ -129,5 +129,15 @@
 @media (max-width: 640px) {
   .ui-modal-header { padding: var(--space-3) var(--space-4); }
   .ui-modal-body   { padding: var(--space-4); }
-  .ui-modal-footer { padding: var(--space-3) var(--space-4); }
+  .ui-modal-footer {
+    padding: var(--space-3) var(--space-4);
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .ui-modal-footer button {
+    width: 100%;
+  }
+  .ui-modal-title h3 {
+    font-size: var(--font-base, 0.95rem);
+  }
 }

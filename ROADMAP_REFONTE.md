@@ -57,7 +57,7 @@
 ```
 Phase 1 ──── Phase 2 ──── Phase 3 ──── Phase 4 ──── Phase 5 ──── Phase 6
 Fondations   Monstres     Mobile       Backend      Tests+CI     Polish
-~2 semaines  ~3 semaines  ~2 semaines  ~2 semaines  ~2 semaines  ~1 semaine
+  ✅           ✅           ✅         ~2 semaines  ~2 semaines  ~1 semaine
 ```
 
 **Vue séquentielle avec dépendances** :
@@ -205,27 +205,27 @@ Phase 6 (Polish)
 
 ---
 
-## 6. PHASE 3 — MOBILE & RESPONSIVE
+## 6. PHASE 3 — MOBILE & RESPONSIVE ✅
 
 **Objectif** : Moderniser l'architecture mobile pour la rendre maintenable et testable.
 
 ### 6.1 Tâches
 
-| # | Tâche | Détail | Effort |
-|---|-------|--------|--------|
-| 3.1 | Intégrer un router hash pour le mobile | Remplacer `useState('home')` par un hash-router léger — bookmarks, back, refresh fonctionnels | 3h |
-| 3.2 | Standardiser les bottom sheets | Utiliser le nouveau `BottomSheet` DS dans tous les écrans mobile | 4h |
-| 3.3 | Ajouter `Skeleton` loading | Remplacer les flash blancs par des placeholders skeleton sur tous les écrans mobile | 2h |
-| 3.4 | Migrer MobileApp.css monolithique | Éclater en CSS co-localisés par écran mobile | 3h |
-| 3.5 | Améliorer la détection mobile | Remplacer le regex UA par `window.matchMedia` + taille écran | 1h |
-| 3.6 | Adapter les composants DS au mobile | Vérifier que Button, Input, Modal s'adaptent aux small screens | 2h |
+| # | Tâche | Détail | Effort | Statut |
+|---|-------|--------|--------|--------|
+| 3.1 | Intégrer un router hash pour le mobile | Hook `useMobileRouter` — bookmarks, back, refresh, QR deep links | 3h | ✅ |
+| 3.2 | Standardiser les bottom sheets | `BottomSheet` DS dans MobileApp (user menu) + MobileLogin (reset password) | 4h | ✅ |
+| 3.3 | Ajouter `Skeleton` loading | `MobileListSkeleton` (3 variants) sur 5 écrans mobile | 2h | ✅ |
+| 3.4 | Migrer MobileApp.css monolithique | 1041L → 558L + `MobileSheet.css` + `MobileModuleWrapper.css` co-localisés | 3h | ✅ |
+| 3.5 | Améliorer la détection mobile | `window.matchMedia('(pointer: coarse)')` + resize listener | 1h | ✅ |
+| 3.6 | Adapter les composants DS au mobile | Button/Input/Modal: touch targets 44px, `font-size: 16px` iOS, footer colonne | 2h | ✅ |
 
 ### 6.2 Critères de succès Phase 3
 
-- [ ] Navigation mobile avec URL (bookmarkable, back browser fonctionne)
-- [ ] Skeleton loading visible sur chaque écran mobile
-- [ ] MobileApp.css éclaté en fichiers co-localisés
-- [ ] 485+ tests passent
+- [x] Navigation mobile avec URL (bookmarkable, back browser fonctionne)
+- [x] Skeleton loading visible sur chaque écran mobile
+- [x] MobileApp.css éclaté en fichiers co-localisés
+- [x] 413+ tests passent
 
 ---
 

@@ -3,8 +3,9 @@ import { LogIn, UserPlus, Mail, Key } from 'lucide-react';
 import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
 import './MobileLogin.css';
+import './MobileSheet.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, Card, FormField, InlineAlert, Input } from '@/design-system';
+import { Button, Card, FormField, InlineAlert, Input, BottomSheet } from '@/design-system';
 
 function MobileLogin({ onLogin }) {
   const toast = useToast();
@@ -173,105 +174,99 @@ function MobileLogin({ onLogin }) {
       )}
 
       {/* Modal Réinitialisation directe du mot de passe */}
-      {showResetPassword && (
-        <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowResetPassword(false); }} onKeyDown={(e) => { if (e.key === 'Escape') setShowResetPassword(false); }}>
-          <div className="mobile-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="mobile-sheet-handle" />
-            <h3 className="mobile-sheet-title">🔑 Réinitialiser le mot de passe</h3>
-            <div className="mobile-sheet-form">
-              <p className="mobile-sheet-desc">
-                Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
-              </p>
-              
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                if (resetFormPassword !== resetFormConfirm) {
-                  setResetError('Les mots de passe ne correspondent pas');
-                  return;
-                }
-                setIsLoading(true);
-                setResetError('');
-                try {
-                  const data = await api.selfResetPasswordWithNewPassword(resetFormEmail, resetFormName, resetFormPassword);
-                  onLogin(data.user);
-                  setShowResetPassword(false);
-                } catch (err) {
-                  setResetError(err.message);
-                } finally {
-                  setIsLoading(false);
-                }
-              }}>
-                <FormField className="form-group" label="Adresse email" htmlFor="reset-email">
-                  <Input
-                    id="reset-email"
-                    type="email"
-                    value={resetFormEmail}
-                    onChange={(e) => setResetFormEmail(e.target.value)}
-                    placeholder="email@exemple.com"
-                    required
-                    autoFocus
-                  />
-                </FormField>
+      <BottomSheet open={showResetPassword} onClose={() => { setShowResetPassword(false); setResetError(''); }} title="🔑 Réinitialiser le mot de passe">
+        <div className="mobile-sheet-form">
+          <p className="mobile-sheet-desc">
+            Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
+          </p>
+          
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (resetFormPassword !== resetFormConfirm) {
+              setResetError('Les mots de passe ne correspondent pas');
+              return;
+            }
+            setIsLoading(true);
+            setResetError('');
+            try {
+              const data = await api.selfResetPasswordWithNewPassword(resetFormEmail, resetFormName, resetFormPassword);
+              onLogin(data.user);
+              setShowResetPassword(false);
+            } catch (err) {
+              setResetError(err.message);
+            } finally {
+              setIsLoading(false);
+            }
+          }}>
+            <FormField className="form-group" label="Adresse email" htmlFor="reset-email">
+              <Input
+                id="reset-email"
+                type="email"
+                value={resetFormEmail}
+                onChange={(e) => setResetFormEmail(e.target.value)}
+                placeholder="email@exemple.com"
+                required
+                autoFocus
+              />
+            </FormField>
 
-                <FormField className="form-group" label="Nom complet" htmlFor="reset-name">
-                  <Input
-                    id="reset-name"
-                    type="text"
-                    value={resetFormName}
-                    onChange={(e) => setResetFormName(e.target.value)}
-                    placeholder="Prénom Nom"
-                    required
-                  />
-                </FormField>
+            <FormField className="form-group" label="Nom complet" htmlFor="reset-name">
+              <Input
+                id="reset-name"
+                type="text"
+                value={resetFormName}
+                onChange={(e) => setResetFormName(e.target.value)}
+                placeholder="Prénom Nom"
+                required
+              />
+            </FormField>
 
-                <FormField className="form-group" label="Nouveau mot de passe" htmlFor="reset-password">
-                  <Input
-                    id="reset-password"
-                    type="password"
-                    value={resetFormPassword}
-                    onChange={(e) => setResetFormPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
-                </FormField>
+            <FormField className="form-group" label="Nouveau mot de passe" htmlFor="reset-password">
+              <Input
+                id="reset-password"
+                type="password"
+                value={resetFormPassword}
+                onChange={(e) => setResetFormPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </FormField>
 
-                <FormField className="form-group" label="Confirmer le mot de passe" htmlFor="reset-confirm">
-                  <Input
-                    id="reset-confirm"
-                    type="password"
-                    value={resetFormConfirm}
-                    onChange={(e) => setResetFormConfirm(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
-                </FormField>
+            <FormField className="form-group" label="Confirmer le mot de passe" htmlFor="reset-confirm">
+              <Input
+                id="reset-confirm"
+                type="password"
+                value={resetFormConfirm}
+                onChange={(e) => setResetFormConfirm(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </FormField>
 
-                {resetError && <InlineAlert>{resetError}</InlineAlert>}
-                
-                <div className="mobile-sheet-form-actions">
-                  <Button variant="ghost"                     type="button"
-                    className="toggle-mode-button"
-                    onClick={() => { setShowResetPassword(false); setResetError(''); }}
-                    disabled={isLoading}
-                  >
-                    Annuler
-                  </Button>
-                  <Button variant="ghost"                     type="submit"
-                    className="login-button"
-                    disabled={isLoading || !resetFormEmail || !resetFormName || !resetFormPassword || !resetFormConfirm}
-                  >
-                    {isLoading ? 'Réinitialisation...' : 'Réinitialiser'}
-                  </Button>
-                </div>
-              </form>
+            {resetError && <InlineAlert>{resetError}</InlineAlert>}
+            
+            <div className="mobile-sheet-form-actions">
+              <Button variant="ghost"                 type="button"
+                className="toggle-mode-button"
+                onClick={() => { setShowResetPassword(false); setResetError(''); }}
+                disabled={isLoading}
+              >
+                Annuler
+              </Button>
+              <Button variant="ghost"                 type="submit"
+                className="login-button"
+                disabled={isLoading || !resetFormEmail || !resetFormName || !resetFormPassword || !resetFormConfirm}
+              >
+                {isLoading ? 'Réinitialisation...' : 'Réinitialiser'}
+              </Button>
             </div>
-          </div>
+          </form>
         </div>
-      )}
+      </BottomSheet>
     </div>
   );
 }

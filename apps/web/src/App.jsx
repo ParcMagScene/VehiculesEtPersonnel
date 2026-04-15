@@ -52,7 +52,7 @@ const AffaireDetailDialog = lazy(() => import('./components/affaires/AffaireDeta
 const UserPreferencesModal = lazy(() => import('./components/auth/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
 
-// Détection fiable d'un appareil mobile
+// Détection fiable d'un appareil mobile (matchMedia)
 const detectMobile = () => {
   if (window.location.pathname === '/mobile' || window.location.hash.startsWith('#/mobile')) {
     return true;
@@ -60,11 +60,9 @@ const detectMobile = () => {
   if (sessionStorage.getItem('forceDesktop') === 'true') {
     return false;
   }
-  const ua = navigator.userAgent || '';
-  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  const isSmallScreen = window.innerWidth <= 768;
-  return isMobileUA && (isTouchDevice || isSmallScreen);
+  const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+  const isSmallScreen = window.matchMedia('(max-width: 768px)').matches;
+  return isCoarsePointer && isSmallScreen;
 };
 
 function AppContent() {
@@ -141,8 +139,14 @@ function AppContent() {
   // ═══ Mobile detection ═══
   useEffect(() => {
     const handleHashChange = () => setIsMobile(detectMobile());
+    const mql = window.matchMedia('(max-width: 768px)');
+    const handleResize = () => setIsMobile(detectMobile());
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    mql.addEventListener('change', handleResize);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      mql.removeEventListener('change', handleResize);
+    };
   }, []);
 
   useEffect(() => {

@@ -10,6 +10,7 @@ import SwipeableRow from './SwipeableRow';
 import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import './MobileTasks.css';
+import './MobileModuleWrapper.css';
 
 const SECTIONS = {
   rdv: { label: 'Rendez-vous', emoji: '📅', color: STATUS_COLORS.info },

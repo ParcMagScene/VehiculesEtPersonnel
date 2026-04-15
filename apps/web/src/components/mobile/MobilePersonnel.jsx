@@ -5,7 +5,7 @@ import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import './MobilePersonnel.css';
-import { Avatar, Button, Spinner } from '@/design-system';
+import { Avatar, Button, Skeleton } from '@/design-system';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
@@ -279,8 +279,9 @@ function MobilePersonnel({ onBack, currentUser }) {
 
       {loading ? (
         <div className="mpers-loading">
-          <Spinner size="lg" />
-          <p>Chargement...</p>
+          <Skeleton variant="circle" width={48} height={48} style={{ margin: '0 auto 12px' }} />
+          <Skeleton width="50%" height={18} style={{ margin: '0 auto 16px' }} />
+          <Skeleton count={5} width="100%" height={52} gap={8} style={{ borderRadius: 10 }} />
         </div>
       ) : isSimpleUser ? (
         /* ═══ VUE UTILISATEUR SIMPLE — Mon planning ═══ */

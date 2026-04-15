@@ -20,7 +20,7 @@
  *                  EntityCombobox
  *
  *   ORGANISMES     Modal, ModalHeader, ModalBody, ModalFooter,
- *                  Dialog, Drawer, PageHeader,
+ *                  Dialog, Drawer, BottomSheet, PageHeader,
  *                  FormLayout, FormSection, FormRow, FormActions,
  *                  ModuleLayout, ModuleToolbar, ModuleContent,
  *                  ModuleFooter, SplitLayout
@@ -64,6 +64,7 @@ export {
   Spinner,
   LoadingOverlay,
   ProgressBar,
+  Skeleton,
   EmptyState,
   InlineAlert,
 
@@ -90,6 +91,7 @@ export {
   ModalLayout,
   Dialog,
   Drawer,
+  BottomSheet,
   PageHeader,
   FormLayout,
   FormSection,

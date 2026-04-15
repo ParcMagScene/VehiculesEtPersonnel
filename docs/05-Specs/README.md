@@ -10,35 +10,26 @@
 |------|-------------|--------|
 | [Annotations_PDF_ViT.md](Annotations_PDF_ViT.md) | Annotations PDF + Vision Transformer | 🔴 À faire |
 | [MODULE_VIDEO.md](MODULE_VIDEO.md) | Module vidéo WebRTC (caméras, enregistrement) | 🔴 À faire |
-| [MODE_VS_CODE.md](MODE_VS_CODE.md) | Thème VS Code (Dark+/Light+) | � Implémenté (theme-vscode.css) |
+
+## Specs actives
+
+| Spec | Description | Statut |
+|------|-------------|--------|
+| [MODE_VS_CODE.md](MODE_VS_CODE.md) | Thème VS Code (Dark+/Light+) | 🟢 Implémenté |
+| [SONOS_FULL_GUI_PLAN.md](SONOS_FULL_GUI_PLAN.md) | Plan GUI Sonos complet | 🟢 Implémenté |
+| [UNIFICATION_PERSONS_DRIVERS.md](UNIFICATION_PERSONS_DRIVERS.md) | Design doc unification persons/drivers | 📋 En cours |
+| [images-generiques.md](images-generiques.md) | Génération d'images génériques | 🟢 Implémenté |
 
 ## Taxonomie & Normalisation
 
 | Document | Description | Statut |
 |----------|-------------|--------|
-| [Taxonomie_Unifiee.md](Taxonomie_Unifiee.md) | Référence complète des 13 familles, catégories, sous-catégories et types | ✅ Implémenté |
-| [Taxonomie_Fournisseurs_Marques_Modeles.md](Taxonomie_Fournisseurs_Marques_Modeles.md) | Référence fournisseurs, marques et modèles normalisés | ✅ Implémenté |
-| [UniformisationCatégories.md](UniformisationCat%C3%A9gories.md) | Prompt : uniformisation familles/catégories/types | ✅ Exécuté |
-| [UniformisationMarquesSociétés.md](UniformisationMarquesSoci%C3%A9t%C3%A9s.md) | Prompt : normalisation marques, fournisseurs, modèles | ✅ Exécuté |
-| [MaintenanceAutoTaxonomie.md](MaintenanceAutoTaxonomie.md) | Prompt : maintenance automatique de la taxonomie | ✅ Exécuté |
-
-## Design System
-
-| Document | Description | Statut |
-|----------|-------------|--------|
-| [DesignSystem_Prompt.md](DesignSystem_Prompt.md) | Prompt : génération du Design System complet (10 étapes) | ✅ Exécuté |
-| [EpurationGUI.md](EpurationGUI.md) | Prompt : analyse et épuration des interfaces GUI | ✅ Exécuté |
-
-→ Voir [docs/DesignSystem/](../DesignSystem/) pour les 10 rapports produits.
-
-## Prompts & Directives
-
-| Document | Description | Statut |
-|----------|-------------|--------|
-| [Directives_Audit.md](Directives_Audit.md) | Prompt Copilot pour audit technique complet | 📌 Réutilisable |
-| [DOC_API.md](DOC_API.md) | Prompt pour génération documentation API | ✅ Exécuté → [API-INDEX.md](../API-INDEX.md) |
-| [Reorganisation_Monorepo.md](Reorganisation_Monorepo.md) | Spec de migration monorepo | ✅ Réalisée |
+| [taxonomie-unifiee.md](taxonomie-unifiee.md) | Référence complète des 13 familles, catégories, sous-catégories et types | ✅ Implémenté |
+| [taxonomie-fournisseurs.md](taxonomie-fournisseurs.md) | Référence fournisseurs, marques et modèles normalisés | ✅ Implémenté |
+| [uniformisation-categories.md](uniformisation-categories.md) | Uniformisation familles/catégories/types | ✅ Implémenté |
+| [uniformisation-marques-societes.md](uniformisation-marques-societes.md) | Normalisation marques, fournisseurs, modèles | ✅ Implémenté |
+| [maintenance-auto-taxonomie.md](maintenance-auto-taxonomie.md) | Maintenance automatique de la taxonomie | ✅ Implémenté |
 
 ---
 
-> Voir aussi : [Changelog](../06-Changelog/) pour les specs déjà implémentées.
+> Les specs terminées (audits, prompts exécutés, monorepo) sont archivées dans [docs/07-Archive/](../07-Archive/).

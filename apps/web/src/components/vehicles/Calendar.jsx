@@ -281,7 +281,6 @@ const Calendar = ({
           <Button variant="ghost" className={`cal-nav-view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => setView('day')}>Jour</Button>
           <Button variant="ghost" className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</Button>
           <Button variant="ghost" className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</Button>
-          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</Button>
         </div>
         <div className="cal-nav-date">
           <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious} aria-label="Période précédente"><ChevronLeft size={18} /></Button>
@@ -293,9 +292,8 @@ const Calendar = ({
               if (view === 'day') setShowWeekSelector(true);
               if (view === 'month') setShowMonthSelector(true);
               if (view === 'week') setShowWeekSelector(true);
-              if (view === 'year') setShowYearSelector(true);
             }}
-            title={view === 'day' ? 'Sélectionner une date' : view === 'month' ? 'Sélectionner un mois' : view === 'week' ? 'Sélectionner une semaine' : 'Sélectionner une année'}
+            title={view === 'day' ? 'Sélectionner une date' : view === 'month' ? 'Sélectionner un mois' : 'Sélectionner une semaine'}
           >
             {getDateLabel()}
           </span>

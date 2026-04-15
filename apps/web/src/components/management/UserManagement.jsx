@@ -123,10 +123,19 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     const newValue = !perms[permissionKey];
     const updatedPerms = { ...perms, [permissionKey]: newValue };
     
+    // Optimistic update — immediately reflect in UI
+    setUsers(prev => prev.map(u => 
+      u.id === userId ? { ...u, permissions: updatedPerms } : u
+    ));
+    
     try {
       await api.updateUser(userId, { permissions: updatedPerms });
       loadData(true);
     } catch (error) {
+      // Revert on error
+      setUsers(prev => prev.map(u => 
+        u.id === userId ? { ...u, permissions: currentPermissions } : u
+      ));
       toast.error(`Erreur: ${error.message}`);
     }
   };

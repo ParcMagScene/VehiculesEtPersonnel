@@ -415,10 +415,6 @@
   grid-template-columns: repeat(62, minmax(55px, 1fr));
 }
 
-.banner-grid.year-view {
-  grid-template-columns: repeat(12, minmax(150px, 1fr));
-}
-
 /* Lignes de grille avec subgrid */
 .banner-grid-lines {
   grid-column: 1 / -1;
@@ -487,9 +483,10 @@
   gap: 0;
   padding: 0;
   min-height: 24px;
+  height: 100%;
   position: relative;
   z-index: var(--z-base);
-  align-items: center;
+  align-items: stretch;
 }
 
 /* Bloc d'événement qui s'étend sur plusieurs colonnes */
@@ -506,6 +503,7 @@
   transition: all 0.2s;
   white-space: nowrap;
   overflow: hidden;
+  align-self: stretch;
 }
 
 .event-block-span.clickable:hover {

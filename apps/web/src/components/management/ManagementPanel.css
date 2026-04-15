@@ -203,10 +203,14 @@
 }
 
 .tab-label {
-  font-size: var(--font-base);
+  font-size: var(--font-xs);
   position: relative;
   z-index: var(--z-base);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .tab-badge {

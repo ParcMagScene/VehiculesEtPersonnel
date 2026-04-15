@@ -9,7 +9,9 @@ import useSwipeAction from '../../hooks/useSwipeAction';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 import SwipeableRow from './SwipeableRow';
 import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
-import { ROLES, STATUS } from '../../constants';\nimport MobileListSkeleton from './MobileListSkeleton';\nimport './MobileListSkeleton.css';
+import { ROLES, STATUS } from '../../constants';
+import MobileListSkeleton from './MobileListSkeleton';
+import './MobileListSkeleton.css';
 import { STATUS_COLORS } from '../../constants/colors';
 
 import './MobileLeaves.css';

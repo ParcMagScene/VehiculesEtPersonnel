@@ -281,9 +281,15 @@ function applyConfig(config) {
 //  RENDU DES ÉVÉNEMENTS
 // ===============================================
 function renderEvents(events) {
+  // Filtrer les événements terminés
+  const activeEvents = events.filter(e => {
+    const eventId = String(e.id);
+    return e.status !== 'done' && !completedEvents.includes(eventId);
+  });
+
   // Séparer événements réguliers et récurrents
-  const regular = events.filter(e => !e.is_recurrent);
-  const recurrent = events.filter(e => e.is_recurrent);
+  const regular = activeEvents.filter(e => !e.is_recurrent);
+  const recurrent = activeEvents.filter(e => e.is_recurrent);
 
   const regularList = document.getElementById('regular-events-list');
   const recurrentList = document.getElementById('recurrent-events-list');
@@ -500,13 +506,13 @@ function renderWeather(data) {
 
 function getWeatherIcon(iconCode) {
   const iconMap = {
-    '01d': '☀️', '01n': '🌙', '02d': '🌤️', '02n': '☁️',
-    '03d': '☁️', '03n': '☁️', '04d': '☁️', '04n': '☁️',
-    '09d': '🌧️', '09n': '🌧️', '10d': '🌦️', '10n': '🌧️',
-    '11d': '⛈️', '11n': '⛈️', '13d': '❄️', '13n': '❄️',
-    '50d': '🌫️', '50n': '🌫️'
+    '01d': '&#9728;', '01n': '&#9790;', '02d': '&#9925;', '02n': '&#9729;',
+    '03d': '&#9729;', '03n': '&#9729;', '04d': '&#9729;', '04n': '&#9729;',
+    '09d': '&#9748;', '09n': '&#9748;', '10d': '&#9926;', '10n': '&#9748;',
+    '11d': '&#9736;', '11n': '&#9736;', '13d': '&#10052;', '13n': '&#10052;',
+    '50d': '&#9729;', '50n': '&#9729;'
   };
-  return iconMap[iconCode] || '🌡️';
+  return iconMap[iconCode] || '&#9729;';
 }
 
 // ===============================================
@@ -617,25 +623,27 @@ function startAutoScroll() {
   let isPaused = false;
 
   function scroll() {
-    if (isPaused) return;
-    const maxScroll = mainElement.scrollHeight - mainElement.clientHeight;
-    if (maxScroll > 0) {
-      scrollPosition += scrollSpeed;
-      if (scrollPosition >= maxScroll) {
-        scrollPosition = maxScroll;
-        isPaused = true;
-        setTimeout(() => {
-          scrollPosition = 0;
-          mainElement.scrollTop = 0;
+    if (!isPaused) {
+      const maxScroll = mainElement.scrollHeight - mainElement.clientHeight;
+      if (maxScroll > 0) {
+        scrollPosition += scrollSpeed;
+        if (scrollPosition >= maxScroll) {
+          scrollPosition = maxScroll;
           isPaused = true;
-          setTimeout(() => { isPaused = false; }, pauseAtTop);
-        }, pauseAtBottom);
+          setTimeout(() => {
+            scrollPosition = 0;
+            mainElement.scrollTop = 0;
+            isPaused = true;
+            setTimeout(() => { isPaused = false; }, pauseAtTop);
+          }, pauseAtBottom);
+        }
+        mainElement.scrollTop = scrollPosition;
       }
-      mainElement.scrollTop = scrollPosition;
     }
+    requestAnimationFrame(scroll);
   }
 
-  setInterval(scroll, 16);
+  requestAnimationFrame(scroll);
 }
 
 

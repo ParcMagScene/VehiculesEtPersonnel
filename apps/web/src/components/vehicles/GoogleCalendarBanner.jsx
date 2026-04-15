@@ -762,13 +762,6 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
                   <span>Locations</span>
                   <span>Prestations</span>
                   <span>Installations</span>
-                  <Button variant="ghost"                     className="banner-reconnect-google"
-                    onClick={handleReconnect}
-                    title={googleEmail ? `Connecté : ${googleEmail} — Cliquer pour changer de compte` : 'Reconnecter / changer de compte Google'}
-                  >
-                    <RefreshCw size={12} />
-                    <span>{googleEmail ? googleEmail : 'Compte Google'}</span>
-                  </Button>
                 </div>
               )}
               <div className="banner-header-actions">

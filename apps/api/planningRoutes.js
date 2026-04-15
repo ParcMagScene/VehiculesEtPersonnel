@@ -132,7 +132,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(events);
     } catch (error) {
       logger.error('GET /api/planning/display-events error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -140,11 +140,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/planning/display-events/:id', authenticateToken, (req, res) => {
     try {
       const event = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
-      if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
+      if (!event) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
       res.json(event);
     } catch (error) {
       logger.error('GET /api/planning/display-events/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -154,13 +154,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       const { affaire_id, bl_import_id, type, category, date, period, time, comment, client, location } = req.body;
 
       if (!type || !category || !date) {
-        return res.status(400).json({ error: 'Champs obligatoires : type, category, date' });
+        return res.status(400).json({ success: false, error: 'Champs obligatoires : type, category, date' });
       }
       if (!isValidDate(date)) {
-        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+        return res.status(400).json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
       }
       if (time && !isValidTime(time)) {
-        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+        return res.status(400).json({ success: false, error: 'Format heure invalide (attendu HH:mm)' });
       }
 
       const id = crypto.randomUUID().replace(/-/g, '');
@@ -176,7 +176,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(created);
     } catch (error) {
       logger.error('POST /api/planning/display-events error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -184,15 +184,15 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.put('/api/planning/display-events/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Événement non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
 
       const { affaire_id, bl_import_id, type, category, date, period, time, comment, client, location, visible } = req.body;
 
       if (date && !isValidDate(date)) {
-        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+        return res.status(400).json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
       }
       if (time && !isValidTime(time)) {
-        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+        return res.status(400).json({ success: false, error: 'Format heure invalide (attendu HH:mm)' });
       }
 
       const stmt = db.prepare(`
@@ -221,7 +221,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/display-events/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -229,13 +229,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/planning/display-events/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Événement non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
 
       db.prepare('DELETE FROM dynamic_display_events WHERE id = ?').run(req.params.id);
       res.json({ success: true, message: 'Événement supprimé' });
     } catch (error) {
       logger.error('DELETE /api/planning/display-events/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -265,7 +265,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(imports);
     } catch (error) {
       logger.error('GET /api/planning/bl-imports error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -273,11 +273,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/planning/bl-imports/:id', authenticateToken, (req, res) => {
     try {
       const blImport = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(req.params.id);
-      if (!blImport) return res.status(404).json({ error: 'Import BL non trouvé' });
+      if (!blImport) return res.status(404).json({ success: false, error: 'Import BL non trouvé' });
       res.json(blImport);
     } catch (error) {
       logger.error('GET /api/planning/bl-imports/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -290,7 +290,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       const file = req.file;
 
       if (!file && !raw_text) {
-        return res.status(400).json({ error: 'Un fichier ou du texte extrait est requis' });
+        return res.status(400).json({ success: false, error: 'Un fichier ou du texte extrait est requis' });
       }
 
       // [AUDIT FIX I3] Valider parsed_data si présent
@@ -298,10 +298,10 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         try {
           const test = typeof parsed_data === 'string' ? JSON.parse(parsed_data) : parsed_data;
           if (test && typeof test !== 'object') {
-            return res.status(400).json({ error: 'parsed_data doit être un objet JSON' });
+            return res.status(400).json({ success: false, error: 'parsed_data doit être un objet JSON' });
           }
         } catch {
-          return res.status(400).json({ error: 'parsed_data n\'est pas du JSON valide' });
+          return res.status(400).json({ success: false, error: 'parsed_data n\'est pas du JSON valide' });
         }
       }
 
@@ -549,7 +549,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.status(updated ? 200 : 201).json({ ...created, affaire_created: affaireCreated, bp_items_count: bpItemsCount, updated });
     } catch (error) {
       logger.error('POST /api/planning/bl-imports error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -557,7 +557,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/planning/bl-imports/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM bl_imports WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Import BL non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Import BL non trouvé' });
 
       // Supprimer le fichier physique s'il existe
       if (existing.file_path) {
@@ -571,7 +571,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, message: 'Import BL supprimé' });
     } catch (error) {
       logger.error('DELETE /api/planning/bl-imports/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -588,25 +588,25 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       } catch { /* ignore */ }
 
       if (!req.files?.length && !items.length) {
-        return res.status(400).json({ error: 'Aucun fichier ou métadonnées fourni' });
+        return res.status(400).json({ success: false, error: 'Aucun fichier ou métadonnées fourni' });
       }
 
       // [AUDIT FIX I4] Valider que items est un tableau d'objets avec des champs attendus
       if (!Array.isArray(items)) {
-        return res.status(400).json({ error: 'items doit être un tableau JSON' });
+        return res.status(400).json({ success: false, error: 'items doit être un tableau JSON' });
       }
       if (items.length > 50) {
-        return res.status(400).json({ error: 'Maximum 50 items par batch' });
+        return res.status(400).json({ success: false, error: 'Maximum 50 items par batch' });
       }
       for (const item of items) {
         if (item.parsed_data) {
           try {
             const pd = typeof item.parsed_data === 'string' ? JSON.parse(item.parsed_data) : item.parsed_data;
             if (pd && typeof pd !== 'object') {
-              return res.status(400).json({ error: 'parsed_data doit être un objet JSON' });
+              return res.status(400).json({ success: false, error: 'parsed_data doit être un objet JSON' });
             }
           } catch {
-            return res.status(400).json({ error: 'parsed_data invalide dans un des items' });
+            return res.status(400).json({ success: false, error: 'parsed_data invalide dans un des items' });
           }
         }
       }
@@ -860,7 +860,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('POST /api/planning/bl-imports/batch error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -908,7 +908,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('GET /api/planning/bp-items error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -918,11 +918,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { equipment_id } = req.body;
       const item = db.prepare('SELECT * FROM bp_items WHERE id = ?').get(req.params.id);
-      if (!item) return res.status(404).json({ error: 'Article BP non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Article BP non trouvé' });
 
       if (equipment_id) {
         const eqItem = db.prepare('SELECT id FROM equipment WHERE id = ?').get(equipment_id);
-        if (!eqItem) return res.status(404).json({ error: 'Matériel introuvable' });
+        if (!eqItem) return res.status(404).json({ success: false, error: 'Matériel introuvable' });
         db.prepare('UPDATE bp_items SET equipment_id = ?, match_status = ?, match_confidence = 1.0 WHERE id = ?')
           .run(equipment_id, 'manual', req.params.id);
       } else {
@@ -940,7 +940,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/bp-items/:id/match error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -950,16 +950,16 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { supplier_article_id, stock_item_id } = req.body;
       const item = db.prepare('SELECT * FROM bp_items WHERE id = ?').get(req.params.id);
-      if (!item) return res.status(404).json({ error: 'Article BP non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Article BP non trouvé' });
 
       if (supplier_article_id) {
         const sa = db.prepare('SELECT id FROM supplier_articles WHERE id = ?').get(supplier_article_id);
-        if (!sa) return res.status(404).json({ error: 'Article fournisseur introuvable' });
+        if (!sa) return res.status(404).json({ success: false, error: 'Article fournisseur introuvable' });
         db.prepare('UPDATE bp_items SET supplier_article_id = ?, stock_item_id = NULL WHERE id = ?')
           .run(supplier_article_id, req.params.id);
       } else if (stock_item_id) {
         const si = db.prepare('SELECT id FROM stock_items WHERE id = ?').get(stock_item_id);
-        if (!si) return res.status(404).json({ error: 'Article stock introuvable' });
+        if (!si) return res.status(404).json({ success: false, error: 'Article stock introuvable' });
         db.prepare('UPDATE bp_items SET stock_item_id = ?, supplier_article_id = NULL WHERE id = ?')
           .run(stock_item_id, req.params.id);
       } else {
@@ -980,7 +980,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/bp-items/:id/match-article error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1052,7 +1052,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(tasks);
     } catch (error) {
       logger.error('GET /api/planning/tasks error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1066,7 +1066,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       const { date, taskIds, affaireIds, eventIds } = req.query;
       const gcalEvents = req.body?.gcalEvents || [];
       if (!date) {
-        return res.status(400).json({ error: 'Le paramètre date est requis' });
+        return res.status(400).json({ success: false, error: 'Le paramètre date est requis' });
       }
 
       // ── 1) Charger les tâches ──
@@ -1742,7 +1742,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
     } catch (error) {
       logger.error('GET /api/planning/tasks/export-pdf error:', error);
       if (!res.headersSent) {
-        res.status(500).json({ error: 'Erreur génération PDF' });
+        res.status(500).json({ success: false, error: 'Erreur génération PDF' });
       }
     }
   };
@@ -1769,11 +1769,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         WHERE ta.id = ? AND ta.deleted_at IS NULL
       `).get(req.params.id);
 
-      if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
+      if (!task) return res.status(404).json({ success: false, error: 'Tâche non trouvée' });
       res.json(task);
     } catch (error) {
       logger.error('GET /api/planning/tasks/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1783,16 +1783,16 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id, location_address, location_lat, location_lng } = req.body;
 
       if (!date) {
-        return res.status(400).json({ error: 'Le champ date est obligatoire' });
+        return res.status(400).json({ success: false, error: 'Le champ date est obligatoire' });
       }
       if (!isValidDate(date)) {
-        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+        return res.status(400).json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
       }
       if (time && !isValidTime(time)) {
-        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+        return res.status(400).json({ success: false, error: 'Format heure invalide (attendu HH:mm)' });
       }
       if (end_time && !isValidTime(end_time)) {
-        return res.status(400).json({ error: 'Format end_time invalide (attendu HH:mm)' });
+        return res.status(400).json({ success: false, error: 'Format end_time invalide (attendu HH:mm)' });
       }
 
       const id = crypto.randomUUID().replace(/-/g, '');
@@ -1847,7 +1847,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(created);
     } catch (error) {
       logger.error('POST /api/planning/tasks error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1857,7 +1857,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { tasks: taskList } = req.body;
       if (!Array.isArray(taskList) || taskList.length === 0) {
-        return res.status(400).json({ error: 'Un tableau de tâches est requis' });
+        return res.status(400).json({ success: false, error: 'Un tableau de tâches est requis' });
       }
 
       const EVENT_SECTIONS_BATCH = ['rdv', 'evenements'];
@@ -1921,7 +1921,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       }
     } catch (error) {
       logger.error('POST /api/planning/tasks/batch error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1933,7 +1933,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, deleted: result.changes });
     } catch (error) {
       logger.error('DELETE /api/planning/tasks/by-source error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1941,18 +1941,18 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.put('/api/planning/tasks/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Tâche non trouvée' });
 
       const { display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, reservation_id, location_address, location_lat, location_lng } = req.body;
 
       if (date && !isValidDate(date)) {
-        return res.status(400).json({ error: 'Format date invalide (attendu YYYY-MM-DD)' });
+        return res.status(400).json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
       }
       if (time && !isValidTime(time)) {
-        return res.status(400).json({ error: 'Format heure invalide (attendu HH:mm)' });
+        return res.status(400).json({ success: false, error: 'Format heure invalide (attendu HH:mm)' });
       }
       if (end_time && !isValidTime(end_time)) {
-        return res.status(400).json({ error: 'Format end_time invalide (attendu HH:mm)' });
+        return res.status(400).json({ success: false, error: 'Format end_time invalide (attendu HH:mm)' });
       }
 
       const stmt = db.prepare(`
@@ -2000,7 +2000,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/tasks/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2008,13 +2008,13 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/planning/tasks/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Tâche non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Tâche non trouvée' });
 
       db.prepare("UPDATE task_assignments SET deleted_at = datetime('now'), modified_by = ?, modified_at = datetime('now') WHERE id = ?").run(req.user.id, req.params.id);
       res.json({ success: true, message: 'Tâche supprimée' });
     } catch (error) {
       logger.error('DELETE /api/planning/tasks/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2066,7 +2066,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('GET /api/planning/stats error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2167,7 +2167,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(result);
     } catch (error) {
       logger.error('GET /api/planning/planning-affaires error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2186,7 +2186,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ numero_affaire: num, status: newStatus });
     } catch (error) {
       logger.error('PATCH /api/planning/planning-affaires/:num/cycle-status error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2196,7 +2196,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { type, id } = req.params;
       const validTypes = ['google_event', 'ical_event', 'rdv'];
-      if (!validTypes.includes(type)) return res.status(400).json({ error: 'Type invalide' });
+      if (!validTypes.includes(type)) return res.status(400).json({ success: false, error: 'Type invalide' });
       const existing = db.prepare('SELECT status FROM planning_event_status WHERE event_type = ? AND event_id = ?').get(type, id);
       const currentStatus = existing?.status || 'pending';
       const nextStatus = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
@@ -2207,7 +2207,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ event_type: type, event_id: id, status: newStatus });
     } catch (error) {
       logger.error('PATCH /api/planning/planning-events/:type/:id/cycle-status error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2219,7 +2219,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(rows);
     } catch (error) {
       logger.error('GET /api/planning/planning-event-statuses error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2232,7 +2232,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, hidden: id });
     } catch (error) {
       logger.error('POST /api/planning/planning-hidden-affaires error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2245,7 +2245,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, unhidden: id });
     } catch (error) {
       logger.error('DELETE /api/planning/planning-hidden-affaires error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2254,7 +2254,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.patch('/api/planning/tasks/:id/toggle-visible', authenticateToken, (req, res) => {
     try {
       const task = db.prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
-      if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
+      if (!task) return res.status(404).json({ success: false, error: 'Tâche non trouvée' });
 
       const newVisible = (task.visible === 0) ? 1 : 0;
       db.prepare('UPDATE task_assignments SET visible = ?, modified_by = ?, modified_at = datetime(\'now\') WHERE id = ?')
@@ -2269,7 +2269,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PATCH /api/planning/tasks/:id/toggle-visible error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2278,7 +2278,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.patch('/api/planning/display-events/:id/toggle-visible', authenticateToken, (req, res) => {
     try {
       const event = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
-      if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
+      if (!event) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
 
       const newVisible = event.visible === 0 ? 1 : 0;
       db.prepare('UPDATE dynamic_display_events SET visible = ?, modified_by = ?, modified_at = datetime(\'now\') WHERE id = ?')
@@ -2288,7 +2288,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PATCH /api/planning/display-events/:id/toggle-visible error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2297,7 +2297,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.patch('/api/planning/display-events/:id/cycle-status', authenticateToken, (req, res) => {
     try {
       const event = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
-      if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
+      if (!event) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
 
       const nextStatus = { pending: 'in_progress', in_progress: 'done', done: 'pending' };
       const newStatus = nextStatus[event.status] || 'pending';
@@ -2308,7 +2308,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PATCH /api/planning/display-events/:id/cycle-status error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2318,7 +2318,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { person_id } = req.body;
       const event = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(req.params.id);
-      if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
+      if (!event) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
 
       db.prepare('UPDATE dynamic_display_events SET assigned_person_id = ? WHERE id = ?')
         .run(person_id || null, req.params.id);
@@ -2333,7 +2333,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/display-events/:id/assign error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2348,7 +2348,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ recurringTasks: rows });
     } catch (error) {
       logger.error('GET /api/planning/recurring-tasks error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2356,7 +2356,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/planning/recurring-tasks', authenticateToken, (req, res) => {
     try {
       const { title, section, time, period, recurrence, day_of_week, day_of_month, notes } = req.body;
-      if (!title || !title.trim()) return res.status(400).json({ error: 'Titre requis' });
+      if (!title || !title.trim()) return res.status(400).json({ success: false, error: 'Titre requis' });
       const id = crypto.randomUUID().replace(/-/g, '');
       db.prepare(`
         INSERT INTO recurring_tasks (id, title, section, time, period, recurrence, day_of_week, day_of_month, notes, active, created_by, created_at)
@@ -2366,7 +2366,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(created);
     } catch (error) {
       logger.error('POST /api/planning/recurring-tasks error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2379,11 +2379,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         WHERE id = ?
       `).run(title, section || 'manual', time || null, period || null, recurrence || 'daily', day_of_week ?? null, day_of_month ?? null, notes || '', active ?? 1, req.params.id);
       const updated = db.prepare('SELECT * FROM recurring_tasks WHERE id = ?').get(req.params.id);
-      if (!updated) return res.status(404).json({ error: 'Tâche récurrente introuvable' });
+      if (!updated) return res.status(404).json({ success: false, error: 'Tâche récurrente introuvable' });
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/recurring-tasks/:id error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2391,11 +2391,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/planning/recurring-tasks/:id', authenticateToken, (req, res) => {
     try {
       const result = db.prepare('DELETE FROM recurring_tasks WHERE id = ?').run(req.params.id);
-      if (result.changes === 0) return res.status(404).json({ error: 'Introuvable' });
+      if (result.changes === 0) return res.status(404).json({ success: false, error: 'Introuvable' });
       res.json({ success: true });
     } catch (error) {
       logger.error('DELETE /api/planning/recurring-tasks error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2404,12 +2404,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/planning/recurring-tasks/generate', authenticateToken, (req, res) => {
     try {
       const { date } = req.body;
-      if (!date) return res.status(400).json({ error: 'Date requise' });
+      if (!date) return res.status(400).json({ success: false, error: 'Date requise' });
       const count = generateRecurringTasks(date);
       res.json({ generated: count });
     } catch (error) {
       logger.error('POST /api/planning/recurring-tasks/generate error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2418,7 +2418,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/planning/tasks/clear-completed', authenticateToken, (req, res) => {
     try {
       const { date } = req.body;
-      if (!date) return res.status(400).json({ error: 'Date requise' });
+      if (!date) return res.status(400).json({ success: false, error: 'Date requise' });
       const result = db.prepare(`
         UPDATE task_assignments
         SET deleted_at = datetime('now'), modified_by = ?, modified_at = datetime('now')
@@ -2434,7 +2434,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ cleared: result.changes });
     } catch (error) {
       logger.error('POST /api/planning/tasks/clear-completed error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2443,12 +2443,12 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/planning/tasks/rollover', authenticateToken, (req, res) => {
     try {
       const { fromDate } = req.body;
-      if (!fromDate) return res.status(400).json({ error: 'Date requise' });
+      if (!fromDate) return res.status(400).json({ success: false, error: 'Date requise' });
       const count = rolloverPendingTasks(fromDate);
       res.json({ rolled: count });
     } catch (error) {
       logger.error('POST /api/planning/tasks/rollover error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2463,7 +2463,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ calendars: rows });
     } catch (error) {
       logger.error('GET ical-calendars error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2471,14 +2471,14 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/planning/ical-calendars', authenticateToken, (req, res) => {
     try {
       const { name, url, color } = req.body;
-      if (!name?.trim() || !url?.trim()) return res.status(400).json({ error: 'Nom et URL requis' });
+      if (!name?.trim() || !url?.trim()) return res.status(400).json({ success: false, error: 'Nom et URL requis' });
       const id = crypto.randomUUID().replace(/-/g, '');
       db.prepare('INSERT INTO ical_calendars (id, name, url, color) VALUES (?, ?, ?, ?)').run(id, name.trim(), url.trim(), color || '#3b82f6');
       const created = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(id);
       res.json(created);
     } catch (error) {
       logger.error('POST ical-calendars error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2489,11 +2489,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       db.prepare('UPDATE ical_calendars SET name = ?, url = ?, color = ?, enabled = ? WHERE id = ?')
         .run(name, url, color || '#3b82f6', enabled ?? 1, req.params.id);
       const updated = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(req.params.id);
-      if (!updated) return res.status(404).json({ error: 'Calendrier introuvable' });
+      if (!updated) return res.status(404).json({ success: false, error: 'Calendrier introuvable' });
       res.json(updated);
     } catch (error) {
       logger.error('PUT ical-calendars error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2501,11 +2501,11 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/planning/ical-calendars/:id', authenticateToken, (req, res) => {
     try {
       const result = db.prepare('DELETE FROM ical_calendars WHERE id = ?').run(req.params.id);
-      if (result.changes === 0) return res.status(404).json({ error: 'Introuvable' });
+      if (result.changes === 0) return res.status(404).json({ success: false, error: 'Introuvable' });
       res.json({ success: true });
     } catch (error) {
       logger.error('DELETE ical-calendars error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2513,7 +2513,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/planning/ical-events', authenticateToken, cacheMiddleware(icalCache, (req) => `ical-${req.query.dateFrom}-${req.query.dateTo}`, 5 * 60_000), async (req, res) => {
     try {
       const { dateFrom, dateTo } = req.query;
-      if (!dateFrom || !dateTo) return res.status(400).json({ error: 'dateFrom et dateTo requis' });
+      if (!dateFrom || !dateTo) return res.status(400).json({ success: false, error: 'dateFrom et dateTo requis' });
 
       const calendars = db.prepare('SELECT * FROM ical_calendars WHERE enabled = 1').all();
       const allEvents = [];
@@ -2553,7 +2553,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json({ events: allEvents, syncErrors: syncErrors.length ? syncErrors : undefined });
     } catch (error) {
       logger.error('GET ical-events error:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -2764,7 +2764,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(rows);
     } catch (error) {
       logger.error('GET /api/planning/planning-assignments error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2774,7 +2774,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { entity_type, entity_id, person_id } = req.body;
       if (!entity_type || !entity_id || !person_id) {
-        return res.status(400).json({ error: 'entity_type, entity_id et person_id requis' });
+        return res.status(400).json({ success: false, error: 'entity_type, entity_id et person_id requis' });
       }
       const id = crypto.randomUUID().replace(/-/g, '');
       db.prepare(`
@@ -2792,7 +2792,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(assignments);
     } catch (error) {
       logger.error('POST /api/planning/planning-assignments error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2800,7 +2800,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/planning/planning-assignments/:id', authenticateToken, (req, res) => {
     try {
       const row = db.prepare('SELECT * FROM planning_assignments WHERE id = ?').get(req.params.id);
-      if (!row) return res.status(404).json({ error: 'Affectation non trouvée' });
+      if (!row) return res.status(404).json({ success: false, error: 'Affectation non trouvée' });
       db.prepare('DELETE FROM planning_assignments WHERE id = ?').run(req.params.id);
       // Retourner les affectations restantes pour cette entité
       const assignments = db.prepare(`
@@ -2813,7 +2813,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json(assignments);
     } catch (error) {
       logger.error('DELETE /api/planning/planning-assignments error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -2825,7 +2825,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
       res.json([]);
     } catch (error) {
       logger.error('DELETE /api/planning/planning-assignments/entity error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 

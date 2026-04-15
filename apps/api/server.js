@@ -37,6 +37,7 @@ import { createAuthenticateToken } from './middleware/authenticate.js';
 import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess, requireNotReadOnly } from './middleware/authorize.js';
 import { xssSanitize } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { httpLogger } from './middleware/httpLogger.js';
 
 // ── Routes ──
 import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
@@ -98,6 +99,7 @@ app.use(cookieParser());
 // [AUDIT FIX H3] Limite body JSON réduite (les imports volumineux utilisent multer)
 app.use(express.json({ limit: '1mb' }));
 app.use(xssSanitize);
+app.use(httpLogger);
 
 // Rate limiting
 app.use('/api/', generalLimiter);

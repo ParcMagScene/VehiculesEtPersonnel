@@ -155,7 +155,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json(db.prepare(sql).all(...params));
     } catch (err) {
       logger.error('GET /api/inventory/locations:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -172,9 +172,9 @@ export function setupInventoryRoutes(app, authenticate) {
       const loc = db.prepare('SELECT * FROM inventory_locations WHERE id = ?').get(result.lastInsertRowid);
       res.status(201).json(loc);
     } catch (err) {
-      if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Code emplacement déjà utilisé' });
+      if (err.message.includes('UNIQUE')) return res.status(409).json({ success: false, error: 'Code emplacement déjà utilisé' });
       logger.error('POST /api/inventory/locations:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -183,7 +183,7 @@ export function setupInventoryRoutes(app, authenticate) {
     try {
       const { name, code, depot_number, type, zone, floor, capacity, address, gps_lat, gps_lon, parent_id, is_active } = req.body;
       const existing = db.prepare('SELECT * FROM inventory_locations WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Emplacement non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Emplacement non trouvé' });
       
       db.prepare(`
         UPDATE inventory_locations SET name=?, code=?, depot_number=?, type=?, zone=?, floor=?, capacity=?, 
@@ -199,7 +199,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json(db.prepare('SELECT * FROM inventory_locations WHERE id = ?').get(req.params.id));
     } catch (err) {
       logger.error('PUT /api/inventory/locations/:id:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -207,14 +207,14 @@ export function setupInventoryRoutes(app, authenticate) {
   app.delete('/api/inventory/locations/:id', authenticate, (req, res) => {
     try {
       const usage = db.prepare('SELECT COUNT(*) as c FROM stock_items WHERE depot_id = ?').get(req.params.id);
-      if (usage.c > 0) return res.status(409).json({ error: `${usage.c} article(s) utilisent cet emplacement` });
+      if (usage.c > 0) return res.status(409).json({ success: false, error: `${usage.c} article(s) utilisent cet emplacement` });
       
       const result = db.prepare('DELETE FROM inventory_locations WHERE id = ?').run(req.params.id);
-      if (!result.changes) return res.status(404).json({ error: 'Non trouvé' });
+      if (!result.changes) return res.status(404).json({ success: false, error: 'Non trouvé' });
       res.json({ success: true });
     } catch (err) {
       logger.error('DELETE /api/inventory/locations/:id:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -235,7 +235,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json(prices);
     } catch (err) {
       logger.error('GET /api/inventory/prices:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -252,7 +252,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.status(201).json(db.prepare('SELECT * FROM inventory_price_history WHERE id = ?').get(result.lastInsertRowid));
     } catch (err) {
       logger.error('POST /api/inventory/prices:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -264,7 +264,7 @@ export function setupInventoryRoutes(app, authenticate) {
   app.get('/api/inventory/price-engine/:itemId', authenticate, (req, res) => {
     try {
       const item = db.prepare('SELECT id, name, reference, unit_price FROM stock_items WHERE id = ?').get(req.params.itemId);
-      if (!item) return res.status(404).json({ error: 'Article non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Article non trouvé' });
       
       const priceEntries = db.prepare(`
         SELECT * FROM inventory_price_history 
@@ -280,7 +280,7 @@ export function setupInventoryRoutes(app, authenticate) {
       });
     } catch (err) {
       logger.error('GET /api/inventory/price-engine:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
   
@@ -313,7 +313,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json(results);
     } catch (err) {
       logger.error('POST /api/inventory/price-engine/batch:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -347,7 +347,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json({ inserted: prices.length, analysis });
     } catch (err) {
       logger.error('POST /api/inventory/price-engine/fusion:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -372,7 +372,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json(db.prepare(sql).all(...params));
     } catch (err) {
       logger.error('GET /api/inventory/anomalies:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -391,7 +391,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json(db.prepare('SELECT * FROM inventory_anomalies WHERE id = ?').get(req.params.id));
     } catch (err) {
       logger.error('PUT /api/inventory/anomalies/:id:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -457,7 +457,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json({ detected_count: detected.length, anomalies: detected });
     } catch (err) {
       logger.error('POST /api/inventory/anomalies/detect:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -526,7 +526,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json({ counted: results.length, adjustments: results.filter(r => r.diff !== 0).length, details: results });
     } catch (err) {
       logger.error('POST /api/inventory/count:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -558,7 +558,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json(alerts);
     } catch (err) {
       logger.error('GET /api/inventory/alerts:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -634,7 +634,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json(stats);
     } catch (err) {
       logger.error('GET /api/inventory/stats:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -644,7 +644,7 @@ export function setupInventoryRoutes(app, authenticate) {
       db.prepare("DELETE FROM inventory_stats_cache WHERE cache_key = 'global_stats'").run();
       res.json({ success: true, message: 'Cache invalidé' });
     } catch (err) {
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -686,7 +686,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json({ classified: result.total, distribution: { A: result.a, B: result.b, C: result.c } });
     } catch (err) {
       logger.error('POST /api/inventory/abc-classify:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -730,7 +730,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.send('\uFEFF' + csv); // BOM pour Excel
     } catch (err) {
       logger.error('GET /api/inventory/export/csv:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -755,7 +755,7 @@ export function setupInventoryRoutes(app, authenticate) {
       res.json({ exported_at: new Date().toISOString(), count: items.length, items });
     } catch (err) {
       logger.error('GET /api/inventory/export/json:', err.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 

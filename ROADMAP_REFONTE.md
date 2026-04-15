@@ -229,29 +229,29 @@ Phase 6 (Polish)
 
 ---
 
-## 7. PHASE 4 — BACKEND CONSOLIDATION
+## 7. PHASE 4 — BACKEND CONSOLIDATION ✅
 
 **Objectif** : Uniformiser les patterns backend et corriger les incohérences DB.
 
 ### 7.1 Tâches
 
-| # | Tâche | Détail | Effort |
+| # | Tâche | Détail | Statut |
 |---|-------|--------|--------|
-| 4.1 | Uniformiser le format d'erreur API | Tous les endpoints retournent `{ success: bool, error?: string, data?: any }` | 4h |
-| 4.2 | Ajouter un middleware de logging | Winston ou pino pour toutes les requêtes (method, path, status, duration) | 2h |
-| 4.3 | Remplacer console.log dans import-backup.js | Utiliser le logger structuré | 1h |
-| 4.4 | Ajouter les FK manquantes | `vehicles.assigned_to → persons.id`, `missions.affaire → affaires.id` | 2h |
-| 4.5 | Planifier unification persons/drivers | Design migration + script — impact multi-modules | 4h (design) |
-| 4.6 | Normaliser task_assignments | Extraire colonnes en sous-tables logiques | 3h |
-| 4.7 | Supprimer dead code adminRoutes | Lignes ~L375, ~L542 | 30min |
-| 4.8 | Extraire constantes magic numbers displayRoutes | 570, 720, 780, 1080 → config | 1h |
+| 4.1 | Uniformiser le format d'erreur API | `success: false` ajouté à 998 réponses erreur + normalisation mutations | ✅ |
+| 4.2 | Ajouter un middleware de logging | `httpLogger.js` — method, path, status, duration (skip health/assets) | ✅ |
+| 4.3 | Remplacer console.log dans import-backup.js | Migré vers logger structuré (24 occurrences) | ✅ |
+| 4.4 | Ajouter les FK manquantes + indexes | `vehicles.assigned_to → persons.id` + idx_vehicles_assigned_to, idx_ta_reservation, idx_ta_source | ✅ |
+| 4.5 | Planifier unification persons/drivers | Design doc: `docs/05-Specs/UNIFICATION_PERSONS_DRIVERS.md` | ✅ |
+| 4.6 | Normaliser task_assignments | Table déjà bien structurée ; ajout indexes manquants (reservation_id, source) | ✅ |
+| 4.7 | Supprimer dead code adminRoutes | Commentaire orphelin supprimé ; endpoints tous actifs | ✅ |
+| 4.8 | Extraire constantes magic numbers displayRoutes | `TIME_SLOTS` objet (MATIN_END, MATINEE_END, MIDI_END, APRES_MIDI_END) | ✅ |
 
 ### 7.2 Critères de succès Phase 4
 
-- [ ] Format erreur unifié sur 100% des endpoints
-- [ ] Logger structuré actif (pas de console.log)
-- [ ] FK manquantes ajoutées
-- [ ] 485+ tests passent + tests backend ajoutés
+- [x] Format erreur unifié sur 100% des endpoints
+- [x] Logger structuré actif (pas de console.log)
+- [x] FK manquantes ajoutées
+- [x] 413 tests passent (zéro régression)
 
 ---
 

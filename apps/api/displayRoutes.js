@@ -3,6 +3,14 @@
 // (Affichage dynamique : écrans, playlists, médias, messages, templates, logs)
 // ═══════════════════════════════════════════════════════════════
 
+// ──── Constantes de créneaux horaires (en minutes depuis minuit) ────
+const TIME_SLOTS = {
+  MATIN_END: 570,       // 9h30  → fin créneau "matin"
+  MATINEE_END: 720,     // 12h00 → fin créneau "matinée"
+  MIDI_END: 780,        // 13h00 → fin créneau "midi"
+  APRES_MIDI_END: 1080, // 18h00 → fin créneau "après-midi"
+};
+
 import { dirname, join, extname, basename, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -194,7 +202,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(screens);
     } catch (error) {
       logger.error('Display screens list:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -207,11 +215,11 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN display_playlists p ON p.id = s.playlist_id
         WHERE s.id = ?
       `).get(req.params.id);
-      if (!screen) return res.status(404).json({ error: 'Écran introuvable' });
+      if (!screen) return res.status(404).json({ success: false, error: 'Écran introuvable' });
       res.json(screen);
     } catch (error) {
       logger.error('Display screen detail:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -243,7 +251,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(screen);
     } catch (error) {
       logger.error('Display screen create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -252,7 +260,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { name, location, resolution, orientation, playlistId, config, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_screens WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Écran introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Écran introuvable' });
 
       db.prepare(`
         UPDATE display_screens
@@ -278,7 +286,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('Display screen update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -286,7 +294,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/display/screens/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM display_screens WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Écran introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Écran introuvable' });
 
       db.prepare('DELETE FROM display_screens WHERE id = ?').run(req.params.id);
       logAction(null, 'screen_deleted', { id: req.params.id, name: existing.name }, req.user.id);
@@ -294,7 +302,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display screen delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -309,7 +317,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display screen heartbeat:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -328,7 +336,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(playlists);
     } catch (error) {
       logger.error('Display playlists list:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -336,7 +344,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/display/playlists/:id', authenticateToken, (req, res) => {
     try {
       const playlist = db.prepare('SELECT * FROM display_playlists WHERE id = ?').get(req.params.id);
-      if (!playlist) return res.status(404).json({ error: 'Playlist introuvable' });
+      if (!playlist) return res.status(404).json({ success: false, error: 'Playlist introuvable' });
 
       const items = db.prepare(`
         SELECT pi.*,
@@ -354,7 +362,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ ...playlist, items });
     } catch (error) {
       logger.error('Display playlist detail:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -398,7 +406,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(playlist);
     } catch (error) {
       logger.error('Display playlist create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -407,7 +415,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { name, description, transition, defaultDuration, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_playlists WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Playlist introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Playlist introuvable' });
 
       db.prepare(`
         UPDATE display_playlists
@@ -430,7 +438,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('Display playlist update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -438,7 +446,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/display/playlists/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM display_playlists WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Playlist introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Playlist introuvable' });
 
       // Dissocier les écrans liés
       db.prepare('UPDATE display_screens SET playlist_id = NULL WHERE playlist_id = ?').run(req.params.id);
@@ -449,7 +457,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display playlist delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -459,7 +467,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const { items } = req.body;
 
       const existing = db.prepare('SELECT * FROM display_playlists WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Playlist introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Playlist introuvable' });
 
       const replaceItems = db.transaction(() => {
         db.prepare('DELETE FROM display_playlist_items WHERE playlist_id = ?').run(req.params.id);
@@ -489,7 +497,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ ...playlist, items: updatedItems });
     } catch (error) {
       logger.error('Display playlist items update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -510,7 +518,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(media);
     } catch (error) {
       logger.error('Display media list:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -522,7 +530,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/display/media — Upload média
   app.post('/api/display/media', authenticateToken, uploadMedia.single('file'), validateFileType(DISPLAY_MEDIA_MIMES), (req, res) => {
     try {
-      if (!req.file) return res.status(400).json({ error: 'Aucun fichier fourni' });
+      if (!req.file) return res.status(400).json({ success: false, error: 'Aucun fichier fourni' });
 
       const mediaType = req.file.mimetype.startsWith('video/') ? 'video' : 'image';
       const filePath = `/display-media/${req.file.filename}`;
@@ -553,7 +561,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(media);
     } catch (error) {
       logger.error('Display media upload:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -561,7 +569,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/display/media/:id', authenticateToken, (req, res) => {
     try {
       const media = db.prepare('SELECT * FROM display_media WHERE id = ?').get(req.params.id);
-      if (!media) return res.status(404).json({ error: 'Média introuvable' });
+      if (!media) return res.status(404).json({ success: false, error: 'Média introuvable' });
 
       // Supprimer le fichier physique
       const fullPath = join(__dirname, '..', '..', 'public', media.file_path);
@@ -577,7 +585,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display media delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -597,7 +605,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(messages);
     } catch (error) {
       logger.error('Display messages list:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -626,7 +634,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(message);
     } catch (error) {
       logger.error('Display message create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -635,7 +643,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { title, body, priority, style, templateId, dateStart, dateEnd, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_messages WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Message introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Message introuvable' });
 
       db.prepare(`
         UPDATE display_messages
@@ -662,7 +670,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('Display message update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -670,7 +678,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/display/messages/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM display_messages WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Message introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Message introuvable' });
 
       db.prepare('DELETE FROM display_playlist_items WHERE item_type = ? AND item_id = ?').run('message', req.params.id);
       db.prepare('DELETE FROM display_messages WHERE id = ?').run(req.params.id);
@@ -679,7 +687,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display message delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -692,7 +700,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(templates);
     } catch (error) {
       logger.error('Display templates list:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -712,7 +720,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(template);
     } catch (error) {
       logger.error('Display template create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -721,7 +729,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { name, category, description, layout, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_templates WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Template introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Template introuvable' });
 
       db.prepare(`
         UPDATE display_templates
@@ -744,7 +752,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error('Display template update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -752,7 +760,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/display/templates/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM display_templates WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Template introuvable' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Template introuvable' });
 
       db.prepare('UPDATE display_messages SET template_id = NULL WHERE template_id = ?').run(req.params.id);
       db.prepare('DELETE FROM display_playlist_items WHERE item_type = ? AND item_id = ?').run('template', req.params.id);
@@ -762,7 +770,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display template delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -794,7 +802,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ logs, total: total.c });
     } catch (error) {
       logger.error('Display logs list:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -818,7 +826,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('Display stats:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -852,7 +860,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('Display appearance get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -877,7 +885,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display appearance save:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -895,7 +903,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ welcomeMessages: messages });
     } catch (error) {
       logger.error('Display welcome messages get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -920,7 +928,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display welcome messages save:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -943,17 +951,17 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const timeMinutes = hour * 60 + minutes;
 
       let slot;
-      if (timeMinutes < 570) slot = 'matin';           // avant 9h30
-      else if (timeMinutes < 720) slot = 'matinee';     // 9h30 - 12h
-      else if (timeMinutes < 780) slot = 'midi';         // 12h - 13h
-      else if (timeMinutes < 1080) slot = 'apres_midi';  // 13h - 18h
-      else slot = 'soir';                                 // après 18h
+      if (timeMinutes < TIME_SLOTS.MATIN_END) slot = 'matin';           // avant 9h30
+      else if (timeMinutes < TIME_SLOTS.MATINEE_END) slot = 'matinee';   // 9h30 - 12h
+      else if (timeMinutes < TIME_SLOTS.MIDI_END) slot = 'midi';         // 12h - 13h
+      else if (timeMinutes < TIME_SLOTS.APRES_MIDI_END) slot = 'apres_midi'; // 13h - 18h
+      else slot = 'soir';                                                 // après 18h
 
       const row = db.prepare('SELECT message FROM display_welcome_messages WHERE day = ? AND slot = ?').get(day, slot);
       res.json({ message: row?.message || '', isSneaky: false });
     } catch (error) {
       logger.error('Display welcome message:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -967,7 +975,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ sections });
     } catch (error) {
       logger.error('Display sidebar-config get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -984,7 +992,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display sidebar-config save:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -995,7 +1003,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ rules });
     } catch (error) {
       logger.error('Display color rules get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1016,7 +1024,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display color rules save:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1029,19 +1037,19 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ gifs: files });
     } catch (error) {
       logger.error('Display gifs list:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
   // POST /api/display/location-gifs — Upload d'un GIF
   app.post('/api/display/location-gifs', authenticateToken, requireAdmin, uploadGif.single('gif'), validateFileType(DISPLAY_GIF_MIMES), (req, res) => {
     try {
-      if (!req.file) return res.status(400).json({ error: 'Fichier requis' });
+      if (!req.file) return res.status(400).json({ success: false, error: 'Fichier requis' });
       logAction(null, 'gif_uploaded', { filename: req.file.filename }, req.user.id);
       res.json({ success: true, filename: req.file.filename });
     } catch (error) {
       logger.error('Display gif upload:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1052,14 +1060,14 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const sanitized = basename(req.params.filename);
       const normalizedBase = resolve(gifsDir);
       const filePath = resolve(gifsDir, sanitized);
-      if (!filePath.startsWith(normalizedBase + '/') && filePath !== normalizedBase) return res.status(403).json({ error: 'Accès interdit' });
-      if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Fichier introuvable' });
+      if (!filePath.startsWith(normalizedBase + '/') && filePath !== normalizedBase) return res.status(403).json({ success: false, error: 'Accès interdit' });
+      if (!fs.existsSync(filePath)) return res.status(404).json({ success: false, error: 'Fichier introuvable' });
       fs.unlinkSync(filePath);
       logAction(null, 'gif_deleted', { filename: req.params.filename }, req.user.id);
       res.json({ success: true });
     } catch (error) {
       logger.error('Display gif delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1070,7 +1078,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ rules });
     } catch (error) {
       logger.error('Display location icon rules get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1091,7 +1099,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display location icon rules save:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1100,7 +1108,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/display/logo — Upload du logo
   app.post('/api/display/logo', authenticateToken, requireAdmin, uploadLogo.single('logo'), validateFileType(DISPLAY_IMAGE_MIMES), (req, res) => {
     try {
-      if (!req.file) return res.status(400).json({ error: 'Fichier requis' });
+      if (!req.file) return res.status(400).json({ success: false, error: 'Fichier requis' });
       // Stocker le chemin dans la config
       const upsert = db.prepare(`
         INSERT INTO display_config (key, value, updated_at) VALUES ('logoPath', ?, datetime('now'))
@@ -1111,7 +1119,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, path: `/display-logo/${req.file.filename}` });
     } catch (error) {
       logger.error('Display logo upload:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1132,7 +1140,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       }
     } catch (error) {
       logger.error('Display logo get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1141,7 +1149,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/display/sneaky-photo — Activer une photo furtive
   app.post('/api/display/sneaky-photo', authenticateToken, requireAdmin, uploadSneaky.single('photo'), validateFileType(DISPLAY_IMAGE_MIMES), (req, res) => {
     try {
-      if (!req.file) return res.status(400).json({ error: 'Photo requise' });
+      if (!req.file) return res.status(400).json({ success: false, error: 'Photo requise' });
       const duration = req.body.duration || '60';
       const expiresAt = computeExpiration(duration);
       const config = {
@@ -1156,7 +1164,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, expiresAt });
     } catch (error) {
       logger.error('Display sneaky photo upload:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1171,7 +1179,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       }
     } catch (error) {
       logger.error('Display sneaky photo status:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1189,7 +1197,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display sneaky photo delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1206,7 +1214,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, expiresAt });
     } catch (error) {
       logger.error('Display sneaky message create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1221,7 +1229,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       }
     } catch (error) {
       logger.error('Display sneaky message status:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1233,7 +1241,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Display sneaky message delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1247,7 +1255,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const apiKey = apiKeyRow ? JSON.parse(apiKeyRow.value) : '';
       const city = cityRow ? JSON.parse(cityRow.value) : 'Saint-Denis,RE,FR';
 
-      if (!apiKey) return res.status(503).json({ error: 'Clé API météo non configurée' });
+      if (!apiKey) return res.status(503).json({ success: false, error: 'Clé API météo non configurée' });
 
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=fr`;
       const response = await fetch(url);
@@ -1256,7 +1264,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(data);
     } catch (error) {
       logger.error('Display weather:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1433,7 +1441,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('Display tv-state:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1445,12 +1453,12 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     const filePath = resolve(gifsDir, sanitized);
     // Vérifier que le chemin résolu reste dans gifsDir
     if (!filePath.startsWith(normalizedBase + '/') && filePath !== normalizedBase) {
-      return res.status(403).json({ error: 'Accès interdit' });
+      return res.status(403).json({ success: false, error: 'Accès interdit' });
     }
     if (fs.existsSync(filePath)) {
       res.sendFile(filePath);
     } else {
-      res.status(404).json({ error: 'Fichier introuvable' });
+      res.status(404).json({ success: false, error: 'Fichier introuvable' });
     }
   });
 
@@ -1620,7 +1628,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('Display tv-public-state:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1642,7 +1650,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ completed: rows.map(r => r.event_id) });
     } catch (error) {
       logger.error('Display completed-events:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1656,7 +1664,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, eventId });
     } catch (error) {
       logger.error('Display complete-event:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1670,7 +1678,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, eventId });
     } catch (error) {
       logger.error('Display uncomplete-event:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1734,7 +1742,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('Compat /api/events:', error);
-      res.status(500).json({ error: 'Impossible de récupérer les événements' });
+      res.status(500).json({ success: false, error: 'Impossible de récupérer les événements' });
     }
   });
 
@@ -1749,7 +1757,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(config);
     } catch (error) {
       logger.error('Compat /api/config:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1775,7 +1783,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ message: row?.message || '' });
     } catch (error) {
       logger.error('Compat /api/welcome-message:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1787,7 +1795,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json({ completed: rows.map(r => r.event_id) });
     } catch (error) {
       logger.error('Compat /api/completed-events:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1795,13 +1803,13 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/complete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
-      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
+      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ success: false, error: 'eventId invalide' });
       const today = new Date().toISOString().split('T')[0];
       db.prepare('INSERT OR IGNORE INTO display_completed_events (event_id, event_date) VALUES (?, ?)').run(String(eventId), today);
       res.json({ success: true, eventId });
     } catch (error) {
       logger.error('Compat /api/complete-event:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1809,13 +1817,13 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/uncomplete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
-      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
+      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ success: false, error: 'eventId invalide' });
       const today = new Date().toISOString().split('T')[0];
       db.prepare('DELETE FROM display_completed_events WHERE event_id = ? AND event_date = ?').run(String(eventId), today);
       res.json({ success: true, eventId });
     } catch (error) {
       logger.error('Compat /api/uncomplete-event:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1826,7 +1834,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(rules);
     } catch (error) {
       logger.error('Compat /api/event-color-rules:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1837,7 +1845,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       res.json(rules);
     } catch (error) {
       logger.error('Compat /api/location-icons:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1848,14 +1856,14 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const cityRow = db.prepare("SELECT value FROM display_config WHERE key = 'weatherCity'").get();
       const apiKey = apiKeyRow ? JSON.parse(apiKeyRow.value) : '';
       const city = cityRow ? JSON.parse(cityRow.value) : 'Saint-Denis,RE,FR';
-      if (!apiKey) return res.status(503).json({ error: 'Clé API météo non configurée' });
+      if (!apiKey) return res.status(503).json({ success: false, error: 'Clé API météo non configurée' });
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=fr`;
       const response = await fetch(url);
       const data = await response.json();
       res.json(data);
     } catch (error) {
       logger.error('Compat /api/weather:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1884,9 +1892,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         const filePath = join(sneakyDir, config.filename);
         if (fs.existsSync(filePath)) return res.sendFile(filePath);
       }
-      res.status(404).json({ error: 'Aucune photo active' });
+      res.status(404).json({ success: false, error: 'Aucune photo active' });
     } catch (error) {
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1897,9 +1905,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       if (files.length > 0) {
         return res.sendFile(join(logoDir, files[0]));
       }
-      res.status(404).json({ error: 'Aucun logo trouvé' });
+      res.status(404).json({ success: false, error: 'Aucun logo trouvé' });
     } catch (error) {
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 

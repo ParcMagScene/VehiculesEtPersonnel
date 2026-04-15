@@ -43,7 +43,7 @@ app.patch('/api/users/me', authenticateToken, (req, res) => {
   try {
     const { name } = req.body;
     if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Le nom est requis' });
+      return res.status(400).json({ success: false, error: 'Le nom est requis' });
     }
     db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), req.user.id);
     const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(req.user.id);
@@ -51,7 +51,7 @@ app.patch('/api/users/me', authenticateToken, (req, res) => {
     res.json({ success: true, user });
   } catch (error) {
     logger.error('Erreur mise à jour profil:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -62,7 +62,7 @@ const AVATAR_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 app.post('/api/users/me/avatar', authenticateToken, uploadAvatar.single('avatar'), validateFileType(AVATAR_MIMES), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'Aucun fichier envoyé' });
+      return res.status(400).json({ success: false, error: 'Aucun fichier envoyé' });
     }
     const avatarUrl = `/avatars/${req.file.filename}`;
     db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatarUrl, req.user.id);
@@ -72,7 +72,7 @@ app.post('/api/users/me/avatar', authenticateToken, uploadAvatar.single('avatar'
     res.json({ success: true, user, avatarUrl });
   } catch (error) {
     logger.error('Erreur upload avatar:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -89,7 +89,7 @@ app.delete('/api/users/me/avatar', authenticateToken, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur suppression avatar:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -101,7 +101,7 @@ app.get('/api/users/me/preferences', authenticateToken, (req, res) => {
     res.json(prefs);
   } catch (error) {
     logger.error('Erreur récupération préférences:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -113,7 +113,7 @@ app.put('/api/users/me/preferences', authenticateToken, (req, res) => {
     res.json(req.body);
   } catch (error) {
     logger.error('Erreur sauvegarde préférences:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -125,10 +125,10 @@ app.patch('/api/users/:id/profile', authenticateToken, requireAdmin, (req, res) 
     const { id } = req.params;
     const { name } = req.body;
     if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Le nom est requis' });
+      return res.status(400).json({ success: false, error: 'Le nom est requis' });
     }
     const existing = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
-    if (!existing) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    if (!existing) return res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
 
     db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), id);
     const updated = db.prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?').get(id);
@@ -137,7 +137,7 @@ app.patch('/api/users/:id/profile', authenticateToken, requireAdmin, (req, res) 
     res.json({ success: true, user });
   } catch (error) {
     logger.error('Erreur mise à jour profil utilisateur:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -145,10 +145,10 @@ app.patch('/api/users/:id/profile', authenticateToken, requireAdmin, (req, res) 
 app.post('/api/users/:id/avatar', authenticateToken, requireAdmin, uploadAvatar.single('avatar'), validateFileType(AVATAR_MIMES), (req, res) => {
   try {
     const { id } = req.params;
-    if (!req.file) return res.status(400).json({ error: 'Aucun fichier envoyé' });
+    if (!req.file) return res.status(400).json({ success: false, error: 'Aucun fichier envoyé' });
 
     const existing = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
-    if (!existing) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    if (!existing) return res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
 
     const avatarUrl = `/avatars/${req.file.filename}`;
     db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(avatarUrl, id);
@@ -158,7 +158,7 @@ app.post('/api/users/:id/avatar', authenticateToken, requireAdmin, uploadAvatar.
     res.json({ success: true, user, avatarUrl });
   } catch (error) {
     logger.error('Erreur upload avatar utilisateur:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -167,7 +167,7 @@ app.delete('/api/users/:id/avatar', authenticateToken, requireAdmin, (req, res) 
   try {
     const { id } = req.params;
     const target = db.prepare('SELECT avatar FROM users WHERE id = ?').get(id);
-    if (!target) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    if (!target) return res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
 
     if (target.avatar) {
       const publicDir = path.resolve(__dirname, '..', '..', 'public');
@@ -179,7 +179,7 @@ app.delete('/api/users/:id/avatar', authenticateToken, requireAdmin, (req, res) 
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur suppression avatar utilisateur:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 

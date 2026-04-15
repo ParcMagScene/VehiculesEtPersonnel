@@ -141,7 +141,7 @@ app.get('/api/affaires', authenticateToken, cacheMiddleware(listCache, () => 'af
     res.json(enriched);
   } catch (error) {
     logger.error('Erreur GET /api/affaires:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -162,7 +162,7 @@ app.get('/api/affaires/personnel-counts', authenticateToken, (req, res) => {
     res.json(counts);
   } catch (error) {
     logger.error('Erreur GET /api/affaires/personnel-counts:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -211,7 +211,7 @@ app.post('/api/affaires', authenticateToken, validate(affaireSchema), (req, res)
     }
   } catch (error) {
     logger.error('Erreur POST /api/affaires:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -235,13 +235,13 @@ app.put('/api/affaires/:id', authenticateToken, (req, res) => {
       req.user.id, id
     );
     const updated = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
-    if (!updated) return res.status(404).json({ error: 'Affaire non trouvée' });
+    if (!updated) return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
     invalidateEntity('affaires');
     listCache.invalidatePattern(/^planning-affaires/);
     res.json(updated);
   } catch (error) {
     logger.error('Erreur PUT /api/affaires:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -250,14 +250,14 @@ app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
   try {
     const { id } = req.params;
     const existing = db.prepare('SELECT id FROM affaires WHERE id = ?').get(id);
-    if (!existing) return res.status(404).json({ error: 'Affaire non trouvée' });
+    if (!existing) return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
     db.prepare('DELETE FROM affaires WHERE id = ?').run(id);
     invalidateEntity('affaires');
     listCache.invalidatePattern(/^planning-affaires/);
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur DELETE /api/affaires:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -286,7 +286,7 @@ app.get('/api/affaires/:id/links', authenticateToken, (req, res) => {
     res.json({ children, parents, total: children.length + parents.length });
   } catch (error) {
     logger.error('Erreur GET /api/affaires/:id/links:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -295,13 +295,13 @@ app.post('/api/affaires/:id/links', authenticateToken, (req, res) => {
   try {
     const parentId = parseInt(req.params.id);
     const { childAffaireId } = req.body;
-    if (!childAffaireId) return res.status(400).json({ error: 'childAffaireId requis' });
-    if (parentId === childAffaireId) return res.status(400).json({ error: 'Impossible de lier une affaire à elle-même' });
+    if (!childAffaireId) return res.status(400).json({ success: false, error: 'childAffaireId requis' });
+    if (parentId === childAffaireId) return res.status(400).json({ success: false, error: 'Impossible de lier une affaire à elle-même' });
 
     const parent = db.prepare('SELECT id, numero_affaire FROM affaires WHERE id = ?').get(parentId);
     const child = db.prepare('SELECT id, numero_affaire FROM affaires WHERE id = ?').get(childAffaireId);
-    if (!parent) return res.status(404).json({ error: 'Affaire parent non trouvée' });
-    if (!child) return res.status(404).json({ error: 'Affaire enfant non trouvée' });
+    if (!parent) return res.status(404).json({ success: false, error: 'Affaire parent non trouvée' });
+    if (!child) return res.status(404).json({ success: false, error: 'Affaire enfant non trouvée' });
 
     const existing = db.prepare('SELECT id FROM affaire_links WHERE parent_affaire_id = ? AND child_affaire_id = ?').get(parentId, childAffaireId);
     if (existing) return res.json({ success: true, message: 'Lien déjà existant', linkId: existing.id });
@@ -311,7 +311,7 @@ app.post('/api/affaires/:id/links', authenticateToken, (req, res) => {
     res.json({ success: true, linkId: result.lastInsertRowid });
   } catch (error) {
     logger.error('Erreur POST /api/affaires/:id/links:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -323,7 +323,7 @@ app.delete('/api/affaires/:id/links/:linkId', authenticateToken, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur DELETE affaire link:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -421,7 +421,7 @@ app.post('/api/affaires/sync-google-events', authenticateToken, (req, res) => {
     res.json({ created, linked, results });
   } catch (error) {
     logger.error('Erreur POST /api/affaires/sync-google-events:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -439,7 +439,7 @@ app.post('/api/affaires/:id/bp/annotate', authenticateToken, (req, res) => {
       SELECT numero_affaire, nom, type, client, date_debut, date_fin, adresse_livraison, google_event_id
       FROM affaires WHERE numero_affaire = ?
     `).get(affaireId);
-    if (!affaire) return res.status(404).json({ error: 'Affaire introuvable' });
+    if (!affaire) return res.status(404).json({ success: false, error: 'Affaire introuvable' });
 
     // 2. BP Items (groupés par section)
     let bpQuery = `
@@ -594,7 +594,7 @@ app.post('/api/affaires/:id/bp/annotate', authenticateToken, (req, res) => {
     logger.info(`BP annotate ${affaireId}: ${reservations.length} resa, ${tasks.length} tasks, ${personnel.length} perso, googleEventId=${googleEventId}`);
   } catch (error) {
     logger.error('Erreur POST /api/affaires/:id/bp/annotate:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 

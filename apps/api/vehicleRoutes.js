@@ -63,7 +63,7 @@ app.get('/api/vehicles', authenticateToken, cacheMiddleware(listCache, () => 've
     res.json(mappedVehicles);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -119,7 +119,7 @@ app.post('/api/vehicles', authenticateToken, requireAdmin, validate(vehicleSchem
     res.json(saved);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -190,7 +190,7 @@ app.put('/api/vehicles/:id', authenticateToken, requireAdmin, validate(vehicleSc
     res.json(saved);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -205,7 +205,7 @@ app.delete('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -255,7 +255,7 @@ app.get('/api/reservations', authenticateToken, cacheMiddleware(listCache, () =>
     res.json(mappedReservations);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -308,7 +308,7 @@ app.post('/api/reservations', authenticateToken, requireAdmin, validate(reservat
     `).get(reservation.id);
     
     if (!createdReservation) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération de la réservation créée' });
+      return res.status(500).json({ success: false, error: 'Erreur lors de la récupération de la réservation créée' });
     }
     
     // Mapper au format attendu par le frontend
@@ -363,7 +363,7 @@ app.post('/api/reservations', authenticateToken, requireAdmin, validate(reservat
     res.json(mappedReservation);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -437,7 +437,7 @@ app.put('/api/reservations/:id', authenticateToken, requireNotReadOnly, validate
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -451,14 +451,14 @@ app.patch('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) =
     if (google_drive_links !== undefined) {
       // Nouveau format : tableau de {url, label}
       if (!Array.isArray(google_drive_links)) {
-        return res.status(400).json({ error: 'google_drive_links doit être un tableau' });
+        return res.status(400).json({ success: false, error: 'google_drive_links doit être un tableau' });
       }
       linksToStore = JSON.stringify(google_drive_links);
     } else if (google_drive_link !== undefined) {
       // Ancien format rétrocompatible : string simple
       linksToStore = google_drive_link || '';
     } else {
-      return res.status(400).json({ error: 'Champ manquant (google_drive_links ou google_drive_link)' });
+      return res.status(400).json({ success: false, error: 'Champ manquant (google_drive_links ou google_drive_link)' });
     }
     
     const stmt = db.prepare(`
@@ -471,7 +471,7 @@ app.patch('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) =
     res.json({ success: true, googleDriveLinks: updatedLinks, googleDriveLink: linksToStore });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -500,7 +500,7 @@ app.delete('/api/reservations/:id', authenticateToken, requireAdmin, async (req,
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -530,7 +530,7 @@ app.get('/api/reservation-requests', authenticateToken, (req, res) => {
     res.json(requests);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -561,7 +561,7 @@ app.post('/api/reservation-requests', authenticateToken, validate(reservationReq
     res.json({ success: true, id: request.id });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -572,7 +572,7 @@ app.put('/api/reservation-requests/:id/approve', authenticateToken, (req, res) =
     const user = userStmt.get(req.user.id);
     
     if (!user || !user.is_admin) {
-      return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+      return res.status(403).json({ success: false, error: 'Accès réservé aux administrateurs' });
     }
 
     // Récupérer la demande
@@ -580,7 +580,7 @@ app.put('/api/reservation-requests/:id/approve', authenticateToken, (req, res) =
     const request = requestStmt.get(req.params.id);
     
     if (!request) {
-      return res.status(404).json({ error: 'Demande introuvable' });
+      return res.status(404).json({ success: false, error: 'Demande introuvable' });
     }
 
     // [AUDIT FIX HIGH-3] Vérifier les chevauchements avec les réservations existantes
@@ -641,7 +641,7 @@ app.put('/api/reservation-requests/:id/approve', authenticateToken, (req, res) =
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -652,7 +652,7 @@ app.put('/api/reservation-requests/:id/reject', authenticateToken, (req, res) =>
     const user = userStmt.get(req.user.id);
     
     if (!user || !user.is_admin) {
-      return res.status(403).json({ error: 'Accès réservé aux administrateurs' });
+      return res.status(403).json({ success: false, error: 'Accès réservé aux administrateurs' });
     }
 
     const updateStmt = db.prepare(`
@@ -667,7 +667,7 @@ app.put('/api/reservation-requests/:id/reject', authenticateToken, (req, res) =>
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -712,7 +712,7 @@ app.get('/api/maintenances', authenticateToken, cacheMiddleware(listCache, () =>
     res.json(mappedMaintenances);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -806,7 +806,7 @@ app.post('/api/maintenances', authenticateToken, validate(maintenanceSchema), (r
     res.json({ success: true, id: maintenance.id });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -829,7 +829,7 @@ app.put('/api/maintenances/:id', authenticateToken, validate(maintenanceSchema),
       const existing = db.prepare('SELECT created_by, status FROM maintenances WHERE id = ?').get(req.params.id);
       
       if (!existing) {
-        return res.status(404).json({ error: 'Maintenance introuvable' });
+        return res.status(404).json({ success: false, error: 'Maintenance introuvable' });
       }
       
       // Les non-autorisés peuvent uniquement modifier leurs propres signalements
@@ -969,7 +969,7 @@ app.put('/api/maintenances/:id', authenticateToken, validate(maintenanceSchema),
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -984,7 +984,7 @@ app.delete('/api/maintenances/:id', authenticateToken, requireMaintenanceAccess,
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -996,7 +996,7 @@ app.get('/api/history/:entityType/:entityId', authenticateToken, (req, res) => {
     res.json(history);
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 

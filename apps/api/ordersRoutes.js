@@ -55,7 +55,7 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
       res.json(suppliers);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -63,7 +63,7 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/suppliers', authenticateToken, (req, res) => {
     try {
       const { name, contact_name, email, phone, address, notes } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
       const result = db.prepare(
         'INSERT INTO suppliers (name, contact_name, email, phone, address, notes) VALUES (?, ?, ?, ?, ?, ?)'
       ).run(name, contact_name || null, email || null, phone || null, address || null, notes || null);
@@ -71,7 +71,7 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(supplier);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -86,7 +86,7 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
       res.json(supplier);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -95,13 +95,13 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
     try {
       const orderCount = db.prepare('SELECT COUNT(*) as count FROM orders WHERE supplier_id = ?').get(req.params.id);
       if (orderCount.count > 0) {
-        return res.status(400).json({ error: `Ce fournisseur est lié à ${orderCount.count} commande(s)` });
+        return res.status(400).json({ success: false, error: `Ce fournisseur est lié à ${orderCount.count} commande(s)` });
       }
       db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -155,7 +155,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       res.json(orders);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -184,7 +184,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       res.json(stats);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -205,7 +205,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       res.json(orders);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -223,12 +223,12 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN affaires a ON a.numero_affaire = o.affaire_id
         WHERE o.id = ?
       `).get(req.params.id);
-      if (!order) return res.status(404).json({ error: 'Commande non trouvée' });
+      if (!order) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
       const items = db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(req.params.id);
       res.json({ ...order, items });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -240,20 +240,20 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       // Validation des items
       for (const item of items) {
         if (!item.designation || !item.designation.trim()) {
-          return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+          return res.status(400).json({ success: false, error: 'Chaque ligne doit avoir une désignation' });
         }
         if (item.quantity !== undefined && (item.quantity <= 0 || isNaN(item.quantity))) {
-          return res.status(400).json({ error: `Quantité invalide pour "${item.designation}"` });
+          return res.status(400).json({ success: false, error: `Quantité invalide pour "${item.designation}"` });
         }
         if (item.unit_price_ht !== undefined && (item.unit_price_ht < 0 || isNaN(item.unit_price_ht))) {
-          return res.status(400).json({ error: `Prix invalide pour "${item.designation}"` });
+          return res.status(400).json({ success: false, error: `Prix invalide pour "${item.designation}"` });
         }
       }
 
       // Vérifier le fournisseur si fourni
       if (supplier_id) {
         const supplier = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(supplier_id);
-        if (!supplier) return res.status(400).json({ error: 'Fournisseur introuvable' });
+        if (!supplier) return res.status(400).json({ success: false, error: 'Fournisseur introuvable' });
       }
 
       const prefix = type === 'purchase' ? 'BC' : 'BV';
@@ -299,7 +299,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json({ ...order, items: orderItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -308,12 +308,12 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { affaire_id, supplier_id, status, order_date, expected_date, received_date, notes, items, tva_rate } = req.body;
       const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Commande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
 
       // Validation transition de statut
       if (status && status !== existing.status) {
         if (!validateStatusTransition(ORDER_TRANSITIONS, existing.status, status)) {
-          return res.status(400).json({ error: `Transition de statut invalide: ${existing.status} → ${status}` });
+          return res.status(400).json({ success: false, error: `Transition de statut invalide: ${existing.status} → ${status}` });
         }
       }
 
@@ -321,7 +321,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       if (items) {
         for (const item of items) {
           if (!item.designation || !item.designation.trim()) {
-            return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+            return res.status(400).json({ success: false, error: 'Chaque ligne doit avoir une désignation' });
           }
         }
       }
@@ -377,7 +377,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       res.json({ ...order, items: orderItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -385,12 +385,12 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/orders/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Commande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
 
       // Vérifier qu'aucun devis n'est lié
       const linkedQuote = db.prepare('SELECT id, reference FROM quotes WHERE converted_to_order_id = ?').get(req.params.id);
       if (linkedQuote) {
-        return res.status(400).json({ error: `Impossible de supprimer : liée au devis ${linkedQuote.reference}` });
+        return res.status(400).json({ success: false, error: `Impossible de supprimer : liée au devis ${linkedQuote.reference}` });
       }
 
       const deleteOrder = db.transaction(() => {
@@ -402,7 +402,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -449,7 +449,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.json(quotes);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -463,12 +463,12 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN affaires a ON a.numero_affaire = q.affaire_id
         WHERE q.id = ?
       `).get(req.params.id);
-      if (!quote) return res.status(404).json({ error: 'Devis non trouvé' });
+      if (!quote) return res.status(404).json({ success: false, error: 'Devis non trouvé' });
       const items = db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY id ASC').all(req.params.id);
       res.json({ ...quote, items });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -480,7 +480,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       // Validation des items
       for (const item of items) {
         if (!item.designation || !item.designation.trim()) {
-          return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+          return res.status(400).json({ success: false, error: 'Chaque ligne doit avoir une désignation' });
         }
       }
 
@@ -523,7 +523,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json({ ...quote, items: quoteItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -532,12 +532,12 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { affaire_id, client_name, client_email, client_address, status, quote_date, validity_date, notes, items, tva_rate } = req.body;
       const existing = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Devis non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Devis non trouvé' });
 
       // Validation transition de statut
       if (status && status !== existing.status) {
         if (!validateStatusTransition(QUOTE_TRANSITIONS, existing.status, status)) {
-          return res.status(400).json({ error: `Transition de statut invalide: ${existing.status} → ${status}` });
+          return res.status(400).json({ success: false, error: `Transition de statut invalide: ${existing.status} → ${status}` });
         }
       }
 
@@ -545,7 +545,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       if (items) {
         for (const item of items) {
           if (!item.designation || !item.designation.trim()) {
-            return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+            return res.status(400).json({ success: false, error: 'Chaque ligne doit avoir une désignation' });
           }
         }
       }
@@ -600,7 +600,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.json({ ...quote, items: quoteItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -608,9 +608,9 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/quotes/:id/convert', authenticateToken, (req, res) => {
     try {
       const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
-      if (!quote) return res.status(404).json({ error: 'Devis non trouvé' });
-      if (quote.status !== 'accepted') return res.status(400).json({ error: 'Seul un devis accepté peut être converti' });
-      if (quote.converted_to_order_id) return res.status(400).json({ error: 'Ce devis a déjà été converti' });
+      if (!quote) return res.status(404).json({ success: false, error: 'Devis non trouvé' });
+      if (quote.status !== 'accepted') return res.status(400).json({ success: false, error: 'Seul un devis accepté peut être converti' });
+      if (quote.converted_to_order_id) return res.status(400).json({ success: false, error: 'Ce devis a déjà été converti' });
 
       const quoteItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ?').all(req.params.id);
 
@@ -653,7 +653,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json({ ...order, items: orderItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -661,11 +661,11 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/quotes/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Devis non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Devis non trouvé' });
 
       // Empêcher suppression si déjà converti
       if (existing.converted_to_order_id) {
-        return res.status(400).json({ error: 'Impossible de supprimer un devis déjà converti en commande' });
+        return res.status(400).json({ success: false, error: 'Impossible de supprimer un devis déjà converti en commande' });
       }
 
       const deleteQuote = db.transaction(() => {
@@ -677,7 +677,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -688,7 +688,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/orders/prepare-from-affaire', authenticateToken, (req, res) => {
     try {
       const { affaire_id } = req.body;
-      if (!affaire_id) return res.status(400).json({ error: 'affaire_id requis' });
+      if (!affaire_id) return res.status(400).json({ success: false, error: 'affaire_id requis' });
 
       // 1) Récupérer tous les BL de l'affaire
       const bls = db.prepare('SELECT * FROM bl_imports WHERE affaire_id = ? AND status != ?').all(affaire_id, 'rejected');
@@ -795,7 +795,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -807,7 +807,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { affaire_id, affaire_reference, items = [] } = req.body;
       if (!affaire_id || !items || items.length === 0) {
-        return res.status(400).json({ error: 'affaire_id et items sont requis' });
+        return res.status(400).json({ success: false, error: 'affaire_id et items sont requis' });
       }
 
       // Group items by fournisseur
@@ -898,7 +898,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('generate-from-bl error:', error?.message || error, error?.stack);
-      res.status(500).json({ error: 'Erreur serveur interne', detail: error?.message });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne', detail: error?.message });
     }
   });
 
@@ -910,10 +910,10 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { items = [] } = req.body;
       const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-      if (!order) return res.status(404).json({ error: 'Commande non trouvée' });
+      if (!order) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
 
       if (items.length === 0) {
-        return res.status(400).json({ error: 'Aucun article à ajouter' });
+        return res.status(400).json({ success: false, error: 'Aucun article à ajouter' });
       }
 
       const addItems = db.transaction(() => {
@@ -960,7 +960,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.json({ ...updatedOrder, items: orderItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -986,7 +986,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       res.json(requests);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1000,7 +1000,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       res.json({ total, pending, approved, ordered });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1009,7 +1009,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
     try {
       const { article, supplier_id, supplier_name, quantity, priority, affaire_id, destination, destination_other, notes, ref_code } = req.body;
       if (!article || !article.trim()) {
-        return res.status(400).json({ error: 'L\'article est requis' });
+        return res.status(400).json({ success: false, error: 'L\'article est requis' });
       }
       const result = db.prepare(`
         INSERT INTO material_requests (article, supplier_id, supplier_name, quantity, priority, affaire_id, destination, destination_other, notes, ref_code, requested_by, requested_by_name)
@@ -1033,7 +1033,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       res.status(201).json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1041,11 +1041,11 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
   app.put('/api/material-requests/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
       // Seul le demandeur ou un admin peut modifier
       if (existing.requested_by !== req.user.id) {
         const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-        if (!user?.is_admin) return res.status(403).json({ error: 'Non autorisé' });
+        if (!user?.is_admin) return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
       const { article, supplier_id, supplier_name, quantity, priority, affaire_id, destination, destination_other, notes, ref_code } = req.body;
       db.prepare(`
@@ -1061,7 +1061,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1069,16 +1069,16 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
   app.delete('/api/material-requests/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
       if (existing.requested_by !== req.user.id) {
         const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-        if (!user?.is_admin) return res.status(403).json({ error: 'Non autorisé' });
+        if (!user?.is_admin) return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
       db.prepare('DELETE FROM material_requests WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1087,8 +1087,8 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
     try {
       const { action, rejection_reason } = req.body; // action: 'approve' | 'reject'
       const request = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
-      if (!request) return res.status(404).json({ error: 'Demande non trouvée' });
-      if (request.status !== 'pending') return res.status(400).json({ error: 'Cette demande a déjà été traitée' });
+      if (!request) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
+      if (request.status !== 'pending') return res.status(400).json({ success: false, error: 'Cette demande a déjà été traitée' });
 
       if (action === 'reject') {
         db.prepare(`UPDATE material_requests SET status = 'rejected', approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP, rejection_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
@@ -1155,10 +1155,10 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         return res.json({ success: true, request: updated, action: 'approved', order: result });
       }
 
-      return res.status(400).json({ error: 'Action invalide — approve ou reject attendu' });
+      return res.status(400).json({ success: false, error: 'Action invalide — approve ou reject attendu' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1166,7 +1166,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
   app.post('/api/material-requests/batch-validate', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { request_ids = [], action } = req.body;
-      if (!request_ids.length) return res.status(400).json({ error: 'Aucune demande sélectionnée' });
+      if (!request_ids.length) return res.status(400).json({ success: false, error: 'Aucune demande sélectionnée' });
 
       const results = [];
       for (const id of request_ids) {
@@ -1218,7 +1218,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       res.json({ success: true, results });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -1244,7 +1244,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json(db.prepare(query).all(...params));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1252,9 +1252,9 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
   app.post('/api/supplier-documents', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { supplier_id, order_id, doc_type, filename, notes } = req.body;
-      if (!supplier_id || !doc_type) return res.status(400).json({ error: 'supplier_id et doc_type requis' });
+      if (!supplier_id || !doc_type) return res.status(400).json({ success: false, error: 'supplier_id et doc_type requis' });
       const validTypes = ['acknowledgment', 'delivery_note', 'quote', 'invoice'];
-      if (!validTypes.includes(doc_type)) return res.status(400).json({ error: 'Type document invalide' });
+      if (!validTypes.includes(doc_type)) return res.status(400).json({ success: false, error: 'Type document invalide' });
 
       const result = db.prepare(`
         INSERT INTO supplier_documents (supplier_id, order_id, doc_type, filename, notes, created_by)
@@ -1272,7 +1272,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.status(201).json(doc);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1280,7 +1280,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
   app.delete('/api/supplier-documents/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const doc = db.prepare('SELECT * FROM supplier_documents WHERE id = ?').get(req.params.id);
-      if (!doc) return res.status(404).json({ error: 'Document non trouvé' });
+      if (!doc) return res.status(404).json({ success: false, error: 'Document non trouvé' });
       if (doc.file_path) {
         const fp = path.join(uploadDir, doc.file_path);
         if (fs.existsSync(fp)) fs.unlinkSync(fp);
@@ -1289,7 +1289,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1315,7 +1315,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json(suppliers);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1354,7 +1354,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json(orders);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1365,7 +1365,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json(catalogs);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1373,7 +1373,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
   app.get('/api/suppliers/:id/full-detail', authenticateToken, (req, res) => {
     try {
       const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(req.params.id);
-      if (!supplier) return res.status(404).json({ error: 'Fournisseur non trouvé' });
+      if (!supplier) return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
 
       const orders = db.prepare(`
         SELECT o.*, u.name as created_by_name,
@@ -1437,7 +1437,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json({ supplier, orders, documents, catalogs, blCorrespondence, workflow });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1541,7 +1541,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json(db.prepare(query).all(...params));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1551,7 +1551,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1561,7 +1561,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }

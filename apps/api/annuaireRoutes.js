@@ -117,7 +117,7 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
       res.json({ data: rows, total: countRow.total, page: Math.floor(offset / limit) + 1, limit });
     } catch (error) {
       logger.error('Annuaire clients GET:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -125,12 +125,12 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
   app.get('/api/annuaire/clients/:id', authenticateToken, (req, res) => {
     try {
       const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
-      if (!client) return res.status(404).json({ error: 'Client non trouvé' });
+      if (!client) return res.status(404).json({ success: false, error: 'Client non trouvé' });
       client.contacts = db.prepare('SELECT * FROM annuaire_contacts WHERE client_id = ? ORDER BY is_primary DESC, last_name ASC').all(req.params.id);
       res.json(client);
     } catch (error) {
       logger.error('Annuaire client detail:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -139,11 +139,11 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
     try {
       const { name, code_libre, email, phone, phone2, address, postal_code, city, country,
               type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
 
       // Validation et normalisation
       const validationErrors = sanitizeEntityBody(req.body);
-      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+      if (validationErrors.length > 0) return res.status(400).json({ success: false, error: validationErrors.join('. ') });
 
       const result = db.prepare(`
         INSERT INTO clients (name, code_libre, email, phone, phone2, address, postal_code, city, country,
@@ -162,10 +162,10 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
       res.status(201).json(created);
     } catch (error) {
       if (error.message?.includes('UNIQUE constraint failed: clients.code_libre')) {
-        return res.status(409).json({ error: 'Ce code libre existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
       }
       logger.error('Annuaire client create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -177,7 +177,7 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
 
       // Validation et normalisation
       const validationErrors = sanitizeEntityBody(req.body);
-      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+      if (validationErrors.length > 0) return res.status(400).json({ success: false, error: validationErrors.join('. ') });
 
       db.prepare(`
         UPDATE clients SET name = ?, code_libre = ?, email = ?, phone = ?, phone2 = ?,
@@ -199,10 +199,10 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
       res.json(updated);
     } catch (error) {
       if (error.message?.includes('UNIQUE constraint failed: clients.code_libre')) {
-        return res.status(409).json({ error: 'Ce code libre existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
       }
       logger.error('Annuaire client update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -222,7 +222,7 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
       res.json({ success: true });
     } catch (error) {
       logger.error('Annuaire client delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }
@@ -248,20 +248,20 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
       res.json({ data: rows, total: countRow.total, page: Math.floor(offset / limit) + 1, limit });
     } catch (error) {
       logger.error('Annuaire suppliers GET:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
   app.get('/api/annuaire/suppliers/:id', authenticateToken, (req, res) => {
     try {
       const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(req.params.id);
-      if (!supplier) return res.status(404).json({ error: 'Fournisseur non trouvé' });
+      if (!supplier) return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
       supplier.contacts = db.prepare('SELECT * FROM annuaire_contacts WHERE supplier_id = ? ORDER BY is_primary DESC, last_name ASC').all(req.params.id);
       supplier.orders = db.prepare('SELECT id, reference, status, order_date, total_ttc FROM orders WHERE supplier_id = ? ORDER BY order_date DESC LIMIT 10').all(req.params.id);
       res.json(supplier);
     } catch (error) {
       logger.error('Annuaire supplier detail:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -269,11 +269,11 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
     try {
       const { name, code_libre, contact_name, email, phone, phone2, address, postal_code, city, country,
               type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
 
       // Validation et normalisation
       const validationErrors = sanitizeEntityBody(req.body);
-      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+      if (validationErrors.length > 0) return res.status(400).json({ success: false, error: validationErrors.join('. ') });
 
       const result = db.prepare(`
         INSERT INTO suppliers (name, code_libre, contact_name, email, phone, phone2, address, postal_code, city, country,
@@ -292,10 +292,10 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
       res.status(201).json(created);
     } catch (error) {
       if (error.message?.includes('UNIQUE constraint failed: suppliers.code_libre')) {
-        return res.status(409).json({ error: 'Ce code libre existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
       }
       logger.error('Annuaire supplier create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -306,7 +306,7 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
 
       // Validation et normalisation
       const validationErrors = sanitizeEntityBody(req.body);
-      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+      if (validationErrors.length > 0) return res.status(400).json({ success: false, error: validationErrors.join('. ') });
 
       db.prepare(`
         UPDATE suppliers SET name = ?, code_libre = ?, contact_name = ?, email = ?, phone = ?, phone2 = ?,
@@ -328,10 +328,10 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
       res.json(updated);
     } catch (error) {
       if (error.message?.includes('UNIQUE constraint failed: suppliers.code_libre')) {
-        return res.status(409).json({ error: 'Ce code libre existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
       }
       logger.error('Annuaire supplier update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -349,7 +349,7 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
       res.json({ success: true });
     } catch (error) {
       logger.error('Annuaire supplier delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }
@@ -374,19 +374,19 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
       res.json({ data: rows, total: countRow.total, page: Math.floor(offset / limit) + 1, limit });
     } catch (error) {
       logger.error('Annuaire prestataires GET:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
   app.get('/api/annuaire/prestataires/:id', authenticateToken, (req, res) => {
     try {
       const p = db.prepare('SELECT * FROM prestataires WHERE id = ?').get(req.params.id);
-      if (!p) return res.status(404).json({ error: 'Prestataire non trouvé' });
+      if (!p) return res.status(404).json({ success: false, error: 'Prestataire non trouvé' });
       p.contacts = db.prepare('SELECT * FROM annuaire_contacts WHERE prestataire_id = ? ORDER BY is_primary DESC, last_name ASC').all(req.params.id);
       res.json(p);
     } catch (error) {
       logger.error('Annuaire prestataire detail:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -394,11 +394,11 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
     try {
       const { name, code_libre, email, phone, phone2, address, postal_code, city, country,
               legal_structure, siret, tva_intra, website, activity_sector, service_types, notes } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
 
       // Validation et normalisation
       const validationErrors = sanitizeEntityBody(req.body);
-      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+      if (validationErrors.length > 0) return res.status(400).json({ success: false, error: validationErrors.join('. ') });
 
       const result = db.prepare(`
         INSERT INTO prestataires (name, code_libre, email, phone, phone2, address, postal_code, city, country,
@@ -417,10 +417,10 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
       res.status(201).json(created);
     } catch (error) {
       if (error.message?.includes('UNIQUE constraint failed: prestataires.code_libre')) {
-        return res.status(409).json({ error: 'Ce code libre existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
       }
       logger.error('Annuaire prestataire create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -431,7 +431,7 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
 
       // Validation et normalisation
       const validationErrors = sanitizeEntityBody(req.body);
-      if (validationErrors.length > 0) return res.status(400).json({ error: validationErrors.join('. ') });
+      if (validationErrors.length > 0) return res.status(400).json({ success: false, error: validationErrors.join('. ') });
 
       db.prepare(`
         UPDATE prestataires SET name = ?, code_libre = ?, email = ?, phone = ?, phone2 = ?,
@@ -453,10 +453,10 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
       res.json(updated);
     } catch (error) {
       if (error.message?.includes('UNIQUE constraint failed: prestataires.code_libre')) {
-        return res.status(409).json({ error: 'Ce code libre existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
       }
       logger.error('Annuaire prestataire update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -473,7 +473,7 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
       res.json({ success: true });
     } catch (error) {
       logger.error('Annuaire prestataire delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }
@@ -518,7 +518,7 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
       res.json({ data: rows, total: countRow.total, page: Math.floor(offset / parseInt(limit)) + 1, limit: parseInt(limit) });
     } catch (error) {
       logger.error('Annuaire contacts GET:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -526,7 +526,7 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
     try {
       const { client_id, supplier_id, prestataire_id, first_name, last_name, job_title,
               category, email, phone, phone2, is_primary, notes } = req.body;
-      if (!last_name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!last_name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
 
       const result = db.prepare(`
         INSERT INTO annuaire_contacts (client_id, supplier_id, prestataire_id, first_name, last_name,
@@ -541,7 +541,7 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
       res.status(201).json(created);
     } catch (error) {
       logger.error('Annuaire contact create:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -566,7 +566,7 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
       res.json(updated);
     } catch (error) {
       logger.error('Annuaire contact update:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -576,7 +576,7 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
       res.json({ success: true });
     } catch (error) {
       logger.error('Annuaire contact delete:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }
@@ -604,7 +604,7 @@ export function setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin)
         res.json(db.prepare(query).all());
       } catch (error) {
         logger.error(`Annuaire ref ${slug}:`, error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
     });
 
@@ -612,13 +612,13 @@ export function setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin)
     app.post(`/api/annuaire/ref/${slug}`, authenticateToken, requireAdmin, (req, res) => {
       try {
         const { code, name, sort_order } = req.body;
-        if (!code || !name) return res.status(400).json({ error: 'Code et nom requis' });
+        if (!code || !name) return res.status(400).json({ success: false, error: 'Code et nom requis' });
         const result = db.prepare(`INSERT INTO ${table} (code, name, sort_order) VALUES (?, ?, ?)`).run(code, name, sort_order || 0);
         res.status(201).json(db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(result.lastInsertRowid));
       } catch (error) {
-        if (error.message?.includes('UNIQUE constraint')) return res.status(409).json({ error: 'Ce code existe déjà' });
+        if (error.message?.includes('UNIQUE constraint')) return res.status(409).json({ success: false, error: 'Ce code existe déjà' });
         logger.error(`Annuaire ref ${slug} create:`, error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
     });
 
@@ -631,7 +631,7 @@ export function setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin)
         res.json(db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(req.params.id));
       } catch (error) {
         logger.error(`Annuaire ref ${slug} update:`, error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
     });
 
@@ -642,7 +642,7 @@ export function setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin)
         res.json({ success: true });
       } catch (error) {
         logger.error(`Annuaire ref ${slug} delete:`, error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
     });
   }
@@ -657,7 +657,7 @@ export function setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin)
       res.json(result);
     } catch (error) {
       logger.error('Annuaire ref all:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }
@@ -711,7 +711,7 @@ export function setupAnnuaireSearchRoutes(app, authenticateToken) {
       res.json({ clients, suppliers, prestataires, contacts });
     } catch (error) {
       logger.error('Annuaire search:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }
@@ -725,7 +725,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
   app.post('/api/annuaire/import/clients-csv', authenticateToken, requireAdmin, (req, res) => {
     try {
       const csvPath = path.join(__dirname, '..', '..', 'public', 'imports', 'Clients Locmat.csv');
-      if (!fs.existsSync(csvPath)) return res.status(404).json({ error: 'Fichier CSV introuvable' });
+      if (!fs.existsSync(csvPath)) return res.status(404).json({ success: false, error: 'Fichier CSV introuvable' });
 
       const raw = fs.readFileSync(csvPath, 'utf-8');
       const lines = raw.split(/\r?\n/).filter(l => l.trim());
@@ -769,7 +769,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
       res.json({ success: true, imported, skipped, errors, total: dataLines.length });
     } catch (error) {
       logger.error('Import clients CSV:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -777,7 +777,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
   app.post('/api/annuaire/import/suppliers-csv', authenticateToken, requireAdmin, (req, res) => {
     try {
       const csvPath = path.join(__dirname, '..', '..', 'public', 'imports', 'Fournisseurs Locmat.csv');
-      if (!fs.existsSync(csvPath)) return res.status(404).json({ error: 'Fichier CSV introuvable' });
+      if (!fs.existsSync(csvPath)) return res.status(404).json({ success: false, error: 'Fichier CSV introuvable' });
 
       const raw = fs.readFileSync(csvPath, 'utf-8');
       const lines = raw.replace(/\r/g, '').split('\n').filter(l => l.trim());
@@ -890,7 +890,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
       res.json({ success: true, imported, skipped, errors, total: dataLines.length });
     } catch (error) {
       logger.error('Import fournisseurs CSV:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1042,7 +1042,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
       res.json({ success: true, imported, updated, skipped, errors, total: data.length });
     } catch (error) {
       logger.error('Import contacts CSV:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1059,7 +1059,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
       res.json(stats);
     } catch (error) {
       logger.error('Annuaire stats:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }

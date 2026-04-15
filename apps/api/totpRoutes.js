@@ -54,11 +54,11 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
     try {
       const user = db.prepare('SELECT id, email, totp_enabled FROM users WHERE id = ?').get(req.user.id);
       if (!user) {
-        return res.status(404).json({ error: 'Utilisateur introuvable' });
+        return res.status(404).json({ success: false, error: 'Utilisateur introuvable' });
       }
 
       if (user.totp_enabled === 1) {
-        return res.status(400).json({ error: '2FA déjà activé. Désactivez-le d\'abord pour le reconfigurer.' });
+        return res.status(400).json({ success: false, error: '2FA déjà activé. Désactivez-le d\'abord pour le reconfigurer.' });
       }
 
       const { secret, uri } = generateTOTPSecret(user.email);
@@ -76,7 +76,7 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('Erreur setup 2FA:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -85,20 +85,20 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { code } = req.body;
       if (!code) {
-        return res.status(400).json({ error: 'Code de vérification requis' });
+        return res.status(400).json({ success: false, error: 'Code de vérification requis' });
       }
 
       const user = db.prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?').get(req.user.id);
       if (!user || !user.totp_secret) {
-        return res.status(400).json({ error: 'Aucun setup 2FA en cours. Lancez /api/auth/2fa/setup d\'abord.' });
+        return res.status(400).json({ success: false, error: 'Aucun setup 2FA en cours. Lancez /api/auth/2fa/setup d\'abord.' });
       }
 
       if (user.totp_enabled === 1) {
-        return res.status(400).json({ error: '2FA déjà activé.' });
+        return res.status(400).json({ success: false, error: '2FA déjà activé.' });
       }
 
       if (!verifyTOTPCode(user.totp_secret, code)) {
-        return res.status(400).json({ error: 'Code invalide. Vérifiez l\'heure de votre appareil et réessayez.' });
+        return res.status(400).json({ success: false, error: 'Code invalide. Vérifiez l\'heure de votre appareil et réessayez.' });
       }
 
       db.prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?').run(user.id);
@@ -108,7 +108,7 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, message: '2FA activé avec succès.' });
     } catch (error) {
       logger.error('Erreur confirm 2FA:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -117,16 +117,16 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { code } = req.body;
       if (!code) {
-        return res.status(400).json({ error: 'Code TOTP requis pour désactiver le 2FA' });
+        return res.status(400).json({ success: false, error: 'Code TOTP requis pour désactiver le 2FA' });
       }
 
       const user = db.prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?').get(req.user.id);
       if (!user || user.totp_enabled !== 1) {
-        return res.status(400).json({ error: '2FA non activé.' });
+        return res.status(400).json({ success: false, error: '2FA non activé.' });
       }
 
       if (!verifyTOTPCode(user.totp_secret, code)) {
-        return res.status(400).json({ error: 'Code invalide.' });
+        return res.status(400).json({ success: false, error: 'Code invalide.' });
       }
 
       db.prepare('UPDATE users SET totp_enabled = 0, totp_secret = NULL WHERE id = ?').run(user.id);
@@ -136,7 +136,7 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, message: '2FA désactivé.' });
     } catch (error) {
       logger.error('Erreur disable 2FA:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -146,7 +146,7 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
       const user = db.prepare('SELECT totp_enabled FROM users WHERE id = ?').get(req.user.id);
       res.json({ enabled: user?.totp_enabled === 1 });
     } catch (error) {
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -155,7 +155,7 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { code } = req.body;
       if (!code) {
-        return res.status(400).json({ error: 'Code TOTP requis' });
+        return res.status(400).json({ success: false, error: 'Code TOTP requis' });
       }
 
       const user = db.prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?').get(req.user.id);
@@ -165,14 +165,14 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
 
       if (!verifyTOTPCode(user.totp_secret, code)) {
         auditLog({ actorId: user.id, actorEmail: user.email, action: 'security.2fa.verify_failed', targetType: 'user', targetId: user.id, req });
-        return res.status(401).json({ error: 'Code 2FA invalide.' });
+        return res.status(401).json({ success: false, error: 'Code 2FA invalide.' });
       }
 
       auditLog({ actorId: user.id, actorEmail: user.email, action: 'security.2fa.verify_success', targetType: 'user', targetId: user.id, req });
       res.json({ success: true, message: '2FA vérifié.' });
     } catch (error) {
       logger.error('Erreur verify 2FA:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 

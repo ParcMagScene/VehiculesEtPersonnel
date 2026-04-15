@@ -342,7 +342,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   function validateZone(req, res) {
     const zone = req.params.zone;
     if (!zone || !isValidIPv4(zone)) {
-      res.status(400).json({ error: 'Zone invalide (IPv4 attendue, ex: 192.168.1.10)' });
+      res.status(400).json({ success: false, error: 'Zone invalide (IPv4 attendue, ex: 192.168.1.10)' });
       return null;
     }
     return zone;
@@ -373,7 +373,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ sonosIP });
     } catch (error) {
       logger.error('Sonos config get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -389,7 +389,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Sonos config save:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -417,10 +417,10 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/zones', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
 
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const device = new lib.Sonos(sonosIP);
       const groups = await device.getAllGroups();
@@ -442,7 +442,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ zones });
     } catch (error) {
       logger.error('Sonos zones:', error);
-      res.status(500).json({ error: 'Impossible de lister les zones Sonos' });
+      res.status(500).json({ success: false, error: 'Impossible de lister les zones Sonos' });
     }
   });
 
@@ -457,7 +457,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
 
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
 
       const { device, coordinatorIP } = result;
 
@@ -497,7 +497,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error(`Sonos state ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur lecture état Sonos' });
+      res.status(500).json({ success: false, error: 'Erreur lecture état Sonos' });
     }
   });
 
@@ -511,13 +511,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     if (!zone) return;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.play();
       logger.info(`[Sonos] Play on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'play', zone });
     } catch (error) {
       logger.error(`Sonos play ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande play' });
+      res.status(500).json({ success: false, error: 'Erreur commande play' });
     }
   });
 
@@ -527,13 +527,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     if (!zone) return;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.pause();
       logger.info(`[Sonos] Pause on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'pause', zone });
     } catch (error) {
       logger.error(`Sonos pause ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande pause' });
+      res.status(500).json({ success: false, error: 'Erreur commande pause' });
     }
   });
 
@@ -543,13 +543,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     if (!zone) return;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.next();
       logger.info(`[Sonos] Next on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'next', zone });
     } catch (error) {
       logger.error(`Sonos next ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande next' });
+      res.status(500).json({ success: false, error: 'Erreur commande next' });
     }
   });
 
@@ -559,13 +559,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     if (!zone) return;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.previous();
       logger.info(`[Sonos] Previous on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'previous', zone });
     } catch (error) {
       logger.error(`Sonos previous ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande previous' });
+      res.status(500).json({ success: false, error: 'Erreur commande previous' });
     }
   });
 
@@ -580,13 +580,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     const { value } = req.body;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.setVolume(Math.round(value));
       logger.info(`[Sonos] Volume ${value} on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'volume', zone, value: Math.round(value) });
     } catch (error) {
       logger.error(`Sonos volume ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande volume' });
+      res.status(500).json({ success: false, error: 'Erreur commande volume' });
     }
   });
 
@@ -596,13 +596,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     if (!zone) return;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.setMuted(true);
       logger.info(`[Sonos] Mute on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'mute', zone });
     } catch (error) {
       logger.error(`Sonos mute ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande mute' });
+      res.status(500).json({ success: false, error: 'Erreur commande mute' });
     }
   });
 
@@ -612,13 +612,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     if (!zone) return;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.setMuted(false);
       logger.info(`[Sonos] Unmute on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'unmute', zone });
     } catch (error) {
       logger.error(`Sonos unmute ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande unmute' });
+      res.status(500).json({ success: false, error: 'Erreur commande unmute' });
     }
   });
 
@@ -630,10 +630,10 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/favorites', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
 
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
       const favs = await device.getFavorites();
@@ -686,7 +686,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ favorites });
     } catch (error) {
       logger.error('Sonos favorites:', error);
-      res.status(500).json({ error: 'Impossible de lister les favoris Sonos' });
+      res.status(500).json({ success: false, error: 'Impossible de lister les favoris Sonos' });
     }
   });
 
@@ -694,9 +694,9 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/radio-stations', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
 
@@ -719,7 +719,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ stations: items });
     } catch (error) {
       logger.error('Sonos radio-stations:', error);
-      res.status(500).json({ error: 'Impossible de lister les stations radio' });
+      res.status(500).json({ success: false, error: 'Impossible de lister les stations radio' });
     }
   });
 
@@ -728,13 +728,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/browse/:objectId(*)', authenticateToken, sonosReadLimiter, async (req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const objectId = req.params.objectId;
       if (!objectId || objectId.length > 256) {
-        return res.status(400).json({ error: 'objectId requis (max 256 car.)' });
+        return res.status(400).json({ success: false, error: 'objectId requis (max 256 car.)' });
       }
 
       // Les services musicaux (MS:xxx) ne sont pas browsables via ContentDirectory
@@ -825,7 +825,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('Sonos browse:', error);
-      res.status(500).json({ error: 'Impossible de parcourir les sources Sonos' });
+      res.status(500).json({ success: false, error: 'Impossible de parcourir les sources Sonos' });
     }
   });
 
@@ -833,9 +833,9 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/music-services', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
       const activeIP = coordinatorIP || sonosIP;
@@ -961,16 +961,16 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ sources });
     } catch (error) {
       logger.error('Sonos music-services:', error);
-      res.status(500).json({ error: 'Impossible de lister les services musicaux' });
+      res.status(500).json({ success: false, error: 'Impossible de lister les services musicaux' });
     }
   });
   // GET /api/sonos/queue — File de lecture actuelle
   app.get('/api/sonos/queue', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ error: 'Package sonos non installé' });
+      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ error: 'IP Sonos non configurée' });
+      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
       const queue = await withTimeout(device.getQueue(), 8000).catch(() => null);
@@ -992,7 +992,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ items });
     } catch (error) {
       logger.error('Sonos queue:', error);
-      res.status(500).json({ error: 'Impossible de récupérer la file de lecture' });
+      res.status(500).json({ success: false, error: 'Impossible de récupérer la file de lecture' });
     }
   });
 
@@ -1002,14 +1002,14 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     const { uri, title } = req.body;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.setAVTransportURI(uri);
       await result.device.play();
       logger.info(`[Sonos] Play favorite "${title || uri}" on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'favorite', zone, title: title || uri });
     } catch (error) {
       logger.error(`Sonos favorite ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur lecture favori' });
+      res.status(500).json({ success: false, error: 'Erreur lecture favori' });
     }
   });
 
@@ -1024,13 +1024,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     const { position } = req.body;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.seek(position);
       logger.info(`[Sonos] Seek ${position}s on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'seek', zone, position });
     } catch (error) {
       logger.error(`Sonos seek ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande seek' });
+      res.status(500).json({ success: false, error: 'Erreur commande seek' });
     }
   });
 
@@ -1041,7 +1041,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     const { enabled } = req.body;
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       const mode = await result.device.getPlayMode();
       let newMode = enabled ? 'SHUFFLE' : 'NORMAL';
       if (mode === 'REPEAT_ALL' && enabled) newMode = 'SHUFFLE_REPEAT_ONE';
@@ -1052,7 +1052,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, action: 'shuffle', zone, enabled });
     } catch (error) {
       logger.error(`Sonos shuffle ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande shuffle' });
+      res.status(500).json({ success: false, error: 'Erreur commande shuffle' });
     }
   });
 
@@ -1064,13 +1064,13 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     const MODES = { none: 'NORMAL', all: 'REPEAT_ALL', one: 'REPEAT_ONE' };
     try {
       const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ error: result.error });
+      if (result.error) return res.status(503).json({ success: false, error: result.error });
       await result.device.setPlayMode(MODES[mode]);
       logger.info(`[Sonos] Repeat ${mode} on ${zone}`, { userId: req.user?.id });
       res.json({ success: true, action: 'repeat', zone, mode });
     } catch (error) {
       logger.error(`Sonos repeat ${zone}:`, error);
-      res.status(500).json({ error: 'Erreur commande repeat' });
+      res.status(500).json({ success: false, error: 'Erreur commande repeat' });
     }
   });
 
@@ -1093,7 +1093,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ sonosIP: getSonosIP() });
     } catch (error) {
       logger.error('Compat sonos-config get:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1107,7 +1107,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error('Compat sonos-config save:', error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 

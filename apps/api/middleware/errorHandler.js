@@ -14,16 +14,16 @@ export function errorHandler(err, req, res, _next) {
   // Erreur métier (AppError)
   if (err instanceof AppError) {
     logger.warn(`[${err.code}] ${req.method} ${req.originalUrl}: ${err.message}`);
-    return res.status(err.statusCode).json({ error: err.message, code: err.code });
+    return res.status(err.statusCode).json({ success: false, error: err.message, code: err.code });
   }
 
   // Erreur SQLite (better-sqlite3)
   if (err.code && err.code.startsWith('SQLITE_')) {
     logger.error(`[DB] ${req.method} ${req.originalUrl}: ${err.message}`);
-    return res.status(500).json({ error: 'Erreur base de données' });
+    return res.status(500).json({ success: false, error: 'Erreur base de données' });
   }
 
   // Erreur inattendue
   logger.error(`[UNHANDLED] ${req.method} ${req.originalUrl}:`, err);
-  res.status(500).json({ error: 'Erreur serveur interne' });
+  res.status(500).json({ success: false, error: 'Erreur serveur interne' });
 }

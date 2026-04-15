@@ -31,7 +31,7 @@ app.post('/api/auth/register', validate(registerSchema), async (req, res) => {
     // [AUDIT FIX HIGH-2] Validation mot de passe renforcée
     const pwError = validatePassword(password);
     if (pwError) {
-      return res.status(400).json({ error: pwError });
+      return res.status(400).json({ success: false, error: pwError });
     }
     
     // Vérifier si l'email est autorisé
@@ -39,7 +39,7 @@ app.post('/api/auth/register', validate(registerSchema), async (req, res) => {
     const authorized = authStmt.get(email, 'pending');
     
     if (!authorized) {
-      return res.status(403).json({ error: 'Email non autorisé. Contactez un administrateur.' });
+      return res.status(403).json({ success: false, error: 'Email non autorisé. Contactez un administrateur.' });
     }
     
     const passwordHash = await bcrypt.hash(password, 10);
@@ -59,7 +59,7 @@ app.post('/api/auth/register', validate(registerSchema), async (req, res) => {
     res.json({ id: result.lastInsertRowid, email, name, isAdmin: isAdmin === 1 });
   } catch (error) {
     logger.error(error);
-    res.status(400).json({ error: 'Erreur lors de l\'inscription' });
+    res.status(400).json({ success: false, error: 'Erreur lors de l\'inscription' });
   }
 });
 
@@ -68,7 +68,7 @@ app.post('/api/auth/forgot-password', validate(forgotPasswordSchema), async (req
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ error: 'Email requis' });
+      return res.status(400).json({ success: false, error: 'Email requis' });
     }
 
     const user = db.prepare('SELECT id, email, name FROM users WHERE email = ?').get(email);
@@ -118,7 +118,7 @@ app.post('/api/auth/forgot-password', validate(forgotPasswordSchema), async (req
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -129,26 +129,26 @@ app.post('/api/auth/self-reset-password', validate(selfResetPasswordSchema), asy
     const { email, name, newPassword } = req.body;
 
     if (!email || !name) {
-      return res.status(400).json({ error: 'Email et nom requis' });
+      return res.status(400).json({ success: false, error: 'Email et nom requis' });
     }
 
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     if (!user) {
       // Message générique pour ne pas révéler si le compte existe
-      return res.status(400).json({ error: 'Les informations saisies ne correspondent à aucun compte' });
+      return res.status(400).json({ success: false, error: 'Les informations saisies ne correspondent à aucun compte' });
     }
 
     // Vérifier que le nom correspond (insensible à la casse, trim)
     const nameMatch = user.name.trim().toLowerCase() === name.trim().toLowerCase();
     if (!nameMatch) {
-      return res.status(400).json({ error: 'Les informations saisies ne correspondent à aucun compte' });
+      return res.status(400).json({ success: false, error: 'Les informations saisies ne correspondent à aucun compte' });
     }
 
     // Mode direct : si newPassword fourni, réinitialiser immédiatement (pas d'OTP)
     if (newPassword) {
       const pwError = validatePassword(newPassword);
       if (pwError) {
-        return res.status(400).json({ error: pwError });
+        return res.status(400).json({ success: false, error: pwError });
       }
 
       const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -219,7 +219,7 @@ app.post('/api/auth/self-reset-password', validate(selfResetPasswordSchema), asy
     });
   } catch (error) {
     logger.error('Erreur self-reset-password:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -233,13 +233,13 @@ app.post('/api/auth/login', validate(loginSchema), async (req, res) => {
     
     if (!user) {
       auditLog({ actorId: null, actorEmail: email, action: AUDIT_ACTIONS.LOGIN_FAILED, targetType: 'user', targetId: null, details: { reason: 'unknown_email' }, req });
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+      return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
     }
     
     // Vérifier si le compte est bloqué
     if (user.is_blocked) {
       auditLog({ actorId: user.id, actorEmail: email, action: AUDIT_ACTIONS.LOGIN_FAILED, targetType: 'user', targetId: user.id, details: { reason: 'account_blocked' }, req });
-      return res.status(403).json({ error: 'Votre compte a été bloqué. Veuillez contacter un administrateur.' });
+      return res.status(403).json({ success: false, error: 'Votre compte a été bloqué. Veuillez contacter un administrateur.' });
     }
     
     // Vérifier si une réinitialisation est requise AVANT de vérifier le mot de passe
@@ -256,7 +256,7 @@ app.post('/api/auth/login', validate(loginSchema), async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
     if (!passwordMatch) {
       auditLog({ actorId: user.id, actorEmail: email, action: AUDIT_ACTIONS.LOGIN_FAILED, targetType: 'user', targetId: user.id, details: { reason: 'wrong_password' }, req });
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+      return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
     }
     
     logger.info('✅ Authentification réussie');
@@ -312,7 +312,7 @@ app.post('/api/auth/login', validate(loginSchema), async (req, res) => {
     });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -325,7 +325,7 @@ app.post('/api/auth/force-login', validate(forceLoginSchema), async (req, res) =
     const user = stmt.get(email);
     
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+      return res.status(401).json({ success: false, error: 'Email ou mot de passe incorrect' });
     }
     
     // Vérifier que l'email est autorisé
@@ -373,7 +373,7 @@ app.post('/api/auth/force-login', validate(forceLoginSchema), async (req, res) =
     });
   } catch (error) {
     logger.error('Erreur force-login:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -394,10 +394,10 @@ app.post('/api/auth/logout', authenticateToken, (req, res) => {
     
     // [AUDIT Phase 3] Effacer le cookie httpOnly
     res.clearCookie('auth_token', { path: '/' });
-    res.json({ message: 'Déconnexion réussie', sessionsClosed: result.changes });
+    res.json({ success: true, message: 'Déconnexion réussie', sessionsClosed: result.changes });
   } catch (error) {
     logger.error('Erreur logout:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -416,7 +416,7 @@ app.get('/api/auth/users-public', (req, res) => {
     })));
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -432,7 +432,7 @@ app.post('/api/auth/refresh', authenticateToken, (req, res) => {
     const user = db.prepare('SELECT id, email, name, is_admin, avatar, permissions FROM users WHERE id = ?').get(userId);
     if (!user) {
       logger.warn(`🔄 Refresh échoué: user ${userId} introuvable en DB`);
-      return res.status(401).json({ error: 'Utilisateur introuvable' });
+      return res.status(401).json({ success: false, error: 'Utilisateur introuvable' });
     }
 
     // Récupérer le hash du token actuel pour mettre à jour la session
@@ -461,7 +461,7 @@ app.post('/api/auth/refresh', authenticateToken, (req, res) => {
 
     if (updated.changes === 0) {
       logger.warn(`🔄 Refresh échoué: session introuvable pour user ${userId} (old hash prefix: ${oldTokenHash.substring(0, 8)}…)`);
-      return res.status(401).json({ error: 'Session introuvable' });
+      return res.status(401).json({ success: false, error: 'Session introuvable' });
     }
 
     // Invalider le cache pour l'ancien token hash
@@ -482,7 +482,7 @@ app.post('/api/auth/refresh', authenticateToken, (req, res) => {
     });
   } catch (error) {
     logger.error('Erreur refresh token:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 

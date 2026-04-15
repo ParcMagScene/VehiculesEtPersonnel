@@ -60,7 +60,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ articles, total, limit: lim, offset: off });
     } catch (error) {
       logger.error('Erreur GET supplier-articles:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -93,7 +93,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ suppliers, brands, families, categories });
     } catch (error) {
       logger.error('Erreur GET supplier-articles/filters:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -118,7 +118,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ totalArticles, totalImports, bySupplier, byBrand });
     } catch (error) {
       logger.error('Erreur GET supplier-articles/stats:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -225,7 +225,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ success: true, scanned: articles.length, brandDetected, familyMapped: mapped });
     } catch (error) {
       logger.error('Erreur POST refresh-brands:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -264,7 +264,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       });
     } catch (error) {
       logger.error('Erreur GET supplier-articles/taxonomy:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -277,11 +277,11 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
         LEFT JOIN suppliers s ON sa.supplier_id = s.id
         WHERE sa.id = ?
       `).get(req.params.id);
-      if (!article) return res.status(404).json({ error: 'Article non trouvé' });
+      if (!article) return res.status(404).json({ success: false, error: 'Article non trouvé' });
       res.json(article);
     } catch (error) {
       logger.error('Erreur GET supplier-articles/:id:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -376,7 +376,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
     } catch (error) {
       logger.error('Erreur POST supplier-articles/import:', error);
       // [AUDIT FIX H1] Ne pas exposer error.message au client
-      res.status(500).json({ error: 'Erreur lors de l\'import du catalogue' });
+      res.status(500).json({ success: false, error: 'Erreur lors de l\'import du catalogue' });
     }
   });
 
@@ -397,7 +397,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ success: true, deletedArticles: artCount, deletedImports: impCount });
     } catch (error) {
       logger.error('Erreur DELETE supplier-articles (purge):', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -405,11 +405,11 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   app.delete('/api/supplier-articles/:id', authenticateToken, requireWriteAccess, (req, res) => {
     try {
       const result = db.prepare('DELETE FROM supplier_articles WHERE id = ?').run(req.params.id);
-      if (result.changes === 0) return res.status(404).json({ error: 'Article non trouvé' });
+      if (result.changes === 0) return res.status(404).json({ success: false, error: 'Article non trouvé' });
       res.json({ success: true });
     } catch (error) {
       logger.error('Erreur DELETE supplier-articles:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -417,7 +417,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   app.delete('/api/catalog-imports/:id', authenticateToken, requireWriteAccess, (req, res) => {
     try {
       const imp = db.prepare('SELECT * FROM catalog_imports WHERE id = ?').get(req.params.id);
-      if (!imp) return res.status(404).json({ error: 'Import non trouvé' });
+      if (!imp) return res.status(404).json({ success: false, error: 'Import non trouvé' });
 
       const deleteAll = db.transaction(() => {
         const del = db.prepare('DELETE FROM supplier_articles WHERE import_id = ?').run(req.params.id);
@@ -430,7 +430,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ success: true, deletedArticles: deletedCount });
     } catch (error) {
       logger.error('Erreur DELETE catalog-imports:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -449,7 +449,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json(imports);
     } catch (error) {
       logger.error('Erreur GET catalog-imports:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -566,7 +566,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
     } catch (error) {
       logger.error('Erreur POST supplier-articles/analyze:', error);
       // [AUDIT FIX H1] Ne pas exposer error.message au client
-      res.status(500).json({ error: 'Erreur lors de l\'analyse du catalogue' });
+      res.status(500).json({ success: false, error: 'Erreur lors de l\'analyse du catalogue' });
     }
   });
 
@@ -598,7 +598,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ success: true, totalChanged, rulesApplied: rules.length });
     } catch (error) {
       logger.error('Erreur POST taxonomy/apply:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -611,7 +611,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json(brands);
     } catch (error) {
       logger.error('Erreur GET brands:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -624,7 +624,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json(result);
     } catch (error) {
       logger.error('Erreur POST brands/resolve:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -632,7 +632,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   app.get('/api/brands/:id', authenticateToken, (req, res) => {
     try {
       const brand = db.prepare('SELECT * FROM brands WHERE id = ?').get(req.params.id);
-      if (!brand) return res.status(404).json({ error: 'Marque non trouvée' });
+      if (!brand) return res.status(404).json({ success: false, error: 'Marque non trouvée' });
 
       brand.aliases = db.prepare('SELECT * FROM brand_aliases WHERE brand_id = ?').all(req.params.id);
       brand.families = db.prepare(`
@@ -645,7 +645,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json(brand);
     } catch (error) {
       logger.error('Erreur GET brands/:id:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -655,11 +655,11 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       const { alias } = req.body;
 
       const brand = db.prepare('SELECT id FROM brands WHERE id = ?').get(req.params.id);
-      if (!brand) return res.status(404).json({ error: 'Marque non trouvée' });
+      if (!brand) return res.status(404).json({ success: false, error: 'Marque non trouvée' });
 
       const slug = alias.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const existing = db.prepare('SELECT id FROM brand_aliases WHERE alias_slug = ?').get(slug);
-      if (existing) return res.status(409).json({ error: 'Alias déjà existant' });
+      if (existing) return res.status(409).json({ success: false, error: 'Alias déjà existant' });
 
       db.prepare('INSERT INTO brand_aliases (brand_id, alias, alias_slug, source) VALUES (?, ?, ?, ?)')
         .run(req.params.id, alias.trim(), slug, 'manual');
@@ -668,7 +668,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ success: true });
     } catch (error) {
       logger.error('Erreur POST brands/:id/aliases:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -681,7 +681,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ success: true, supplier_articles: sa, equipment: eq });
     } catch (error) {
       logger.error('Erreur POST link-brand-ids:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -693,7 +693,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ success: true, ...result });
     } catch (error) {
       logger.error('Erreur POST apply-unified-family:', error.message);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }

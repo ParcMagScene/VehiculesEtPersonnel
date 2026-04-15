@@ -142,7 +142,8 @@ function initializeDatabase() {
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (assigned_to) REFERENCES persons(id) ON DELETE SET NULL
     )
   `);
 
@@ -2026,6 +2027,8 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_reservation ON task_assignments(reservation_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_source ON task_assignments(source_type, source_id)');
 
     // Table planning_hidden_affaires: affaires masquées de la planification
     db.exec(`
@@ -2942,6 +2945,7 @@ function initializeDatabase() {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_vehicles_type ON vehicles(type);
     CREATE INDEX IF NOT EXISTS idx_vehicles_registration ON vehicles(registration);
+    CREATE INDEX IF NOT EXISTS idx_vehicles_assigned_to ON vehicles(assigned_to);
     CREATE INDEX IF NOT EXISTS idx_reservations_vehicle ON reservations(vehicle_id);
     CREATE INDEX IF NOT EXISTS idx_reservations_dates ON reservations(start_date, end_date);
     CREATE INDEX IF NOT EXISTS idx_reservations_affaire ON reservations(affaire);

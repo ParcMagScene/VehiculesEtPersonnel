@@ -20,7 +20,7 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
       res.json(categories);
     } catch (error) {
       logger.error('Erreur liste catégories stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -28,7 +28,7 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
   app.post('/api/stock/categories', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { name, description, parent_id, color, icon } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
 
       const result = db.prepare(
         'INSERT INTO stock_categories (name, description, parent_id, color, icon) VALUES (?, ?, ?, ?, ?)'
@@ -38,7 +38,7 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
       res.status(201).json(category);
     } catch (error) {
       logger.error('Erreur création catégorie stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -46,18 +46,18 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
   app.put('/api/stock/categories/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { name, description, parent_id, color, icon } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
 
       db.prepare(
         'UPDATE stock_categories SET name = ?, description = ?, parent_id = ?, color = ?, icon = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
       ).run(name, description || null, parent_id || null, color || '#6366f1', icon || '📦', req.params.id);
 
       const category = db.prepare('SELECT * FROM stock_categories WHERE id = ?').get(req.params.id);
-      if (!category) return res.status(404).json({ error: 'Catégorie non trouvée' });
+      if (!category) return res.status(404).json({ success: false, error: 'Catégorie non trouvée' });
       res.json(category);
     } catch (error) {
       logger.error('Erreur modification catégorie stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -66,17 +66,17 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
     try {
       const itemCount = db.prepare('SELECT COUNT(*) as count FROM stock_items WHERE category_id = ?').get(req.params.id);
       if (itemCount.count > 0) {
-        return res.status(400).json({ error: `Impossible de supprimer : ${itemCount.count} article(s) dans cette catégorie` });
+        return res.status(400).json({ success: false, error: `Impossible de supprimer : ${itemCount.count} article(s) dans cette catégorie` });
       }
       const childCount = db.prepare('SELECT COUNT(*) as count FROM stock_categories WHERE parent_id = ?').get(req.params.id);
       if (childCount.count > 0) {
-        return res.status(400).json({ error: `Impossible de supprimer : ${childCount.count} sous-catégorie(s) liée(s)` });
+        return res.status(400).json({ success: false, error: `Impossible de supprimer : ${childCount.count} sous-catégorie(s) liée(s)` });
       }
       db.prepare('DELETE FROM stock_categories WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error('Erreur suppression catégorie stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -131,7 +131,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       res.json(items);
     } catch (error) {
       logger.error('Erreur liste articles stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -148,11 +148,11 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN suppliers s ON si.supplier_id = s.id
         WHERE si.id = ?
       `).get(req.params.id);
-      if (!item) return res.status(404).json({ error: 'Article non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Article non trouvé' });
       res.json(item);
     } catch (error) {
       logger.error('Erreur détail article stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -160,7 +160,7 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/stock/items', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo, stock_type, location_depot, location_zone, location_floor } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
 
       // Auto-generate reference if not provided
       const prefix = stock_type === 'sav' ? 'SAV' : 'STK';
@@ -204,10 +204,10 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json(item);
     } catch (error) {
       if (error.message?.includes('UNIQUE constraint')) {
-        return res.status(400).json({ error: 'Cette référence existe déjà' });
+        return res.status(400).json({ success: false, error: 'Cette référence existe déjà' });
       }
       logger.error('Erreur création article stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -215,10 +215,10 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
   app.put('/api/stock/items/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { reference, name, description, category_id, unit, unit_price, sell_price, quantity, min_quantity, location, supplier_id, notes, photo, is_active, stock_type, location_depot, location_zone, location_floor } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
 
       const existing = db.prepare('SELECT * FROM stock_items WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Article non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Article non trouvé' });
 
       // If quantity changed, create a movement record
       const newQty = quantity !== undefined ? Number(quantity) : existing.quantity;
@@ -271,10 +271,10 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
       res.json(item);
     } catch (error) {
       if (error.message?.includes('UNIQUE constraint')) {
-        return res.status(400).json({ error: 'Cette référence existe déjà' });
+        return res.status(400).json({ success: false, error: 'Cette référence existe déjà' });
       }
       logger.error('Erreur modification article stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -282,14 +282,14 @@ export function setupStockItemsRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/stock/items/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const item = db.prepare('SELECT * FROM stock_items WHERE id = ?').get(req.params.id);
-      if (!item) return res.status(404).json({ error: 'Article non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Article non trouvé' });
 
       addToHistory('stock_item', req.params.id, 'delete', { name: item.name, reference: item.reference }, req.user.id, req.user.name);
       db.prepare('DELETE FROM stock_items WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error('Erreur suppression article stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -303,14 +303,14 @@ export function setupStockMovementsRoutes(app, authenticateToken, requireAdmin) 
     try {
       const { stock_item_id, type, quantity, reason, reference, linked_entity_type, linked_entity_id } = req.body;
       if (!stock_item_id || !type || !quantity) {
-        return res.status(400).json({ error: 'Article, type et quantité sont requis' });
+        return res.status(400).json({ success: false, error: 'Article, type et quantité sont requis' });
       }
       if (!['in', 'out', 'adjustment', 'return'].includes(type)) {
-        return res.status(400).json({ error: 'Type invalide (in, out, adjustment, return)' });
+        return res.status(400).json({ success: false, error: 'Type invalide (in, out, adjustment, return)' });
       }
 
       const item = db.prepare('SELECT * FROM stock_items WHERE id = ?').get(stock_item_id);
-      if (!item) return res.status(404).json({ error: 'Article non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Article non trouvé' });
 
       const qty = Math.abs(Number(quantity));
       let newQuantity;
@@ -319,7 +319,7 @@ export function setupStockMovementsRoutes(app, authenticateToken, requireAdmin) 
         newQuantity = item.quantity + qty;
       } else if (type === 'out') {
         if (qty > item.quantity) {
-          return res.status(400).json({ error: `Stock insuffisant (disponible: ${item.quantity})` });
+          return res.status(400).json({ success: false, error: `Stock insuffisant (disponible: ${item.quantity})` });
         }
         newQuantity = item.quantity - qty;
       } else {
@@ -344,7 +344,7 @@ export function setupStockMovementsRoutes(app, authenticateToken, requireAdmin) 
       res.status(201).json({ ...movement, item_name: item.name, item_reference: item.reference });
     } catch (error) {
       logger.error('Erreur mouvement stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -390,7 +390,7 @@ export function setupStockMovementsRoutes(app, authenticateToken, requireAdmin) 
       res.json({ movements, total: total.count });
     } catch (error) {
       logger.error('Erreur historique mouvements stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -500,7 +500,7 @@ export function setupStockImportRoutes(app, authenticateToken, requireAdmin) {
       res.json({ categories, inventoryMap: INVENTORY_CATEGORY_MAP });
     } catch (error) {
       logger.error('Erreur category-map:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -615,7 +615,7 @@ export function setupStockImportRoutes(app, authenticateToken, requireAdmin) {
     } catch (error) {
       logger.error('Erreur import stock:', error);
       // [AUDIT FIX H1] Ne pas exposer error.message au client
-      res.status(500).json({ error: 'Erreur lors de l\'import du stock' });
+      res.status(500).json({ success: false, error: 'Erreur lors de l\'import du stock' });
     }
   });
 }
@@ -679,7 +679,7 @@ export function setupStockStatsRoutes(app, authenticateToken) {
       });
     } catch (error) {
       logger.error('Erreur stats stock:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }

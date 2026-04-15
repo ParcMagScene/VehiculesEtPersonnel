@@ -150,7 +150,7 @@ export function validate(schema) {
           ? result.error.errors
           : [];
       const errors = zodIssues.map(e => `${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`);
-      return res.status(400).json({ error: 'Données invalides', details: errors });
+      return res.status(400).json({ success: false, error: 'Données invalides', details: errors });
     }
     req.body = result.data;
     next();

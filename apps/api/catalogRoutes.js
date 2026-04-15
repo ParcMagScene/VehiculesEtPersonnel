@@ -97,7 +97,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
     } catch (error) {
       logger.error('GET /api/catalog/equipment error:', error);
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -122,7 +122,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json({ matches, total: references.length, matched: Object.keys(matches).length });
     } catch (error) {
       logger.error('POST /api/catalog/equipment/match-references error:', error);
-      res.status(500).json({ error: 'Erreur matching références' });
+      res.status(500).json({ success: false, error: 'Erreur matching références' });
     }
   });
 
@@ -134,7 +134,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json(data);
     } catch (error) {
       logger.error('GET /api/catalog/equipment/zones error:', error);
-      res.status(500).json({ error: 'Erreur chargement zones dépôt' });
+      res.status(500).json({ success: false, error: 'Erreur chargement zones dépôt' });
     }
   });
 
@@ -156,7 +156,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json({ stats, unlocated: unlocated.count });
     } catch (error) {
       logger.error('GET /api/catalog/equipment/location-stats error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -169,7 +169,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json(families.map(f => f.family));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -182,7 +182,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json(categories.map(c => c.category));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -190,7 +190,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   app.get('/api/catalog/equipment/:id', authenticateToken, (req, res) => {
     try {
       const item = db.prepare('SELECT * FROM equipment_catalog WHERE id = ?').get(req.params.id);
-      if (!item) return res.status(404).json({ error: 'Équipement catalogue non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Équipement catalogue non trouvé' });
 
       // Charger le flight-case par défaut si existant
       if (item.default_flightcase_id) {
@@ -200,7 +200,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json(item);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -230,11 +230,11 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.status(201).json(created);
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
-        return res.status(409).json({ error: 'Référence déjà existante' });
+        return res.status(409).json({ success: false, error: 'Référence déjà existante' });
       }
       logger.error('POST /api/catalog/equipment error:', error);
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -243,7 +243,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
     try {
       const { reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata, location_depot, location_zone, location_code, location_floor } = req.body;
       const existing = db.prepare('SELECT * FROM equipment_catalog WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Équipement catalogue non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Équipement catalogue non trouvé' });
 
       const now = new Date().toISOString();
 
@@ -278,10 +278,10 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json(updated);
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
-        return res.status(409).json({ error: 'Référence déjà existante' });
+        return res.status(409).json({ success: false, error: 'Référence déjà existante' });
       }
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -289,12 +289,12 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   app.delete('/api/catalog/equipment/:id', authenticateToken, requireWriteAccess, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM equipment_catalog WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Équipement catalogue non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Équipement catalogue non trouvé' });
 
       // Vérifier s'il est utilisé dans des réservations
       const usageCount = db.prepare('SELECT COUNT(*) as count FROM equipment_to_vehicle WHERE equipment_id = ?').get(req.params.id);
       if (usageCount.count > 0) {
-        return res.status(409).json({ error: `Impossible de supprimer : utilisé dans ${usageCount.count} réservation(s)` });
+        return res.status(409).json({ success: false, error: `Impossible de supprimer : utilisé dans ${usageCount.count} réservation(s)` });
       }
 
       db.prepare('DELETE FROM equipment_catalog WHERE id = ?').run(req.params.id);
@@ -303,7 +303,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
       res.json({ success: true, message: 'Équipement catalogue supprimé' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -334,7 +334,7 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
       res.json(items);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -342,11 +342,11 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
   app.get('/api/flightcases/:id', authenticateToken, (req, res) => {
     try {
       const item = db.prepare('SELECT * FROM flightcases WHERE id = ?').get(req.params.id);
-      if (!item) return res.status(404).json({ error: 'Flight-case non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Flight-case non trouvé' });
       res.json(item);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -375,7 +375,7 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
       res.status(201).json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -384,7 +384,7 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
     try {
       const { name, internal_code, dimensions, capacity, category, texture, metadata } = req.body;
       const existing = db.prepare('SELECT * FROM flightcases WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Flight-case non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Flight-case non trouvé' });
 
       const now = new Date().toISOString();
 
@@ -411,7 +411,7 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -419,12 +419,12 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
   app.delete('/api/flightcases/:id', authenticateToken, requireWriteAccess, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM flightcases WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Flight-case non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Flight-case non trouvé' });
 
       // Vérifier si utilisé dans des réservations
       const usageCount = db.prepare('SELECT COUNT(*) as count FROM equipment_to_vehicle WHERE flightcase_id = ?').get(req.params.id);
       if (usageCount.count > 0) {
-        return res.status(409).json({ error: `Impossible de supprimer : utilisé dans ${usageCount.count} réservation(s)` });
+        return res.status(409).json({ success: false, error: `Impossible de supprimer : utilisé dans ${usageCount.count} réservation(s)` });
       }
 
       // Détacher du catalogue
@@ -436,7 +436,7 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
       res.json({ success: true, message: 'Flight-case supprimé' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -467,7 +467,7 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
       res.json(items);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -475,11 +475,11 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
   app.get('/api/trucks/models/:id', authenticateToken, (req, res) => {
     try {
       const item = db.prepare('SELECT * FROM truck_models WHERE id = ?').get(req.params.id);
-      if (!item) return res.status(404).json({ error: 'Modèle de camion non trouvé' });
+      if (!item) return res.status(404).json({ success: false, error: 'Modèle de camion non trouvé' });
       res.json(item);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -508,7 +508,7 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
       res.status(201).json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -517,7 +517,7 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
     try {
       const { name, type, internal_code, dimensions, axle_config, metadata } = req.body;
       const existing = db.prepare('SELECT * FROM truck_models WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Modèle de camion non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Modèle de camion non trouvé' });
 
       const now = new Date().toISOString();
 
@@ -543,7 +543,7 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -551,7 +551,7 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
   app.delete('/api/trucks/models/:id', authenticateToken, requireWriteAccess, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM truck_models WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Modèle de camion non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Modèle de camion non trouvé' });
 
       db.prepare('DELETE FROM truck_models WHERE id = ?').run(req.params.id);
       addToHistory('truck_model', req.params.id, 'delete', { name: existing.name }, req.user?.id, req.user?.name);
@@ -559,7 +559,7 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
       res.json({ success: true, message: 'Modèle de camion supprimé' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -608,7 +608,7 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
       });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -619,11 +619,11 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
 
       // Vérifier que la réservation existe
       const reservation = db.prepare('SELECT id FROM reservations WHERE id = ?').get(req.params.id);
-      if (!reservation) return res.status(404).json({ error: 'Réservation non trouvée' });
+      if (!reservation) return res.status(404).json({ success: false, error: 'Réservation non trouvée' });
 
       // Vérifier que l'équipement catalogue existe
       const equipment = db.prepare('SELECT * FROM equipment_catalog WHERE id = ?').get(equipment_id);
-      if (!equipment) return res.status(404).json({ error: 'Équipement catalogue non trouvé' });
+      if (!equipment) return res.status(404).json({ success: false, error: 'Équipement catalogue non trouvé' });
 
       // Auto-suggest flight-case si non spécifié
       const effectiveFlightcaseId = flightcase_id || equipment.default_flightcase_id || null;
@@ -660,7 +660,7 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
       res.status(201).json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -671,7 +671,7 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
         'SELECT * FROM equipment_to_vehicle WHERE id = ? AND reservation_id = ?'
       ).get(req.params.linkId, req.params.reservationId);
 
-      if (!existing) return res.status(404).json({ error: 'Lien équipement-réservation non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Lien équipement-réservation non trouvé' });
 
       db.prepare('DELETE FROM equipment_to_vehicle WHERE id = ?').run(req.params.linkId);
 
@@ -683,7 +683,7 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
       res.json({ success: true, message: 'Équipement retiré de la réservation' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -691,7 +691,7 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
   app.get('/api/reservations/:id/chargement-export', authenticateToken, (req, res) => {
     try {
       const reservation = db.prepare('SELECT * FROM reservations WHERE id = ?').get(req.params.id);
-      if (!reservation) return res.status(404).json({ error: 'Réservation non trouvée' });
+      if (!reservation) return res.status(404).json({ success: false, error: 'Réservation non trouvée' });
 
       // Charger le véhicule et trouver un modèle de camion associé
       const vehicle = db.prepare('SELECT * FROM vehicles WHERE id = ?').get(reservation.vehicle_id);
@@ -762,7 +762,7 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
     } catch (error) {
       logger.error('GET /api/reservations/:id/chargement-export error:', error);
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }

@@ -248,7 +248,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(holidays);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -256,14 +256,14 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/leaves/holidays', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { date, name } = req.body;
-      if (!date || !name) return res.status(400).json({ error: 'Date et nom requis' });
+      if (!date || !name) return res.status(400).json({ success: false, error: 'Date et nom requis' });
       const year = new Date(date).getFullYear();
       db.prepare('INSERT OR IGNORE INTO public_holidays (date, name, year, is_custom) VALUES (?, ?, ?, 1)')
         .run(date, name, year);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -274,7 +274,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -286,7 +286,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/leaves/calculate', authenticateToken, (req, res) => {
     try {
       const { startDate, endDate, startPeriod, endPeriod, leaveType, exceptionalType } = req.body;
-      if (!startDate || !endDate) return res.status(400).json({ error: 'Dates requises' });
+      if (!startDate || !endDate) return res.status(400).json({ success: false, error: 'Dates requises' });
 
       // Pour les congés exceptionnels, utiliser la durée légale
       if (leaveType === 'exceptionnel' && exceptionalType && EXCEPTIONAL_LEAVE_DURATIONS[exceptionalType]) {
@@ -341,7 +341,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -360,19 +360,19 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       // Validations de base
       if (!personId || !startDate || !endDate) {
-        return res.status(400).json({ error: 'person_id, start_date et end_date sont requis' });
+        return res.status(400).json({ success: false, error: 'person_id, start_date et end_date sont requis' });
       }
       if (!leaveType || !LEAVE_TYPES[leaveType]) {
-        return res.status(400).json({ error: 'Type de congé invalide' });
+        return res.status(400).json({ success: false, error: 'Type de congé invalide' });
       }
 
       // Vérifier que la personne existe
       const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
-      if (!person) return res.status(404).json({ error: 'Personne non trouvée' });
+      if (!person) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
       // Vérifier les dates
       if (new Date(endDate) < new Date(startDate)) {
-        return res.status(400).json({ error: 'La date de fin doit être postérieure à la date de début' });
+        return res.status(400).json({ success: false, error: 'La date de fin doit être postérieure à la date de début' });
       }
 
       // Calculer les jours ouvrables
@@ -384,7 +384,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       }
 
       if (workingDays <= 0) {
-        return res.status(400).json({ error: 'La période sélectionnée ne contient aucun jour ouvrable' });
+        return res.status(400).json({ success: false, error: 'La période sélectionnée ne contient aucun jour ouvrable' });
       }
 
       // Vérifier le justificatif pour congé maladie et certains congés exceptionnels
@@ -486,7 +486,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
     } catch (error) {
       logger.error('Erreur POST /api/leaves:', error);
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -516,7 +516,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(requests);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -549,7 +549,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(requests);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -567,7 +567,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(requests);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -578,7 +578,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json({ count: result.count });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -595,12 +595,12 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         WHERE lr.id = ?
       `).get(req.params.id);
 
-      if (!request) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!request) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && request.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+        return res.status(403).json({ success: false, error: 'Accès non autorisé à cette demande' });
       }
       delete request.owner_user_id;
 
@@ -623,7 +623,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(request);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -637,31 +637,31 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const { status, adminComment, modifiedStartDate, modifiedEndDate, signatureAdmin } = req.body;
 
       if (!status || !['accepted', 'refused', 'modified'].includes(status)) {
-        return res.status(400).json({ error: 'Statut invalide. Valeurs acceptées : accepted, refused, modified' });
+        return res.status(400).json({ success: false, error: 'Statut invalide. Valeurs acceptées : accepted, refused, modified' });
       }
 
       const existing = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Empêcher un admin d'approuver/modifier sa propre demande
       if (existing.user_id === req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez pas traiter votre propre demande de congé' });
+        return res.status(403).json({ success: false, error: 'Vous ne pouvez pas traiter votre propre demande de congé' });
       }
 
       if (existing.status !== 'pending') {
-        return res.status(400).json({ error: 'Seules les demandes en attente peuvent être traitées' });
+        return res.status(400).json({ success: false, error: 'Seules les demandes en attente peuvent être traitées' });
       }
 
       // Motif obligatoire pour refus et modification
       if ((status === 'refused' || status === 'modified') && !adminComment) {
-        return res.status(400).json({ error: 'Le motif est obligatoire pour un refus ou une modification' });
+        return res.status(400).json({ success: false, error: 'Le motif est obligatoire pour un refus ou une modification' });
       }
 
       // Pour une modification, vérifier les nouvelles dates
       let modifiedWorkingDays = null;
       if (status === 'modified') {
         if (!modifiedStartDate || !modifiedEndDate) {
-          return res.status(400).json({ error: 'Les nouvelles dates sont requises pour une modification' });
+          return res.status(400).json({ success: false, error: 'Les nouvelles dates sont requises pour une modification' });
         }
         modifiedWorkingDays = calcWorkingDays(modifiedStartDate, modifiedEndDate, existing.start_period, existing.end_period);
       }
@@ -753,7 +753,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
     } catch (error) {
       logger.error('Erreur PUT /api/leaves/:id/decision:', error);
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -766,23 +766,23 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { signature, role } = req.body; // role = 'employee' ou 'admin'
       if (!signature || !role) {
-        return res.status(400).json({ error: 'Signature et rôle requis' });
+        return res.status(400).json({ success: false, error: 'Signature et rôle requis' });
       }
 
       const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété pour signature employee, ou admin pour signature admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (role === 'employee' && existing.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez signer que vos propres demandes' });
+        return res.status(403).json({ success: false, error: 'Vous ne pouvez signer que vos propres demandes' });
       }
       if (role === 'admin' && currentUser?.is_admin !== 1) {
-        return res.status(403).json({ error: 'Accès admin requis' });
+        return res.status(403).json({ success: false, error: 'Accès admin requis' });
       }
 
       if (role !== 'employee' && role !== 'admin') {
-        return res.status(400).json({ error: 'Rôle invalide. Valeurs : employee, admin' });
+        return res.status(400).json({ success: false, error: 'Rôle invalide. Valeurs : employee, admin' });
       }
 
       db.transaction(() => {
@@ -809,7 +809,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -821,17 +821,17 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   app.put('/api/leaves/:id/cancel', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && existing.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez annuler que vos propres demandes' });
+        return res.status(403).json({ success: false, error: 'Vous ne pouvez annuler que vos propres demandes' });
       }
 
       // Seules les demandes pending ou accepted peuvent être annulées
       if (!['pending', 'accepted'].includes(existing.status)) {
-        return res.status(400).json({ error: 'Cette demande ne peut plus être annulée' });
+        return res.status(400).json({ success: false, error: 'Cette demande ne peut plus être annulée' });
       }
 
       // Si acceptée, vérifier le délai de modification (1 mois)
@@ -872,7 +872,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, message: 'Demande annulée' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -884,18 +884,18 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/leaves/:id/justification', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && existing.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres demandes' });
+        return res.status(403).json({ success: false, error: 'Vous ne pouvez modifier que vos propres demandes' });
       }
 
       // Le fichier est envoyé en base64 dans le body
       const { filename, data } = req.body;
       if (!filename || !data) {
-        return res.status(400).json({ error: 'Fichier requis (filename + data en base64)' });
+        return res.status(400).json({ success: false, error: 'Fichier requis (filename + data en base64)' });
       }
 
       // [SECURITY] Valider l'extension du fichier
@@ -903,13 +903,13 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const MAX_JUSTIFICATION_SIZE = 10 * 1024 * 1024; // 10 Mo
       const ext = path.extname(filename).toLowerCase();
       if (!ALLOWED_JUSTIFICATION_EXTS.includes(ext)) {
-        return res.status(400).json({ error: 'Type de fichier non autorisé (PDF, JPG, PNG, WebP uniquement)' });
+        return res.status(400).json({ success: false, error: 'Type de fichier non autorisé (PDF, JPG, PNG, WebP uniquement)' });
       }
 
       // [SECURITY] Décoder et vérifier la taille
       const buffer = Buffer.from(data, 'base64');
       if (buffer.length > MAX_JUSTIFICATION_SIZE) {
-        return res.status(400).json({ error: 'Fichier trop volumineux (max 10 Mo)' });
+        return res.status(400).json({ success: false, error: 'Fichier trop volumineux (max 10 Mo)' });
       }
 
       // Créer le dossier de justificatifs
@@ -932,7 +932,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, path: `/leave-justifications/${safeName}` });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -961,7 +961,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(balances);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -969,7 +969,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   app.put('/api/leaves/balances', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { personId, year, type, daysEntitled } = req.body;
-      if (!personId || !year) return res.status(400).json({ error: 'personId et year requis' });
+      if (!personId || !year) return res.status(400).json({ success: false, error: 'personId et year requis' });
 
       const leaveType = type || 'conge_paye';
       const entitled = daysEntitled !== undefined ? daysEntitled : DAYS_PER_YEAR;
@@ -989,7 +989,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(getOrCreateBalance(personId, year));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1010,12 +1010,12 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         WHERE lr.id = ?
       `).get(req.params.id);
 
-      if (!request) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!request) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && request.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+        return res.status(403).json({ success: false, error: 'Accès non autorisé à cette demande' });
       }
       delete request.owner_user_id;
 
@@ -1031,7 +1031,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
     } catch (error) {
       logger.error('Erreur PDF:', error);
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1070,7 +1070,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(stats);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1108,7 +1108,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(conflicts);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1121,10 +1121,10 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
     try {
       // Vérifier propriété : propriétaire ou admin
       const leaveReq = db.prepare('SELECT lr.person_id, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
-      if (!leaveReq) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!leaveReq) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && leaveReq.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+        return res.status(403).json({ success: false, error: 'Accès non autorisé à cette demande' });
       }
 
       const history = db.prepare(`
@@ -1137,7 +1137,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(history);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 

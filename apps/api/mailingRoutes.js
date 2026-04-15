@@ -44,7 +44,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       })));
     } catch (err) {
       logger.error('Erreur liste templates:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -52,11 +52,11 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/mail-templates/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const tpl = db.prepare('SELECT * FROM mail_templates WHERE id = ?').get(req.params.id);
-      if (!tpl) return res.status(404).json({ error: 'Template non trouvé' });
+      if (!tpl) return res.status(404).json({ success: false, error: 'Template non trouvé' });
       res.json({ ...tpl, variables: JSON.parse(tpl.variables || '[]') });
     } catch (err) {
       logger.error('Erreur détail template:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -64,7 +64,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/mail-templates', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { name, subject, html_body, variables, category } = req.body;
-      if (!name) return res.status(400).json({ error: 'Nom obligatoire' });
+      if (!name) return res.status(400).json({ success: false, error: 'Nom obligatoire' });
 
       const result = db.prepare(`
         INSERT INTO mail_templates (name, subject, html_body, variables, category, created_by)
@@ -78,10 +78,10 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
         req.user.id
       );
 
-      res.status(201).json({ id: result.lastInsertRowid, message: 'Template créé' });
+      res.status(201).json({ success: true, id: result.lastInsertRowid, message: 'Template créé' });
     } catch (err) {
       logger.error('Erreur création template:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -90,7 +90,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { name, subject, html_body, variables, category } = req.body;
       const existing = db.prepare('SELECT id FROM mail_templates WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Template non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Template non trouvé' });
 
       db.prepare(`
         UPDATE mail_templates
@@ -105,10 +105,10 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
         req.params.id
       );
 
-      res.json({ message: 'Template mis à jour' });
+      res.json({ success: true, message: 'Template mis à jour' });
     } catch (err) {
       logger.error('Erreur modification template:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -116,11 +116,11 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/mail-templates/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const result = db.prepare('DELETE FROM mail_templates WHERE id = ?').run(req.params.id);
-      if (result.changes === 0) return res.status(404).json({ error: 'Template non trouvé' });
-      res.json({ message: 'Template supprimé' });
+      if (result.changes === 0) return res.status(404).json({ success: false, error: 'Template non trouvé' });
+      res.json({ success: true, message: 'Template supprimé' });
     } catch (err) {
       logger.error('Erreur suppression template:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -132,12 +132,12 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       const { template_id, recipients, subject, html_body, variables } = req.body;
 
       if (!recipients || recipients.length === 0) {
-        return res.status(400).json({ error: 'Au moins un destinataire requis' });
+        return res.status(400).json({ success: false, error: 'Au moins un destinataire requis' });
       }
 
       const config = db.prepare('SELECT * FROM email_config WHERE id = 1').get();
       if (!config || !config.enabled || !config.smtp_host || !config.smtp_user) {
-        return res.status(400).json({ error: 'Configuration SMTP non activée' });
+        return res.status(400).json({ success: false, error: 'Configuration SMTP non activée' });
       }
 
       // Déterminer sujet et contenu
@@ -158,7 +158,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       finalHtml = substituteVariables(finalHtml, vars);
 
       if (!finalSubject) {
-        return res.status(400).json({ error: 'Sujet obligatoire' });
+        return res.status(400).json({ success: false, error: 'Sujet obligatoire' });
       }
 
       // Utiliser le transporteur singleton de emailService
@@ -168,7 +168,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
         initEmailTransporter(db);
         const retry = getTransporter();
         if (!retry.transporter) {
-          return res.status(500).json({ error: 'Transporteur email non configuré' });
+          return res.status(500).json({ success: false, error: 'Transporteur email non configuré' });
         }
       }
       const activeTransport = transport || getTransporter().transporter;
@@ -214,7 +214,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (err) {
       logger.error('Erreur envoi mailing:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -241,7 +241,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       res.json({ subject: finalSubject, html: finalHtml });
     } catch (err) {
       logger.error('Erreur preview mailing:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -267,7 +267,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       res.json({ history, total });
     } catch (err) {
       logger.error('Erreur historique mailing:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -303,7 +303,7 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       res.json(contacts);
     } catch (err) {
       logger.error('Erreur contacts mailing:', err);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 }

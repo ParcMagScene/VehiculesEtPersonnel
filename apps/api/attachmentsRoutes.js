@@ -90,17 +90,17 @@ app.post('/api/create-folder', authenticateToken, (req, res) => {
   try {
     const { path: folderPath } = req.body;
     if (!folderPath) {
-      return res.status(400).json({ error: 'Chemin du dossier manquant' });
+      return res.status(400).json({ success: false, error: 'Chemin du dossier manquant' });
     }
     const safePath = sanitizePath(attachmentsPath, folderPath.replace(attachmentsPath, ''));
     if (!safePath) {
-      return res.status(403).json({ error: 'Chemin non autorisé' });
+      return res.status(403).json({ success: false, error: 'Chemin non autorisé' });
     }
     fs.mkdirSync(safePath, { recursive: true });
     res.json({ success: true, path: safePath });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -109,17 +109,17 @@ app.post('/api/create-folder', authenticateToken, (req, res) => {
 app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), validateFileType(['application/pdf']), (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'Aucun fichier fourni' });
+      return res.status(400).json({ success: false, error: 'Aucun fichier fourni' });
     }
     if (!req.body.affaireId) {
-      return res.status(400).json({ error: 'affaireId requis' });
+      return res.status(400).json({ success: false, error: 'affaireId requis' });
     }
     if (!isValidAffaireId(req.body.affaireId)) {
-      return res.status(400).json({ error: 'Identifiant d\'affaire invalide' });
+      return res.status(400).json({ success: false, error: 'Identifiant d\'affaire invalide' });
     }
     const affaireDir = sanitizePath(attachmentsPath, req.body.affaireId);
     if (!affaireDir) {
-      return res.status(403).json({ error: 'Chemin non autorisé' });
+      return res.status(403).json({ success: false, error: 'Chemin non autorisé' });
     }
     if (!fs.existsSync(affaireDir)) {
       fs.mkdirSync(affaireDir, { recursive: true });
@@ -127,7 +127,7 @@ app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), validateFile
     const originalName = sanitizeFilename(req.file.originalname.replace(/^\d+-/, ''));
     if (!originalName) {
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({ error: 'Nom de fichier invalide' });
+      return res.status(400).json({ success: false, error: 'Nom de fichier invalide' });
     }
     const finalPath = path.join(affaireDir, originalName);
     fs.renameSync(req.file.path, finalPath);
@@ -135,7 +135,7 @@ app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), validateFile
     res.json({ success: true, path: relativePath, filename: originalName });
   } catch (error) {
     logger.error('❌ Erreur upload BL:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -143,21 +143,21 @@ app.post('/api/upload-bl', authenticateToken, upload.single('pdf'), validateFile
 app.post('/api/upload-attachment', authenticateToken, (req, res) => {
   uploadAttachment.single('file')(req, res, function (err) {
     if (err) {
-      return res.status(400).json({ error: err.message });
+      return res.status(400).json({ success: false, error: err.message });
     }
     try {
       if (!req.file) {
-        return res.status(400).json({ error: 'Aucun fichier fourni' });
+        return res.status(400).json({ success: false, error: 'Aucun fichier fourni' });
       }
       if (!req.body.affaireId) {
-        return res.status(400).json({ error: 'affaireId requis' });
+        return res.status(400).json({ success: false, error: 'affaireId requis' });
       }
       if (!isValidAffaireId(req.body.affaireId)) {
-        return res.status(400).json({ error: 'Identifiant d\'affaire invalide' });
+        return res.status(400).json({ success: false, error: 'Identifiant d\'affaire invalide' });
       }
       const affaireDir = sanitizePath(attachmentsPath, req.body.affaireId);
       if (!affaireDir) {
-        return res.status(403).json({ error: 'Chemin non autorisé' });
+        return res.status(403).json({ success: false, error: 'Chemin non autorisé' });
       }
       if (!fs.existsSync(affaireDir)) {
         fs.mkdirSync(affaireDir, { recursive: true });
@@ -165,7 +165,7 @@ app.post('/api/upload-attachment', authenticateToken, (req, res) => {
       const originalName = sanitizeFilename(req.file.originalname.replace(/^\d+-/, ''));
       if (!originalName) {
         fs.unlinkSync(req.file.path);
-        return res.status(400).json({ error: 'Nom de fichier invalide' });
+        return res.status(400).json({ success: false, error: 'Nom de fichier invalide' });
       }
       const finalPath = path.join(affaireDir, originalName);
       fs.renameSync(req.file.path, finalPath);
@@ -178,7 +178,7 @@ app.post('/api/upload-attachment', authenticateToken, (req, res) => {
       });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 });
@@ -188,11 +188,11 @@ app.get('/api/attachments/:affaireId', authenticateToken, (req, res) => {
   try {
     const affaireId = req.params.affaireId;
     if (!isValidAffaireId(affaireId)) {
-      return res.status(400).json({ error: 'Identifiant d\'affaire invalide' });
+      return res.status(400).json({ success: false, error: 'Identifiant d\'affaire invalide' });
     }
     const dirPath = sanitizePath(attachmentsPath, affaireId);
     if (!dirPath) {
-      return res.status(403).json({ error: 'Chemin non autorisé' });
+      return res.status(403).json({ success: false, error: 'Chemin non autorisé' });
     }
     if (!fs.existsSync(dirPath)) {
       return res.json({ files: [] });
@@ -219,7 +219,7 @@ app.get('/api/attachments/:affaireId', authenticateToken, (req, res) => {
     res.json({ files });
   } catch (error) {
     logger.error('Erreur liste fichiers:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -245,7 +245,7 @@ app.get('/api/attachments-index', authenticateToken, (req, res) => {
     res.json({ affaires, counts });
   } catch (error) {
     logger.error('Erreur attachments-index:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -254,20 +254,20 @@ app.delete('/api/attachments/:affaireId/:filename', authenticateToken, requireAd
   try {
     const { affaireId, filename } = req.params;
     if (!isValidAffaireId(affaireId)) {
-      return res.status(400).json({ error: 'Identifiant d\'affaire invalide' });
+      return res.status(400).json({ success: false, error: 'Identifiant d\'affaire invalide' });
     }
     const safePath = sanitizePath(attachmentsPath, path.join(affaireId, filename));
     if (!safePath) {
-      return res.status(403).json({ error: 'Chemin non autorisé' });
+      return res.status(403).json({ success: false, error: 'Chemin non autorisé' });
     }
     if (!fs.existsSync(safePath)) {
-      return res.status(404).json({ error: 'Fichier non trouvé' });
+      return res.status(404).json({ success: false, error: 'Fichier non trouvé' });
     }
     fs.unlinkSync(safePath);
     res.json({ success: true, message: `${filename} supprimé` });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 

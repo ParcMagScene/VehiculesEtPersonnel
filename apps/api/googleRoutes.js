@@ -28,7 +28,7 @@ const GCAL_MAX_RETRIES = 2;
 const gcalRoute = (fn) => async (req, res) => {
   try { await fn(req, res); } catch (err) {
     logger.error('Google route error:', err.message);
-    if (!res.headersSent) res.status(502).json({ error: 'google_unavailable', message: 'Service Google Calendar indisponible' });
+    if (!res.headersSent) res.status(502).json({ success: false, error: 'google_unavailable', message: 'Service Google Calendar indisponible' });
   }
 };
 
@@ -37,7 +37,7 @@ const gcalRoute = (fn) => async (req, res) => {
 async function googleProxyV2(req, res, method, url, body) {
   const token = await getValidAccessToken(req.user.id);
   if (!token) {
-    return res.status(401).json({ error: 'google_not_connected', message: 'Compte Google non connecté — connectez-vous via Paramètres' });
+    return res.status(401).json({ success: false, error: 'google_not_connected', message: 'Compte Google non connecté — connectez-vous via Paramètres' });
   }
 
   const headers = { 'Authorization': `Bearer ${token}` };
@@ -65,7 +65,7 @@ async function googleProxyV2(req, res, method, url, body) {
 
         if (response.status === 401) {
           // Token expiré malgré le refresh — forcer un nouveau refresh au prochain appel
-          return res.status(401).json({ error: 'google_token_expired', message: 'Session Google expirée — réessayez' });
+          return res.status(401).json({ success: false, error: 'google_token_expired', message: 'Session Google expirée — réessayez' });
         }
 
         return res.status(response.status).json(errorData);
@@ -78,7 +78,7 @@ async function googleProxyV2(req, res, method, url, body) {
       clearTimeout(timer);
       if (err.name === 'AbortError' && attempt < GCAL_MAX_RETRIES) continue;
       logger.error('Google Calendar proxy error:', err.message);
-      return res.status(502).json({ error: 'google_proxy_error', message: 'Erreur communication Google Calendar' });
+      return res.status(502).json({ success: false, error: 'google_proxy_error', message: 'Erreur communication Google Calendar' });
     }
   }
 }
@@ -113,7 +113,7 @@ setInterval(cleanExpiredStates, 5 * 60 * 1000).unref();
 function validateEventId(req, res) {
   const id = req.params.eventId;
   if (!id || id.length > 1024 || /[\/\\]/.test(id)) {
-    res.status(400).json({ error: 'invalid_event_id', message: 'Event ID invalide' });
+    res.status(400).json({ success: false, error: 'invalid_event_id', message: 'Event ID invalide' });
     return false;
   }
   return true;
@@ -126,7 +126,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
   // Redirige l'utilisateur vers Google pour autorisation
   app.get('/api/google/auth', authenticateToken, (req, res) => {
     if (!isGoogleOAuthConfigured()) {
-      return res.status(503).json({ error: 'google_not_configured', message: 'Module Google non configuré (variables .env manquantes)' });
+      return res.status(503).json({ success: false, error: 'google_not_configured', message: 'Module Google non configuré (variables .env manquantes)' });
     }
 
     cleanExpiredStates();
@@ -265,7 +265,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
     const days = Math.max(1, Math.min(365, parseInt(req.query.days || req.body?.days || '90', 10)));
     const result = await pullReservationsFromGoogle({ userId: req.user.id, days });
     if (result.skipped) {
-      return res.status(503).json({ error: result.reason, message: 'Synchronisation pull indisponible', details: result.details });
+      return res.status(503).json({ success: false, error: result.reason, message: 'Synchronisation pull indisponible', details: result.details });
     }
     res.json(result);
   }));

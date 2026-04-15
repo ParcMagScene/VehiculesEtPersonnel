@@ -29,7 +29,7 @@ app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (re
     // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée
     const pwError = validatePassword(newPassword);
     if (pwError) {
-      return res.status(400).json({ error: pwError });
+      return res.status(400).json({ success: false, error: pwError });
     }
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
@@ -38,7 +38,7 @@ app.post('/api/admin/reset-password', authenticateToken, requireAdmin, async (re
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -51,13 +51,13 @@ app.post('/api/auth/change-password', authenticateToken, validate(changePassword
     const user = stmt.get(req.user.id);
     
     if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) {
-      return res.status(401).json({ error: 'Mot de passe actuel incorrect' });
+      return res.status(401).json({ success: false, error: 'Mot de passe actuel incorrect' });
     }
     
     // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée
     const pwError = validatePassword(newPassword);
     if (pwError) {
-      return res.status(400).json({ error: pwError });
+      return res.status(400).json({ success: false, error: pwError });
     }
     const passwordHash = await bcrypt.hash(newPassword, 10);
     const updateStmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
@@ -67,7 +67,7 @@ app.post('/api/auth/change-password', authenticateToken, validate(changePassword
     res.json({ success: true });
   } catch (error) {
     logger.error(error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -79,13 +79,13 @@ app.post('/api/access-requests', validate(accessRequestSchema), async (req, res)
     const { email, name } = req.body;
     
     if (!email || !name) {
-      return res.status(400).json({ error: 'Email et nom requis' });
+      return res.status(400).json({ success: false, error: 'Email et nom requis' });
     }
 
     // Vérifier si l'email existe déjà en tant qu'utilisateur
     const existingUser = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
     if (existingUser) {
-      return res.status(400).json({ error: 'Cet email est déjà enregistré. Connectez-vous directement.' });
+      return res.status(400).json({ success: false, error: 'Cet email est déjà enregistré. Connectez-vous directement.' });
     }
 
     // Vérifier si l'email est déjà autorisé par un admin
@@ -108,7 +108,7 @@ app.post('/api/access-requests', validate(accessRequestSchema), async (req, res)
     ).get(email, 'pending');
     
     if (existingRequest) {
-      return res.status(400).json({ error: 'Une demande est déjà en cours pour cet email' });
+      return res.status(400).json({ success: false, error: 'Une demande est déjà en cours pour cet email' });
     }
 
     // Créer la demande (email non autorisé → besoin approbation admin)
@@ -130,7 +130,7 @@ app.post('/api/access-requests', validate(accessRequestSchema), async (req, res)
     });
   } catch (error) {
     logger.error('Erreur création demande d\'accès:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -139,7 +139,7 @@ app.post('/api/access-requests/check-email', validate(checkEmailSchema), async (
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ error: 'Email requis' });
+      return res.status(400).json({ success: false, error: 'Email requis' });
     }
     
     // Vérifier si déjà utilisateur
@@ -164,7 +164,7 @@ app.post('/api/access-requests/check-email', validate(checkEmailSchema), async (
     
     res.json({ authorized: !!authorized, name });
   } catch (error) {
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -188,7 +188,7 @@ app.get('/api/access-requests', authenticateToken, requireAdmin, (req, res) => {
     res.json(requests);
   } catch (error) {
     logger.error('Erreur récupération demandes:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -199,17 +199,17 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
     const { status, is_admin } = req.body;
     
     if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({ error: 'Status invalide' });
+      return res.status(400).json({ success: false, error: 'Status invalide' });
     }
 
     // Récupérer la demande
     const request = db.prepare('SELECT * FROM access_requests WHERE id = ?').get(id);
     if (!request) {
-      return res.status(404).json({ error: 'Demande non trouvée' });
+      return res.status(404).json({ success: false, error: 'Demande non trouvée' });
     }
 
     if (request.status !== 'pending') {
-      return res.status(400).json({ error: 'Cette demande a déjà été traitée' });
+      return res.status(400).json({ success: false, error: 'Cette demande a déjà été traitée' });
     }
 
     // Mettre à jour le statut
@@ -254,7 +254,7 @@ app.patch('/api/access-requests/:id', authenticateToken, requireAdmin, async (re
     });
   } catch (error) {
     logger.error('Erreur traitement demande:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -266,7 +266,7 @@ app.get('/api/access-requests/count/pending', authenticateToken, requireAdmin, (
     res.json({ count: result.count });
   } catch (error) {
     logger.error('Erreur comptage demandes:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -286,7 +286,7 @@ app.get('/api/pending-requests-count', authenticateToken, requireAdmin, (req, re
     });
   } catch (error) {
     logger.error('Erreur comptage demandes:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -305,7 +305,7 @@ app.get('/api/reservation-requests/pending', authenticateToken, requireAdmin, (r
     res.json(requests);
   } catch (error) {
     logger.error('Erreur récupération demandes:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -319,7 +319,7 @@ app.get('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) =>
     res.json(emails);
   } catch (error) {
     logger.error('Erreur récupération emails:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -329,7 +329,7 @@ app.post('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) =
     const { email } = req.body;
     
     if (!email) {
-      return res.status(400).json({ error: 'Email requis' });
+      return res.status(400).json({ success: false, error: 'Email requis' });
     }
     
     // Vérifier si l'email existe déjà
@@ -337,7 +337,7 @@ app.post('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) =
     const existing = checkStmt.get(email);
     
     if (existing) {
-      return res.status(400).json({ error: 'Cet email est déjà autorisé' });
+      return res.status(400).json({ success: false, error: 'Cet email est déjà autorisé' });
     }
     
     const stmt = db.prepare('INSERT INTO authorized_emails (email, status) VALUES (?, ?)');
@@ -347,7 +347,7 @@ app.post('/api/authorized-emails', authenticateToken, requireAdmin, (req, res) =
     res.json({ id: result.lastInsertRowid, email, status: 'pending' });
   } catch (error) {
     logger.error('Erreur ajout email:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -361,7 +361,7 @@ app.delete('/api/authorized-emails/:id', authenticateToken, requireAdmin, (req, 
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur suppression email:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -375,23 +375,22 @@ app.get('/api/users/names', authenticateToken, (req, res) => {
     res.json(users);
   } catch (error) {
     logger.error('Erreur récupération noms utilisateurs:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
-// Récupérer tous les utilisateurs (admin uniquement)
 // Création directe d'un utilisateur par l'admin
 app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { email, name, password, isAdmin = false, readOnly = false, permissions: rawPermissions } = req.body;
     if (!email || !name || !password) {
-      return res.status(400).json({ error: 'Email, nom et mot de passe requis' });
+      return res.status(400).json({ success: false, error: 'Email, nom et mot de passe requis' });
     }
     const pwError = validatePassword(password);
-    if (pwError) return res.status(400).json({ error: pwError });
+    if (pwError) return res.status(400).json({ success: false, error: pwError });
 
     const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (existing) return res.status(409).json({ error: 'Un utilisateur avec cet email existe déjà' });
+    if (existing) return res.status(409).json({ success: false, error: 'Un utilisateur avec cet email existe déjà' });
 
     const passwordHash = await bcrypt.hash(password, 12);
     // Construire les permissions : lecture seule OU permissions granulaires
@@ -419,10 +418,10 @@ app.post('/api/users', authenticateToken, requireAdmin, async (req, res) => {
     }
 
     auditLog(AUDIT_ACTIONS.USER_CREATE, req.user?.id, { targetUserId: result.lastInsertRowid, email });
-    res.status(201).json({ id: result.lastInsertRowid, email, name: name.trim() });
+    res.status(201).json({ success: true, id: result.lastInsertRowid, email, name: name.trim() });
   } catch (error) {
     logger.error('Erreur création utilisateur:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -461,7 +460,7 @@ app.get('/api/users', authenticateToken, requireAdmin, (req, res) => {
     }));
   } catch (error) {
     logger.error('Erreur récupération utilisateurs:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -511,7 +510,7 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
       // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée
       const pwError = validatePassword(newPassword);
       if (pwError) {
-        return res.status(400).json({ error: pwError });
+        return res.status(400).json({ success: false, error: pwError });
       }
       const passwordHash = await bcrypt.hash(newPassword, 10);
       const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
@@ -527,7 +526,7 @@ app.patch('/api/users/:id', authenticateToken, requireAdmin, async (req, res) =>
     res.json({ success: true, message: 'Utilisateur mis à jour. Les sessions actives ont été fermées.' });
   } catch (error) {
     logger.error('Erreur mise à jour utilisateur:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -558,7 +557,7 @@ app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, (req,
     });
   } catch (error) {
     logger.error('Erreur demande réinitialisation:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -569,7 +568,7 @@ app.post('/api/auth/check-reset', async (req, res) => {
     const { email } = req.body;
     
     if (!email) {
-      return res.status(400).json({ error: 'Email requis' });
+      return res.status(400).json({ success: false, error: 'Email requis' });
     }
     
     const stmt = db.prepare('SELECT id, name, password_reset_required FROM users WHERE email = ?');
@@ -586,7 +585,7 @@ app.post('/api/auth/check-reset', async (req, res) => {
     });
   } catch (error) {
     logger.error('Erreur check reset:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -599,35 +598,35 @@ app.post('/api/auth/set-new-password', validate(setNewPasswordSchema), async (re
     // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée
     const pwError = validatePassword(newPassword);
     if (pwError) {
-      return res.status(400).json({ error: pwError });
+      return res.status(400).json({ success: false, error: pwError });
     }
     
     const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
     const user = stmt.get(email);
     
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      return res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
     }
     
     if (user.password_reset_required !== 1) {
-      return res.status(400).json({ error: 'Aucune réinitialisation en attente pour ce compte' });
+      return res.status(400).json({ success: false, error: 'Aucune réinitialisation en attente pour ce compte' });
     }
 
     // [AUDIT FIX CRIT-1] Vérifier le token OTP
     if (!resetToken) {
-      return res.status(400).json({ error: 'Code de vérification requis' });
+      return res.status(400).json({ success: false, error: 'Code de vérification requis' });
     }
 
     const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
     if (!user.reset_token_hash || tokenHash !== user.reset_token_hash) {
-      return res.status(400).json({ error: 'Code de vérification invalide' });
+      return res.status(400).json({ success: false, error: 'Code de vérification invalide' });
     }
 
     // Vérifier l'expiration du token
     if (user.reset_token_expires && new Date(user.reset_token_expires) < new Date()) {
       // Nettoyer le token expiré
       db.prepare('UPDATE users SET password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?').run(user.id);
-      return res.status(400).json({ error: 'Code de vérification expiré. Veuillez refaire une demande.' });
+      return res.status(400).json({ success: false, error: 'Code de vérification expiré. Veuillez refaire une demande.' });
     }
     
     // Mettre à jour le mot de passe et retirer le flag + token
@@ -673,7 +672,7 @@ app.post('/api/auth/set-new-password', validate(setNewPasswordSchema), async (re
     });
   } catch (error) {
     logger.error('Erreur définition mot de passe:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -684,7 +683,7 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
     
     // Empêcher la suppression de son propre compte
     if (parseInt(id) === req.user.id) {
-      return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' });
+      return res.status(400).json({ success: false, error: 'Vous ne pouvez pas supprimer votre propre compte' });
     }
     
     // Avant de supprimer l'utilisateur, réassigner toutes ses données à l'admin qui fait la suppression
@@ -737,7 +736,7 @@ app.delete('/api/users/:id', authenticateToken, requireAdmin, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     logger.error('Erreur suppression utilisateur:', error);
-    res.status(500).json({ error: 'Erreur serveur interne' });
+    res.status(500).json({ success: false, error: 'Erreur serveur interne' });
   }
 });
 
@@ -754,7 +753,7 @@ app.get('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
     res.json(config || {});
   } catch (error) {
     logger.error('Erreur lecture config email:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -794,7 +793,7 @@ app.put('/api/email-config', authenticateToken, requireAdmin, (req, res) => {
     res.json({ success: true, message: 'Configuration email mise à jour' });
   } catch (error) {
     logger.error('Erreur mise à jour config email:', error);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 });
 
@@ -803,7 +802,7 @@ app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, 
   try {
     const config = db.prepare('SELECT * FROM email_config WHERE id = 1').get();
     if (!config || !config.smtp_host || !config.smtp_user) {
-      return res.status(400).json({ error: 'Configuration SMTP incomplète' });
+      return res.status(400).json({ success: false, error: 'Configuration SMTP incomplète' });
     }
 
     const nodemailer = (await import('nodemailer')).default;
@@ -831,7 +830,7 @@ app.post('/api/email-config/test', authenticateToken, requireAdmin, async (req, 
     res.json({ success: true, message: `Email de test envoyé à ${req.user.email}` });
   } catch (error) {
     logger.error('Erreur test email:', error);
-    res.status(500).json({ error: 'Erreur lors du test SMTP' });
+    res.status(500).json({ success: false, error: 'Erreur lors du test SMTP' });
   }
 });
 
@@ -844,7 +843,7 @@ app.post('/api/cache/clear', authenticateToken, requireAdmin, (req, res) => {
   if (name) {
     const stats = getAllCacheStats();
     const target = stats.find(s => s.name === name);
-    if (!target) return res.status(404).json({ error: `Cache '${name}' non trouvé` });
+    if (!target) return res.status(404).json({ success: false, error: `Cache '${name}' non trouvé` });
     // Clear by name
     const cache = ALL_CACHES.find(c => c.name === name);
     if (cache) cache.clear();

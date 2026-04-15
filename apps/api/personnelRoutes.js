@@ -39,7 +39,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       res.json(enriched);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -47,7 +47,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/persons/:id', authenticateToken, (req, res) => {
     try {
       const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
-      if (!person) return res.status(404).json({ error: 'Personne non trouvée' });
+      if (!person) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
       person.skills = db.prepare(`
         SELECT ps.skill_id, ps.level, s.name, s.category
@@ -73,7 +73,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       res.json(person);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -82,7 +82,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
     try {
       const p = req.body;
       if (!p.first_name || !p.last_name) {
-        return res.status(400).json({ error: 'first_name et last_name sont requis' });
+        return res.status(400).json({ success: false, error: 'first_name et last_name sont requis' });
       }
 
       const stmt = db.prepare(`
@@ -127,7 +127,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       res.json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -136,7 +136,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
     try {
       const p = req.body;
       const existing = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Personne non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
       const stmt = db.prepare(`
         UPDATE persons SET
@@ -194,7 +194,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -202,7 +202,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/persons/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Personne non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
       db.prepare('DELETE FROM persons WHERE id = ?').run(req.params.id);
       addToHistory('person', req.params.id, 'deleted', null, req.user.id, req.user.name);
@@ -210,7 +210,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -222,7 +222,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       // mode = 'preview' | 'import'
 
       if (!data || !Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ error: 'Données CSV vides' });
+        return res.status(400).json({ success: false, error: 'Données CSV vides' });
       }
 
       // Mapping des types CSV vers le modèle interne
@@ -398,7 +398,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
     } catch (error) {
       logger.error('Erreur import CSV personnel:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -407,7 +407,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { ids } = req.body;
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ error: 'Liste d\'ids requise' });
+        return res.status(400).json({ success: false, error: 'Liste d\'ids requise' });
       }
 
       const deleteStmt = db.prepare('DELETE FROM persons WHERE id = ?');
@@ -426,7 +426,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true, deleted });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -442,7 +442,7 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       res.json(skills);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -450,7 +450,7 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/skills', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { name, category, description } = req.body;
-      if (!name) return res.status(400).json({ error: 'name est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'name est requis' });
 
       const result = db.prepare(
         'INSERT INTO skills (name, category, description) VALUES (?, ?, ?)',
@@ -460,10 +460,10 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       res.json(created);
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
-        return res.status(409).json({ error: 'Cette compétence existe déjà' });
+        return res.status(409).json({ success: false, error: 'Cette compétence existe déjà' });
       }
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -477,15 +477,15 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       `).run(name, category, description || null, req.params.id);
 
       const updated = db.prepare('SELECT * FROM skills WHERE id = ?').get(req.params.id);
-      if (!updated) return res.status(404).json({ error: 'Compétence non trouvée' });
+      if (!updated) return res.status(404).json({ success: false, error: 'Compétence non trouvée' });
 
       res.json(updated);
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
-        return res.status(409).json({ error: 'Ce nom de compétence existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce nom de compétence existe déjà' });
       }
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -493,13 +493,13 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/skills/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM skills WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Compétence non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Compétence non trouvée' });
 
       db.prepare('DELETE FROM skills WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -512,7 +512,7 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       res.json(positions);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -520,7 +520,7 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/positions', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { name, category, is_common } = req.body;
-      if (!name) return res.status(400).json({ error: 'name est requis' });
+      if (!name) return res.status(400).json({ success: false, error: 'name est requis' });
 
       const result = db.prepare(
         'INSERT INTO positions (name, category, is_common) VALUES (?, ?, ?)'
@@ -530,10 +530,10 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       res.json(created);
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
-        return res.status(409).json({ error: 'Ce poste existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce poste existe déjà' });
       }
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -547,15 +547,15 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       `).run(name, category, is_common ? 1 : 0, req.params.id);
 
       const updated = db.prepare('SELECT * FROM positions WHERE id = ?').get(req.params.id);
-      if (!updated) return res.status(404).json({ error: 'Poste non trouvé' });
+      if (!updated) return res.status(404).json({ success: false, error: 'Poste non trouvé' });
 
       res.json(updated);
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
-        return res.status(409).json({ error: 'Ce nom de poste existe déjà' });
+        return res.status(409).json({ success: false, error: 'Ce nom de poste existe déjà' });
       }
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -563,13 +563,13 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/positions/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM positions WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Poste non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Poste non trouvé' });
 
       db.prepare('DELETE FROM positions WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -636,7 +636,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       res.json(availabilities);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -648,11 +648,11 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
     try {
       const a = req.body;
       if (!a.person_id || !a.start_date || !a.end_date) {
-        return res.status(400).json({ error: 'person_id, start_date et end_date sont requis' });
+        return res.status(400).json({ success: false, error: 'person_id, start_date et end_date sont requis' });
       }
 
       const person = db.prepare('SELECT id FROM persons WHERE id = ?').get(a.person_id);
-      if (!person) return res.status(404).json({ error: 'Personne non trouvée' });
+      if (!person) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
       // Détection de conflits — vérifier les périodes existantes qui se chevauchent
       const conflicting = db.prepare(`
@@ -707,7 +707,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       res.json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -716,7 +716,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
     try {
       const a = req.body;
       const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Disponibilité non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Disponibilité non trouvée' });
 
       db.prepare(`
         UPDATE availabilities SET
@@ -746,7 +746,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -754,9 +754,9 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
   app.post('/api/availabilities/:id/approve', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
       if (existing.status !== 'pending') {
-        return res.status(400).json({ error: 'Seules les demandes en attente peuvent être approuvées' });
+        return res.status(400).json({ success: false, error: 'Seules les demandes en attente peuvent être approuvées' });
       }
 
       db.prepare(`
@@ -794,7 +794,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -803,9 +803,9 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
     try {
       const { reason } = req.body;
       const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
       if (existing.status !== 'pending') {
-        return res.status(400).json({ error: 'Seules les demandes en attente peuvent être refusées' });
+        return res.status(400).json({ success: false, error: 'Seules les demandes en attente peuvent être refusées' });
       }
 
       db.prepare(`
@@ -823,7 +823,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -831,7 +831,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
   app.delete('/api/availabilities/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Disponibilité non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Disponibilité non trouvée' });
 
       db.prepare('DELETE FROM availabilities WHERE id = ?').run(req.params.id);
       // Supprimer aussi les votes associés
@@ -839,7 +839,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -925,7 +925,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
       res.json(enriched);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -933,7 +933,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/missions/:id', authenticateToken, (req, res) => {
     try {
       const mission = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
-      if (!mission) return res.status(404).json({ error: 'Mission non trouvée' });
+      if (!mission) return res.status(404).json({ success: false, error: 'Mission non trouvée' });
 
       mission.assignments = db.prepare(`
         SELECT ma.*, p.first_name, p.last_name, p.phone, p.type as person_type
@@ -960,7 +960,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
       res.json(mission);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -969,13 +969,13 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
     try {
       const m = req.body;
       if (!m.title || !m.start_date || !m.end_date) {
-        return res.status(400).json({ error: 'title, start_date et end_date sont requis' });
+        return res.status(400).json({ success: false, error: 'title, start_date et end_date sont requis' });
       }
 
       // Vérifier la réservation liée si fournie
       if (m.reservation_id) {
         const reservation = db.prepare('SELECT id FROM reservations WHERE id = ?').get(m.reservation_id);
-        if (!reservation) return res.status(400).json({ error: 'Réservation non trouvée' });
+        if (!reservation) return res.status(400).json({ success: false, error: 'Réservation non trouvée' });
       }
 
       const result = db.prepare(`
@@ -1003,7 +1003,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
       res.json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1012,7 +1012,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
     try {
       const m = req.body;
       const existing = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Mission non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Mission non trouvée' });
 
       db.prepare(`
         UPDATE missions SET
@@ -1055,7 +1055,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1063,7 +1063,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/missions/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Mission non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Mission non trouvée' });
 
       db.prepare('DELETE FROM missions WHERE id = ?').run(req.params.id);
       addToHistory('mission', req.params.id, 'deleted', null, req.user.id, req.user.name);
@@ -1071,7 +1071,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -1119,7 +1119,7 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       res.json(assignments);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1128,18 +1128,18 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
     try {
       const a = req.body;
       if (!a.mission_id || !a.person_id) {
-        return res.status(400).json({ error: 'mission_id et person_id sont requis' });
+        return res.status(400).json({ success: false, error: 'mission_id et person_id sont requis' });
       }
 
       // Vérifier que la mission existe
       const mission = db.prepare('SELECT * FROM missions WHERE id = ?').get(a.mission_id);
-      if (!mission) return res.status(404).json({ error: 'Mission non trouvée' });
+      if (!mission) return res.status(404).json({ success: false, error: 'Mission non trouvée' });
 
       // Vérifier que la personne existe et est active
       const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(a.person_id);
-      if (!person) return res.status(404).json({ error: 'Personne non trouvée' });
+      if (!person) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
       if (person.status !== 'active') {
-        return res.status(400).json({ error: 'Cette personne est inactive' });
+        return res.status(400).json({ success: false, error: 'Cette personne est inactive' });
       }
 
       // Vérifier les conflits de planning (autre affectation confirmée en même temps)
@@ -1199,10 +1199,10 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       });
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
-        return res.status(409).json({ error: 'Cette personne est déjà affectée à cette mission' });
+        return res.status(409).json({ success: false, error: 'Cette personne est déjà affectée à cette mission' });
       }
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1211,7 +1211,7 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
     try {
       const a = req.body;
       const existing = db.prepare('SELECT * FROM mission_assignments WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Affectation non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Affectation non trouvée' });
 
       // Si statut change vers confirmed/refused, enregistrer responded_at
       const respondedAt = ['confirmed', 'refused'].includes(a.status) && existing.status !== a.status
@@ -1265,7 +1265,7 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1273,7 +1273,7 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
   app.delete('/api/assignments/:id', authenticateToken, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM mission_assignments WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Affectation non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Affectation non trouvée' });
 
       db.prepare('DELETE FROM mission_assignments WHERE id = ?').run(req.params.id);
       addToHistory('assignment', req.params.id, 'deleted', null, req.user.id, req.user.name);
@@ -1281,7 +1281,7 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1291,7 +1291,7 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       const { start_date, end_date, person_id, skill_id } = req.query;
 
       if (!start_date || !end_date) {
-        return res.status(400).json({ error: 'start_date et end_date sont requis' });
+        return res.status(400).json({ success: false, error: 'start_date et end_date sont requis' });
       }
 
       // Récupérer les missions + affectations dans la plage
@@ -1376,7 +1376,7 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }

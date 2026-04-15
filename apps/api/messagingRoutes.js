@@ -154,7 +154,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       res.json(result);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -199,7 +199,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       res.json({ id: convId, success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -220,7 +220,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       ).get(convId, req.user.id);
 
       if (!isParticipant) {
-        return res.status(403).json({ error: 'Non autorisé' });
+        return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
 
       let query = `
@@ -255,7 +255,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       res.json(result);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -271,7 +271,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       ).get(convId, req.user.id);
 
       if (!isParticipant) {
-        return res.status(403).json({ error: 'Non autorisé' });
+        return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
 
       const result = db.prepare(
@@ -313,7 +313,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       }
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -328,31 +328,31 @@ export function setupMessagingRoutes(app, authenticateToken) {
       ).get(convId, req.user.id);
 
       if (!isParticipant) {
-        return res.status(403).json({ error: 'Non autorisé' });
+        return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
 
       // Traiter le multipart form data (le fichier est dans req.body en base64 ou via multer)
       const { filename, data, mimeType } = req.body;
       if (!filename || !data) {
-        return res.status(400).json({ error: 'Fichier manquant' });
+        return res.status(400).json({ success: false, error: 'Fichier manquant' });
       }
 
       // [AUDIT Phase 4] Valider le type MIME
       if (!mimeType || !MESSAGING_ALLOWED_MIMES.has(mimeType)) {
-        return res.status(400).json({ error: `Type de fichier non autorisé: ${mimeType || 'inconnu'}` });
+        return res.status(400).json({ success: false, error: `Type de fichier non autorisé: ${mimeType || 'inconnu'}` });
       }
 
       // [SECURITY] Vérifier aussi l'extension du fichier (le MIME client est spoofable)
       const ALLOWED_MSG_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt', '.mp4', '.webm', '.mov'];
       const fileExt = extname(filename).toLowerCase();
       if (!ALLOWED_MSG_EXTS.includes(fileExt)) {
-        return res.status(400).json({ error: `Extension de fichier non autorisée: ${fileExt || 'aucune'}` });
+        return res.status(400).json({ success: false, error: `Extension de fichier non autorisée: ${fileExt || 'aucune'}` });
       }
 
       // [AUDIT Phase 4] Décoder et vérifier la taille
       const buffer = Buffer.from(data, 'base64');
       if (buffer.length > MESSAGING_MAX_FILE_SIZE) {
-        return res.status(400).json({ error: 'Fichier trop volumineux (max 25 Mo)' });
+        return res.status(400).json({ success: false, error: 'Fichier trop volumineux (max 25 Mo)' });
       }
 
       // Déterminer le type de message
@@ -417,7 +417,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       }
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -430,7 +430,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -439,13 +439,13 @@ export function setupMessagingRoutes(app, authenticateToken) {
     try {
       const { content } = req.body;
       if (!content || !content.trim()) {
-        return res.status(400).json({ error: 'Contenu requis' });
+        return res.status(400).json({ success: false, error: 'Contenu requis' });
       }
 
       const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
-      if (!message) return res.status(404).json({ error: 'Message non trouvé' });
+      if (!message) return res.status(404).json({ success: false, error: 'Message non trouvé' });
       if (message.sender_id !== req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres messages' });
+        return res.status(403).json({ success: false, error: 'Vous ne pouvez modifier que vos propres messages' });
       }
 
       db.prepare('UPDATE messages SET content = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ?')
@@ -455,7 +455,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -463,19 +463,19 @@ export function setupMessagingRoutes(app, authenticateToken) {
   app.delete('/api/messaging/messages/:id', authenticateToken, (req, res) => {
     try {
       const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
-      if (!message) return res.status(404).json({ error: 'Message non trouvé' });
+      if (!message) return res.status(404).json({ success: false, error: 'Message non trouvé' });
       if (message.sender_id !== req.user.id && !req.user.isAdmin) {
-        return res.status(403).json({ error: 'Non autorisé' });
+        return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
 
       // Supprimer les pièces jointes associées
       db.prepare('DELETE FROM message_attachments WHERE message_id = ?').run(req.params.id);
       db.prepare('DELETE FROM messages WHERE id = ?').run(req.params.id);
 
-      res.json({ message: 'Message supprimé' });
+      res.json({ success: true, message: 'Message supprimé' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -498,7 +498,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
       res.json({ unread: result.total_unread });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }

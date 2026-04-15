@@ -94,6 +94,7 @@ const ChangePassword = ({ currentUser }) => {
                   className="password-toggle-btn"
                   onClick={() => setShowAdminPassword(!showAdminPassword)}
                   title={showAdminPassword ? 'Masquer' : 'Afficher'}
+                  aria-pressed={showAdminPassword}
                 >
                   {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </Button>
@@ -146,6 +147,7 @@ const ChangePassword = ({ currentUser }) => {
             className="password-toggle-btn"
             onClick={() => setShowNewPassword(!showNewPassword)}
             title={showNewPassword ? 'Masquer' : 'Afficher'}
+            aria-pressed={showNewPassword}
           >
             {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </Button>
@@ -168,6 +170,7 @@ const ChangePassword = ({ currentUser }) => {
             className="password-toggle-btn"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             title={showConfirmPassword ? 'Masquer' : 'Afficher'}
+            aria-pressed={showConfirmPassword}
           >
             {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </Button>

@@ -1164,7 +1164,7 @@
 
 .map-offscreen-pill:hover {
   background: var(--theme-primary, #3b82f6);
-  color: #fff;
+  color: var(--color-white);
 }
 
 .map-offscreen-arrow {

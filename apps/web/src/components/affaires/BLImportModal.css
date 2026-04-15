@@ -490,7 +490,7 @@
   margin-top: 8px;
   background: rgba(239, 68, 68, 0.10);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: var(--theme-danger);
   font-size: 0.82rem;
   line-height: 1.4;
 }
@@ -500,7 +500,7 @@
 }
 
 .bl-import-modal .bl-success-icon {
-  color: #10b981;
+  color: var(--theme-success);
 }
 
 .bl-import-modal .bl-field-count {
@@ -593,7 +593,7 @@
   border-radius: 8px;
   margin-top: 12px;
   background: rgba(245, 158, 11, 0.08);
-  color: #f59e0b;
+  color: var(--theme-warning);
   font-size: 0.85rem;
 }
 
@@ -603,5 +603,5 @@
 
 .bl-import-modal .bl-blocked-badge {
   background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+  color: var(--theme-danger);
 }

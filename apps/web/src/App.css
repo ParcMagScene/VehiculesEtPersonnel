@@ -138,7 +138,7 @@
 .help-trigger-btn:hover {
   background: linear-gradient(135deg, var(--theme-bg-indigo-light), var(--theme-purple-bg));
   color: var(--theme-primary-dark);
-  border-color: #a5b4fc;
+  border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px var(--accent-tint-vivid);
 }
@@ -1300,7 +1300,7 @@
 }
 
 .settings-button:hover {
-  background: #4b5563;
+  background: var(--theme-text-secondary);
 }
 
 /* Personnel panel main (full-page) */

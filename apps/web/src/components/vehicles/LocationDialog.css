@@ -414,7 +414,7 @@
 
 .coordinates-info {
   background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
-  border: 2px solid #0ea5e9;
+  border: 2px solid var(--theme-info, #0ea5e9);
   padding: 1.25rem;
   border-radius: var(--radius-md-lg);
   margin-top: 1rem;

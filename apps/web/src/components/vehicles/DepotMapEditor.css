@@ -102,13 +102,13 @@
 }
 
 .dep-ed-btn-save {
-  background: #22c55e20;
-  border-color: #22c55e60;
-  color: #4ade80;
+  background: color-mix(in srgb, var(--theme-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--theme-success) 38%, transparent);
+  color: var(--theme-success);
 }
 
 .dep-ed-btn-save:hover:not(:disabled) {
-  background: #22c55e40;
+  background: color-mix(in srgb, var(--theme-success) 25%, transparent);
 }
 
 .dep-ed-btn-close {
@@ -211,12 +211,12 @@
 }
 
 .dep-ed-btn-danger {
-  border-color: #ef444440;
+  border-color: color-mix(in srgb, var(--theme-danger) 25%, transparent);
   color: var(--theme-danger);
 }
 
 .dep-ed-btn-danger:hover {
-  background: #ef444420;
+  background: color-mix(in srgb, var(--theme-danger) 12%, transparent);
 }
 
 .dep-ed-slider-row {

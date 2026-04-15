@@ -30,6 +30,8 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@storybook/react": "^8.6.18",
+    "@storybook/react-vite": "^8.6.18",
     "husky": "^9.1.7",
     "md-to-pdf": "^5.2.5"
   },

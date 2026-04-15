@@ -10,7 +10,7 @@ function SonosZoneSelector({ zones, activeZone, onZoneSelect, zonesOpen, setZone
 
   return (
     <div className="sonos-zones">
-      <button className="sonos-zones-toggle" onClick={() => setZonesOpen(o => !o)}>
+      <button className="sonos-zones-toggle" onClick={() => setZonesOpen(o => !o)} aria-expanded={zonesOpen}>
         <Speaker size={14} />
         <span className="sonos-zones-label">
           Système

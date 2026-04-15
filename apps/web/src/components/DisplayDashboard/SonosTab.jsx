@@ -175,7 +175,7 @@ function FavoritesList({ zone, isAdmin }) {
 
   return (
     <div className="dtv-sonos-favorites">
-      <button className="dtv-sonos-fav-toggle" onClick={() => setOpen(o => !o)}>
+      <button className="dtv-sonos-fav-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}>
         <Heart size={14} />
         <span>Favoris Sonos</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

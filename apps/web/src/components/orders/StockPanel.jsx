@@ -1016,7 +1016,7 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                   location_zone: loc.location_zone || '',
                   location_floor: loc.location_floor || '' }))}
               />
-              <Button variant="ghost" type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)}>
+              <Button variant="ghost" type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)} aria-pressed={showMap}>
                 <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
               </Button>
               {showMap && (() => {

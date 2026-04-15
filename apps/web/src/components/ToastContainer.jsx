@@ -68,7 +68,7 @@ const ToastContainer = forwardRef(function ToastContainer(_, ref) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="toast-stack">
+    <div className="toast-stack" aria-live="polite" aria-relevant="additions removals">
       {toasts.map(t => {
         const Icon = ICONS[t.type] || ICONS.info;
         return (

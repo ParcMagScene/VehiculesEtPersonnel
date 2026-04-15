@@ -1,9 +1,18 @@
 # AUDITS_OVERVIEW.md — Système Multi-Audits eM@g
 
-> **Date** : 8 avril 2026  
-> **Version app** : 2.1.0  
+> **Date** : 8 avril 2026 (consolidé 15 avril 2026)  
+> **Version app** : 2.1.0 → 2.5.0  
 > **Branche source** : `dev` (commit `fb7fbfc`)  
+> **Statut** : ✅ Tous les audits sont terminés et consolidés dans `AUDIT_COMPLET.md`  
 > **Gouvernance** : BDFL — validation requise avant chaque modification
+>
+> **Note consolidation** : Les 7 fichiers de suivi individuels (`AUDIT_ROBUSTESSE.md`,
+> `AUDIT_PLANNING.md`, `AUDIT_SECURITE.md`, `AUDIT_IMPORTS.md`, `AUDIT_UI.md`,
+> `AUDIT_VIDEO.md`, `AUDIT_TESTS.md`) ont été supprimés lors de la Phase 6 (Polish).
+> Leur contenu est intégralement couvert par `AUDIT_COMPLET.md` à la racine.
+> Les annexes détaillées (`AUDIT_CSS.md`, `AUDIT_GOOGLE.md`, `AUDIT_MOBILE_UI.md`)
+> sont conservées à la racine car elles contiennent des analyses quantitatives
+> non présentes dans l'audit principal.
 
 ---
 

@@ -220,7 +220,7 @@
 
 [data-theme="dark"] .pi-action-badge.create {
   background: var(--success-tint-vivid);
-  color: #34d399;
+  color: var(--theme-success);
 }
 
 [data-theme="dark"] .pi-action-badge.update {

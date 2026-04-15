@@ -196,7 +196,7 @@ function MobileApp({ onSwitchToDesktop }) {
     <div className="mobile-app">
       {/* Header */}
       <header className="mobile-header">
-        <Button variant="ghost" className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}>
+        <Button variant="ghost" className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'} aria-pressed={menuOpen} aria-expanded={menuOpen}>
           {menuOpen ? <X size={24} /> : <Menu size={24} />}
         </Button>
         <img src="/Logos/LogoEmagTransp.png" alt="eM@g" className="mobile-header-logo" />

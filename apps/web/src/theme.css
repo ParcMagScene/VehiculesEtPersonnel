@@ -41,7 +41,7 @@
   /* ─── Texte ─── */
   --theme-text-primary: #1e293b;
   --theme-text-secondary: #64748b;
-  --theme-text-muted: #94a3b8;
+  --theme-text-muted: #657686; /* WCAG AA 4.68:1 on white */
   
   /* ─── Texte — étendus ─── */
   --theme-text-heading: #111827;
@@ -480,7 +480,7 @@
   /* ─── Texte ─── */
   --theme-text-primary: #f1f5f9;
   --theme-text-secondary: #94a3b8;
-  --theme-text-muted: #64748b;
+  --theme-text-muted: #8293a7; /* WCAG AA: 4.65:1 on bg-card, 5.68:1 on bg-page */
   --theme-text-heading: #f8fafc;
   --theme-text-dark: #e2e8f0;
   --theme-text-body: #cbd5e1;

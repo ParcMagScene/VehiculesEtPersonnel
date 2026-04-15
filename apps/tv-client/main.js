@@ -29,6 +29,42 @@ let locationIconRules = [];
 let completedEvents = [];
 let tvConfig = {};
 let allEvents = [];
+let isOffline = false;
+
+// ===============================================
+//  CACHE OFFLINE — localStorage
+// ===============================================
+const CACHE_KEYS = {
+  tvState: 'tv-cache-state',
+  weather: 'tv-cache-weather',
+  sonos:   'tv-cache-sonos',
+};
+
+function cacheSet(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+  } catch { /* quota exceeded — ignore */ }
+}
+
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function setOnlineStatus(online) {
+  const prev = isOffline;
+  isOffline = !online;
+  const indicator = document.getElementById('offline-indicator');
+  if (indicator) {
+    indicator.style.display = isOffline ? 'flex' : 'none';
+  }
+  if (prev !== isOffline) {
+    console.log(isOffline ? '🔴 Mode offline — données en cache' : '🟢 Connexion rétablie');
+  }
+}
 
 /** Échappe les caractères HTML pour prévenir les injections XSS */
 function escapeHtml(str) {
@@ -142,6 +178,24 @@ async function loadTVState() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const state = await response.json();
 
+    // Cache la réponse pour le mode offline
+    cacheSet(CACHE_KEYS.tvState, state);
+    setOnlineStatus(true);
+
+    applyTVState(state);
+  } catch (error) {
+    console.error('Erreur chargement état TV:', error);
+    setOnlineStatus(false);
+    // Fallback : utiliser le cache
+    const cached = cacheGet(CACHE_KEYS.tvState);
+    if (cached && cached.data) {
+      applyTVState(cached.data);
+    }
+  }
+}
+
+/** Applique l'état TV (live ou cache) */
+function applyTVState(state) {
     // Appliquer la config (variables CSS)
     tvConfig = state.config || {};
     applyConfig(tvConfig);
@@ -189,10 +243,6 @@ async function loadTVState() {
       playAlarmSound();
       showAlarmFlash({ id: 'test', title: 'Test alarme admin' });
     }
-
-  } catch (error) {
-    console.error('Erreur chargement état TV:', error);
-  }
 }
 
 // ===============================================
@@ -424,18 +474,27 @@ async function loadWeather() {
     const response = await tvFetch(`${API_BASE}/api/display/weather`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    const weatherEl = document.getElementById('weather');
 
-    if (weatherEl && data && !data.error && data.main) {
-      const temp = Math.round(data.main.temp);
-      const icon = getWeatherIcon(data.weather?.[0]?.icon);
-      weatherEl.innerHTML = `<div class="weather-line1">${icon} ${temp}°C</div>`;
-      weatherEl.style.display = 'flex';
-    } else if (weatherEl) {
-      weatherEl.textContent = '';
-    }
+    cacheSet(CACHE_KEYS.weather, data);
+    renderWeather(data);
   } catch (error) {
     console.error('Erreur météo:', error);
+    const cached = cacheGet(CACHE_KEYS.weather);
+    if (cached && cached.data) {
+      renderWeather(cached.data);
+    }
+  }
+}
+
+function renderWeather(data) {
+  const weatherEl = document.getElementById('weather');
+  if (weatherEl && data && !data.error && data.main) {
+    const temp = Math.round(data.main.temp);
+    const icon = getWeatherIcon(data.weather?.[0]?.icon);
+    weatherEl.innerHTML = `<div class="weather-line1">${icon} ${temp}°C</div>`;
+    weatherEl.style.display = 'flex';
+  } else if (weatherEl) {
+    weatherEl.textContent = '';
   }
 }
 
@@ -458,11 +517,18 @@ async function loadSonosNowPlaying() {
     const response = await tvFetch(`${API_BASE}/api/sonos/now-playing`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
+
+    cacheSet(CACHE_KEYS.sonos, data);
     updateSonosWidget(data);
   } catch (error) {
     console.error('Erreur Sonos:', error);
-    const widget = document.getElementById('sonos-widget');
-    if (widget) widget.style.display = 'none';
+    const cached = cacheGet(CACHE_KEYS.sonos);
+    if (cached && cached.data) {
+      updateSonosWidget(cached.data);
+    } else {
+      const widget = document.getElementById('sonos-widget');
+      if (widget) widget.style.display = 'none';
+    }
   }
 }
 

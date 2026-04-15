@@ -713,6 +713,8 @@ const ManagementPanel = ({
           </Button>
         </div>
 
+        {/* Tabs + Content — wrapped in settings-body for sidebar layout in settings mode */}
+        <div className={panelType === 'settings' ? 'settings-body' : 'panel-body'}>
         <div className="management-tabs">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -720,9 +722,7 @@ const ManagementPanel = ({
               <Button variant="ghost"                 key={tab.id}
                 className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
-                style={{
-                  '--tab-color': tab.color
-                }}
+                style={{ '--tab-color': tab.color }}
               >
                 <div className="tab-icon" style={{ backgroundColor: activeTab === tab.id ? tab.color : 'transparent' }}>
                   <Icon size={20} style={{ color: activeTab === tab.id ? 'white' : tab.color }} />
@@ -1512,6 +1512,7 @@ const ManagementPanel = ({
           </div>
           )}
         </div>
+        </div>{/* close settings-body wrapper */}
       </div>
 
       {/* Dialog pour les lieux */}

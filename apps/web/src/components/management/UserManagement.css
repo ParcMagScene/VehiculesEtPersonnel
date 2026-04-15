@@ -1,5 +1,5 @@
 .user-management {
-  padding: 20px;
+  padding: 0;
   max-width: 100%;
   margin: 0 auto;
 }
@@ -13,10 +13,10 @@
 
 .user-management-section {
   background: var(--theme-bg-card);
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: var(--radius-lg);
   box-shadow: 0 2px 8px var(--shadow-xs);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .access-requests-section {
@@ -196,7 +196,7 @@
 .emails-list td, .users-list td, .requests-history td {
   padding: 2px 8px;
   border-top: 1px solid var(--theme-border-medium);
-  font-size: var(--font-base);
+  font-size: var(--font-sm);
   line-height: 1.2;
   vertical-align: middle;
 }
@@ -375,16 +375,17 @@
 
 .permissions-group {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 3px 8px;
 }
 
 .permission-checkbox {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   cursor: pointer;
   user-select: none;
+  white-space: nowrap;
 }
 
 .permission-checkbox input[type="checkbox"] {

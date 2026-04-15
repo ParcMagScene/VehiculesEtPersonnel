@@ -69,7 +69,7 @@ export const useEquipment = ({ currentUser, initialTab }) => {
   }, [depotMapModalZone, depotZones, allDepotZones]);
 
   const isAdmin = currentUser?.isAdmin === true;
-  const canManageEquipmentMaintenance = isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance === true;
+  const canManageEquipmentMaintenance = isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance === true;
 
   const loadData = useCallback(async () => {
     try {

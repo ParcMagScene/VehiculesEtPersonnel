@@ -24,8 +24,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [createForm, setCreateForm] = useState({
     email: '', name: '', password: '', isAdmin: false, readOnly: false,
-    can_manage_vehicle_maintenance: false, can_manage_equipment_maintenance: false,
-    can_manage_catalog: false, can_manage_trucks: false
+    canManageVehicleMaintenance: false, canManageEquipmentMaintenance: false,
+    canManageCatalog: false, canManageTrucks: false
   });
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
@@ -267,11 +267,11 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     e.preventDefault();
     try {
       const permissions = {};
-      if (createForm.readOnly) permissions.read_only = true;
-      if (createForm.can_manage_vehicle_maintenance) permissions.can_manage_vehicle_maintenance = true;
-      if (createForm.can_manage_equipment_maintenance) permissions.can_manage_equipment_maintenance = true;
-      if (createForm.can_manage_catalog) permissions.can_manage_catalog = true;
-      if (createForm.can_manage_trucks) permissions.can_manage_trucks = true;
+      if (createForm.readOnly) permissions.readOnly = true;
+      if (createForm.canManageVehicleMaintenance) permissions.canManageVehicleMaintenance = true;
+      if (createForm.canManageEquipmentMaintenance) permissions.canManageEquipmentMaintenance = true;
+      if (createForm.canManageCatalog) permissions.canManageCatalog = true;
+      if (createForm.canManageTrucks) permissions.canManageTrucks = true;
 
       await api.createUser(createForm.email, createForm.name, createForm.password, {
         isAdmin: createForm.isAdmin,
@@ -282,8 +282,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       setShowCreateUser(false);
       setCreateForm({
         email: '', name: '', password: '', isAdmin: false, readOnly: false,
-        can_manage_vehicle_maintenance: false, can_manage_equipment_maintenance: false,
-        can_manage_catalog: false, can_manage_trucks: false
+        canManageVehicleMaintenance: false, canManageEquipmentMaintenance: false,
+        canManageCatalog: false, canManageTrucks: false
       });
       loadData(true);
     } catch (error) {
@@ -346,23 +346,23 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                 <div className="create-user-permissions">
                   <span className="create-user-permissions-label">Permissions :</span>
                   <Checkbox
-                    checked={createForm.can_manage_vehicle_maintenance}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, can_manage_vehicle_maintenance: e.target.checked }))}
+                    checked={createForm.canManageVehicleMaintenance}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, canManageVehicleMaintenance: e.target.checked }))}
                     label="🚗 Maint. Véhicules"
                   />
                   <Checkbox
-                    checked={createForm.can_manage_equipment_maintenance}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, can_manage_equipment_maintenance: e.target.checked }))}
+                    checked={createForm.canManageEquipmentMaintenance}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, canManageEquipmentMaintenance: e.target.checked }))}
                     label="🔧 Maint. Matériel"
                   />
                   <Checkbox
-                    checked={createForm.can_manage_catalog}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, can_manage_catalog: e.target.checked }))}
+                    checked={createForm.canManageCatalog}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, canManageCatalog: e.target.checked }))}
                     label="📦 Catalogue"
                   />
                   <Checkbox
-                    checked={createForm.can_manage_trucks}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, can_manage_trucks: e.target.checked }))}
+                    checked={createForm.canManageTrucks}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, canManageTrucks: e.target.checked }))}
                     label="🚛 Camions"
                   />
                 </div>
@@ -422,8 +422,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
  <Tooltip content="Autoriser la gestion des maintenances véhicules" position="bottom">
    <label className="permission-checkbox">
                             <Checkbox
-                              checked={user.permissions?.can_manage_vehicle_maintenance || user.permissions?.can_manage_maintenance || false}
-                              onChange={() => handleTogglePermission(user.id, 'can_manage_vehicle_maintenance', user.permissions)}
+                              checked={user.permissions?.canManageVehicleMaintenance || user.permissions?.canManageMaintenance || false}
+                              onChange={() => handleTogglePermission(user.id, 'canManageVehicleMaintenance', user.permissions)}
                             />
                             <span className="checkbox-label">
                               🚗 Maint. Véhicules
@@ -433,8 +433,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
  <Tooltip content="Autoriser la gestion des maintenances matériel (SAV)" position="bottom">
    <label className="permission-checkbox">
                             <Checkbox
-                              checked={user.permissions?.can_manage_equipment_maintenance || false}
-                              onChange={() => handleTogglePermission(user.id, 'can_manage_equipment_maintenance', user.permissions)}
+                              checked={user.permissions?.canManageEquipmentMaintenance || false}
+                              onChange={() => handleTogglePermission(user.id, 'canManageEquipmentMaintenance', user.permissions)}
                             />
                             <span className="checkbox-label">
                               🔧 Maint. Matériel
@@ -444,8 +444,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
  <Tooltip content="Autoriser la gestion du catalogue d'équipements et flight-cases" position="bottom">
    <label className="permission-checkbox">
                             <Checkbox
-                              checked={user.permissions?.can_manage_catalog || false}
-                              onChange={() => handleTogglePermission(user.id, 'can_manage_catalog', user.permissions)}
+                              checked={user.permissions?.canManageCatalog || false}
+                              onChange={() => handleTogglePermission(user.id, 'canManageCatalog', user.permissions)}
                             />
                             <span className="checkbox-label">
                               📦 Catalogue
@@ -455,8 +455,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
  <Tooltip content="Autoriser la gestion des modèles de camions" position="bottom">
    <label className="permission-checkbox">
                             <Checkbox
-                              checked={user.permissions?.can_manage_trucks || false}
-                              onChange={() => handleTogglePermission(user.id, 'can_manage_trucks', user.permissions)}
+                              checked={user.permissions?.canManageTrucks || false}
+                              onChange={() => handleTogglePermission(user.id, 'canManageTrucks', user.permissions)}
                             />
                             <span className="checkbox-label">
                               🚛 Camions
@@ -466,8 +466,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
  <Tooltip content="Compte en lecture seule — aucune modification autorisée" position="bottom">
    <label className="permission-checkbox">
                             <Checkbox
-                              checked={user.permissions?.read_only || false}
-                              onChange={() => handleTogglePermission(user.id, 'read_only', user.permissions)}
+                              checked={user.permissions?.readOnly || false}
+                              onChange={() => handleTogglePermission(user.id, 'readOnly', user.permissions)}
                             />
                             <span className="checkbox-label">
                               🔒 Lecture seule

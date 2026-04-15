@@ -45,7 +45,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const isAdmin = currentUser?.isAdmin;
-  const canWrite = isAdmin || currentUser?.permissions?.can_manage_catalog === true;
+  const canWrite = isAdmin || currentUser?.permissions?.canManageCatalog === true;
 
   // ── Charger les filtres dynamiques ──
   useEffect(() => {

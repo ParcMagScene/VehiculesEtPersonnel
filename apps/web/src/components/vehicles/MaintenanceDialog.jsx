@@ -18,7 +18,7 @@ function MaintenanceDialog({ vehicle, onClose, maintenances = [], onSave, garage
   
   // Vérifier les droits - admin ou utilisateur avec permission maintenance véhicules
   const isAdmin = currentUser?.isAdmin === true;
-  const canManageMaintenance = isAdmin || currentUser?.permissions?.can_manage_vehicle_maintenance === true || currentUser?.permissions?.can_manage_maintenance === true;
+  const canManageMaintenance = isAdmin || currentUser?.permissions?.canManageVehicleMaintenance === true || currentUser?.permissions?.canManageMaintenance === true;
   // Mode consultation : utilisateur sans droit maintenance qui ouvre une intervention existante
   const isViewMode = !canManageMaintenance && !!maintenanceToEditData;
   const canSchedule = canManageMaintenance;

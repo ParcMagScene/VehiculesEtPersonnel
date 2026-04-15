@@ -4,8 +4,8 @@ import './MobileHome.css';
 
 function MobileHome({ onNavigate, currentUser }) {
   const isAdmin = !!currentUser?.isAdmin;
-  const canManageEquipment = isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance;
-  const canManageCatalog = isAdmin || currentUser?.permissions?.can_manage_catalog;
+  const canManageEquipment = isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance;
+  const canManageCatalog = isAdmin || currentUser?.permissions?.canManageCatalog;
 
   return (
     <div className="mobile-home">

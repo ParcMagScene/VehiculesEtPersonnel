@@ -316,7 +316,7 @@ function MobileApp({ onSwitchToDesktop }) {
             </Button>
 
             <div className="menu-section-label">Gestion</div>
-            {(isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance) && (
+            {(isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance) && (
             <Button variant="ghost"               className={currentScreen === 'equipment' ? 'active' : ''}
               onClick={() => { setCurrentScreen('equipment'); setMenuOpen(false); }}
             >
@@ -330,7 +330,7 @@ function MobileApp({ onSwitchToDesktop }) {
               <MapPin size={20} />
               <span>Localisation</span>
             </Button>
-            {(isAdmin || currentUser?.permissions?.can_manage_catalog) && (
+            {(isAdmin || currentUser?.permissions?.canManageCatalog) && (
             <Button variant="ghost"               className={currentScreen === 'orders' ? 'active' : ''}
               onClick={() => { setCurrentScreen('orders'); setMenuOpen(false); }}
             >
@@ -344,7 +344,7 @@ function MobileApp({ onSwitchToDesktop }) {
               <Palmtree size={20} />
               <span>Congés</span>
             </Button>
-            {(isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance) && (
+            {(isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance) && (
             <Button variant="ghost"               className={currentScreen === 'inventory' ? 'active' : ''}
               onClick={() => { setCurrentScreen('inventory'); setMenuOpen(false); }}
             >

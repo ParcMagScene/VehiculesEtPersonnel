@@ -201,7 +201,7 @@ eM@g/
 │   │   └── migrations/     # 17 fichiers SQL
 │   ├── web/                # ══ FRONTEND REACT ══
 │   └── tv-client/          # ══ CLIENT TV ══
-├── tests/                  # 56 tests (unit, schemas Zod, DB init)
+├── tests/                  # 85 tests backend (unit, schemas Zod, DB init)
 ├── public/
 │   ├── depot-zones.json    # Plan dépôt 1 (Événementiel)
 │   ├── depot2-zones.json   # Plan dépôt 2 (Structure)
@@ -244,7 +244,7 @@ npm run preview      # Prévisualiser le build
 npm run deploy       # Build + déploiement PM2
 npm run lint         # Vérification du code (ESLint)
 npm run dev:start    # Démarre backend + frontend en dev
-npm test             # Lance les 56 tests (unit + schemas + DB)
+npm test             # Lance les 608+ tests (523 frontend + 85 backend)
 ```
 
 ---

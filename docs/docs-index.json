@@ -25,11 +25,11 @@
         "docs/api/mailing.md"
       ]
     },
-    "database": {
-      "path": "docs/database/",
-      "index": "docs/database/README.md",
+    "architecture": {
+      "path": "docs/01-Architecture/",
       "files": [
-        "docs/database/SCHEMA.md"
+        "docs/01-Architecture/ARCHITECTURE.md",
+        "docs/01-Architecture/SCHEMA_DB.md"
       ]
     },
     "workflows": {
@@ -54,7 +54,7 @@
       ]
     }
   },
-  "totalFiles": 28,
+  "totalFiles": 27,
   "totalEndpoints": 243,
   "totalTables": 87,
   "totalModules": 16

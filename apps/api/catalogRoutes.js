@@ -10,6 +10,13 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import logger from './logger.js';
+import { validate } from './schemas/imports.js';
+import {
+  catalogEquipmentSchema, catalogEquipmentUpdateSchema, catalogMatchReferencesSchema,
+  flightcaseSchema, flightcaseUpdateSchema,
+  truckModelSchema, truckModelUpdateSchema,
+  reservationEquipmentSchema,
+} from './schemas/catalog.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -95,12 +102,9 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   });
 
   // POST /api/catalog/equipment/match-references — Matching lot de références BP → catalogue
-  app.post('/api/catalog/equipment/match-references', authenticateToken, (req, res) => {
+  app.post('/api/catalog/equipment/match-references', authenticateToken, validate(catalogMatchReferencesSchema), (req, res) => {
     try {
       const { references } = req.body;
-      if (!Array.isArray(references) || !references.length) {
-        return res.json({ matches: {} });
-      }
       // Recherche exacte + recherche partielle (sans tirets/espaces)
       const matches = {};
       const stmt = db.prepare('SELECT id, reference, name, family, subfamily, category FROM equipment_catalog WHERE reference = ?');
@@ -201,10 +205,9 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   });
 
   // POST /api/catalog/equipment (admin)
-  app.post('/api/catalog/equipment', authenticateToken, requireWriteAccess, (req, res) => {
+  app.post('/api/catalog/equipment', authenticateToken, requireWriteAccess, validate(catalogEquipmentSchema), (req, res) => {
     try {
       const { reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata, location_depot, location_zone, location_code, location_floor } = req.body;
-      if (!name) return res.status(400).json({ error: 'Nom requis' });
 
       const id = generateId();
       const now = new Date().toISOString();
@@ -236,7 +239,7 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   });
 
   // PUT /api/catalog/equipment/:id
-  app.put('/api/catalog/equipment/:id', authenticateToken, requireWriteAccess, (req, res) => {
+  app.put('/api/catalog/equipment/:id', authenticateToken, requireWriteAccess, validate(catalogEquipmentUpdateSchema), (req, res) => {
     try {
       const { reference, name, family, subfamily, category, dimensions, weight, default_flightcase_id, metadata, location_depot, location_zone, location_code, location_floor } = req.body;
       const existing = db.prepare('SELECT * FROM equipment_catalog WHERE id = ?').get(req.params.id);
@@ -348,10 +351,9 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
   });
 
   // POST /api/flightcases
-  app.post('/api/flightcases', authenticateToken, requireWriteAccess, (req, res) => {
+  app.post('/api/flightcases', authenticateToken, requireWriteAccess, validate(flightcaseSchema), (req, res) => {
     try {
       const { name, internal_code, dimensions, capacity, category, texture, metadata } = req.body;
-      if (!name) return res.status(400).json({ error: 'Nom requis' });
 
       const id = generateId();
       const now = new Date().toISOString();
@@ -378,7 +380,7 @@ export function setupFlightcasesRoutes(app, authenticateToken, requireWriteAcces
   });
 
   // PUT /api/flightcases/:id
-  app.put('/api/flightcases/:id', authenticateToken, requireWriteAccess, (req, res) => {
+  app.put('/api/flightcases/:id', authenticateToken, requireWriteAccess, validate(flightcaseUpdateSchema), (req, res) => {
     try {
       const { name, internal_code, dimensions, capacity, category, texture, metadata } = req.body;
       const existing = db.prepare('SELECT * FROM flightcases WHERE id = ?').get(req.params.id);
@@ -482,13 +484,9 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
   });
 
   // POST /api/trucks/models
-  app.post('/api/trucks/models', authenticateToken, requireWriteAccess, (req, res) => {
+  app.post('/api/trucks/models', authenticateToken, requireWriteAccess, validate(truckModelSchema), (req, res) => {
     try {
       const { name, type, internal_code, dimensions, axle_config, metadata } = req.body;
-      if (!name) return res.status(400).json({ error: 'Nom requis' });
-      if (type && !['semi', 'porteur', 'utilitaire'].includes(type)) {
-        return res.status(400).json({ error: 'Type invalide (semi, porteur, utilitaire)' });
-      }
 
       const id = generateId();
       const now = new Date().toISOString();
@@ -515,15 +513,11 @@ export function setupTruckModelsRoutes(app, authenticateToken, requireWriteAcces
   });
 
   // PUT /api/trucks/models/:id
-  app.put('/api/trucks/models/:id', authenticateToken, requireWriteAccess, (req, res) => {
+  app.put('/api/trucks/models/:id', authenticateToken, requireWriteAccess, validate(truckModelUpdateSchema), (req, res) => {
     try {
       const { name, type, internal_code, dimensions, axle_config, metadata } = req.body;
       const existing = db.prepare('SELECT * FROM truck_models WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Modèle de camion non trouvé' });
-
-      if (type && !['semi', 'porteur', 'utilitaire'].includes(type)) {
-        return res.status(400).json({ error: 'Type invalide (semi, porteur, utilitaire)' });
-      }
 
       const now = new Date().toISOString();
 
@@ -619,10 +613,9 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
   });
 
   // POST /api/reservations/:id/equipment — Assigner équipement
-  app.post('/api/reservations/:id/equipment', authenticateToken, (req, res) => {
+  app.post('/api/reservations/:id/equipment', authenticateToken, validate(reservationEquipmentSchema), (req, res) => {
     try {
       const { equipment_id, quantity, flightcase_id, metadata } = req.body;
-      if (!equipment_id) return res.status(400).json({ error: 'equipment_id requis' });
 
       // Vérifier que la réservation existe
       const reservation = db.prepare('SELECT id FROM reservations WHERE id = ?').get(req.params.id);

@@ -1,0 +1,33 @@
+/* ═══════════════════════════════════════
+   Skeleton — Design System Atoms
+   Placeholder loading animé
+   ═══════════════════════════════════════ */
+
+@keyframes ui-skeleton-pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.ui-skeleton {
+  display: block;
+  background: var(--theme-bg-hover, rgba(128, 128, 128, 0.15));
+  border-radius: var(--radius-sm, 4px);
+  animation: ui-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* ─── Variants ─── */
+.ui-skeleton--circle {
+  border-radius: 50%;
+}
+
+.ui-skeleton--text {
+  height: 1em;
+  border-radius: var(--radius-xs, 2px);
+}
+
+/* ─── Preset sizes ─── */
+.ui-skeleton--sm  { height: 20px; }
+.ui-skeleton--md  { height: 32px; }
+.ui-skeleton--lg  { height: 48px; }
+.ui-skeleton--xl  { height: 80px; }

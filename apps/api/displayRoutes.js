@@ -11,6 +11,16 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import db from './database.js';
 import logger from './logger.js';
+import { validate } from './schemas/imports.js';
+import {
+  screenSchema, screenUpdateSchema,
+  playlistSchema, playlistUpdateSchema, playlistItemsSchema,
+  messageSchema, messageUpdateSchema,
+  templateSchema, templateUpdateSchema,
+  appearanceSchema, welcomeMessagesSchema,
+  sidebarConfigSchema, colorRulesSchema, locationIconRulesSchema,
+  sneakyMessageSchema, eventIdSchema
+} from './schemas/display.js';
 import { randomBytes } from 'node:crypto';
 import { uploadMedia } from './middleware/upload.js';
 import { validateFileType } from './middleware/validateFileType.js';
@@ -206,10 +216,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/screens — Créer un écran (admin)
-  app.post('/api/display/screens', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/screens', authenticateToken, requireAdmin, validate(screenSchema), (req, res) => {
     try {
       const { name, location, resolution, orientation, playlistId, config } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
 
       // Générer un token unique pour l'écran
       const token = randomBytes(32).toString('hex');
@@ -239,7 +248,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/display/screens/:id — Modifier un écran (admin)
-  app.put('/api/display/screens/:id', authenticateToken, requireAdmin, (req, res) => {
+  app.put('/api/display/screens/:id', authenticateToken, requireAdmin, validate(screenUpdateSchema), (req, res) => {
     try {
       const { name, location, resolution, orientation, playlistId, config, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_screens WHERE id = ?').get(req.params.id);
@@ -350,10 +359,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/playlists (admin)
-  app.post('/api/display/playlists', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/playlists', authenticateToken, requireAdmin, validate(playlistSchema), (req, res) => {
     try {
       const { name, description, transition, defaultDuration, items } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
 
       const result = db.prepare(`
         INSERT INTO display_playlists (name, description, transition, default_duration, created_by)
@@ -395,7 +403,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/display/playlists/:id (admin)
-  app.put('/api/display/playlists/:id', authenticateToken, requireAdmin, (req, res) => {
+  app.put('/api/display/playlists/:id', authenticateToken, requireAdmin, validate(playlistUpdateSchema), (req, res) => {
     try {
       const { name, description, transition, defaultDuration, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_playlists WHERE id = ?').get(req.params.id);
@@ -446,10 +454,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/display/playlists/:id/items — Réordonner / remplacer les items (admin)
-  app.put('/api/display/playlists/:id/items', authenticateToken, requireAdmin, (req, res) => {
+  app.put('/api/display/playlists/:id/items', authenticateToken, requireAdmin, validate(playlistItemsSchema), (req, res) => {
     try {
       const { items } = req.body;
-      if (!Array.isArray(items)) return res.status(400).json({ error: 'items doit être un tableau' });
 
       const existing = db.prepare('SELECT * FROM display_playlists WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ error: 'Playlist introuvable' });
@@ -595,10 +602,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/messages
-  app.post('/api/display/messages', authenticateToken, (req, res) => {
+  app.post('/api/display/messages', authenticateToken, validate(messageSchema), (req, res) => {
     try {
       const { title, body, priority, style, templateId, dateStart, dateEnd } = req.body;
-      if (!title) return res.status(400).json({ error: 'Le titre est requis' });
 
       const result = db.prepare(`
         INSERT INTO display_messages (title, body, priority, style, template_id, date_start, date_end, created_by)
@@ -625,7 +631,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/display/messages/:id
-  app.put('/api/display/messages/:id', authenticateToken, (req, res) => {
+  app.put('/api/display/messages/:id', authenticateToken, validate(messageUpdateSchema), (req, res) => {
     try {
       const { title, body, priority, style, templateId, dateStart, dateEnd, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_messages WHERE id = ?').get(req.params.id);
@@ -691,11 +697,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/templates
-  app.post('/api/display/templates', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/templates', authenticateToken, requireAdmin, validate(templateSchema), (req, res) => {
     try {
       const { name, category, description, layout } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
-      if (!layout) return res.status(400).json({ error: 'Le layout est requis' });
 
       const result = db.prepare(`
         INSERT INTO display_templates (name, category, description, layout, created_by)
@@ -713,7 +717,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/display/templates/:id
-  app.put('/api/display/templates/:id', authenticateToken, requireAdmin, (req, res) => {
+  app.put('/api/display/templates/:id', authenticateToken, requireAdmin, validate(templateUpdateSchema), (req, res) => {
     try {
       const { name, category, description, layout, isActive } = req.body;
       const existing = db.prepare('SELECT * FROM display_templates WHERE id = ?').get(req.params.id);
@@ -853,7 +857,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/appearance — Enregistrer la config
-  app.post('/api/display/appearance', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/appearance', authenticateToken, requireAdmin, validate(appearanceSchema), (req, res) => {
     try {
       const upsert = db.prepare(`
         INSERT INTO display_config (key, value, updated_at) VALUES (?, ?, datetime('now'))
@@ -896,10 +900,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/welcome-messages — Enregistrer tous les messages
-  app.post('/api/display/welcome-messages', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/welcome-messages', authenticateToken, requireAdmin, validate(welcomeMessagesSchema), (req, res) => {
     try {
       const { welcomeMessages } = req.body;
-      if (!welcomeMessages) return res.status(400).json({ error: 'welcomeMessages requis' });
 
       const upsert = db.prepare(`
         INSERT INTO display_welcome_messages (day, slot, message) VALUES (?, ?, ?)
@@ -969,7 +972,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/sidebar-config — Sauvegarder les sections visibles
-  app.post('/api/display/sidebar-config', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/sidebar-config', authenticateToken, requireAdmin, validate(sidebarConfigSchema), (req, res) => {
     try {
       const { sections } = req.body; // string[] | null
       const upsert = db.prepare(`
@@ -997,10 +1000,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/color-rules — Remplacer toutes les règles
-  app.post('/api/display/color-rules', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/color-rules', authenticateToken, requireAdmin, validate(colorRulesSchema), (req, res) => {
     try {
       const { rules } = req.body;
-      if (!Array.isArray(rules)) return res.status(400).json({ error: 'rules doit être un tableau' });
 
       const t = db.transaction(() => {
         db.prepare('DELETE FROM display_color_rules').run();
@@ -1073,10 +1075,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/location-icon-rules — Remplacer toutes les règles
-  app.post('/api/display/location-icon-rules', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/location-icon-rules', authenticateToken, requireAdmin, validate(locationIconRulesSchema), (req, res) => {
     try {
       const { rules } = req.body;
-      if (!Array.isArray(rules)) return res.status(400).json({ error: 'rules doit être un tableau' });
 
       const t = db.transaction(() => {
         db.prepare('DELETE FROM display_location_icon_rules').run();
@@ -1195,10 +1196,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────── MESSAGE FURTIF ───────────────────────────────
 
   // POST /api/display/sneaky-message — Activer un message furtif
-  app.post('/api/display/sneaky-message', authenticateToken, requireAdmin, (req, res) => {
+  app.post('/api/display/sneaky-message', authenticateToken, requireAdmin, validate(sneakyMessageSchema), (req, res) => {
     try {
       const { message, duration } = req.body;
-      if (!message || !message.trim()) return res.status(400).json({ error: 'Message requis' });
       const expiresAt = computeExpiration(duration || '60');
       const config = { active: true, message: message.trim(), expiresAt, createdAt: new Date().toISOString() };
       writeJsonFile(join(displayDataDir, 'sneaky-message.json'), config);
@@ -1647,10 +1647,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/tv/complete-event — Marquer une tâche comme terminée
-  app.post('/api/display/tv/complete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
+  app.post('/api/display/tv/complete-event', optionalTvToken, tvWriteLimiter, validate(eventIdSchema), (req, res) => {
     try {
       const { eventId } = req.body;
-      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
       const today = new Date();
       const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       db.prepare('INSERT OR IGNORE INTO display_completed_events (event_id, event_date) VALUES (?, ?)').run(String(eventId), dateStr);
@@ -1662,10 +1661,9 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/display/tv/uncomplete-event — Démarquer une tâche
-  app.post('/api/display/tv/uncomplete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
+  app.post('/api/display/tv/uncomplete-event', optionalTvToken, tvWriteLimiter, validate(eventIdSchema), (req, res) => {
     try {
       const { eventId } = req.body;
-      if (!eventId || !isValidEventId(String(eventId))) return res.status(400).json({ error: 'eventId invalide' });
       const today = new Date();
       const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       db.prepare('DELETE FROM display_completed_events WHERE event_id = ? AND event_date = ?').run(String(eventId), dateStr);

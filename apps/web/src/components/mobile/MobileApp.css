@@ -24,7 +24,7 @@
   justify-content: center;
   font-size: 1.4rem;
   color: var(--theme-text-primary);
-  z-index: 100;
+  z-index: var(--z-dropdown);
   pointer-events: none;
   transition: opacity 0.1s;
 }

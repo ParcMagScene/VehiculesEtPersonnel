@@ -8,6 +8,7 @@ import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { normalizeBrand, enrichArticle, linkBrandIds, applyUnifiedFamilyBatch, invalidateBrandCache, listBrandsWithStats } from './brandHelpers.js';
 import { supplierImportSchema, validate } from './schemas/imports.js';
+import { analyzeSchema, taxonomyApplySchema, brandResolveSchema, brandAliasSchema } from './schemas/supplier.js';
 
 // ============ ARTICLES FOURNISSEURS ============
 
@@ -456,12 +457,9 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
 
   // POST /api/supplier-articles/analyze — Analyse un résultat de parsing (sans import)
   // Le frontend envoie les articles parsés + le texte brut pour analyse
-  app.post('/api/supplier-articles/analyze', authenticateToken, (req, res) => {
+  app.post('/api/supplier-articles/analyze', authenticateToken, validate(analyzeSchema), (req, res) => {
     try {
       const { items, totalLines, parserId, text } = req.body;
-      if (!items || !totalLines) {
-        return res.status(400).json({ error: 'items et totalLines requis' });
-      }
 
       const lines = (text || '').split('\n').filter(l => l.trim());
 
@@ -575,13 +573,9 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   // ============ NORMALISATION FAMILLES & CATÉGORIES ============
 
   // POST /api/supplier-articles/taxonomy/apply — Appliquer une normalisation
-  app.post('/api/supplier-articles/taxonomy/apply', authenticateToken, requireWriteAccess, (req, res) => {
+  app.post('/api/supplier-articles/taxonomy/apply', authenticateToken, requireWriteAccess, validate(taxonomyApplySchema), (req, res) => {
     try {
       const { rules } = req.body;
-      // rules = [{ type: 'family'|'category', from: 'old value', to: 'new value' }, ...]
-      if (!rules?.length) {
-        return res.status(400).json({ error: 'rules requis (tableau de { type, from, to })' });
-      }
 
       let totalChanged = 0;
 
@@ -623,7 +617,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
 
   // POST /api/brands/resolve — Résoudre une marque texte → brand_id + nom canonique
   // NOTE: doit être AVANT /api/brands/:id sinon Express capture "resolve" comme un id
-  app.post('/api/brands/resolve', authenticateToken, (req, res) => {
+  app.post('/api/brands/resolve', authenticateToken, validate(brandResolveSchema), (req, res) => {
     try {
       const { brand: brandText } = req.body;
       const result = normalizeBrand(brandText);
@@ -656,10 +650,9 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   });
 
   // POST /api/brands/:id/aliases — Ajouter un alias à une marque
-  app.post('/api/brands/:id/aliases', authenticateToken, requireWriteAccess, (req, res) => {
+  app.post('/api/brands/:id/aliases', authenticateToken, requireWriteAccess, validate(brandAliasSchema), (req, res) => {
     try {
       const { alias } = req.body;
-      if (!alias?.trim()) return res.status(400).json({ error: 'alias requis' });
 
       const brand = db.prepare('SELECT id FROM brands WHERE id = ?').get(req.params.id);
       if (!brand) return res.status(404).json({ error: 'Marque non trouvée' });

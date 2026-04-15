@@ -7,6 +7,8 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import db from './database.js';
 import logger from './logger.js';
+import { validate } from './schemas/imports.js';
+import { sonosConfigSchema, sonosVolumeSchema, sonosFavoriteSchema, sonosSeekSchema, sonosShuffleSchema, sonosRepeatSchema } from './schemas/sonos.js';
 import rateLimit from 'express-rate-limit';
 import { optionalTvToken } from './middleware/tvAuth.js';
 
@@ -376,12 +378,9 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/sonos/config — Sauver config Sonos
-  app.post('/api/sonos/config', authenticateToken, requireAdmin, sonosCommandLimiter, (req, res) => {
+  app.post('/api/sonos/config', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosConfigSchema), (req, res) => {
     try {
       const { sonosIP } = req.body;
-      if (sonosIP && !isValidIPv4(sonosIP)) {
-        return res.status(400).json({ error: 'IPv4 invalide (ex: 192.168.1.10)' });
-      }
       db.prepare(`
         INSERT INTO display_config (key, value, updated_at) VALUES ('sonosIP', ?, datetime('now'))
         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
@@ -575,13 +574,10 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────────────────────────────────────────────────────
 
   // POST /api/sonos/volume/:zone — body: { value: 0-100 }
-  app.post('/api/sonos/volume/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
+  app.post('/api/sonos/volume/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosVolumeSchema), async (req, res) => {
     const zone = validateZone(req, res);
     if (!zone) return;
     const { value } = req.body;
-    if (typeof value !== 'number' || value < 0 || value > 100) {
-      return res.status(400).json({ error: 'Volume invalide (0-100 attendu)' });
-    }
     try {
       const result = await getDeviceForZone(zone);
       if (result.error) return res.status(503).json({ error: result.error });
@@ -1000,16 +996,10 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  app.post('/api/sonos/favorite/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
+  app.post('/api/sonos/favorite/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosFavoriteSchema), async (req, res) => {
     const zone = validateZone(req, res);
     if (!zone) return;
     const { uri, title } = req.body;
-    if (!uri || typeof uri !== 'string' || uri.length > 2048) {
-      return res.status(400).json({ error: 'URI du favori requis (max 2048 car.)' });
-    }
-    if (title && (typeof title !== 'string' || title.length > 256)) {
-      return res.status(400).json({ error: 'Titre invalide (max 256 car.)' });
-    }
     try {
       const result = await getDeviceForZone(zone);
       if (result.error) return res.status(503).json({ error: result.error });
@@ -1028,13 +1018,10 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────────────────────────────────────────────────────
 
   // POST /api/sonos/seek/:zone — body: { position: seconds }
-  app.post('/api/sonos/seek/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
+  app.post('/api/sonos/seek/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosSeekSchema), async (req, res) => {
     const zone = validateZone(req, res);
     if (!zone) return;
     const { position } = req.body;
-    if (typeof position !== 'number' || position < 0 || position > 86400) {
-      return res.status(400).json({ error: 'Position invalide (0-86400 secondes)' });
-    }
     try {
       const result = await getDeviceForZone(zone);
       if (result.error) return res.status(503).json({ error: result.error });
@@ -1048,13 +1035,10 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/sonos/shuffle/:zone — body: { enabled: boolean }
-  app.post('/api/sonos/shuffle/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
+  app.post('/api/sonos/shuffle/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosShuffleSchema), async (req, res) => {
     const zone = validateZone(req, res);
     if (!zone) return;
     const { enabled } = req.body;
-    if (typeof enabled !== 'boolean') {
-      return res.status(400).json({ error: 'enabled: boolean attendu' });
-    }
     try {
       const result = await getDeviceForZone(zone);
       if (result.error) return res.status(503).json({ error: result.error });
@@ -1073,14 +1057,11 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/sonos/repeat/:zone — body: { mode: 'none' | 'all' | 'one' }
-  app.post('/api/sonos/repeat/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
+  app.post('/api/sonos/repeat/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosRepeatSchema), async (req, res) => {
     const zone = validateZone(req, res);
     if (!zone) return;
     const { mode } = req.body;
     const MODES = { none: 'NORMAL', all: 'REPEAT_ALL', one: 'REPEAT_ONE' };
-    if (!mode || !MODES[mode]) {
-      return res.status(400).json({ error: "mode: 'none' | 'all' | 'one' attendu" });
-    }
     try {
       const result = await getDeviceForZone(zone);
       if (result.error) return res.status(503).json({ error: result.error });
@@ -1116,12 +1097,9 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  app.post('/api/display/sonos-config', deprecatedSonosRoute('/api/sonos/config'), authenticateToken, requireAdmin, sonosCommandLimiter, (req, res) => {
+  app.post('/api/display/sonos-config', deprecatedSonosRoute('/api/sonos/config'), authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosConfigSchema), (req, res) => {
     try {
       const { sonosIP } = req.body;
-      if (sonosIP && !isValidIPv4(sonosIP)) {
-        return res.status(400).json({ error: 'IPv4 invalide' });
-      }
       db.prepare(`
         INSERT INTO display_config (key, value, updated_at) VALUES ('sonosIP', ?, datetime('now'))
         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')

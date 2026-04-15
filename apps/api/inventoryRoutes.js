@@ -7,6 +7,12 @@
 
 import db from './database.js';
 import logger from './logger.js';
+import { validate } from './schemas/imports.js';
+import {
+  locationSchema, locationUpdateSchema,
+  priceSchema, priceBatchSchema, priceFusionSchema,
+  anomalyUpdateSchema, inventoryCountSchema,
+} from './schemas/inventory.js';
 
 // ─── Helpers ───
 function paginate(query, params, page = 1, limit = 50) {
@@ -154,10 +160,9 @@ export function setupInventoryRoutes(app, authenticate) {
   });
 
   // POST /api/inventory/locations — Créer un emplacement
-  app.post('/api/inventory/locations', authenticate, (req, res) => {
+  app.post('/api/inventory/locations', authenticate, validate(locationSchema), (req, res) => {
     try {
       const { name, code, depot_number, type, zone, floor, capacity, address, gps_lat, gps_lon, parent_id } = req.body;
-      if (!name || !code) return res.status(400).json({ error: 'name et code requis' });
       
       const result = db.prepare(`
         INSERT INTO inventory_locations (name, code, depot_number, type, zone, floor, capacity, address, gps_lat, gps_lon, parent_id)
@@ -174,7 +179,7 @@ export function setupInventoryRoutes(app, authenticate) {
   });
 
   // PUT /api/inventory/locations/:id — Modifier un emplacement
-  app.put('/api/inventory/locations/:id', authenticate, (req, res) => {
+  app.put('/api/inventory/locations/:id', authenticate, validate(locationUpdateSchema), (req, res) => {
     try {
       const { name, code, depot_number, type, zone, floor, capacity, address, gps_lat, gps_lon, parent_id, is_active } = req.body;
       const existing = db.prepare('SELECT * FROM inventory_locations WHERE id = ?').get(req.params.id);
@@ -235,10 +240,9 @@ export function setupInventoryRoutes(app, authenticate) {
   });
 
   // POST /api/inventory/prices — Ajouter un prix
-  app.post('/api/inventory/prices', authenticate, (req, res) => {
+  app.post('/api/inventory/prices', authenticate, validate(priceSchema), (req, res) => {
     try {
       const { stock_item_id, supplier_id, source, price_ht, currency, quantity_break, valid_from, valid_to, reference } = req.body;
-      if (!stock_item_id || price_ht == null) return res.status(400).json({ error: 'stock_item_id et price_ht requis' });
       
       const result = db.prepare(`
         INSERT INTO inventory_price_history (stock_item_id, supplier_id, source, price_ht, currency, quantity_break, valid_from, valid_to, reference)
@@ -281,10 +285,9 @@ export function setupInventoryRoutes(app, authenticate) {
   });
   
   // POST /api/inventory/price-engine/batch — Analyse prix en masse
-  app.post('/api/inventory/price-engine/batch', authenticate, (req, res) => {
+  app.post('/api/inventory/price-engine/batch', authenticate, validate(priceBatchSchema), (req, res) => {
     try {
       const { item_ids } = req.body;
-      if (!Array.isArray(item_ids) || !item_ids.length) return res.status(400).json({ error: 'item_ids requis (array)' });
       
       const sanitizedIds = item_ids.filter(id => Number.isInteger(Number(id))).slice(0, 100);
       const placeholders = sanitizedIds.map(() => '?').join(',');
@@ -315,13 +318,9 @@ export function setupInventoryRoutes(app, authenticate) {
   });
 
   // POST /api/inventory/price-engine/fusion — Fusion multi-sources
-  app.post('/api/inventory/price-engine/fusion', authenticate, (req, res) => {
+  app.post('/api/inventory/price-engine/fusion', authenticate, validate(priceFusionSchema), (req, res) => {
     try {
       const { stock_item_id, prices } = req.body;
-      // prices = [{ price_ht, supplier_id?, source?, reference? }, ...]
-      if (!stock_item_id || !Array.isArray(prices)) {
-        return res.status(400).json({ error: 'stock_item_id et prices[] requis' });
-      }
       
       const insert = db.prepare(`
         INSERT INTO inventory_price_history (stock_item_id, supplier_id, source, price_ht, reference)
@@ -378,12 +377,9 @@ export function setupInventoryRoutes(app, authenticate) {
   });
 
   // PUT /api/inventory/anomalies/:id — Résoudre/ignorer anomalie
-  app.put('/api/inventory/anomalies/:id', authenticate, (req, res) => {
+  app.put('/api/inventory/anomalies/:id', authenticate, validate(anomalyUpdateSchema), (req, res) => {
     try {
       const { status } = req.body;
-      if (!['acknowledged', 'resolved', 'ignored'].includes(status)) {
-        return res.status(400).json({ error: 'Status invalide' });
-      }
       
       const updates = status === 'resolved' 
         ? { resolved_by: req.user?.id, resolved_at: new Date().toISOString() }
@@ -470,11 +466,10 @@ export function setupInventoryRoutes(app, authenticate) {
   // ────────────────────────────────────────
   
   // POST /api/inventory/count — Enregistrer un comptage
-  app.post('/api/inventory/count', authenticate, (req, res) => {
+  app.post('/api/inventory/count', authenticate, validate(inventoryCountSchema), (req, res) => {
     try {
       const { items } = req.body;
       // items = [{ stock_item_id, counted_qty }, ...]
-      if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'items[] requis' });
       
       const updateItem = db.prepare(`
         UPDATE stock_items SET last_counted_at = datetime('now'), last_counted_qty = ? WHERE id = ?

@@ -1,3 +1,10 @@
+import {
+  AFFAIRE_STATUSES,
+  isValidTransition,
+  getAvailableTransitions,
+  validateTransition,
+  STEP_TEMPLATES,
+} from './affaireWorkflow.js';
 import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import db from './database.js';
 import logger from './logger.js';
@@ -86,6 +93,7 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
             numeroAffaire: a.numero_affaire,
             nom: a.nom || '',
             type: a.type,
+            status: a.status || 'brouillon',
             client: a.client,
             interlocuteur: a.interlocuteur,
             tel: a.tel,
@@ -143,6 +151,7 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
             numeroAffaire: ra.affaire,
             nom: '',
             type: 'Prestation',
+            status: 'brouillon',
             client: client,
             interlocuteur: '',
             tel: '',
@@ -551,6 +560,306 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
+
+  // ═══ Phase 9 — Workflow affaires : statut, historique, templates, KPIs ═══
+
+  // PATCH /api/affaires/:id/status — Transition de statut (machine à états)
+  app.patch('/api/affaires/:id/status', authenticateToken, (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status: toStatus, notes, force } = req.body;
+
+      if (!toStatus) {
+        return res.status(400).json({ success: false, error: 'Statut cible requis' });
+      }
+
+      const validValues = AFFAIRE_STATUSES.map((s) => s.value);
+      if (!validValues.includes(toStatus)) {
+        return res.status(400).json({ success: false, error: `Statut invalide: ${toStatus}` });
+      }
+
+      const affaire = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
+      if (!affaire) {
+        return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
+      }
+
+      const fromStatus = affaire.status || 'brouillon';
+
+      // Vérifier la transition
+      if (!isValidTransition(fromStatus, toStatus)) {
+        return res.status(400).json({
+          success: false,
+          error: `Transition ${fromStatus} → ${toStatus} non autorisée`,
+          allowed: getAvailableTransitions(fromStatus).map((t) => t.value),
+        });
+      }
+
+      // Validation conditionnelle (sauf si force=true)
+      if (!force) {
+        const reservationCount =
+          db
+            .prepare("SELECT COUNT(*) as c FROM reservations WHERE affaire = ? AND affaire != ''")
+            .get(affaire.numero_affaire)?.c || 0;
+
+        const totalSteps =
+          db
+            .prepare(
+              'SELECT COUNT(*) as c FROM task_assignments WHERE affaire_num = ? AND deleted_at IS NULL',
+            )
+            .get(affaire.numero_affaire)?.c || 0;
+
+        const doneSteps =
+          db
+            .prepare(
+              "SELECT COUNT(*) as c FROM task_assignments WHERE affaire_num = ? AND deleted_at IS NULL AND status IN ('done', 'cancelled')",
+            )
+            .get(affaire.numero_affaire)?.c || 0;
+
+        const context = {
+          affaire: { date_debut: affaire.date_debut, date_fin: affaire.date_fin },
+          reservationCount,
+          stepsComplete: totalSteps > 0 && doneSteps >= totalSteps,
+        };
+
+        const validation = validateTransition(toStatus, context);
+        if (!validation.valid) {
+          return res.status(400).json({
+            success: false,
+            error: validation.message,
+            canForce: true,
+          });
+        }
+      }
+
+      // Appliquer la transition
+      db.prepare(
+        'UPDATE affaires SET status = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ).run(toStatus, req.user.id, id);
+
+      // Logger dans l'historique
+      db.prepare(
+        'INSERT INTO affaire_status_history (affaire_id, from_status, to_status, changed_by, notes) VALUES (?, ?, ?, ?, ?)',
+      ).run(id, fromStatus, toStatus, req.user.id, notes || null);
+
+      // Synchroniser planning_affaire_status (rétro-compatibilité)
+      const planningStatusMap = {
+        brouillon: 'pending',
+        planifiee: 'pending',
+        en_cours: 'in_progress',
+        terminee: 'done',
+        annulee: 'done',
+      };
+      db.prepare(
+        "INSERT INTO planning_affaire_status (numero_affaire, status, updated_at) VALUES (?, ?, datetime('now')) ON CONFLICT(numero_affaire) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at",
+      ).run(affaire.numero_affaire, planningStatusMap[toStatus] || 'pending');
+
+      invalidateEntity('affaires');
+      listCache.invalidatePattern(/^planning-affaires/);
+
+      const updated = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
+      logger.info(
+        `📋 Affaire ${affaire.numero_affaire}: ${fromStatus} → ${toStatus} (par user #${req.user.id})`,
+      );
+
+      res.json({
+        success: true,
+        affaire: updated,
+        transition: { from: fromStatus, to: toStatus },
+      });
+    } catch (error) {
+      logger.error('Erreur PATCH /api/affaires/:id/status:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // GET /api/affaires/:id/history — Historique des transitions de statut
+  app.get('/api/affaires/:id/history', authenticateToken, (req, res) => {
+    try {
+      const { id } = req.params;
+      const history = db
+        .prepare(
+          `SELECT ash.*, u.username as changed_by_name
+           FROM affaire_status_history ash
+           LEFT JOIN users u ON ash.changed_by = u.id
+           WHERE ash.affaire_id = ?
+           ORDER BY ash.changed_at DESC
+           LIMIT 100`,
+        )
+        .all(id);
+      res.json(history);
+    } catch (error) {
+      logger.error('Erreur GET /api/affaires/:id/history:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // POST /api/affaires/:id/apply-template — Appliquer template d'étapes selon le type
+  app.post('/api/affaires/:id/apply-template', authenticateToken, (req, res) => {
+    try {
+      const { id } = req.params;
+      const affaire = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
+      if (!affaire) {
+        return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
+      }
+
+      const steps = STEP_TEMPLATES[affaire.type];
+      if (!steps || steps.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: `Pas de template pour le type "${affaire.type}"`,
+        });
+      }
+
+      // Vérifier s'il y a déjà des tâches
+      const existingCount =
+        db
+          .prepare(
+            'SELECT COUNT(*) as c FROM task_assignments WHERE affaire_num = ? AND deleted_at IS NULL',
+          )
+          .get(affaire.numero_affaire)?.c || 0;
+
+      if (existingCount > 0 && !req.body.replace) {
+        return res.status(409).json({
+          success: false,
+          error: `${existingCount} tâche(s) existante(s). Utilisez replace=true pour remplacer.`,
+          existingCount,
+        });
+      }
+
+      if (req.body.replace && existingCount > 0) {
+        db.prepare(
+          "UPDATE task_assignments SET deleted_at = datetime('now') WHERE affaire_num = ? AND deleted_at IS NULL",
+        ).run(affaire.numero_affaire);
+      }
+
+      const date = affaire.date_debut || new Date().toISOString().slice(0, 10);
+      const insertStmt = db.prepare(
+        `INSERT INTO task_assignments (id, date, section, title, affaire_num, source_type, source_id, status, created_by, created_at)
+         VALUES (lower(hex(randomblob(16))), ?, ?, ?, ?, 'affaire', ?, 'pending', ?, datetime('now'))`,
+      );
+
+      const SECTION_MAP = {
+        preparation: 'prep_locations',
+        chargement: 'chargement',
+        depart: 'depart',
+        livraison: 'courses',
+        enlevement: 'enlevement',
+        retour: 'retour',
+        recuperation: 'recuperation',
+        installation: 'installation',
+        montage: 'prep_prestations',
+        demontage: 'prep_prestations',
+      };
+      const LABEL_MAP = {
+        preparation: 'Préparation',
+        chargement: 'Chargement',
+        depart: 'Départ',
+        livraison: 'Livraison',
+        enlevement: 'Enlèvement',
+        retour: 'Retour',
+        recuperation: 'Récupération',
+        installation: 'Installation',
+        montage: 'Montage',
+        demontage: 'Démontage',
+      };
+
+      const created = [];
+      for (const stepKey of steps) {
+        const section = SECTION_MAP[stepKey] || 'manual';
+        const title = LABEL_MAP[stepKey] || stepKey;
+        insertStmt.run(
+          date,
+          section,
+          title,
+          affaire.numero_affaire,
+          String(affaire.id),
+          req.user.id,
+        );
+        created.push({ step: stepKey, section, title });
+      }
+
+      logger.info(
+        `📋 Template "${affaire.type}" appliqué à ${affaire.numero_affaire}: ${steps.length} étapes`,
+      );
+      res.json({ success: true, steps: created, count: created.length });
+    } catch (error) {
+      logger.error('Erreur POST /api/affaires/:id/apply-template:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // GET /api/affaires/dashboard — KPIs affaires
+  app.get(
+    '/api/affaires/dashboard',
+    authenticateToken,
+    cacheMiddleware(listCache, () => 'affaires-dashboard', 60_000),
+    (req, res) => {
+      try {
+        const byStatus = db
+          .prepare(
+            `SELECT COALESCE(status, 'brouillon') as status, COUNT(*) as count
+             FROM affaires GROUP BY COALESCE(status, 'brouillon')`,
+          )
+          .all();
+
+        const byType = db
+          .prepare('SELECT type, COUNT(*) as count FROM affaires GROUP BY type')
+          .all();
+
+        const overdue =
+          db
+            .prepare(
+              `SELECT COUNT(*) as count FROM affaires
+             WHERE date_fin < date('now') AND date_fin != ''
+               AND COALESCE(status, 'brouillon') NOT IN ('terminee', 'annulee')`,
+            )
+            .get()?.count || 0;
+
+        const upcoming =
+          db
+            .prepare(
+              `SELECT COUNT(*) as count FROM affaires
+             WHERE date_debut BETWEEN date('now') AND date('now', '+7 days')
+               AND COALESCE(status, 'brouillon') NOT IN ('terminee', 'annulee')`,
+            )
+            .get()?.count || 0;
+
+        const avgDuration =
+          db
+            .prepare(
+              `SELECT AVG(julianday(date_fin) - julianday(date_debut)) as avg_days
+             FROM affaires WHERE status = 'terminee' AND date_debut != '' AND date_fin != ''`,
+            )
+            .get()?.avg_days || 0;
+
+        const total = db.prepare('SELECT COUNT(*) as count FROM affaires').get()?.count || 0;
+
+        const recentTransitions = db
+          .prepare(
+            `SELECT ash.*, a.numero_affaire, a.nom, u.username as changed_by_name
+             FROM affaire_status_history ash
+             JOIN affaires a ON ash.affaire_id = a.id
+             LEFT JOIN users u ON ash.changed_by = u.id
+             ORDER BY ash.changed_at DESC
+             LIMIT 15`,
+          )
+          .all();
+
+        res.json({
+          total,
+          byStatus: Object.fromEntries(byStatus.map((r) => [r.status, r.count])),
+          byType: Object.fromEntries(byType.map((r) => [r.type, r.count])),
+          overdue,
+          upcoming,
+          avgDuration: Math.round(avgDuration * 10) / 10,
+          recentTransitions,
+        });
+      } catch (error) {
+        logger.error('Erreur GET /api/affaires/dashboard:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ═══════════════════════════════════════════════════════════════
   // POST /api/affaires/:id/bp/annotate — Données pour annotation BP

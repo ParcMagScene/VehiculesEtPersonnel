@@ -1811,3 +1811,108 @@ select.edit-input {
   border-color: var(--theme-primary);
   box-shadow: var(--focus-ring);
 }
+
+/* ═══ Phase 9 — Workflow styles ═══ */
+.workflow-section {
+  padding: 10px 14px !important;
+  margin-bottom: 8px;
+}
+
+.workflow-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workflow-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.workflow-transition-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.workflow-transition-btn {
+  font-size: 0.78rem !important;
+  padding: 3px 10px !important;
+  border: 1.5px solid !important;
+  border-radius: 6px !important;
+  font-weight: 500;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.workflow-transition-btn:hover {
+  background: currentColor;
+  color: #fff !important;
+  opacity: 0.85;
+}
+
+.workflow-actions-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.workflow-history {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workflow-history-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  flex-wrap: wrap;
+}
+
+.wh-date {
+  color: var(--theme-text-secondary, #666);
+  min-width: 70px;
+}
+
+.wh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.wh-arrow {
+  color: var(--theme-text-secondary, #999);
+  flex-shrink: 0;
+}
+
+.wh-user {
+  color: var(--theme-text-secondary, #888);
+  font-style: italic;
+}
+
+.wh-notes {
+  color: var(--theme-text-secondary, #888);
+  font-size: 0.72rem;
+}
+
+.wh-empty {
+  font-size: 0.78rem;
+  color: var(--theme-text-secondary, #999);
+  margin: 6px 0 0;
+  font-style: italic;
+}

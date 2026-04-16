@@ -835,4 +835,64 @@ export function runPostInitMigrations(db) {
   } catch (e) {
     logger.warn('⚠️ Migration Phase 8 reservations rental_price:', e.message);
   }
+
+  // ═══ Phase 9 — Workflow affaires : statut, historique, notifications ═══
+
+  // 9a. Ajouter colonne status à affaires
+  try {
+    const affCols = db
+      .prepare("PRAGMA table_info('affaires')")
+      .all()
+      .map((c) => c.name);
+    if (!affCols.includes('status')) {
+      db.exec("ALTER TABLE affaires ADD COLUMN status TEXT NOT NULL DEFAULT 'brouillon'");
+      db.exec('CREATE INDEX IF NOT EXISTS idx_affaires_status ON affaires(status)');
+
+      // Migrer les statuts existants depuis planning_affaire_status
+      const existingStatuses = db
+        .prepare('SELECT numero_affaire, status FROM planning_affaire_status')
+        .all();
+      if (existingStatuses.length > 0) {
+        const STATUS_MAP = { pending: 'brouillon', in_progress: 'en_cours', done: 'terminee' };
+        const updateStmt = db.prepare('UPDATE affaires SET status = ? WHERE numero_affaire = ?');
+        for (const row of existingStatuses) {
+          const newStatus = STATUS_MAP[row.status] || 'brouillon';
+          updateStmt.run(newStatus, row.numero_affaire);
+        }
+        logger.info(
+          `✅ Migration Phase 9: ${existingStatuses.length} statuts migrés depuis planning_affaire_status`,
+        );
+      }
+      logger.info('✅ Migration Phase 9: colonne status ajoutée à affaires');
+    }
+  } catch (e) {
+    logger.warn('⚠️ Migration Phase 9 affaires.status:', e.message);
+  }
+
+  // 9b. Table historique des transitions de statut
+  try {
+    const historyExists = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='affaire_status_history'",
+      )
+      .get();
+    if (!historyExists) {
+      db.exec(`
+        CREATE TABLE affaire_status_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          affaire_id INTEGER NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
+          from_status TEXT,
+          to_status TEXT NOT NULL,
+          changed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          changed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          notes TEXT
+        )
+      `);
+      db.exec('CREATE INDEX IF NOT EXISTS idx_ash_affaire ON affaire_status_history(affaire_id)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_ash_date ON affaire_status_history(changed_at)');
+      logger.info('✅ Migration Phase 9: table affaire_status_history créée');
+    }
+  } catch (e) {
+    logger.warn('⚠️ Migration Phase 9 affaire_status_history:', e.message);
+  }
 } // fin runPostInitMigrations

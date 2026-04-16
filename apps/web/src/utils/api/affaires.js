@@ -68,5 +68,25 @@ export function registerAffairesMethods(ApiClient) {
       formData.append('affaireId', affaireId);
       return this.requestFormData('/upload-bl', formData);
     },
+
+    // ═══ Phase 9 — Workflow ═══
+    async changeAffaireStatus(id, status, { notes, force } = {}) {
+      return this.request(`/affaires/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, notes, force }),
+      });
+    },
+    async getAffaireHistory(id) {
+      return this.request(`/affaires/${id}/history`);
+    },
+    async applyStepTemplate(id, { replace } = {}) {
+      return this.request(`/affaires/${id}/apply-template`, {
+        method: 'POST',
+        body: JSON.stringify({ replace }),
+      });
+    },
+    async getAffaireDashboard() {
+      return this.request('/affaires/dashboard');
+    },
   });
 }

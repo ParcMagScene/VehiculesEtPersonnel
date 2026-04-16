@@ -49,6 +49,11 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { AFFAIRE_TYPE_SECTIONS, AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
+import {
+  AFFAIRE_STATUS_MAP,
+  getAvailableTransitions,
+  STEP_TEMPLATES,
+} from '../../utils/affaireWorkflow';
 import api, { getApiUrl } from '../../utils/api';
 import { capitalizeText } from '../../utils/dateUtils';
 import { formatDateSimple } from '../../utils/formatUtils';
@@ -150,8 +155,12 @@ const TASK_STEPS = [
   },
 ];
 
-// Toutes les étapes sont disponibles pour tous les types d'affaire
-const getVisibleSteps = () => TASK_STEPS;
+// Étapes filtrées par type d'affaire (Phase 9)
+const getVisibleSteps = (type) => {
+  const templateKeys = STEP_TEMPLATES[type];
+  if (!templateKeys) return TASK_STEPS;
+  return TASK_STEPS.filter((s) => templateKeys.includes(s.key));
+};
 
 const TASK_STATUS_MAP = {
   pending: { label: 'En attente', color: '#94a3b8', bg: '#f1f5f9' },
@@ -239,6 +248,10 @@ const AffaireDetailContent = ({
   const [actionFeedback, setActionFeedback] = useState(null);
   const [generatingOrders, setGeneratingOrders] = useState(false);
   const [showOrdersModal, setShowOrdersModal] = useState(false);
+  // ═══ Phase 9 — Workflow state ═══
+  const [statusHistory, setStatusHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
   const [planningOpen, setPlanningOpen] = useState(false);
   const [annotatingBL, setAnnotatingBL] = useState(null); // bl import object en cours d'annotation
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
@@ -310,6 +323,71 @@ const AffaireDetailContent = ({
     setActionFeedback(msg);
     feedbackTimerRef.current = setTimeout(() => setActionFeedback(null), duration);
   }, []);
+
+  // ═══ Phase 9 — Handlers workflow ═══
+  const currentStatus =
+    AFFAIRE_STATUS_MAP[affaire.status || 'brouillon'] || AFFAIRE_STATUS_MAP.brouillon;
+  const availableTransitions = useMemo(
+    () => getAvailableTransitions(affaire.status || 'brouillon'),
+    [affaire.status],
+  );
+
+  const handleChangeStatus = useCallback(
+    async (toStatus, force = false) => {
+      if (!affaire.id) {
+        showFeedback({ type: 'error', message: 'Affaire non enregistrée en base' }, 4000);
+        return;
+      }
+      setStatusLoading(true);
+      try {
+        const result = await api.changeAffaireStatus(affaire.id, toStatus, { force });
+        showFeedback({
+          type: 'success',
+          message: `Statut → ${AFFAIRE_STATUS_MAP[toStatus]?.label || toStatus}`,
+        });
+        if (onDataChanged) onDataChanged();
+      } catch (err) {
+        const data = err.data || err;
+        if (data?.canForce) {
+          showFeedback({ type: 'warning', message: `${data.error} (forcer possible)` }, 6000);
+        } else {
+          showFeedback({ type: 'error', message: data?.error || err.message }, 4000);
+        }
+      } finally {
+        setStatusLoading(false);
+      }
+    },
+    [affaire.id, showFeedback, onDataChanged],
+  );
+
+  const handleApplyTemplate = useCallback(
+    async (replace = false) => {
+      if (!affaire.id) return;
+      try {
+        const result = await api.applyStepTemplate(affaire.id, { replace });
+        showFeedback({ type: 'success', message: `${result.count} étape(s) créée(s)` });
+        if (onDataChanged) onDataChanged();
+      } catch (err) {
+        const data = err.data || err;
+        showFeedback({ type: 'error', message: data?.error || err.message }, 4000);
+      }
+    },
+    [affaire.id, showFeedback, onDataChanged],
+  );
+
+  const loadHistory = useCallback(async () => {
+    if (!affaire.id) return;
+    try {
+      const data = await api.getAffaireHistory(affaire.id);
+      setStatusHistory(data || []);
+    } catch {
+      setStatusHistory([]);
+    }
+  }, [affaire.id]);
+
+  useEffect(() => {
+    if (showHistory) loadHistory();
+  }, [showHistory, loadHistory]);
 
   // ═══ États pour consultation réservation / événement ═══
   const [viewedReservation, setViewedReservation] = useState(null);
@@ -1054,6 +1132,78 @@ const AffaireDetailContent = ({
 
   return (
     <div className="affaire-detail-content">
+      {/* ═══ Phase 9 : Workflow — Statut & Transitions ═══ */}
+      <section className="detail-section workflow-section">
+        <div className="workflow-status-row">
+          <span
+            className="workflow-status-badge"
+            style={{ background: currentStatus.color, color: '#fff' }}
+          >
+            {currentStatus.emoji} {currentStatus.label}
+          </span>
+          {editable && availableTransitions.length > 0 && (
+            <div className="workflow-transition-btns">
+              {availableTransitions.map((t) => (
+                <Button
+                  key={t.value}
+                  variant="ghost"
+                  className="workflow-transition-btn"
+                  style={{ borderColor: t.color, color: t.color }}
+                  onClick={() => handleChangeStatus(t.value)}
+                  disabled={statusLoading}
+                >
+                  {t.emoji} {t.label}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+        {editable && affaire.id && (
+          <div className="workflow-actions-row">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleApplyTemplate()}
+              title="Générer les étapes depuis le template du type"
+            >
+              <ClipboardList size={14} /> Appliquer template
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowHistory((v) => !v)}>
+              <Clock size={14} /> {showHistory ? 'Masquer' : 'Historique'}
+            </Button>
+          </div>
+        )}
+        {showHistory && statusHistory.length > 0 && (
+          <div className="workflow-history">
+            {statusHistory.map((h) => {
+              const from = AFFAIRE_STATUS_MAP[h.from_status];
+              const to = AFFAIRE_STATUS_MAP[h.to_status];
+              return (
+                <div key={h.id} className="workflow-history-item">
+                  <span className="wh-date">{fmtDate(h.changed_at)}</span>
+                  {from && (
+                    <span className="wh-badge" style={{ background: from.color, color: '#fff' }}>
+                      {from.emoji} {from.label}
+                    </span>
+                  )}
+                  <ArrowRight size={12} className="wh-arrow" />
+                  {to && (
+                    <span className="wh-badge" style={{ background: to.color, color: '#fff' }}>
+                      {to.emoji} {to.label}
+                    </span>
+                  )}
+                  {h.changed_by_name && <span className="wh-user">{h.changed_by_name}</span>}
+                  {h.notes && <span className="wh-notes">{h.notes}</span>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {showHistory && statusHistory.length === 0 && (
+          <p className="wh-empty">Aucune transition enregistrée</p>
+        )}
+      </section>
+
       {/* ═══ Section 1 : Détails basiques ═══ */}
       <section className="detail-section">
         <h3 className="detail-section-title">
@@ -2703,6 +2853,22 @@ const AffaireSlidePanel = ({
           <span className="slide-panel-type" style={{ background: typeInfo.color }}>
             {typeInfo.label}
           </span>
+          {(() => {
+            const st = AFFAIRE_STATUS_MAP[currentAffaire.status || 'brouillon'];
+            return st ? (
+              <span
+                className="workflow-status-badge"
+                style={{
+                  background: st.color,
+                  color: '#fff',
+                  fontSize: '0.72rem',
+                  padding: '2px 8px',
+                }}
+              >
+                {st.emoji} {st.label}
+              </span>
+            ) : null;
+          })()}
         </div>
         <Tooltip content="Fermer">
           <Button variant="ghost" className="slide-panel-close" onClick={handleClose}>

@@ -23,6 +23,7 @@ import {
   Paperclip,
   Plus,
   RefreshCw,
+  TrendingUp,
 } from 'lucide-react';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -40,10 +41,12 @@ import {
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
+import { AFFAIRE_STATUS_MAP } from '../../utils/affaireWorkflow';
 import api from '../../utils/api';
 import { capitalizeText } from '../../utils/dateUtils';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
+import AffaireDashboard from './AffaireDashboard';
 import { AffaireDetailDialog, AffaireSlidePanel } from './AffaireDetailPanel';
 
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
@@ -128,6 +131,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   // BL Import modal
   const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
   const [showMultiImport, setShowMultiImport] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   // Timeline / frise chronologique
   const timelineRef = useRef(null);
@@ -862,6 +866,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       )}
 
       {/* Frise chronologique (navigation visuelle) */}
+      {showDashboard && <AffaireDashboard />}
       <div className="affaires-info-bar">
         <div className="affaires-timeline" ref={timelineRef} onMouseDown={handleTimelineMouseDown}>
           <div className="timeline-track">
@@ -1085,6 +1090,15 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
               <BarChart2 size={14} /> Analyse batch
             </Button>
           </Tooltip>
+          <Tooltip content="Afficher le tableau de bord KPIs" position="bottom">
+            <Button
+              variant="ghost"
+              className={`affaires-tb-bl-import-btn u-gap-1${showDashboard ? ' active' : ''}`}
+              onClick={() => setShowDashboard((v) => !v)}
+            >
+              <TrendingUp size={14} /> KPIs
+            </Button>
+          </Tooltip>
 
           <Divider orientation="vertical" />
 
@@ -1259,22 +1273,36 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
                     }}
                   >
                     <span className="ar-status">
-                      {affaire.isArchived ? (
-                        <Tooltip content="Archivée" position="bottom">
-                          <span className="status-dot archived" />
-                        </Tooltip>
-                      ) : (
-                        <span
-                          className={`status-dot ${status}`}
-                          title={
-                            status === STATUS.ACTIVE
-                              ? 'En cours'
-                              : status === 'upcoming'
-                                ? 'À venir'
-                                : 'Terminée'
-                          }
-                        />
-                      )}
+                      {(() => {
+                        const wfStatus = AFFAIRE_STATUS_MAP[affaire.status || 'brouillon'];
+                        if (wfStatus) {
+                          return (
+                            <Tooltip content={wfStatus.label} position="bottom">
+                              <span
+                                className="status-dot"
+                                style={{ background: wfStatus.color }}
+                                title={wfStatus.label}
+                              />
+                            </Tooltip>
+                          );
+                        }
+                        return affaire.isArchived ? (
+                          <Tooltip content="Archivée" position="bottom">
+                            <span className="status-dot archived" />
+                          </Tooltip>
+                        ) : (
+                          <span
+                            className={`status-dot ${status}`}
+                            title={
+                              status === STATUS.ACTIVE
+                                ? 'En cours'
+                                : status === 'upcoming'
+                                  ? 'À venir'
+                                  : 'Terminée'
+                            }
+                          />
+                        );
+                      })()}
                     </span>
                     <span className="ar-numero">{affaire.numeroAffaire || '—'}</span>
                     <span className="ar-type">

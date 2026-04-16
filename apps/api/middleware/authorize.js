@@ -30,9 +30,10 @@ function resolvePermissions(req) {
   if (req.user.permissions !== undefined && req.user.isAdmin !== undefined) {
     return {
       is_admin: req.user.isAdmin ? 1 : 0,
-      permissions: typeof req.user.permissions === 'string'
-        ? req.user.permissions
-        : JSON.stringify(req.user.permissions || {})
+      permissions:
+        typeof req.user.permissions === 'string'
+          ? req.user.permissions
+          : JSON.stringify(req.user.permissions || {}),
     };
   }
   // Fallback DB pour anciens tokens sans permissions
@@ -70,7 +71,7 @@ function parsePermissions(user) {
  * @param {string} flagName - Nom du flag à ajouter sur req.user
  */
 export function requirePermission(permissionKey, errorMessage, flagName) {
-  return function(req, res, next) {
+  return function (req, res, next) {
     const user = resolvePermissions(req);
     if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
     const perms = parsePermissions(user);
@@ -104,7 +105,7 @@ export function requireAdmin(req, res, next) {
 export const requireMaintenanceAccess = requirePermission(
   'can_manage_vehicle_maintenance',
   'Accès réservé — permission maintenance véhicules requise',
-  'canManageMaintenance'
+  'canManageMaintenance',
 );
 
 // Backward compat: can_manage_maintenance OU can_manage_vehicle_maintenance
@@ -121,7 +122,9 @@ export function requireMaintenanceAccessCompat(req, res, next) {
     req.user.permissions = perms;
     next();
   } else {
-    return res.status(403).json({ error: 'Accès réservé — permission maintenance véhicules requise' });
+    return res
+      .status(403)
+      .json({ error: 'Accès réservé — permission maintenance véhicules requise' });
   }
 }
 
@@ -131,7 +134,7 @@ export function requireMaintenanceAccessCompat(req, res, next) {
 export const requireEquipmentMaintenanceAccess = requirePermission(
   'can_manage_equipment_maintenance',
   'Accès réservé — permission maintenance matériel requise',
-  'canManageEquipmentMaintenance'
+  'canManageEquipmentMaintenance',
 );
 
 /**
@@ -140,7 +143,7 @@ export const requireEquipmentMaintenanceAccess = requirePermission(
 export const requireCatalogAccess = requirePermission(
   'can_manage_catalog',
   'Accès réservé — permission catalogue requise',
-  'canManageCatalog'
+  'canManageCatalog',
 );
 
 /**
@@ -166,5 +169,5 @@ export function requireNotReadOnly(req, res, next) {
 export const requireTruckAccess = requirePermission(
   'can_manage_trucks',
   'Accès réservé — permission modèles camions requise',
-  'canManageTrucks'
+  'canManageTrucks',
 );

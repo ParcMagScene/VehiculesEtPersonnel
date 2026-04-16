@@ -4,13 +4,24 @@ const xssOptions = { whiteList: {}, stripIgnoreTag: true, stripIgnoreTagBody: ['
 
 // Champs exemptés de la sanitization (base64, mots de passe)
 const EXEMPT_FIELDS = [
-  'signature', 'signatureAdmin', 'signatureEmployee',
-  'signature_admin', 'signature_employee',
-  'password', 'newPassword', 'currentPassword'
+  'signature',
+  'signatureAdmin',
+  'signatureEmployee',
+  'signature_admin',
+  'signature_employee',
+  'password',
+  'newPassword',
+  'currentPassword',
 ];
 
 // [SEC FIX] Champs signature doivent être du base64 valide (data URI PNG/JPEG)
-const SIGNATURE_FIELDS = ['signature', 'signatureAdmin', 'signatureEmployee', 'signature_admin', 'signature_employee'];
+const SIGNATURE_FIELDS = [
+  'signature',
+  'signatureAdmin',
+  'signatureEmployee',
+  'signature_admin',
+  'signature_employee',
+];
 const BASE64_DATA_URI = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
 function isValidSignature(val) {
   if (typeof val !== 'string') return false;

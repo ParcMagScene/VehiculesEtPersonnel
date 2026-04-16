@@ -9,28 +9,27 @@
 import logger from '../logger.js';
 
 export function runInventoryMigrations(db) {
-
   // ─── 1. Étendre stock_items avec colonnes inventaire ───
   try {
-    const cols = db.pragma('table_info(stock_items)').map(c => c.name);
+    const cols = db.pragma('table_info(stock_items)').map((c) => c.name);
     const additions = [
-      ['barcode',          'TEXT'],
-      ['brand',            'TEXT'],
-      ['model',            'TEXT'],
-      ['serial_number',    'TEXT'],
-      ['depot_id',         'INTEGER'],
-      ['zone',             'TEXT'],
-      ['sub_location',     'TEXT'],
-      ['weight',           'REAL'],
-      ['dimensions',       'TEXT'],          // JSON {w,h,d}
-      ['warranty_end',     'TEXT'],
-      ['purchase_date',    'TEXT'],
-      ['lifecycle_status', "TEXT DEFAULT 'active'"],  // active|deprecated|obsolete
-      ['reorder_point',    'REAL DEFAULT 0'],
-      ['reorder_qty',      'REAL DEFAULT 0'],
-      ['last_counted_at',  'TEXT'],
+      ['barcode', 'TEXT'],
+      ['brand', 'TEXT'],
+      ['model', 'TEXT'],
+      ['serial_number', 'TEXT'],
+      ['depot_id', 'INTEGER'],
+      ['zone', 'TEXT'],
+      ['sub_location', 'TEXT'],
+      ['weight', 'REAL'],
+      ['dimensions', 'TEXT'], // JSON {w,h,d}
+      ['warranty_end', 'TEXT'],
+      ['purchase_date', 'TEXT'],
+      ['lifecycle_status', "TEXT DEFAULT 'active'"], // active|deprecated|obsolete
+      ['reorder_point', 'REAL DEFAULT 0'],
+      ['reorder_qty', 'REAL DEFAULT 0'],
+      ['last_counted_at', 'TEXT'],
       ['last_counted_qty', 'REAL'],
-      ['abc_class',        "TEXT DEFAULT 'C'"],       // A/B/C classification
+      ['abc_class', "TEXT DEFAULT 'C'"], // A/B/C classification
     ];
     for (const [col, type] of additions) {
       if (!cols.includes(col)) {
@@ -128,27 +127,33 @@ export function runInventoryMigrations(db) {
     'CREATE INDEX IF NOT EXISTS idx_inv_price_history_item ON inventory_price_history(stock_item_id)',
     'CREATE INDEX IF NOT EXISTS idx_inv_price_history_supplier ON inventory_price_history(supplier_id)',
     'CREATE INDEX IF NOT EXISTS idx_inv_anomalies_item ON inventory_anomalies(stock_item_id)',
-    'CREATE INDEX IF NOT EXISTS idx_inv_anomalies_status ON inventory_anomalies(status) WHERE status = \'open\'',
+    "CREATE INDEX IF NOT EXISTS idx_inv_anomalies_status ON inventory_anomalies(status) WHERE status = 'open'",
     'CREATE INDEX IF NOT EXISTS idx_inv_locations_depot ON inventory_locations(depot_number)',
     'CREATE INDEX IF NOT EXISTS idx_inv_locations_code ON inventory_locations(code)',
     'CREATE INDEX IF NOT EXISTS idx_inv_stats_cache_key ON inventory_stats_cache(cache_key)',
   ];
   for (const idx of indexes) {
-    try { db.exec(idx); } catch (e) { /* index exists */ }
+    try {
+      db.exec(idx);
+    } catch (e) {
+      /* index exists */
+    }
   }
 
   // ─── 7. Seed: Emplacements par défaut (Dépôt 1+2) ───
   try {
     const count = db.prepare('SELECT COUNT(*) as c FROM inventory_locations').get().c;
     if (count === 0) {
-      const ins = db.prepare(`INSERT INTO inventory_locations (name, code, depot_number, type, zone) VALUES (?, ?, ?, ?, ?)`);
+      const ins = db.prepare(
+        `INSERT INTO inventory_locations (name, code, depot_number, type, zone) VALUES (?, ?, ?, ?, ?)`,
+      );
       const locations = [
-        ['Dépôt 1 — Stockage principal', 'DEP1-MAIN',  1, 'storage',  'A'],
-        ['Dépôt 1 — Atelier',            'DEP1-WORK',  1, 'workshop', 'B'],
-        ['Dépôt 2 — Stockage',           'DEP2-MAIN',  2, 'storage',  'A'],
-        ['Dépôt 2 — Atelier',            'DEP2-WORK',  2, 'workshop', 'B'],
-        ['Camion — En tournée',           'TRUCK-01',   0, 'truck',    null],
-        ['Externe — Chez prestataire',    'EXT-PRESTA', 0, 'external', null],
+        ['Dépôt 1 — Stockage principal', 'DEP1-MAIN', 1, 'storage', 'A'],
+        ['Dépôt 1 — Atelier', 'DEP1-WORK', 1, 'workshop', 'B'],
+        ['Dépôt 2 — Stockage', 'DEP2-MAIN', 2, 'storage', 'A'],
+        ['Dépôt 2 — Atelier', 'DEP2-WORK', 2, 'workshop', 'B'],
+        ['Camion — En tournée', 'TRUCK-01', 0, 'truck', null],
+        ['Externe — Chez prestataire', 'EXT-PRESTA', 0, 'external', null],
       ];
       for (const [name, code, depot, type, zone] of locations) {
         ins.run(name, code, depot, type, zone);

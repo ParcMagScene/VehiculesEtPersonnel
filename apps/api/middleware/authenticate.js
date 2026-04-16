@@ -34,11 +34,15 @@ export function createAuthenticateToken(JWT_SECRET) {
         return next();
       }
 
-      const session = db.prepare(
-        'SELECT 1 FROM active_sessions WHERE token_hash = ? AND expires_at > datetime(\'now\')'
-      ).get(tokenHash);
+      const session = db
+        .prepare(
+          "SELECT 1 FROM active_sessions WHERE token_hash = ? AND expires_at > datetime('now')",
+        )
+        .get(tokenHash);
       if (!session) {
-        logger.warn(`🔒 Session expirée/révoquée pour user ${user.id} sur ${req.method} ${req.path} (hash prefix: ${tokenHash.substring(0, 8)}…)`);
+        logger.warn(
+          `🔒 Session expirée/révoquée pour user ${user.id} sur ${req.method} ${req.path} (hash prefix: ${tokenHash.substring(0, 8)}…)`,
+        );
         return res.status(401).json({ error: 'Session expirée ou révoquée' });
       }
 
@@ -54,8 +58,12 @@ export function createAuthenticateToken(JWT_SECRET) {
 
       // Mise à jour silencieuse de last_activity (fire-and-forget, ne bloque pas la requête)
       try {
-        db.prepare('UPDATE active_sessions SET last_activity = CURRENT_TIMESTAMP WHERE token_hash = ?').run(tokenHash);
-      } catch { /* silencieux */ }
+        db.prepare(
+          'UPDATE active_sessions SET last_activity = CURRENT_TIMESTAMP WHERE token_hash = ?',
+        ).run(tokenHash);
+      } catch {
+        /* silencieux */
+      }
 
       req.user = user;
       next();

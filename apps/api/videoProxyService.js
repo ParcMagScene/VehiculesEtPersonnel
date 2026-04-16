@@ -12,16 +12,23 @@ import logger from './logger.js';
 const __dir = dirname(fileURLToPath(import.meta.url));
 
 // ── Protection SSRF — bloquer les IPs internes sauf le LAN local ──
-const BLOCKED_RANGES = [/^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^169\.254\./, /^0\./, /^255\./];
+const BLOCKED_RANGES = [
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^169\.254\./,
+  /^0\./,
+  /^255\./,
+];
 // [SEC FIX] Bloque aussi IPv6 loopback et link-local
 const BLOCKED_IPV6 = ['::1', '::ffff:127.0.0.1', 'fe80::', 'fc00::', 'fd00::'];
 function isBlockedIP(ip) {
   if (!ip) return true;
   // Bloquer IPv6 dangereuses
-  if (ip.includes(':')) return BLOCKED_IPV6.some(prefix => ip.startsWith(prefix));
+  if (ip.includes(':')) return BLOCKED_IPV6.some((prefix) => ip.startsWith(prefix));
   // IPv4 : vérifier format + ranges
   if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return true;
-  return BLOCKED_RANGES.some(r => r.test(ip));
+  return BLOCKED_RANGES.some((r) => r.test(ip));
 }
 
 // ── Chiffrement / déchiffrement des mots de passe caméras ──
@@ -40,14 +47,18 @@ function getKeyBuffer() {
           process.env.VIDEO_CIPHER_KEY = match[1].trim();
           break;
         }
-      } catch {}
+      } catch {
+        /* ignored */
+      }
     }
   }
   if (!process.env.VIDEO_CIPHER_KEY) {
     // [AUDIT FIX B4] En production, la clé DOIT être configurée
     if (process.env.NODE_ENV === 'production') {
       logger.error('❌ FATAL: VIDEO_CIPHER_KEY non défini en production. Configurez-la dans .env');
-      logger.error('   Générez une clé: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+      logger.error(
+        "   Générez une clé: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+      );
       process.exit(1);
     }
     // En dev uniquement : générer et persister
@@ -55,17 +66,25 @@ function getKeyBuffer() {
     const envPath = join(__dir, '.env');
     try {
       let content = '';
-      try { content = fs.readFileSync(envPath, 'utf8'); } catch {}
+      try {
+        content = fs.readFileSync(envPath, 'utf8');
+      } catch {
+        /* ignored */
+      }
       const line = `\nVIDEO_CIPHER_KEY=${generated}\n`;
       fs.appendFileSync(envPath, line);
       process.env.VIDEO_CIPHER_KEY = generated;
       logger.info('🔑 VIDEO_CIPHER_KEY générée et sauvegardée dans .env (dev uniquement)');
     } catch (writeErr) {
-      logger.warn('⚠️  VIDEO_CIPHER_KEY non défini et impossible d\'écrire dans .env — les mots de passe caméra seront perdus au redémarrage');
+      logger.warn(
+        "⚠️  VIDEO_CIPHER_KEY non défini et impossible d'écrire dans .env — les mots de passe caméra seront perdus au redémarrage",
+      );
     }
   }
   const key = process.env.VIDEO_CIPHER_KEY || crypto.randomBytes(32).toString('hex');
-  logger.info(`🔑 Cipher key initialisée (source: ${process.env.VIDEO_CIPHER_KEY ? 'env' : 'random'})`);
+  logger.info(
+    `🔑 Cipher key initialisée (source: ${process.env.VIDEO_CIPHER_KEY ? 'env' : 'random'})`,
+  );
   _keyBuffer = Buffer.from(key.padEnd(64, '0').slice(0, 64), 'hex');
   return _keyBuffer;
 }
@@ -115,9 +134,13 @@ const MAX_ACTIVE_SESSIONS = 500;
 export function storeSession(token, data) {
   // [AUDIT FIX V4] Purger les sessions les plus anciennes si cap atteint
   if (activeSessions.size >= MAX_ACTIVE_SESSIONS) {
-    let oldest = null, oldestKey = null;
+    let oldest = null,
+      oldestKey = null;
     for (const [k, v] of activeSessions) {
-      if (!oldest || v.createdAt < oldest) { oldest = v.createdAt; oldestKey = k; }
+      if (!oldest || v.createdAt < oldest) {
+        oldest = v.createdAt;
+        oldestKey = k;
+      }
     }
     if (oldestKey) activeSessions.delete(oldestKey);
   }
@@ -137,7 +160,8 @@ export function removeSession(token) {
 // ── Construire l'URL RTSP ──
 export function buildRtspUrl(camera, password) {
   if (camera.rtsp_url) {
-    if (!/^rtsp[s]?:\/\//.test(camera.rtsp_url)) throw new Error('rtsp_url doit commencer par rtsp:// ou rtsps://');
+    if (!/^rtsp[s]?:\/\//.test(camera.rtsp_url))
+      throw new Error('rtsp_url doit commencer par rtsp:// ou rtsps://');
     return camera.rtsp_url;
   }
   if (isBlockedIP(camera.ip)) throw new Error('Adresse IP bloquée (SSRF)');
@@ -233,7 +257,9 @@ export async function whepDelete(sessionLocation) {
   if (!sessionLocation) return;
   try {
     await fetch(sessionLocation, { method: 'DELETE' });
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 // ── Snapshot via HTTP ──
@@ -266,7 +292,7 @@ export async function fetchSnapshot(camera, password) {
 
   try {
     const res = await fetch(url, {
-      headers: { 'Authorization': authHeader },
+      headers: { Authorization: authHeader },
       signal: controller.signal,
     });
     clearTimeout(timeout);
@@ -294,13 +320,20 @@ export async function sendPTZCommand(camera, password, command, speed = 1) {
   const timeout = setTimeout(() => controller.abort(), 5000);
 
   try {
-    let url, method = 'GET', body = null, headers = { 'Authorization': authHeader };
+    let url,
+      method = 'GET',
+      body = null,
+      headers = { Authorization: authHeader };
 
     if (brand.includes('dahua') || brand.includes('amcrest')) {
       // Dahua CGI PTZ
       const codeMap = {
-        left: 'Left', right: 'Right', up: 'Up', down: 'Down',
-        zoomin: 'ZoomTele', zoomout: 'ZoomWide',
+        left: 'Left',
+        right: 'Right',
+        up: 'Up',
+        down: 'Down',
+        zoomin: 'ZoomTele',
+        zoomout: 'ZoomWide',
         stop: 'Stop',
       };
       const code = codeMap[command] || 'Stop';
@@ -319,8 +352,13 @@ export async function sendPTZCommand(camera, password, command, speed = 1) {
     } else {
       // ONVIF fallback — basic HTTP PTZ
       const codeMap = {
-        left: 'left', right: 'right', up: 'up', down: 'down',
-        zoomin: 'zoomin', zoomout: 'zoomout', stop: 'stop',
+        left: 'left',
+        right: 'right',
+        up: 'up',
+        down: 'down',
+        zoomin: 'zoomin',
+        zoomout: 'zoomout',
+        stop: 'stop',
       };
       url = `http://${ip}:${httpPort}/ptz/${codeMap[command] || 'stop'}?speed=${speed}`;
     }
@@ -359,10 +397,10 @@ export async function searchNvrRecordings(camera, password, channel, startTime, 
   const ch = channel - 1; // API Dahua = channel 0-based
 
   // 1. Créer un finder
-  const createRes = await fetch(
-    `${baseUrl}/cgi-bin/mediaFileFind.cgi?action=factory.create`,
-    { headers: { Authorization: auth }, signal: AbortSignal.timeout(5000) }
-  );
+  const createRes = await fetch(`${baseUrl}/cgi-bin/mediaFileFind.cgi?action=factory.create`, {
+    headers: { Authorization: auth },
+    signal: AbortSignal.timeout(5000),
+  });
   const createText = await createRes.text();
   const idMatch = createText.match(/result=(\d+)/);
   if (!idMatch) throw new Error('Impossible de créer la session de recherche NVR');
@@ -372,7 +410,8 @@ export async function searchNvrRecordings(camera, password, channel, startTime, 
     // 2. Lancer la recherche
     const startEnc = encodeURIComponent(startTime);
     const endEnc = encodeURIComponent(endTime);
-    const findUrl = `${baseUrl}/cgi-bin/mediaFileFind.cgi?action=findFile&object=${finderId}` +
+    const findUrl =
+      `${baseUrl}/cgi-bin/mediaFileFind.cgi?action=findFile&object=${finderId}` +
       `&condition.Channel=${ch}&condition.StartTime=${startEnc}&condition.EndTime=${endEnc}` +
       `&condition.Types[0]=dav&condition.Flags[0]=Timing`;
 
@@ -387,12 +426,15 @@ export async function searchNvrRecordings(camera, password, channel, startTime, 
     while (hasMore) {
       const nextRes = await fetch(
         `${baseUrl}/cgi-bin/mediaFileFind.cgi?action=findNextFile&object=${finderId}&count=30`,
-        { headers: { Authorization: auth }, signal: AbortSignal.timeout(5000) }
+        { headers: { Authorization: auth }, signal: AbortSignal.timeout(5000) },
       );
       const nextText = await nextRes.text();
       const foundMatch = nextText.match(/found=(\d+)/);
       const count = foundMatch ? parseInt(foundMatch[1], 10) : 0;
-      if (count === 0) { hasMore = false; break; }
+      if (count === 0) {
+        hasMore = false;
+        break;
+      }
 
       for (let i = 0; i < count; i++) {
         const sM = nextText.match(new RegExp(`items\\[${i}\\]\\.StartTime=(.+)`));
@@ -425,8 +467,10 @@ export function buildPlaybackRtspUrl(camera, password, channel, startTime, endTi
   const user = camera.username || '888888';
   const pass = password || '';
   const fmt = (t) => t.replace(/[-: ]/g, '_'); // 2026-03-25 10:00:00 → 2026_03_25_10_00_00
-  return `rtsp://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${camera.ip}:554` +
-    `/cam/playback?channel=${channel}&starttime=${fmt(startTime)}&endtime=${fmt(endTime)}`;
+  return (
+    `rtsp://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${camera.ip}:554` +
+    `/cam/playback?channel=${channel}&starttime=${fmt(startTime)}&endtime=${fmt(endTime)}`
+  );
 }
 
 /** Enregistrer le stream playback dans MediaMTX (path séparé) */
@@ -440,9 +484,11 @@ export async function registerPlaybackInProxy(cameraId, rtspUrl) {
   };
   try {
     // Supprimer l'ancien path (force reconnexion propre si le précédent est en erreur)
-    const delRes = await fetch(`${MEDIAMTX_API}/v3/config/paths/remove/${streamName}`, { method: 'DELETE' }).catch(() => null);
+    const delRes = await fetch(`${MEDIAMTX_API}/v3/config/paths/remove/${streamName}`, {
+      method: 'DELETE',
+    }).catch(() => null);
     if (delRes?.ok) {
-      await new Promise(r => setTimeout(r, 500));
+      await new Promise((r) => setTimeout(r, 500));
     }
 
     // Créer le path frais

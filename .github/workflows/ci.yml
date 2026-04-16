@@ -48,7 +48,6 @@ jobs:
         run: npm run lint
 
       - name: Prettier (vérification)
-        continue-on-error: true
         run: npm run format:check
 
   # ─── Tests backend ────────────────────────────────────

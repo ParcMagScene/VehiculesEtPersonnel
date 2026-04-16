@@ -43,10 +43,20 @@ const insertStmt = db.prepare(`
  * @param {object|null} params.details - Détails supplémentaires (sérialisé en JSON)
  * @param {object|null} params.req - Request Express pour extraire IP/user-agent
  */
-export function auditLog({ actorId = null, actorEmail = null, action, targetType = null, targetId = null, details = null, req = null }) {
+export function auditLog({
+  actorId = null,
+  actorEmail = null,
+  action,
+  targetType = null,
+  targetId = null,
+  details = null,
+  req = null,
+}) {
   try {
-    const ip = req ? (req.headers['x-forwarded-for'] || req.ip || req.connection?.remoteAddress || null) : null;
-    const ua = req ? (req.headers['user-agent'] || null) : null;
+    const ip = req
+      ? req.headers['x-forwarded-for'] || req.ip || req.connection?.remoteAddress || null
+      : null;
+    const ua = req ? req.headers['user-agent'] || null : null;
     const detailsStr = details ? JSON.stringify(details) : null;
 
     insertStmt.run(actorId, actorEmail, action, targetType, String(targetId), detailsStr, ip, ua);
@@ -68,7 +78,7 @@ export const AUDIT_ACTIONS = {
   PASSWORD_CHANGE: 'auth.password.change',
   PASSWORD_RESET_REQUEST: 'auth.password.reset_request',
   PASSWORD_RESET_COMPLETE: 'auth.password.reset_complete',
-  
+
   // Admin — Users
   USER_CREATE: 'admin.user.create',
   USER_DELETE: 'admin.user.delete',
@@ -77,17 +87,17 @@ export const AUDIT_ACTIONS = {
   USER_PASSWORD_RESET: 'admin.user.password_reset',
   USER_PASSWORD_CHANGE: 'admin.user.password_change',
   USER_BLOCK: 'admin.user.block',
-  
+
   // Admin — Access
   ACCESS_REQUEST_APPROVE: 'admin.access.approve',
   ACCESS_REQUEST_REJECT: 'admin.access.reject',
   AUTHORIZED_EMAIL_ADD: 'admin.email.add',
   AUTHORIZED_EMAIL_DELETE: 'admin.email.delete',
-  
+
   // Admin — Config
   EMAIL_CONFIG_CHANGE: 'admin.config.email',
   CACHE_CLEAR: 'admin.cache.clear',
-  
+
   // Security
   SESSION_INVALIDATED: 'security.session.invalidated',
   SESSIONS_FORCE_CLOSED: 'security.sessions.force_closed',

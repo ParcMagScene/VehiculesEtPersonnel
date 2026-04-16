@@ -19,10 +19,10 @@ function createStorage(subDir, prefix) {
       cb(null, dir);
     },
     filename: (_req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = path.extname(file.originalname).toLowerCase();
       cb(null, `${prefix}-${uniqueSuffix}${ext}`);
-    }
+    },
   });
 }
 
@@ -37,9 +37,13 @@ export const uploadBL = multer({
     if (allowed.test(path.extname(file.originalname))) {
       cb(null, true);
     } else {
-      cb(new Error('Type de fichier non supporté. Formats acceptés : PDF, JPG, PNG, GIF, WEBP, TIFF'));
+      cb(
+        new Error(
+          'Type de fichier non supporté. Formats acceptés : PDF, JPG, PNG, GIF, WEBP, TIFF',
+        ),
+      );
     }
-  }
+  },
 });
 
 /**
@@ -54,17 +58,20 @@ export const uploadMedia = multer({
     filename: (_req, file, cb) => {
       const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const ext = path.extname(file.originalname).toLowerCase();
-      const safeName = file.originalname
-        .replace(/[^a-zA-Z0-9._-]/g, '_')
-        .replace(/_{2,}/g, '_');
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_{2,}/g, '_');
       cb(null, `display-${unique}-${safeName}`);
     },
   }),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
   fileFilter: (_req, file, cb) => {
     const allowedMimes = [
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      'video/mp4', 'video/webm', 'video/ogg',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'video/mp4',
+      'video/webm',
+      'video/ogg',
     ];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
@@ -87,7 +94,7 @@ export const uploadAttachment = multer({
     } else {
       cb(new Error('Type de fichier non supporté'));
     }
-  }
+  },
 });
 
 /**
@@ -103,7 +110,7 @@ export const uploadMessaging = multer({
     } else {
       cb(new Error('Type de fichier non supporté pour la messagerie'));
     }
-  }
+  },
 });
 
 export { createStorage };

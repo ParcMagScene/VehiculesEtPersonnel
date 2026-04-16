@@ -16,18 +16,25 @@ export function notifyUser(userId, event, data) {
   if (!clients) return;
   const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   for (const res of clients) {
-    try { res.write(payload); } catch { clients.delete(res); }
+    try {
+      res.write(payload);
+    } catch {
+      clients.delete(res);
+    }
   }
 }
 
 function getConversationParticipantIds(conversationId) {
-  return db.prepare(
-    'SELECT user_id FROM conversation_participants WHERE conversation_id = ?'
-  ).all(conversationId).map(r => r.user_id);
+  return db
+    .prepare('SELECT user_id FROM conversation_participants WHERE conversation_id = ?')
+    .all(conversationId)
+    .map((r) => r.user_id);
 }
 
 function getUnreadCountForUser(userId) {
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     SELECT COALESCE(SUM(
       (SELECT COUNT(*) FROM messages m 
        WHERE m.conversation_id = c.id 
@@ -38,14 +45,20 @@ function getUnreadCountForUser(userId) {
     FROM conversations c
     JOIN conversation_participants cp ON c.id = cp.conversation_id
     WHERE cp.user_id = ?
-  `).get(userId, userId);
+  `,
+    )
+    .get(userId, userId);
   return result.total_unread;
 }
 
 // [AUDIT Phase 4] Types MIME autorisés pour les uploads messagerie
 const MESSAGING_ALLOWED_MIMES = new Set([
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-  'video/mp4', 'video/webm',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'video/mp4',
+  'video/webm',
   'application/pdf',
   'text/plain',
   'application/msword',
@@ -63,7 +76,6 @@ const UPLOADS_DIR = join(__dirname, '..', '..', 'public', 'messaging-uploads');
 if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true });
 
 export function setupMessagingRoutes(app, authenticateToken) {
-
   // ═══════════════════════════════════════
   // SSE ENDPOINT
   // ═══════════════════════════════════════
@@ -78,7 +90,11 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
     // Heartbeat toutes les 30s pour garder la connexion
     const heartbeat = setInterval(() => {
-      try { res.write(':heartbeat\n\n'); } catch { /* noop */ }
+      try {
+        res.write(':heartbeat\n\n');
+      } catch {
+        /* noop */
+      }
     }, 30000);
 
     // Enregistrer le client
@@ -89,7 +105,9 @@ export function setupMessagingRoutes(app, authenticateToken) {
     try {
       const unread = getUnreadCountForUser(userId);
       res.write(`event: unread_update\ndata: ${JSON.stringify({ unread })}\n\n`);
-    } catch { /* silencieux */ }
+    } catch {
+      /* silencieux */
+    }
 
     req.on('close', () => {
       clearInterval(heartbeat);
@@ -108,7 +126,9 @@ export function setupMessagingRoutes(app, authenticateToken) {
   // GET /api/messaging/conversations — Liste des conversations de l'utilisateur
   app.get('/api/messaging/conversations', authenticateToken, (req, res) => {
     try {
-      const conversations = db.prepare(`
+      const conversations = db
+        .prepare(
+          `
         SELECT c.id, c.type, c.title, c.created_at, c.updated_at,
           cp.last_read_at,
           (SELECT COUNT(*) FROM messages m 
@@ -136,7 +156,9 @@ export function setupMessagingRoutes(app, authenticateToken) {
           (SELECT MAX(m5.created_at) FROM messages m5 WHERE m5.conversation_id = c.id),
           c.created_at
         ) DESC
-      `).all(req.user.id, req.user.id);
+      `,
+        )
+        .all(req.user.id, req.user.id);
 
       // Pour chaque conversation, récupérer les participants
       const participantsStmt = db.prepare(`
@@ -146,7 +168,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
         WHERE cp.conversation_id = ?
       `);
 
-      const result = conversations.map(conv => ({
+      const result = conversations.map((conv) => ({
         ...conv,
         participants: participantsStmt.all(conv.id),
       }));
@@ -165,27 +187,31 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       // Pour les conversations directes, vérifier qu'il n'en existe pas déjà une
       if (type === 'direct' && participantIds.length === 1) {
-        const existing = db.prepare(`
+        const existing = db
+          .prepare(
+            `
           SELECT c.id FROM conversations c
           JOIN conversation_participants cp1 ON c.id = cp1.conversation_id AND cp1.user_id = ?
           JOIN conversation_participants cp2 ON c.id = cp2.conversation_id AND cp2.user_id = ?
           WHERE c.type = 'direct'
-        `).get(req.user.id, participantIds[0]);
+        `,
+          )
+          .get(req.user.id, participantIds[0]);
 
         if (existing) {
           return res.json({ id: existing.id, existing: true });
         }
       }
 
-      const result = db.prepare(
-        'INSERT INTO conversations (type, title, created_by) VALUES (?, ?, ?)'
-      ).run(type, title || null, req.user.id);
+      const result = db
+        .prepare('INSERT INTO conversations (type, title, created_by) VALUES (?, ?, ?)')
+        .run(type, title || null, req.user.id);
 
       const convId = result.lastInsertRowid;
 
       // Ajouter le créateur comme participant
       const addParticipant = db.prepare(
-        'INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)'
+        'INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)',
       );
       addParticipant.run(convId, req.user.id);
 
@@ -215,9 +241,11 @@ export function setupMessagingRoutes(app, authenticateToken) {
       const before = req.query.before; // cursor-based pagination
 
       // Vérifier que l'utilisateur est participant
-      const isParticipant = db.prepare(
-        'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?'
-      ).get(convId, req.user.id);
+      const isParticipant = db
+        .prepare(
+          'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?',
+        )
+        .get(convId, req.user.id);
 
       if (!isParticipant) {
         return res.status(403).json({ success: false, error: 'Non autorisé' });
@@ -244,13 +272,15 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       // Récupérer les pièces jointes pour chaque message de type file/image/video
       const attachStmt = db.prepare(
-        'SELECT id, filename, original_name, mime_type, size FROM message_attachments WHERE message_id = ?'
+        'SELECT id, filename, original_name, mime_type, size FROM message_attachments WHERE message_id = ?',
       );
 
-      const result = messages.map(m => ({
-        ...m,
-        attachments: m.type !== 'text' ? attachStmt.all(m.id) : [],
-      })).reverse(); // Remettre dans l'ordre chronologique
+      const result = messages
+        .map((m) => ({
+          ...m,
+          attachments: m.type !== 'text' ? attachStmt.all(m.id) : [],
+        }))
+        .reverse(); // Remettre dans l'ordre chronologique
 
       res.json(result);
     } catch (error) {
@@ -260,62 +290,73 @@ export function setupMessagingRoutes(app, authenticateToken) {
   });
 
   // POST /api/messaging/conversations/:id/messages — Envoyer un message
-  app.post('/api/messaging/conversations/:id/messages', authenticateToken, validate(messageSchema), (req, res) => {
-    try {
-      const convId = req.params.id;
-      const { content, type = 'text' } = req.body;
+  app.post(
+    '/api/messaging/conversations/:id/messages',
+    authenticateToken,
+    validate(messageSchema),
+    (req, res) => {
+      try {
+        const convId = req.params.id;
+        const { content, type = 'text' } = req.body;
 
-      // Vérifier que l'utilisateur est participant
-      const isParticipant = db.prepare(
-        'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?'
-      ).get(convId, req.user.id);
+        // Vérifier que l'utilisateur est participant
+        const isParticipant = db
+          .prepare(
+            'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?',
+          )
+          .get(convId, req.user.id);
 
-      if (!isParticipant) {
-        return res.status(403).json({ success: false, error: 'Non autorisé' });
-      }
+        if (!isParticipant) {
+          return res.status(403).json({ success: false, error: 'Non autorisé' });
+        }
 
-      const result = db.prepare(
-        'INSERT INTO messages (conversation_id, sender_id, content, type) VALUES (?, ?, ?, ?)'
-      ).run(convId, req.user.id, content, type);
+        const result = db
+          .prepare(
+            'INSERT INTO messages (conversation_id, sender_id, content, type) VALUES (?, ?, ?, ?)',
+          )
+          .run(convId, req.user.id, content, type);
 
-      // Mettre à jour le timestamp de la conversation
-      db.prepare('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(convId);
+        // Mettre à jour le timestamp de la conversation
+        db.prepare('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
+          convId,
+        );
 
-      // Marquer comme lu pour l'expéditeur
-      db.prepare(
-        'UPDATE conversation_participants SET last_read_at = CURRENT_TIMESTAMP WHERE conversation_id = ? AND user_id = ?'
-      ).run(convId, req.user.id);
+        // Marquer comme lu pour l'expéditeur
+        db.prepare(
+          'UPDATE conversation_participants SET last_read_at = CURRENT_TIMESTAMP WHERE conversation_id = ? AND user_id = ?',
+        ).run(convId, req.user.id);
 
-      res.json({
-        id: result.lastInsertRowid,
-        conversation_id: parseInt(convId),
-        sender_id: req.user.id,
-        sender_name: req.user.name,
-        content,
-        type,
-        created_at: new Date().toISOString(),
-        attachments: [],
-      });
-
-      // SSE — notifier les autres participants
-      const participants = getConversationParticipantIds(convId);
-      for (const pid of participants) {
-        if (pid === req.user.id) continue;
-        const unread = getUnreadCountForUser(pid);
-        notifyUser(pid, 'new_message', {
+        res.json({
+          id: result.lastInsertRowid,
           conversation_id: parseInt(convId),
           sender_id: req.user.id,
           sender_name: req.user.name,
           content,
           type,
+          created_at: new Date().toISOString(),
+          attachments: [],
         });
-        notifyUser(pid, 'unread_update', { unread });
+
+        // SSE — notifier les autres participants
+        const participants = getConversationParticipantIds(convId);
+        for (const pid of participants) {
+          if (pid === req.user.id) continue;
+          const unread = getUnreadCountForUser(pid);
+          notifyUser(pid, 'new_message', {
+            conversation_id: parseInt(convId),
+            sender_id: req.user.id,
+            sender_name: req.user.name,
+            content,
+            type,
+          });
+          notifyUser(pid, 'unread_update', { unread });
+        }
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // POST /api/messaging/conversations/:id/messages/file — Envoyer un fichier
   app.post('/api/messaging/conversations/:id/messages/file', authenticateToken, (req, res) => {
@@ -323,9 +364,11 @@ export function setupMessagingRoutes(app, authenticateToken) {
       const convId = req.params.id;
 
       // Vérifier participation
-      const isParticipant = db.prepare(
-        'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?'
-      ).get(convId, req.user.id);
+      const isParticipant = db
+        .prepare(
+          'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?',
+        )
+        .get(convId, req.user.id);
 
       if (!isParticipant) {
         return res.status(403).json({ success: false, error: 'Non autorisé' });
@@ -339,20 +382,44 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       // [AUDIT Phase 4] Valider le type MIME
       if (!mimeType || !MESSAGING_ALLOWED_MIMES.has(mimeType)) {
-        return res.status(400).json({ success: false, error: `Type de fichier non autorisé: ${mimeType || 'inconnu'}` });
+        return res.status(400).json({
+          success: false,
+          error: `Type de fichier non autorisé: ${mimeType || 'inconnu'}`,
+        });
       }
 
       // [SECURITY] Vérifier aussi l'extension du fichier (le MIME client est spoofable)
-      const ALLOWED_MSG_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt', '.mp4', '.webm', '.mov'];
+      const ALLOWED_MSG_EXTS = [
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.gif',
+        '.webp',
+        '.pdf',
+        '.doc',
+        '.docx',
+        '.xls',
+        '.xlsx',
+        '.csv',
+        '.txt',
+        '.mp4',
+        '.webm',
+        '.mov',
+      ];
       const fileExt = extname(filename).toLowerCase();
       if (!ALLOWED_MSG_EXTS.includes(fileExt)) {
-        return res.status(400).json({ success: false, error: `Extension de fichier non autorisée: ${fileExt || 'aucune'}` });
+        return res.status(400).json({
+          success: false,
+          error: `Extension de fichier non autorisée: ${fileExt || 'aucune'}`,
+        });
       }
 
       // [AUDIT Phase 4] Décoder et vérifier la taille
       const buffer = Buffer.from(data, 'base64');
       if (buffer.length > MESSAGING_MAX_FILE_SIZE) {
-        return res.status(400).json({ success: false, error: 'Fichier trop volumineux (max 25 Mo)' });
+        return res
+          .status(400)
+          .json({ success: false, error: 'Fichier trop volumineux (max 25 Mo)' });
       }
 
       // Déterminer le type de message
@@ -367,21 +434,25 @@ export function setupMessagingRoutes(app, authenticateToken) {
       writeFileSync(filePath, buffer);
 
       // Créer le message
-      const msgResult = db.prepare(
-        'INSERT INTO messages (conversation_id, sender_id, content, type) VALUES (?, ?, ?, ?)'
-      ).run(convId, req.user.id, filename, msgType);
+      const msgResult = db
+        .prepare(
+          'INSERT INTO messages (conversation_id, sender_id, content, type) VALUES (?, ?, ?, ?)',
+        )
+        .run(convId, req.user.id, filename, msgType);
 
       const messageId = msgResult.lastInsertRowid;
 
       // Créer l'attachement
       db.prepare(
-        'INSERT INTO message_attachments (message_id, filename, original_name, mime_type, size) VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO message_attachments (message_id, filename, original_name, mime_type, size) VALUES (?, ?, ?, ?, ?)',
       ).run(messageId, uniqueName, filename, mimeType || 'application/octet-stream', buffer.length);
 
       // Mettre à jour la conversation
-      db.prepare('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(convId);
+      db.prepare('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
+        convId,
+      );
       db.prepare(
-        'UPDATE conversation_participants SET last_read_at = CURRENT_TIMESTAMP WHERE conversation_id = ? AND user_id = ?'
+        'UPDATE conversation_participants SET last_read_at = CURRENT_TIMESTAMP WHERE conversation_id = ? AND user_id = ?',
       ).run(convId, req.user.id);
 
       res.json({
@@ -392,13 +463,15 @@ export function setupMessagingRoutes(app, authenticateToken) {
         content: filename,
         type: msgType,
         created_at: new Date().toISOString(),
-        attachments: [{
-          id: null,
-          filename: uniqueName,
-          original_name: filename,
-          mime_type: mimeType || 'application/octet-stream',
-          size: buffer.length,
-        }],
+        attachments: [
+          {
+            id: null,
+            filename: uniqueName,
+            original_name: filename,
+            mime_type: mimeType || 'application/octet-stream',
+            size: buffer.length,
+          },
+        ],
       });
 
       // SSE — notifier les autres participants
@@ -425,7 +498,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
   app.post('/api/messaging/conversations/:id/read', authenticateToken, (req, res) => {
     try {
       db.prepare(
-        'UPDATE conversation_participants SET last_read_at = CURRENT_TIMESTAMP WHERE conversation_id = ? AND user_id = ?'
+        'UPDATE conversation_participants SET last_read_at = CURRENT_TIMESTAMP WHERE conversation_id = ? AND user_id = ?',
       ).run(req.params.id, req.user.id);
       res.json({ success: true });
     } catch (error) {
@@ -445,11 +518,15 @@ export function setupMessagingRoutes(app, authenticateToken) {
       const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
       if (!message) return res.status(404).json({ success: false, error: 'Message non trouvé' });
       if (message.sender_id !== req.user.id) {
-        return res.status(403).json({ success: false, error: 'Vous ne pouvez modifier que vos propres messages' });
+        return res
+          .status(403)
+          .json({ success: false, error: 'Vous ne pouvez modifier que vos propres messages' });
       }
 
-      db.prepare('UPDATE messages SET content = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(content.trim(), req.params.id);
+      db.prepare('UPDATE messages SET content = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ?').run(
+        content.trim(),
+        req.params.id,
+      );
 
       const updated = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
       res.json(updated);
@@ -482,7 +559,9 @@ export function setupMessagingRoutes(app, authenticateToken) {
   // GET /api/messaging/unread-count — Nombre total de messages non lus
   app.get('/api/messaging/unread-count', authenticateToken, (req, res) => {
     try {
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         SELECT COALESCE(SUM(
           (SELECT COUNT(*) FROM messages m 
            WHERE m.conversation_id = c.id 
@@ -493,7 +572,9 @@ export function setupMessagingRoutes(app, authenticateToken) {
         FROM conversations c
         JOIN conversation_participants cp ON c.id = cp.conversation_id
         WHERE cp.user_id = ?
-      `).get(req.user.id, req.user.id);
+      `,
+        )
+        .get(req.user.id, req.user.id);
 
       res.json({ unread: result.total_unread });
     } catch (error) {

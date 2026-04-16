@@ -7,7 +7,9 @@ const GCAL_TIMEOUT_MS = 8000;
 const DEFAULT_TIMEZONE = 'Europe/Paris';
 
 function isGoogleBidirectionalSyncEnabled() {
-  const val = String(process.env.GOOGLE_BIDIRECTIONAL_SYNC || '').trim().toLowerCase();
+  const val = String(process.env.GOOGLE_BIDIRECTIONAL_SYNC || '')
+    .trim()
+    .toLowerCase();
   return val === '1' || val === 'true' || val === 'yes' || val === 'on';
 }
 
@@ -19,7 +21,9 @@ function getCalendarId() {
 }
 
 function addDays(dateStr, days) {
-  const [y, m, d] = String(dateStr || '').split('-').map(Number);
+  const [y, m, d] = String(dateStr || '')
+    .split('-')
+    .map(Number);
   if (!y || !m || !d) return dateStr;
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + days);
@@ -135,7 +139,11 @@ async function googleRequest(userId, method, url, body) {
     const raw = isNoContent ? '' : await response.text();
     let data = null;
     if (raw) {
-      try { data = JSON.parse(raw); } catch { data = { raw }; }
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = { raw };
+      }
     }
 
     if (!response.ok) {
@@ -145,7 +153,8 @@ async function googleRequest(userId, method, url, body) {
     updateLastSync(userId);
     return { ok: true, data };
   } catch (error) {
-    if (error?.name === 'AbortError') return { ok: false, status: 504, data: { message: 'timeout' } };
+    if (error?.name === 'AbortError')
+      return { ok: false, status: 504, data: { message: 'timeout' } };
     return { ok: false, status: 502, data: { message: error?.message || 'google_request_failed' } };
   } finally {
     clearTimeout(timer);
@@ -154,7 +163,12 @@ async function googleRequest(userId, method, url, body) {
 
 export async function syncReservationToGoogle({ reservation, vehicleName, userId }) {
   if (!isGoogleBidirectionalSyncEnabled()) return { skipped: true, reason: 'feature_disabled' };
-  if (!reservation?.id || !reservation?.vehicle_id || !reservation?.start_date || !reservation?.end_date) {
+  if (
+    !reservation?.id ||
+    !reservation?.vehicle_id ||
+    !reservation?.start_date ||
+    !reservation?.end_date
+  ) {
     return { skipped: true, reason: 'invalid_reservation_payload' };
   }
 
@@ -170,9 +184,13 @@ export async function syncReservationToGoogle({ reservation, vehicleName, userId
 
     // Si l'event n'existe plus, on le recrée proprement.
     if (patchResult.status === 404) {
-      logger.warn(`[GoogleSync] Event ${eventId} introuvable pour reservation ${reservation.id}, recreation.`);
+      logger.warn(
+        `[GoogleSync] Event ${eventId} introuvable pour reservation ${reservation.id}, recreation.`,
+      );
     } else {
-      logger.warn(`[GoogleSync] Echec update reservation ${reservation.id} -> Google (${patchResult.status})`);
+      logger.warn(
+        `[GoogleSync] Echec update reservation ${reservation.id} -> Google (${patchResult.status})`,
+      );
       return { skipped: true, reason: 'update_failed', details: patchResult };
     }
   }
@@ -180,7 +198,9 @@ export async function syncReservationToGoogle({ reservation, vehicleName, userId
   const createUrl = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events`;
   const createResult = await googleRequest(userId, 'POST', createUrl, payload);
   if (!createResult.ok) {
-    logger.warn(`[GoogleSync] Echec create reservation ${reservation.id} -> Google (${createResult.status})`);
+    logger.warn(
+      `[GoogleSync] Echec create reservation ${reservation.id} -> Google (${createResult.status})`,
+    );
     return { skipped: true, reason: 'create_failed', details: createResult };
   }
 
@@ -324,7 +344,9 @@ export async function pullReservationsFromGoogle({ userId, days = 90 }) {
   }
 
   // 3. Récupérer les réservations DB qui ont un google_event_id dans la fenêtre
-  const dbReservations = db.prepare(`
+  const dbReservations = db
+    .prepare(
+      `
     SELECT r.id, r.vehicle_id, r.start_date, r.end_date, r.start_period, r.end_period,
            r.google_event_id, v.name as vehicle_name
     FROM reservations r
@@ -332,10 +354,12 @@ export async function pullReservationsFromGoogle({ userId, days = 90 }) {
     WHERE r.google_event_id IS NOT NULL AND r.google_event_id != ''
       AND r.start_date >= date('now', '-7 days')
       AND r.start_date <= date('now', '+${days} days')
-  `.replace('${days}', String(Math.max(1, Math.min(365, Number(days) || 90))))).all();
+  `.replace('${days}', String(Math.max(1, Math.min(365, Number(days) || 90)))),
+    )
+    .all();
 
   const stmtClearEventId = db.prepare(
-    `UPDATE reservations SET google_event_id = '', modified_at = CURRENT_TIMESTAMP WHERE id = ?`
+    `UPDATE reservations SET google_event_id = '', modified_at = CURRENT_TIMESTAMP WHERE id = ?`,
   );
   const stmtUpdateDates = db.prepare(`
     UPDATE reservations
@@ -356,7 +380,9 @@ export async function pullReservationsFromGoogle({ userId, days = 90 }) {
       // Événement supprimé côté Google → on délie la réservation sans la supprimer
       stmtClearEventId.run(res.id);
       orphaned++;
-      logger.info(`[GooglePull] Réservation ${res.id} déliée (event ${res.google_event_id} absent de Google)`);
+      logger.info(
+        `[GooglePull] Réservation ${res.id} déliée (event ${res.google_event_id} absent de Google)`,
+      );
       continue;
     }
 
@@ -364,29 +390,39 @@ export async function pullReservationsFromGoogle({ userId, days = 90 }) {
     const emagId = googleEvent.extendedProperties?.private?.emagReservationId;
     if (emagId && String(emagId) !== String(res.id)) {
       // Incohérence — on ne touche pas
-      errors.push({ reservationId: res.id, reason: 'id_mismatch', googleEventId: res.google_event_id });
+      errors.push({
+        reservationId: res.id,
+        reason: 'id_mismatch',
+        googleEventId: res.google_event_id,
+      });
       continue;
     }
 
     // Comparer les dates
     const parsed = parseGoogleEventDates(googleEvent);
-    if (!parsed) { skipped++; continue; }
+    if (!parsed) {
+      skipped++;
+      continue;
+    }
 
-    const datesChanged = (
+    const datesChanged =
       parsed.startDate !== res.start_date ||
       parsed.endDate !== res.end_date ||
       parsed.startPeriod !== res.start_period ||
-      parsed.endPeriod !== res.end_period
-    );
+      parsed.endPeriod !== res.end_period;
 
     if (datesChanged) {
       stmtUpdateDates.run(
-        parsed.startDate, parsed.startPeriod,
-        parsed.endDate, parsed.endPeriod,
-        res.id
+        parsed.startDate,
+        parsed.startPeriod,
+        parsed.endDate,
+        parsed.endPeriod,
+        res.id,
       );
       synced++;
-      logger.info(`[GooglePull] Réservation ${res.id} mise à jour: ${res.start_date}→${parsed.startDate}, ${res.end_date}→${parsed.endDate}`);
+      logger.info(
+        `[GooglePull] Réservation ${res.id} mise à jour: ${res.start_date}→${parsed.startDate}, ${res.end_date}→${parsed.endDate}`,
+      );
     } else {
       skipped++;
     }

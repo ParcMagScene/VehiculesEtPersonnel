@@ -33,7 +33,10 @@ export const selfResetPasswordSchema = z.object({
 // ── Check reset (OTP) ──
 export const checkResetSchema = z.object({
   email,
-  otp: z.string().length(6, 'Code OTP à 6 chiffres').regex(/^\d{6}$/, 'Code OTP invalide'),
+  otp: z
+    .string()
+    .length(6, 'Code OTP à 6 chiffres')
+    .regex(/^\d{6}$/, 'Code OTP invalide'),
 });
 
 // ── Set new password (after OTP) ──

@@ -9,8 +9,8 @@ import db from './database.js';
 import logger from './logger.js';
 
 const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16;   // 128 bits
-const TAG_LENGTH = 16;  // 128 bits
+const IV_LENGTH = 16; // 128 bits
+const TAG_LENGTH = 16; // 128 bits
 
 // Cache mémoire des access_tokens (user_id → { token, expiresAt })
 const accessTokenCache = new Map();
@@ -23,7 +23,9 @@ const EXPIRY_MARGIN_MS = 5 * 60 * 1000;
 function getEncryptionKey() {
   const hex = process.env.GOOGLE_ENCRYPTION_KEY;
   if (!hex || hex.length < 64) {
-    throw new Error('GOOGLE_ENCRYPTION_KEY manquante ou trop courte (64 hex chars = 32 bytes requis)');
+    throw new Error(
+      'GOOGLE_ENCRYPTION_KEY manquante ou trop courte (64 hex chars = 32 bytes requis)',
+    );
   }
   return Buffer.from(hex.slice(0, 64), 'hex');
 }
@@ -83,7 +85,8 @@ function createOAuth2Client() {
  */
 export function storeRefreshToken(userId, refreshToken, googleEmail, scopes) {
   const { encrypted, iv, tag } = encrypt(refreshToken);
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO google_oauth_tokens (user_id, refresh_token_encrypted, refresh_token_iv, refresh_token_tag, google_email, scopes, connected_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
@@ -93,7 +96,8 @@ export function storeRefreshToken(userId, refreshToken, googleEmail, scopes) {
       google_email = excluded.google_email,
       scopes = excluded.scopes,
       connected_at = excluded.connected_at
-  `).run(userId, encrypted, iv, tag, googleEmail || null, scopes || null, Date.now());
+  `,
+  ).run(userId, encrypted, iv, tag, googleEmail || null, scopes || null, Date.now());
 
   // Invalider le cache mémoire
   accessTokenCache.delete(userId);
@@ -105,9 +109,11 @@ export function storeRefreshToken(userId, refreshToken, googleEmail, scopes) {
  * @returns {string|null}
  */
 export function getRefreshToken(userId) {
-  const row = db.prepare(
-    'SELECT refresh_token_encrypted, refresh_token_iv, refresh_token_tag FROM google_oauth_tokens WHERE user_id = ?'
-  ).get(userId);
+  const row = db
+    .prepare(
+      'SELECT refresh_token_encrypted, refresh_token_iv, refresh_token_tag FROM google_oauth_tokens WHERE user_id = ?',
+    )
+    .get(userId);
   if (!row) return null;
   try {
     return decrypt(row.refresh_token_encrypted, row.refresh_token_iv, row.refresh_token_tag);
@@ -130,9 +136,11 @@ export function deleteTokens(userId) {
  * Récupère le statut de connexion Google d'un utilisateur
  */
 export function getConnectionStatus(userId) {
-  const row = db.prepare(
-    'SELECT google_email, scopes, connected_at, last_sync_at FROM google_oauth_tokens WHERE user_id = ?'
-  ).get(userId);
+  const row = db
+    .prepare(
+      'SELECT google_email, scopes, connected_at, last_sync_at FROM google_oauth_tokens WHERE user_id = ?',
+    )
+    .get(userId);
   if (!row) return { connected: false };
   return {
     connected: true,
@@ -147,7 +155,10 @@ export function getConnectionStatus(userId) {
  * Met à jour le timestamp de dernière synchronisation
  */
 export function updateLastSync(userId) {
-  db.prepare('UPDATE google_oauth_tokens SET last_sync_at = ? WHERE user_id = ?').run(Date.now(), userId);
+  db.prepare('UPDATE google_oauth_tokens SET last_sync_at = ? WHERE user_id = ?').run(
+    Date.now(),
+    userId,
+  );
 }
 
 // ── Access token (avec refresh automatique) ──
@@ -160,7 +171,7 @@ export function updateLastSync(userId) {
 export async function getValidAccessToken(userId) {
   // 1. Vérifier le cache mémoire
   const cached = accessTokenCache.get(userId);
-  if (cached && Date.now() < (cached.expiresAt - EXPIRY_MARGIN_MS)) {
+  if (cached && Date.now() < cached.expiresAt - EXPIRY_MARGIN_MS) {
     return cached.token;
   }
 
@@ -175,14 +186,16 @@ export async function getValidAccessToken(userId) {
 
     const { credentials } = await oauth2.refreshAccessToken();
     const accessToken = credentials.access_token;
-    const expiresAt = credentials.expiry_date || (Date.now() + 3600 * 1000);
+    const expiresAt = credentials.expiry_date || Date.now() + 3600 * 1000;
 
     // Mettre en cache
     accessTokenCache.set(userId, { token: accessToken, expiresAt });
 
     // Si Google a fourni un nouveau refresh_token (rotation), le stocker
     if (credentials.refresh_token && credentials.refresh_token !== refreshToken) {
-      const row = db.prepare('SELECT google_email, scopes FROM google_oauth_tokens WHERE user_id = ?').get(userId);
+      const row = db
+        .prepare('SELECT google_email, scopes FROM google_oauth_tokens WHERE user_id = ?')
+        .get(userId);
       storeRefreshToken(userId, credentials.refresh_token, row?.google_email, row?.scopes);
       logger.info(`[Google] Refresh token roté pour user ${userId}`);
     }
@@ -209,8 +222,8 @@ export async function getValidAccessToken(userId) {
 export function getAuthorizationUrl(state) {
   const oauth2 = createOAuth2Client();
   return oauth2.generateAuthUrl({
-    access_type: 'offline',    // ← CRITIQUE : nécessaire pour le refresh_token
-    prompt: 'consent',         // Force le consentement pour obtenir le refresh_token
+    access_type: 'offline', // ← CRITIQUE : nécessaire pour le refresh_token
+    prompt: 'consent', // Force le consentement pour obtenir le refresh_token
     scope: ['https://www.googleapis.com/auth/calendar'],
     state,
     include_granted_scopes: true,
@@ -266,5 +279,9 @@ export async function revokeToken(userId) {
  * Vérifie si le module Google OAuth est configuré (variables .env présentes)
  */
 export function isGoogleOAuthConfigured() {
-  return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.GOOGLE_ENCRYPTION_KEY);
+  return !!(
+    process.env.GOOGLE_CLIENT_ID &&
+    process.env.GOOGLE_CLIENT_SECRET &&
+    process.env.GOOGLE_ENCRYPTION_KEY
+  );
 }

@@ -26,22 +26,27 @@ function substituteVariables(text, vars = {}) {
 }
 
 export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
-
   // ═══ TEMPLATES ═══════════════════════════════════════════
 
   // GET /api/mail-templates — Liste des templates
   app.get('/api/mail-templates', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const templates = db.prepare(`
+      const templates = db
+        .prepare(
+          `
         SELECT mt.*, u.name as created_by_name
         FROM mail_templates mt
         LEFT JOIN users u ON u.id = mt.created_by
         ORDER BY mt.updated_at DESC
-      `).all();
-      res.json(templates.map(t => ({
-        ...t,
-        variables: JSON.parse(t.variables || '[]'),
-      })));
+      `,
+        )
+        .all();
+      res.json(
+        templates.map((t) => ({
+          ...t,
+          variables: JSON.parse(t.variables || '[]'),
+        })),
+      );
     } catch (err) {
       logger.error('Erreur liste templates:', err);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
@@ -66,17 +71,21 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       const { name, subject, html_body, variables, category } = req.body;
       if (!name) return res.status(400).json({ success: false, error: 'Nom obligatoire' });
 
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         INSERT INTO mail_templates (name, subject, html_body, variables, category, created_by)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        name,
-        subject || '',
-        html_body || '',
-        JSON.stringify(variables || []),
-        category || 'general',
-        req.user.id
-      );
+      `,
+        )
+        .run(
+          name,
+          subject || '',
+          html_body || '',
+          JSON.stringify(variables || []),
+          category || 'general',
+          req.user.id,
+        );
 
       res.status(201).json({ success: true, id: result.lastInsertRowid, message: 'Template créé' });
     } catch (err) {
@@ -92,17 +101,19 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT id FROM mail_templates WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ success: false, error: 'Template non trouvé' });
 
-      db.prepare(`
+      db.prepare(
+        `
         UPDATE mail_templates
         SET name = ?, subject = ?, html_body = ?, variables = ?, category = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(
+      `,
+      ).run(
         name || '',
         subject || '',
         html_body || '',
         JSON.stringify(variables || []),
         category || 'general',
-        req.params.id
+        req.params.id,
       );
 
       res.json({ success: true, message: 'Template mis à jour' });
@@ -116,7 +127,8 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/mail-templates/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const result = db.prepare('DELETE FROM mail_templates WHERE id = ?').run(req.params.id);
-      if (result.changes === 0) return res.status(404).json({ success: false, error: 'Template non trouvé' });
+      if (result.changes === 0)
+        return res.status(404).json({ success: false, error: 'Template non trouvé' });
       res.json({ success: true, message: 'Template supprimé' });
     } catch (err) {
       logger.error('Erreur suppression template:', err);
@@ -168,7 +180,9 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
         initEmailTransporter(db);
         const retry = getTransporter();
         if (!retry.transporter) {
-          return res.status(500).json({ success: false, error: 'Transporteur email non configuré' });
+          return res
+            .status(500)
+            .json({ success: false, error: 'Transporteur email non configuré' });
         }
       }
       const activeTransport = transport || getTransporter().transporter;
@@ -189,24 +203,28 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
           });
 
           // Log en historique
-          db.prepare(`
+          db.prepare(
+            `
             INSERT INTO mail_history (template_id, recipients, subject, status, sent_by)
             VALUES (?, ?, ?, 'sent', ?)
-          `).run(template_id || null, to, finalSubject, req.user.id);
+          `,
+          ).run(template_id || null, to, finalSubject, req.user.id);
 
           results.push({ to, status: 'sent' });
         } catch (err) {
-          db.prepare(`
+          db.prepare(
+            `
             INSERT INTO mail_history (template_id, recipients, subject, status, error_message, sent_by)
             VALUES (?, ?, ?, 'error', ?, ?)
-          `).run(template_id || null, to, finalSubject, err.message, req.user.id);
+          `,
+          ).run(template_id || null, to, finalSubject, err.message, req.user.id);
 
           results.push({ to, status: 'error', error: err.message });
         }
       }
 
-      const sent = results.filter(r => r.status === 'sent').length;
-      const errors = results.filter(r => r.status === 'error').length;
+      const sent = results.filter((r) => r.status === 'sent').length;
+      const errors = results.filter((r) => r.status === 'error').length;
 
       res.json({
         message: `${sent} email(s) envoyé(s)${errors > 0 ? `, ${errors} erreur(s)` : ''}`,
@@ -253,14 +271,18 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       const limit = parseInt(req.query.limit) || 50;
       const offset = parseInt(req.query.offset) || 0;
 
-      const history = db.prepare(`
+      const history = db
+        .prepare(
+          `
         SELECT mh.*, u.name as sent_by_name, mt.name as template_name
         FROM mail_history mh
         LEFT JOIN users u ON u.id = mh.sent_by
         LEFT JOIN mail_templates mt ON mt.id = mh.template_id
         ORDER BY mh.sent_at DESC
         LIMIT ? OFFSET ?
-      `).all(limit, offset);
+      `,
+        )
+        .all(limit, offset);
 
       const total = db.prepare('SELECT COUNT(*) as count FROM mail_history').get().count;
 
@@ -279,26 +301,54 @@ export function setupMailingRoutes(app, authenticateToken, requireAdmin) {
       const contacts = [];
 
       // Utilisateurs
-      const users = db.prepare("SELECT id, name, email FROM users WHERE email IS NOT NULL AND email != '' LIMIT 2000").all();
-      users.forEach(u => contacts.push({ type: 'user', id: u.id, name: u.name, email: u.email }));
+      const users = db
+        .prepare(
+          "SELECT id, name, email FROM users WHERE email IS NOT NULL AND email != '' LIMIT 2000",
+        )
+        .all();
+      users.forEach((u) => contacts.push({ type: 'user', id: u.id, name: u.name, email: u.email }));
 
       // Personnel
       try {
-        const persons = db.prepare("SELECT id, first_name || ' ' || last_name as name, email FROM persons WHERE email IS NOT NULL AND email != '' LIMIT 2000").all();
-        persons.forEach(p => contacts.push({ type: 'person', id: p.id, name: p.name, email: p.email }));
-      } catch { /* table pas encore créée */ }
+        const persons = db
+          .prepare(
+            "SELECT id, first_name || ' ' || last_name as name, email FROM persons WHERE email IS NOT NULL AND email != '' LIMIT 2000",
+          )
+          .all();
+        persons.forEach((p) =>
+          contacts.push({ type: 'person', id: p.id, name: p.name, email: p.email }),
+        );
+      } catch {
+        /* table pas encore créée */
+      }
 
       // Clients
       try {
-        const clients = db.prepare("SELECT id, name, email FROM clients WHERE email IS NOT NULL AND email != '' LIMIT 2000").all();
-        clients.forEach(c => contacts.push({ type: 'client', id: c.id, name: c.name, email: c.email }));
-      } catch { /* table pas encore créée */ }
+        const clients = db
+          .prepare(
+            "SELECT id, name, email FROM clients WHERE email IS NOT NULL AND email != '' LIMIT 2000",
+          )
+          .all();
+        clients.forEach((c) =>
+          contacts.push({ type: 'client', id: c.id, name: c.name, email: c.email }),
+        );
+      } catch {
+        /* table pas encore créée */
+      }
 
       // Fournisseurs
       try {
-        const suppliers = db.prepare("SELECT id, name, email FROM suppliers WHERE email IS NOT NULL AND email != '' LIMIT 2000").all();
-        suppliers.forEach(s => contacts.push({ type: 'supplier', id: s.id, name: s.name, email: s.email }));
-      } catch { /* table pas encore créée */ }
+        const suppliers = db
+          .prepare(
+            "SELECT id, name, email FROM suppliers WHERE email IS NOT NULL AND email != '' LIMIT 2000",
+          )
+          .all();
+        suppliers.forEach((s) =>
+          contacts.push({ type: 'supplier', id: s.id, name: s.name, email: s.email }),
+        );
+      } catch {
+        /* table pas encore créée */
+      }
 
       res.json(contacts);
     } catch (err) {

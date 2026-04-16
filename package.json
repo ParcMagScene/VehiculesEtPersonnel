@@ -16,10 +16,10 @@
     "build": "npm run build --workspace=apps/web",
     "preview": "npm run preview --workspace=apps/web",
     "deploy": "bash scripts/safe-deploy.sh",
-    "lint": "npm run lint --workspace=apps/web",
-    "lint:fix": "npm run lint:fix --workspace=apps/web",
-    "format": "npm run format --workspace=apps/web",
-    "format:check": "npm run format:check --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web && npm run lint --workspace=apps/api",
+    "lint:fix": "npm run lint:fix --workspace=apps/web && npm run lint:fix --workspace=apps/api",
+    "format": "npm run format --workspace=apps/web && npm run format --workspace=apps/api",
+    "format:check": "npm run format:check --workspace=apps/web && npm run format:check --workspace=apps/api",
     "update-photos": "node scripts/generate-photo-list.js",
     "watch-photos": "node scripts/watch-photos.js",
     "smoke-test": "node scripts/smoke-test.js",
@@ -45,6 +45,10 @@
     ],
     "apps/web/src/**/*.css": [
       "prettier --write"
+    ],
+    "apps/api/**/*.js": [
+      "prettier --write",
+      "apps/api/node_modules/.bin/eslint --quiet --fix"
     ]
   },
   "dependencies": {

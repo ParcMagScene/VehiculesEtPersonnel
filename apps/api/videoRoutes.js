@@ -6,14 +6,25 @@
 import db from './database.js';
 import logger from './logger.js';
 import {
-  encryptPassword, decryptPassword,
-  buildRtspUrl, registerStreamInProxy,
-  whepExchange, whepDelete,
-  fetchSnapshot, sendPTZCommand,
-  generateSessionToken, storeSession, getSession, removeSession,
+  encryptPassword,
+  decryptPassword,
+  buildRtspUrl,
+  registerStreamInProxy,
+  whepExchange,
+  whepDelete,
+  fetchSnapshot,
+  sendPTZCommand,
+  generateSessionToken,
+  storeSession,
+  getSession,
+  removeSession,
   getProxyStatus,
-  extractDahuaChannel, extractPasswordFromRtspUrl, searchNvrRecordings,
-  buildPlaybackRtspUrl, registerPlaybackInProxy, whepPlaybackExchange,
+  extractDahuaChannel,
+  extractPasswordFromRtspUrl,
+  searchNvrRecordings,
+  buildPlaybackRtspUrl,
+  registerPlaybackInProxy,
+  whepPlaybackExchange,
 } from './videoProxyService.js';
 import { verifyTvToken } from './middleware/tvAuth.js';
 
@@ -45,15 +56,16 @@ function checkStreamRate(userId) {
 // Helper log d'accès vidéo
 function logVideoAccess(userId, userName, cameraId, cameraName, action, ipAddress, details = null) {
   try {
-    db.prepare(`INSERT INTO video_access_logs (user_id, user_name, camera_id, camera_name, action, ip_address, details)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`).run(userId, userName, cameraId, cameraName, action, ipAddress, details);
+    db.prepare(
+      `INSERT INTO video_access_logs (user_id, user_name, camera_id, camera_name, action, ip_address, details)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).run(userId, userName, cameraId, cameraName, action, ipAddress, details);
   } catch (e) {
     logger.warn('Log vidéo:', e.message);
   }
 }
 
 export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
-
   // ════════════════════════════════════════
   // CAMERAS CRUD
   // ════════════════════════════════════════
@@ -61,14 +73,18 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/video/cameras — Liste toutes les caméras
   app.get('/api/video/cameras', authenticateToken, requireAdmin, (_req, res) => {
     try {
-      const cameras = db.prepare(`
+      const cameras = db
+        .prepare(
+          `
         SELECT id, name, brand, model, ip, rtsp_url, rtsp_port, http_port, ptz_supported,
                location, affaire_id, zone, enabled, stream_profile, channel, status,
                sort_order, notes, last_seen, created_at, updated_at
         FROM cameras ORDER BY sort_order, name
-      `).all();
+      `,
+        )
+        .all();
       // Ne jamais exposer username/password — ajouter flag playback & retirer rtsp_url
-      const result = cameras.map(c => {
+      const result = cameras.map((c) => {
         const supportsPlayback = !!extractDahuaChannel(c);
         const { rtsp_url, ...rest } = c;
         return { ...rest, supports_playback: supportsPlayback };
@@ -85,16 +101,22 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) return res.status(400).json({ success: false, error: 'ID invalide' });
-      const camera = db.prepare(`
+      const camera = db
+        .prepare(
+          `
         SELECT id, name, brand, model, ip, rtsp_url, rtsp_port, http_port,
                username, ptz_supported, location, affaire_id, zone, enabled,
                stream_profile, snapshot_path, channel, status, sort_order, notes,
                last_seen, created_at, updated_at
         FROM cameras WHERE id = ?
-      `).get(id);
+      `,
+        )
+        .get(id);
       if (!camera) return res.status(404).json({ success: false, error: 'Caméra introuvable' });
       // Masquer le mot de passe, indiquer seulement s'il existe
-      camera.hasPassword = !!db.prepare('SELECT password_encrypted FROM cameras WHERE id = ?').get(id)?.password_encrypted;
+      camera.hasPassword = !!db
+        .prepare('SELECT password_encrypted FROM cameras WHERE id = ?')
+        .get(id)?.password_encrypted;
       res.json(camera);
     } catch (error) {
       logger.error('GET /api/video/cameras/:id:', error);
@@ -105,11 +127,29 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/video/cameras — Créer une caméra
   app.post('/api/video/cameras', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const { name, brand, model, ip, rtsp_url, rtsp_port, http_port,
-              username, password, ptz_supported, location, affaire_id,
-              zone, enabled, stream_profile, snapshot_path, notes, channel } = req.body;
+      const {
+        name,
+        brand,
+        model,
+        ip,
+        rtsp_url,
+        rtsp_port,
+        http_port,
+        username,
+        password,
+        ptz_supported,
+        location,
+        affaire_id,
+        zone,
+        enabled,
+        stream_profile,
+        snapshot_path,
+        notes,
+        channel,
+      } = req.body;
 
-      if (!name || !ip) return res.status(400).json({ success: false, error: 'name et ip sont requis' });
+      if (!name || !ip)
+        return res.status(400).json({ success: false, error: 'name et ip sont requis' });
 
       // Validation IP basique
       if (!/^[\d.]+$/.test(ip) && !/^[a-zA-Z0-9.-]+$/.test(ip)) {
@@ -118,19 +158,35 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
 
       const passwordEncrypted = password ? encryptPassword(password) : null;
 
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         INSERT INTO cameras (name, brand, model, ip, rtsp_url, rtsp_port, http_port,
           username, password_encrypted, ptz_supported, location, affaire_id, zone,
           enabled, stream_profile, snapshot_path, notes, channel)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        name, brand || 'generic', model || null, ip, rtsp_url || null,
-        rtsp_port || 554, http_port || 80, username || 'admin',
-        passwordEncrypted, ptz_supported ? 1 : 0, location || null,
-        affaire_id || null, zone || null, enabled !== false ? 1 : 0,
-        stream_profile || 'main', snapshot_path || null, notes || null,
-        channel || 1
-      );
+      `,
+        )
+        .run(
+          name,
+          brand || 'generic',
+          model || null,
+          ip,
+          rtsp_url || null,
+          rtsp_port || 554,
+          http_port || 80,
+          username || 'admin',
+          passwordEncrypted,
+          ptz_supported ? 1 : 0,
+          location || null,
+          affaire_id || null,
+          zone || null,
+          enabled !== false ? 1 : 0,
+          stream_profile || 'main',
+          snapshot_path || null,
+          notes || null,
+          channel || 1,
+        );
 
       const camera = db.prepare('SELECT * FROM cameras WHERE id = ?').get(result.lastInsertRowid);
       // Enregistrer dans le proxy si activée
@@ -157,9 +213,27 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT * FROM cameras WHERE id = ?').get(id);
       if (!existing) return res.status(404).json({ success: false, error: 'Caméra introuvable' });
 
-      const { name, brand, model, ip, rtsp_url, rtsp_port, http_port,
-              username, password, ptz_supported, location, affaire_id,
-              zone, enabled, stream_profile, snapshot_path, notes, sort_order, channel } = req.body;
+      const {
+        name,
+        brand,
+        model,
+        ip,
+        rtsp_url,
+        rtsp_port,
+        http_port,
+        username,
+        password,
+        ptz_supported,
+        location,
+        affaire_id,
+        zone,
+        enabled,
+        stream_profile,
+        snapshot_path,
+        notes,
+        sort_order,
+        channel,
+      } = req.body;
 
       // Chiffrer le nouveau mot de passe seulement s'il est fourni
       let passwordEncrypted = existing.password_encrypted;
@@ -167,23 +241,36 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         passwordEncrypted = encryptPassword(password);
       }
 
-      db.prepare(`
+      db.prepare(
+        `
         UPDATE cameras SET
           name = ?, brand = ?, model = ?, ip = ?, rtsp_url = ?, rtsp_port = ?,
           http_port = ?, username = ?, password_encrypted = ?, ptz_supported = ?,
           location = ?, affaire_id = ?, zone = ?, enabled = ?, stream_profile = ?,
           snapshot_path = ?, notes = ?, sort_order = ?, channel = ?, updated_at = datetime('now')
         WHERE id = ?
-      `).run(
-        name ?? existing.name, brand ?? existing.brand, model ?? existing.model,
-        ip ?? existing.ip, rtsp_url ?? existing.rtsp_url, rtsp_port ?? existing.rtsp_port,
-        http_port ?? existing.http_port, username ?? existing.username, passwordEncrypted,
+      `,
+      ).run(
+        name ?? existing.name,
+        brand ?? existing.brand,
+        model ?? existing.model,
+        ip ?? existing.ip,
+        rtsp_url ?? existing.rtsp_url,
+        rtsp_port ?? existing.rtsp_port,
+        http_port ?? existing.http_port,
+        username ?? existing.username,
+        passwordEncrypted,
         ptz_supported !== undefined ? (ptz_supported ? 1 : 0) : existing.ptz_supported,
-        location ?? existing.location, affaire_id ?? existing.affaire_id,
-        zone ?? existing.zone, enabled !== undefined ? (enabled ? 1 : 0) : existing.enabled,
-        stream_profile ?? existing.stream_profile, snapshot_path ?? existing.snapshot_path,
-        notes ?? existing.notes, sort_order ?? existing.sort_order,
-        channel ?? existing.channel ?? 1, id
+        location ?? existing.location,
+        affaire_id ?? existing.affaire_id,
+        zone ?? existing.zone,
+        enabled !== undefined ? (enabled ? 1 : 0) : existing.enabled,
+        stream_profile ?? existing.stream_profile,
+        snapshot_path ?? existing.snapshot_path,
+        notes ?? existing.notes,
+        sort_order ?? existing.sort_order,
+        channel ?? existing.channel ?? 1,
+        id,
       );
 
       // Re-enregistrer dans le proxy
@@ -230,13 +317,18 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) return res.status(400).json({ success: false, error: 'ID invalide' });
-        if (!checkStreamRate(req.user.id)) return res.status(429).json({ success: false, error: 'Trop de requêtes vidéo' });
+        if (!checkStreamRate(req.user.id))
+          return res.status(429).json({ success: false, error: 'Trop de requêtes vidéo' });
 
         const { sdp: clientOffer } = req.body;
-        if (!clientOffer) return res.status(400).json({ success: false, error: 'SDP offer requis' });
+        if (!clientOffer)
+          return res.status(400).json({ success: false, error: 'SDP offer requis' });
 
         const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
-        if (!camera) return res.status(404).json({ success: false, error: 'Caméra introuvable ou désactivée' });
+        if (!camera)
+          return res
+            .status(404)
+            .json({ success: false, error: 'Caméra introuvable ou désactivée' });
 
         // S'assurer que le stream est enregistré dans MediaMTX
         const pwd = decryptPassword(camera.password_encrypted) || '';
@@ -245,17 +337,24 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
 
         // Négociation WHEP : envoyer l'offre client, recevoir la réponse
         const result = await whepExchange(id, clientOffer);
-        if (!result) return res.status(502).json({ success: false, error: 'Proxy vidéo indisponible — MediaMTX non démarré ?' });
+        if (!result)
+          return res
+            .status(502)
+            .json({ success: false, error: 'Proxy vidéo indisponible — MediaMTX non démarré ?' });
 
         // Créer la session
         const token = generateSessionToken();
         storeSession(token, { cameraId: id, userId: req.user.id, location: result.location });
 
-        db.prepare(`INSERT INTO video_sessions (camera_id, user_id, session_token, status)
-          VALUES (?, ?, ?, 'active')`).run(id, req.user.id, token);
+        db.prepare(
+          `INSERT INTO video_sessions (camera_id, user_id, session_token, status)
+          VALUES (?, ?, ?, 'active')`,
+        ).run(id, req.user.id, token);
 
         // Mettre à jour le statut de la caméra
-        db.prepare(`UPDATE cameras SET status = 'online', last_seen = datetime('now') WHERE id = ?`).run(id);
+        db.prepare(
+          `UPDATE cameras SET status = 'online', last_seen = datetime('now') WHERE id = ?`,
+        ).run(id);
 
         logVideoAccess(req.user.id, req.user.name, id, camera.name, 'start_stream', req.ip);
 
@@ -276,7 +375,9 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         // [AUDIT FIX V3] Libérer le stream WHEP dans MediaMTX
         if (session.location) whepDelete(session.location);
         removeSession(token);
-        db.prepare(`UPDATE video_sessions SET status = 'closed', ended_at = datetime('now') WHERE session_token = ?`).run(token);
+        db.prepare(
+          `UPDATE video_sessions SET status = 'closed', ended_at = datetime('now') WHERE session_token = ?`,
+        ).run(token);
         logVideoAccess(req.user.id, req.user.name, session.cameraId, null, 'stop_stream', req.ip);
       }
       res.json({ success: true });
@@ -300,11 +401,15 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
 
         const { command, speed } = req.body;
         const validCommands = ['left', 'right', 'up', 'down', 'zoomin', 'zoomout', 'stop'];
-        if (!validCommands.includes(command)) return res.status(400).json({ success: false, error: 'Commande PTZ invalide' });
+        if (!validCommands.includes(command))
+          return res.status(400).json({ success: false, error: 'Commande PTZ invalide' });
 
         const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
         if (!camera) return res.status(404).json({ success: false, error: 'Caméra introuvable' });
-        if (!camera.ptz_supported) return res.status(400).json({ success: false, error: 'Cette caméra ne supporte pas le PTZ' });
+        if (!camera.ptz_supported)
+          return res
+            .status(400)
+            .json({ success: false, error: 'Cette caméra ne supporte pas le PTZ' });
 
         const pwd = decryptPassword(camera.password_encrypted) || '';
         const ok = await sendPTZCommand(camera, pwd, command, speed || 1);
@@ -329,7 +434,8 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) return res.status(400).json({ success: false, error: 'ID invalide' });
-        if (!checkStreamRate(req.user.id)) return res.status(429).json({ success: false, error: 'Trop de requêtes' });
+        if (!checkStreamRate(req.user.id))
+          return res.status(429).json({ success: false, error: 'Trop de requêtes' });
 
         const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
         if (!camera) return res.status(404).json({ success: false, error: 'Caméra introuvable' });
@@ -337,7 +443,10 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         const pwd = decryptPassword(camera.password_encrypted) || '';
         const snapshot = await fetchSnapshot(camera, pwd);
 
-        if (!snapshot) return res.status(502).json({ success: false, error: 'Impossible de capturer le snapshot' });
+        if (!snapshot)
+          return res
+            .status(502)
+            .json({ success: false, error: 'Impossible de capturer le snapshot' });
 
         logVideoAccess(req.user.id, req.user.name, id, camera.name, 'snapshot', req.ip);
 
@@ -372,9 +481,13 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       params.push(limit, offset);
 
       const logs = db.prepare(sql).all(...params);
-      const total = db.prepare(
-        cameraId ? 'SELECT COUNT(*) as count FROM video_access_logs WHERE camera_id = ?' : 'SELECT COUNT(*) as count FROM video_access_logs'
-      ).get(...(cameraId ? [cameraId] : []));
+      const total = db
+        .prepare(
+          cameraId
+            ? 'SELECT COUNT(*) as count FROM video_access_logs WHERE camera_id = ?'
+            : 'SELECT COUNT(*) as count FROM video_access_logs',
+        )
+        .get(...(cameraId ? [cameraId] : []));
 
       res.json({ logs, total: total.count, limit, offset });
     } catch (error) {
@@ -386,13 +499,17 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/video/sessions — Sessions actives
   app.get('/api/video/sessions', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const sessions = db.prepare(`
+      const sessions = db
+        .prepare(
+          `
         SELECT vs.*, c.name as camera_name
         FROM video_sessions vs
         LEFT JOIN cameras c ON c.id = vs.camera_id
         WHERE vs.status = 'active'
         ORDER BY vs.started_at DESC
-      `).all();
+      `,
+        )
+        .all();
       res.json(sessions);
     } catch (error) {
       logger.error('GET /api/video/sessions:', error);
@@ -427,7 +544,10 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         const snapshot = await fetchSnapshot(camera, pwd);
 
         const newStatus = snapshot ? 'online' : 'error';
-        db.prepare(`UPDATE cameras SET status = ?, last_seen = datetime('now') WHERE id = ?`).run(newStatus, id);
+        db.prepare(`UPDATE cameras SET status = ?, last_seen = datetime('now') WHERE id = ?`).run(
+          newStatus,
+          id,
+        );
 
         res.json({ reachable: !!snapshot, status: newStatus });
       } catch (error) {
@@ -447,7 +567,10 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
           const pwd = decryptPassword(camera.password_encrypted) || '';
           const snapshot = await fetchSnapshot(camera, pwd);
           const status = snapshot ? 'online' : 'error';
-          db.prepare(`UPDATE cameras SET status = ?, last_seen = datetime('now') WHERE id = ?`).run(status, camera.id);
+          db.prepare(`UPDATE cameras SET status = ?, last_seen = datetime('now') WHERE id = ?`).run(
+            status,
+            camera.id,
+          );
           results.push({ id: camera.id, name: camera.name, status });
         }
         res.json(results);
@@ -468,26 +591,42 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) return res.status(400).json({ success: false, error: 'ID invalide' });
-        if (!checkStreamRate(req.user.id)) return res.status(429).json({ success: false, error: 'Trop de requêtes' });
+        if (!checkStreamRate(req.user.id))
+          return res.status(429).json({ success: false, error: 'Trop de requêtes' });
 
         const { date } = req.query;
         if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-          return res.status(400).json({ success: false, error: 'Paramètre date requis (YYYY-MM-DD)' });
+          return res
+            .status(400)
+            .json({ success: false, error: 'Paramètre date requis (YYYY-MM-DD)' });
         }
 
         const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
         if (!camera) return res.status(404).json({ success: false, error: 'Caméra introuvable' });
 
         const channel = extractDahuaChannel(camera);
-        if (!channel) return res.status(400).json({ success: false, error: 'Cette caméra ne supporte pas la relecture (pas de channel NVR)' });
+        if (!channel)
+          return res.status(400).json({
+            success: false,
+            error: 'Cette caméra ne supporte pas la relecture (pas de channel NVR)',
+          });
 
-        const pwd = decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
+        const pwd =
+          decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
         const startTime = `${date} 00:00:00`;
         const endTime = `${date} 23:59:59`;
 
         const recordings = await searchNvrRecordings(camera, pwd, channel, startTime, endTime);
 
-        logVideoAccess(req.user.id, req.user.name, id, camera.name, 'recordings_search', req.ip, date);
+        logVideoAccess(
+          req.user.id,
+          req.user.name,
+          id,
+          camera.name,
+          'recordings_search',
+          req.ip,
+          date,
+        );
 
         res.json({ cameraId: id, date, recordings });
       } catch (error) {
@@ -504,30 +643,45 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) return res.status(400).json({ success: false, error: 'ID invalide' });
-        if (!checkStreamRate(req.user.id)) return res.status(429).json({ success: false, error: 'Trop de requêtes vidéo' });
+        if (!checkStreamRate(req.user.id))
+          return res.status(429).json({ success: false, error: 'Trop de requêtes vidéo' });
 
         const { sdp: clientOffer, startTime, endTime } = req.body;
-        if (!clientOffer) return res.status(400).json({ success: false, error: 'SDP offer requis' });
-        if (!startTime || !endTime) return res.status(400).json({ success: false, error: 'startTime et endTime requis' });
+        if (!clientOffer)
+          return res.status(400).json({ success: false, error: 'SDP offer requis' });
+        if (!startTime || !endTime)
+          return res.status(400).json({ success: false, error: 'startTime et endTime requis' });
 
         // Validation format date
-        if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(startTime) ||
-            !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(endTime)) {
-          return res.status(400).json({ success: false, error: 'Format date invalide (YYYY-MM-DD HH:MM:SS)' });
+        if (
+          !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(startTime) ||
+          !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(endTime)
+        ) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Format date invalide (YYYY-MM-DD HH:MM:SS)' });
         }
 
         const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
-        if (!camera) return res.status(404).json({ success: false, error: 'Caméra introuvable ou désactivée' });
+        if (!camera)
+          return res
+            .status(404)
+            .json({ success: false, error: 'Caméra introuvable ou désactivée' });
 
         const channel = extractDahuaChannel(camera);
-        if (!channel) return res.status(400).json({ success: false, error: 'Cette caméra ne supporte pas la relecture' });
+        if (!channel)
+          return res
+            .status(400)
+            .json({ success: false, error: 'Cette caméra ne supporte pas la relecture' });
 
-        const pwd = decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
+        const pwd =
+          decryptPassword(camera.password_encrypted) || extractPasswordFromRtspUrl(camera);
         const rtspUrl = buildPlaybackRtspUrl(camera, pwd, channel, startTime, endTime);
 
         // Enregistrer dans MediaMTX (DELETE ancien + POST nouveau)
         const registered = await registerPlaybackInProxy(id, rtspUrl);
-        if (!registered) return res.status(502).json({ success: false, error: 'Proxy vidéo indisponible' });
+        if (!registered)
+          return res.status(502).json({ success: false, error: 'Proxy vidéo indisponible' });
 
         // Le WHEP déclenche sourceOnDemand → MediaMTX connecte le RTSP du NVR
         // MediaMTX bloque la requête WHEP jusqu'à sourceOnDemandStartTimeout (15s)
@@ -536,19 +690,38 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
         if (!result) {
           // Retry une fois après 2s (le NVR peut être lent à démarrer)
           logger.info(`🎬 Playback WHEP 1ère tentative échouée pour cam ${id}, retry dans 2s...`);
-          await new Promise(r => setTimeout(r, 2000));
+          await new Promise((r) => setTimeout(r, 2000));
           result = await whepPlaybackExchange(id, clientOffer);
         }
-        if (!result) return res.status(502).json({ success: false, error: 'Flux de relecture indisponible — le NVR met trop de temps à répondre' });
+        if (!result)
+          return res.status(502).json({
+            success: false,
+            error: 'Flux de relecture indisponible — le NVR met trop de temps à répondre',
+          });
 
         // Session
         const token = generateSessionToken();
-        storeSession(token, { cameraId: id, userId: req.user.id, location: result.location, playback: true });
+        storeSession(token, {
+          cameraId: id,
+          userId: req.user.id,
+          location: result.location,
+          playback: true,
+        });
 
-        db.prepare(`INSERT INTO video_sessions (camera_id, user_id, session_token, status)
-          VALUES (?, ?, ?, 'active')`).run(id, req.user.id, token);
+        db.prepare(
+          `INSERT INTO video_sessions (camera_id, user_id, session_token, status)
+          VALUES (?, ?, ?, 'active')`,
+        ).run(id, req.user.id, token);
 
-        logVideoAccess(req.user.id, req.user.name, id, camera.name, 'playback', req.ip, `${startTime} → ${endTime}`);
+        logVideoAccess(
+          req.user.id,
+          req.user.name,
+          id,
+          camera.name,
+          'playback',
+          req.ip,
+          `${startTime} → ${endTime}`,
+        );
 
         res.json({ answerSdp: result.answerSdp, sessionToken: token });
       } catch (error) {
@@ -566,11 +739,13 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/video/tv/cameras — Caméras activées (pas de mot de passe)
   app.get('/api/video/tv/cameras', verifyTvToken, (_req, res) => {
     try {
-      const cameras = db.prepare(
-        `SELECT id, name, brand, model, location, zone, ptz_supported,
+      const cameras = db
+        .prepare(
+          `SELECT id, name, brand, model, location, zone, ptz_supported,
                 stream_profile, status, sort_order, last_seen
-         FROM cameras WHERE enabled = 1 ORDER BY sort_order ASC, name ASC`
-      ).all();
+         FROM cameras WHERE enabled = 1 ORDER BY sort_order ASC, name ASC`,
+        )
+        .all();
       res.json(cameras);
     } catch (error) {
       logger.error('TV cameras:', error);
@@ -583,20 +758,23 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
     // [AUDIT FIX V5] parseInt + rate limit TV
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, error: 'ID invalide' });
-    if (!checkStreamRate(`tv_${id}`)) return res.status(429).json({ success: false, error: 'Trop de requêtes vidéo' });
+    if (!checkStreamRate(`tv_${id}`))
+      return res.status(429).json({ success: false, error: 'Trop de requêtes vidéo' });
     const camera = db.prepare('SELECT * FROM cameras WHERE id = ? AND enabled = 1').get(id);
     if (!camera) return res.status(404).json({ success: false, error: 'Caméra introuvable' });
 
     (async () => {
       try {
         const { sdp: clientOffer } = req.body;
-        if (!clientOffer) return res.status(400).json({ success: false, error: 'SDP offer requis' });
+        if (!clientOffer)
+          return res.status(400).json({ success: false, error: 'SDP offer requis' });
 
         const password = decryptPassword(camera.password_encrypted) || '';
         const rtspUrl = buildRtspUrl(camera, password);
         await registerStreamInProxy(camera.id, rtspUrl);
         const result = await whepExchange(camera.id, clientOffer);
-        if (!result) return res.status(502).json({ success: false, error: 'Proxy vidéo indisponible' });
+        if (!result)
+          return res.status(502).json({ success: false, error: 'Proxy vidéo indisponible' });
         logVideoAccess(0, 'TV-Client', camera.id, camera.name, 'start_stream', req.ip);
         res.json({ answerSdp: result.answerSdp });
       } catch (error) {
@@ -614,13 +792,17 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
   // [AUDIT FIX V2] Filtrer par is_shared OU user_id
   app.get('/api/video/presets', authenticateToken, (req, res) => {
     try {
-      const presets = db.prepare(`
+      const presets = db
+        .prepare(
+          `
         SELECT id, name, camera_ids, user_id, is_shared, created_at, updated_at
         FROM camera_presets
         WHERE is_shared = 1 OR user_id = ?
         ORDER BY name
-      `).all(req.user.id);
-      res.json(presets.map(p => ({ ...p, camera_ids: JSON.parse(p.camera_ids || '[]') })));
+      `,
+        )
+        .all(req.user.id);
+      res.json(presets.map((p) => ({ ...p, camera_ids: JSON.parse(p.camera_ids || '[]') })));
     } catch (error) {
       logger.error('GET /api/video/presets:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
@@ -635,11 +817,17 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       if (!Array.isArray(camera_ids) || camera_ids.length === 0 || camera_ids.length > 4) {
         return res.status(400).json({ success: false, error: 'Sélectionnez 1 à 4 caméras' });
       }
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         INSERT INTO camera_presets (name, camera_ids, user_id, is_shared)
         VALUES (?, ?, ?, 1)
-      `).run(name.trim(), JSON.stringify(camera_ids), req.user.id);
-      const preset = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(result.lastInsertRowid);
+      `,
+        )
+        .run(name.trim(), JSON.stringify(camera_ids), req.user.id);
+      const preset = db
+        .prepare('SELECT * FROM camera_presets WHERE id = ?')
+        .get(result.lastInsertRowid);
       res.status(201).json({ ...preset, camera_ids: JSON.parse(preset.camera_ids) });
     } catch (error) {
       logger.error('POST /api/video/presets:', error);
@@ -656,18 +844,22 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
       if (!existing) return res.status(404).json({ success: false, error: 'Preset introuvable' });
       if (existing.user_id !== req.user.id && req.user.role !== 'admin') {
-        return res.status(403).json({ success: false, error: 'Vous ne pouvez modifier que vos propres presets' });
+        return res
+          .status(403)
+          .json({ success: false, error: 'Vous ne pouvez modifier que vos propres presets' });
       }
       const { name, camera_ids } = req.body;
       if (camera_ids && (!Array.isArray(camera_ids) || camera_ids.length > 4)) {
         return res.status(400).json({ success: false, error: 'Maximum 4 caméras' });
       }
-      db.prepare(`
+      db.prepare(
+        `
         UPDATE camera_presets SET name = ?, camera_ids = ?, updated_at = datetime('now') WHERE id = ?
-      `).run(
-        (name?.trim()) || existing.name,
+      `,
+      ).run(
+        name?.trim() || existing.name,
         camera_ids ? JSON.stringify(camera_ids) : existing.camera_ids,
-        id
+        id,
       );
       const updated = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
       res.json({ ...updated, camera_ids: JSON.parse(updated.camera_ids) });
@@ -686,7 +878,9 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT * FROM camera_presets WHERE id = ?').get(id);
       if (!existing) return res.status(404).json({ success: false, error: 'Preset introuvable' });
       if (existing.user_id !== req.user.id && req.user.role !== 'admin') {
-        return res.status(403).json({ success: false, error: 'Vous ne pouvez supprimer que vos propres presets' });
+        return res
+          .status(403)
+          .json({ success: false, error: 'Vous ne pouvez supprimer que vos propres presets' });
       }
       db.prepare('DELETE FROM camera_presets WHERE id = ?').run(id);
       res.json({ success: true });

@@ -13,7 +13,7 @@ if (isDev) {
   logger.info(`  📄 Env: ${envFile}`);
   logger.info(`  🔌 Port: ${process.env.PORT || 3002}`);
   logger.info(`  💾 DB: ${process.env.DB_PATH || 'vehicules-dev.db'}`);
-  logger.info('  ⚠️  La production n\'est PAS affectée');
+  logger.info("  ⚠️  La production n'est PAS affectée");
   logger.info('═══════════════════════════════════════════');
   logger.info('');
 }
@@ -32,27 +32,76 @@ import logger from './logger.js';
 // ── Configs & Middlewares extraits ──
 import { helmetConditional } from './config/helmet.js';
 import { corsMiddleware } from './config/cors.js';
-import { authLimiter, generalLimiter, sensitiveEndpointLimiter, googleCalendarLimiter } from './config/rateLimiter.js';
+import {
+  authLimiter,
+  generalLimiter,
+  sensitiveEndpointLimiter,
+  googleCalendarLimiter,
+} from './config/rateLimiter.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
-import { requireAdmin, requireMaintenanceAccessCompat as requireMaintenanceAccess, requireEquipmentMaintenanceAccess, requireCatalogAccess, requireNotReadOnly } from './middleware/authorize.js';
+import {
+  requireAdmin,
+  requireMaintenanceAccessCompat as requireMaintenanceAccess,
+  requireEquipmentMaintenanceAccess,
+  requireCatalogAccess,
+  requireNotReadOnly,
+} from './middleware/authorize.js';
 import { xssSanitize } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { httpLogger } from './middleware/httpLogger.js';
 
 // ── Routes ──
-import { setupClientsRoutes, setupDriversRoutes, setupLocationsRoutes, setupGaragesRoutes, setupConfigRoutes } from './routes.js';
-import { setupPersonsRoutes, setupSkillsRoutes, setupAvailabilitiesRoutes, setupMissionsRoutes, setupAssignmentsRoutes } from './personnelRoutes.js';
-import { setupEquipmentCategoriesRoutes, setupEquipmentRoutes, setupEquipmentAssignmentsRoutes, setupSavTicketsRoutes, setupEquipmentListsRoutes } from './equipmentRoutes.js';
-import { setupSuppliersRoutes, setupOrdersRoutes, setupQuotesRoutes, setupMaterialRequestsRoutes, setupSupplierDocumentsRoutes } from './ordersRoutes.js';
+import {
+  setupClientsRoutes,
+  setupDriversRoutes,
+  setupLocationsRoutes,
+  setupGaragesRoutes,
+  setupConfigRoutes,
+} from './routes.js';
+import {
+  setupPersonsRoutes,
+  setupSkillsRoutes,
+  setupAvailabilitiesRoutes,
+  setupMissionsRoutes,
+  setupAssignmentsRoutes,
+} from './personnelRoutes.js';
+import {
+  setupEquipmentCategoriesRoutes,
+  setupEquipmentRoutes,
+  setupEquipmentAssignmentsRoutes,
+  setupSavTicketsRoutes,
+  setupEquipmentListsRoutes,
+} from './equipmentRoutes.js';
+import {
+  setupSuppliersRoutes,
+  setupOrdersRoutes,
+  setupQuotesRoutes,
+  setupMaterialRequestsRoutes,
+  setupSupplierDocumentsRoutes,
+} from './ordersRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupReservationEquipmentRoutes } from './catalogRoutes.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
-import { setupStockCategoriesRoutes, setupStockItemsRoutes, setupStockMovementsRoutes, setupStockImportRoutes, setupStockStatsRoutes } from './stockRoutes.js';
+import {
+  setupStockCategoriesRoutes,
+  setupStockItemsRoutes,
+  setupStockMovementsRoutes,
+  setupStockImportRoutes,
+  setupStockStatsRoutes,
+} from './stockRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { setupDisplayRoutes } from './displayRoutes.js';
 import { setupSonosRoutes } from './sonosRoutes.js';
-import { setupAnnuaireClientsRoutes, setupAnnuaireSuppliersRoutes, setupAnnuairePrestatairesRoutes, setupAnnuaireContactsRoutes, setupAnnuaireLookupsRoutes, setupAnnuaireSearchRoutes, setupAnnuaireImportRoutes } from './annuaireRoutes.js';
+import {
+  setupAnnuaireClientsRoutes,
+  setupAnnuaireSuppliersRoutes,
+  setupAnnuairePrestatairesRoutes,
+  setupAnnuaireContactsRoutes,
+  setupAnnuaireLookupsRoutes,
+  setupAnnuaireSearchRoutes,
+  setupAnnuaireImportRoutes,
+} from './annuaireRoutes.js';
 import { setupAuthRoutes } from './authRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupAdminRoutes } from './adminRoutes.js';
@@ -85,10 +134,14 @@ const KNOWN_DEFAULT_SECRETS = [
 
 if (KNOWN_DEFAULT_SECRETS.includes(JWT_SECRET) || JWT_SECRET.length < 32) {
   if (process.env.NODE_ENV === 'production') {
-    logger.error('❌ FATAL: JWT_SECRET par défaut ou trop court (<32 chars) interdit en production. Définissez JWT_SECRET dans .env');
+    logger.error(
+      '❌ FATAL: JWT_SECRET par défaut ou trop court (<32 chars) interdit en production. Définissez JWT_SECRET dans .env',
+    );
     process.exit(1);
   }
-  logger.warn('⚠️  ATTENTION: JWT_SECRET par défaut ou trop court ! Générez un secret d\'au moins 32 caractères.');
+  logger.warn(
+    "⚠️  ATTENTION: JWT_SECRET par défaut ou trop court ! Générez un secret d'au moins 32 caractères.",
+  );
 }
 
 // ── Middlewares globaux (configs extraites) ──
@@ -137,7 +190,10 @@ const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments'
 app.use('/attachments', express.static(attachmentsPath, { maxAge: '1h' }));
 
 // Servir les BL/BP importés
-app.use('/bl-imports', express.static(path.join(__dirname, '..', '..', 'public', 'bl-imports'), { maxAge: '1h' }));
+app.use(
+  '/bl-imports',
+  express.static(path.join(__dirname, '..', '..', 'public', 'bl-imports'), { maxAge: '1h' }),
+);
 
 // Servir les avatars
 const avatarsPath = path.join(__dirname, '..', '..', 'public', 'avatars');
@@ -146,24 +202,46 @@ app.use('/avatars', express.static(avatarsPath, { maxAge: '1d' }));
 
 // ── Client TV standalone (fusion calendar-dashboard) ──
 const staticCacheOpts = { maxAge: '7d' };
-app.use('/display-gifs', express.static(path.join(__dirname, '..', '..', 'public', 'display-gifs'), staticCacheOpts));
-app.use('/display-logo', express.static(path.join(__dirname, '..', '..', 'public', 'display-logo'), staticCacheOpts));
-app.use('/display-sneaky', express.static(path.join(__dirname, '..', '..', 'public', 'display-sneaky'), staticCacheOpts));
-app.use('/display-media', express.static(path.join(__dirname, '..', '..', 'public', 'display-media'), staticCacheOpts));
-app.use('/Logos', express.static(path.join(__dirname, '..', '..', 'public', 'Logos'), staticCacheOpts));
-app.use('/radio-logos', express.static(path.join(__dirname, '..', '..', 'public', 'radio-logos'), staticCacheOpts));
+app.use(
+  '/display-gifs',
+  express.static(path.join(__dirname, '..', '..', 'public', 'display-gifs'), staticCacheOpts),
+);
+app.use(
+  '/display-logo',
+  express.static(path.join(__dirname, '..', '..', 'public', 'display-logo'), staticCacheOpts),
+);
+app.use(
+  '/display-sneaky',
+  express.static(path.join(__dirname, '..', '..', 'public', 'display-sneaky'), staticCacheOpts),
+);
+app.use(
+  '/display-media',
+  express.static(path.join(__dirname, '..', '..', 'public', 'display-media'), staticCacheOpts),
+);
+app.use(
+  '/Logos',
+  express.static(path.join(__dirname, '..', '..', 'public', 'Logos'), staticCacheOpts),
+);
+app.use(
+  '/radio-logos',
+  express.static(path.join(__dirname, '..', '..', 'public', 'radio-logos'), staticCacheOpts),
+);
 app.get('/SNCF.wav', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'public', 'SNCF.wav'));
 });
 const tvClientDir = path.join(__dirname, '..', 'tv-client');
-app.use('/tv-client', (req, res, next) => {
-  if (req.path.endsWith('.html') || req.path === '/') {
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
-  }
-  next();
-}, express.static(tvClientDir));
+app.use(
+  '/tv-client',
+  (req, res, next) => {
+    if (req.path.endsWith('.html') || req.path === '/') {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+    }
+    next();
+  },
+  express.static(tvClientDir),
+);
 app.get('/tv', (_req, res) => res.redirect('/tv-client/index.html'));
 
 // ── Compat port 3001 : ancien client calendar-dashboard ──
@@ -252,7 +330,13 @@ setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin);
 
 // Routes extraites de server.js — Phase 2 Refactoring
 setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev });
-setupVehicleRoutes(app, authenticateToken, requireAdmin, requireMaintenanceAccess, requireNotReadOnly);
+setupVehicleRoutes(
+  app,
+  authenticateToken,
+  requireAdmin,
+  requireMaintenanceAccess,
+  requireNotReadOnly,
+);
 setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS });
 setupTOTPRoutes(app, authenticateToken, requireAdmin);
 setupAffairesRoutes(app, authenticateToken, requireAdmin);
@@ -290,7 +374,10 @@ if (isDev) {
 if (isDev) {
   app.get('/api/debug/session', authenticateToken, (req, res) => {
     try {
-      const sessions = db.prepare('SELECT id, user_id, created_at, expires_at, last_activity FROM active_sessions WHERE user_id = ?')
+      const sessions = db
+        .prepare(
+          'SELECT id, user_id, created_at, expires_at, last_activity FROM active_sessions WHERE user_id = ?',
+        )
         .all(req.user.id);
       res.json({
         user: req.user,
@@ -360,18 +447,20 @@ if (hasSSL) {
 // Sert la même app Express, les écrans existants continuent de fonctionner
 // En DEV, on ne démarre PAS ce serveur pour laisser la production servir les écrans TV
 if (!isDev) {
-const TV_PORT = 3001;
-const tvServer = http.createServer(app);
-tvServer.listen(TV_PORT, '0.0.0.0', () => {
-  logger.info(`📺 Client TV accessible sur http://${SERVER_HOST}:${TV_PORT}/tv-client/`);
-});
-tvServer.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    logger.warn(`⚠️  Port ${TV_PORT} déjà utilisé — le client TV reste accessible via http://${SERVER_HOST}:${PORT}/tv`);
-  } else {
-    logger.error('Erreur serveur TV:', err.message);
-  }
-});
+  const TV_PORT = 3001;
+  const tvServer = http.createServer(app);
+  tvServer.listen(TV_PORT, '0.0.0.0', () => {
+    logger.info(`📺 Client TV accessible sur http://${SERVER_HOST}:${TV_PORT}/tv-client/`);
+  });
+  tvServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.warn(
+        `⚠️  Port ${TV_PORT} déjà utilisé — le client TV reste accessible via http://${SERVER_HOST}:${PORT}/tv`,
+      );
+    } else {
+      logger.error('Erreur serveur TV:', err.message);
+    }
+  });
 } else {
   logger.info('📺 Mode DEV — serveur TV (port 3001) non démarré, la production garde la main');
 }
@@ -381,10 +470,18 @@ tvServer.on('error', (err) => {
  */
 function cleanExpiredSessions() {
   try {
-    const sessResult = db.prepare("DELETE FROM active_sessions WHERE expires_at < datetime('now')").run();
-    const tokenResult = db.prepare("UPDATE users SET reset_token_hash = NULL, reset_token_expires = NULL WHERE reset_token_expires < datetime('now')").run();
+    const sessResult = db
+      .prepare("DELETE FROM active_sessions WHERE expires_at < datetime('now')")
+      .run();
+    const tokenResult = db
+      .prepare(
+        "UPDATE users SET reset_token_hash = NULL, reset_token_expires = NULL WHERE reset_token_expires < datetime('now')",
+      )
+      .run();
     if (sessResult.changes > 0 || tokenResult.changes > 0) {
-      logger.info(`🧹 Session cleanup: ${sessResult.changes} session(s), ${tokenResult.changes} token(s) expirés supprimés`);
+      logger.info(
+        `🧹 Session cleanup: ${sessResult.changes} session(s), ${tokenResult.changes} token(s) expirés supprimés`,
+      );
     }
   } catch (err) {
     logger.error('Erreur nettoyage sessions:', err.message);
@@ -398,9 +495,17 @@ function cleanTempFiles() {
   const publicDir = path.join(__dirname, '..', '..', 'public');
   // Répertoires à nettoyer avec durée max de rétention
   const targets = [
-    { dir: path.join(publicDir, 'attachments', 'TEMP'), maxAge: 24 * 60 * 60 * 1000, label: 'TEMP' },              // 24h
-    { dir: path.join(publicDir, 'bl-imports'),           maxAge: 7 * 24 * 60 * 60 * 1000, label: 'bl-imports' },     // 7 jours
-    { dir: path.join(publicDir, 'imports'),              maxAge: 7 * 24 * 60 * 60 * 1000, label: 'imports' },        // 7 jours
+    {
+      dir: path.join(publicDir, 'attachments', 'TEMP'),
+      maxAge: 24 * 60 * 60 * 1000,
+      label: 'TEMP',
+    }, // 24h
+    {
+      dir: path.join(publicDir, 'bl-imports'),
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      label: 'bl-imports',
+    }, // 7 jours
+    { dir: path.join(publicDir, 'imports'), maxAge: 7 * 24 * 60 * 60 * 1000, label: 'imports' }, // 7 jours
   ];
 
   for (const { dir, maxAge, label } of targets) {
@@ -416,7 +521,9 @@ function cleanTempFiles() {
             fs.unlinkSync(filePath);
             removed++;
           }
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
       if (removed > 0) logger.info(`🧹 ${label} cleanup: ${removed} fichier(s) supprimé(s)`);
     } catch (err) {
@@ -428,14 +535,14 @@ function cleanTempFiles() {
 // Gestion de l'arrêt propre du serveur
 function gracefulShutdown(signal) {
   logger.info(`\n⚠️  Signal ${signal} reçu - Arrêt en cours...`);
-  
+
   // Faire un dernier checkpoint de la base de données
   logger.info('💾 Sauvegarde finale de la base de données...');
   checkpointDatabase();
-  
+
   // Fermer proprement la base de données
   closeDatabase();
-  
+
   logger.info('✅ Arrêt propre terminé');
   process.exit(0);
 }

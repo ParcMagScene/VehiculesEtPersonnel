@@ -48,7 +48,9 @@ export function initEmailTransporter(db) {
         pass: (() => {
           const decrypted = decryptPassword(config.smtp_pass);
           if (!decrypted) {
-            logger.error('❌ SMTP: déchiffrement du mot de passe échoué — vérifiez la configuration');
+            logger.error(
+              '❌ SMTP: déchiffrement du mot de passe échoué — vérifiez la configuration',
+            );
             throw new Error('SMTP password decryption failed');
           }
           return decrypted;
@@ -107,10 +109,10 @@ async function sendEmail({ to, subject, html, text }) {
  */
 function getAdminEmails(db) {
   try {
-    const admins = db.prepare(
-      "SELECT email FROM users WHERE is_admin = 1 AND email IS NOT NULL AND email != ''"
-    ).all();
-    return admins.map(a => a.email);
+    const admins = db
+      .prepare("SELECT email FROM users WHERE is_admin = 1 AND email IS NOT NULL AND email != ''")
+      .all();
+    return admins.map((a) => a.email);
   } catch {
     return [];
   }
@@ -141,7 +143,7 @@ export async function alertAccessRequest(db, requestData) {
 
   await sendEmail({
     to: admins.join(','),
-    subject: 'Nouvelle demande d\'accès',
+    subject: "Nouvelle demande d'accès",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px 12px 0 0;">
@@ -286,14 +288,19 @@ export async function alertLeaveDecision(db, leave, decisionBy) {
   if (!config?.alert_leave) return;
 
   // Trouver l'email de l'employé
-  const person = db.prepare('SELECT p.first_name, p.last_name, p.email FROM persons p WHERE p.id = ?').get(leave.person_id);
+  const person = db
+    .prepare('SELECT p.first_name, p.last_name, p.email FROM persons p WHERE p.id = ?')
+    .get(leave.person_id);
   const email = person?.email || getUserEmail(db, leave.user_id);
   if (!email) return;
 
-  const personName = person ? `${person.first_name || ''} ${person.last_name || ''}`.trim() : 'Employé';
+  const personName = person
+    ? `${person.first_name || ''} ${person.last_name || ''}`.trim()
+    : 'Employé';
   const statusLabels = { accepted: '✅ Acceptée', refused: '❌ Refusée', modified: '✏️ Modifiée' };
   const statusLabel = statusLabels[leave.status] || leave.status;
-  const bgColor = leave.status === 'accepted' ? '#10b981' : leave.status === 'refused' ? '#ef4444' : '#f59e0b';
+  const bgColor =
+    leave.status === 'accepted' ? '#10b981' : leave.status === 'refused' ? '#ef4444' : '#f59e0b';
 
   await sendEmail({
     to: email,
@@ -329,7 +336,9 @@ export async function alertSavTicketCreated(db, ticket, creatorName) {
   if (admins.length === 0) return;
 
   // Récupérer le nom de l'équipement
-  const eq = db.prepare('SELECT name, serial_number FROM equipment WHERE id = ?').get(ticket.equipment_id);
+  const eq = db
+    .prepare('SELECT name, serial_number FROM equipment WHERE id = ?')
+    .get(ticket.equipment_id);
   const eqName = eq?.name || `ID ${ticket.equipment_id}`;
 
   await sendEmail({
@@ -370,7 +379,9 @@ export async function alertMaintenanceCreated(db, maintenance, vehicleName, crea
   if (admins.length === 0) return;
 
   const isCT = !!maintenance.technical_control_type;
-  const title = isCT ? `Contrôle technique ${maintenance.technical_control_type}` : 'Nouvelle maintenance';
+  const title = isCT
+    ? `Contrôle technique ${maintenance.technical_control_type}`
+    : 'Nouvelle maintenance';
   const icon = isCT ? '🔍' : '🔧';
 
   await sendEmail({

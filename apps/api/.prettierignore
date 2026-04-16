@@ -1,0 +1,9 @@
+node_modules/
+backups/
+*.db
+*.sqlite
+*.sqlite3
+display-data/
+logs/
+_*
+package-lock.json

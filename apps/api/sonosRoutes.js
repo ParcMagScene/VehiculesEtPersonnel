@@ -8,7 +8,14 @@ import { promisify } from 'util';
 import db from './database.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';
-import { sonosConfigSchema, sonosVolumeSchema, sonosFavoriteSchema, sonosSeekSchema, sonosShuffleSchema, sonosRepeatSchema } from './schemas/sonos.js';
+import {
+  sonosConfigSchema,
+  sonosVolumeSchema,
+  sonosFavoriteSchema,
+  sonosSeekSchema,
+  sonosShuffleSchema,
+  sonosRepeatSchema,
+} from './schemas/sonos.js';
 import rateLimit from 'express-rate-limit';
 import { optionalTvToken } from './middleware/tvAuth.js';
 
@@ -26,7 +33,7 @@ function withTimeout(promise, ms = SONOS_TIMEOUT_MS) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Sonos timeout — appareil injoignable')), ms)
+      setTimeout(() => reject(new Error('Sonos timeout — appareil injoignable')), ms),
     ),
   ]);
 }
@@ -51,41 +58,41 @@ const sonosCommandLimiter = rateLimit({
 // ── Logos locaux connus (évite la recherche favicon pour ces radios) ──
 // Matching par mot-clé dans l'URI stream OU le titre du favori (case-insensitive)
 const KNOWN_RADIO_LOGOS = {
-  'radiomeuh':      '/radio-logos/radiomeuh.svg',
-  'fip':            '/radio-logos/fip.svg',
-  'franceinter':    '/radio-logos/franceinter.svg',
-  'france inter':   '/radio-logos/franceinter.svg',
-  'franceinfo':     '/radio-logos/franceinfo.svg',
-  'france info':    '/radio-logos/franceinfo.svg',
-  'franceculture':  '/radio-logos/franceculture.svg',
+  radiomeuh: '/radio-logos/radiomeuh.svg',
+  fip: '/radio-logos/fip.svg',
+  franceinter: '/radio-logos/franceinter.svg',
+  'france inter': '/radio-logos/franceinter.svg',
+  franceinfo: '/radio-logos/franceinfo.svg',
+  'france info': '/radio-logos/franceinfo.svg',
+  franceculture: '/radio-logos/franceculture.svg',
   'france culture': '/radio-logos/franceculture.svg',
-  'francemusique':  '/radio-logos/francemusique.svg',
+  francemusique: '/radio-logos/francemusique.svg',
   'france musique': '/radio-logos/francemusique.svg',
-  'nova':           '/radio-logos/nova.svg',
-  'radio nova':     '/radio-logos/nova.svg',
-  'rtl':            '/radio-logos/rtl.svg',
-  'nrj':            '/radio-logos/nrj.svg',
-  'nostalgie':      '/radio-logos/nostalgie.svg',
-  'rfm':            '/radio-logos/rfm.svg',
-  'skyrock':        '/radio-logos/skyrock.svg',
-  'cherie':         '/radio-logos/cheriefm.svg',
-  'chérie':         '/radio-logos/cheriefm.svg',
-  'rmc':            '/radio-logos/rmc.svg',
-  'europe 1':       '/radio-logos/europe1.svg',
-  'europe1':        '/radio-logos/europe1.svg',
-  'tsf jazz':       '/radio-logos/tsfjazz.svg',
-  'tsfjazz':        '/radio-logos/tsfjazz.svg',
-  'jazz radio':     '/radio-logos/jazzradio.svg',
-  'jazzradio':      '/radio-logos/jazzradio.svg',
-  'mouv':           '/radio-logos/mouv.svg',
-  'oui fm':         '/radio-logos/ouifm.svg',
-  'ouifm':          '/radio-logos/ouifm.svg',
-  'rtl2':           '/radio-logos/rtl2.svg',
-  'virgin':         '/radio-logos/virgin.svg',
-  'funradio':       '/radio-logos/funradio.svg',
-  'fun radio':      '/radio-logos/funradio.svg',
+  nova: '/radio-logos/nova.svg',
+  'radio nova': '/radio-logos/nova.svg',
+  rtl: '/radio-logos/rtl.svg',
+  nrj: '/radio-logos/nrj.svg',
+  nostalgie: '/radio-logos/nostalgie.svg',
+  rfm: '/radio-logos/rfm.svg',
+  skyrock: '/radio-logos/skyrock.svg',
+  cherie: '/radio-logos/cheriefm.svg',
+  chérie: '/radio-logos/cheriefm.svg',
+  rmc: '/radio-logos/rmc.svg',
+  'europe 1': '/radio-logos/europe1.svg',
+  europe1: '/radio-logos/europe1.svg',
+  'tsf jazz': '/radio-logos/tsfjazz.svg',
+  tsfjazz: '/radio-logos/tsfjazz.svg',
+  'jazz radio': '/radio-logos/jazzradio.svg',
+  jazzradio: '/radio-logos/jazzradio.svg',
+  mouv: '/radio-logos/mouv.svg',
+  'oui fm': '/radio-logos/ouifm.svg',
+  ouifm: '/radio-logos/ouifm.svg',
+  rtl2: '/radio-logos/rtl2.svg',
+  virgin: '/radio-logos/virgin.svg',
+  funradio: '/radio-logos/funradio.svg',
+  'fun radio': '/radio-logos/funradio.svg',
   'rire et chansons': '/radio-logos/rireetchansons.svg',
-  'sud radio':      '/radio-logos/sudradio.svg',
+  'sud radio': '/radio-logos/sudradio.svg',
 };
 
 // ── Cache favicon radio ──
@@ -143,7 +150,7 @@ async function getSonosDevice(Sonos, ip) {
     if (groups && groups.length > 0) {
       for (const group of groups) {
         const members = group.ZoneGroupMember || [];
-        const isMember = members.some(m => m.Location && m.Location.includes(ip));
+        const isMember = members.some((m) => m.Location && m.Location.includes(ip));
         if (isMember && group.host && group.host !== ip) {
           coordinatorIP = group.host;
           device = new Sonos(coordinatorIP);
@@ -151,7 +158,9 @@ async function getSonosDevice(Sonos, ip) {
         }
       }
     }
-  } catch { /* ignore group discovery errors */ }
+  } catch {
+    /* ignore group discovery errors */
+  }
 
   return { device, coordinatorIP };
 }
@@ -194,8 +203,16 @@ async function getRadioFavicon(streamUrl) {
 
   try {
     const { stdout } = await execFileAsync('curl', [
-      '-s', '-o', '/dev/null', '-D', '-',
-      '-H', 'Icy-MetaData: 1', '--max-time', '5', streamUrl,
+      '-s',
+      '-o',
+      '/dev/null',
+      '-D',
+      '-',
+      '-H',
+      'Icy-MetaData: 1',
+      '--max-time',
+      '5',
+      streamUrl,
     ]);
     const icyHeaders = {};
     for (const line of stdout.split('\n')) {
@@ -223,15 +240,24 @@ async function getRadioFavicon(streamUrl) {
         try {
           const url = base + path;
           const { stdout: headOut } = await execFileAsync('curl', [
-            '-s', '-o', '/dev/null', '-w', '%{http_code} %{content_type}',
-            '-L', '--max-time', '4', url,
+            '-s',
+            '-o',
+            '/dev/null',
+            '-w',
+            '%{http_code} %{content_type}',
+            '-L',
+            '--max-time',
+            '4',
+            url,
           ]);
           const [code, ctype] = headOut.trim().split(' ');
           if (code === '200' && ctype && ctype.startsWith('image')) {
             radioFaviconCache.set(streamUrl, url);
             return url;
           }
-        } catch { /* suivant */ }
+        } catch {
+          /* suivant */
+        }
       }
     }
 
@@ -247,16 +273,17 @@ async function getRadioFavicon(streamUrl) {
  * Résout l'artwork pour un morceau/radio
  */
 async function resolveArtwork(track, coordinatorIP) {
-  let artUrl = track.albumArtURL
-    || (track.albumArtURI ? `http://${coordinatorIP}:1400${track.albumArtURI}` : '');
+  let artUrl =
+    track.albumArtURL ||
+    (track.albumArtURI ? `http://${coordinatorIP}:1400${track.albumArtURI}` : '');
 
-  const isRadio = track.uri && (
-    track.uri.startsWith('x-rincon-mp3radio://') ||
-    track.uri.startsWith('x-sonosapi-stream:') ||
-    track.uri.startsWith('x-sonosapi-hls-static:') ||
-    track.uri.startsWith('aac:') ||
-    track.uri.startsWith('x-rincon-stream:')
-  );
+  const isRadio =
+    track.uri &&
+    (track.uri.startsWith('x-rincon-mp3radio://') ||
+      track.uri.startsWith('x-sonosapi-stream:') ||
+      track.uri.startsWith('x-sonosapi-hls-static:') ||
+      track.uri.startsWith('aac:') ||
+      track.uri.startsWith('x-rincon-stream:'));
 
   if (isRadio) {
     // 1) Essayer le matching local par URI + titre
@@ -278,7 +305,9 @@ async function resolveArtwork(track, coordinatorIP) {
       try {
         const favicon = await getRadioFavicon(streamUrl);
         artUrl = favicon || '';
-      } catch { artUrl = ''; }
+      } catch {
+        artUrl = '';
+      }
     } else {
       artUrl = '';
     }
@@ -337,12 +366,13 @@ export async function getSonosNowPlaying() {
 // ══════════════════════════════════════════════════════════════
 
 export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
-
   // ── Validation zone (IP) ──
   function validateZone(req, res) {
     const zone = req.params.zone;
     if (!zone || !isValidIPv4(zone)) {
-      res.status(400).json({ success: false, error: 'Zone invalide (IPv4 attendue, ex: 192.168.1.10)' });
+      res
+        .status(400)
+        .json({ success: false, error: 'Zone invalide (IPv4 attendue, ex: 192.168.1.10)' });
       return null;
     }
     return zone;
@@ -378,20 +408,29 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/sonos/config — Sauver config Sonos
-  app.post('/api/sonos/config', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosConfigSchema), (req, res) => {
-    try {
-      const { sonosIP } = req.body;
-      db.prepare(`
+  app.post(
+    '/api/sonos/config',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    validate(sonosConfigSchema),
+    (req, res) => {
+      try {
+        const { sonosIP } = req.body;
+        db.prepare(
+          `
         INSERT INTO display_config (key, value, updated_at) VALUES ('sonosIP', ?, datetime('now'))
         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
-      `).run(JSON.stringify(sonosIP || ''));
-      logger.info(`[Sonos] Config updated: sonosIP=${sonosIP}`, { userId: req.user?.id });
-      res.json({ success: true });
-    } catch (error) {
-      logger.error('Sonos config save:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+      `,
+        ).run(JSON.stringify(sonosIP || ''));
+        logger.info(`[Sonos] Config updated: sonosIP=${sonosIP}`, { userId: req.user?.id });
+        res.json({ success: true });
+      } catch (error) {
+        logger.error('Sonos config save:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // ─────────────────────────────────────────────────────────────
   // NOW PLAYING (lecture seule — accessible TV + users)
@@ -417,16 +456,18 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/zones', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
+      if (!lib)
+        return res.status(503).json({ success: false, error: 'Package sonos non installé' });
 
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
+      if (!sonosIP)
+        return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const device = new lib.Sonos(sonosIP);
       const groups = await device.getAllGroups();
 
-      const zones = (groups || []).map(g => {
-        const members = (g.ZoneGroupMember || []).map(m => ({
+      const zones = (groups || []).map((g) => {
+        const members = (g.ZoneGroupMember || []).map((m) => ({
           name: m.ZoneName || m.zoneName || '',
           ip: m.Location ? m.Location.match(/\/\/([\d.]+):/)?.[1] || '' : '',
           uuid: m.UUID || '',
@@ -506,121 +547,164 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────────────────────────────────────────────────────
 
   // POST /api/sonos/play/:zone
-  app.post('/api/sonos/play/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.play();
-      logger.info(`[Sonos] Play on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'play', zone });
-    } catch (error) {
-      logger.error(`Sonos play ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande play' });
-    }
-  });
+  app.post(
+    '/api/sonos/play/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.play();
+        logger.info(`[Sonos] Play on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'play', zone });
+      } catch (error) {
+        logger.error(`Sonos play ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande play' });
+      }
+    },
+  );
 
   // POST /api/sonos/pause/:zone
-  app.post('/api/sonos/pause/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.pause();
-      logger.info(`[Sonos] Pause on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'pause', zone });
-    } catch (error) {
-      logger.error(`Sonos pause ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande pause' });
-    }
-  });
+  app.post(
+    '/api/sonos/pause/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.pause();
+        logger.info(`[Sonos] Pause on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'pause', zone });
+      } catch (error) {
+        logger.error(`Sonos pause ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande pause' });
+      }
+    },
+  );
 
   // POST /api/sonos/next/:zone
-  app.post('/api/sonos/next/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.next();
-      logger.info(`[Sonos] Next on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'next', zone });
-    } catch (error) {
-      logger.error(`Sonos next ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande next' });
-    }
-  });
+  app.post(
+    '/api/sonos/next/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.next();
+        logger.info(`[Sonos] Next on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'next', zone });
+      } catch (error) {
+        logger.error(`Sonos next ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande next' });
+      }
+    },
+  );
 
   // POST /api/sonos/previous/:zone
-  app.post('/api/sonos/previous/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.previous();
-      logger.info(`[Sonos] Previous on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'previous', zone });
-    } catch (error) {
-      logger.error(`Sonos previous ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande previous' });
-    }
-  });
+  app.post(
+    '/api/sonos/previous/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.previous();
+        logger.info(`[Sonos] Previous on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'previous', zone });
+      } catch (error) {
+        logger.error(`Sonos previous ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande previous' });
+      }
+    },
+  );
 
   // ─────────────────────────────────────────────────────────────
   // VOLUME (admin uniquement)
   // ─────────────────────────────────────────────────────────────
 
   // POST /api/sonos/volume/:zone — body: { value: 0-100 }
-  app.post('/api/sonos/volume/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosVolumeSchema), async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    const { value } = req.body;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.setVolume(Math.round(value));
-      logger.info(`[Sonos] Volume ${value} on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'volume', zone, value: Math.round(value) });
-    } catch (error) {
-      logger.error(`Sonos volume ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande volume' });
-    }
-  });
+  app.post(
+    '/api/sonos/volume/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    validate(sonosVolumeSchema),
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      const { value } = req.body;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.setVolume(Math.round(value));
+        logger.info(`[Sonos] Volume ${value} on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'volume', zone, value: Math.round(value) });
+      } catch (error) {
+        logger.error(`Sonos volume ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande volume' });
+      }
+    },
+  );
 
   // POST /api/sonos/mute/:zone
-  app.post('/api/sonos/mute/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.setMuted(true);
-      logger.info(`[Sonos] Mute on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'mute', zone });
-    } catch (error) {
-      logger.error(`Sonos mute ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande mute' });
-    }
-  });
+  app.post(
+    '/api/sonos/mute/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.setMuted(true);
+        logger.info(`[Sonos] Mute on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'mute', zone });
+      } catch (error) {
+        logger.error(`Sonos mute ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande mute' });
+      }
+    },
+  );
 
   // POST /api/sonos/unmute/:zone
-  app.post('/api/sonos/unmute/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.setMuted(false);
-      logger.info(`[Sonos] Unmute on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'unmute', zone });
-    } catch (error) {
-      logger.error(`Sonos unmute ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande unmute' });
-    }
-  });
+  app.post(
+    '/api/sonos/unmute/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.setMuted(false);
+        logger.info(`[Sonos] Unmute on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'unmute', zone });
+      } catch (error) {
+        logger.error(`Sonos unmute ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande unmute' });
+      }
+    },
+  );
 
   // ─────────────────────────────────────────────────────────────
   // FAVORIS / PRESETS
@@ -630,58 +714,65 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/favorites', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
+      if (!lib)
+        return res.status(503).json({ success: false, error: 'Package sonos non installé' });
 
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
+      if (!sonosIP)
+        return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
       const favs = await device.getFavorites();
 
       const items = favs?.items || [];
-      const favorites = await Promise.all(items.map(async (f) => {
-        const uri = f.uri || '';
-        const title = f.title || '';
-        let albumArtURI = f.albumArtURI || '';
+      const favorites = await Promise.all(
+        items.map(async (f) => {
+          const uri = f.uri || '';
+          const title = f.title || '';
+          let albumArtURI = f.albumArtURI || '';
 
-        // Détection radio
-        const isRadio = uri.startsWith('x-rincon-mp3radio://') ||
-          uri.startsWith('x-sonosapi-stream:') ||
-          uri.startsWith('x-sonosapi-hls-static:') ||
-          uri.startsWith('aac:') ||
-          uri.startsWith('x-rincon-stream:');
+          // Détection radio
+          const isRadio =
+            uri.startsWith('x-rincon-mp3radio://') ||
+            uri.startsWith('x-sonosapi-stream:') ||
+            uri.startsWith('x-sonosapi-hls-static:') ||
+            uri.startsWith('aac:') ||
+            uri.startsWith('x-rincon-stream:');
 
-        if (isRadio) {
-          // 1) Logo local connu (par URI + titre)
-          const knownLogo = matchKnownRadioLogo(uri, title);
-          if (knownLogo) {
-            albumArtURI = knownLogo;
-          } else {
-            // 2) Tenter getRadioFavicon via le stream URL
-            let streamUrl = uri;
-            if (streamUrl.startsWith('x-rincon-mp3radio://')) {
-              streamUrl = streamUrl.replace('x-rincon-mp3radio://', '');
-              if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
-            } else if (streamUrl.startsWith('aac://')) {
-              streamUrl = streamUrl.replace('aac://', '');
-              if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
+          if (isRadio) {
+            // 1) Logo local connu (par URI + titre)
+            const knownLogo = matchKnownRadioLogo(uri, title);
+            if (knownLogo) {
+              albumArtURI = knownLogo;
             } else {
-              streamUrl = '';
+              // 2) Tenter getRadioFavicon via le stream URL
+              let streamUrl = uri;
+              if (streamUrl.startsWith('x-rincon-mp3radio://')) {
+                streamUrl = streamUrl.replace('x-rincon-mp3radio://', '');
+                if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
+              } else if (streamUrl.startsWith('aac://')) {
+                streamUrl = streamUrl.replace('aac://', '');
+                if (!streamUrl.startsWith('http')) streamUrl = 'http://' + streamUrl;
+              } else {
+                streamUrl = '';
+              }
+              if (streamUrl) {
+                try {
+                  const favicon = await getRadioFavicon(streamUrl);
+                  if (favicon) albumArtURI = favicon;
+                } catch {
+                  /* garder albumArtURI d'origine */
+                }
+              }
             }
-            if (streamUrl) {
-              try {
-                const favicon = await getRadioFavicon(streamUrl);
-                if (favicon) albumArtURI = favicon;
-              } catch { /* garder albumArtURI d'origine */ }
-            }
+          } else if (albumArtURI && !albumArtURI.startsWith('http')) {
+            // Artwork relatif Sonos → préfixer avec l'IP coordinateur
+            albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
           }
-        } else if (albumArtURI && !albumArtURI.startsWith('http')) {
-          // Artwork relatif Sonos → préfixer avec l'IP coordinateur
-          albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
-        }
 
-        return { title, uri, albumArtURI, description: f.description || '' };
-      }));
+          return { title, uri, albumArtURI, description: f.description || '' };
+        }),
+      );
 
       res.json({ favorites });
     } catch (error) {
@@ -694,14 +785,16 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/radio-stations', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
+      if (!lib)
+        return res.status(503).json({ success: false, error: 'Package sonos non installé' });
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
+      if (!sonosIP)
+        return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
 
       const stations = await device.getFavoritesRadioStations().catch(() => ({ items: [] }));
-      const items = (stations?.items || []).map(s => {
+      const items = (stations?.items || []).map((s) => {
         let albumArtURI = s.albumArtURI || '';
         const knownLogo = matchKnownRadioLogo(s.uri || '', s.title || '');
         if (knownLogo) {
@@ -725,117 +818,132 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
 
   // GET /api/sonos/browse/:objectId — Parcourir le ContentDirectory Sonos
   // objectId exemples: "R:0/0" (radios), "SQ:" (saved queues), "A:" (music library), "FV:2" (favorites)
-  app.get('/api/sonos/browse/:objectId(*)', authenticateToken, sonosReadLimiter, async (req, res) => {
-    try {
-      const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
-      const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
+  app.get(
+    '/api/sonos/browse/:objectId(*)',
+    authenticateToken,
+    sonosReadLimiter,
+    async (req, res) => {
+      try {
+        const lib = await loadSonosLib();
+        if (!lib)
+          return res.status(503).json({ success: false, error: 'Package sonos non installé' });
+        const sonosIP = getSonosIP();
+        if (!sonosIP)
+          return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
-      const objectId = req.params.objectId;
-      if (!objectId || objectId.length > 256) {
-        return res.status(400).json({ success: false, error: 'objectId requis (max 256 car.)' });
-      }
-
-      // Les services musicaux (MS:xxx) ne sont pas browsables via ContentDirectory
-      if (objectId.startsWith('MS:')) {
-        return res.json({
-          containers: [],
-          items: [],
-          total: 0,
-          message: 'Ce service est disponible sur votre Sonos. Utilisez l\'application Sonos officielle pour naviguer dans son contenu.',
-        });
-      }
-
-      const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
-      const cds = device.contentDirectoryService();
-
-      const result = await new Promise((resolve, reject) => {
-        cds.Browse({
-          ObjectID: objectId,
-          BrowseFlag: 'BrowseDirectChildren',
-          Filter: '*',
-          StartingIndex: 0,
-          RequestedCount: 100,
-          SortCriteria: '',
-        }, (err, data) => {
-          if (err) reject(err);
-          else resolve(data);
-        });
-      });
-
-      // Parse le XML DIDL-Lite retourné
-      const { parseString } = await import('xml2js');
-      const parsed = await new Promise((resolve, reject) => {
-        parseString(result.Result, { explicitArray: false }, (err, data) => {
-          if (err) reject(err);
-          else resolve(data);
-        });
-      });
-
-      const containers = [];
-      const items = [];
-      const root = parsed?.['DIDL-Lite'];
-      if (!root) return res.json({ containers, items, total: 0 });
-
-      // Conteneurs (dossiers / catégories)
-      const rawContainers = root.container
-        ? (Array.isArray(root.container) ? root.container : [root.container])
-        : [];
-      for (const c of rawContainers) {
-        containers.push({
-          id: c.$?.id || '',
-          title: c['dc:title'] || '',
-          albumArtURI: c['upnp:albumArtURI'] || '',
-          childCount: parseInt(c.$?.childCount, 10) || 0,
-        });
-      }
-
-      // Items (morceaux / stations)
-      const rawItems = root.item
-        ? (Array.isArray(root.item) ? root.item : [root.item])
-        : [];
-      for (const it of rawItems) {
-        let albumArtURI = it['upnp:albumArtURI'] || '';
-        const uri = it.res?._  || it.res || '';
-        const title = it['dc:title'] || '';
-
-        // Résoudre les logos radio
-        const knownLogo = matchKnownRadioLogo(typeof uri === 'string' ? uri : '', title);
-        if (knownLogo) {
-          albumArtURI = knownLogo;
-        } else if (albumArtURI && !albumArtURI.startsWith('http')) {
-          albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
+        const objectId = req.params.objectId;
+        if (!objectId || objectId.length > 256) {
+          return res.status(400).json({ success: false, error: 'objectId requis (max 256 car.)' });
         }
 
-        items.push({
-          title,
-          uri: typeof uri === 'string' ? uri : '',
-          albumArtURI,
-          artist: it['dc:creator'] || '',
-          album: it['upnp:album'] || '',
-          class: it['upnp:class'] || '',
-        });
-      }
+        // Les services musicaux (MS:xxx) ne sont pas browsables via ContentDirectory
+        if (objectId.startsWith('MS:')) {
+          return res.json({
+            containers: [],
+            items: [],
+            total: 0,
+            message:
+              "Ce service est disponible sur votre Sonos. Utilisez l'application Sonos officielle pour naviguer dans son contenu.",
+          });
+        }
 
-      res.json({
-        containers,
-        items,
-        total: parseInt(result.TotalMatches, 10) || containers.length + items.length,
-      });
-    } catch (error) {
-      logger.error('Sonos browse:', error);
-      res.status(500).json({ success: false, error: 'Impossible de parcourir les sources Sonos' });
-    }
-  });
+        const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
+        const cds = device.contentDirectoryService();
+
+        const result = await new Promise((resolve, reject) => {
+          cds.Browse(
+            {
+              ObjectID: objectId,
+              BrowseFlag: 'BrowseDirectChildren',
+              Filter: '*',
+              StartingIndex: 0,
+              RequestedCount: 100,
+              SortCriteria: '',
+            },
+            (err, data) => {
+              if (err) reject(err);
+              else resolve(data);
+            },
+          );
+        });
+
+        // Parse le XML DIDL-Lite retourné
+        const { parseString } = await import('xml2js');
+        const parsed = await new Promise((resolve, reject) => {
+          parseString(result.Result, { explicitArray: false }, (err, data) => {
+            if (err) reject(err);
+            else resolve(data);
+          });
+        });
+
+        const containers = [];
+        const items = [];
+        const root = parsed?.['DIDL-Lite'];
+        if (!root) return res.json({ containers, items, total: 0 });
+
+        // Conteneurs (dossiers / catégories)
+        const rawContainers = root.container
+          ? Array.isArray(root.container)
+            ? root.container
+            : [root.container]
+          : [];
+        for (const c of rawContainers) {
+          containers.push({
+            id: c.$?.id || '',
+            title: c['dc:title'] || '',
+            albumArtURI: c['upnp:albumArtURI'] || '',
+            childCount: parseInt(c.$?.childCount, 10) || 0,
+          });
+        }
+
+        // Items (morceaux / stations)
+        const rawItems = root.item ? (Array.isArray(root.item) ? root.item : [root.item]) : [];
+        for (const it of rawItems) {
+          let albumArtURI = it['upnp:albumArtURI'] || '';
+          const uri = it.res?._ || it.res || '';
+          const title = it['dc:title'] || '';
+
+          // Résoudre les logos radio
+          const knownLogo = matchKnownRadioLogo(typeof uri === 'string' ? uri : '', title);
+          if (knownLogo) {
+            albumArtURI = knownLogo;
+          } else if (albumArtURI && !albumArtURI.startsWith('http')) {
+            albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
+          }
+
+          items.push({
+            title,
+            uri: typeof uri === 'string' ? uri : '',
+            albumArtURI,
+            artist: it['dc:creator'] || '',
+            album: it['upnp:album'] || '',
+            class: it['upnp:class'] || '',
+          });
+        }
+
+        res.json({
+          containers,
+          items,
+          total: parseInt(result.TotalMatches, 10) || containers.length + items.length,
+        });
+      } catch (error) {
+        logger.error('Sonos browse:', error);
+        res
+          .status(500)
+          .json({ success: false, error: 'Impossible de parcourir les sources Sonos' });
+      }
+    },
+  );
 
   // GET /api/sonos/music-services — Liste des services musicaux disponibles sur le Sonos
   app.get('/api/sonos/music-services', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
+      if (!lib)
+        return res.status(503).json({ success: false, error: 'Package sonos non installé' });
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
+      if (!sonosIP)
+        return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
       const activeIP = coordinatorIP || sonosIP;
@@ -848,9 +956,12 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       ];
 
       const { parseString } = await import('xml2js');
-      const parseXmlAsync = (xml) => new Promise((resolve, reject) => {
-        parseString(xml, { explicitArray: false }, (err, data) => err ? reject(err) : resolve(data));
-      });
+      const parseXmlAsync = (xml) =>
+        new Promise((resolve, reject) => {
+          parseString(xml, { explicitArray: false }, (err, data) =>
+            err ? reject(err) : resolve(data),
+          );
+        });
 
       // Lancer les 2 enrichissements en parallèle pour réduire le temps de réponse
       const enrichMusicServices = async () => {
@@ -867,21 +978,21 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
         // Whitelist : services pertinents à afficher (ID → icône)
         // ListAvailableServices retourne ~90 services, on ne garde que les principaux
         const knownServices = {
-          303: 'radio',    // Sonos Radio
-          585: 'radio',    // Radio France
-          266: 'radio',    // Les Indés Radios
-          308: 'radio',    // Radio Paradise
-          174: 'music',    // TIDAL
-          9:   'music',    // Spotify
-          2:   'music',    // Deezer
-          204: 'music',    // Apple Music
-          201: 'music',    // Amazon Music
-          284: 'music',    // YouTube Music
-          31:  'music',    // Qobuz
-          160: 'music',    // SoundCloud
-          212: 'server',   // Plex
-          239: 'book',     // Audible
-          233: 'podcast',  // Pocket Casts
+          303: 'radio', // Sonos Radio
+          585: 'radio', // Radio France
+          266: 'radio', // Les Indés Radios
+          308: 'radio', // Radio Paradise
+          174: 'music', // TIDAL
+          9: 'music', // Spotify
+          2: 'music', // Deezer
+          204: 'music', // Apple Music
+          201: 'music', // Amazon Music
+          284: 'music', // YouTube Music
+          31: 'music', // Qobuz
+          160: 'music', // SoundCloud
+          212: 'server', // Plex
+          239: 'book', // Audible
+          233: 'podcast', // Pocket Casts
         };
 
         for (const svc of serviceList) {
@@ -908,28 +1019,33 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
         const cds = device.contentDirectoryService();
         const result = await new Promise((resolve, reject) => {
           const timer = setTimeout(() => reject(new Error('timeout')), 4000);
-          cds.Browse({
-            ObjectID: 'R:',
-            BrowseFlag: 'BrowseDirectChildren',
-            Filter: '*',
-            StartingIndex: 0,
-            RequestedCount: 100,
-            SortCriteria: '',
-          }, (err, data) => {
-            clearTimeout(timer);
-            if (err) reject(err);
-            else resolve(data);
-          });
+          cds.Browse(
+            {
+              ObjectID: 'R:',
+              BrowseFlag: 'BrowseDirectChildren',
+              Filter: '*',
+              StartingIndex: 0,
+              RequestedCount: 100,
+              SortCriteria: '',
+            },
+            (err, data) => {
+              clearTimeout(timer);
+              if (err) reject(err);
+              else resolve(data);
+            },
+          );
         });
 
         const parsed = await parseXmlAsync(result.Result);
         const root = parsed?.['DIDL-Lite'];
         const rawContainers = root?.container
-          ? (Array.isArray(root.container) ? root.container : [root.container])
+          ? Array.isArray(root.container)
+            ? root.container
+            : [root.container]
           : [];
 
         if (rawContainers.length > 0) {
-          const idx = sources.findIndex(s => s.id === 'R:0/0');
+          const idx = sources.findIndex((s) => s.id === 'R:0/0');
           if (idx >= 0) sources.splice(idx, 1);
 
           for (const c of rawContainers) {
@@ -948,10 +1064,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       };
 
       // Lancer les 2 enrichissements en parallèle (non-bloquant)
-      const results = await Promise.allSettled([
-        enrichMusicServices(),
-        enrichRadioCategories(),
-      ]);
+      const results = await Promise.allSettled([enrichMusicServices(), enrichRadioCategories()]);
       for (const r of results) {
         if (r.status === 'rejected') {
           logger.warn('Sonos music-services enrichment failed:', r.reason?.message);
@@ -968,9 +1081,11 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/sonos/queue', authenticateToken, sonosReadLimiter, async (_req, res) => {
     try {
       const lib = await loadSonosLib();
-      if (!lib) return res.status(503).json({ success: false, error: 'Package sonos non installé' });
+      if (!lib)
+        return res.status(503).json({ success: false, error: 'Package sonos non installé' });
       const sonosIP = getSonosIP();
-      if (!sonosIP) return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
+      if (!sonosIP)
+        return res.status(400).json({ success: false, error: 'IP Sonos non configurée' });
 
       const { device, coordinatorIP } = await getSonosDevice(lib.Sonos, sonosIP);
       const queue = await withTimeout(device.getQueue(), 8000).catch(() => null);
@@ -979,12 +1094,14 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
         return res.json({ items: [] });
       }
 
-      const items = queue.map(item => ({
+      const items = queue.map((item) => ({
         title: item.title || '',
         artist: item.artist || '',
         album: item.album || '',
         albumArtURI: item.albumArtURI
-          ? (item.albumArtURI.startsWith('http') ? item.albumArtURI : `http://${coordinatorIP}:1400${item.albumArtURI}`)
+          ? item.albumArtURI.startsWith('http')
+            ? item.albumArtURI
+            : `http://${coordinatorIP}:1400${item.albumArtURI}`
           : null,
         uri: item.uri || '',
       }));
@@ -996,83 +1113,111 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  app.post('/api/sonos/favorite/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosFavoriteSchema), async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    const { uri, title } = req.body;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.setAVTransportURI(uri);
-      await result.device.play();
-      logger.info(`[Sonos] Play favorite "${title || uri}" on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'favorite', zone, title: title || uri });
-    } catch (error) {
-      logger.error(`Sonos favorite ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur lecture favori' });
-    }
-  });
+  app.post(
+    '/api/sonos/favorite/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    validate(sonosFavoriteSchema),
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      const { uri, title } = req.body;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.setAVTransportURI(uri);
+        await result.device.play();
+        logger.info(`[Sonos] Play favorite "${title || uri}" on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'favorite', zone, title: title || uri });
+      } catch (error) {
+        logger.error(`Sonos favorite ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur lecture favori' });
+      }
+    },
+  );
 
   // ─────────────────────────────────────────────────────────────
   // SEEK / SHUFFLE / REPEAT (admin uniquement)
   // ─────────────────────────────────────────────────────────────
 
   // POST /api/sonos/seek/:zone — body: { position: seconds }
-  app.post('/api/sonos/seek/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosSeekSchema), async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    const { position } = req.body;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.seek(position);
-      logger.info(`[Sonos] Seek ${position}s on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'seek', zone, position });
-    } catch (error) {
-      logger.error(`Sonos seek ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande seek' });
-    }
-  });
+  app.post(
+    '/api/sonos/seek/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    validate(sonosSeekSchema),
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      const { position } = req.body;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.seek(position);
+        logger.info(`[Sonos] Seek ${position}s on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'seek', zone, position });
+      } catch (error) {
+        logger.error(`Sonos seek ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande seek' });
+      }
+    },
+  );
 
   // POST /api/sonos/shuffle/:zone — body: { enabled: boolean }
-  app.post('/api/sonos/shuffle/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosShuffleSchema), async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    const { enabled } = req.body;
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      const mode = await result.device.getPlayMode();
-      let newMode = enabled ? 'SHUFFLE' : 'NORMAL';
-      if (mode === 'REPEAT_ALL' && enabled) newMode = 'SHUFFLE_REPEAT_ONE';
-      else if (mode === 'SHUFFLE' && !enabled) newMode = 'NORMAL';
-      else if (mode === 'SHUFFLE_NOREPEAT' && !enabled) newMode = 'NORMAL';
-      await result.device.setPlayMode(newMode);
-      logger.info(`[Sonos] Shuffle ${enabled} on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'shuffle', zone, enabled });
-    } catch (error) {
-      logger.error(`Sonos shuffle ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande shuffle' });
-    }
-  });
+  app.post(
+    '/api/sonos/shuffle/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    validate(sonosShuffleSchema),
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      const { enabled } = req.body;
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        const mode = await result.device.getPlayMode();
+        let newMode = enabled ? 'SHUFFLE' : 'NORMAL';
+        if (mode === 'REPEAT_ALL' && enabled) newMode = 'SHUFFLE_REPEAT_ONE';
+        else if (mode === 'SHUFFLE' && !enabled) newMode = 'NORMAL';
+        else if (mode === 'SHUFFLE_NOREPEAT' && !enabled) newMode = 'NORMAL';
+        await result.device.setPlayMode(newMode);
+        logger.info(`[Sonos] Shuffle ${enabled} on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'shuffle', zone, enabled });
+      } catch (error) {
+        logger.error(`Sonos shuffle ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande shuffle' });
+      }
+    },
+  );
 
   // POST /api/sonos/repeat/:zone — body: { mode: 'none' | 'all' | 'one' }
-  app.post('/api/sonos/repeat/:zone', authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosRepeatSchema), async (req, res) => {
-    const zone = validateZone(req, res);
-    if (!zone) return;
-    const { mode } = req.body;
-    const MODES = { none: 'NORMAL', all: 'REPEAT_ALL', one: 'REPEAT_ONE' };
-    try {
-      const result = await getDeviceForZone(zone);
-      if (result.error) return res.status(503).json({ success: false, error: result.error });
-      await result.device.setPlayMode(MODES[mode]);
-      logger.info(`[Sonos] Repeat ${mode} on ${zone}`, { userId: req.user?.id });
-      res.json({ success: true, action: 'repeat', zone, mode });
-    } catch (error) {
-      logger.error(`Sonos repeat ${zone}:`, error);
-      res.status(500).json({ success: false, error: 'Erreur commande repeat' });
-    }
-  });
+  app.post(
+    '/api/sonos/repeat/:zone',
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    validate(sonosRepeatSchema),
+    async (req, res) => {
+      const zone = validateZone(req, res);
+      if (!zone) return;
+      const { mode } = req.body;
+      const MODES = { none: 'NORMAL', all: 'REPEAT_ALL', one: 'REPEAT_ONE' };
+      try {
+        const result = await getDeviceForZone(zone);
+        if (result.error) return res.status(503).json({ success: false, error: result.error });
+        await result.device.setPlayMode(MODES[mode]);
+        logger.info(`[Sonos] Repeat ${mode} on ${zone}`, { userId: req.user?.id });
+        res.json({ success: true, action: 'repeat', zone, mode });
+      } catch (error) {
+        logger.error(`Sonos repeat ${zone}:`, error);
+        res.status(500).json({ success: false, error: 'Erreur commande repeat' });
+      }
+    },
+  );
 
   // ─────────────────────────────────────────────────────────────
   // COMPATIBILITÉ — Anciennes routes /api/display/sonos-*
@@ -1088,47 +1233,75 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     };
   }
 
-  app.get('/api/display/sonos-config', deprecatedSonosRoute('/api/sonos/config'), authenticateToken, sonosReadLimiter, (_req, res) => {
-    try {
-      res.json({ sonosIP: getSonosIP() });
-    } catch (error) {
-      logger.error('Compat sonos-config get:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+  app.get(
+    '/api/display/sonos-config',
+    deprecatedSonosRoute('/api/sonos/config'),
+    authenticateToken,
+    sonosReadLimiter,
+    (_req, res) => {
+      try {
+        res.json({ sonosIP: getSonosIP() });
+      } catch (error) {
+        logger.error('Compat sonos-config get:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
-  app.post('/api/display/sonos-config', deprecatedSonosRoute('/api/sonos/config'), authenticateToken, requireAdmin, sonosCommandLimiter, validate(sonosConfigSchema), (req, res) => {
-    try {
-      const { sonosIP } = req.body;
-      db.prepare(`
+  app.post(
+    '/api/display/sonos-config',
+    deprecatedSonosRoute('/api/sonos/config'),
+    authenticateToken,
+    requireAdmin,
+    sonosCommandLimiter,
+    validate(sonosConfigSchema),
+    (req, res) => {
+      try {
+        const { sonosIP } = req.body;
+        db.prepare(
+          `
         INSERT INTO display_config (key, value, updated_at) VALUES ('sonosIP', ?, datetime('now'))
         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
-      `).run(JSON.stringify(sonosIP || ''));
-      res.json({ success: true });
-    } catch (error) {
-      logger.error('Compat sonos-config save:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+      `,
+        ).run(JSON.stringify(sonosIP || ''));
+        res.json({ success: true });
+      } catch (error) {
+        logger.error('Compat sonos-config save:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
-  app.get('/api/display/sonos-now-playing', deprecatedSonosRoute('/api/sonos/now-playing'), optionalTvToken, sonosReadLimiter, async (_req, res) => {
-    try {
-      const result = await getSonosNowPlaying();
-      res.json(result);
-    } catch (error) {
-      logger.error('Compat sonos-now-playing:', error);
-      res.json({ playing: false, error: error.message });
-    }
-  });
+  app.get(
+    '/api/display/sonos-now-playing',
+    deprecatedSonosRoute('/api/sonos/now-playing'),
+    optionalTvToken,
+    sonosReadLimiter,
+    async (_req, res) => {
+      try {
+        const result = await getSonosNowPlaying();
+        res.json(result);
+      } catch (error) {
+        logger.error('Compat sonos-now-playing:', error);
+        res.json({ playing: false, error: error.message });
+      }
+    },
+  );
 
   // Legacy sans auth → sécurisé avec optionalTvToken + déprécié
-  app.get('/api/sonos-now-playing', deprecatedSonosRoute('/api/sonos/now-playing'), optionalTvToken, sonosReadLimiter, async (_req, res) => {
-    try {
-      const result = await getSonosNowPlaying();
-      res.json(result);
-    } catch (error) {
-      logger.error('Compat legacy sonos-now-playing:', error);
-      res.json({ playing: false, error: error.message });
-    }
-  });
+  app.get(
+    '/api/sonos-now-playing',
+    deprecatedSonosRoute('/api/sonos/now-playing'),
+    optionalTvToken,
+    sonosReadLimiter,
+    async (_req, res) => {
+      try {
+        const result = await getSonosNowPlaying();
+        res.json(result);
+      } catch (error) {
+        logger.error('Compat legacy sonos-now-playing:', error);
+        res.json({ playing: false, error: error.message });
+      }
+    },
+  );
 }

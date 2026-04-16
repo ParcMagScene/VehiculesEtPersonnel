@@ -10,7 +10,6 @@
 import logger from '../logger.js';
 
 export function runTaxonomyMaintenanceMigrations(db) {
-
   // ─── 1. Ajouter 18 nouvelles règles regex ───
   try {
     const migKey = 'taxonomy_maint_new_rules_v1';
@@ -21,15 +20,20 @@ export function runTaxonomyMaintenanceMigrations(db) {
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
       const ins = db.prepare(
-        'INSERT INTO taxonomy_family_mapping (source_pattern, target_family, is_regex, priority) VALUES (?, ?, ?, ?)'
+        'INSERT INTO taxonomy_family_mapping (source_pattern, target_family, is_regex, priority) VALUES (?, ?, ?, ?)',
       );
       const checkExists = db.prepare(
-        'SELECT id FROM taxonomy_family_mapping WHERE source_pattern = ?'
+        'SELECT id FROM taxonomy_family_mapping WHERE source_pattern = ?',
       );
 
       const newRules = [
         // Éclairage — accessoires et pieds projecteurs (~219 articles)
-        ['accessoires.*projecteur|pieds.*projecteur|colonnes?.*télescopique|trépieds?', 'Éclairage', 1, 10],
+        [
+          'accessoires.*projecteur|pieds.*projecteur|colonnes?.*télescopique|trépieds?',
+          'Éclairage',
+          1,
+          10,
+        ],
         // Éclairage — contrôleurs, LED panels, guirlandes (~182)
         ['contrôleur|ledpanel|barres?.*led|cordon.*lumineux|guirlande', 'Éclairage', 1, 10],
         // Éclairage — filtres optiques et gélatines (~72)
@@ -96,7 +100,7 @@ export function runTaxonomyMaintenanceMigrations(db) {
 
       let cleaned = 0;
       const nullify = db.prepare(
-        "UPDATE supplier_articles SET unified_family = NULL WHERE family = ?"
+        'UPDATE supplier_articles SET unified_family = NULL WHERE family = ?',
       );
       for (const pattern of artefactPatterns) {
         const r = nullify.run(pattern);
@@ -117,19 +121,23 @@ export function runTaxonomyMaintenanceMigrations(db) {
     if (!already) {
       // Exclure les artefacts connus
       const artefacts = ['SOMMAIRE', 'TITRE SOUS SOMMAIRE', 'S S E M E N T A U', 'VUE ARRIÈRE'];
-      const artefactSet = new Set(artefacts.map(a => a.toLowerCase()));
+      const artefactSet = new Set(artefacts.map((a) => a.toLowerCase()));
 
-      const rules = db.prepare(
-        'SELECT source_pattern, target_family, is_regex FROM taxonomy_family_mapping ORDER BY priority DESC'
-      ).all();
+      const rules = db
+        .prepare(
+          'SELECT source_pattern, target_family, is_regex FROM taxonomy_family_mapping ORDER BY priority DESC',
+        )
+        .all();
 
       const updateFamily = db.prepare(
-        'UPDATE supplier_articles SET unified_family = ? WHERE id = ?'
+        'UPDATE supplier_articles SET unified_family = ? WHERE id = ?',
       );
 
-      const unmapped = db.prepare(
-        "SELECT id, family FROM supplier_articles WHERE unified_family IS NULL AND family IS NOT NULL AND family != ''"
-      ).all();
+      const unmapped = db
+        .prepare(
+          "SELECT id, family FROM supplier_articles WHERE unified_family IS NULL AND family IS NOT NULL AND family != ''",
+        )
+        .all();
 
       let mapped = 0;
       for (const row of unmapped) {
@@ -146,7 +154,9 @@ export function runTaxonomyMaintenanceMigrations(db) {
                 mapped++;
                 break;
               }
-            } catch { /* regex invalide, skip */ }
+            } catch {
+              /* regex invalide, skip */
+            }
           } else {
             if (familyLower === rule.source_pattern.toLowerCase()) {
               updateFamily.run(rule.target_family, row.id);
@@ -169,9 +179,11 @@ export function runTaxonomyMaintenanceMigrations(db) {
     const migKey = 'taxonomy_maint_stock_rename_v1';
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
-      const r = db.prepare(
-        "UPDATE stock_categories SET name = 'Outillage & EPI' WHERE name = 'Mécanique & Outillage' AND parent_id IS NULL"
-      ).run();
+      const r = db
+        .prepare(
+          "UPDATE stock_categories SET name = 'Outillage & EPI' WHERE name = 'Mécanique & Outillage' AND parent_id IS NULL",
+        )
+        .run();
 
       db.prepare('INSERT INTO _migrations_log (key) VALUES (?)').run(migKey);
       logger.info(`  ✅ Migration ${migKey}: ${r.changes} catégorie(s) renommée(s)`);
@@ -187,17 +199,17 @@ export function runTaxonomyMaintenanceMigrations(db) {
     if (!already) {
       const newRoots = [
         ['Rideau-Machinerie', '🎭', '#a855f7'],
-        ['Informatique',      '💻', '#06b6d4'],
-        ['Accroche',          '🔗', '#14b8a6'],
-        ['Motorisation',      '⚙️',  '#f97316'],
-        ['Mobilier',          '🪑', '#6b7280'],
+        ['Informatique', '💻', '#06b6d4'],
+        ['Accroche', '🔗', '#14b8a6'],
+        ['Motorisation', '⚙️', '#f97316'],
+        ['Mobilier', '🪑', '#6b7280'],
       ];
 
       const checkExists = db.prepare(
-        "SELECT id FROM stock_categories WHERE name = ? AND parent_id IS NULL"
+        'SELECT id FROM stock_categories WHERE name = ? AND parent_id IS NULL',
       );
       const ins = db.prepare(
-        "INSERT INTO stock_categories (name, icon, color, parent_id) VALUES (?, ?, ?, NULL)"
+        'INSERT INTO stock_categories (name, icon, color, parent_id) VALUES (?, ?, ?, NULL)',
       );
 
       let added = 0;

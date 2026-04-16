@@ -4,10 +4,13 @@ import { z } from 'zod';
 const optStr = (max = 255) => z.string().max(max).trim().optional().or(z.literal('')).or(z.null());
 
 // ── IPv4 ──
-const ipv4 = z.string().max(45).regex(
-  /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
-  'IPv4 invalide (ex: 192.168.1.10)'
-);
+const ipv4 = z
+  .string()
+  .max(45)
+  .regex(
+    /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
+    'IPv4 invalide (ex: 192.168.1.10)',
+  );
 
 // ── Config ──
 export const sonosConfigSchema = z.object({

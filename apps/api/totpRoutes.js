@@ -48,17 +48,21 @@ function verifyTOTPCode(secret, code) {
 }
 
 export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
-
   // ─── Étape 1 : Initier le setup 2FA (génère secret + QR) ───
   app.post('/api/auth/2fa/setup', authenticateToken, requireAdmin, async (req, res) => {
     try {
-      const user = db.prepare('SELECT id, email, totp_enabled FROM users WHERE id = ?').get(req.user.id);
+      const user = db
+        .prepare('SELECT id, email, totp_enabled FROM users WHERE id = ?')
+        .get(req.user.id);
       if (!user) {
         return res.status(404).json({ success: false, error: 'Utilisateur introuvable' });
       }
 
       if (user.totp_enabled === 1) {
-        return res.status(400).json({ success: false, error: '2FA déjà activé. Désactivez-le d\'abord pour le reconfigurer.' });
+        return res.status(400).json({
+          success: false,
+          error: "2FA déjà activé. Désactivez-le d'abord pour le reconfigurer.",
+        });
       }
 
       const { secret, uri } = generateTOTPSecret(user.email);
@@ -72,7 +76,8 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
       res.json({
         secret,
         qrCode: qrDataUrl,
-        message: 'Scannez le QR code avec votre application d\'authentification (Google Authenticator, Authy, etc.), puis confirmez avec un code.'
+        message:
+          "Scannez le QR code avec votre application d'authentification (Google Authenticator, Authy, etc.), puis confirmez avec un code.",
       });
     } catch (error) {
       logger.error('Erreur setup 2FA:', error);
@@ -88,9 +93,14 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ success: false, error: 'Code de vérification requis' });
       }
 
-      const user = db.prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?').get(req.user.id);
+      const user = db
+        .prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?')
+        .get(req.user.id);
       if (!user || !user.totp_secret) {
-        return res.status(400).json({ success: false, error: 'Aucun setup 2FA en cours. Lancez /api/auth/2fa/setup d\'abord.' });
+        return res.status(400).json({
+          success: false,
+          error: "Aucun setup 2FA en cours. Lancez /api/auth/2fa/setup d'abord.",
+        });
       }
 
       if (user.totp_enabled === 1) {
@@ -98,11 +108,21 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
       }
 
       if (!verifyTOTPCode(user.totp_secret, code)) {
-        return res.status(400).json({ success: false, error: 'Code invalide. Vérifiez l\'heure de votre appareil et réessayez.' });
+        return res.status(400).json({
+          success: false,
+          error: "Code invalide. Vérifiez l'heure de votre appareil et réessayez.",
+        });
       }
 
       db.prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?').run(user.id);
-      auditLog({ actorId: user.id, actorEmail: user.email, action: 'security.2fa.enabled', targetType: 'user', targetId: user.id, req });
+      auditLog({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: 'security.2fa.enabled',
+        targetType: 'user',
+        targetId: user.id,
+        req,
+      });
 
       logger.info(`🔐 2FA activé pour ${user.email}`);
       res.json({ success: true, message: '2FA activé avec succès.' });
@@ -117,10 +137,14 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { code } = req.body;
       if (!code) {
-        return res.status(400).json({ success: false, error: 'Code TOTP requis pour désactiver le 2FA' });
+        return res
+          .status(400)
+          .json({ success: false, error: 'Code TOTP requis pour désactiver le 2FA' });
       }
 
-      const user = db.prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?').get(req.user.id);
+      const user = db
+        .prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?')
+        .get(req.user.id);
       if (!user || user.totp_enabled !== 1) {
         return res.status(400).json({ success: false, error: '2FA non activé.' });
       }
@@ -130,7 +154,14 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
       }
 
       db.prepare('UPDATE users SET totp_enabled = 0, totp_secret = NULL WHERE id = ?').run(user.id);
-      auditLog({ actorId: user.id, actorEmail: user.email, action: 'security.2fa.disabled', targetType: 'user', targetId: user.id, req });
+      auditLog({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: 'security.2fa.disabled',
+        targetType: 'user',
+        targetId: user.id,
+        req,
+      });
 
       logger.info(`🔓 2FA désactivé pour ${user.email}`);
       res.json({ success: true, message: '2FA désactivé.' });
@@ -158,24 +189,39 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ success: false, error: 'Code TOTP requis' });
       }
 
-      const user = db.prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?').get(req.user.id);
+      const user = db
+        .prepare('SELECT id, email, totp_secret, totp_enabled FROM users WHERE id = ?')
+        .get(req.user.id);
       if (!user || user.totp_enabled !== 1) {
         return res.json({ success: true, message: '2FA non requis.' });
       }
 
       if (!verifyTOTPCode(user.totp_secret, code)) {
-        auditLog({ actorId: user.id, actorEmail: user.email, action: 'security.2fa.verify_failed', targetType: 'user', targetId: user.id, req });
+        auditLog({
+          actorId: user.id,
+          actorEmail: user.email,
+          action: 'security.2fa.verify_failed',
+          targetType: 'user',
+          targetId: user.id,
+          req,
+        });
         return res.status(401).json({ success: false, error: 'Code 2FA invalide.' });
       }
 
-      auditLog({ actorId: user.id, actorEmail: user.email, action: 'security.2fa.verify_success', targetType: 'user', targetId: user.id, req });
+      auditLog({
+        actorId: user.id,
+        actorEmail: user.email,
+        action: 'security.2fa.verify_success',
+        targetType: 'user',
+        targetId: user.id,
+        req,
+      });
       res.json({ success: true, message: '2FA vérifié.' });
     } catch (error) {
       logger.error('Erreur verify 2FA:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
-
 }
 
 export { verifyTOTPCode };

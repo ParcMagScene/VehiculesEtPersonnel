@@ -30,8 +30,12 @@ export function validateFileType(allowedMimes) {
 
       if (!allowedMimes.includes(result.mime)) {
         fs.unlinkSync(req.file.path);
-        logger.warn(`[SEC] Upload rejeté (MIME réel: ${result.mime}, déclaré: ${req.file.mimetype}): ${req.file.originalname}`);
-        return res.status(400).json({ error: `Type de fichier non autorisé (détecté : ${result.mime})` });
+        logger.warn(
+          `[SEC] Upload rejeté (MIME réel: ${result.mime}, déclaré: ${req.file.mimetype}): ${req.file.originalname}`,
+        );
+        return res
+          .status(400)
+          .json({ error: `Type de fichier non autorisé (détecté : ${result.mime})` });
       }
 
       // Stocker le MIME réel pour usage éventuel
@@ -67,15 +71,21 @@ export function validateFileTypes(allowedMimes) {
             if (fs.existsSync(f.path)) fs.unlinkSync(f.path);
           }
           logger.warn(`[SEC] Upload batch rejeté (magic bytes inconnus): ${file.originalname}`);
-          return res.status(400).json({ error: `Type de fichier non reconnu : ${file.originalname}` });
+          return res
+            .status(400)
+            .json({ error: `Type de fichier non reconnu : ${file.originalname}` });
         }
 
         if (!allowedMimes.includes(result.mime)) {
           for (const f of req.files) {
             if (fs.existsSync(f.path)) fs.unlinkSync(f.path);
           }
-          logger.warn(`[SEC] Upload batch rejeté (MIME réel: ${result.mime}): ${file.originalname}`);
-          return res.status(400).json({ error: `Type non autorisé pour ${file.originalname} (détecté : ${result.mime})` });
+          logger.warn(
+            `[SEC] Upload batch rejeté (MIME réel: ${result.mime}): ${file.originalname}`,
+          );
+          return res.status(400).json({
+            error: `Type non autorisé pour ${file.originalname} (détecté : ${result.mime})`,
+          });
         }
 
         file.detectedMime = result.mime;

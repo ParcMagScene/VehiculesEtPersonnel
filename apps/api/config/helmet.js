@@ -9,7 +9,12 @@ export const helmetMiddleware = helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        'https://fonts.googleapis.com',
+        'https://cdn.jsdelivr.net',
+      ],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'data:'],
       imgSrc: ["'self'", 'data:', 'blob:'],
       connectSrc: ["'self'"],
@@ -35,7 +40,12 @@ const tvHelmetMiddleware = helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        'https://fonts.googleapis.com',
+        'https://cdn.jsdelivr.net',
+      ],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'data:'],
       imgSrc: ["'self'", 'data:', 'blob:', '*'],
       connectSrc: ["'self'"],
@@ -53,12 +63,14 @@ const tvHelmetMiddleware = helmet({
  */
 export function helmetConditional(req, res, next) {
   const port = req.socket.localPort;
-  if (port === 3001
-      || req.path.startsWith('/tv-client')
-      || req.path.startsWith('/display-')
-      || req.path === '/tv'
-      || req.path === '/SNCF.wav'
-      || (req.path.startsWith('/api/display/tv') && !req.headers.authorization)) {
+  if (
+    port === 3001 ||
+    req.path.startsWith('/tv-client') ||
+    req.path.startsWith('/display-') ||
+    req.path === '/tv' ||
+    req.path === '/SNCF.wav' ||
+    (req.path.startsWith('/api/display/tv') && !req.headers.authorization)
+  ) {
     return tvHelmetMiddleware(req, res, next);
   }
   return helmetMiddleware(req, res, next);

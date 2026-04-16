@@ -8,8 +8,31 @@ import QRCode from 'qrcode';
 import db from './database.js';
 import logger from './logger.js';
 import { auditLog } from './auditLog.js';
+import { encryptPassword, decryptPassword } from './videoProxyService.js';
 
 const TOTP_ISSUER = 'eM@g';
+
+/**
+ * [SEC M1] Chiffre un secret TOTP avant stockage DB (AES-256-GCM)
+ * Format stocké : "iv:tag:encrypted" — même pattern que les mots de passe caméra
+ */
+function encryptTOTPSecret(secret) {
+  return encryptPassword(secret);
+}
+
+/**
+ * [SEC M1] Déchiffre un secret TOTP depuis la DB
+ * Supporte le fallback cleartext pour les anciens secrets non migrés
+ */
+function decryptTOTPSecret(stored) {
+  if (!stored) return null;
+  // Format chiffré = "iv:tag:encrypted" (3 parties hex séparées par ':')
+  if (stored.includes(':')) {
+    return decryptPassword(stored);
+  }
+  // Fallback : ancien secret en clair (base32, pas de ':')
+  return stored;
+}
 
 /**
  * Génère un secret TOTP et un QR code pour l'enrôlement
@@ -48,6 +71,27 @@ function verifyTOTPCode(secret, code) {
 }
 
 export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
+  // [SEC M1] Migration : chiffrer les secrets TOTP existants en clair
+  try {
+    const users = db
+      .prepare('SELECT id, totp_secret FROM users WHERE totp_secret IS NOT NULL')
+      .all();
+    let migrated = 0;
+    for (const u of users) {
+      // Les secrets chiffrés contiennent ':', les base32 en clair jamais
+      if (u.totp_secret && !u.totp_secret.includes(':')) {
+        const encrypted = encryptTOTPSecret(u.totp_secret);
+        db.prepare('UPDATE users SET totp_secret = ? WHERE id = ?').run(encrypted, u.id);
+        migrated++;
+      }
+    }
+    if (migrated > 0) {
+      logger.info(`🔐 Migration TOTP : ${migrated} secret(s) chiffré(s)`);
+    }
+  } catch (err) {
+    logger.warn('⚠️ Migration TOTP échouée:', err.message);
+  }
+
   // ─── Étape 1 : Initier le setup 2FA (génère secret + QR) ───
   app.post('/api/auth/2fa/setup', authenticateToken, requireAdmin, async (req, res) => {
     try {
@@ -67,8 +111,9 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
 
       const { secret, uri } = generateTOTPSecret(user.email);
 
-      // Stocker le secret temporairement (pas encore confirmé)
-      db.prepare('UPDATE users SET totp_secret = ? WHERE id = ?').run(secret, user.id);
+      // [SEC M1] Stocker le secret chiffré (pas encore confirmé)
+      const encryptedSecret = encryptTOTPSecret(secret);
+      db.prepare('UPDATE users SET totp_secret = ? WHERE id = ?').run(encryptedSecret, user.id);
 
       // Générer le QR code en data URL
       const qrDataUrl = await QRCode.toDataURL(uri);
@@ -107,7 +152,8 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ success: false, error: '2FA déjà activé.' });
       }
 
-      if (!verifyTOTPCode(user.totp_secret, code)) {
+      const plainSecret = decryptTOTPSecret(user.totp_secret);
+      if (!plainSecret || !verifyTOTPCode(plainSecret, code)) {
         return res.status(400).json({
           success: false,
           error: "Code invalide. Vérifiez l'heure de votre appareil et réessayez.",
@@ -149,7 +195,8 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ success: false, error: '2FA non activé.' });
       }
 
-      if (!verifyTOTPCode(user.totp_secret, code)) {
+      const plainSecret = decryptTOTPSecret(user.totp_secret);
+      if (!plainSecret || !verifyTOTPCode(plainSecret, code)) {
         return res.status(400).json({ success: false, error: 'Code invalide.' });
       }
 
@@ -196,7 +243,8 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
         return res.json({ success: true, message: '2FA non requis.' });
       }
 
-      if (!verifyTOTPCode(user.totp_secret, code)) {
+      const plainSecret = decryptTOTPSecret(user.totp_secret);
+      if (!plainSecret || !verifyTOTPCode(plainSecret, code)) {
         auditLog({
           actorId: user.id,
           actorEmail: user.email,

@@ -209,23 +209,23 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
           ))}
         </select>
         <div className="preset-panel__bar-actions">
-          <Tooltip content="Modifier le preset">
+          <Tooltip content="Modifier le preset" position="bottom">
             <Button variant="ghost" size="sm" onClick={startEdit}>
               <Edit2 size={14} />
             </Button>
           </Tooltip>
-          <Tooltip content="Supprimer le preset">
+          <Tooltip content="Supprimer le preset" position="bottom">
             <Button variant="ghost" size="sm" onClick={handleDelete}>
               <Trash2 size={14} />
             </Button>
           </Tooltip>
-          <Tooltip content="Nouveau preset">
+          <Tooltip content="Nouveau preset" position="bottom">
             <Button variant="ghost" size="sm" onClick={startCreate}>
               <Plus size={14} />
             </Button>
           </Tooltip>
           {onDetach && (
-            <Tooltip content="Détacher dans une fenêtre">
+            <Tooltip content="Détacher dans une fenêtre" position="bottom">
               <Button variant="ghost" size="sm" onClick={() => onDetach(activePresetId)}>
                 <ExternalLink size={14} />
               </Button>

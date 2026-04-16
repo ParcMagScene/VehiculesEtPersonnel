@@ -833,7 +833,7 @@ function TaskPDFExportModal({
 
       <ModalFooter className="pdf-export-footer">
         <Button variant="ghost" onClick={onClose}>
-          Annuler
+          Fermer
         </Button>
         <Button
           variant="primary"

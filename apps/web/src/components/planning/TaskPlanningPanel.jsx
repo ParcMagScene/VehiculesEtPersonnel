@@ -630,7 +630,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   const cycleStatus = useCallback(
     async (task) => {
       const next = {
-        pending: 'in_progress',
+        pending: 'done',
         in_progress: 'done',
         done: 'pending',
         cancelled: 'pending',

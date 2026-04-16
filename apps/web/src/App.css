@@ -440,7 +440,7 @@
   }
 }
 
-/* Popup des notifications */
+/* Popup des notifications — positionnée en popover sous le header */
 .notifications-popup-overlay {
   position: fixed;
   top: 0;
@@ -456,16 +456,27 @@
   animation: fadeIn 0.2s ease-out;
 }
 
+/* Override du Modal overlay pour positionner en popover */
+.ui-modal-overlay:has(> .notifications-popup) {
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: none;
+}
+
 .notifications-popup {
   background: var(--theme-bg-card);
-  border-radius: var(--radius-lg);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   width: 100%;
-  max-width: 600px;
-  max-height: 70vh;
+  max-width: 480px;
+  max-height: 75vh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
   animation: slideDown 0.3s ease-out;
+  margin-right: 8px;
+  margin-top: var(--header-height, 56px);
 }
 
 @keyframes slideDown {

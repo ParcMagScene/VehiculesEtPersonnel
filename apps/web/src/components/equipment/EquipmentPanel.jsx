@@ -358,111 +358,109 @@ const EquipmentPanel = ({
               )}
             </>
           )}
-        </div>
-
-        {/* Stats */}
-        <div className="eq-stats-row">
-          <Tooltip content="Tous" position="bottom">
-            <Button
-              variant="ghost"
-              className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`}
-              onClick={() => {
-                setFilterStatus('');
-                setListFilter('');
-                setSubTab('inventory');
-              }}
-            >
-              <Package size={13} />
-              <span className="eq-stat-value">{stats.total}</span>
-            </Button>
-          </Tooltip>
-          <Tooltip content="Disponibles" position="bottom">
-            <Button
-              variant="ghost"
-              className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`}
-              onClick={() => {
-                setFilterStatus('available');
-                setListFilter('');
-                setSubTab('inventory');
-              }}
-            >
-              <CheckCircle size={13} />
-              <span className="eq-stat-value">{stats.available}</span>
-            </Button>
-          </Tooltip>
-          <Tooltip content="En service" position="bottom">
-            <Button
-              variant="ghost"
-              className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`}
-              onClick={() => {
-                setFilterStatus('in_use');
-                setListFilter('');
-                setSubTab('inventory');
-              }}
-            >
-              <Clock size={13} />
-              <span className="eq-stat-value">{stats.in_use}</span>
-            </Button>
-          </Tooltip>
-          <Tooltip content="Maintenance" position="bottom">
-            <Button
-              variant="ghost"
-              className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`}
-              onClick={() => {
-                setFilterStatus('maintenance');
-                setListFilter('');
-                setSubTab('inventory');
-              }}
-            >
-              <Wrench size={13} />
-              <span className="eq-stat-value">{stats.maintenance}</span>
-            </Button>
-          </Tooltip>
-          {stats.openTickets > 0 && (
-            <Tooltip content="Tickets SAV" position="bottom">
+          <div className="eq-stats-row">
+            <Tooltip content="Tous" position="bottom">
               <Button
                 variant="ghost"
-                className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`}
+                className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`}
                 onClick={() => {
-                  setSavFilterStatus('_active');
-                  setSubTab('sav');
-                }}
-              >
-                <AlertTriangle size={13} />
-                <span className="eq-stat-value">{stats.openTickets}</span>
-              </Button>
-            </Tooltip>
-          )}
-          {favoriteIds.size > 0 && (
-            <Tooltip content="Favoris" position="bottom">
-              <Button
-                variant="ghost"
-                className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`}
-                onClick={() => {
-                  setListFilter(listFilter === 'favorite' ? '' : 'favorite');
+                  setFilterStatus('');
+                  setListFilter('');
                   setSubTab('inventory');
                 }}
               >
-                <Star size={13} />
-                <span className="eq-stat-value">{favoriteIds.size}</span>
+                <Package size={13} />
+                <span className="eq-stat-value">{stats.total}</span>
               </Button>
             </Tooltip>
-          )}
-          {watchIds.size > 0 && (
-            <Tooltip content="Surveillance" position="bottom">
+            <Tooltip content="Disponibles" position="bottom">
               <Button
                 variant="ghost"
-                className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`}
+                className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`}
                 onClick={() => {
-                  setListFilter(listFilter === 'watch' ? '' : 'watch');
+                  setFilterStatus('available');
+                  setListFilter('');
                   setSubTab('inventory');
                 }}
               >
-                <Eye size={13} />
-                <span className="eq-stat-value">{watchIds.size}</span>
+                <CheckCircle size={13} />
+                <span className="eq-stat-value">{stats.available}</span>
               </Button>
             </Tooltip>
-          )}
+            <Tooltip content="En service" position="bottom">
+              <Button
+                variant="ghost"
+                className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`}
+                onClick={() => {
+                  setFilterStatus('in_use');
+                  setListFilter('');
+                  setSubTab('inventory');
+                }}
+              >
+                <Clock size={13} />
+                <span className="eq-stat-value">{stats.in_use}</span>
+              </Button>
+            </Tooltip>
+            <Tooltip content="Maintenance" position="bottom">
+              <Button
+                variant="ghost"
+                className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`}
+                onClick={() => {
+                  setFilterStatus('maintenance');
+                  setListFilter('');
+                  setSubTab('inventory');
+                }}
+              >
+                <Wrench size={13} />
+                <span className="eq-stat-value">{stats.maintenance}</span>
+              </Button>
+            </Tooltip>
+            {stats.openTickets > 0 && (
+              <Tooltip content="Tickets SAV" position="bottom">
+                <Button
+                  variant="ghost"
+                  className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`}
+                  onClick={() => {
+                    setSavFilterStatus('_active');
+                    setSubTab('sav');
+                  }}
+                >
+                  <AlertTriangle size={13} />
+                  <span className="eq-stat-value">{stats.openTickets}</span>
+                </Button>
+              </Tooltip>
+            )}
+            {favoriteIds.size > 0 && (
+              <Tooltip content="Favoris" position="bottom">
+                <Button
+                  variant="ghost"
+                  className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`}
+                  onClick={() => {
+                    setListFilter(listFilter === 'favorite' ? '' : 'favorite');
+                    setSubTab('inventory');
+                  }}
+                >
+                  <Star size={13} />
+                  <span className="eq-stat-value">{favoriteIds.size}</span>
+                </Button>
+              </Tooltip>
+            )}
+            {watchIds.size > 0 && (
+              <Tooltip content="Surveillance" position="bottom">
+                <Button
+                  variant="ghost"
+                  className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`}
+                  onClick={() => {
+                    setListFilter(listFilter === 'watch' ? '' : 'watch');
+                    setSubTab('inventory');
+                  }}
+                >
+                  <Eye size={13} />
+                  <span className="eq-stat-value">{watchIds.size}</span>
+                </Button>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </div>
 

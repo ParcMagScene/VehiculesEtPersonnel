@@ -106,7 +106,16 @@ function LocationsTab({ currentUser }) {
   }
 
   return (
-    <>
+    <div
+      className="locations-tab"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
+      }}
+    >
       {/* Toolbar */}
       <div className="annuaire-toolbar">
         <div className="annuaire-toolbar-actions-row">
@@ -275,7 +284,7 @@ function LocationsTab({ currentUser }) {
       )}
 
       {ConfirmDialogRenderer}
-    </>
+    </div>
   );
 }
 

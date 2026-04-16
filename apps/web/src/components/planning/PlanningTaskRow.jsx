@@ -301,6 +301,8 @@ export const PlanningTaskRow = React.memo(
             <Tooltip content="Lier à une affaire" position="bottom">
               <Button
                 variant="ghost"
+                size="xs"
+                iconOnly
                 className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -315,6 +317,8 @@ export const PlanningTaskRow = React.memo(
           <Tooltip content={isHidden ? "Afficher sur l'écran" : "Masquer de l'écran"}>
             <Button
               variant="ghost"
+              size="xs"
+              iconOnly
               className={`toggle-visible ${isHidden ? 'off' : ''}`}
               onClick={() => onToggleVisible(task)}
             >
@@ -322,12 +326,24 @@ export const PlanningTaskRow = React.memo(
             </Button>
           </Tooltip>
           <Tooltip content="Modifier cette tâche">
-            <Button variant="ghost" className="edit" onClick={() => onEdit(task)}>
+            <Button
+              variant="ghost"
+              size="xs"
+              iconOnly
+              className="edit"
+              onClick={() => onEdit(task)}
+            >
               <Edit2 size={14} />
             </Button>
           </Tooltip>
           <Tooltip content="Supprimer">
-            <Button variant="ghost" className="delete" onClick={() => onDelete(task.id)}>
+            <Button
+              variant="ghost"
+              size="xs"
+              iconOnly
+              className="delete"
+              onClick={() => onDelete(task.id)}
+            >
               <Trash2 size={14} />
             </Button>
           </Tooltip>

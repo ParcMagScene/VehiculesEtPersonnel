@@ -616,6 +616,14 @@ function startAutoScroll() {
   const mainElement = document.querySelector('main');
   if (!mainElement) return;
 
+  // Wrapper GPU-composited : transform au lieu de scrollTop → pas de reflow par frame
+  const wrapper = document.createElement('div');
+  wrapper.style.willChange = 'transform';
+  while (mainElement.firstChild) {
+    wrapper.appendChild(mainElement.firstChild);
+  }
+  mainElement.appendChild(wrapper);
+
   let scrollPosition = 0;
   const scrollSpeed = 0.5;
   const pauseAtBottom = 3000;
@@ -624,7 +632,7 @@ function startAutoScroll() {
 
   function scroll() {
     if (!isPaused) {
-      const maxScroll = mainElement.scrollHeight - mainElement.clientHeight;
+      const maxScroll = wrapper.scrollHeight - mainElement.clientHeight;
       if (maxScroll > 0) {
         scrollPosition += scrollSpeed;
         if (scrollPosition >= maxScroll) {
@@ -632,12 +640,12 @@ function startAutoScroll() {
           isPaused = true;
           setTimeout(() => {
             scrollPosition = 0;
-            mainElement.scrollTop = 0;
+            wrapper.style.transform = 'translateY(0)';
             isPaused = true;
             setTimeout(() => { isPaused = false; }, pauseAtTop);
           }, pauseAtBottom);
         }
-        mainElement.scrollTop = scrollPosition;
+        wrapper.style.transform = `translateY(-${scrollPosition}px)`;
       }
     }
     requestAnimationFrame(scroll);

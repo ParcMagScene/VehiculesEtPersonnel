@@ -22,7 +22,6 @@ import {
   PackagePlus,
   Paperclip,
   Plus,
-  RefreshCw,
   TrendingUp,
 } from 'lucide-react';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1102,16 +1101,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
 
           <Divider orientation="vertical" />
 
-          {/* Stats */}
-          <Tooltip content="Rafraîchir les affaires" position="bottom">
-            <Button
-              variant="ghost"
-              className="affaires-tb-nav-btn u-flex-center u-gap-1"
-              onClick={handleRefresh}
-            >
-              <RefreshCw size={14} />
-            </Button>
-          </Tooltip>
           <div className="affaires-count-box">
             <span className="affaires-count-number">{filteredAffaires.length}</span>
             <span className="affaires-count-label">

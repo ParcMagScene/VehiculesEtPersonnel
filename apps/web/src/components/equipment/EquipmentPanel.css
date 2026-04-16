@@ -67,7 +67,9 @@
   gap: 3px;
   flex-wrap: wrap;
   align-items: center;
-  width: 100%;
+  margin-left: auto;
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--theme-border);
 }
 
 .eq-stat-btn {

@@ -16,10 +16,10 @@ import {
   startOfYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarPlus, Plus, RefreshCw, Search } from 'lucide-react';
+import { CalendarPlus, Plus, RefreshCw } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, InlineAlert, LoadingOverlay, SearchBar } from '@/design-system';
+import { Button, InlineAlert, LoadingOverlay } from '@/design-system';
 
 import { TIMING } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
@@ -99,12 +99,10 @@ function GoogleCalendarBanner({
 
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
   const [attachmentCounts, setAttachmentCounts] = useState({});
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchFilter, setSearchFilter] = useState('');
+
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
   const [eventFormEvent, setEventFormEvent] = useState(null);
-  const searchInputRef = useRef(null);
 
   // ── Synchronisation intelligente via useGoogleSync ──
   const {
@@ -656,26 +654,9 @@ function GoogleCalendarBanner({
     ];
     let colorIndex = 0;
 
-    // Filtrer par recherche (nom ou numéro d'affaire)
-    const searchLower = searchFilter.trim().toLowerCase();
-
     events.forEach((event) => {
       if (processedEvents.has(event.id)) return;
       processedEvents.add(event.id);
-
-      // Appliquer le filtre de recherche
-      if (searchLower) {
-        const summary = (event.summary || '').toLowerCase();
-        const affaire = (event.affaire || '').toLowerCase();
-        const location = (event.location || '').toLowerCase();
-        if (
-          !summary.includes(searchLower) &&
-          !affaire.includes(searchLower) &&
-          !location.includes(searchLower)
-        ) {
-          return; // skip cet événement
-        }
-      }
 
       const eventStart = event.start.dateTime
         ? parseISO(event.start.dateTime)
@@ -774,7 +755,7 @@ function GoogleCalendarBanner({
     });
 
     return eventBlocks;
-  }, [view, currentDate, events, days, searchFilter, activeModule]);
+  }, [view, currentDate, events, days, activeModule]);
 
   // Afficher un message si le module Google n'est pas configuré côté serveur
   if (googleConfigured === false) {
@@ -851,20 +832,6 @@ function GoogleCalendarBanner({
                   </div>
                 )}
                 <div className="banner-header-actions">
-                  {displayMode !== 'closed' && (
-                    <Button
-                      variant="ghost"
-                      className={`banner-search-toggle ${searchOpen ? 'active' : ''}`}
-                      onClick={() => {
-                        setSearchOpen((prev) => !prev);
-                        if (searchOpen) setSearchFilter('');
-                        else setTimeout(() => searchInputRef.current?.focus(), 100);
-                      }}
-                      title="Rechercher un événement"
-                    >
-                      <Search size={14} />
-                    </Button>
-                  )}
                   <Button
                     variant="ghost"
                     className="toggle-banner-button"
@@ -875,24 +842,6 @@ function GoogleCalendarBanner({
                   </Button>
                 </div>
               </div>
-              {searchOpen && displayMode !== 'closed' && (
-                <div className="banner-search-bar">
-                  <SearchBar
-                    ref={searchInputRef}
-                    value={searchFilter}
-                    onChange={setSearchFilter}
-                    placeholder="Nom, n° affaire…"
-                    size="sm"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        setSearchFilter('');
-                        setSearchOpen(false);
-                      }
-                    }}
-                  />
-                  <span className="banner-search-count">{eventBlocks.length}</span>
-                </div>
-              )}
               {/* Bouton contextuel : Nouvelle réservation / Nouvelle affectation / Nouvelle affaire */}
               <Button
                 variant="ghost"

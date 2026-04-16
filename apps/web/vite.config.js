@@ -65,6 +65,13 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     setupFiles: './src/test/setup.js',
     css: false,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{js,jsx}'],
+      exclude: ['src/test/**', 'src/**/*.test.*', 'src/**/*.stories.*'],
+    },
   },
   build: {
     // Supprimer console.log et debugger en production

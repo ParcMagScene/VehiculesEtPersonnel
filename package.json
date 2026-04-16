@@ -30,10 +30,22 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@storybook/react": "^8.6.18",
     "@storybook/react-vite": "^8.6.18",
     "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "md-to-pdf": "^5.2.5"
+  },
+  "lint-staged": {
+    "apps/web/src/**/*.{js,jsx}": [
+      "prettier --write",
+      "eslint --quiet --fix"
+    ],
+    "apps/web/src/**/*.css": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "file-type": "^19.6.0"

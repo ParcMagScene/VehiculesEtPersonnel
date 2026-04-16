@@ -1,2 +1,2 @@
-cd apps/web && npx eslint src/ --quiet && npx vitest run && cd ../..
+npx lint-staged
 npm test

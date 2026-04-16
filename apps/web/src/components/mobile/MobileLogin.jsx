@@ -22,6 +22,8 @@ function MobileLogin({ onLogin }) {
   const [resetFormPassword, setResetFormPassword] = useState('');
   const [resetFormConfirm, setResetFormConfirm] = useState('');
   const [resetError, setResetError] = useState('');
+  const [resetStep, setResetStep] = useState(1);
+  const [resetOtp, setResetOtp] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -157,6 +159,8 @@ function MobileLogin({ onLogin }) {
                 setResetFormPassword('');
                 setResetFormConfirm('');
                 setResetError('');
+                setResetStep(1);
+                setResetOtp('');
               }}
             >
               <Key size={16} />
@@ -181,37 +185,50 @@ function MobileLogin({ onLogin }) {
         />
       )}
 
-      {/* Modal Réinitialisation directe du mot de passe */}
+      {/* Modal Réinitialisation du mot de passe (2 étapes avec OTP) */}
       <BottomSheet
         open={showResetPassword}
         onClose={() => {
           setShowResetPassword(false);
           setResetError('');
+          setResetStep(1);
+          setResetOtp('');
         }}
         title="🔑 Réinitialiser le mot de passe"
       >
         <div className="mobile-sheet-form">
           <p className="mobile-sheet-desc">
-            Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
+            {resetStep === 1
+              ? 'Entrez votre adresse email et votre nom complet. Un code de vérification vous sera envoyé par email.'
+              : 'Un code de vérification a été envoyé à votre adresse email. Saisissez-le ci-dessous avec votre nouveau mot de passe.'}
           </p>
 
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              if (resetFormPassword !== resetFormConfirm) {
-                setResetError('Les mots de passe ne correspondent pas');
-                return;
-              }
               setIsLoading(true);
               setResetError('');
               try {
-                const data = await api.selfResetPasswordWithNewPassword(
-                  resetFormEmail,
-                  resetFormName,
-                  resetFormPassword,
-                );
-                onLogin(data.user);
-                setShowResetPassword(false);
+                if (resetStep === 1) {
+                  await api.selfResetPassword(resetFormEmail, resetFormName);
+                  setResetStep(2);
+                } else {
+                  if (resetFormPassword !== resetFormConfirm) {
+                    setResetError('Les mots de passe ne correspondent pas');
+                    return;
+                  }
+                  if (resetFormPassword.length < 10) {
+                    setResetError('Le mot de passe doit contenir au moins 10 caractères');
+                    return;
+                  }
+                  await api.setNewPassword(resetFormEmail, resetOtp, resetFormPassword);
+                  setShowResetPassword(false);
+                  setResetStep(1);
+                  setResetOtp('');
+                  setError(
+                    'Mot de passe réinitialisé — connectez-vous avec votre nouveau mot de passe.',
+                  );
+                }
               } catch (err) {
                 setResetError(err.message);
               } finally {
@@ -219,58 +236,88 @@ function MobileLogin({ onLogin }) {
               }
             }}
           >
-            <FormField className="form-group" label="Adresse email" htmlFor="reset-email">
-              <Input
-                id="reset-email"
-                type="email"
-                value={resetFormEmail}
-                onChange={(e) => setResetFormEmail(e.target.value)}
-                placeholder="email@exemple.com"
-                required
-                autoFocus
-              />
-            </FormField>
+            {resetStep === 1 ? (
+              <>
+                <FormField className="form-group" label="Adresse email" htmlFor="reset-email">
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={resetFormEmail}
+                    onChange={(e) => setResetFormEmail(e.target.value)}
+                    placeholder="email@exemple.com"
+                    required
+                    autoFocus
+                  />
+                </FormField>
 
-            <FormField className="form-group" label="Nom complet" htmlFor="reset-name">
-              <Input
-                id="reset-name"
-                type="text"
-                value={resetFormName}
-                onChange={(e) => setResetFormName(e.target.value)}
-                placeholder="Prénom Nom"
-                required
-              />
-            </FormField>
+                <FormField className="form-group" label="Nom complet" htmlFor="reset-name">
+                  <Input
+                    id="reset-name"
+                    type="text"
+                    value={resetFormName}
+                    onChange={(e) => setResetFormName(e.target.value)}
+                    placeholder="Prénom Nom"
+                    required
+                  />
+                </FormField>
+              </>
+            ) : (
+              <>
+                <FormField
+                  className="form-group"
+                  label="Code de vérification (6 chiffres)"
+                  htmlFor="reset-otp"
+                >
+                  <Input
+                    id="reset-otp"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    value={resetOtp}
+                    onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="000000"
+                    required
+                    autoFocus
+                    autoComplete="one-time-code"
+                  />
+                </FormField>
 
-            <FormField className="form-group" label="Nouveau mot de passe" htmlFor="reset-password">
-              <Input
-                id="reset-password"
-                type="password"
-                value={resetFormPassword}
-                onChange={(e) => setResetFormPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-            </FormField>
+                <FormField
+                  className="form-group"
+                  label="Nouveau mot de passe"
+                  htmlFor="reset-password"
+                >
+                  <Input
+                    id="reset-password"
+                    type="password"
+                    value={resetFormPassword}
+                    onChange={(e) => setResetFormPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={10}
+                    autoComplete="new-password"
+                  />
+                </FormField>
 
-            <FormField
-              className="form-group"
-              label="Confirmer le mot de passe"
-              htmlFor="reset-confirm"
-            >
-              <Input
-                id="reset-confirm"
-                type="password"
-                value={resetFormConfirm}
-                onChange={(e) => setResetFormConfirm(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                autoComplete="new-password"
-              />
-            </FormField>
+                <FormField
+                  className="form-group"
+                  label="Confirmer le mot de passe"
+                  htmlFor="reset-confirm"
+                >
+                  <Input
+                    id="reset-confirm"
+                    type="password"
+                    value={resetFormConfirm}
+                    onChange={(e) => setResetFormConfirm(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    minLength={10}
+                    autoComplete="new-password"
+                  />
+                </FormField>
+              </>
+            )}
 
             {resetError && <InlineAlert>{resetError}</InlineAlert>}
 
@@ -282,6 +329,8 @@ function MobileLogin({ onLogin }) {
                 onClick={() => {
                   setShowResetPassword(false);
                   setResetError('');
+                  setResetStep(1);
+                  setResetOtp('');
                 }}
                 disabled={isLoading}
               >
@@ -293,13 +342,18 @@ function MobileLogin({ onLogin }) {
                 className="login-button"
                 disabled={
                   isLoading ||
-                  !resetFormEmail ||
-                  !resetFormName ||
-                  !resetFormPassword ||
-                  !resetFormConfirm
+                  (resetStep === 1 && (!resetFormEmail || !resetFormName)) ||
+                  (resetStep === 2 &&
+                    (resetOtp.length !== 6 || !resetFormPassword || !resetFormConfirm))
                 }
               >
-                {isLoading ? 'Réinitialisation...' : 'Réinitialiser'}
+                {isLoading
+                  ? resetStep === 1
+                    ? 'Envoi...'
+                    : 'Réinitialisation...'
+                  : resetStep === 1
+                    ? 'Envoyer le code'
+                    : 'Réinitialiser'}
               </Button>
             </div>
           </form>

@@ -343,13 +343,6 @@ export class ApiClient {
     });
   }
 
-  async selfResetPasswordWithNewPassword(email, name, newPassword) {
-    return this.request('/auth/self-reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ email, name, newPassword }),
-    });
-  }
-
   async setNewPassword(email, resetToken, newPassword) {
     const data = await this.request('/auth/set-new-password', {
       method: 'POST',

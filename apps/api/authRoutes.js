@@ -49,7 +49,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
           .json({ success: false, error: 'Email non autorisé. Contactez un administrateur.' });
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await bcrypt.hash(password, 12);
 
       // Utiliser le flag is_admin de authorized_emails (ou 0 par défaut)
       const isAdmin = authorized.is_admin || 0;
@@ -143,11 +143,12 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
     }
   });
 
-  // Réinitialisation directe du mot de passe (self-service, sans ancien mot de passe)
-  // Mode simplifié : email + nom + newPassword → reset direct (pas d'OTP)
+  // Réinitialisation du mot de passe (self-service) — envoi OTP par email
+  // Étape 1: email + nom → génère OTP envoyé par email
+  // Étape 2: /api/auth/verify-reset-otp avec OTP + newPassword
   app.post('/api/auth/self-reset-password', validate(selfResetPasswordSchema), async (req, res) => {
     try {
-      const { email, name, newPassword } = req.body;
+      const { email, name } = req.body;
 
       if (!email || !name) {
         return res.status(400).json({ success: false, error: 'Email et nom requis' });
@@ -171,30 +172,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         });
       }
 
-      // Mode direct : si newPassword fourni, réinitialiser immédiatement (pas d'OTP)
-      if (newPassword) {
-        const pwError = validatePassword(newPassword);
-        if (pwError) {
-          return res.status(400).json({ success: false, error: pwError });
-        }
-
-        const hashedPassword = await bcrypt.hash(newPassword, 12);
-        db.prepare(
-          'UPDATE users SET password_hash = ?, password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?',
-        ).run(hashedPassword, user.id);
-
-        // Fermer les sessions existantes
-        db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
-
-        logger.info(`🔑 Mot de passe réinitialisé (direct) pour user ${user.id}`);
-
-        return res.json({
-          success: true,
-          message: 'Mot de passe réinitialisé avec succès. Vous pouvez vous connecter.',
-        });
-      }
-
-      // [AUDIT FIX CRIT-1] Générer un OTP 6 chiffres et l'envoyer par email
+      // [SECURITY] OTP obligatoire — générer et envoyer par email
       const otp = String(crypto.randomInt(100000, 999999));
       const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
@@ -337,7 +315,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
       // [AUDIT FIX C2] Limite de sessions pour éviter l'accumulation
       const MAX_SESSIONS_PER_USER = 10;
 
-      // Parser les permissions
+      // Parser les permissions pour la réponse API (pas dans le JWT)
       let perms = {};
       try {
         perms = user.permissions ? JSON.parse(user.permissions) : {};
@@ -345,17 +323,11 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         perms = {};
       }
 
-      const token = jwt.sign(
-        {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isAdmin: user.is_admin === 1,
-          permissions: perms,
-        },
-        JWT_SECRET,
-        { expiresIn: `${JWT_EXPIRY_DAYS}d` },
-      );
+      // [SEC] JWT minimal — permissions résolues côté serveur via DB
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: `${JWT_EXPIRY_DAYS}d`,
+      });
 
       // Enregistrer la session
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
@@ -435,7 +407,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
       const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
       deleteSessionsStmt.run(user.id);
 
-      // Parser les permissions
+      // Parser les permissions pour la réponse API
       let forcePerms = {};
       try {
         forcePerms = user.permissions ? JSON.parse(user.permissions) : {};
@@ -443,18 +415,11 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         forcePerms = {};
       }
 
-      // Créer un nouveau token
-      const token = jwt.sign(
-        {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isAdmin: user.is_admin === 1,
-          permissions: forcePerms,
-        },
-        JWT_SECRET,
-        { expiresIn: `${JWT_EXPIRY_DAYS}d` },
-      );
+      // [SEC] JWT minimal — permissions résolues côté serveur via DB
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: `${JWT_EXPIRY_DAYS}d`,
+      });
 
       // Enregistrer la nouvelle session
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
@@ -573,7 +538,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         .digest('hex')
         .substring(0, 64);
 
-      // Parser les permissions
+      // Parser les permissions pour la réponse API
       let perms = {};
       try {
         perms = user.permissions ? JSON.parse(user.permissions) : {};
@@ -581,18 +546,11 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         perms = {};
       }
 
-      // Générer un nouveau token avec les infos à jour
-      const newToken = jwt.sign(
-        {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isAdmin: user.is_admin === 1,
-          permissions: perms,
-        },
-        JWT_SECRET,
-        { algorithm: 'HS256', expiresIn: `${JWT_EXPIRY_DAYS}d` },
-      );
+      // [SEC] JWT minimal — permissions résolues côté serveur via DB
+      const newToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: `${JWT_EXPIRY_DAYS}d`,
+      });
 
       // Mettre à jour la session : nouveau hash + nouvelle expiration + last_activity
       const newTokenHash = crypto

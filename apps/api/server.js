@@ -122,7 +122,7 @@ const app = express();
 app.set('trust proxy', 1); // [AUDIT] Nécessaire pour rate limiter derrière reverse proxy
 const PORT = process.env.PORT || 3002;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '30', 10);
+const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '7', 10);
 
 const KNOWN_DEFAULT_SECRETS = [
   'your-secret-key-change-in-production',
@@ -168,9 +168,9 @@ app.get('/api/health', (req, res) => {
   }
 });
 
-// Rate limiters auth — login/force-login désactivés (réseau local de confiance)
-// app.use('/api/auth/login', authLimiter);
-// app.use('/api/auth/force-login', authLimiter);
+// Rate limiters auth
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
 app.use('/api/auth/forgot-password', sensitiveEndpointLimiter);
@@ -185,13 +185,14 @@ app.use('/api/admin/reset-password', sensitiveEndpointLimiter);
 // Créer le middleware d'authentification avec le secret JWT
 const authenticateToken = createAuthenticateToken(JWT_SECRET);
 
-// Servir les fichiers statiques depuis le dossier public/attachments
+// [SEC] Fichiers statiques sensibles — protégés par authentification
 const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments');
-app.use('/attachments', express.static(attachmentsPath, { maxAge: '1h' }));
+app.use('/attachments', authenticateToken, express.static(attachmentsPath, { maxAge: '1h' }));
 
 // Servir les BL/BP importés
 app.use(
   '/bl-imports',
+  authenticateToken,
   express.static(path.join(__dirname, '..', '..', 'public', 'bl-imports'), { maxAge: '1h' }),
 );
 

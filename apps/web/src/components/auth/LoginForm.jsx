@@ -23,6 +23,8 @@ const LoginForm = ({ onLogin }) => {
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetError, setResetError] = useState('');
+  const [resetStep, setResetStep] = useState(1); // 1 = email+nom, 2 = OTP+mdp
+  const [resetOtp, setResetOtp] = useState('');
   // État de vérification email
   const [emailStatus, setEmailStatus] = useState(null); // null | 'checking' | 'authorized' | 'unknown' | 'already-registered'
   const [_emailCheckName, setEmailCheckName] = useState('');
@@ -155,23 +157,31 @@ const LoginForm = ({ onLogin }) => {
   const handleSelfResetPassword = async (e) => {
     e.preventDefault();
     setResetError('');
-
-    if (newPassword !== newPasswordConfirm) {
-      setResetError('Les mots de passe ne correspondent pas');
-      return;
-    }
-
-    if (newPassword.length < 10) {
-      setResetError('Le mot de passe doit contenir au moins 10 caractères');
-      return;
-    }
-
     setLoading(true);
+
     try {
-      await api.selfResetPasswordWithNewPassword(resetFormEmail, resetFormName, newPassword);
-      setShowResetPassword(false);
-      setResetError('');
-      setError('Mot de passe réinitialisé — connectez-vous avec votre nouveau mot de passe.');
+      if (resetStep === 1) {
+        // Étape 1: envoyer email + nom → backend envoie un OTP par email
+        await api.selfResetPassword(resetFormEmail, resetFormName);
+        setResetStep(2);
+        setResetError('');
+      } else {
+        // Étape 2: valider OTP + nouveau mot de passe
+        if (newPassword !== newPasswordConfirm) {
+          setResetError('Les mots de passe ne correspondent pas');
+          return;
+        }
+        if (newPassword.length < 10) {
+          setResetError('Le mot de passe doit contenir au moins 10 caractères');
+          return;
+        }
+        await api.setNewPassword(resetFormEmail, resetOtp, newPassword);
+        setShowResetPassword(false);
+        setResetStep(1);
+        setResetOtp('');
+        setResetError('');
+        setError('Mot de passe réinitialisé — connectez-vous avec votre nouveau mot de passe.');
+      }
     } catch (err) {
       setResetError(err.message);
     } finally {
@@ -420,79 +430,107 @@ const LoginForm = ({ onLogin }) => {
               </div>
               <div className="modal-body">
                 <p className="login-modal-text">
-                  Entrez votre adresse email, votre nom complet, puis choisissez un nouveau mot de
-                  passe.
+                  {resetStep === 1
+                    ? 'Entrez votre adresse email et votre nom complet. Un code de vérification vous sera envoyé par email.'
+                    : 'Un code de vérification a été envoyé à votre adresse email. Saisissez-le ci-dessous avec votre nouveau mot de passe.'}
                 </p>
 
                 <form onSubmit={handleSelfResetPassword}>
-                  <FormField
-                    className="form-group login-form-field-spacing"
-                    label="Adresse email"
-                    htmlFor="reset-email"
-                  >
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      value={resetFormEmail}
-                      onChange={(e) => setResetFormEmail(e.target.value)}
-                      placeholder="email@exemple.com"
-                      required
-                      autoFocus
-                      className="login-reset-input"
-                    />
-                  </FormField>
+                  {resetStep === 1 ? (
+                    <>
+                      <FormField
+                        className="form-group login-form-field-spacing"
+                        label="Adresse email"
+                        htmlFor="reset-email"
+                      >
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          value={resetFormEmail}
+                          onChange={(e) => setResetFormEmail(e.target.value)}
+                          placeholder="email@exemple.com"
+                          required
+                          autoFocus
+                          className="login-reset-input"
+                        />
+                      </FormField>
 
-                  <FormField
-                    className="form-group login-form-field-spacing"
-                    label="Nom complet"
-                    htmlFor="reset-name"
-                  >
-                    <Input
-                      id="reset-name"
-                      type="text"
-                      value={resetFormName}
-                      onChange={(e) => setResetFormName(e.target.value)}
-                      placeholder="Prénom Nom"
-                      required
-                      className="login-reset-input"
-                    />
-                  </FormField>
+                      <FormField
+                        className="form-group login-form-field-spacing-last"
+                        label="Nom complet"
+                        htmlFor="reset-name"
+                      >
+                        <Input
+                          id="reset-name"
+                          type="text"
+                          value={resetFormName}
+                          onChange={(e) => setResetFormName(e.target.value)}
+                          placeholder="Prénom Nom"
+                          required
+                          className="login-reset-input"
+                        />
+                      </FormField>
+                    </>
+                  ) : (
+                    <>
+                      <FormField
+                        className="form-group login-form-field-spacing"
+                        label="Code de vérification (6 chiffres)"
+                        htmlFor="reset-otp"
+                      >
+                        <Input
+                          id="reset-otp"
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]{6}"
+                          maxLength={6}
+                          value={resetOtp}
+                          onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
+                          placeholder="000000"
+                          required
+                          autoFocus
+                          className="login-reset-input"
+                          autoComplete="one-time-code"
+                        />
+                      </FormField>
 
-                  <FormField
-                    className="form-group login-form-field-spacing"
-                    label="Nouveau mot de passe"
-                    htmlFor="new-password"
-                  >
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Entrez votre nouveau mot de passe"
-                      minLength={10}
-                      required
-                      className="login-reset-input"
-                      autoComplete="new-password"
-                    />
-                  </FormField>
+                      <FormField
+                        className="form-group login-form-field-spacing"
+                        label="Nouveau mot de passe"
+                        htmlFor="new-password"
+                      >
+                        <Input
+                          id="new-password"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Entrez votre nouveau mot de passe"
+                          minLength={10}
+                          required
+                          className="login-reset-input"
+                          autoComplete="new-password"
+                        />
+                      </FormField>
 
-                  <FormField
-                    className="form-group login-form-field-spacing-last"
-                    label="Confirmer le mot de passe"
-                    htmlFor="confirm-password"
-                  >
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={newPasswordConfirm}
-                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                      placeholder="Confirmez votre nouveau mot de passe"
-                      minLength={10}
-                      required
-                      className="login-reset-input"
-                      autoComplete="new-password"
-                    />
-                  </FormField>
+                      <FormField
+                        className="form-group login-form-field-spacing-last"
+                        label="Confirmer le mot de passe"
+                        htmlFor="confirm-password"
+                      >
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          value={newPasswordConfirm}
+                          onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                          placeholder="Confirmez votre nouveau mot de passe"
+                          minLength={10}
+                          required
+                          className="login-reset-input"
+                          autoComplete="new-password"
+                        />
+                      </FormField>
+                    </>
+                  )}
 
                   {resetError && (
                     <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>
@@ -503,6 +541,8 @@ const LoginForm = ({ onLogin }) => {
                       variant="ghost"
                       onClick={() => {
                         setShowResetPassword(false);
+                        setResetStep(1);
+                        setResetOtp('');
                         setResetError('');
                       }}
                       disabled={loading}
@@ -514,13 +554,20 @@ const LoginForm = ({ onLogin }) => {
                       type="submit"
                       disabled={
                         loading ||
-                        !resetFormEmail ||
-                        !resetFormName ||
-                        newPassword.length < 10 ||
-                        newPasswordConfirm !== newPassword
+                        (resetStep === 1 && (!resetFormEmail || !resetFormName)) ||
+                        (resetStep === 2 &&
+                          (resetOtp.length !== 6 ||
+                            newPassword.length < 10 ||
+                            newPasswordConfirm !== newPassword))
                       }
                     >
-                      {loading ? 'Réinitialisation...' : 'Réinitialiser'}
+                      {loading
+                        ? resetStep === 1
+                          ? 'Envoi...'
+                          : 'Réinitialisation...'
+                        : resetStep === 1
+                          ? 'Envoyer le code'
+                          : 'Réinitialiser'}
                     </Button>
                   </div>
                 </form>

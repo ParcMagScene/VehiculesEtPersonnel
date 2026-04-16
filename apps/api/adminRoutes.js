@@ -40,7 +40,7 @@ export function setupAdminRoutes(
       if (pwError) {
         return res.status(400).json({ success: false, error: pwError });
       }
-      const passwordHash = await bcrypt.hash(newPassword, 10);
+      const passwordHash = await bcrypt.hash(newPassword, 12);
       const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
       stmt.run(passwordHash, userId);
       auditLog({
@@ -79,7 +79,7 @@ export function setupAdminRoutes(
         if (pwError) {
           return res.status(400).json({ success: false, error: pwError });
         }
-        const passwordHash = await bcrypt.hash(newPassword, 10);
+        const passwordHash = await bcrypt.hash(newPassword, 12);
         const updateStmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
         updateStmt.run(passwordHash, req.user.id);
         auditLog({
@@ -641,7 +641,7 @@ export function setupAdminRoutes(
         if (pwError) {
           return res.status(400).json({ success: false, error: pwError });
         }
-        const passwordHash = await bcrypt.hash(newPassword, 10);
+        const passwordHash = await bcrypt.hash(newPassword, 12);
         const stmt = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
         stmt.run(passwordHash, id);
 
@@ -789,7 +789,7 @@ export function setupAdminRoutes(
       }
 
       // Mettre à jour le mot de passe et retirer le flag + token
-      const passwordHash = await bcrypt.hash(newPassword, 10);
+      const passwordHash = await bcrypt.hash(newPassword, 12);
       const updateStmt = db.prepare(`
       UPDATE users 
       SET password_hash = ?, password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL
@@ -801,24 +801,11 @@ export function setupAdminRoutes(
       const deleteOldSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
       deleteOldSessionsStmt.run(user.id);
 
-      // Créer un token pour connecter directement l'utilisateur
-      let resetPerms = {};
-      try {
-        resetPerms = user.permissions ? JSON.parse(user.permissions) : {};
-      } catch {
-        resetPerms = {};
-      }
-      const token = jwt.sign(
-        {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isAdmin: user.is_admin === 1,
-          permissions: resetPerms,
-        },
-        JWT_SECRET,
-        { expiresIn: `${JWT_EXPIRY_DAYS}d` },
-      );
+      // [SEC] JWT minimal — permissions résolues côté serveur via DB
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: `${JWT_EXPIRY_DAYS}d`,
+      });
 
       // Enregistrer la session
       const sessionHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);

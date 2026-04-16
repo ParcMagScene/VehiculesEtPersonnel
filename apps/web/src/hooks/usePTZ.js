@@ -1,5 +1,6 @@
 // Hook — Contrôle PTZ d'une caméra
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
+
 import api from '../utils/api';
 
 export function usePTZ(camera) {

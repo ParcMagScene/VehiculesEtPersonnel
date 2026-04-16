@@ -1,4 +1,4 @@
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 export const EQUIPMENT_STATUS = {
   available: { label: 'Disponible', color: STATUS_COLORS.success, icon: '✅' },

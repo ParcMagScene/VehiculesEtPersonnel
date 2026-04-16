@@ -1,33 +1,35 @@
-import React from 'react';
 import {
-  X,
-  Edit2,
-  Send,
-  Check,
-  Package,
   ArrowRight,
-  Eye,
-  Building2,
-  Hash,
-  FileText,
-  FileCheck,
   BookOpen,
+  Building2,
+  Check,
   ClipboardList,
-  Users as UsersIcon,
+  Edit2,
+  Eye,
+  FileCheck,
+  FileText,
+  Hash,
+  Package,
+  Send,
   Trash2,
+  Users as UsersIcon,
+  X,
 } from 'lucide-react';
-import { Button, Table, StatusBadge, Tag, Tooltip, ProgressBar } from '@/design-system';
+import React from 'react';
+
+import { Button, ProgressBar, StatusBadge, Table, Tag, Tooltip } from '@/design-system';
+
+import { STATUS } from '../../constants';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
-import { formatPhoneDisplay } from '../PhoneInput';
 import AffaireBadge from '../AffaireBadge';
+import { formatPhoneDisplay } from '../PhoneInput';
 import {
+  groupItemsByRequester,
   ORDER_STATUS,
   QUOTE_STATUS,
-  REQUEST_STATUS,
   REQUEST_PRIORITY,
-  groupItemsByRequester,
+  REQUEST_STATUS,
 } from './ordersConstants';
-import { STATUS } from '../../constants';
 
 // ═══ Volet latéral Commande (clic simple) ═══
 export const OrderSlidePanel = React.memo(

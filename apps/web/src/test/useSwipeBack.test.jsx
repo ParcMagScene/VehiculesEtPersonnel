@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import useSwipeBack from '../hooks/useSwipeBack';
 
 const touch = (clientX, clientY = 0) => ({

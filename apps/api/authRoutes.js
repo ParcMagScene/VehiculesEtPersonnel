@@ -1,20 +1,21 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+
+import { AUDIT_ACTIONS, auditLog } from './auditLog.js';
+import { authCache } from './cache.js';
 import db from './database.js';
 import { getTransporter } from './emailService.js';
 import logger from './logger.js';
-import { authCache } from './cache.js';
 import { validatePassword } from './passwordPolicy.js';
-import { auditLog, AUDIT_ACTIONS } from './auditLog.js';
-import { validate } from './schemas/imports.js';
 import {
-  registerSchema,
-  loginSchema,
-  forgotPasswordSchema,
-  selfResetPasswordSchema,
   forceLoginSchema,
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  selfResetPasswordSchema,
 } from './schemas/auth.js';
+import { validate } from './schemas/imports.js';
 
 export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev }) {
   // Options cookie httpOnly pour les tokens JWT

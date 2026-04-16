@@ -1,8 +1,9 @@
-import db, { addToHistory } from './database.js';
-import logger from './logger.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+import db, { addToHistory } from './database.js';
+import logger from './logger.js';
 import { contactsImportSchema, validate } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);

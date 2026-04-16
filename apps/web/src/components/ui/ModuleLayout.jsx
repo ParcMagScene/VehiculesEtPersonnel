@@ -63,4 +63,4 @@ function SplitLayout({ sidebar, sidebarWidth = 280, side = 'left', className = '
   );
 }
 
-export { ModuleLayout, ModuleToolbar, ModuleContent, ModuleFooter, SplitLayout };
+export { ModuleContent, ModuleFooter, ModuleLayout, ModuleToolbar, SplitLayout };

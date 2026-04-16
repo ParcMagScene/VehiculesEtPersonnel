@@ -1,15 +1,17 @@
-import { useState, useMemo } from 'react';
+import './EquipmentBatchLabels.css';
+
 import {
-  Tag,
   CheckSquare,
-  Square,
-  Printer,
-  Download,
   ChevronDown,
   ChevronRight,
+  Download,
+  Printer,
+  Square,
+  Tag,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import './EquipmentBatchLabels.css';
+import { useMemo, useState } from 'react';
+
 import { Button, SearchBar } from '@/design-system';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');

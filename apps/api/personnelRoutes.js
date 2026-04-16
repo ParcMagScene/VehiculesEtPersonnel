@@ -4,10 +4,10 @@
 // ============================================================
 
 import db, { addToHistory } from './database.js';
-import logger from './logger.js';
 import { alertAssignmentCreated } from './emailService.js';
-import { validate, personnelImportSchema } from './schemas/imports.js';
+import logger from './logger.js';
 import { personSchema } from './schemas/crud.js';
+import { personnelImportSchema, validate } from './schemas/imports.js';
 
 // ============ PERSONS (PERSONNEL) ============
 

@@ -1,9 +1,12 @@
-import { useState, useEffect, useTransition, lazy, Suspense } from 'react';
-import { ClipboardList, Calendar, Tv2, Users } from 'lucide-react';
-import api from '../../utils/api';
-import { useToast } from '../../hooks/useToast';
-import { Button } from '@/design-system';
 import './PlanningPanel.css';
+
+import { Calendar, ClipboardList, Tv2, Users } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState, useTransition } from 'react';
+
+import { Button } from '@/design-system';
+
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 
 const PersonnelPanel = lazy(() => import('../personnel/PersonnelPanel'));
 const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));

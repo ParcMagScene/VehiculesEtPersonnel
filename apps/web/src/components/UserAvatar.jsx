@@ -104,5 +104,5 @@ const UserAvatar = ({ name, avatar, size = 40, gradient = true, style = {} }) =>
   );
 };
 
-export { getInitials, getColorFromName, adjustColor };
+export { adjustColor, getColorFromName, getInitials };
 export default UserAvatar;

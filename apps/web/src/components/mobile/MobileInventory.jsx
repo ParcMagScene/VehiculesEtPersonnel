@@ -1,10 +1,12 @@
-import { Suspense, lazy } from 'react';
-import { ArrowLeft } from 'lucide-react';
-
-import { Button } from '@/design-system';
-import MobileListSkeleton from './MobileListSkeleton';
 import './MobileListSkeleton.css';
 import './MobileModuleWrapper.css';
+
+import { ArrowLeft } from 'lucide-react';
+import { lazy, Suspense } from 'react';
+
+import { Button } from '@/design-system';
+
+import MobileListSkeleton from './MobileListSkeleton';
 const InventoryPanel = lazy(() => import('../inventory/InventoryPanel'));
 
 function MobileInventory({ onBack }) {

@@ -1,10 +1,11 @@
-import db from './database.js';
-import { fileURLToPath } from 'url';
-import { dirname, join, basename, extname } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { basename, dirname, extname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+import db from './database.js';
 import logger from './logger.js';
-import { validate } from './schemas/imports.js';
 import { messageSchema } from './schemas/crud.js';
+import { validate } from './schemas/imports.js';
 
 // ═══════════════════════════════════════
 // SSE — Server-Sent Events pour la messagerie temps réel

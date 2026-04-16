@@ -3,28 +3,30 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  X,
-  Calendar,
-  Clock,
-  CheckCircle,
-  Download,
-  Trash2,
-  ChevronDown,
-  Send,
-  RefreshCw,
-} from 'lucide-react';
+import './LeaveRequestsPanel.css';
+
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {
+  Calendar,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  Download,
+  RefreshCw,
+  Send,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
-import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
-import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
-import { useToast } from '../../hooks/useToast';
-import { STATUS } from '../../constants';
-
-import './LeaveRequestsPanel.css';
+import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 
 const LeaveRequestsPanel = ({
   personId = null,

@@ -1,19 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Trash2, MapPin, Clock, User, ArrowDown } from 'lucide-react';
 import './TripDetailsModal.css';
-import {
-  loadGoogleMapsAPI,
-  isGoogleMapsLoaded as checkGoogleMapsLoaded,
-} from '../../utils/googleMapsLoader';
-import LocationDialog from './LocationDialog';
-import { Button, Dialog, Input, FormField } from '@/design-system';
-import DriverSelect from './DriverSelect';
-import api from '../../utils/api';
-import AddressAutocomplete from '../AddressAutocomplete';
-import { useToast } from '../../hooks/useToast';
+
+import { ArrowDown, Clock, MapPin, Plus, Trash2, User, X } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+
+import { Button, Dialog, FormField, Input } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import {
+  isGoogleMapsLoaded as checkGoogleMapsLoaded,
+  loadGoogleMapsAPI,
+} from '../../utils/googleMapsLoader';
+import AddressAutocomplete from '../AddressAutocomplete';
+import DriverSelect from './DriverSelect';
+import LocationDialog from './LocationDialog';
 
 const TripDetailsModal = ({
   event,

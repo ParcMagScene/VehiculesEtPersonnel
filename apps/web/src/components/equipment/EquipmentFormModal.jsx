@@ -1,17 +1,19 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { Search, Camera, X, MapPin, Map } from 'lucide-react';
-import { EQUIPMENT_STATUS } from './equipmentConstants';
-import { matchPhotoToEquipment, getCategoryHierarchy } from './equipmentUtils';
-import {
-  resolveGenericImage,
-  getAllGenericImages,
-  GENERIC_IMAGES,
-} from '../../utils/genericImages';
-import CategoryCascadePicker from './CategoryCascadePicker';
-import LocationSelector from '../vehicles/LocationSelector';
-import DepotMap from '../vehicles/DepotMap';
+import { Camera, Map, MapPin, Search, X } from 'lucide-react';
+import React, { useCallback, useMemo, useState } from 'react';
+
+import { Button, Input, ModalLayout, Select, Textarea, Tooltip } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
-import { Button, ModalLayout, Input, Textarea, Select, Tooltip } from '@/design-system';
+import {
+  GENERIC_IMAGES,
+  getAllGenericImages,
+  resolveGenericImage,
+} from '../../utils/genericImages';
+import DepotMap from '../vehicles/DepotMap';
+import LocationSelector from '../vehicles/LocationSelector';
+import CategoryCascadePicker from './CategoryCascadePicker';
+import { EQUIPMENT_STATUS } from './equipmentConstants';
+import { getCategoryHierarchy, matchPhotoToEquipment } from './equipmentUtils';
 
 const EquipmentFormModal = ({
   equipment: eq,

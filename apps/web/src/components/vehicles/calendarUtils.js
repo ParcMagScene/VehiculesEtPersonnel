@@ -1,5 +1,5 @@
-import api from '../../utils/api';
 import { STATUS } from '../../constants';
+import api from '../../utils/api';
 
 // Fonction pour obtenir les initiales d'un utilisateur
 export const getUserInitials = (userId, currentUser, users = []) => {

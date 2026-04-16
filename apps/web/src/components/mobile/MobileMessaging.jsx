@@ -1,23 +1,26 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  ArrowLeft,
-  Send,
-  Paperclip,
-  Plus,
-  MessageSquare,
-  File,
-  Image,
-  Download,
-  Users,
-} from 'lucide-react';
-import { Button, Input, ModalLayout, Spinner } from '@/design-system';
-import usePullToRefresh from '../../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
-import api, { getApiUrl } from '../../utils/api';
-import { AVATAR_COLORS } from '../../constants/colors';
+import './MobileMessaging.css';
+
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import './MobileMessaging.css';
+import {
+  ArrowLeft,
+  Download,
+  File,
+  Image,
+  MessageSquare,
+  Paperclip,
+  Plus,
+  Send,
+  Users,
+} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button, Input, ModalLayout, Spinner } from '@/design-system';
+
+import { AVATAR_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import api, { getApiUrl } from '../../utils/api';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 const API_BASE_URL = getApiUrl();
 

@@ -1,23 +1,26 @@
-import { useState, useEffect } from 'react';
+import './VehicleDetailsModal.css';
+
 import {
-  X,
-  Wrench,
   AlertTriangle,
   Calendar,
+  CheckCircle,
+  Clock,
   FileText,
   Gauge,
-  Clock,
-  CheckCircle,
   Loader,
   User,
+  Wrench,
+  X,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { Button } from '@/design-system';
+
+import { STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
+import { formatDateSimple } from '../../utils/formatUtils';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import InterventionModal from '../planning/InterventionModal';
-import { Button } from '@/design-system';
-import { STATUS_COLORS } from '../../constants/colors';
-import { formatDateSimple } from '../../utils/formatUtils';
-import './VehicleDetailsModal.css';
 
 const VehicleDetailsModal = ({
   vehicle,

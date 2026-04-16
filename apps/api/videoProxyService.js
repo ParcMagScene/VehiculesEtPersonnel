@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+
 import logger from './logger.js';
 
 const __dir = dirname(fileURLToPath(import.meta.url));

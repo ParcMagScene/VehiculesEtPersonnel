@@ -1,5 +1,5 @@
-import { forwardRef } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { forwardRef } from 'react';
 
 /**
  * Select — Composant atomique Design System

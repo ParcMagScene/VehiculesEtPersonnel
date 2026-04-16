@@ -1,7 +1,7 @@
+import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import db from './database.js';
 import logger from './logger.js';
-import { listCache, cacheMiddleware, invalidateEntity } from './cache.js';
-import { validate, affaireSchema } from './schemas/imports.js';
+import { affaireSchema, validate } from './schemas/imports.js';
 
 export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/affaires — Liste des affaires enrichies (DB + auto-détection depuis réservations) [PERF] Cache 30s

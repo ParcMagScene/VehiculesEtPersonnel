@@ -1,36 +1,38 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import './MobilePersonnel.css';
+
 import {
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  Phone,
-  Mail,
-  Star,
-  Shield,
-  Truck,
-  User,
-  Calendar,
-} from 'lucide-react';
-import {
-  format,
   addDays,
-  startOfWeek,
   endOfWeek,
+  format,
   isSameDay,
   isWithinInterval,
-  startOfDay,
   parseISO,
+  startOfDay,
+  startOfWeek,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import { formatPhoneDisplay } from '../PhoneInput';
-import './MobilePersonnel.css';
+import {
+  ArrowLeft,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  Phone,
+  Shield,
+  Star,
+  Truck,
+  User,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Avatar, Button, Skeleton } from '@/design-system';
-import usePullToRefresh from '../../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import { STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import api from '../../utils/api';
+import { formatPhoneDisplay } from '../PhoneInput';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 const skillIcon = (skillName) => {
   if (!skillName) return <Star size={12} />;

@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { existsSync } from 'fs'
 import { join } from 'path'
+import { defineConfig } from 'vite'
 
 // Plugin : redirection auto quand le navigateur demande un asset périmé (ancien hash)
 function staleAssetReload() {

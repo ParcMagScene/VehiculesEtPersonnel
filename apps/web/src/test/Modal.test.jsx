@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '../components/ui/Modal';
+import { describe, expect, it, vi } from 'vitest';
+
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '../components/ui/Modal';
 
 describe('Modal', () => {
   it('renders nothing when closed', () => {

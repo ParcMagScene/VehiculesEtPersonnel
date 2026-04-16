@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+
 import api from '../utils/api';
 
 /**

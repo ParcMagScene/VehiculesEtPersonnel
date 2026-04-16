@@ -4,20 +4,21 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { execFile } from 'child_process';
+import rateLimit from 'express-rate-limit';
 import { promisify } from 'util';
+
 import db from './database.js';
 import logger from './logger.js';
+import { optionalTvToken } from './middleware/tvAuth.js';
 import { validate } from './schemas/imports.js';
 import {
   sonosConfigSchema,
-  sonosVolumeSchema,
   sonosFavoriteSchema,
+  sonosRepeatSchema,
   sonosSeekSchema,
   sonosShuffleSchema,
-  sonosRepeatSchema,
+  sonosVolumeSchema,
 } from './schemas/sonos.js';
-import rateLimit from 'express-rate-limit';
-import { optionalTvToken } from './middleware/tvAuth.js';
 
 const execFileAsync = promisify(execFile);
 

@@ -4,33 +4,32 @@
 // Workflow : consultation → décision → signature → notification
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  X,
-  Calendar,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  FileText,
-  Download,
-  ChevronDown,
-  User,
-  Shield,
-  Pen,
-  MessageSquare,
-  RefreshCw,
-  BarChart3,
-  Eye,
-  Send,
-  ArrowRight,
-} from 'lucide-react';
+import './LeaveValidationPanel.css';
+
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
-import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
-import './LeaveValidationPanel.css';
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Calendar,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  Download,
+  Eye,
+  FileText,
+  MessageSquare,
+  Pen,
+  RefreshCw,
+  Send,
+  Shield,
+  User,
+  X,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
   Avatar,
   Button,
@@ -45,6 +44,9 @@ import {
 } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import api from '../../utils/api';
+import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
+import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 
 // ═══════════════════════════════════════
 // COMPOSANT SIGNATURE CANVAS (admin)

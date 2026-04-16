@@ -3,11 +3,13 @@
 // + Message furtif temporaire
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { MessageCircle, Zap, Save, Trash2, Clock } from 'lucide-react';
+import { Clock, MessageCircle, Save, Trash2, Zap } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, SectionHeader, Select, Textarea } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, Select, Textarea, SectionHeader } from '@/design-system';
 
 const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
 const DAY_LABELS = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven' };

@@ -1,8 +1,12 @@
 import js from '@eslint/js';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
 export default [
   js.configs.recommended,
   {
+    plugins: {
+      'simple-import-sort': simpleImportSort,
+    },
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -42,6 +46,8 @@ export default [
         },
       ],
       'no-console': 'off',
+      'simple-import-sort/imports': 'warn',
+      'simple-import-sort/exports': 'warn',
     },
   },
   {

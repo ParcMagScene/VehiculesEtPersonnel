@@ -1,45 +1,46 @@
-import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import {
-  ShoppingCart,
-  FileText,
-  Plus,
-  Filter,
-  Euro,
-  Building2,
-  ClipboardList,
-  Bell,
-  Check,
-  Package,
   Archive,
+  Bell,
   BookOpen,
+  Building2,
+  Check,
+  ClipboardList,
+  Euro,
+  FileText,
+  Filter,
+  Package,
+  Plus,
+  ShoppingCart,
 } from 'lucide-react';
+import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 const SupplierCatalogPanel = lazy(() => import('./SupplierCatalogPanel'));
-import api from '../../utils/api';
-import { formatCurrency } from '../../utils/formatUtils';
-import { Button, Select, Checkbox, SearchBar } from '@/design-system';
 import './OrdersPanel.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+import { Button, Checkbox, SearchBar, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { formatCurrency } from '../../utils/formatUtils';
+import { OrderFormModal, QuoteFormModal } from './OrderFormModals';
 import { ORDER_STATUS, QUOTE_STATUS, REQUEST_STATUS } from './ordersConstants';
+import { OrderDetailDialog, QuoteDetailDialog, RequestDetailDialog } from './OrdersDialogs';
 import {
+  EnhancedSuppliersList,
+  MaterialRequestsList,
+  MyLinkedOrdersList,
   OrdersList,
   QuotesList,
-  EnhancedSuppliersList,
-  MyLinkedOrdersList,
-  MaterialRequestsList,
 } from './OrdersListViews';
-import { OrderFormModal, QuoteFormModal } from './OrderFormModals';
-import { SupplierFormModal, MaterialRequestModal, SupplierDetailModal } from './SupplierModals';
 import {
   OrderSlidePanel,
   QuoteSlidePanel,
   RequestSlidePanel,
   SupplierSlidePanel,
 } from './OrdersSlidePanels';
-import { OrderDetailDialog, QuoteDetailDialog, RequestDetailDialog } from './OrdersDialogs';
+import { MaterialRequestModal, SupplierDetailModal, SupplierFormModal } from './SupplierModals';
 
 function OrdersPanel({ currentUser, isMobile }) {
   const toast = useToast();

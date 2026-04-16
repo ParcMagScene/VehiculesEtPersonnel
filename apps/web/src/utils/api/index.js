@@ -1,20 +1,20 @@
 // API Client — Assemblage de tous les modules domaine
-import { ApiClient, getApiUrl } from './base.js';
-import { registerVehicleMethods } from './vehicles.js';
 import { registerAdminMethods } from './admin.js';
-import { registerPersonnelMethods } from './personnel.js';
-import { registerLeavesMethods } from './leaves.js';
 import { registerAffairesMethods } from './affaires.js';
-import { registerMessagingMethods } from './messaging.js';
-import { registerMailingMethods } from './mailing.js';
-import { registerEquipmentMethods } from './equipment.js';
-import { registerOrdersMethods } from './orders.js';
-import { registerStockMethods } from './stock.js';
-import { registerPlanningMethods } from './planning.js';
 import { registerAnnuaireMethods } from './annuaire.js';
+import { ApiClient, getApiUrl } from './base.js';
 import { registerDisplayMethods } from './display.js';
-import { registerSonosMethods } from './sonos.js';
+import { registerEquipmentMethods } from './equipment.js';
 import { registerInventoryMethods } from './inventory.js';
+import { registerLeavesMethods } from './leaves.js';
+import { registerMailingMethods } from './mailing.js';
+import { registerMessagingMethods } from './messaging.js';
+import { registerOrdersMethods } from './orders.js';
+import { registerPersonnelMethods } from './personnel.js';
+import { registerPlanningMethods } from './planning.js';
+import { registerSonosMethods } from './sonos.js';
+import { registerStockMethods } from './stock.js';
+import { registerVehicleMethods } from './vehicles.js';
 import { registerVideoMethods } from './video.js';
 
 // Enregistrer toutes les méthodes domaine sur ApiClient.prototype

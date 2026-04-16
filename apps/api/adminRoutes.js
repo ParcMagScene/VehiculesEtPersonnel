@@ -1,20 +1,21 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+
+import { AUDIT_ACTIONS, auditLog } from './auditLog.js';
+import { ALL_CACHES, getAllCacheStats } from './cache.js';
 import db from './database.js';
 import { alertAccessRequest, initEmailTransporter } from './emailService.js';
 import logger from './logger.js';
-import { getAllCacheStats, ALL_CACHES } from './cache.js';
-import { encryptPassword, decryptPassword } from './videoProxyService.js';
 import { validatePassword } from './passwordPolicy.js';
-import { auditLog, AUDIT_ACTIONS } from './auditLog.js';
-import { validate } from './schemas/imports.js';
 import {
   accessRequestSchema,
-  checkEmailSchema,
   changePasswordSchema,
+  checkEmailSchema,
   setNewPasswordSchema,
 } from './schemas/auth.js';
+import { validate } from './schemas/imports.js';
+import { decryptPassword, encryptPassword } from './videoProxyService.js';
 
 export function setupAdminRoutes(
   app,

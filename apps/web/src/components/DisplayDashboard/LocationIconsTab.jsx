@@ -3,12 +3,14 @@
 // Galerie d'icônes + Règles d'association type de tâche → icône
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Film, Upload, Plus, Trash2, Save, X } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
+import { Film, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, SectionHeader, Select, Tooltip } from '@/design-system';
+
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
 import api, { getApiUrl } from '../../utils/api';
-import { Button, Select, Tooltip, SectionHeader } from '@/design-system';
 
 // Types de tâches (sections) disponibles pour l'association icône
 const TASK_SECTIONS = [

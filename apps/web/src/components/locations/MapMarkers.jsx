@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import L from 'leaflet';
+
 import { getLocationType } from './map-utils';
 
 /**

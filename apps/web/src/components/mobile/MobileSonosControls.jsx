@@ -2,8 +2,9 @@
 // MobileSonosControls — Transport tactile + seek bar
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, memo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1 } from 'lucide-react';
+import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
+
 import { formatTime } from '../../hooks/useSonos';
 
 function MobileSonosControls({

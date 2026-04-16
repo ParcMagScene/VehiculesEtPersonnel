@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Tabs, TabList, Tab, TabPanel } from '../components/ui/Tabs';
+import { describe, expect, it, vi } from 'vitest';
+
+import { Tab, TabList, TabPanel, Tabs } from '../components/ui/Tabs';
 
 function renderTabs(props = {}) {
   return render(

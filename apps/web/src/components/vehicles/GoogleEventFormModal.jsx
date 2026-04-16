@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { format } from 'date-fns';
-import { Calendar, MapPin, Save, Clock, Type, AlignLeft } from 'lucide-react';
 import './GoogleEventFormModal.css';
+
+import { format } from 'date-fns';
+import { AlignLeft, Calendar, Clock, MapPin, Save, Type } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
 import { Button, Input, Textarea, Toggle } from '@/design-system';
-import { useToast } from '../../hooks/useToast';
+
 import { useDirtyForm } from '../../hooks/useDirtyForm';
+import { useToast } from '../../hooks/useToast';
 import AddressAutocomplete from '../AddressAutocomplete';
 
 function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDate }) {

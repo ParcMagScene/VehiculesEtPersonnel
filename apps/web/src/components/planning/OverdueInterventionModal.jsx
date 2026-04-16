@@ -1,12 +1,14 @@
-import { useState } from 'react';
-import { CheckCircle, XCircle, Calendar, Clock } from 'lucide-react';
-import { Button, ModalLayout, Textarea } from '@/design-system';
 import './OverdueInterventionModal.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { formatDateSimple } from '../../utils/formatUtils';
+
+import { Calendar, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button, ModalLayout, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 const OverdueInterventionModal = ({
   intervention,

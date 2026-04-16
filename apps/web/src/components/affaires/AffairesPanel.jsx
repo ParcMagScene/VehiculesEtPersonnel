@@ -1,35 +1,31 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
+import './AffairesPanel.css';
+
 import {
-  Calendar,
-  Briefcase,
-  Paperclip,
-  LinkIcon,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  BarChart2,
-  RefreshCw,
-  PackagePlus,
-  DollarSign,
-} from 'lucide-react';
-import api from '../../utils/api';
-import {
+  addMonths,
+  endOfMonth,
+  endOfYear,
   format,
   startOfMonth,
-  endOfMonth,
-  addMonths,
-  subMonths,
   startOfYear,
-  endOfYear,
+  subMonths,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { capitalizeText } from '../../utils/dateUtils';
-import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
-import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
-import MonthSelector from '../MonthSelector';
-import WeekSelector from '../WeekSelector';
-import './AffairesPanel.css';
+import {
+  BarChart2,
+  Briefcase,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+  FileText,
+  LinkIcon,
+  PackagePlus,
+  Paperclip,
+  Plus,
+  RefreshCw,
+} from 'lucide-react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import {
   Button,
   Checkbox,
@@ -42,7 +38,13 @@ import {
 } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import { capitalizeText } from '../../utils/dateUtils';
+import MonthSelector from '../MonthSelector';
+import WeekSelector from '../WeekSelector';
+import { AffaireDetailDialog, AffaireSlidePanel } from './AffaireDetailPanel';
 
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));

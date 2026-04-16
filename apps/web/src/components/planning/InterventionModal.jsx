@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
-import { Save, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select } from '@/design-system';
 import './InterventionModal.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { useDirtyForm } from '../../hooks/useDirtyForm';
-import { formatDateSimple } from '../../utils/formatUtils';
+
+import { AlertTriangle, CheckCircle, Clock, Save } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { Button, Dialog, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
+import { useToast } from '../../hooks/useToast';
+import { formatDateSimple } from '../../utils/formatUtils';
 
 const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, currentUser }) => {
   const isAdmin = currentUser?.isAdmin === true;

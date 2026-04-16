@@ -2,15 +2,17 @@
 // LocationsMapPanel.jsx — Panneau cartographie des lieux eM@g
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useRef, useMemo } from 'react';
-import { X, Map, Building2, Moon, Sun } from 'lucide-react';
-import { LOCATION_TYPES, filterGeoLocations } from './map-utils';
+import 'leaflet/dist/leaflet.css';
+import './LocationsMapPanel.css';
+
+import { Building2, Map, Moon, Sun, X } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+
+import { filterGeoLocations, LOCATION_TYPES } from './map-utils';
+import MapDualPrintModal from './MapDualPrintModal';
 import MapGeneral from './MapGeneral';
 import MapLocal from './MapLocal';
 import MapPrintControl from './MapPrintControl';
-import MapDualPrintModal from './MapDualPrintModal';
-import 'leaflet/dist/leaflet.css';
-import './LocationsMapPanel.css';
 
 export default function LocationsMapPanel({ locations, onClose, onEditLocation }) {
   const [activeView, setActiveView] = useState('general'); // 'general' | 'local'

@@ -1,16 +1,17 @@
-import { useMemo, useCallback } from 'react';
 import {
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
   eachDayOfInterval,
   eachMonthOfInterval,
+  endOfMonth,
+  endOfWeek,
+  endOfYear,
+  startOfMonth,
+  startOfWeek,
+  startOfYear,
 } from 'date-fns';
-import { getPeriodTimestamp, formatLocalDate } from '../../utils/dateUtils';
+import { useCallback, useMemo } from 'react';
+
 import { STATUS } from '../../constants';
+import { formatLocalDate, getPeriodTimestamp } from '../../utils/dateUtils';
 
 /**
  * Hook encapsulating all computed/memoized calendar data.

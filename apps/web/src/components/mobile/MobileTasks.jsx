@@ -1,26 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  ArrowLeft,
-  CheckCircle,
-  Clock,
-  Circle,
-  XCircle,
-  RefreshCw,
-  Briefcase,
-  MapPin,
-  User,
-} from 'lucide-react';
-import api from '../../utils/api';
-import { Accordion, Button, ProgressBar } from '@/design-system';
-import { ROLES, STATUS } from '../../constants';
-import usePullToRefresh from '../../hooks/usePullToRefresh';
-import useSwipeAction from '../../hooks/useSwipeAction';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
-import SwipeableRow from './SwipeableRow';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
-
 import './MobileTasks.css';
 import './MobileModuleWrapper.css';
+
+import {
+  ArrowLeft,
+  Briefcase,
+  CheckCircle,
+  Circle,
+  Clock,
+  MapPin,
+  RefreshCw,
+  User,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Accordion, Button, ProgressBar } from '@/design-system';
+
+import { ROLES, STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import useSwipeAction from '../../hooks/useSwipeAction';
+import api from '../../utils/api';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
+import SwipeableRow from './SwipeableRow';
 
 const SECTIONS = {
   rdv: { label: 'Rendez-vous', emoji: '📅', color: STATUS_COLORS.info },

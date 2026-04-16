@@ -1,26 +1,29 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import './MaintenanceReportModal.css';
+
 import {
+  addDays,
+  addMonths,
+  addWeeks,
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
   format,
   startOfDay,
-  endOfDay,
-  startOfWeek,
-  endOfWeek,
   startOfMonth,
-  endOfMonth,
-  addDays,
-  addWeeks,
-  addMonths,
+  startOfWeek,
   subDays,
-  subWeeks,
   subMonths,
+  subWeeks,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, Printer, FileText, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-import api from '../../utils/api';
-import './MaintenanceReportModal.css';
+import { ChevronLeft, ChevronRight, Download, FileText, Printer, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Button, Select, Table, Tooltip } from '@/design-system';
+
 import { STATUS_COLORS } from '../../constants/colors';
-import { formatDateTime, formatDateSimple } from '../../utils/formatUtils';
+import api from '../../utils/api';
+import { formatDateSimple, formatDateTime } from '../../utils/formatUtils';
 
 const PERIOD_MODES = [
   { value: 'day', label: 'Journalier' },

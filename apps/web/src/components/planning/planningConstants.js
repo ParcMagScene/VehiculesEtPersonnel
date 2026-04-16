@@ -1,4 +1,4 @@
-import { PLANNING_SECTIONS, EVENT_TYPE_COLORS } from '../../constants/colors';
+import { EVENT_TYPE_COLORS, PLANNING_SECTIONS } from '../../constants/colors';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 
 // ═══ Sections ═══

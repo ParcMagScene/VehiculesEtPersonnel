@@ -3,8 +3,9 @@
 // Utilisées par LeaveRequestForm, LeaveRequestsPanel, LeaveValidationPanel
 // ═══════════════════════════════════════════════════════════════
 
-import { Clock, CheckCircle, XCircle, AlertTriangle, Trash2 } from 'lucide-react';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { AlertTriangle, CheckCircle, Clock, Trash2, XCircle } from 'lucide-react';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 export const STATUS_CONFIG = {
   pending: { label: 'En attente', icon: Clock, color: STATUS_COLORS.warning, bg: '#fef3c7' },

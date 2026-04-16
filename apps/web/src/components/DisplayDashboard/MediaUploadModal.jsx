@@ -1,7 +1,9 @@
 // MediaUploadModal — Upload de médias (images/vidéos)
-import { useState, useCallback, useRef, memo } from 'react';
-import { Upload, Image, Film, Loader } from 'lucide-react';
-import { Button, FormField, ModalLayout, Input } from '@/design-system';
+import { Film, Image, Loader, Upload } from 'lucide-react';
+import { memo, useCallback, useRef, useState } from 'react';
+
+import { Button, FormField, Input, ModalLayout } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 

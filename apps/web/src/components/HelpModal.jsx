@@ -1,20 +1,21 @@
-import { useState } from 'react';
+import './HelpModal.css';
+
 import {
-  X,
-  HelpCircle,
+  Briefcase,
   Download,
+  HelpCircle,
+  Keyboard,
+  MessageSquare,
+  Package,
+  Shield,
+  ShoppingCart,
   Truck,
   Users,
-  Briefcase,
-  MessageSquare,
-  Keyboard,
-  Package,
-  ShoppingCart,
   Wrench,
-  Shield,
+  X,
 } from 'lucide-react';
-import { SHORTCUTS, SHORTCUT_CATEGORIES } from '../hooks/useKeyboardShortcuts';
-import './HelpModal.css';
+import { useState } from 'react';
+
 import {
   Accordion,
   Button,
@@ -27,7 +28,9 @@ import {
   Tabs,
   Tooltip,
 } from '@/design-system';
-import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../constants/colors';
+import { SHORTCUT_CATEGORIES, SHORTCUTS } from '../hooks/useKeyboardShortcuts';
 
 // ═══ FAQ Data ═══
 const FAQ_ITEMS = [

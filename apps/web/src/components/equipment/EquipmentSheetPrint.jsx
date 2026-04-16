@@ -1,6 +1,6 @@
-import { safeDate, formatDateSimple } from '../../utils/formatUtils';
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { formatDateSimple, safeDate } from '../../utils/formatUtils';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 

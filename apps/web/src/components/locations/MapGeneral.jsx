@@ -2,22 +2,23 @@
 // MapGeneral.jsx — Carte générale de tous les lieux géolocalisés
 // ═══════════════════════════════════════════════════════════════
 
-import { useMemo, useRef, useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
+
 import {
-  TILE_LIGHT,
-  TILE_DARK,
-  DEFAULT_ZOOM,
-  MAG_SCENE,
   BOUNDS_PADDING,
+  DEFAULT_ZOOM,
   filterGeoLocations,
+  MAG_SCENE,
+  TILE_DARK,
+  TILE_LIGHT,
 } from './map-utils';
-import { createLocationIcon, createHQIcon } from './MapMarkers';
-import MapPopup from './MapPopup';
-import MapSearchControl from './MapSearchControl';
-import MapRouteControl from './MapRouteControl';
+import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapOffScreenIndicators from './MapOffScreenIndicators';
+import MapPopup from './MapPopup';
+import MapRouteControl from './MapRouteControl';
+import MapSearchControl from './MapSearchControl';
 
 function FitBoundsOnLoad({ locations }) {
   const map = useMap();

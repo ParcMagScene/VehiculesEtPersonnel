@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FormLayout, FormSection, FormRow, FormActions } from '../components/ui/FormLayout';
+import { describe, expect, it, vi } from 'vitest';
+
+import { FormActions, FormLayout, FormRow, FormSection } from '../components/ui/FormLayout';
 
 describe('FormLayout', () => {
   it('rend un div sans onSubmit', () => {

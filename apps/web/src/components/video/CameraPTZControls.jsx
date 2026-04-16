@@ -2,9 +2,11 @@
 // CameraPTZControls.jsx — Contrôle PTZ (Pan/Tilt/Zoom)
 // ═══════════════════════════════════════════════════════════════
 
-import { usePTZ } from '../../hooks/usePTZ';
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ZoomIn, ZoomOut } from 'lucide-react';
+
 import { Button, Tooltip } from '@/design-system';
+
+import { usePTZ } from '../../hooks/usePTZ';
 
 const CameraPTZControls = ({ camera }) => {
   const { moving, startMove, stopMove } = usePTZ(camera);

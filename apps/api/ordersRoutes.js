@@ -1,11 +1,12 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { resolveBrand } from './brandHelpers.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { resolveBrand } from './brandHelpers.js';
-import { validate } from './schemas/imports.js';
 import { orderSchema } from './schemas/crud.js';
+import { validate } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

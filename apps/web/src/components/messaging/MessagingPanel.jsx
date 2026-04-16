@@ -1,23 +1,26 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  X,
-  MessageSquare,
-  Send,
-  Paperclip,
-  ArrowLeft,
-  Plus,
-  File,
-  Image,
-  Download,
-  Users,
-  Smile,
-} from 'lucide-react';
-import api, { getApiUrl } from '../../utils/api';
-import { useToast } from '../../hooks/useToast';
-import { Button, Textarea, EmptyState, Tooltip } from '@/design-system';
+import './MessagingPanel.css';
+
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import './MessagingPanel.css';
+import {
+  ArrowLeft,
+  Download,
+  File,
+  Image,
+  MessageSquare,
+  Paperclip,
+  Plus,
+  Send,
+  Smile,
+  Users,
+  X,
+} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button, EmptyState, Textarea, Tooltip } from '@/design-system';
+
+import { useToast } from '../../hooks/useToast';
+import api, { getApiUrl } from '../../utils/api';
 
 const API_BASE_URL = getApiUrl();
 

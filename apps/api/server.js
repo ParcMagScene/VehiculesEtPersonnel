@@ -1,7 +1,8 @@
 // Charger le fichier .env AVANT tous les autres imports (ESM hoisting)
-import { isDev, envFile } from './env.js';
-import { fileURLToPath as _fileURLToPath } from 'url';
 import { dirname as _dirname } from 'path';
+import { fileURLToPath as _fileURLToPath } from 'url';
+
+import { envFile, isDev } from './env.js';
 
 const __serverFile = _fileURLToPath(import.meta.url);
 const __serverDir = _dirname(__serverFile);
@@ -18,102 +19,101 @@ if (isDev) {
   logger.info('');
 }
 
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+import express from 'express';
+import fs from 'fs';
 import http from 'http';
 import https from 'https';
-import express from 'express';
-import cookieParser from 'cookie-parser';
-import compression from 'compression';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import db, { closeDatabase, checkpointDatabase } from './database.js';
-import logger from './logger.js';
 
+import { setupAdminRoutes } from './adminRoutes.js';
+import { setupAffairesRoutes } from './affairesRoutes.js';
+import {
+  setupAnnuaireClientsRoutes,
+  setupAnnuaireContactsRoutes,
+  setupAnnuaireImportRoutes,
+  setupAnnuaireLookupsRoutes,
+  setupAnnuairePrestatairesRoutes,
+  setupAnnuaireSearchRoutes,
+  setupAnnuaireSuppliersRoutes,
+} from './annuaireRoutes.js';
+import { setupAttachmentsRoutes } from './attachmentsRoutes.js';
+import { setupAuthRoutes } from './authRoutes.js';
+import { setupReservationEquipmentRoutes } from './catalogRoutes.js';
+import { corsMiddleware } from './config/cors.js';
 // ── Configs & Middlewares extraits ──
 import { helmetConditional } from './config/helmet.js';
-import { corsMiddleware } from './config/cors.js';
 import {
   authLimiter,
   generalLimiter,
-  sensitiveEndpointLimiter,
   googleCalendarLimiter,
+  sensitiveEndpointLimiter,
 } from './config/rateLimiter.js';
+import db, { checkpointDatabase, closeDatabase } from './database.js';
+import { setupDisplayRoutes } from './displayRoutes.js';
+import { initEmailTransporter } from './emailService.js';
+import {
+  setupEquipmentAssignmentsRoutes,
+  setupEquipmentCategoriesRoutes,
+  setupEquipmentListsRoutes,
+  setupEquipmentRoutes,
+  setupSavTicketsRoutes,
+} from './equipmentRoutes.js';
+import { setupGoogleRoutes } from './googleRoutes.js';
+import { setupInventoryRoutes } from './inventoryRoutes.js';
+import { setupLeaveRoutes } from './leaveRoutes.js';
+import logger from './logger.js';
+import { setupMailingRoutes } from './mailingRoutes.js';
+import { setupMessagingRoutes } from './messagingRoutes.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
 import {
   requireAdmin,
-  requireMaintenanceAccessCompat as requireMaintenanceAccess,
-  requireEquipmentMaintenanceAccess,
   requireCatalogAccess,
+  requireEquipmentMaintenanceAccess,
+  requireMaintenanceAccessCompat as requireMaintenanceAccess,
   requireNotReadOnly,
 } from './middleware/authorize.js';
-import { xssSanitize } from './middleware/sanitize.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { httpLogger } from './middleware/httpLogger.js';
-
+import { xssSanitize } from './middleware/sanitize.js';
+import {
+  setupMaterialRequestsRoutes,
+  setupOrdersRoutes,
+  setupQuotesRoutes,
+  setupSupplierDocumentsRoutes,
+  setupSuppliersRoutes,
+} from './ordersRoutes.js';
+import {
+  setupAssignmentsRoutes,
+  setupAvailabilitiesRoutes,
+  setupMissionsRoutes,
+  setupPersonsRoutes,
+  setupSkillsRoutes,
+} from './personnelRoutes.js';
+import { setupPlanningRoutes } from './planningRoutes.js';
+import { setupProfileRoutes } from './profileRoutes.js';
 // ── Routes ──
 import {
   setupClientsRoutes,
-  setupDriversRoutes,
-  setupLocationsRoutes,
-  setupGaragesRoutes,
   setupConfigRoutes,
+  setupDriversRoutes,
+  setupGaragesRoutes,
+  setupLocationsRoutes,
 } from './routes.js';
-import {
-  setupPersonsRoutes,
-  setupSkillsRoutes,
-  setupAvailabilitiesRoutes,
-  setupMissionsRoutes,
-  setupAssignmentsRoutes,
-} from './personnelRoutes.js';
-import {
-  setupEquipmentCategoriesRoutes,
-  setupEquipmentRoutes,
-  setupEquipmentAssignmentsRoutes,
-  setupSavTicketsRoutes,
-  setupEquipmentListsRoutes,
-} from './equipmentRoutes.js';
-import {
-  setupSuppliersRoutes,
-  setupOrdersRoutes,
-  setupQuotesRoutes,
-  setupMaterialRequestsRoutes,
-  setupSupplierDocumentsRoutes,
-} from './ordersRoutes.js';
-import { setupMessagingRoutes } from './messagingRoutes.js';
-import { setupLeaveRoutes } from './leaveRoutes.js';
-import { setupReservationEquipmentRoutes } from './catalogRoutes.js';
-import { setupMailingRoutes } from './mailingRoutes.js';
-import {
-  setupStockCategoriesRoutes,
-  setupStockItemsRoutes,
-  setupStockMovementsRoutes,
-  setupStockImportRoutes,
-  setupStockStatsRoutes,
-} from './stockRoutes.js';
-import { setupPlanningRoutes } from './planningRoutes.js';
-import { setupDisplayRoutes } from './displayRoutes.js';
 import { setupSonosRoutes } from './sonosRoutes.js';
 import {
-  setupAnnuaireClientsRoutes,
-  setupAnnuaireSuppliersRoutes,
-  setupAnnuairePrestatairesRoutes,
-  setupAnnuaireContactsRoutes,
-  setupAnnuaireLookupsRoutes,
-  setupAnnuaireSearchRoutes,
-  setupAnnuaireImportRoutes,
-} from './annuaireRoutes.js';
-import { setupAuthRoutes } from './authRoutes.js';
-import { setupVehicleRoutes } from './vehicleRoutes.js';
-import { setupAdminRoutes } from './adminRoutes.js';
-import { setupTOTPRoutes } from './totpRoutes.js';
-import { setupAffairesRoutes } from './affairesRoutes.js';
-import { setupProfileRoutes } from './profileRoutes.js';
-import { setupAttachmentsRoutes } from './attachmentsRoutes.js';
+  setupStockCategoriesRoutes,
+  setupStockImportRoutes,
+  setupStockItemsRoutes,
+  setupStockMovementsRoutes,
+  setupStockStatsRoutes,
+} from './stockRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
-import { setupInventoryRoutes } from './inventoryRoutes.js';
+import { setupTOTPRoutes } from './totpRoutes.js';
+import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
-import { setupGoogleRoutes } from './googleRoutes.js';
-import { initEmailTransporter } from './emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

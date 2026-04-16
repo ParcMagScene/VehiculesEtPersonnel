@@ -1,24 +1,26 @@
-import React, { useMemo, useState } from 'react';
 import {
-  Hash,
-  Edit2,
-  Trash2,
   ArrowRight,
-  Building2,
-  Package,
-  Check,
-  X,
-  ClipboardList,
   BookOpen,
+  Building2,
+  Check,
+  ClipboardList,
+  Edit2,
+  Hash,
+  Package,
+  Trash2,
   Users as UsersIcon,
+  X,
 } from 'lucide-react';
-import { Button, Table, StatusBadge, Tooltip, Input, ProgressBar } from '@/design-system';
-import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
-import { formatPhoneDisplay } from '../PhoneInput';
-import AffaireBadge from '../AffaireBadge';
-import { ORDER_STATUS, QUOTE_STATUS, REQUEST_STATUS, REQUEST_PRIORITY } from './ordersConstants';
+import React, { useMemo, useState } from 'react';
+
+import { Button, Input, ProgressBar, StatusBadge, Table, Tooltip } from '@/design-system';
+
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
+import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
+import AffaireBadge from '../AffaireBadge';
+import { formatPhoneDisplay } from '../PhoneInput';
+import { ORDER_STATUS, QUOTE_STATUS, REQUEST_PRIORITY, REQUEST_STATUS } from './ordersConstants';
 
 // ═══ Liste des commandes ═══
 export const OrdersList = React.memo(

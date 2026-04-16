@@ -3,9 +3,10 @@
 // Remplace les <select> pour toute entité DB (fournisseurs, clients, etc.)
 // ============================================================
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { ChevronDown, X } from 'lucide-react';
 import './EntityCombobox.css';
+
+import { ChevronDown, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * @param {Object}   props

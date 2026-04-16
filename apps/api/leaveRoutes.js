@@ -3,11 +3,12 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import db, { addToHistory } from './database.js';
-import { alertLeaveCreated, alertLeaveDecision } from './emailService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+import db, { addToHistory } from './database.js';
+import { alertLeaveCreated, alertLeaveDecision } from './emailService.js';
 import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1680,4 +1681,4 @@ function generateLeaveRequestPdfHtml(request) {
 </html>`;
 }
 
-export { LEAVE_TYPES, EXCEPTIONAL_LEAVE_DURATIONS };
+export { EXCEPTIONAL_LEAVE_DURATIONS, LEAVE_TYPES };

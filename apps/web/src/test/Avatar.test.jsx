@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
 import Avatar from '../components/ui/Avatar';
 
 // Avatar délègue à UserAvatar — on teste le wrapper DS

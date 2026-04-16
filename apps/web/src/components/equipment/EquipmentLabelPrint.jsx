@@ -1,8 +1,10 @@
-import { useState, useRef } from 'react';
-import { X, Printer, Tag, Download } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { Button, Input } from '@/design-system';
 import './EquipmentLabelPrint.css';
+
+import { Download, Printer, Tag, X } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useRef, useState } from 'react';
+
+import { Button, Input } from '@/design-system';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 

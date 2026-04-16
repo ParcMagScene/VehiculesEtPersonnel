@@ -3,7 +3,7 @@
 // Partagées entre PersonnelPanel, PersonFormModal, PlanningTab, etc.
 // ═══════════════════════════════════════
 
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 export const PERSON_TYPES = [
   { value: 'permanent', label: 'Permanent' },

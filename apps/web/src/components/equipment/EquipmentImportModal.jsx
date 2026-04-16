@@ -1,18 +1,20 @@
-import { useState, useCallback, useMemo } from 'react';
+import './EquipmentImportModal.css';
+
 import {
-  Upload,
-  FileText,
   CheckCircle,
   ChevronDown,
   ChevronRight,
-  Eye,
   Download,
+  Eye,
+  FileText,
+  Upload,
 } from 'lucide-react';
-import { Button, ModalLayout, Table, Spinner, InlineAlert } from '@/design-system';
-import api from '../../utils/api';
-import { STATUS } from '../../constants';
+import { useCallback, useMemo, useState } from 'react';
 
-import './EquipmentImportModal.css';
+import { Button, InlineAlert, ModalLayout, Spinner, Table } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import api from '../../utils/api';
 
 // Colonnes CSV attendues (séparateur ;)
 const EXPECTED_HEADERS = [

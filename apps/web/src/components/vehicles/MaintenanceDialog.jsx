@@ -1,39 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
+import './MaintenanceDialog.css';
+
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
-  Clock,
-  CheckCircle,
   AlertTriangle,
-  FileText,
-  Loader,
-  X,
-  User,
   Calendar,
+  CheckCircle,
+  Clock,
+  FileText,
   Gauge,
+  Loader,
+  User,
+  X,
 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+
 import {
   Button,
+  Checkbox,
   Dialog,
   FormField,
   Input,
-  Textarea,
   Select,
-  Checkbox,
-  Tabs,
-  TabList,
-  Tab,
-  TabPanel,
   StatusBadge,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+  Textarea,
 } from '@/design-system';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { getPeriodTimestamp } from '../../utils/dateUtils';
-import api from '../../utils/api';
-import './MaintenanceDialog.css';
-import { useToast } from '../../hooks/useToast';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { getPeriodTimestamp } from '../../utils/dateUtils';
 
 function MaintenanceDialog({
   vehicle,

@@ -1,5 +1,5 @@
 // API Client — Module Vidéo Surveillance
-import { toCamelCase, toSnakeCase, API_URL } from './base.js';
+import { API_URL, toCamelCase, toSnakeCase } from './base.js';
 
 export function registerVideoMethods(ApiClient) {
   // ── Caméras CRUD ──

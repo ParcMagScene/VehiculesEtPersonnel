@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { Lock, Save, Eye, EyeOff, Shield, KeyRound } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, FormField, Input } from '@/design-system';
 import './ChangePassword.css';
+
+import { Eye, EyeOff, KeyRound, Lock, Save, Shield } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button, FormField, Input } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 
 const ChangePassword = ({ currentUser }) => {
   const toast = useToast();

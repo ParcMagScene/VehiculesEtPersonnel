@@ -3,14 +3,15 @@
 // Affichage dynamique + Import BL + Planification des tâches
 // ═══════════════════════════════════════════════════════════════
 
-import db from './database.js';
-import path from 'path';
-import fs from 'fs';
 import crypto from 'crypto';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
+import path from 'path';
 import PDFDocument from 'pdfkit';
+import { fileURLToPath } from 'url';
+
+import { cacheMiddleware, icalCache, invalidateEntity, listCache, statsCache } from './cache.js';
+import db from './database.js';
 import logger from './logger.js';
-import { statsCache, listCache, icalCache, cacheMiddleware, invalidateEntity } from './cache.js';
 import { uploadBL } from './middleware/upload.js';
 
 const __filename = fileURLToPath(import.meta.url);

@@ -86,7 +86,7 @@
 
 ---
 
-## v2.6.0 — GUI Sonos complète + CI/CD 🔄
+## v2.6.0 — GUI Sonos complète + CI/CD ✅
 
 ### GUI Sonos complète ✅
 - [x] Hook partagé `useSonos` (config, zones, polling, contrôles, favoris, busy-lock)
@@ -96,16 +96,16 @@
 - [x] CSS dédié desktop + mobile (touch targets 48px+, scroll-snap zones)
 - [x] 47 tests Vitest (hook + composants desktop + mobile)
 
-### CI/CD 📋
-- [ ] GitHub Actions : lint + build + test sur PR
-- [ ] GitHub Actions : deploy automatique main → production
-- [ ] Vérification Conventional Commits
-- [ ] Coverage reporting (> 60%)
+### CI/CD ✅
+- [x] GitHub Actions : lint + build + test sur PR
+- [x] GitHub Actions : deploy automatique main → production
+- [x] Vérification Conventional Commits (commitlint + husky)
+- [x] Coverage reporting backend (57% lignes) + frontend (Vitest --coverage)
 
-### Qualité
-- [ ] ESLint config unifiée (monorepo)
-- [ ] Prettier config partagée
-- [ ] Import sorting automatique
+### Qualité ✅
+- [x] ESLint config unifiée — import sorting automatique (`eslint-plugin-simple-import-sort`)
+- [x] Prettier config partagée (`.prettierrc` racine unique)
+- [x] Import sorting automatique (backend + frontend)
 
 ---
 

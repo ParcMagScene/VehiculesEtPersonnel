@@ -3,36 +3,38 @@
 // Exports CSV, synthèses imprimables, statistiques clés
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import './ReportsPanel.css';
+
 import {
-  Download,
-  Printer,
-  BarChart3,
-  Calendar,
-  Truck,
-  Users,
-  ShoppingCart,
-  Briefcase,
-  RefreshCw,
-  Wrench,
-  FileSpreadsheet,
-} from 'lucide-react';
-import {
+  differenceInDays,
+  endOfMonth,
   format,
   parseISO,
   startOfMonth,
-  endOfMonth,
-  subMonths,
   startOfYear,
-  differenceInDays,
+  subMonths,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import './ReportsPanel.css';
+import {
+  BarChart3,
+  Briefcase,
+  Calendar,
+  Download,
+  FileSpreadsheet,
+  Printer,
+  RefreshCw,
+  ShoppingCart,
+  Truck,
+  Users,
+  Wrench,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Button, InlineAlert, SectionHeader, Table, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import api from '../../utils/api';
 
 // ═══════════════════════════════════════
 // Helpers

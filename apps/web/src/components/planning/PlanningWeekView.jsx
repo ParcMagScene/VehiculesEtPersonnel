@@ -1,30 +1,32 @@
-import React, { useMemo } from 'react';
 import {
+  Briefcase,
+  Calendar,
   Check,
+  ChevronDown,
   Clock,
   Edit2,
-  Trash2,
   Eye,
   EyeOff,
-  ChevronDown,
-  Calendar,
   Monitor,
-  Briefcase,
+  Trash2,
   X,
 } from 'lucide-react';
-import AffaireBadge from '../AffaireBadge';
+import React, { useMemo } from 'react';
+
 import { Button, Tooltip } from '@/design-system';
+
 import { STATUS } from '../../constants';
 import { EVENT_TYPE_COLORS, STATUS_COLORS } from '../../constants/colors';
-import {
-  SECTIONS,
-  normalizeSection,
-  extractAffaireNum,
-  todayStr,
-  EVENT_TYPES,
-} from './planningConstants';
-import { safeParseDate } from '../../utils/dateUtils';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
+import { safeParseDate } from '../../utils/dateUtils';
+import AffaireBadge from '../AffaireBadge';
+import {
+  EVENT_TYPES,
+  extractAffaireNum,
+  normalizeSection,
+  SECTIONS,
+  todayStr,
+} from './planningConstants';
 
 // ═══ WeekMiniCard ═══
 // Compact card for the week view — handles task, event, affaire, google types

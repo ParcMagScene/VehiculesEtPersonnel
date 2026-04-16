@@ -1,25 +1,28 @@
-import React, { useState, useEffect, useCallback, startTransition } from 'react';
+import './Calendar.css';
+
+import { format, isSameDay, isSameMonth, isSameWeek, isSameYear, setMonth } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight, Link, Truck } from 'lucide-react';
+import React, { startTransition, useCallback, useEffect, useState } from 'react';
+
+import { Button, Tooltip } from '@/design-system';
+
+import { TIMING } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import useWindowWidth from '../../hooks/useWindowWidth';
 import { formatDateSimple } from '../../utils/formatUtils';
-import { format, isSameDay, isSameWeek, isSameMonth, isSameYear, setMonth } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { Link, ChevronLeft, ChevronRight, Truck } from 'lucide-react';
-import { Button, Tooltip } from '@/design-system';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { TIMING } from '../../constants';
-import { getDriveLinksCount } from './calendarUtils';
-import useCalendarDrag from './useCalendarDrag';
-import useCalendarTrips from './useCalendarTrips';
-import useCalendarData from './useCalendarData';
-import CalendarVehicleRow from './CalendarVehicleRow';
-import CalendarHeaders from './CalendarHeaders';
-import CalendarVehicleColumn from './CalendarVehicleColumn';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import YearSelector from '../YearSelector';
+import CalendarHeaders from './CalendarHeaders';
+import { getDriveLinksCount } from './calendarUtils';
+import CalendarVehicleColumn from './CalendarVehicleColumn';
+import CalendarVehicleRow from './CalendarVehicleRow';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
-import './Calendar.css';
+import useCalendarData from './useCalendarData';
+import useCalendarDrag from './useCalendarDrag';
+import useCalendarTrips from './useCalendarTrips';
 
 const Calendar = ({
   view,

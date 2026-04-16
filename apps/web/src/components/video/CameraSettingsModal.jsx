@@ -2,9 +2,11 @@
 // CameraSettingsModal.jsx — Modal de configuration d'une caméra
 // ═══════════════════════════════════════════════════════════════
 
+import { Save, TestTube2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { Save, Trash2, TestTube2 } from 'lucide-react';
-import { Button, FormField, ModalLayout, Input, Textarea, Select, Checkbox } from '@/design-system';
+
+import { Button, Checkbox, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
+
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 
 const BRANDS = ['generic', 'Hikvision', 'Dahua', 'Ezviz', 'Amcrest', 'Axis', 'ONVIF'];

@@ -1,5 +1,6 @@
-import React from 'react';
 import './ui.css';
+
+import React from 'react';
 
 /**
  * ScrollArea — Conteneur scrollable avec scrollbars unifiées

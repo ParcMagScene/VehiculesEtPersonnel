@@ -4,9 +4,11 @@
 // Supporte un ou plusieurs dépôts
 // ============================================================
 
-import { useMemo } from 'react';
-import { MapPin, Warehouse } from 'lucide-react';
 import './LocationSelector.css';
+
+import { MapPin, Warehouse } from 'lucide-react';
+import { useMemo } from 'react';
+
 import { Select } from '@/design-system';
 
 export default function LocationSelector({ zones, depots, value, onChange }) {

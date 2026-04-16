@@ -2,8 +2,8 @@
 // SonosQueue — File de lecture actuelle (colonne centrale)
 // ═══════════════════════════════════════════════════════════════
 
-import { memo } from 'react';
 import { ListMusic, Music } from 'lucide-react';
+import { memo } from 'react';
 
 function SonosQueue({ queue, queueLoading, nowPlaying }) {
   const currentTitle = nowPlaying?.title;

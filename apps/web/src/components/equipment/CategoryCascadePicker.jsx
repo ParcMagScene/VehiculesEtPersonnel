@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Tag, ChevronRight } from 'lucide-react';
+import { ChevronRight, Tag } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+
 import { Button } from '@/design-system';
 
 const CategoryCascadePicker = ({ families, subfamilies, leafCategories, value, onChange }) => {

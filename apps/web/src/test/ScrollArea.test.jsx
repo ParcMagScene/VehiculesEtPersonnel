@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { createRef } from 'react';
+import { describe, expect, it } from 'vitest';
+
 import ScrollArea from '../components/ui/ScrollArea';
 
 describe('ScrollArea', () => {

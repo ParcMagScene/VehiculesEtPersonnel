@@ -2,8 +2,8 @@
 // SonosVolumeSlider — Volume inline (style Sonos topbar)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, memo } from 'react';
-import { Volume2, Volume1, VolumeX } from 'lucide-react';
+import { Volume1, Volume2, VolumeX } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
 
 function SonosVolumeSlider({ volume, muted, onSetVolume, onMute, onUnmute, busy }) {
   const [vol, setVol] = useState(volume ?? 50);

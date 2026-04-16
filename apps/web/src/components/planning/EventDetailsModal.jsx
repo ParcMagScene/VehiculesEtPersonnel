@@ -1,28 +1,31 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import './EventDetailsModal.css';
+
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
+  Briefcase,
   Calendar,
-  MapPin,
+  Check,
+  Edit,
+  ExternalLink,
   FileText,
   Folder,
-  ExternalLink,
-  Edit,
-  Trash2,
-  Plus,
-  Link as LinkIcon,
-  X,
-  Check,
   HardDrive,
+  Link as LinkIcon,
+  MapPin,
   Pencil,
-  Briefcase,
+  Plus,
+  Trash2,
+  X,
 } from 'lucide-react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+
+import { Button, Input, ModalLayout, SectionHeader, Tooltip } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
-import './EventDetailsModal.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { Button, ModalLayout, Input, SectionHeader, Tooltip } from '@/design-system';
 
 const BLImportModal = lazy(() => import('../affaires/BLImportModal'));
 const DynamicDisplayDialog = lazy(() => import('../DynamicDisplayDialog'));

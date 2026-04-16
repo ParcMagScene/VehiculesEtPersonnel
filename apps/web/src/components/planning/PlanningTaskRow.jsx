@@ -1,9 +1,11 @@
+import { Check, Clock, Edit2, Eye, EyeOff, Link, MapPin, Trash2, Truck, X } from 'lucide-react';
 import React from 'react';
-import { Check, Clock, Edit2, Trash2, Eye, EyeOff, Link, X, Truck, MapPin } from 'lucide-react';
+
 import { Button, Input, Tooltip } from '@/design-system';
-import AffaireBadge from '../AffaireBadge';
+
 import { STATUS } from '../../constants';
-import { SECTIONS, EVENT_TYPES, normalizeSection, extractAffaireNum } from './planningConstants';
+import AffaireBadge from '../AffaireBadge';
+import { EVENT_TYPES, extractAffaireNum, normalizeSection, SECTIONS } from './planningConstants';
 
 /**
  * PlanningTaskRow — renders a single task row in the planning panel.

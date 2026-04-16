@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mock useSonos ──
 const defaultSonos = {
@@ -70,12 +70,12 @@ vi.mock('@/design-system', () => ({
 }));
 
 // ── Import components after mocks ──
-import SonosNowPlaying from '../components/sonos/SonosNowPlaying';
 import SonosControls from '../components/sonos/SonosControls';
-import SonosVolumeSlider from '../components/sonos/SonosVolumeSlider';
 import SonosFavorites from '../components/sonos/SonosFavorites';
-import SonosZoneSelector from '../components/sonos/SonosZoneSelector';
+import SonosNowPlaying from '../components/sonos/SonosNowPlaying';
 import SonosPanel from '../components/sonos/SonosPanel';
+import SonosVolumeSlider from '../components/sonos/SonosVolumeSlider';
+import SonosZoneSelector from '../components/sonos/SonosZoneSelector';
 
 describe('SonosNowPlaying', () => {
   it('renders nothing when displayState is null', () => {

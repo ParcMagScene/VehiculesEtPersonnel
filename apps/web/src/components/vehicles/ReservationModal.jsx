@@ -1,32 +1,33 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import './ReservationModal.css';
+
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X, Trash2, MapPin, Link2, Unlink, Paperclip } from 'lucide-react';
+import { Link2, MapPin, Paperclip, Trash2, Unlink, X } from 'lucide-react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+
 import {
   Button,
+  Checkbox,
   Dialog,
   FormField,
   Input,
-  Textarea,
-  Select,
-  Checkbox,
   SectionHeader,
+  Select,
+  Textarea,
 } from '@/design-system';
-import { useAutocomplete } from '../../hooks/useAutocomplete';
-
-import TripDetailsModal from './TripDetailsModal';
-import LocationDialog from './LocationDialog';
-import VehiclePickerCards from './VehiclePickerCards';
-import DriverSelect from './DriverSelect';
-import api from '../../utils/api';
-import AffaireBadge from '../AffaireBadge';
-import { loadFromIndexedDB } from '../../utils/indexedDB';
-import './ReservationModal.css';
-import { useToast } from '../../hooks/useToast';
-import { useDirtyForm } from '../../hooks/useDirtyForm';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
+import { useAutocomplete } from '../../hooks/useAutocomplete';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { loadFromIndexedDB } from '../../utils/indexedDB';
+import AffaireBadge from '../AffaireBadge';
+import DriverSelect from './DriverSelect';
+import LocationDialog from './LocationDialog';
+import TripDetailsModal from './TripDetailsModal';
+import VehiclePickerCards from './VehiclePickerCards';
 
 const ReservationEquipment = lazy(() => import('./ReservationEquipment'));
 

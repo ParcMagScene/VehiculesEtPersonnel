@@ -4,7 +4,8 @@
 // Phase D du refactoring Google OAuth2
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import api from '../utils/api';
 
 const CHANNEL_NAME = 'emag-google-sync';

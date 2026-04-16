@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
-import { User, ChevronDown, Check } from 'lucide-react';
-import { Avatar, Button } from '@/design-system';
 import './DriverSelect.css';
+
+import { Check, ChevronDown, User } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { Avatar, Button } from '@/design-system';
 
 /**
  * Sélecteur de conducteur avec avatars (photo ou initiales).

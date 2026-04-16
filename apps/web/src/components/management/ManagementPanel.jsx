@@ -1,49 +1,52 @@
-import React, { useState, useEffect, useRef, Suspense } from 'react';
 import {
-  X,
-  Plus,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Cloud,
+  Download,
   Edit2,
+  Gauge,
+  GripVertical,
+  Lock,
+  Map,
+  MapPin,
+  Plus,
+  RefreshCw,
+  Settings,
+  Shield,
+  Smartphone,
   Trash2,
   Truck,
-  Calendar,
-  ChevronUp,
-  ChevronDown,
-  RefreshCw,
-  GripVertical,
   Upload,
-  Download,
-  Shield,
-  Lock,
-  Settings,
-  Smartphone,
   UserCircle2,
-  MapPin,
-  Cloud,
-  Gauge,
-  Map,
+  X,
 } from 'lucide-react';
-import { saveToIndexedDB, STORES, loadFromIndexedDB } from '../../utils/indexedDB';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
+
+import api from '../../utils/api';
+import { loadFromIndexedDB, saveToIndexedDB, STORES } from '../../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../../utils/photoList';
-import { formatPhoneDisplay } from '../PhoneInput';
-import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../../utils/vehicleUtils';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
-import UserManagement from './UserManagement';
-import GoogleCalendarConfig from '../vehicles/GoogleCalendarConfig';
+import { getExpiredTechnicalControls, hasExpiredTechnicalControl } from '../../utils/vehicleUtils';
 import ChangePassword from '../auth/ChangePassword';
 import MobileAccess from '../auth/MobileAccess';
-import DepotMap from '../vehicles/DepotMap';
-import LocationDialog from '../vehicles/LocationDialog';
+import LocationsMapPanel from '../locations/LocationsMapPanel';
+import { formatPhoneDisplay } from '../PhoneInput';
 import ClientDialog from '../vehicles/ClientDialog';
+import DepotMap from '../vehicles/DepotMap';
+import GoogleCalendarConfig from '../vehicles/GoogleCalendarConfig';
+import LocationDialog from '../vehicles/LocationDialog';
 import ReservationRequestsPanel from '../vehicles/ReservationRequestsPanel';
 import VehicleMaintenanceModal from '../vehicles/VehicleMaintenanceModal';
-import LocationsMapPanel from '../locations/LocationsMapPanel';
-import api from '../../utils/api';
+import UserManagement from './UserManagement';
 const PersonnelPanel = React.lazy(() => import('../personnel/PersonnelPanel'));
 import './ManagementPanel.css';
-import { useToast } from '../../hooks/useToast';
+
 import { Button, Input, Select } from '@/design-system';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
 
 const ManagementPanel = ({
   vehicles,

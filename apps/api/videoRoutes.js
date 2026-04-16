@@ -5,28 +5,28 @@
 
 import db from './database.js';
 import logger from './logger.js';
+import { verifyTvToken } from './middleware/tvAuth.js';
 import {
-  encryptPassword,
-  decryptPassword,
+  buildPlaybackRtspUrl,
   buildRtspUrl,
-  registerStreamInProxy,
-  whepExchange,
-  whepDelete,
-  fetchSnapshot,
-  sendPTZCommand,
-  generateSessionToken,
-  storeSession,
-  getSession,
-  removeSession,
-  getProxyStatus,
+  decryptPassword,
+  encryptPassword,
   extractDahuaChannel,
   extractPasswordFromRtspUrl,
-  searchNvrRecordings,
-  buildPlaybackRtspUrl,
+  fetchSnapshot,
+  generateSessionToken,
+  getProxyStatus,
+  getSession,
   registerPlaybackInProxy,
+  registerStreamInProxy,
+  removeSession,
+  searchNvrRecordings,
+  sendPTZCommand,
+  storeSession,
+  whepDelete,
+  whepExchange,
   whepPlaybackExchange,
 } from './videoProxyService.js';
-import { verifyTvToken } from './middleware/tvAuth.js';
 
 // Rate limiting simple pour les flux vidéo
 const streamRateMap = new Map();

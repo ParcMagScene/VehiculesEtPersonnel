@@ -1,29 +1,31 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  ChevronLeft,
-  Plus,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Calendar,
-  Send,
-  Trash2,
-  RefreshCw,
-} from 'lucide-react';
-import api from '../../utils/api';
-import { Button, DetailRow, Textarea, InlineAlert } from '@/design-system';
-import usePullToRefresh from '../../hooks/usePullToRefresh';
-import useSwipeAction from '../../hooks/useSwipeAction';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
-import SwipeableRow from './SwipeableRow';
-import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
-import { ROLES, STATUS } from '../../constants';
-import MobileListSkeleton from './MobileListSkeleton';
 import './MobileListSkeleton.css';
-import { STATUS_COLORS } from '../../constants/colors';
-
 import './MobileLeaves.css';
 import './MobileModuleWrapper.css';
+
+import {
+  Calendar,
+  CheckCircle,
+  ChevronLeft,
+  Clock,
+  Plus,
+  RefreshCw,
+  Send,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Button, DetailRow, InlineAlert, Textarea } from '@/design-system';
+
+import { ROLES, STATUS } from '../../constants';
+import { STATUS_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import useSwipeAction from '../../hooks/useSwipeAction';
+import api from '../../utils/api';
+import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from '../leaves/leaveConstants';
+import MobileListSkeleton from './MobileListSkeleton';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
+import SwipeableRow from './SwipeableRow';
 
 // ─── Composant principal ────────────────────────────────
 function MobileLeaves({ currentUser, onBack }) {

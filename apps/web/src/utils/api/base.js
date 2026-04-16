@@ -1,7 +1,7 @@
 // API Client — Base class + auth methods
 // Détection automatique de l'URL du backend
 
-import { saveAuthToIDB, loadAuthFromIDB, clearAllIndexedDB } from '../indexedDB.js';
+import { clearAllIndexedDB, loadAuthFromIDB, saveAuthToIDB } from '../indexedDB.js';
 
 export const getApiUrl = () => {
   const port = window.location.port;

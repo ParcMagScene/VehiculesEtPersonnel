@@ -1,9 +1,10 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../utils/googleMapsLoader';
-import api from '../utils/api';
-import { TIMING } from '../constants';
-
 import './AddressAutocomplete.css';
+
+import { useCallback, useEffect, useRef } from 'react';
+
+import { TIMING } from '../constants';
+import api from '../utils/api';
+import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../utils/googleMapsLoader';
 
 /**
  * Composant réutilisable d'autocomplétion d'adresse via Google Maps Places API

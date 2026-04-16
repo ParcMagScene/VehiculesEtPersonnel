@@ -1,4 +1,4 @@
-import { useRef, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 /**
  * Hook pour accéder au système de toast + feedback

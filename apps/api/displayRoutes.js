@@ -11,35 +11,37 @@ const TIME_SLOTS = {
   APRES_MIDI_END: 1080, // 18h00 → fin créneau "après-midi"
 };
 
-import { dirname, join, extname, basename, resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { randomBytes } from 'node:crypto';
+
+import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import multer from 'multer';
+import { basename, dirname, extname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
 import db from './database.js';
 import logger from './logger.js';
-import { validate } from './schemas/imports.js';
-import {
-  screenSchema,
-  screenUpdateSchema,
-  playlistSchema,
-  playlistUpdateSchema,
-  playlistItemsSchema,
-  messageSchema,
-  messageUpdateSchema,
-  templateSchema,
-  templateUpdateSchema,
-  appearanceSchema,
-  welcomeMessagesSchema,
-  sidebarConfigSchema,
-  colorRulesSchema,
-  locationIconRulesSchema,
-  sneakyMessageSchema,
-  eventIdSchema,
-} from './schemas/display.js';
-import { randomBytes } from 'node:crypto';
 import { uploadMedia } from './middleware/upload.js';
 import { validateFileType } from './middleware/validateFileType.js';
-import rateLimit from 'express-rate-limit';
+import {
+  appearanceSchema,
+  colorRulesSchema,
+  eventIdSchema,
+  locationIconRulesSchema,
+  messageSchema,
+  messageUpdateSchema,
+  playlistItemsSchema,
+  playlistSchema,
+  playlistUpdateSchema,
+  screenSchema,
+  screenUpdateSchema,
+  sidebarConfigSchema,
+  sneakyMessageSchema,
+  templateSchema,
+  templateUpdateSchema,
+  welcomeMessagesSchema,
+} from './schemas/display.js';
+import { validate } from './schemas/imports.js';
 
 // Rate limiter dédié pour les endpoints TV publics (écriture)
 const tvWriteLimiter = rateLimit({

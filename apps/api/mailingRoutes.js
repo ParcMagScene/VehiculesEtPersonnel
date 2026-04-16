@@ -2,9 +2,9 @@
  * Routes du module Mailing Avancé
  * Templates, envoi, historique
  */
-import { initEmailTransporter, getTransporter } from './emailService.js';
-import logger from './logger.js';
 import db from './database.js';
+import { getTransporter, initEmailTransporter } from './emailService.js';
+import logger from './logger.js';
 
 /**
  * Substitue les variables {{var}} dans un texte

@@ -1,6 +1,8 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { Plus, Check, X } from 'lucide-react';
-import { Button, Input, Textarea, Select, EntityCombobox } from '@/design-system';
+import { Check, Plus, X } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+
+import { Button, EntityCombobox, Input, Select, Textarea } from '@/design-system';
+
 import { formatCurrency } from '../../utils/formatUtils';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { ORDER_STATUS, QUOTE_STATUS, UNITS } from './ordersConstants';

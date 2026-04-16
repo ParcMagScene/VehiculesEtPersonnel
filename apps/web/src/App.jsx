@@ -1,14 +1,15 @@
+import { format } from 'date-fns';
 import {
-  useState,
+  lazy,
+  Suspense,
+  useCallback,
   useEffect,
   useMemo,
-  useCallback,
-  Suspense,
-  lazy,
   useRef,
+  useState,
   useTransition,
 } from 'react';
-import { format } from 'date-fns';
+
 import Header from './components/Header';
 const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
 const VehicleSlidePanel = lazy(() =>
@@ -19,25 +20,26 @@ const VehicleSlidePanel = lazy(() =>
 import LoginForm from './components/auth/LoginForm';
 import ErrorBoundary from './components/ErrorBoundary';
 const PlanningView = lazy(() => import('./components/vehicles/PlanningView'));
-import api from './utils/api';
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { useFeedback } from './hooks/useFeedback';
-import { useTheme } from './hooks/useTheme';
-import { useVSCodeTheme } from './hooks/useVSCodeTheme';
-import { useDraggableModals } from './hooks/useDraggableModals';
-import { ToastProvider } from './hooks/useToast';
-import { NavigationProvider } from './contexts/NavigationContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { useAppData } from './hooks/useAppData';
-import { useSilentRefresh } from './hooks/useSilentRefresh';
-import { useGoogleCalendar } from './hooks/useGoogleCalendar';
-import { useMessagingPolling } from './hooks/useMessagingPolling';
-import { LoadingOverlay } from './design-system';
-import { STATUS } from './constants';
-
-import { Button } from '@/design-system';
 import './App.css';
 import './styles/draggable-modals.css';
+
+import { Button } from '@/design-system';
+
+import { STATUS } from './constants';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { NavigationProvider } from './contexts/NavigationContext';
+import { LoadingOverlay } from './design-system';
+import { useAppData } from './hooks/useAppData';
+import { useDraggableModals } from './hooks/useDraggableModals';
+import { useFeedback } from './hooks/useFeedback';
+import { useGoogleCalendar } from './hooks/useGoogleCalendar';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useMessagingPolling } from './hooks/useMessagingPolling';
+import { useSilentRefresh } from './hooks/useSilentRefresh';
+import { useTheme } from './hooks/useTheme';
+import { ToastProvider } from './hooks/useToast';
+import { useVSCodeTheme } from './hooks/useVSCodeTheme';
+import api from './utils/api';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
 const PresetDetachedView = lazy(() => import('./components/video/PresetDetachedView'));

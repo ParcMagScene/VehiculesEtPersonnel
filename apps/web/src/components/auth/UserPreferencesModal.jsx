@@ -1,44 +1,47 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import './UserPreferencesModal.css';
+
 import {
-  X,
-  Settings,
-  Monitor,
-  Layout,
   Bell,
-  Palette,
+  BookOpen,
+  Boxes,
+  Briefcase,
   Check,
-  Volume2,
-  VolumeX,
+  ChevronDown,
+  ChevronUp,
   Eye,
   EyeOff,
   GripVertical,
-  ChevronUp,
-  ChevronDown,
+  Layout,
+  Monitor,
+  Moon,
+  Package,
+  Palette,
+  Radio,
+  Settings,
+  ShoppingCart,
+  Sun,
   Truck,
   Users,
-  Briefcase,
-  Package,
-  ShoppingCart,
-  BookOpen,
-  Boxes,
-  Sun,
-  Moon,
-  Radio,
+  Volume2,
+  VolumeX,
+  X,
 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button, Dialog, Select, Toggle } from '@/design-system';
+
+import { useDirtyForm } from '../../hooks/useDirtyForm';
+import { PALETTES } from '../../hooks/useTheme';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import {
   playNotificationSound,
-  requestNotificationPermission,
-  showBrowserNotification,
   playSound,
+  requestNotificationPermission,
   setVolume,
+  showBrowserNotification,
   SOUND_TYPES,
 } from '../../utils/notificationSound';
-import { PALETTES } from '../../hooks/useTheme';
-import { Button, Dialog, Select, Toggle } from '@/design-system';
-import './UserPreferencesModal.css';
-import { useToast } from '../../hooks/useToast';
-import { useDirtyForm } from '../../hooks/useDirtyForm';
 
 const ALL_MODULES = [
   { id: 'vehicles', label: 'Parc', icon: Truck, locked: true },

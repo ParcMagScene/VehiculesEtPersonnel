@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 /**
  * Hook swipe-back : détecte un geste swipe depuis le bord gauche de l'écran.

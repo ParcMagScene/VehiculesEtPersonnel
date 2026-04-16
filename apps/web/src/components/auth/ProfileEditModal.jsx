@@ -1,9 +1,12 @@
-import { useState, useRef } from 'react';
-import { X, Camera, User, Save, Trash2 } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, Input, Avatar, InlineAlert } from '@/design-system';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import './ProfileEditModal.css';
+
+import { Camera, Save, Trash2, User, X } from 'lucide-react';
+import { useRef, useState } from 'react';
+
+import { Avatar, Button, InlineAlert, Input } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import api from '../../utils/api';
 
 // targetUser: si fourni (mode admin), on édite cet utilisateur via les endpoints admin
 // sinon on édite currentUser via /users/me

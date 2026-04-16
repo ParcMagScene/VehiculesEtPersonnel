@@ -2,9 +2,9 @@
 // MapOffScreenIndicators — Flèches directionnelles pour les
 // marqueurs hors champ visible de la carte
 // ═══════════════════════════════════════════════════════════════
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useMap, useMapEvents } from 'react-leaflet';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useMap, useMapEvents } from 'react-leaflet';
 
 export default function MapOffScreenIndicators({ locations }) {
   const map = useMap();

@@ -2,19 +2,22 @@
  * BLBatchAnalysis — Rapport d'analyse batch de PDFs
  * Phase 6 : Scanner plusieurs BL, afficher couverture de parsing et statistiques
  */
-import { useState, useCallback } from 'react';
+import './BLBatchAnalysis.css';
+
 import {
-  Upload,
-  FileText,
   AlertTriangle,
   BarChart2,
   ChevronDown,
   ChevronRight,
+  FileText,
+  Upload,
 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+
 import { Button, ModalLayout } from '@/design-system';
-import { batchParsePDFs } from '../../utils/pdfParser';
+
 import { CONF_COLORS, STATUS_COLORS } from '../../constants/colors';
-import './BLBatchAnalysis.css';
+import { batchParsePDFs } from '../../utils/pdfParser';
 
 const FIELD_KEYS = [
   'numero',

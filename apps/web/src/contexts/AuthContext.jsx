@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+
 import api from '../utils/api';
-import { setVolume, requestNotificationPermission } from '../utils/notificationSound';
+import { requestNotificationPermission, setVolume } from '../utils/notificationSound';
 
 const AuthContext = createContext(null);
 

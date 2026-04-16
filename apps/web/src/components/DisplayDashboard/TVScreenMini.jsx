@@ -4,10 +4,10 @@
 // Aligné sur : calendar-dashboard/client/ (index.html + styles.css)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef, memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 const SAMPLE_TASKS = [
   {

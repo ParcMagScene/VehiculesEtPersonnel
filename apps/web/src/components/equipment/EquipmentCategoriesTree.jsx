@@ -1,7 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { ChevronRight, Edit2, Check, X } from 'lucide-react';
-import api from '../../utils/api';
+import { Check, ChevronRight, Edit2, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+
 import { Button, Input, Tooltip } from '@/design-system';
+
+import api from '../../utils/api';
 
 const EquipmentCategoriesTree = ({
   families,

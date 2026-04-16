@@ -1,12 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
-import logger from '../../utils/logger';
-import { X, MapPin, Navigation, Clock, Route, Mail, Phone, User } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, Dialog, Input, InlineAlert, FormField } from '@/design-system';
-import PhoneInput from '../PhoneInput';
 import './LocationDialog.css';
-import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
+
+import { Clock, Mail, MapPin, Navigation, Phone, Route, User, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { Button, Dialog, FormField, InlineAlert, Input } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
+import logger from '../../utils/logger';
+import PhoneInput from '../PhoneInput';
 
 const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
   const toast = useToast();

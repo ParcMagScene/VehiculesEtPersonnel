@@ -1,28 +1,31 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import {
-  X,
-  Save,
-  Calendar,
-  Clock,
-  User,
-  Briefcase,
-  ChevronDown,
-  Plus,
-  Check,
-  Info,
-  Trash2,
-  Edit2,
-  Users,
-  Search,
-} from 'lucide-react';
-import { format, eachDayOfInterval, parseISO, isWeekend as isWeekendFn, isSameDay } from 'date-fns';
+import './AssignmentDialog.css';
+
+import { eachDayOfInterval, format, isSameDay, isWeekend as isWeekendFn, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {
+  Briefcase,
+  Calendar,
+  Check,
+  ChevronDown,
+  Clock,
+  Edit2,
+  Info,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+  User,
+  Users,
+  X,
+} from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+
+import { Button, Dialog, InlineAlert, Input, Spinner, Textarea } from '@/design-system';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
-import { Button, Dialog, InlineAlert, Input, Spinner, Textarea } from '@/design-system';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
-import './AssignmentDialog.css';
 
 const POSITION_CATEGORIES = [
   { value: 'administratif', label: 'Administration', color: '#7c3aed' },

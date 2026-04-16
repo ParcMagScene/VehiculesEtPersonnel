@@ -1,25 +1,27 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import './PersonnelDetailPanel.css';
+
 import {
-  X,
-  Phone,
-  Mail,
-  Briefcase,
   Award,
+  Briefcase,
   Calendar,
+  Check,
+  Clock,
   ExternalLink,
   Link2,
-  Clock,
-  Check,
-  XCircle,
+  Mail,
+  Phone,
   Plus,
+  X,
+  XCircle,
 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Avatar, Button, SectionHeader, Tag, Tooltip } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
-import { Avatar, Button, SectionHeader, Tag, Tooltip } from '@/design-system';
-import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
-
-import './PersonnelDetailPanel.css';
 
 const CONTRACT_TYPES = [
   { value: 'intermittent', label: 'Intermittent' },

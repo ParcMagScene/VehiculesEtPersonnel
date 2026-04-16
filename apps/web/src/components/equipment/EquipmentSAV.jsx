@@ -1,31 +1,33 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
-  Edit2,
-  Trash2,
-  Wrench,
-  Package,
-  X,
-  ExternalLink,
-  Search,
   Calendar,
   CheckCircle,
   DollarSign,
+  Edit2,
+  ExternalLink,
+  Package,
+  Search,
+  Trash2,
   User,
+  Wrench,
+  X,
 } from 'lucide-react';
-import { SAV_STATUS, SAV_PRIORITY, SAV_TYPES, cleanName } from './equipmentConstants';
-import { getCategoryHierarchy } from './equipmentUtils';
-import { safeDate } from '../../utils/formatUtils';
-import { useToast } from '../../hooks/useToast';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import {
   Button,
-  ModalLayout,
+  EmptyState,
   Input,
-  Textarea,
+  ModalLayout,
   Select,
   Table,
-  EmptyState,
+  Textarea,
   Tooltip,
 } from '@/design-system';
+
+import { useToast } from '../../hooks/useToast';
+import { safeDate } from '../../utils/formatUtils';
+import { cleanName, SAV_PRIORITY, SAV_STATUS, SAV_TYPES } from './equipmentConstants';
+import { getCategoryHierarchy } from './equipmentUtils';
 
 // ═══ LISTE DES TICKETS SAV ═══
 const SavTicketsList = ({
@@ -987,4 +989,4 @@ const SavDetailDialog = ({
   );
 };
 
-export { SavTicketsList, SavTicketFormModal, MobileSavRequestForm, SavSlidePanel, SavDetailDialog };
+export { MobileSavRequestForm, SavDetailDialog, SavSlidePanel, SavTicketFormModal, SavTicketsList };

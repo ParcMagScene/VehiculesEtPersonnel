@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Popup } from 'react-leaflet';
+
 import { getLocationType } from './map-utils';
 
 export default function MapPopup({ location, onEdit }) {

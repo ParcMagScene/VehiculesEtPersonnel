@@ -1,10 +1,12 @@
+import { Briefcase, Edit2, Plus, Save, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
-import { Plus, X, Save, Edit2, Trash2, Briefcase } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
+
+import { Button, Checkbox, EmptyState, Input, Select } from '@/design-system';
+
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { POSITION_CATEGORIES } from './personnelConstants';
-import { Button, Input, Select, Checkbox, EmptyState } from '@/design-system';
 
 const PositionsTab = ({ positions, setPositions, currentUser }) => {
   const toast = useToast();

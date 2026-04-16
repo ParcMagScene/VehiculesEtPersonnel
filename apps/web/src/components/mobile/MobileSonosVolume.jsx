@@ -2,8 +2,8 @@
 // MobileSonosVolume — Slider volume tactile pleine largeur
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, memo } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
 
 function MobileSonosVolume({ volume, muted, onSetVolume, onMute, onUnmute, busy, isAdmin }) {
   const [vol, setVol] = useState(volume ?? 50);

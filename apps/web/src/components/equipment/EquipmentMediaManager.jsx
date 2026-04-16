@@ -1,12 +1,14 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { Image as ImageIcon, Upload, Trash2, ZoomIn, Edit2, X, Link2, QrCode } from 'lucide-react';
+import { Edit2, Image as ImageIcon, Link2, QrCode, Trash2, Upload, X, ZoomIn } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import api from '../../utils/api';
-import { cleanName, APP_BASE_URL } from './equipmentConstants';
-import { matchPhotoToEquipment } from './equipmentUtils';
-import { useToast } from '../../hooks/useToast';
+import React, { useMemo, useRef, useState } from 'react';
+
+import { Button, Input, SearchBar, Tooltip } from '@/design-system';
+
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { Button, Input, Tooltip, SearchBar } from '@/design-system';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { APP_BASE_URL, cleanName } from './equipmentConstants';
+import { matchPhotoToEquipment } from './equipmentUtils';
 
 const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) => {
   const toast = useToast();

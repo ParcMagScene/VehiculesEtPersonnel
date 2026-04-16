@@ -3,6 +3,7 @@
  * Utilise nodemailer avec configuration SMTP stockée en base
  */
 import nodemailer from 'nodemailer';
+
 import logger from './logger.js';
 import { decryptPassword } from './videoProxyService.js';
 

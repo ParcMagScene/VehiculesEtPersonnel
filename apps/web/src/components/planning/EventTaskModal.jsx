@@ -1,27 +1,29 @@
-import { useState, useMemo } from 'react';
-import {
-  X,
-  Calendar,
-  Clock,
-  MapPin,
-  Check,
-  Loader,
-  Package,
-  Truck,
-  ArrowRight,
-  RotateCcw,
-  Wrench,
-  AlertCircle,
-} from 'lucide-react';
-import api from '../../utils/api';
-import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../../utils/affaireConstants';
-import AffaireBadge from '../AffaireBadge';
-import { useToast } from '../../hooks/useToast';
 import './EventTaskModal.css';
+
+import {
+  AlertCircle,
+  ArrowRight,
+  Calendar,
+  Check,
+  Clock,
+  Loader,
+  MapPin,
+  Package,
+  RotateCcw,
+  Truck,
+  Wrench,
+  X,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+
 import { Button, Input, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useToast } from '../../hooks/useToast';
+import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import AffaireBadge from '../AffaireBadge';
 
 // ═══ Définition des étapes opérationnelles ═══
 const TASK_STEPS = [

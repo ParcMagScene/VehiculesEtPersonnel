@@ -2,8 +2,9 @@
 // SonosNowPlaying — Grande pochette + infos (style Sonos desktop)
 // ═══════════════════════════════════════════════════════════════
 
+import { Info, Music } from 'lucide-react';
 import { memo } from 'react';
-import { Music, Info } from 'lucide-react';
+
 import { InlineAlert } from '@/design-system';
 
 function SonosNowPlaying({ displayState }) {

@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import useMobileRouter, { ROUTES, BACK_TARGET } from '../hooks/useMobileRouter';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import useMobileRouter, { BACK_TARGET, ROUTES } from '../hooks/useMobileRouter';
 
 describe('useMobileRouter', () => {
   let originalHash;

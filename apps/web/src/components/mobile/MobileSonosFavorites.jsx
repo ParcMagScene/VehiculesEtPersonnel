@@ -2,8 +2,9 @@
 // MobileSonosFavorites — Liste scrollable des favoris (mobile)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, memo } from 'react';
 import { Heart, Music } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
+
 import { Input } from '@/design-system';
 
 function MobileSonosFavorites({

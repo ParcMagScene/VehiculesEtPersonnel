@@ -3,10 +3,12 @@
 // Sous-module de Planning → onglet « Dashboard Écrans »
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useRef, lazy, Suspense, memo } from 'react';
-import { Palette, MessageCircle, Tag, Film, Camera, Music, ExternalLink } from 'lucide-react';
 import './DisplayDashboardPanel.css';
-import { Tabs, TabList, Tab, TabPanel } from '@/design-system';
+
+import { Camera, ExternalLink, Film, MessageCircle, Music, Palette, Tag } from 'lucide-react';
+import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+
+import { Tab, TabList, TabPanel, Tabs } from '@/design-system';
 
 // Lazy sub-tabs
 const AppearanceTab = lazy(() => import('./AppearanceTab'));

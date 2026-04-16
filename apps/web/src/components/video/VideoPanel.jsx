@@ -2,36 +2,38 @@
 // VideoPanel.jsx — Module principal de surveillance vidéo
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import './VideoPanel.css';
+
+import {
+  Activity,
+  ChevronLeft,
+  ChevronRight,
+  Film,
+  Grid,
+  LayoutGrid,
+  List,
+  Maximize2,
+  Monitor,
+  Plus,
+  RefreshCw,
+  Repeat,
+  Settings,
+  Shield,
+  Video,
+} from 'lucide-react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button, Divider, InlineAlert, LoadingOverlay, Table, Tooltip } from '@/design-system';
+
+import { ROLES } from '../../constants';
 import { useCameraList } from '../../hooks/useCameraList';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { usePTZ } from '../../hooks/usePTZ';
+import api from '../../utils/api';
 import CameraGrid from './CameraGrid';
 import CameraPTZControls from './CameraPTZControls';
 import PlaybackPanel from './PlaybackPanel';
 import PresetPanel from './PresetPanel';
-import {
-  Plus,
-  Settings,
-  RefreshCw,
-  Video,
-  List,
-  Grid,
-  Activity,
-  Shield,
-  LayoutGrid,
-  Maximize2,
-  Repeat,
-  ChevronLeft,
-  ChevronRight,
-  Film,
-  Monitor,
-} from 'lucide-react';
-import api from '../../utils/api';
-import './VideoPanel.css';
-import { Button, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-
-import { ROLES } from '../../constants';
 
 const GRID_LAYOUTS = [
   { id: 1, label: '1', cols: 1 },

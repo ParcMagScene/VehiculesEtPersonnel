@@ -1,4 +1,5 @@
 import cors from 'cors';
+
 import logger from '../logger.js';
 
 // Construire la liste d'origines autorisées à partir de ALLOWED_ORIGINS (env)

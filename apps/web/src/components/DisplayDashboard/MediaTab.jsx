@@ -1,10 +1,12 @@
 // MediaTab — Galerie de médias (images/vidéos)
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Image, Film, Trash2, Eye } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import api from '../../utils/api';
+import { Eye, Film, Image, Trash2 } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
 import { Button, EmptyState, Tooltip } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 
 function formatFileSize(bytes) {
   if (!bytes) return '0 o';

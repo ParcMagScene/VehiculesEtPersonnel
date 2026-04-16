@@ -1,5 +1,5 @@
 import { STATUS } from '../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../constants/colors';
 // ═══════════════════════════════════════════════════════════════
 // bpAnnotationEngine.js — Moteur d'annotation des BP eM@g
 // Détection familles, kits, couleurs, bloc infos affaire

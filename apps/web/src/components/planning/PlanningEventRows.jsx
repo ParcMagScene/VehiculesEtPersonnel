@@ -1,11 +1,13 @@
+import { Check, Clock, Eye, Link, Plus, User, UserPlus, X } from 'lucide-react';
 import React from 'react';
-import { Check, Clock, Eye, Plus, X, Link, User, UserPlus } from 'lucide-react';
-import AffaireBadge from '../AffaireBadge';
+
 import { Button, DetailRow, Input, Tooltip } from '@/design-system';
+
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
-import { safeParseDate } from '../../utils/dateUtils';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
+import { safeParseDate } from '../../utils/dateUtils';
+import AffaireBadge from '../AffaireBadge';
 
 // ═══ MultiAssignWidget ═══
 // Shared multi-assignment dropdown used by event rows

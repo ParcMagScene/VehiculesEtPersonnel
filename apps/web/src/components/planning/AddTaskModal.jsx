@@ -1,26 +1,28 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import './AddTaskModal.css';
+
 import {
-  X,
+  Briefcase,
+  ChevronDown,
+  Clock,
+  MapPin,
   Plus,
   Search,
-  Unlink,
-  MapPin,
-  Clock,
-  User,
-  Briefcase,
   Truck,
-  ChevronDown,
+  Unlink,
+  User,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import AffaireBadge from '../AffaireBadge';
-import AddressAutocomplete from '../AddressAutocomplete';
-import { useToast } from '../../hooks/useToast';
-import { safeParseDate } from '../../utils/dateUtils';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
 import { Button, Input, Select } from '@/design-system';
+
 import { STATUS } from '../../constants';
 import { PLANNING_SECTIONS } from '../../constants/colors';
-
-import './AddTaskModal.css';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { safeParseDate } from '../../utils/dateUtils';
+import AddressAutocomplete from '../AddressAutocomplete';
+import AffaireBadge from '../AffaireBadge';
 
 // ═══ Constantes (depuis colorConstants) ═══
 const {

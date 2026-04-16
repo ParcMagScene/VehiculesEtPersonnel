@@ -1,9 +1,11 @@
 // LogsTab — Consultation des logs d'activité des écrans
-import { useState, useEffect, useCallback, memo } from 'react';
 import { Activity, ChevronLeft, ChevronRight } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, EmptyState, Table } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, EmptyState, Table } from '@/design-system';
 
 const PAGE_SIZE = 50;
 

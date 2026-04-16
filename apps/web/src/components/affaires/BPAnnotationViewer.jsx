@@ -2,23 +2,26 @@
 // BPAnnotationViewer — Visualiseur PDF avec annotations famille
 // Surlignage automatique par famille métier (Sono, Lumière, etc.)
 // ═══════════════════════════════════════════════════════════════
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { AVATAR_COLORS } from '../../constants/colors';
-import * as pdfjsLib from 'pdfjs-dist';
+import './BPAnnotationViewer.css';
+
 import {
-  X,
-  Download,
-  Printer,
-  ZoomIn,
-  ZoomOut,
   ChevronLeft,
   ChevronRight,
-  Layers,
+  Download,
   Info,
+  Layers,
+  Printer,
+  X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
+import * as pdfjsLib from 'pdfjs-dist';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { Button, Tooltip } from '@/design-system';
+
+import { AVATAR_COLORS } from '../../constants/colors';
 import { FAMILY_COLORS } from '../../utils/bpAnnotationEngine';
-import './BPAnnotationViewer.css';
 
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';

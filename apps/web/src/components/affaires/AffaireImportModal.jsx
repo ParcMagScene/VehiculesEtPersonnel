@@ -1,28 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import logger from '../../utils/logger';
-import api from '../../utils/api';
 import './AffaireImportModal.css';
-import { extractTextFromPDF, smartParse, batchParsePDFs } from '../../utils/pdfParser';
-import {
-  addToIndexedDB,
-  updateInIndexedDB,
-  loadFromIndexedDB,
-  STORES,
-} from '../../utils/indexedDB';
-import PhoneInput from '../PhoneInput';
-import AddressAutocomplete from '../AddressAutocomplete';
-import { useToast } from '../../hooks/useToast';
+
+import React, { useEffect, useRef, useState } from 'react';
+
 import {
   Button,
   FormField,
-  ModalLayout,
   Input,
-  Textarea,
+  ModalLayout,
+  ProgressBar,
   Select,
   Spinner,
-  ProgressBar,
+  Textarea,
 } from '@/design-system';
+
 import { STATUS_COLORS } from '../../constants/colors';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import {
+  addToIndexedDB,
+  loadFromIndexedDB,
+  STORES,
+  updateInIndexedDB,
+} from '../../utils/indexedDB';
+import logger from '../../utils/logger';
+import { batchParsePDFs, extractTextFromPDF, smartParse } from '../../utils/pdfParser';
+import AddressAutocomplete from '../AddressAutocomplete';
+import PhoneInput from '../PhoneInput';
 
 const AffaireImportModal = ({
   isOpen,

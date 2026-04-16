@@ -1,5 +1,5 @@
-import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
+import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * SearchBar — Barre de recherche standardisée

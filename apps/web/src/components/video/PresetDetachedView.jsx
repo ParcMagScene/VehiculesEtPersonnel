@@ -2,10 +2,12 @@
 // PresetDetachedView.jsx — Vue preset détachée (fenêtre indépendante)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback } from 'react';
-import CameraPlayerWebRTC from './CameraPlayerWebRTC';
-import api from '../../utils/api';
 import './VideoPanel.css';
+
+import { useCallback, useEffect, useState } from 'react';
+
+import api from '../../utils/api';
+import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 
 const PresetDetachedView = ({ presetId }) => {
   const [preset, setPreset] = useState(null);

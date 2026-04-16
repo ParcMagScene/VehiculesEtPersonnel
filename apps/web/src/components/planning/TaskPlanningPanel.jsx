@@ -1,50 +1,53 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
+import './TaskPlanningPanel.css';
+
 import {
-  ClipboardList,
-  Plus,
+  CalendarDays,
+  CheckCheck,
   ChevronLeft,
   ChevronRight,
-  LayoutList,
-  CalendarDays,
-  Repeat,
-  SkipForward,
+  ClipboardList,
   FileDown,
+  LayoutList,
+  Plus,
   RefreshCw,
+  Repeat,
   Settings,
-  CheckCheck,
+  SkipForward,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
-import AffaireBadge from '../AffaireBadge';
-import { formatDateFr } from '../../utils/formatUtils';
-import { safeParseDate } from '../../utils/dateUtils';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Button, Tooltip } from '@/design-system';
-import { useToast } from '../../hooks/useToast';
+
+import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import { safeParseDate } from '../../utils/dateUtils';
+import { formatDateFr } from '../../utils/formatUtils';
+import AffaireBadge from '../AffaireBadge';
+import AddTaskModal from './AddTaskModal';
 import EventTaskModal from './EventTaskModal';
 import TaskEditModal from './TaskEditModal';
-import AddTaskModal from './AddTaskModal';
-import { STATUS } from '../../constants';
-import './TaskPlanningPanel.css';
 const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
 import {
-  SECTIONS,
-  EVENT_TYPES,
-  mapEventToSection,
-  mapAffaireToSection,
-  todayStr,
   addDays,
+  DAYS_FR,
+  EVENT_TYPES,
+  extractAffaireNum,
   formatDateShort,
   getWeekDays,
+  mapAffaireToSection,
+  mapEventToSection,
   normalizeSection,
-  extractAffaireNum,
-  DAYS_FR,
+  SECTIONS,
+  todayStr,
 } from './planningConstants';
-import { PlanningTaskRow } from './PlanningTaskRow';
-import { MultiAssignWidget, GoogleRdvRow, RdvRow, IcalEventRow } from './PlanningEventRows';
-import { PlanningWeekView } from './PlanningWeekView';
 import { PlanningDayView, PlanningRecurringPanel } from './PlanningDayView';
+import { GoogleRdvRow, IcalEventRow, MultiAssignWidget, RdvRow } from './PlanningEventRows';
+import { PlanningTaskRow } from './PlanningTaskRow';
+import { PlanningWeekView } from './PlanningWeekView';
 
 // ═══════════════════════════════════════════════════════════════
 // TaskPlanningPanel — lean container (data + state + routing)

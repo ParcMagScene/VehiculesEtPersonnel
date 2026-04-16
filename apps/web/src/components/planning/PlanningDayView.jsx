@@ -1,19 +1,21 @@
-import React from 'react';
 import {
-  ChevronDown,
-  Plus,
+  AlertCircle,
   Check,
-  X,
+  ChevronDown,
   Edit2,
-  Trash2,
   Link,
+  Plus,
   RefreshCw,
   Repeat,
-  AlertCircle,
+  Trash2,
+  X,
 } from 'lucide-react';
+import React from 'react';
+
 import { Accordion, Button, Divider, Input, Select, Tooltip } from '@/design-system';
+
 import { STATUS_COLORS } from '../../constants/colors';
-import { SECTIONS, OPS_SECTION_KEYS, DAYS_FR } from './planningConstants';
+import { DAYS_FR, OPS_SECTION_KEYS, SECTIONS } from './planningConstants';
 
 // ═══════════════════════════════════════════════════════════════
 // PlanningDaySection — renders a single day-view section
@@ -574,4 +576,4 @@ const PlanningDayView = React.memo(function PlanningDayView({
   );
 });
 
-export { PlanningDaySection, PlanningIcalManager, PlanningRecurringPanel, PlanningDayView };
+export { PlanningDaySection, PlanningDayView, PlanningIcalManager, PlanningRecurringPanel };

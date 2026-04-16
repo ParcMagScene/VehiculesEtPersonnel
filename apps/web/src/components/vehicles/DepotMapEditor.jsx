@@ -4,29 +4,32 @@
 // de référence en overlay pour aligner précisément
 // ============================================================
 
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import './DepotMapEditor.css';
+
 import {
-  Save,
-  X,
-  Undo2,
-  Redo2,
-  Maximize2,
-  Plus,
-  Trash2,
-  RotateCcw,
+  Copy,
   Eye,
   EyeOff,
   Grid3X3,
-  Copy,
+  Maximize2,
+  Plus,
+  Redo2,
+  RotateCcw,
+  Save,
+  Scissors,
+  Trash2,
+  Undo2,
+  X,
   ZoomIn,
   ZoomOut,
-  Scissors,
 } from 'lucide-react';
-import api from '../../utils/api';
-import './DepotMapEditor.css';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Button, Input, Select, Tooltip } from '@/design-system';
+
 import { STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import api from '../../utils/api';
 
 const HANDLE_SIZE = 8;
 const SNAP_GRID = 5;

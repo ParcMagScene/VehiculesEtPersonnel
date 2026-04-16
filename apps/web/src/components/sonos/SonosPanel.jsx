@@ -3,17 +3,20 @@
 // Layout 3 colonnes : Système | Lecture + Queue | Sources
 // ═══════════════════════════════════════════════════════════════
 
+import './SonosPanel.css';
+
+import { Music, RefreshCw, Search, Settings, Wifi } from 'lucide-react';
 import { memo, useState } from 'react';
-import { Music, Wifi, Settings, RefreshCw, Search } from 'lucide-react';
+
+import { Button, Checkbox, Input } from '@/design-system';
+
 import useSonos from '../../hooks/useSonos';
-import SonosZoneSelector from './SonosZoneSelector';
-import SonosNowPlaying from './SonosNowPlaying';
 import SonosControls from './SonosControls';
-import SonosVolumeSlider from './SonosVolumeSlider';
+import SonosNowPlaying from './SonosNowPlaying';
 import SonosQueue from './SonosQueue';
 import SonosSources from './SonosSources';
-import { Button, Input, Checkbox } from '@/design-system';
-import './SonosPanel.css';
+import SonosVolumeSlider from './SonosVolumeSlider';
+import SonosZoneSelector from './SonosZoneSelector';
 
 function SonosPanel({ currentUser, _currentUser }) {
   const isAdmin = !!currentUser?.isAdmin || !!_currentUser?.isAdmin;

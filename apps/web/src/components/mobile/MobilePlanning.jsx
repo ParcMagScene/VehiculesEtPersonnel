@@ -1,31 +1,33 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
+import './MobilePlanning.css';
+
 import {
-  format,
   addDays,
-  startOfMonth,
-  endOfMonth,
-  startOfDay,
   addMonths,
-  subMonths,
+  endOfMonth,
+  format,
   isSameDay,
+  startOfDay,
+  startOfMonth,
+  subMonths,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
-  Wrench,
   AlertTriangle,
   Calendar,
-  X,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
-  CalendarDays,
+  Wrench,
+  X,
 } from 'lucide-react';
-import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
-import usePullToRefresh from '../../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
-import './MobilePlanning.css';
+
+import { STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 function MobilePlanning({
   vehicles,

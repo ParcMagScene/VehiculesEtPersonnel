@@ -1,31 +1,33 @@
-import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
+import './GoogleCalendarBanner.css';
+
 import {
-  format,
-  parseISO,
-  isToday,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
   eachDayOfInterval,
   eachMonthOfInterval,
-  startOfDay,
   endOfDay,
+  endOfMonth,
+  endOfWeek,
+  endOfYear,
+  format,
+  isToday,
+  parseISO,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  startOfYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import './GoogleCalendarBanner.css';
-import EventDetailsModal from '../planning/EventDetailsModal';
-import api from '../../utils/api';
-import { capitalizeText } from '../../utils/dateUtils';
-import { Search, RefreshCw, Plus, CalendarPlus } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
-import { useGoogleSync } from '../../hooks/useGoogleSync';
+import { CalendarPlus, Plus, RefreshCw, Search } from 'lucide-react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Button, InlineAlert, LoadingOverlay, SearchBar } from '@/design-system';
 
 import { TIMING } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useGoogleSync } from '../../hooks/useGoogleSync';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { capitalizeText } from '../../utils/dateUtils';
+import EventDetailsModal from '../planning/EventDetailsModal';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('../affaires/AffaireImportModal'));

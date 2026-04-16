@@ -1,5 +1,6 @@
 import { fileTypeFromFile } from 'file-type';
 import fs from 'fs';
+
 import logger from '../logger.js';
 
 /**

@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { MapPin, Plus, Edit2, Trash2, ExternalLink, Map } from 'lucide-react';
-import LocationsMapPanel from '../locations/LocationsMapPanel';
-import api from '../../utils/api';
-import LocationDialog from '../vehicles/LocationDialog';
-import { Button, Table, Spinner, SearchBar, Tooltip } from '@/design-system';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { loadFromIndexedDB } from '../../utils/indexedDB';
-import { useToast } from '../../hooks/useToast';
+import { Edit2, ExternalLink, Map, MapPin, Plus, Trash2 } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+
+import { Button, SearchBar, Spinner, Table, Tooltip } from '@/design-system';
+
 import { STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { loadFromIndexedDB } from '../../utils/indexedDB';
+import LocationsMapPanel from '../locations/LocationsMapPanel';
+import LocationDialog from '../vehicles/LocationDialog';
 
 const LOCATION_TYPES = ['Salle de spectacle', 'Prestataire', 'Dépôt', 'Garage', 'Autre'];
 

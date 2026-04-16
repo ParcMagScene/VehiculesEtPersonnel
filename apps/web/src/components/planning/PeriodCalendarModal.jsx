@@ -1,37 +1,39 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import './PeriodCalendarModal.css';
+
 import {
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  format,
   addMonths,
-  subMonths,
-  isSameMonth,
-  isSameDay,
-  isWeekend,
-  isBefore,
+  eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
   isAfter,
+  isBefore,
+  isSameDay,
+  isSameMonth,
+  isWeekend,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
+  AlertTriangle,
+  Briefcase,
+  CalendarPlus,
+  Check,
   ChevronLeft,
   ChevronRight,
-  X,
-  AlertTriangle,
-  Check,
   Clock,
-  CalendarPlus,
-  Briefcase,
   User,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, Input, Checkbox, InlineAlert } from '@/design-system';
-import { PERIOD_MENU_ITEMS } from '../personnel/PersonnelContextMenu';
-import { STATUS } from '../../constants';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import './PeriodCalendarModal.css';
+import { Button, Checkbox, InlineAlert, Input } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import api from '../../utils/api';
+import { PERIOD_MENU_ITEMS } from '../personnel/PersonnelContextMenu';
 
 // Jours ouvrés entre deux dates
 const countBusinessDays = (start, end) => {

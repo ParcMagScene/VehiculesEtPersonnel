@@ -4,19 +4,20 @@
 // ═══════════════════════════════════════════════════════════════
 
 import crypto from 'crypto';
+
 import db from './database.js';
-import logger from './logger.js';
+import { pullReservationsFromGoogle } from './googleBidirectionalSync.js';
 import {
-  isGoogleOAuthConfigured,
-  getAuthorizationUrl,
   exchangeCode,
-  storeRefreshToken,
-  getValidAccessToken,
+  getAuthorizationUrl,
   getConnectionStatus,
+  getValidAccessToken,
+  isGoogleOAuthConfigured,
   revokeToken,
+  storeRefreshToken,
   updateLastSync,
 } from './googleTokenManager.js';
-import { pullReservationsFromGoogle } from './googleBidirectionalSync.js';
+import logger from './logger.js';
 
 const GOOGLE_API_BASE = 'https://www.googleapis.com/calendar/v3';
 const GCAL_TIMEOUT_MS = 10000;

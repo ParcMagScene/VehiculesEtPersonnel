@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Mail, User, Send, Lock, CheckCircle, Clock, ArrowLeft } from 'lucide-react';
-import { Button, ModalLayout, Input, InlineAlert, FormField } from '@/design-system';
-import api from '../../utils/api';
-import { STATUS } from '../../constants';
-
 import './AccessRequestModal.css';
+
+import { ArrowLeft, CheckCircle, Clock, Lock, Mail, Send, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { Button, FormField, InlineAlert, Input, ModalLayout } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import api from '../../utils/api';
 
 function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   const [step, setStep] = useState('request'); // 'request' | 'create-password' | 'pending'

@@ -1,13 +1,15 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
-import { format, addDays, startOfWeek, endOfWeek, parseISO } from 'date-fns';
+import './PlanningView.css';
+
+import { addDays, endOfWeek, format, parseISO, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Wrench, AlertTriangle, Calendar, Users, Briefcase, Clock, Ban } from 'lucide-react';
-import api from '../../utils/api';
-import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { AlertTriangle, Ban, Briefcase, Calendar, Clock, Users, Wrench } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/design-system';
-import './PlanningView.css';
+
+import { STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import api from '../../utils/api';
 
 function PlanningView({
   vehicles = [],

@@ -1,35 +1,37 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import './MobileAffaires.css';
+
+import { addDays, format, isSameDay, parseISO, startOfDay } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import {
+  AlertCircle,
   ArrowLeft,
+  Briefcase,
+  Calendar,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Calendar,
-  MapPin,
-  User,
-  Phone,
-  FileText,
-  Truck,
-  Package,
-  Users,
-  DollarSign,
-  Briefcase,
   ClipboardList,
-  CheckCircle,
-  AlertCircle,
+  DollarSign,
+  FileText,
+  MapPin,
+  Package,
+  Phone,
+  Truck,
+  User,
+  Users,
 } from 'lucide-react';
-import { format, addDays, startOfDay, parseISO, isSameDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
-import './MobileAffaires.css';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
-import usePullToRefresh from '../../hooks/usePullToRefresh';
-import useSwipeAction from '../../hooks/useSwipeAction';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
-import SwipeableRow from './SwipeableRow';
-import { STATUS_COLORS } from '../../constants/colors';
 
 import { STATUS } from '../../constants';
+import { STATUS_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import useSwipeAction from '../../hooks/useSwipeAction';
+import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
+import SwipeableRow from './SwipeableRow';
 
 // Statut temporel
 const getAffaireStatus = (a, todayStr) => {

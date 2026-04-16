@@ -1,16 +1,18 @@
+import './MobileHome.css';
+
 import {
-  Truck,
-  Users,
-  Package,
-  ShoppingCart,
-  Palmtree,
-  Map,
-  Wrench,
   Briefcase,
   ClipboardList,
+  Map,
+  Package,
+  Palmtree,
+  ShoppingCart,
+  Truck,
+  Users,
+  Wrench,
 } from 'lucide-react';
+
 import { Button } from '@/design-system';
-import './MobileHome.css';
 
 function MobileHome({ onNavigate, currentUser }) {
   const isAdmin = !!currentUser?.isAdmin;

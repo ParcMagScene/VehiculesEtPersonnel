@@ -4,22 +4,22 @@
 // Import PDF catalogues fournisseurs
 // ============================================================
 
+import {
+  applyUnifiedFamilyBatch,
+  enrichArticle,
+  invalidateBrandCache,
+  linkBrandIds,
+  listBrandsWithStats,
+  normalizeBrand,
+} from './brandHelpers.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
-import {
-  normalizeBrand,
-  enrichArticle,
-  linkBrandIds,
-  applyUnifiedFamilyBatch,
-  invalidateBrandCache,
-  listBrandsWithStats,
-} from './brandHelpers.js';
 import { supplierImportSchema, validate } from './schemas/imports.js';
 import {
   analyzeSchema,
-  taxonomyApplySchema,
-  brandResolveSchema,
   brandAliasSchema,
+  brandResolveSchema,
+  taxonomyApplySchema,
 } from './schemas/supplier.js';
 
 // ============ ARTICLES FOURNISSEURS ============

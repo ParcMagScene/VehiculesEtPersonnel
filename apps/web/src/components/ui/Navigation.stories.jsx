@@ -1,5 +1,5 @@
-import { Tabs, TabList, Tab, TabPanel } from '../components/ui/Tabs';
 import Accordion from '../components/ui/Accordion';
+import { Tab, TabList, TabPanel, Tabs } from '../components/ui/Tabs';
 
 export default { title: 'Molécules/Navigation' };
 

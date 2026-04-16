@@ -1,10 +1,12 @@
 import React from 'react';
+
 import { Tooltip } from '@/design-system';
 import { Button } from '@/design-system';
-import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../../utils/vehicleUtils';
-import { getVehicleAvatar } from '../../utils/vehicleAvatars';
+
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
+import { getVehicleAvatar } from '../../utils/vehicleAvatars';
+import { getExpiredTechnicalControls, hasExpiredTechnicalControl } from '../../utils/vehicleUtils';
 
 const VehicleCell = ({ vehicle, maintenances, onVehicleClick, onVehicleDoubleClick }) => {
   const hasBreakdown = maintenances.some(

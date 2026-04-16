@@ -1,10 +1,12 @@
 // TemplatesTab — Gestion des templates d'affichage
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Layout, Trash2, Settings } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import api from '../../utils/api';
+import { Layout, Settings, Trash2 } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
 import { Button, EmptyState, Tooltip } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 
 function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();

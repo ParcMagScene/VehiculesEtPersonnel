@@ -1,25 +1,27 @@
-import React, { useState } from 'react';
-import {
-  Bell,
-  CalendarCheck,
-  ClipboardList,
-  AlertTriangle,
-  XCircle,
-  Clock,
-  Users,
-  Calendar,
-  Check,
-  X,
-  Wrench,
-} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { getPeriodTimestamp } from '../../utils/dateUtils';
-import api from '../../utils/api';
+import {
+  AlertTriangle,
+  Bell,
+  Calendar,
+  CalendarCheck,
+  Check,
+  ClipboardList,
+  Clock,
+  Users,
+  Wrench,
+  X,
+  XCircle,
+} from 'lucide-react';
+import React, { useState } from 'react';
+
 import { Button, Textarea } from '@/design-system';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { getPeriodTimestamp } from '../../utils/dateUtils';
 
 // ─── Shared internal card for reservation requests (used in both popups) ───
 const ReservationRequestCard = ({

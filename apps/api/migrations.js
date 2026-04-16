@@ -4,15 +4,16 @@
 // Exécutées après initializeDatabase() dans database.js
 // ═══════════════════════════════════════════════════════════════
 
-import logger from './logger.js';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
+
+import logger from './logger.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
-import { runVideoMigrations } from './migrations/video-v1.js';
-import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
-import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
+import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
+import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
+import { runVideoMigrations } from './migrations/video-v1.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

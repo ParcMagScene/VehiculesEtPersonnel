@@ -4,28 +4,29 @@
 // automatiques (type de tâche + type d'affaire) + widget Sonos
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
+  Briefcase,
+  Check,
   ClipboardList,
   Clock,
-  Check,
-  Music,
   Disc,
-  RefreshCw,
-  Truck,
-  Settings,
   Eye,
   EyeOff,
+  Music,
+  RefreshCw,
   Save,
-  Briefcase,
+  Settings,
+  Truck,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { useToast } from '../../hooks/useToast';
-import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Accordion, Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { PLANNING_SECTIONS, STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, PLANNING_SECTIONS, STATUS_COLORS } from '../../constants/colors';
+import { useToast } from '../../hooks/useToast';
+import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
+import api from '../../utils/api';
 
 // ─── Sections (depuis colorConstants, labels courts pour sidebar) ───
 const SECTIONS = Object.fromEntries(

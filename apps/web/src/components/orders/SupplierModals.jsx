@@ -1,48 +1,50 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  X,
-  Check,
-  Plus,
-  Building2,
-  Package,
   BookOpen,
-  FileText,
-  Layers,
-  ShoppingCart,
-  Hash,
-  FileDown,
-  Receipt,
+  Building2,
+  Check,
   CheckCircle,
-  Clock,
   ClipboardList,
+  Clock,
+  FileDown,
+  FileText,
+  Hash,
+  Layers,
+  Package,
+  Plus,
+  Receipt,
+  ShoppingCart,
+  X,
 } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
   Button,
-  Input,
-  Textarea,
-  Select,
   EntityCombobox,
-  Spinner,
-  SearchBar,
-  Table,
-  StatusBadge,
+  Input,
   ProgressBar,
+  SearchBar,
+  Select,
+  Spinner,
+  StatusBadge,
+  Table,
   Tag,
+  Textarea,
   Tooltip,
 } from '@/design-system';
-import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
-import PhoneInput from '../PhoneInput';
-import AddressAutocomplete from '../AddressAutocomplete';
+
+import { STATUS } from '../../constants';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
+import AddressAutocomplete from '../AddressAutocomplete';
+import PhoneInput from '../PhoneInput';
 import {
+  DESTINATIONS,
+  DOC_TYPES,
   ORDER_STATUS,
   QUOTE_STATUS,
-  DOC_TYPES,
-  DESTINATIONS,
   REQUEST_PRIORITY,
 } from './ordersConstants';
-import { STATUS } from '../../constants';
 
 // ═══ Modal fournisseur (création / édition) ═══
 export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {

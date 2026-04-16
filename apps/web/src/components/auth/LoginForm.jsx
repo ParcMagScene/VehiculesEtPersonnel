@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { ChevronDown, User, KeyRound, UserPlus, LogIn } from 'lucide-react';
+import './LoginForm.css';
+
+import { ChevronDown, KeyRound, LogIn, User, UserPlus } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Avatar, Button, FormField, InlineAlert, Input } from '@/design-system';
+
 import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
-import './LoginForm.css';
-import { Button, FormField, Input, Avatar, InlineAlert } from '@/design-system';
 
 const LoginForm = ({ onLogin }) => {
   const [email, setEmail] = useState('');

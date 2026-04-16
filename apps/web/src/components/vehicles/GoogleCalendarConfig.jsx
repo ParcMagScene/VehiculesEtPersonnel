@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Save, AlertCircle, LogOut, RefreshCw, ArrowDownUp } from 'lucide-react';
-import api from '../../utils/api';
-import { saveToIndexedDB, loadFromIndexedDB } from '../../utils/indexedDB';
 import './GoogleCalendarConfig.css';
-import { useToast } from '../../hooks/useToast';
-import { Button, FormField, Input, InlineAlert } from '@/design-system';
+
+import { AlertCircle, ArrowDownUp, Calendar, LogOut, RefreshCw, Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { Button, FormField, InlineAlert, Input } from '@/design-system';
+
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { loadFromIndexedDB, saveToIndexedDB } from '../../utils/indexedDB';
 
 const GoogleCalendarConfig = () => {
   const toast = useToast();

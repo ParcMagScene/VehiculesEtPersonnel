@@ -3,11 +3,13 @@
 // (type de tâche → couleur d'affichage sur l'écran TV)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Tag, Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Save, Tag, Trash2 } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, SectionHeader, Select, Tooltip } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, Select, Tooltip, SectionHeader } from '@/design-system';
 
 // Types de tâches (sections) disponibles pour l'association couleur
 const TASK_SECTIONS = [

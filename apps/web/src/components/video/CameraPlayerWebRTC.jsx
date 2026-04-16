@@ -2,12 +2,14 @@
 // CameraPlayerWebRTC.jsx — Lecteur vidéo WebRTC pour une caméra
 // ═══════════════════════════════════════════════════════════════
 
-import { useEffect, useState, useCallback } from 'react';
-import { useWebRTCStream } from '../../hooks/useWebRTCStream';
-import { Maximize, Minimize, Camera, RefreshCw, WifiOff, Film } from 'lucide-react';
-import api from '../../utils/api';
+import { Camera, Film, Maximize, Minimize, RefreshCw, WifiOff } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
 import { Button, Spinner, Tooltip } from '@/design-system';
+
 import { STATUS_COLORS } from '../../constants/colors';
+import { useWebRTCStream } from '../../hooks/useWebRTCStream';
+import api from '../../utils/api';
 
 const CameraPlayerWebRTC = ({
   camera,

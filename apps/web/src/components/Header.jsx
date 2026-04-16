@@ -1,30 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Truck,
-  Package,
-  Briefcase,
-  ShoppingCart,
-  Boxes,
-  Radio,
-  Building2,
-  Video,
-  MapPin,
-  Music,
-  HelpCircle,
-  Sun,
-  Moon,
-} from 'lucide-react';
-import api from '../utils/api';
-import { format } from 'date-fns';
-import { getPeriodTimestamp } from '../utils/dateUtils';
-import OverdueInterventionModal from './planning/OverdueInterventionModal';
-import { useToast } from '../hooks/useToast';
-import { Button, Tooltip } from '@/design-system';
-import { STATUS } from '../constants';
-import HeaderNotifications from './header/HeaderNotifications';
-import HeaderActions from './header/HeaderActions';
-
 import './Header.css';
+
+import { format } from 'date-fns';
+import {
+  Boxes,
+  Briefcase,
+  Building2,
+  HelpCircle,
+  MapPin,
+  Moon,
+  Music,
+  Package,
+  Radio,
+  ShoppingCart,
+  Sun,
+  Truck,
+  Video,
+} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+
+import { Button, Tooltip } from '@/design-system';
+
+import { STATUS } from '../constants';
+import { useToast } from '../hooks/useToast';
+import api from '../utils/api';
+import { getPeriodTimestamp } from '../utils/dateUtils';
+import HeaderActions from './header/HeaderActions';
+import HeaderNotifications from './header/HeaderNotifications';
+import OverdueInterventionModal from './planning/OverdueInterventionModal';
 
 const Header = ({
   _view,

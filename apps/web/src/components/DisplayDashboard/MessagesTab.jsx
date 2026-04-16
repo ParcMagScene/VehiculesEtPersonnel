@@ -1,18 +1,20 @@
 // MessagesTab — Gestion des messages/annonces d'affichage
-import { useState, useEffect, useCallback, memo } from 'react';
 import {
+  AlertTriangle,
+  Clock,
   MessageSquare,
-  Trash2,
   Settings,
   ToggleLeft,
   ToggleRight,
-  AlertTriangle,
-  Clock,
+  Trash2,
 } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import api from '../../utils/api';
+import { memo, useCallback, useEffect, useState } from 'react';
+
 import { Button, EmptyState, Tooltip } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 
 const PRIORITY_CONFIG = {

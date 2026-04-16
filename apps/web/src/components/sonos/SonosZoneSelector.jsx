@@ -2,8 +2,8 @@
 // SonosZoneSelector — Liste de zones compacte (style Sonos)
 // ═══════════════════════════════════════════════════════════════
 
+import { ChevronDown, ChevronUp, Speaker } from 'lucide-react';
 import { memo } from 'react';
-import { Speaker, ChevronDown, ChevronUp } from 'lucide-react';
 
 function SonosZoneSelector({ zones, activeZone, onZoneSelect, zonesOpen, setZonesOpen }) {
   if (!zones.length) return null;

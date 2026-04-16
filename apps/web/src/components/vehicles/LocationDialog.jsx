@@ -1,12 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
-import logger from '../../utils/logger';
-import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, Dialog, FormField, Input, Select, InlineAlert, Tooltip } from '@/design-system';
-import { STATUS_COLORS } from '../../constants/colors';
 import './LocationDialog.css';
-import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
+
+import { Clock, MapPin, Navigation, Route, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { Button, Dialog, FormField, InlineAlert, Input, Select, Tooltip } from '@/design-system';
+
+import { STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
+import logger from '../../utils/logger';
 
 const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   const toast = useToast();

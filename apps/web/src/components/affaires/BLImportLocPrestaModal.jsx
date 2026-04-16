@@ -1,29 +1,32 @@
-import { useState, useCallback, useRef } from 'react';
+import './BLImportLocPrestaModal.css';
+
 import {
-  X,
-  Upload,
-  File,
-  CheckCircle,
   AlertTriangle,
   Briefcase,
+  Calendar,
+  CheckCircle,
   Eye,
   EyeOff,
-  Monitor,
-  Save,
-  Tag,
+  File,
   Layers,
-  Calendar,
-  Package,
-  ShieldAlert,
   Link2,
+  Monitor,
+  Package,
+  Save,
+  ShieldAlert,
+  Tag,
+  Upload,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
-import { useToast } from '../../hooks/useToast';
-import AddressAutocomplete from '../AddressAutocomplete';
+import { useCallback, useRef, useState } from 'react';
+
+import { Button, InlineAlert, Input, ProgressBar, Tooltip } from '@/design-system';
+
 import { CONF_COLORS, STATUS_COLORS } from '../../constants/colors';
-import './BLImportLocPrestaModal.css';
-import { Button, Input, ProgressBar, InlineAlert, Tooltip } from '@/design-system';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { DOC_TYPES, extractTextFromPDF, getDocTypeLabel, smartParse } from '../../utils/pdfParser';
+import AddressAutocomplete from '../AddressAutocomplete';
 
 // Seuls Location et Prestation sont autorisés ici
 const ALLOWED_TYPES = ['Location', 'Prestation'];

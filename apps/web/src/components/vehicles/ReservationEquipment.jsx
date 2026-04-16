@@ -3,20 +3,22 @@
 // Composant à intégrer dans un modal de détail de réservation
 // ============================================================
 
-import { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, Trash2, Box, Search } from 'lucide-react';
-import { Button, ModalLayout, Input, Tooltip } from '@/design-system';
-import api from '../../utils/api';
-import {
-  formatDimensions,
-  buildChargementUrlForReservation,
-  openInChargement,
-} from '../../utils/deepLinking';
 import './ReservationEquipment.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+import { Box, Package, Plus, Search, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Button, Input, ModalLayout, Tooltip } from '@/design-system';
 
 import { TIMING } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import {
+  buildChargementUrlForReservation,
+  formatDimensions,
+  openInChargement,
+} from '../../utils/deepLinking';
 
 export default function ReservationEquipment({ reservationId, _currentUser }) {
   const toast = useToast();

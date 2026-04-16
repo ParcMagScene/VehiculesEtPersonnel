@@ -1,8 +1,11 @@
-import { useEffect, useRef } from 'react';
-import { Calendar, GraduationCap, Building2, Wrench, FileCheck, Clock } from 'lucide-react';
-import { Button, Divider, Tag } from '@/design-system';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import './PersonnelContextMenu.css';
+
+import { Building2, Calendar, Clock, FileCheck, GraduationCap, Wrench } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+
+import { Button, Divider, Tag } from '@/design-system';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 // Types de périodes disponibles dans le menu contextuel
 export const PERIOD_MENU_ITEMS = [

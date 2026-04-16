@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
 import {
-  Settings,
   AlertTriangle,
-  XCircle,
-  ClipboardList,
-  CalendarCheck,
   Bell,
+  CalendarCheck,
+  ClipboardList,
   Clock,
   LayoutGrid,
-  UserCog,
-  MessageSquare,
   Mail,
+  MessageSquare,
+  Settings,
+  UserCog,
+  XCircle,
 } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { Avatar, Button, Tooltip } from '@/design-system';
+
 import { STATUS_COLORS } from '../../constants/colors';
 import ProfileEditModal from '../auth/ProfileEditModal';
 

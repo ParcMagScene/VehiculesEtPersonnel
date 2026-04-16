@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 /**
  * Hook de swipe-to-action sur un élément de liste (style iOS).

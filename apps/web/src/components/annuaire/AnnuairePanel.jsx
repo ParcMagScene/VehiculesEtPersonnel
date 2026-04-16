@@ -1,45 +1,48 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import './AnnuairePanel.css';
+
 import {
-  Plus,
-  Edit2,
-  Trash2,
-  Filter,
-  X,
-  Check,
-  Building2,
-  UserCheck,
-  Phone,
-  Mail,
-  Globe,
-  MapPin,
-  Upload,
-  BookOpen,
-  Contact,
-  Eye,
-  Building,
   ArrowLeft,
+  BookOpen,
+  Building,
+  Building2,
+  Check,
+  Contact,
+  Edit2,
+  Eye,
+  Filter,
+  Globe,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
   Star,
+  Trash2,
+  Upload,
+  UserCheck,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
   Button,
-  FormField,
-  ModalLayout,
-  Input,
-  Textarea,
-  Select,
-  Table,
   Checkbox,
-  Spinner,
+  FormField,
+  Input,
+  ModalLayout,
   SearchBar,
-  Tooltip,
   SectionHeader,
+  Select,
+  Spinner,
+  Table,
+  Textarea,
+  Tooltip,
 } from '@/design-system';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import ContactsCSVImportDialog from './ContactsCSVImportDialog';
-import './AnnuairePanel.css';
-import { useToast } from '../../hooks/useToast';
+
 import { ANNUAIRE_TAB_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import LocationsTab from './LocationsTab';
 
 // ═══ Constantes ═══

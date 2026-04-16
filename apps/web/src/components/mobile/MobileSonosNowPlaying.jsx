@@ -3,9 +3,11 @@
 // Pochette large, swipe gauche/droite = next/prev
 // ═══════════════════════════════════════════════════════════════
 
-import { useRef, memo } from 'react';
-import { Music, Disc, Pause } from 'lucide-react';
+import { Disc, Music, Pause } from 'lucide-react';
+import { memo, useRef } from 'react';
+
 import { InlineAlert } from '@/design-system';
+
 import { formatTime } from '../../hooks/useSonos';
 
 function MobileSonosNowPlaying({ displayState, onNext, onPrevious }) {

@@ -1,14 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  mapEventToSection,
-  normalizeSection,
-  extractAffaireNum,
   addDays,
+  DAYS_FR,
+  extractAffaireNum,
   formatDateShort,
   getMonday,
   getWeekDays,
+  mapEventToSection,
+  normalizeSection,
   SECTION_ALIASES,
-  DAYS_FR,
 } from '../components/planning/planningConstants';
 
 describe('planningConstants', () => {

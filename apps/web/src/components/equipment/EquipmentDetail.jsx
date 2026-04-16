@@ -1,40 +1,42 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Hash,
-  Tag,
-  Clipboard,
-  Package,
-  MapPin,
   Calendar,
-  DollarSign,
   CheckCircle,
-  Wrench,
   ChevronRight,
-  Star,
-  Eye,
-  QrCode,
-  Map,
-  ExternalLink,
+  Clipboard,
+  DollarSign,
   Edit2,
-  Trash2,
-  Printer,
+  ExternalLink,
+  Eye,
   FileText,
+  Hash,
+  Map,
+  MapPin,
+  Package,
+  Printer,
+  QrCode,
+  Star,
+  Tag,
+  Trash2,
+  Wrench,
   X,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import {
-  EQUIPMENT_STATUS,
-  SAV_STATUS,
-  SAV_PRIORITY,
-  SAV_TYPES,
-  cleanName,
-  APP_BASE_URL,
-} from './equipmentConstants';
-import { matchPhotoToEquipment, matchLogoToBrand, getCategoryHierarchy } from './equipmentUtils';
-import { resolveGenericImage } from '../../utils/genericImages';
-import { safeDate } from '../../utils/formatUtils';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import { Button, Tooltip } from '@/design-system';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { safeDate } from '../../utils/formatUtils';
+import { resolveGenericImage } from '../../utils/genericImages';
+import {
+  APP_BASE_URL,
+  cleanName,
+  EQUIPMENT_STATUS,
+  SAV_PRIORITY,
+  SAV_STATUS,
+  SAV_TYPES,
+} from './equipmentConstants';
+import { getCategoryHierarchy, matchLogoToBrand, matchPhotoToEquipment } from './equipmentUtils';
 
 const EquipmentDetailContent = ({
   eq,
@@ -643,4 +645,4 @@ const EquipmentDetailDialog = ({
   );
 };
 
-export { EquipmentDetailContent, EquipmentSlidePanel, EquipmentDetailDialog };
+export { EquipmentDetailContent, EquipmentDetailDialog, EquipmentSlidePanel };

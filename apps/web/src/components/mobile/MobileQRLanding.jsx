@@ -1,9 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Package, Home, ArrowRight } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, InlineAlert, Spinner } from '@/design-system';
-import { EQUIPMENT_STATUS } from '../../constants';
 import './MobileQRLanding.css';
+
+import { ArrowRight, Home, Package } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { Button, InlineAlert, Spinner } from '@/design-system';
+
+import { EQUIPMENT_STATUS } from '../../constants';
+import api from '../../utils/api';
 
 // ═══ PAGE D'ATTERRISSAGE QR — CHOIX MATÉRIEL OU ACCUEIL ═══
 // Affiché quand un utilisateur scanne le QR code d'un équipement

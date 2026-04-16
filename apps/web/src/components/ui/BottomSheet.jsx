@@ -11,8 +11,9 @@
  *   children  — contenu du bottom sheet
  *   className — classes additionnelles sur le panel
  */
-import { useEffect, useRef, useCallback } from 'react';
 import './BottomSheet.css';
+
+import { useCallback, useEffect, useRef } from 'react';
 
 export default function BottomSheet({ open, onClose, title, children, className = '' }) {
   const panelRef = useRef(null);

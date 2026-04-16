@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 /**
  * Hook pull-to-refresh pour les écrans mobile.

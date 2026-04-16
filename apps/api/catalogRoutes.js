@@ -4,23 +4,24 @@
 // Intégration avec l'application Chargement 3D
 // ============================================================
 
-import db, { addToHistory } from './database.js';
 import crypto from 'crypto';
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+
+import db, { addToHistory } from './database.js';
 import logger from './logger.js';
-import { validate } from './schemas/imports.js';
 import {
   catalogEquipmentSchema,
   catalogEquipmentUpdateSchema,
   catalogMatchReferencesSchema,
   flightcaseSchema,
   flightcaseUpdateSchema,
+  reservationEquipmentSchema,
   truckModelSchema,
   truckModelUpdateSchema,
-  reservationEquipmentSchema,
 } from './schemas/catalog.js';
+import { validate } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -3,25 +3,28 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import './LeaveRequestForm.css';
+
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import {
-  X,
   Calendar,
-  Clock,
   CheckCircle,
+  Clock,
   FileText,
-  Upload,
-  Trash2,
-  User,
   Info,
   Pen,
   Send,
+  Trash2,
+  Upload,
+  User,
+  X,
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button, InlineAlert, Select, Textarea } from '@/design-system';
+
 import api from '../../utils/api';
-import { Button, Select, Textarea, InlineAlert } from '@/design-system';
-import './LeaveRequestForm.css';
 
 // ═══════════════════════════════════════
 // COMPOSANT SIGNATURE CANVAS

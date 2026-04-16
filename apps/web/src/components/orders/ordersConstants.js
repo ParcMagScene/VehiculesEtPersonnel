@@ -1,4 +1,4 @@
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 // Helper : grouper les articles par demandeur (affaire ou personne physique)
 export function groupItemsByRequester(items) {

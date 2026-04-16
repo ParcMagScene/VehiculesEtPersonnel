@@ -1,22 +1,25 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  Monitor,
-  X,
-  Save,
-  Briefcase,
-  MapPin,
-  User,
-  Clock,
-  MessageSquare,
-  Calendar,
-  ExternalLink,
-} from 'lucide-react';
-import api from '../utils/api';
-import { useToast } from '../hooks/useToast';
-import AddressAutocomplete from './AddressAutocomplete';
 import './DynamicDisplayDialog.css';
-import { Button, Input, Textarea, FormField } from '@/design-system';
-import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
+
+import {
+  Briefcase,
+  Calendar,
+  Clock,
+  ExternalLink,
+  MapPin,
+  MessageSquare,
+  Monitor,
+  Save,
+  User,
+  X,
+} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button, FormField, Input, Textarea } from '@/design-system';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../constants/colors';
+import { useToast } from '../hooks/useToast';
+import api from '../utils/api';
+import AddressAutocomplete from './AddressAutocomplete';
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {

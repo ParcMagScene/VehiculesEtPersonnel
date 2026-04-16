@@ -3,32 +3,34 @@
 // Congés : historique, export PDF, impression
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  X,
-  Calendar,
-  Download,
-  Printer,
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  RefreshCw,
-  CalendarOff,
-  User,
-  Filter,
-  Edit3,
-  Plus,
-} from 'lucide-react';
+import './MonEspacePanel.css';
+
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {
+  Calendar,
+  CalendarOff,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  Edit3,
+  FileText,
+  Filter,
+  Plus,
+  Printer,
+  RefreshCw,
+  User,
+  X,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+
+import { STATUS } from '../../constants';
 import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
-import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from '../leaves/leaveConstants';
+import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from '../leaves/leaveConstants';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
-import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
-import { STATUS } from '../../constants';
-
-import './MonEspacePanel.css';
 
 const MonEspacePanel = ({ currentUser, onClose }) => {
   const [leaves, setLeaves] = useState([]);

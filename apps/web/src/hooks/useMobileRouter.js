@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 // ═══ Mapping écran ↔ chemin hash ═══
 const ROUTES = {
@@ -86,4 +86,4 @@ export default function useMobileRouter() {
 }
 
 /** Routes exportées pour les tests */
-export { ROUTES, BACK_TARGET };
+export { BACK_TARGET, ROUTES };

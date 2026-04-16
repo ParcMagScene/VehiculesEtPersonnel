@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Briefcase } from 'lucide-react';
-import { getTypeInfo } from '../utils/affaireConstants';
-import { useNavigation } from '../contexts/NavigationContext';
-import api from '../utils/api';
 import './AffaireBadge.css';
+
+import { Briefcase } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { useNavigation } from '../contexts/NavigationContext';
+import { getTypeInfo } from '../utils/affaireConstants';
+import api from '../utils/api';
 
 // ── Cache global partagé entre toutes les instances ──
 const _typeCache = new Map();

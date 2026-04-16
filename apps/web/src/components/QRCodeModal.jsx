@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { QrCode, Printer, Link as LinkIcon, Download } from 'lucide-react';
-import { Button, ModalLayout } from '@/design-system';
 import './QRCodeModal.css';
+
+import { Download, Link as LinkIcon, Printer, QrCode } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+
+import { Button, ModalLayout } from '@/design-system';
 
 function QRCodeModal({ onClose }) {
   const canvasRef = useRef(null);

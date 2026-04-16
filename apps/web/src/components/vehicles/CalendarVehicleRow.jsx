@@ -1,10 +1,12 @@
-import React from 'react';
-import { isSameDay, isWeekend, isToday } from 'date-fns';
+import { isSameDay, isToday, isWeekend } from 'date-fns';
 import { Trash2 } from 'lucide-react';
+import React from 'react';
+
 import { Button, Tooltip } from '@/design-system';
-import { getUserInitials, getMaintenanceStatusStyle } from './calendarUtils';
-import { renderReservationAffaires } from './renderReservationAffaires';
+
 import { STATUS_COLORS } from '../../constants/colors';
+import { getMaintenanceStatusStyle, getUserInitials } from './calendarUtils';
+import { renderReservationAffaires } from './renderReservationAffaires';
 
 const CalendarVehicleRow = ({
   vehicle,

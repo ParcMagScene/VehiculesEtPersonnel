@@ -64,8 +64,18 @@ jobs:
 
       - run: npm ci
 
-      - name: Tests unitaires backend
-        run: npm test
+      - name: Tests unitaires backend avec couverture
+        run: npm run test:coverage 2>&1 | tee /tmp/backend-coverage.txt
+
+      - name: Rapport de couverture backend
+        run: |
+          COVERAGE_LINE=$(grep "^# all files" /tmp/backend-coverage.txt || true)
+          if [ -n "$COVERAGE_LINE" ]; then
+            LINE_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $2); print $2}')
+            BRANCH_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $3); print $3}')
+            FUNC_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $4); print $4}')
+            echo "📊 Backend — Lignes : ${LINE_PCT}% | Branches : ${BRANCH_PCT}% | Fonctions : ${FUNC_PCT}%"
+          fi
 
   # ─── Tests frontend ───────────────────────────────────
   test-frontend:

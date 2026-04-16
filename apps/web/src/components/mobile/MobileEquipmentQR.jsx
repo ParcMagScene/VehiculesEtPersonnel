@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, FileText, AlertTriangle, Wrench, Settings, Home, Loader } from 'lucide-react';
-import api from '../../utils/api';
 import './MobileEquipmentQR.css';
-import { useToast } from '../../hooks/useToast';
+
+import { AlertTriangle, ArrowLeft, FileText, Home, Loader, Settings, Wrench } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
 import { Button, InlineAlert, Input, Select, Spinner, Textarea } from '@/design-system';
 
-import { STATUS, EQUIPMENT_STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { EQUIPMENT_STATUS, STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX

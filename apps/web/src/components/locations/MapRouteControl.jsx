@@ -2,11 +2,12 @@
 // MapRouteControl.jsx — Calcul et affichage de trajet entre lieux
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Navigation, X, RotateCcw, ArrowDown, Clock, Ruler } from 'lucide-react';
-import { useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
-import { filterGeoLocations, MAG_SCENE, haversineDistance } from './map-utils';
+import { ArrowDown, Clock, Navigation, RotateCcw, Ruler, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Polyline, useMap } from 'react-leaflet';
+
+import { filterGeoLocations, haversineDistance, MAG_SCENE } from './map-utils';
 
 function decodePolyline(encoded) {
   const points = [];

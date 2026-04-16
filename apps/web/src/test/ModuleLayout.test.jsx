@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
 import {
-  ModuleLayout,
-  ModuleToolbar,
   ModuleContent,
   ModuleFooter,
+  ModuleLayout,
+  ModuleToolbar,
   SplitLayout,
 } from '../components/ui/ModuleLayout';
 

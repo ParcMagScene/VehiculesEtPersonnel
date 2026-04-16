@@ -5,10 +5,11 @@
 
 import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
+
+import { auditLog } from './auditLog.js';
 import db from './database.js';
 import logger from './logger.js';
-import { auditLog } from './auditLog.js';
-import { encryptPassword, decryptPassword } from './videoProxyService.js';
+import { decryptPassword, encryptPassword } from './videoProxyService.js';
 
 const TOTP_ISSUER = 'eM@g';
 

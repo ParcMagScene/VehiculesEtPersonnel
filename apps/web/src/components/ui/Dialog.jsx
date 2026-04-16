@@ -1,7 +1,9 @@
-import { AlertTriangle, Info, CheckCircle, HelpCircle } from 'lucide-react';
-import { Modal, ModalBody, ModalFooter } from './Modal';
-import Button from './Button';
 import './Dialog.css';
+
+import { AlertTriangle, CheckCircle, HelpCircle, Info } from 'lucide-react';
+
+import Button from './Button';
+import { Modal, ModalBody, ModalFooter } from './Modal';
 
 const VARIANT_CONFIG = {
   confirm: { icon: HelpCircle, color: 'var(--theme-primary)' },

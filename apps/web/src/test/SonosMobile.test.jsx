@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mock useSonos ──
 const defaultSonos = {
@@ -68,10 +68,10 @@ vi.mock('@/design-system', () => ({
 
 // ── Import AFTER mocks ──
 import MobileSonos from '../components/mobile/MobileSonos';
-import MobileSonosNowPlaying from '../components/mobile/MobileSonosNowPlaying';
 import MobileSonosControls from '../components/mobile/MobileSonosControls';
-import MobileSonosVolume from '../components/mobile/MobileSonosVolume';
 import MobileSonosFavorites from '../components/mobile/MobileSonosFavorites';
+import MobileSonosNowPlaying from '../components/mobile/MobileSonosNowPlaying';
+import MobileSonosVolume from '../components/mobile/MobileSonosVolume';
 
 describe('MobileSonosNowPlaying', () => {
   it('renders nothing when displayState is null', () => {

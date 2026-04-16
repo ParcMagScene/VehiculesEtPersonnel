@@ -3,11 +3,13 @@
 // Upload, statut, prévisualisation, désactivation
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Camera, Trash2, Clock, Upload } from 'lucide-react';
+import { Camera, Clock, Trash2, Upload } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, SectionHeader, Select } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, Select, SectionHeader } from '@/design-system';
 
 const DURATION_OPTIONS = [
   { value: '15', label: '15 minutes' },

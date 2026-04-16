@@ -1,6 +1,8 @@
-import { Check } from 'lucide-react';
-import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import './VehiclePickerCards.css';
+
+import { Check } from 'lucide-react';
+
+import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 
 /**
  * Composant réutilisable de sélection de véhicule avec photos.

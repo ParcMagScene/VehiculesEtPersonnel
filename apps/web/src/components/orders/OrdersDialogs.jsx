@@ -1,28 +1,30 @@
-import React from 'react';
 import {
-  X,
-  Edit2,
-  Trash2,
-  Send,
-  Check,
-  Package,
   ArrowRight,
-  Hash,
-  FileCheck,
+  Check,
   ClipboardList,
+  Edit2,
+  FileCheck,
+  Hash,
+  Package,
+  Send,
+  Trash2,
   Users as UsersIcon,
+  X,
 } from 'lucide-react';
-import { Button, Table, StatusBadge, Tag, Tooltip } from '@/design-system';
+import React from 'react';
+
+import { Button, StatusBadge, Table, Tag, Tooltip } from '@/design-system';
+
+import { STATUS } from '../../constants';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
 import AffaireBadge from '../AffaireBadge';
 import {
+  groupItemsByRequester,
   ORDER_STATUS,
   QUOTE_STATUS,
-  REQUEST_STATUS,
   REQUEST_PRIORITY,
-  groupItemsByRequester,
+  REQUEST_STATUS,
 } from './ordersConstants';
-import { STATUS } from '../../constants';
 
 // ═══ Dialog Commande (double-clic) ═══
 export const OrderDetailDialog = React.memo(

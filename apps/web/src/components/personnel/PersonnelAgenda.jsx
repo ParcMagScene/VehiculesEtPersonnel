@@ -1,35 +1,37 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import './PersonnelAgenda.css';
+
 import {
-  format,
-  addWeeks,
   addMonths,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
+  addWeeks,
   eachDayOfInterval,
+  endOfMonth,
+  endOfWeek,
+  format,
   isSameMonth,
   isToday,
   isWeekend,
+  startOfMonth,
+  startOfWeek,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
+  Ban,
+  Briefcase,
+  Calendar as CalIcon,
   ChevronLeft,
   ChevronRight,
-  Calendar as CalIcon,
-  Users,
-  Briefcase,
   Clock,
   MapPin,
-  Ban,
   Palmtree,
+  Users,
 } from 'lucide-react';
-import api from '../../utils/api';
-import './PersonnelAgenda.css';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Avatar, Button, EmptyState, SearchBar } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
+import api from '../../utils/api';
 
 // Couleurs par type d'événement
 const EVENT_COLORS = {

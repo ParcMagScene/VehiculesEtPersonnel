@@ -1,5 +1,6 @@
-import { forwardRef } from 'react';
 import './Textarea.css';
+
+import { forwardRef } from 'react';
 
 /**
  * Textarea — Composant atomique Design System

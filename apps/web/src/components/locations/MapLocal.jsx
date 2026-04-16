@@ -2,13 +2,14 @@
 // MapLocal.jsx — Carte locale autour du dépôt Mag Scène (rayon ajustable)
 // ═══════════════════════════════════════════════════════════════
 
-import { useMemo, useRef, useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, Tooltip, useMap } from 'react-leaflet';
-import { TILE_LIGHT, TILE_DARK, MAG_SCENE, filterNearby } from './map-utils';
-import { createLocationIcon, createHQIcon } from './MapMarkers';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
+
+import { filterNearby, MAG_SCENE, TILE_DARK, TILE_LIGHT } from './map-utils';
+import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapPopup from './MapPopup';
-import MapSearchControl from './MapSearchControl';
 import MapRouteControl from './MapRouteControl';
+import MapSearchControl from './MapSearchControl';
 
 const RADIUS_PRESETS = [2, 5, 10, 25, 50, 100];
 

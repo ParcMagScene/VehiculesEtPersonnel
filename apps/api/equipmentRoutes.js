@@ -3,25 +3,26 @@
 // Routes REST : equipment, categories, assignments, SAV tickets
 // ============================================================
 
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from 'fs';
+import multer from 'multer';
+import { dirname, extname, join } from 'path';
+import PDFDocument from 'pdfkit';
+import { fileURLToPath } from 'url';
+
+import { normalizeBrand } from './brandHelpers.js';
 import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
-import {
-  readFileSync,
-  writeFileSync,
-  readdirSync,
-  existsSync,
-  unlinkSync,
-  mkdirSync,
-  renameSync,
-} from 'fs';
-import { join, dirname, extname } from 'path';
-import { fileURLToPath } from 'url';
-import { validate, equipmentImportSchema, savImportSchema } from './schemas/imports.js';
-import { equipmentSchema } from './schemas/crud.js';
-import multer from 'multer';
 import logger from './logger.js';
-import { normalizeBrand } from './brandHelpers.js';
-import PDFDocument from 'pdfkit';
+import { equipmentSchema } from './schemas/crud.js';
+import { equipmentImportSchema, savImportSchema, validate } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

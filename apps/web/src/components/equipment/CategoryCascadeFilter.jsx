@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Filter, ChevronRight } from 'lucide-react';
+import { ChevronRight, Filter } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+
 import { Button } from '@/design-system';
 
 const CategoryCascadeFilter = ({

@@ -1,20 +1,22 @@
 // ScreensTab — Liste et gestion des écrans d'affichage
-import { useState, useEffect, useCallback, lazy, Suspense, memo } from 'react';
 import {
-  Monitor,
-  Wifi,
-  WifiOff,
   MapPin,
+  Monitor,
+  Plus,
   Settings,
-  Trash2,
   ToggleLeft,
   ToggleRight,
-  Plus,
+  Trash2,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import api from '../../utils/api';
+import { lazy, memo, Suspense, useCallback, useEffect, useState } from 'react';
+
 import { Button, EmptyState, Tooltip } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 
 const ScreenFormModal = lazy(() => import('./ScreenFormModal'));
 

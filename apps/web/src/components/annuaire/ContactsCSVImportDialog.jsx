@@ -1,10 +1,12 @@
-import { useState, useRef, useCallback } from 'react';
-import { Upload, FileText, CheckCircle, Download } from 'lucide-react';
-import { Button, ModalLayout, Table, Spinner, InlineAlert } from '@/design-system';
-import api from '../../utils/api';
-import { STATUS } from '../../constants';
-
 import './ContactsCSVImportDialog.css';
+
+import { CheckCircle, Download, FileText, Upload } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+
+import { Button, InlineAlert, ModalLayout, Spinner, Table } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import api from '../../utils/api';
 
 /**
  * Parse un fichier CSV contacts Locmat (séparateur ;).

@@ -1,8 +1,8 @@
-import { Spinner, LoadingOverlay } from '../components/ui/Loader';
-import ProgressBar from '../components/ui/ProgressBar';
-import Skeleton from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import InlineAlert from '../components/ui/InlineAlert';
+import { LoadingOverlay, Spinner } from '../components/ui/Loader';
+import ProgressBar from '../components/ui/ProgressBar';
+import Skeleton from '../components/ui/Skeleton';
 
 export default { title: 'Atomes/Feedback' };
 

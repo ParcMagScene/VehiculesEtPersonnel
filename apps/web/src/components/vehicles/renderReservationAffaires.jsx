@@ -1,8 +1,10 @@
+import { Link, Link2, MapPin } from 'lucide-react';
 import React from 'react';
-import { MapPin, Link, Link2 } from 'lucide-react';
-import { capitalizeText } from '../../utils/dateUtils';
+
 import { Button, Tooltip } from '@/design-system';
-import { unlinkTripDirectly, linkTripsDirectly } from './calendarUtils';
+
+import { capitalizeText } from '../../utils/dateUtils';
+import { linkTripsDirectly, unlinkTripDirectly } from './calendarUtils';
 
 // Helper pour afficher les affaires d'une réservation alignées avec leur position
 export const renderReservationAffaires = (

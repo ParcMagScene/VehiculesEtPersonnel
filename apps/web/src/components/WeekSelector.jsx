@@ -1,20 +1,23 @@
-import { useMemo } from 'react';
+import './WeekSelector.css';
+
 import {
-  format,
-  startOfMonth,
-  endOfMonth,
   eachDayOfInterval,
-  startOfWeek,
+  endOfMonth,
   endOfWeek,
-  isSameWeek,
+  format,
   getWeek,
   isSameDay,
+  isSameWeek,
+  startOfMonth,
+  startOfWeek,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X } from 'lucide-react';
+import { useMemo } from 'react';
+
 import { Button } from '@/design-system';
+
 import { STATUS_COLORS } from '../constants/colors';
-import './WeekSelector.css';
 
 function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], vehicles = [] }) {
   // Générer les jours du mois actuel

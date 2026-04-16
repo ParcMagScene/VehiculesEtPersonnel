@@ -1,58 +1,60 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import {
-  X,
-  ChevronRight,
-  ChevronDown,
-  Calendar,
-  Users,
-  Truck,
-  FileText,
-  MapPin,
-  Briefcase,
-  LinkIcon,
-  Paperclip,
-  Phone,
-  Mail,
-  User,
-  Clock,
-  ExternalLink,
-  FolderOpen,
-  File,
-  Download,
-  Plus,
-  Upload,
-  UserPlus,
-  Check,
-  AlertCircle,
-  Package,
-  Hash,
-  Trash2,
-  RefreshCw,
-  Edit3,
-  Save,
-  ClipboardList,
-  Loader,
-  Wrench,
-  ArrowRight,
-  RotateCcw,
-  ShoppingCart,
-} from 'lucide-react';
-import { AFFAIRE_TYPES, getTypeInfo, AFFAIRE_TYPE_SECTIONS } from '../../utils/affaireConstants';
-import api, { getApiUrl } from '../../utils/api';
-import AffaireBadge from '../AffaireBadge';
-import AddressAutocomplete from '../AddressAutocomplete';
-import { formatPhoneDisplay } from '../PhoneInput';
+import './AffaireDetailPanel.css';
+
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { capitalizeText } from '../../utils/dateUtils';
-import './AffaireDetailPanel.css';
-import { useAnnotateBP } from '../../hooks/useAnnotateBP';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import {
+  AlertCircle,
+  ArrowRight,
+  Briefcase,
+  Calendar,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  Download,
+  Edit3,
+  ExternalLink,
+  File,
+  FileText,
+  FolderOpen,
+  Hash,
+  LinkIcon,
+  Loader,
+  Mail,
+  MapPin,
+  Package,
+  Paperclip,
+  Phone,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  ShoppingCart,
+  Trash2,
+  Truck,
+  Upload,
+  User,
+  UserPlus,
+  Users,
+  Wrench,
+  X,
+} from 'lucide-react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Avatar, Button, Input, Select, Spinner, Table, Textarea, Tooltip } from '@/design-system';
-import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useAnnotateBP } from '../../hooks/useAnnotateBP';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { AFFAIRE_TYPE_SECTIONS, AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
+import api, { getApiUrl } from '../../utils/api';
+import { capitalizeText } from '../../utils/dateUtils';
+import { formatDateSimple } from '../../utils/formatUtils';
+import AddressAutocomplete from '../AddressAutocomplete';
+import AffaireBadge from '../AffaireBadge';
+import { formatPhoneDisplay } from '../PhoneInput';
 
 const ReservationModal = lazy(() => import('../vehicles/ReservationModal'));
 const EventDetailsModal = lazy(() => import('../planning/EventDetailsModal'));
@@ -3097,5 +3099,5 @@ const AffaireDetailDialog = ({
   );
 };
 
-export { AffaireSlidePanel, AffaireDetailDialog };
+export { AffaireDetailDialog, AffaireSlidePanel };
 export default React.memo(AffaireSlidePanel);

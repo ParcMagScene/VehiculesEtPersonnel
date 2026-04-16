@@ -1,5 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
 import './PhoneInput.css';
+
+import { useEffect, useRef, useState } from 'react';
+
 import { Button, Input } from '@/design-system';
 
 const COUNTRY_CODES = [

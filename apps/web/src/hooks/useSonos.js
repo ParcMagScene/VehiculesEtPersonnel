@@ -3,9 +3,10 @@
 // Config, zones, playback, volume, favoris, polling
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useToast } from './useToast';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import api from '../utils/api';
+import { useToast } from './useToast';
 
 const formatTime = (seconds) => {
   if (!seconds) return '0:00';

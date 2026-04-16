@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
-import { X } from 'lucide-react';
-import { Button } from '@/design-system';
 import './YearSelector.css';
+
+import { X } from 'lucide-react';
+import { useMemo } from 'react';
+
+import { Button } from '@/design-system';
 
 function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] }) {
   // Générer une grille de 16 années centrée sur l'année actuelle

@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { format, startOfDay, addDays, isToday, isPast, startOfWeek, endOfWeek } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import logger from '../../utils/logger';
 import './DashboardPanel.css';
+
+import { addDays, endOfWeek, format, isPast, isToday, startOfDay, startOfWeek } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Button, Card, SectionHeader, Spinner } from '@/design-system';
 
 import { ROLES, STATUS } from '../../constants';
+import api from '../../utils/api';
+import logger from '../../utils/logger';
 
 // ═══════════════════════════════════════════════════
 // Point 1 — Dashboard global desktop

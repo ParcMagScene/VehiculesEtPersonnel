@@ -1,24 +1,24 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import './MailingPanel.css';
+
 import DOMPurify from 'dompurify';
 import {
-  X,
-  Mail,
-  FileText,
-  Clock,
-  Send,
-  Plus,
-  Trash2,
-  Edit3,
-  Eye,
-  Search,
   AlertTriangle,
   Check,
-  Settings,
+  Clock,
+  Edit3,
+  Eye,
+  FileText,
+  Mail,
+  Plus,
   RefreshCw,
+  Search,
+  Send,
+  Settings,
+  Trash2,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import './MailingPanel.css';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import {
   Button,
   Checkbox,
@@ -33,6 +33,9 @@ import {
   Textarea,
   Tooltip,
 } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 
 // Variables disponibles pour les templates

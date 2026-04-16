@@ -1,18 +1,21 @@
-import { useMemo } from 'react';
+import './MonthSelector.css';
+
 import {
-  format,
-  eachMonthOfInterval,
-  startOfYear,
-  endOfYear,
-  startOfMonth,
-  endOfMonth,
   eachDayOfInterval,
+  eachMonthOfInterval,
+  endOfMonth,
+  endOfYear,
+  format,
+  startOfMonth,
+  startOfYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X } from 'lucide-react';
+import { useMemo } from 'react';
+
 import { Button } from '@/design-system';
+
 import { STATUS_COLORS } from '../constants/colors';
-import './MonthSelector.css';
 
 function MonthSelector({ currentDate, onSelectMonth, onClose, reservations = [], vehicles = [] }) {
   // Générer les 12 mois de l'année en cours

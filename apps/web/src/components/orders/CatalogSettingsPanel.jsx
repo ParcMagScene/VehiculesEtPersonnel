@@ -1,21 +1,18 @@
 // ============================================================
 // CatalogSettingsPanel.jsx — Apprentissage parsers & normalisation taxonomie
 // ============================================================
-import React, { useState, useEffect, useCallback } from 'react';
 import {
   AlertTriangle,
-  CheckCircle2,
-  BarChart3,
-  Tags,
   ArrowRight,
-  RefreshCw,
-  Zap,
+  BarChart3,
+  CheckCircle2,
   Eye,
+  RefreshCw,
+  Tags,
+  Zap,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { useToast } from '../../hooks/useToast';
-import { extractPDFMeta } from '../../utils/pdfParser';
-import { parseCatalog, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
+import React, { useCallback, useEffect, useState } from 'react';
+
 import {
   Accordion,
   Button,
@@ -23,12 +20,17 @@ import {
   Select,
   Spinner,
   Tab,
+  Table,
   TabList,
   TabPanel,
-  Table,
   Tabs,
   Tag,
 } from '@/design-system';
+
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { AVAILABLE_PARSERS, parseCatalog } from '../../utils/catalogParsers';
+import { extractPDFMeta } from '../../utils/pdfParser';
 
 // ═══════════════════════════════════════════════════════════
 // COMPOSANT PRINCIPAL — Onglets Parsers / Taxonomie

@@ -1,54 +1,57 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import './MobileApp.css';
+
 import {
-  Car,
-  Settings,
-  LogOut,
-  Home,
-  Menu,
-  X,
-  LayoutGrid,
-  Monitor,
-  Users,
-  MessageSquare,
-  Truck,
-  Package,
-  ShoppingCart,
-  MapPin,
-  Palmtree,
-  Sun,
-  Moon,
-  Palette,
-  ClipboardCheck,
   Briefcase,
+  Car,
+  ClipboardCheck,
   ClipboardList,
+  Home,
+  LayoutGrid,
+  LogOut,
+  MapPin,
+  Menu,
+  MessageSquare,
+  Monitor,
+  Moon,
   Music,
+  Package,
+  Palette,
+  Palmtree,
+  Settings,
+  ShoppingCart,
+  Sun,
+  Truck,
+  Users,
+  X,
 } from 'lucide-react';
-import MobileHome from './MobileHome';
-import MobileParcDashboard from './MobileParcDashboard';
-import MobileReservations from './MobileReservations';
-import MobileMaintenances from './MobileMaintenances';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { BottomSheet, Button, Skeleton, Spinner } from '@/design-system';
+
+import { useMessagingSSE } from '../../hooks/useMessagingSSE';
+import useMobileRouter from '../../hooks/useMobileRouter';
+import useSwipeBack from '../../hooks/useSwipeBack';
+import { PALETTES, useTheme } from '../../hooks/useTheme';
+import api from '../../utils/api';
+import MobileAffaires from './MobileAffaires';
 import MobileAvailability from './MobileAvailability';
-import MobilePlanning from './MobilePlanning';
-import MobilePersonnel from './MobilePersonnel';
-import MobileMessaging from './MobileMessaging';
 import MobileEquipment from './MobileEquipment';
 import MobileEquipmentQR from './MobileEquipmentQR';
-import MobileQRLanding from './MobileQRLanding';
-import MobileOrders from './MobileOrders';
-import MobileLeaves from './MobileLeaves';
+import MobileHome from './MobileHome';
 import MobileInventory from './MobileInventory';
+import MobileLeaves from './MobileLeaves';
 import MobileLocation from './MobileLocation';
-import MobileSonos from './MobileSonos';
-import MobileAffaires from './MobileAffaires';
-import MobileTasks from './MobileTasks';
 import MobileLogin from './MobileLogin';
-import { useTheme, PALETTES } from '../../hooks/useTheme';
-import useSwipeBack from '../../hooks/useSwipeBack';
-import useMobileRouter from '../../hooks/useMobileRouter';
-import { useMessagingSSE } from '../../hooks/useMessagingSSE';
-import api from '../../utils/api';
-import './MobileApp.css';
-import { Button, Spinner, BottomSheet, Skeleton } from '@/design-system';
+import MobileMaintenances from './MobileMaintenances';
+import MobileMessaging from './MobileMessaging';
+import MobileOrders from './MobileOrders';
+import MobileParcDashboard from './MobileParcDashboard';
+import MobilePersonnel from './MobilePersonnel';
+import MobilePlanning from './MobilePlanning';
+import MobileQRLanding from './MobileQRLanding';
+import MobileReservations from './MobileReservations';
+import MobileSonos from './MobileSonos';
+import MobileTasks from './MobileTasks';
 
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

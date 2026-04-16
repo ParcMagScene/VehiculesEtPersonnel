@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link as LinkIcon, QrCode, Copy, Check, Printer } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import './MobileAccess.css';
+
+import { Check, Copy, Link as LinkIcon, Printer, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useEffect, useRef, useState } from 'react';
+
 import { Button, Input } from '@/design-system';
+
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 // Fonctionnalités mobiles à afficher sur l'affichette

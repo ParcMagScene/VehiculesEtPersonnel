@@ -3,29 +3,31 @@
 // Zones, lecture en cours, volume, favoris
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo, useRef } from 'react';
 import {
-  Music,
-  Wifi,
-  RefreshCw,
+  ChevronDown,
+  ChevronUp,
   Disc,
-  Play,
+  Heart,
+  Layers,
+  Music,
   Pause,
+  Play,
+  RefreshCw,
+  Repeat,
+  Repeat1,
+  Shuffle,
   SkipBack,
   SkipForward,
   Volume2,
   VolumeX,
-  Heart,
-  Layers,
-  ChevronDown,
-  ChevronUp,
-  Shuffle,
-  Repeat,
-  Repeat1,
+  Wifi,
 } from 'lucide-react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button, Checkbox, InlineAlert, Input, SectionHeader } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, Input, Checkbox, InlineAlert, SectionHeader } from '@/design-system';
 
 // ── Helpers ──
 const formatTime = (seconds) => {

@@ -1,7 +1,8 @@
-import { useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
 import './Modal.css';
+
+import { X } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * Modal — Wrapper réutilisable pour tous les modaux de l'application.
@@ -111,4 +112,4 @@ function ModalFooter({ align = 'end', className = '', children }) {
   return <div className={cls}>{children}</div>;
 }
 
-export { Modal, ModalHeader, ModalBody, ModalFooter };
+export { Modal, ModalBody, ModalFooter, ModalHeader };

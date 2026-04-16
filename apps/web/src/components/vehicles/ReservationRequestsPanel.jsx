@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Check, X, Clock, User } from 'lucide-react';
-import api from '../../utils/api';
 import './ReservationRequestsPanel.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+import { Calendar, Check, Clock, User, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
 import { Button, DetailRow, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 import { formatDateFr } from '../../utils/formatUtils';
 
 const ReservationRequestsPanel = ({ onRequestProcessed }) => {

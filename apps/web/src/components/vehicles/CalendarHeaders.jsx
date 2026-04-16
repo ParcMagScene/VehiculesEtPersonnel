@@ -1,14 +1,15 @@
-import React from 'react';
 import {
-  format,
-  isWeekend,
-  isToday,
-  getWeek,
-  startOfMonth,
-  endOfMonth,
   eachWeekOfInterval,
+  endOfMonth,
+  format,
+  getWeek,
+  isToday,
+  isWeekend,
+  startOfMonth,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import React from 'react';
+
 import { Tooltip } from '@/design-system';
 
 const CalendarHeaders = ({

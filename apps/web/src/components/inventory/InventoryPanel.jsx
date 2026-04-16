@@ -3,30 +3,28 @@
    Onglets : Dashboard · Articles · Emplacements · Prix · Anomalies
    ═══════════════════════════════════════════════════════════════ */
 
-import { useState, useEffect, useMemo } from 'react';
+import './InventoryPanel.css';
+
 import {
-  BarChart3,
-  MapPin,
-  DollarSign,
   AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  ClipboardCheck,
+  DollarSign,
+  Download,
+  Edit,
+  MapPin,
   Package,
-  Search,
   Plus,
   RefreshCw,
-  Download,
-  CheckCircle2,
-  XCircle,
-  Edit,
+  Search,
+  Star,
   Trash2,
   TrendingUp,
-  ClipboardCheck,
-  Star,
+  XCircle,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { useInventory } from '../../hooks/useInventory';
-import { useToast } from '../../hooks/useToast';
-import { formatDateSimple } from '../../utils/formatUtils';
-import './InventoryPanel.css';
+import { useEffect, useMemo, useState } from 'react';
+
 import {
   Button,
   Card,
@@ -34,14 +32,19 @@ import {
   Select,
   Spinner,
   Tab,
+  Table,
   TabList,
   TabPanel,
-  Table,
   Tabs,
   Tooltip,
 } from '@/design-system';
-import { formatDateTime } from '../../utils/formatUtils';
+
 import { STATUS_COLORS } from '../../constants/colors';
+import { useInventory } from '../../hooks/useInventory';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { formatDateSimple } from '../../utils/formatUtils';
+import { formatDateTime } from '../../utils/formatUtils';
 
 // ═══════ SUB-VIEWS (inline pour éviter le surcoût de fichiers séparés) ═══════
 

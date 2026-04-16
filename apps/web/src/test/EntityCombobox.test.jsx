@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+
 import EntityCombobox from '../components/ui/EntityCombobox';
 
 // jsdom doesn't implement scrollIntoView

@@ -1,5 +1,6 @@
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '../components/ui';
 import './ModalLayout.css';
+
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '../components/ui';
 
 /**
  * ModalLayout — Wrapper obligatoire pour tous les modaux.

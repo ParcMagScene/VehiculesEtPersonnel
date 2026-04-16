@@ -1,7 +1,8 @@
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
 import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);

@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import api from '../../utils/api';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { findZone } from './equipmentUtils';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { findZone } from './equipmentUtils';
 
 export const useEquipment = ({ currentUser, initialTab }) => {
   const toast = useToast();

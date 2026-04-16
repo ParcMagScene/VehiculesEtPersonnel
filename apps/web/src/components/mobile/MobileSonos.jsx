@@ -3,15 +3,18 @@
 // Réutilise le hook useSonos (zéro duplication logique)
 // ═══════════════════════════════════════════════════════════════
 
-import { memo } from 'react';
-import { ArrowLeft, Music, RefreshCw } from 'lucide-react';
-import useSonos from '../../hooks/useSonos';
-import MobileSonosNowPlaying from './MobileSonosNowPlaying';
-import MobileSonosControls from './MobileSonosControls';
-import MobileSonosVolume from './MobileSonosVolume';
-import MobileSonosFavorites from './MobileSonosFavorites';
-import { Button, Spinner } from '@/design-system';
 import './MobileSonos.css';
+
+import { ArrowLeft, Music, RefreshCw } from 'lucide-react';
+import { memo } from 'react';
+
+import { Button, Spinner } from '@/design-system';
+
+import useSonos from '../../hooks/useSonos';
+import MobileSonosControls from './MobileSonosControls';
+import MobileSonosFavorites from './MobileSonosFavorites';
+import MobileSonosNowPlaying from './MobileSonosNowPlaying';
+import MobileSonosVolume from './MobileSonosVolume';
 
 function MobileSonos({ currentUser, onBack }) {
   const isAdmin = !!currentUser?.isAdmin || currentUser?.role === 'admin';

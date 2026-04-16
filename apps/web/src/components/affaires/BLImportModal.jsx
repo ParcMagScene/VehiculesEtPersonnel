@@ -1,27 +1,30 @@
-import { useState, useCallback, useRef } from 'react';
+import './BLImportModal.css';
+
 import {
-  FileText,
-  X,
-  Upload,
-  File,
-  CheckCircle,
   AlertTriangle,
   Briefcase,
+  CheckCircle,
   Eye,
   EyeOff,
+  File,
+  FileText,
   Monitor,
   Save,
-  Tag,
   ShieldAlert,
+  Tag,
+  Upload,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { extractTextFromPDF, smartParse, getDocTypeLabel } from '../../utils/pdfParser';
+import { useCallback, useRef, useState } from 'react';
+
+import { Button, Input, ProgressBar, Tooltip } from '@/design-system';
+
+import { CONF_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import { extractTextFromPDF, getDocTypeLabel, smartParse } from '../../utils/pdfParser';
 import AddressAutocomplete from '../AddressAutocomplete';
-import { CONF_COLORS } from '../../constants/colors';
-import './BLImportModal.css';
-import { Button, Input, ProgressBar, Tooltip } from '@/design-system';
 
 // Types d'affaire incompatibles avec un BL Vente
 const BL_VENTE_FORBIDDEN_TYPES = ['Location', 'Prestation'];

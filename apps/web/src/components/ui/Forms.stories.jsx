@@ -1,7 +1,7 @@
-import Input from '../components/ui/Input';
-import Textarea from '../components/ui/Textarea';
-import Select from '../components/ui/Select';
 import { Checkbox, Toggle } from '../components/ui/Checkbox';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
+import Textarea from '../components/ui/Textarea';
 
 export default { title: 'Atomes/Formulaires' };
 

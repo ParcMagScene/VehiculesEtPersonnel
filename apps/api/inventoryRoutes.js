@@ -9,13 +9,13 @@ import db from './database.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';
 import {
-  locationSchema,
-  locationUpdateSchema,
-  priceSchema,
-  priceBatchSchema,
-  priceFusionSchema,
   anomalyUpdateSchema,
   inventoryCountSchema,
+  locationSchema,
+  locationUpdateSchema,
+  priceBatchSchema,
+  priceFusionSchema,
+  priceSchema,
 } from './schemas/inventory.js';
 
 // ═══════════════════════════════════════════════════════════════

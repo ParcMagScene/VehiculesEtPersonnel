@@ -1,6 +1,6 @@
-import { Tag, Badge } from '../components/ui/Tag';
-import StatusBadge from '../components/ui/StatusBadge';
 import Avatar from '../components/ui/Avatar';
+import StatusBadge from '../components/ui/StatusBadge';
+import { Badge, Tag } from '../components/ui/Tag';
 import Tooltip from '../components/ui/Tooltip';
 
 export default { title: 'Atomes/Indicateurs' };

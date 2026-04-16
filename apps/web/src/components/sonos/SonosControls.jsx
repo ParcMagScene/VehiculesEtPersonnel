@@ -3,8 +3,9 @@
 // Prev | Play/Pause | Next  +  Shuffle / Repeat en secondary
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, memo } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Square } from 'lucide-react';
+import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Square } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
+
 import { formatTime } from '../../hooks/useSonos';
 
 function SonosControls({

@@ -1,15 +1,15 @@
+import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import db, { addToHistory, getHistory } from './database.js';
-import { alertReservationCreated, alertMaintenanceCreated } from './emailService.js';
+import { alertMaintenanceCreated, alertReservationCreated } from './emailService.js';
+import { deleteReservationFromGoogle, syncReservationToGoogle } from './googleBidirectionalSync.js';
 import logger from './logger.js';
-import { listCache, cacheMiddleware, invalidateEntity } from './cache.js';
 import { validate } from './schemas/imports.js';
 import {
-  vehicleSchema,
-  reservationSchema,
   maintenanceSchema,
   reservationRequestSchema,
+  reservationSchema,
+  vehicleSchema,
 } from './schemas/vehicles.js';
-import { syncReservationToGoogle, deleteReservationFromGoogle } from './googleBidirectionalSync.js';
 
 // Helper : parser les liens Google Drive (rétrocompatible ancien format string simple)
 function parseDriveLinks(value) {

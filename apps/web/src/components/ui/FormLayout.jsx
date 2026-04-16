@@ -62,4 +62,4 @@ function FormActions({ align = 'end', className = '', children }) {
   return <div className={cls}>{children}</div>;
 }
 
-export { FormLayout, FormSection, FormRow, FormActions };
+export { FormActions, FormLayout, FormRow, FormSection };

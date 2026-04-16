@@ -5,46 +5,48 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Calendar,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Plus,
-  Download,
-  RefreshCw,
-  Users,
-  BarChart3,
-  ChevronDown,
-  Trash2,
-  Shield,
-  CalendarOff,
-  Eye,
-  TrendingUp,
-} from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
-import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
-import LeaveRequestForm from './LeaveRequestForm';
-import LeaveRequestsPanel from './LeaveRequestsPanel';
-import LeaveValidationPanel from './LeaveValidationPanel';
 import './LeavesTab.css';
+
+import { endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import {
+  BarChart3,
+  Calendar,
+  CalendarOff,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  Download,
+  Eye,
+  Plus,
+  RefreshCw,
+  Shield,
+  Trash2,
+  TrendingUp,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import {
   Button,
   Card,
   DetailRow,
   EmptyState,
   InlineAlert,
-  Tooltip,
   SectionHeader,
+  Tooltip,
 } from '@/design-system';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
+import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
+import LeaveRequestForm from './LeaveRequestForm';
+import LeaveRequestsPanel from './LeaveRequestsPanel';
+import LeaveValidationPanel from './LeaveValidationPanel';
 
 // ═══════════════════════════════════════
 // Helpers

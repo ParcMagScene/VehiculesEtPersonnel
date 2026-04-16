@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
 import api from '../utils/api';
-import { saveToIndexedDB, loadFromIndexedDB, STORES } from '../utils/indexedDB';
+import { loadFromIndexedDB, saveToIndexedDB, STORES } from '../utils/indexedDB';
 
 /**
  * Hook centralisant les données du module Inventaire :

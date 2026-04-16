@@ -1,8 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { X, Save, Calendar, Gauge, Plus, Trash2 } from 'lucide-react';
-import { Button, Dialog, FormField, Input, Select } from '@/design-system';
-import { STATUS_COLORS } from '../../constants/colors';
 import './VehicleMaintenanceModal.css';
+
+import { Calendar, Gauge, Plus, Save, Trash2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { Button, Dialog, FormField, Input, Select } from '@/design-system';
+
+import { STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import { formatDateSimple } from '../../utils/formatUtils';
 

@@ -1,93 +1,95 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import {
-  Users,
-  Award,
-  CalendarDays,
-  Briefcase,
-  Plus,
-  Edit2,
-  Trash2,
-  Save,
-  ChevronLeft,
-  ChevronRight,
-  AlertTriangle,
-  CheckCircle,
-  User,
-  Check,
-  Clock,
-  Link2,
-  Upload,
-  Star,
-  Filter,
-  CalendarOff,
-} from 'lucide-react';
-import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
-import {
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
-  eachDayOfInterval,
-  eachMonthOfInterval,
-  format,
-  parseISO,
-  isSameDay,
-  isWeekend as isWeekendFn,
-  isSameWeek,
-  isSameMonth,
-  isSameYear,
-} from 'date-fns';
-import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import AssignmentDialog from './AssignmentDialog';
-import { PersonnelSlidePanel } from './PersonnelDetailPanel';
-import LeaveRequestForm from '../leaves/LeaveRequestForm';
-import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
-import LeaveValidationPanel from '../leaves/LeaveValidationPanel';
-import PersonnelContextMenu from './PersonnelContextMenu';
-import PeriodCalendarModal from '../planning/PeriodCalendarModal';
-import PersonnelImportModal from './PersonnelImportModal';
-import MonthSelector from '../MonthSelector';
-import WeekSelector from '../WeekSelector';
-import YearSelector from '../YearSelector';
 import './PersonnelPanel.css';
 import '../equipment/EquipmentPanel.css';
-import {
-  Button,
-  FormField,
-  ModalLayout,
-  Input,
-  Textarea,
-  Select,
-  Table,
-  Spinner,
-  Avatar,
-  EmptyState,
-  InlineAlert,
-  SearchBar,
-  Tooltip,
-} from '@/design-system';
 import '../vehicles/Calendar.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import PersonnelAgenda from './PersonnelAgenda';
-import LeavesTab from '../leaves/LeavesTab';
-import SkillsTab from './SkillsTab';
-import PositionsTab from './PositionsTab';
-import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 import {
-  PERSON_TYPES,
+  eachDayOfInterval,
+  eachMonthOfInterval,
+  endOfMonth,
+  endOfWeek,
+  endOfYear,
+  format,
+  isSameDay,
+  isSameMonth,
+  isSameWeek,
+  isSameYear,
+  isWeekend as isWeekendFn,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+  startOfYear,
+} from 'date-fns';
+import { fr } from 'date-fns/locale';
+import {
+  AlertTriangle,
+  Award,
+  Briefcase,
+  CalendarDays,
+  CalendarOff,
+  Check,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Edit2,
+  Filter,
+  Link2,
+  Plus,
+  Save,
+  Star,
+  Trash2,
+  Upload,
+  User,
+  Users,
+} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import {
+  Avatar,
+  Button,
+  EmptyState,
+  FormField,
+  InlineAlert,
+  Input,
+  ModalLayout,
+  SearchBar,
+  Select,
+  Spinner,
+  Table,
+  Textarea,
+  Tooltip,
+} from '@/design-system';
+
+import { STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import LeaveRequestForm from '../leaves/LeaveRequestForm';
+import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
+import LeavesTab from '../leaves/LeavesTab';
+import LeaveValidationPanel from '../leaves/LeaveValidationPanel';
+import MonthSelector from '../MonthSelector';
+import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
+import PeriodCalendarModal from '../planning/PeriodCalendarModal';
+import WeekSelector from '../WeekSelector';
+import YearSelector from '../YearSelector';
+import AssignmentDialog from './AssignmentDialog';
+import PersonnelAgenda from './PersonnelAgenda';
+import {
   CONTRACT_TYPES,
-  SKILL_LEVELS,
-  POSITION_CATEGORIES,
-  PERMANENT_TYPES,
-  NON_PERMANENT_TYPES,
   getCategoryColor,
+  NON_PERMANENT_TYPES,
+  PERMANENT_TYPES,
+  PERSON_TYPES,
+  POSITION_CATEGORIES,
+  SKILL_LEVELS,
 } from './personnelConstants';
+import PersonnelContextMenu from './PersonnelContextMenu';
+import { PersonnelSlidePanel } from './PersonnelDetailPanel';
+import PersonnelImportModal from './PersonnelImportModal';
+import PositionsTab from './PositionsTab';
+import SkillsTab from './SkillsTab';
 
 // ═══════════════════════════════════════
 // Composant principal

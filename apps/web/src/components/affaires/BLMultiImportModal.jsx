@@ -3,35 +3,37 @@
  * Drop one or many PDFs, parse them, review with full detail, then batch import.
  * Creates new affaires or updates existing ones.
  */
-import { useState, useCallback, useRef } from 'react';
+import './BLMultiImportModal.css';
+
 import {
-  FileText,
-  X,
-  Upload,
-  File,
-  CheckCircle,
   AlertTriangle,
   Briefcase,
-  Trash2,
-  Loader,
-  Tag,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
-  PackagePlus,
   Eye,
   EyeOff,
+  File,
+  FileText,
   Layers,
+  Loader,
   Package,
+  PackagePlus,
+  Tag,
+  Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
-import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
-import { useToast } from '../../hooks/useToast';
+import { useCallback, useRef, useState } from 'react';
+
 import { Button, Input, ProgressBar } from '@/design-system';
+
 import { STATUS } from '../../constants';
 import { CONF_COLORS } from '../../constants/colors';
-
-import './BLMultiImportModal.css';
+import { useToast } from '../../hooks/useToast';
+import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import { DOC_TYPES, extractTextFromPDF, getDocTypeLabel, smartParse } from '../../utils/pdfParser';
 
 const AFFAIRE_TYPE_OPTIONS = AFFAIRE_TYPES;
 

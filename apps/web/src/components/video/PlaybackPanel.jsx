@@ -2,13 +2,15 @@
 // PlaybackPanel.jsx — Relecture des enregistrements NVR
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Calendar, Play, Square, Loader, Clock, Film, AlertCircle } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, Select, Tooltip } from '@/design-system';
-import { TIMING } from '../../constants';
-
 import './PlaybackPanel.css';
+
+import { AlertCircle, Calendar, Clock, Film, Loader, Play, Square } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button, Select, Tooltip } from '@/design-system';
+
+import { TIMING } from '../../constants';
+import api from '../../utils/api';
 
 const PlaybackPanel = ({ cameras, initialCameraId }) => {
   const [selectedCameraId, setSelectedCameraId] = useState(() => initialCameraId || '');

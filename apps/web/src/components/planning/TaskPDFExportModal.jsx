@@ -1,33 +1,35 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import './TaskPDFExportModal.css';
+
 import {
-  X,
-  FileDown,
-  Eye,
+  Briefcase,
+  Calendar,
   Check,
   CheckSquare,
-  Square,
-  Minus,
-  User,
   Clock,
+  Eye,
+  FileDown,
   Loader2,
-  Calendar,
   MapPin,
-  Briefcase,
+  Minus,
+  Square,
+  User,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { formatDateFr } from '../../utils/formatUtils';
-import { safeParseDate } from '../../utils/dateUtils';
-import './TaskPDFExportModal.css';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Button, EmptyState } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import {
-  PLANNING_SECTIONS,
-  EVENT_TYPE_COLORS,
-  STATUS_COLORS,
   ACCENT_COLORS,
+  EVENT_TYPE_COLORS,
+  PLANNING_SECTIONS,
+  STATUS_COLORS,
 } from '../../constants/colors';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import { safeParseDate } from '../../utils/dateUtils';
+import { formatDateFr } from '../../utils/formatUtils';
 
 // ═══ Sections (depuis colorConstants) ═══
 const SECTIONS = {

@@ -2,8 +2,8 @@
 // SonosFavorites — Liste verticale avec vignettes (style Sonos)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, memo } from 'react';
-import { Star, Search, Music } from 'lucide-react';
+import { Music, Search, Star } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
 
 function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavorite, nowPlaying }) {
   const [search, setSearch] = useState('');

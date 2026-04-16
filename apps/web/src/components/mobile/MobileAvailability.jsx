@@ -1,12 +1,14 @@
-import { useState } from 'react';
-import { format, addDays, startOfDay, parseISO } from 'date-fns';
+import './MobileAvailability.css';
+
+import { addDays, format, parseISO, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Car, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import { getVehicleAvatar } from '../../utils/vehicleAvatars';
-import { STATUS } from '../../constants';
+import { Calendar, Car, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/design-system';
-import './MobileAvailability.css';
+
+import { STATUS } from '../../constants';
+import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 
 function MobileAvailability({
   vehicles,

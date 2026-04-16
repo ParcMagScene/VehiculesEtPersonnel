@@ -3,11 +3,13 @@
 // (couleurs, police, météo, défilement automatique, Sonos IP)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Palette, Sun, Eye, Save } from 'lucide-react';
+import { Eye, Palette, Save, Sun } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, Checkbox, Input, SectionHeader, Select } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, Input, Select, Checkbox, SectionHeader } from '@/design-system';
 
 const FONT_OPTIONS = [
   { value: 'Arial, sans-serif', label: 'Arial' },

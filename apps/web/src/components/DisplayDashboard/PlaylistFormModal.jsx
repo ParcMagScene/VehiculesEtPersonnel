@@ -1,7 +1,9 @@
 // PlaylistFormModal — Création / édition d'une playlist
-import { useState, useEffect, useCallback, memo } from 'react';
 import { List, Save } from 'lucide-react';
-import { Button, FormField, ModalLayout, Input, Textarea, Select } from '@/design-system';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 

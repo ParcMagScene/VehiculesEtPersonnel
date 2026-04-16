@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Wrench, AlertTriangle, Calendar, Gauge, User, ExternalLink } from 'lucide-react';
-import api from '../../utils/api';
-import { getVehicleAvatar } from '../../utils/vehicleAvatars';
-import { Button, Tag } from '@/design-system';
-import { STATUS_COLORS } from '../../constants/colors';
-import { formatDateSimple } from '../../utils/formatUtils';
 import './VehicleDetailPanel.css';
+
+import { AlertTriangle, Calendar, ExternalLink, Gauge, User, Wrench, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { Button, Tag } from '@/design-system';
+
+import { STATUS_COLORS } from '../../constants/colors';
+import api from '../../utils/api';
+import { formatDateSimple } from '../../utils/formatUtils';
+import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 
 /* ═══════════════════════════════════════════════
    Contenu partagé : infos véhicule

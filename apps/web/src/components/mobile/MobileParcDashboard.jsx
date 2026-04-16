@@ -1,19 +1,21 @@
+import './MobileParcDashboard.css';
+
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
-  ArrowLeft,
-  Car,
-  Calendar,
-  Settings,
   AlertCircle,
+  ArrowLeft,
+  Calendar,
+  Car,
+  CheckCircle,
   ChevronRight,
   LayoutGrid,
-  CheckCircle,
+  Settings,
 } from 'lucide-react';
-import { STATUS } from '../../constants';
 
 import { Button } from '@/design-system';
-import './MobileParcDashboard.css';
+
+import { STATUS } from '../../constants';
 
 function MobileParcDashboard({
   vehicles,

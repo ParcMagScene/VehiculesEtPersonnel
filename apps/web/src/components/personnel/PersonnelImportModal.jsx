@@ -3,23 +3,25 @@
 // Import avec détection des collisions (code libre, nom+prénom)
 // ============================================================
 
-import { useState, useCallback, useMemo } from 'react';
+import './PersonnelImportModal.css';
+
 import {
-  Upload,
+  AlertCircle,
   AlertTriangle,
   CheckCircle,
-  Eye,
   Download,
-  Users,
-  UserPlus,
-  AlertCircle,
+  Eye,
   RefreshCw,
+  Upload,
+  UserPlus,
+  Users,
 } from 'lucide-react';
-import { Button, ModalLayout, Table, Spinner, Tag, InlineAlert, Accordion } from '@/design-system';
-import api from '../../utils/api';
-import { STATUS } from '../../constants';
+import { useCallback, useMemo, useState } from 'react';
 
-import './PersonnelImportModal.css';
+import { Accordion, Button, InlineAlert, ModalLayout, Spinner, Table, Tag } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import api from '../../utils/api';
 
 // Colonnes CSV attendues (séparateur ;)
 const EXPECTED_HEADERS = ['Code Libre', 'Nom', 'Prénom', 'CP', 'Ville', 'Portable', 'Type'];

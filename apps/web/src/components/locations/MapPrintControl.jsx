@@ -2,9 +2,10 @@
 // MapPrintControl.jsx — Bouton d'impression/export de la carte
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useRef, useEffect } from 'react';
 import { Printer } from 'lucide-react';
-import { printMap, exportMapPNG } from './map-print-utils';
+import { useEffect, useRef, useState } from 'react';
+
+import { exportMapPNG, printMap } from './map-print-utils';
 
 export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g', onDualPrint }) {
   const [open, setOpen] = useState(false);

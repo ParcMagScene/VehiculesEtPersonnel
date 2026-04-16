@@ -1,41 +1,43 @@
-import { useState, useEffect } from 'react';
+import './UserManagement.css';
+
 import {
-  Mail,
-  UserPlus,
-  Trash2,
-  RefreshCw,
-  Shield,
-  User,
+  Ban,
+  Bell,
   Check,
   Clock,
-  UserCheck,
-  UserX,
-  Bell,
-  Pencil,
   ExternalLink,
-  Users,
-  Ban,
   KeyRound,
+  Mail,
+  Pencil,
+  RefreshCw,
+  Shield,
+  Trash2,
+  User,
+  UserCheck,
+  UserPlus,
+  Users,
+  UserX,
 } from 'lucide-react';
-import api from '../../utils/api';
-import ProfileEditModal from '../auth/ProfileEditModal';
-import './UserManagement.css';
-import { useToast } from '../../hooks/useToast';
+import { useEffect, useState } from 'react';
+
 import {
-  Button,
-  ModalLayout,
-  Input,
-  Table,
-  Checkbox,
-  Tag,
-  Card,
   Avatar,
+  Button,
+  Card,
+  Checkbox,
+  Input,
+  ModalLayout,
+  Table,
+  Tag,
   Tooltip,
 } from '@/design-system';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { formatDateSimple } from '../../utils/formatUtils';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { formatDateSimple } from '../../utils/formatUtils';
+import ProfileEditModal from '../auth/ProfileEditModal';
 
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const toast = useToast();

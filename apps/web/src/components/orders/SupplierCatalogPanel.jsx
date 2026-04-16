@@ -3,41 +3,44 @@
 // Import catalogues PDF, consultation, filtres, suppression
 // ============================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import './SupplierCatalogPanel.css';
+
 import {
-  FileText,
-  Upload,
-  Trash2,
-  X,
+  AlertCircle,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
-  Package,
-  History,
-  BarChart3,
-  AlertCircle,
   DatabaseZap,
-  Settings,
+  FileText,
+  History,
+  Package,
   RefreshCw,
+  Settings,
+  Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import './SupplierCatalogPanel.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { formatDateTime } from '../../utils/formatUtils';
+import { useCallback, useEffect, useState } from 'react';
+
 import {
   Button,
-  ModalLayout,
-  Select,
-  Table,
   EntityCombobox,
-  Spinner,
-  Tag,
   InlineAlert,
+  ModalLayout,
   SearchBar,
+  Select,
+  Spinner,
+  Table,
+  Tag,
   Tooltip,
 } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { AVAILABLE_PARSERS, parseCatalog } from '../../utils/catalogParsers';
+import { formatDateTime } from '../../utils/formatUtils';
 import { extractPDFMeta } from '../../utils/pdfParser';
-import { parseCatalog, AVAILABLE_PARSERS } from '../../utils/catalogParsers';
 import CatalogSettingsPanel from './CatalogSettingsPanel';
 
 const PAGE_SIZE = 50;

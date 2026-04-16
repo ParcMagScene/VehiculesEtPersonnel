@@ -2,13 +2,15 @@
 // PresetPanel.jsx — Vue preset multi-caméras (1-4 caméras)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback } from 'react';
-import CameraPlayerWebRTC from './CameraPlayerWebRTC';
-import { Plus, Trash2, Save, Edit2, ExternalLink, X } from 'lucide-react';
-import api from '../../utils/api';
+import { Edit2, ExternalLink, Plus, Save, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
 import { Button, Tooltip } from '@/design-system';
-import { useToast } from '../../hooks/useToast';
+
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 
 const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   const toast = useToast();

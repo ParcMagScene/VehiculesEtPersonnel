@@ -3,7 +3,7 @@
  * Source unique de vérité pour types, couleurs, emojis et sections planning.
  */
 
-import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
+import { ACCENT_COLORS, STATUS_COLORS } from '../constants/colors';
 
 // ═══ Types d'affaire avec métadonnées ═══
 export const AFFAIRE_TYPES = [

@@ -4,20 +4,21 @@
 // Les deux cartes sont zoomables/glissables avant l'impression
 // ═══════════════════════════════════════════════════════════════
 
-import { useMemo, useRef, useEffect, useCallback, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Circle, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { X, Printer, Download } from 'lucide-react';
+import { Download, Printer, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
+
+import { STATUS_COLORS } from '../../constants/colors';
 import {
-  TILE_LIGHT,
-  DEFAULT_ZOOM,
-  MAG_SCENE,
   BOUNDS_PADDING,
+  DEFAULT_ZOOM,
   filterGeoLocations,
   filterNearby,
+  MAG_SCENE,
+  TILE_LIGHT,
 } from './map-utils';
-import { createLocationIcon, createHQIcon } from './MapMarkers';
-import { STATUS_COLORS } from '../../constants/colors';
+import { createHQIcon, createLocationIcon } from './MapMarkers';
 
 // ── Composant interne : ajuster les bounds automatiquement ──
 function FitBounds({ locations }) {

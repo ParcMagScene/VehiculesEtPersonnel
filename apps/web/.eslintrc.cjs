@@ -5,6 +5,7 @@ module.exports = {
     es2021: true,
     node: true,
   },
+  plugins: ['simple-import-sort'],
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',
@@ -40,6 +41,9 @@ module.exports = {
     'no-misleading-character-class': 'warn',
     // Catch vides volontaires (silencieux)
     'no-empty': ['error', { allowEmptyCatch: true }],
+    // Import sorting automatique
+    'simple-import-sort/imports': 'warn',
+    'simple-import-sort/exports': 'warn',
   },
   ignorePatterns: ['dist/', 'node_modules/', 'public/', '_archive/'],
 };

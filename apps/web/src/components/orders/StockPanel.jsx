@@ -1,52 +1,55 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import './StockPanel.css';
+
 import {
-  Package,
-  Search,
-  Plus,
-  Edit2,
-  Trash2,
-  ArrowLeft,
-  TrendingUp,
   AlertTriangle,
-  ArrowUpCircle,
-  ArrowDownCircle,
-  RotateCcw,
-  Layers,
-  Tag as TagIcon,
-  MapPin,
-  Euro,
-  Hash,
-  X,
-  Check,
   Archive,
-  Upload,
+  ArrowDownCircle,
+  ArrowLeft,
+  ArrowUpCircle,
+  Check,
+  Edit2,
+  Euro,
   ExternalLink,
+  Hash,
+  Layers,
   Map,
+  MapPin,
+  Package,
+  Plus,
+  RotateCcw,
+  Search,
+  Tag as TagIcon,
+  Trash2,
+  TrendingUp,
+  Upload,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import {
   Button,
-  ModalLayout,
-  Input,
-  Textarea,
-  Select,
-  Table,
-  EntityCombobox,
-  Spinner,
-  Tag,
   EmptyState,
+  EntityCombobox,
   InlineAlert,
+  Input,
+  ModalLayout,
   SearchBar,
+  Select,
+  Spinner,
+  Table,
+  Tag,
+  Textarea,
   Tooltip,
 } from '@/design-system';
-import './StockPanel.css';
-import { useToast } from '../../hooks/useToast';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
 import { extractTextFromPDF } from '../../utils/pdfParser';
-import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
+import LocationSelector from '../vehicles/LocationSelector';
 
 // ═══ Constantes ═══
 const MOVEMENT_TYPES = {

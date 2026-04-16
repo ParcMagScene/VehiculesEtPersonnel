@@ -3,21 +3,21 @@
 // Services musicaux, radios, playlists, browsing hiérarchique
 // ═══════════════════════════════════════════════════════════════
 
-import { useEffect, useState, memo } from 'react';
 import {
-  Radio,
-  ListMusic,
-  Music,
-  Star,
+  Book,
   ChevronLeft,
   ChevronRight,
   Folder,
-  Loader,
-  Book,
-  Server,
   Info,
+  ListMusic,
+  Loader,
+  Music,
   Podcast,
+  Radio,
+  Server,
+  Star,
 } from 'lucide-react';
+import { memo, useEffect, useState } from 'react';
 
 const SERVICE_ICONS = {
   star: <Star size={16} />,

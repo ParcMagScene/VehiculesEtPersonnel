@@ -1,14 +1,17 @@
-import { useState, useImperativeHandle, forwardRef } from 'react';
-import { format, addDays } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { ArrowLeft, Car, Calendar, Users, Plus, ChevronRight, Check } from 'lucide-react';
-import { getVehicleAvatar } from '../../utils/vehicleAvatars';
-import api from '../../utils/api';
-import { Button, Select, Textarea, InlineAlert, FormField } from '@/design-system';
-import usePullToRefresh from '../../hooks/usePullToRefresh';
-import PullToRefreshIndicator from './PullToRefreshIndicator';
 import './MobileReservations.css';
+
+import { addDays, format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { ArrowLeft, Calendar, Car, Check, ChevronRight, Plus, Users } from 'lucide-react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
+
+import { Button, FormField, InlineAlert, Select, Textarea } from '@/design-system';
+
+import usePullToRefresh from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { getVehicleAvatar } from '../../utils/vehicleAvatars';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 // Fonction pour formater une date en toute sécurité
 const safeFormatDate = (dateValue, formatStr = 'dd MMM yyyy') => {

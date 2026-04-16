@@ -1,25 +1,28 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import './TaskEditModal.css';
+
 import {
-  X,
-  Clock,
-  User,
-  FileText,
-  Calendar,
-  Loader,
-  Save,
   Briefcase,
-  Search,
-  Link2,
-  Unlink,
-  MapPin,
+  Calendar,
+  Clock,
   ExternalLink,
+  FileText,
+  Link2,
+  Loader,
+  MapPin,
+  Save,
+  Search,
+  Unlink,
+  User,
+  X,
 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button, EntityCombobox, Input, Select, Textarea } from '@/design-system';
+
+import { useDirtyForm } from '../../hooks/useDirtyForm';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
-import { useToast } from '../../hooks/useToast';
-import { useDirtyForm } from '../../hooks/useDirtyForm';
-import './TaskEditModal.css';
-import { Button, EntityCombobox, Input, Select, Textarea } from '@/design-system';
 
 const SECTIONS = {
   rdv: 'Rendez-vous',

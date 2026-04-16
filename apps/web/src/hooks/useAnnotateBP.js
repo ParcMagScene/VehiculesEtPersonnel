@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
+
 import api from '../utils/api';
 import { annotateBPItems, formatAffaireInfoBlock } from '../utils/bpAnnotationEngine';
 

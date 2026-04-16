@@ -1,5 +1,5 @@
-import { useState, useId } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useId, useState } from 'react';
 
 /**
  * Accordion — Section dépliable

@@ -1,7 +1,8 @@
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import db from '../database.js';
+import jwt from 'jsonwebtoken';
+
 import { authCache } from '../cache.js';
+import db from '../database.js';
 import logger from '../logger.js';
 
 /**

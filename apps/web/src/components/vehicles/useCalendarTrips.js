@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
 import api from '../../utils/api';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
 import { transformTripSnake } from './calendarUtils';

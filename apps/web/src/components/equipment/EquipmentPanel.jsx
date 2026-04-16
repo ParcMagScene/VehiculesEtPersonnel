@@ -1,60 +1,63 @@
-import React from 'react';
+import './EquipmentPanel.css';
+
 import {
-  Package,
-  Plus,
-  Wrench,
   AlertTriangle,
   CheckCircle,
   Clock,
-  X,
-  Tag,
-  MapPin,
-  Upload,
-  Star,
-  Eye,
-  Image as ImageIcon,
-  Hash,
-  Printer,
-  FileText,
-  Map,
   Download,
+  Eye,
+  FileText,
+  Hash,
+  Image as ImageIcon,
+  Map,
+  MapPin,
+  Package,
+  Plus,
+  Printer,
+  Star,
+  Tag,
+  Upload,
+  Wrench,
+  X,
 } from 'lucide-react';
-import api from '../../utils/api';
-import EquipmentImportModal from './EquipmentImportModal';
-import SavImportModal from '../affaires/SavImportModal';
-import EquipmentLabelPrint from './EquipmentLabelPrint';
-import EquipmentBatchLabels from './EquipmentBatchLabels';
-import { printEquipmentSheet } from './EquipmentSheetPrint';
-import MaintenanceReportModal from '../vehicles/MaintenanceReportModal';
-import DepotMap from '../vehicles/DepotMap';
-import './EquipmentPanel.css';
-import { useToast } from '../../hooks/useToast';
+import React from 'react';
+
 import {
   Button,
-  ModalLayout,
-  Select,
   Checkbox,
-  Spinner,
+  ModalLayout,
   SearchBar,
+  Select,
+  Spinner,
   Tooltip,
 } from '@/design-system';
+
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
-import { SAV_STATUS } from './equipmentConstants';
-import { useEquipment } from './useEquipment';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import SavImportModal from '../affaires/SavImportModal';
+import DepotMap from '../vehicles/DepotMap';
+import MaintenanceReportModal from '../vehicles/MaintenanceReportModal';
 import CategoryCascadeFilter from './CategoryCascadeFilter';
+import EquipmentBatchLabels from './EquipmentBatchLabels';
 import EquipmentCategoriesTree from './EquipmentCategoriesTree';
-import EquipmentGrid from './EquipmentGrid';
-import { EquipmentSlidePanel, EquipmentDetailDialog } from './EquipmentDetail';
+import { SAV_STATUS } from './equipmentConstants';
+import { EquipmentDetailDialog, EquipmentSlidePanel } from './EquipmentDetail';
 import EquipmentFormModal from './EquipmentFormModal';
+import EquipmentGrid from './EquipmentGrid';
+import EquipmentImportModal from './EquipmentImportModal';
+import EquipmentLabelPrint from './EquipmentLabelPrint';
 import EquipmentMediaManager from './EquipmentMediaManager';
 import {
-  SavTicketsList,
-  SavTicketFormModal,
   MobileSavRequestForm,
-  SavSlidePanel,
   SavDetailDialog,
+  SavSlidePanel,
+  SavTicketFormModal,
+  SavTicketsList,
 } from './EquipmentSAV';
+import { printEquipmentSheet } from './EquipmentSheetPrint';
+import { useEquipment } from './useEquipment';
 
 // ═══ COMPOSANT PRINCIPAL ═══
 const EquipmentPanel = ({

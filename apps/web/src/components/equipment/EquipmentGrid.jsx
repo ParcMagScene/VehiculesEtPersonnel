@@ -1,10 +1,12 @@
+import { Eye, MapPin, Package, Star } from 'lucide-react';
 import React from 'react';
-import { Package, Star, Eye, MapPin } from 'lucide-react';
-import { EQUIPMENT_STATUS, cleanName } from './equipmentConstants';
-import { matchPhotoToEquipment, findZone, getCategoryHierarchy } from './equipmentUtils';
-import { resolveGenericImage } from '../../utils/genericImages';
+
+import { EmptyState, Table, Tooltip } from '@/design-system';
+
 import { ACCENT_COLORS } from '../../constants/colors';
-import { Table, EmptyState, Tooltip } from '@/design-system';
+import { resolveGenericImage } from '../../utils/genericImages';
+import { cleanName, EQUIPMENT_STATUS } from './equipmentConstants';
+import { findZone, getCategoryHierarchy, matchPhotoToEquipment } from './equipmentUtils';
 
 const EquipmentGrid = ({
   equipment,

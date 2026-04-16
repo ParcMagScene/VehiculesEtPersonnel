@@ -219,15 +219,15 @@ function getAllCacheStats() {
 }
 
 export {
-  LRUCache,
-  createCache,
-  authCache,
-  statsCache,
-  listCache,
-  icalCache,
-  configCache,
-  cacheMiddleware,
-  invalidateEntity,
-  getAllCacheStats,
   ALL_CACHES,
+  authCache,
+  cacheMiddleware,
+  configCache,
+  createCache,
+  getAllCacheStats,
+  icalCache,
+  invalidateEntity,
+  listCache,
+  LRUCache,
+  statsCache,
 };

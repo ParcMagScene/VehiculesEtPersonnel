@@ -33,8 +33,9 @@ db.pragma('foreign_keys = ON');
 // et permet des lectures pendant les écritures
 db.pragma('journal_mode = WAL');
 
-// Définir le mode de synchronisation pour garantir l'écriture sur disque
-db.pragma('synchronous = FULL');
+// Mode de synchronisation — NORMAL est sûr avec WAL (pas de fsync supplémentaire
+// sur le WAL file, protection identique contre la corruption de la DB principale)
+db.pragma('synchronous = NORMAL');
 
 // Configurer le checkpoint automatique (tous les 1000 pages)
 db.pragma('wal_autocheckpoint = 1000');

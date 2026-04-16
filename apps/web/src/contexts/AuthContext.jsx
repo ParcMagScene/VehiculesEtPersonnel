@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import api from '../utils/api';
 import { requestNotificationPermission, setVolume } from '../utils/notificationSound';
@@ -106,17 +114,29 @@ export function AuthProvider({ children }) {
     [applyTabPrefs],
   );
 
-  const value = {
-    isAuthenticated,
-    currentUser,
-    isAuthLoading,
-    login,
-    logout,
-    updateUser,
-    tabPrefs,
-    userPrefsRef,
-    updatePreferences,
-  };
+  const value = useMemo(
+    () => ({
+      isAuthenticated,
+      currentUser,
+      isAuthLoading,
+      login,
+      logout,
+      updateUser,
+      tabPrefs,
+      userPrefsRef,
+      updatePreferences,
+    }),
+    [
+      isAuthenticated,
+      currentUser,
+      isAuthLoading,
+      login,
+      logout,
+      updateUser,
+      tabPrefs,
+      updatePreferences,
+    ],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

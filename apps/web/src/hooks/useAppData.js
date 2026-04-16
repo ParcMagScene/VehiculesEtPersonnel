@@ -101,47 +101,33 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
     loadDataFromAPI();
   }, [isAuthenticated, isAuthLoading, onAuthError]);
 
-  // ══════ Sauvegarde IndexedDB (individual debounced saves) ══════
+  // ══════ Sauvegarde IndexedDB (batch debounced — un seul timer) ══════
   useEffect(() => {
     if (isDataLoading) return;
-    const t = setTimeout(() => saveToIndexedDB(STORES.vehicles, vehicles), 500);
+    const t = setTimeout(() => {
+      saveToIndexedDB(STORES.vehicles, vehicles);
+      saveToIndexedDB(STORES.reservations, reservations);
+      saveToIndexedDB(STORES.clients, clients);
+      saveToIndexedDB(STORES.drivers, drivers);
+      saveToIndexedDB(STORES.locations, locations);
+      if (calendarConfig?.apiKey || calendarConfig?.calendarId) {
+        saveToIndexedDB(STORES.calendarConfig, calendarConfig);
+      }
+      saveToIndexedDB(STORES.garages, garages);
+      saveToIndexedDB(STORES.maintenances, maintenances);
+    }, 500);
     return () => clearTimeout(t);
-  }, [vehicles, isDataLoading]);
-  useEffect(() => {
-    if (isDataLoading) return;
-    const t = setTimeout(() => saveToIndexedDB(STORES.reservations, reservations), 500);
-    return () => clearTimeout(t);
-  }, [reservations, isDataLoading]);
-  useEffect(() => {
-    if (isDataLoading) return;
-    const t = setTimeout(() => saveToIndexedDB(STORES.clients, clients), 500);
-    return () => clearTimeout(t);
-  }, [clients, isDataLoading]);
-  useEffect(() => {
-    if (isDataLoading) return;
-    const t = setTimeout(() => saveToIndexedDB(STORES.drivers, drivers), 500);
-    return () => clearTimeout(t);
-  }, [drivers, isDataLoading]);
-  useEffect(() => {
-    if (isDataLoading) return;
-    const t = setTimeout(() => saveToIndexedDB(STORES.locations, locations), 500);
-    return () => clearTimeout(t);
-  }, [locations, isDataLoading]);
-  useEffect(() => {
-    if (isDataLoading || (!calendarConfig?.apiKey && !calendarConfig?.calendarId)) return;
-    const t = setTimeout(() => saveToIndexedDB(STORES.calendarConfig, calendarConfig), 500);
-    return () => clearTimeout(t);
-  }, [calendarConfig, isDataLoading]);
-  useEffect(() => {
-    if (isDataLoading) return;
-    const t = setTimeout(() => saveToIndexedDB(STORES.garages, garages), 500);
-    return () => clearTimeout(t);
-  }, [garages, isDataLoading]);
-  useEffect(() => {
-    if (isDataLoading) return;
-    const t = setTimeout(() => saveToIndexedDB(STORES.maintenances, maintenances), 500);
-    return () => clearTimeout(t);
-  }, [maintenances, isDataLoading]);
+  }, [
+    vehicles,
+    reservations,
+    clients,
+    drivers,
+    locations,
+    calendarConfig,
+    garages,
+    maintenances,
+    isDataLoading,
+  ]);
 
   // ══════ Mise à jour automatique des statuts de maintenance ══════
   useEffect(() => {

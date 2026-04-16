@@ -299,7 +299,9 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
   // ─── GET /api/planning/bl-imports ───
   app.get('/api/planning/bl-imports', authenticateToken, (req, res) => {
     try {
-      let query = 'SELECT * FROM bl_imports WHERE 1=1';
+      let query = `SELECT id, affaire_id, filename, file_path, mime_type, parsed_data, status,
+        affaire_type, doc_type, confidence_score, sections_data, field_confidence,
+        created_by, created_at FROM bl_imports WHERE 1=1`;
       const params = [];
 
       if (req.query.affaire_id) {

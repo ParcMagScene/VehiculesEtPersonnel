@@ -549,7 +549,6 @@ export function runTaxonomyMigrations(db) {
       let mapped = 0;
       for (const row of unmapped) {
         const familyLower = row.family.toLowerCase();
-        let matched = false;
         for (const rule of rules) {
           if (rule.is_regex) {
             try {
@@ -557,7 +556,6 @@ export function runTaxonomyMigrations(db) {
               if (re.test(familyLower)) {
                 updateFamily.run(rule.target_family, row.id);
                 mapped++;
-                matched = true;
                 break;
               }
             } catch {
@@ -567,7 +565,6 @@ export function runTaxonomyMigrations(db) {
             if (familyLower === rule.source_pattern.toLowerCase()) {
               updateFamily.run(rule.target_family, row.id);
               mapped++;
-              matched = true;
               break;
             }
           }

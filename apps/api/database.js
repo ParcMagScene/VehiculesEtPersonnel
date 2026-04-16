@@ -598,7 +598,7 @@ function initializeDatabase() {
       );
       logger.info('✅ Migration: colonne nom ajoutée à affaires');
     }
-  } catch (e) {
+  } catch (_e) {
     /* colonne existe déjà */
   }
 
@@ -759,7 +759,7 @@ function initializeDatabase() {
       db.prepare("ALTER TABLE persons ADD COLUMN default_positions TEXT DEFAULT '[]'").run();
       logger.info('✅ Colonne default_positions ajoutée à persons');
     }
-  } catch (error) {
+  } catch (_error) {
     // Colonne déjà présente
   }
 
@@ -966,7 +966,7 @@ function initializeDatabase() {
         );
       }
     }
-  } catch (error) {
+  } catch (_error) {
     logger.info('Info: Colonnes véhicules déjà présentes');
   }
 
@@ -996,7 +996,7 @@ function initializeDatabase() {
         let controles = [];
         try {
           controles = v.controles_techniques ? JSON.parse(v.controles_techniques) : [];
-        } catch (e) {
+        } catch (_e) {
           controles = [];
         }
         if (!Array.isArray(controles)) controles = [];
@@ -1095,7 +1095,7 @@ function initializeDatabase() {
       );
       logger.info('✅ Colonne trip_group_id ajoutée à trip_details');
     }
-  } catch (error) {
+  } catch (_error) {
     logger.info('Info: Colonne trip_group_id déjà présente ou table trip_details non créée');
   }
 
@@ -1137,7 +1137,7 @@ function initializeDatabase() {
       db.prepare('ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0').run();
       logger.info('✅ Colonne is_blocked ajoutée à users');
     }
-  } catch (error) {
+  } catch (_error) {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }
 
@@ -1161,7 +1161,7 @@ function initializeDatabase() {
       db.prepare('ALTER TABLE reservations ADD COLUMN google_drive_link TEXT').run();
       logger.info('✅ Colonne google_drive_link ajoutée à reservations');
     }
-  } catch (error) {
+  } catch (_error) {
     logger.info('Info: Colonne google_drive_link déjà présente');
   }
 
@@ -1441,7 +1441,7 @@ function initializeDatabase() {
         ).run();
         logger.info('✅ Migration: level ajouté à equipment_categories');
       }
-    } catch (e) {
+    } catch (_e) {
       /* colonnes déjà présentes */
     }
 
@@ -1473,7 +1473,7 @@ function initializeDatabase() {
         }
         if (existingEq.length > 0) logger.info(`✅ Migration: ${existingEq.length} UID générés`);
       }
-    } catch (e) {
+    } catch (_e) {
       /* colonnes déjà présentes */
     }
 
@@ -2351,7 +2351,7 @@ function initializeDatabase() {
     } catch (migErr) {
       try {
         db.exec('ROLLBACK');
-      } catch (e) {
+      } catch (_e) {
         /* ignored */
       }
       logger.warn('Migration CHECK constraint section:', migErr.message);
@@ -2412,7 +2412,7 @@ function initializeDatabase() {
     } catch (migErr2) {
       try {
         db.exec('ROLLBACK');
-      } catch (e) {
+      } catch (_e) {
         /* ignored */
       }
       logger.warn('Migration CHECK constraint source_type:', migErr2.message);
@@ -2491,7 +2491,7 @@ function initializeDatabase() {
     } catch (migErr3) {
       try {
         db.exec('ROLLBACK');
-      } catch (e) {
+      } catch (_e) {
         /* ignored */
       }
       logger.warn('Migration sections opérationnelles:', migErr3.message);
@@ -2555,7 +2555,7 @@ function initializeDatabase() {
     } catch (migErr4) {
       try {
         db.exec('ROLLBACK');
-      } catch (e) {
+      } catch (_e) {
         /* ignored */
       }
       logger.warn('Migration section installation:', migErr4.message);

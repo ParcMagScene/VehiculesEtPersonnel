@@ -4,7 +4,6 @@
 // ═══════════════════════════════════════════════════════════════
 
 import crypto from 'crypto';
-import { google } from 'googleapis';
 import db from './database.js';
 import logger from './logger.js';
 import {
@@ -14,7 +13,6 @@ import {
   storeRefreshToken,
   getValidAccessToken,
   getConnectionStatus,
-  deleteTokens,
   revokeToken,
   updateLastSync,
 } from './googleTokenManager.js';

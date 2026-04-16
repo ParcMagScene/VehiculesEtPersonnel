@@ -7,7 +7,7 @@ import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
 import db from './database.js';
 import logger from './logger.js';
-import { auditLog, AUDIT_ACTIONS } from './auditLog.js';
+import { auditLog } from './auditLog.js';
 
 const TOTP_ISSUER = 'eM@g';
 
@@ -176,7 +176,7 @@ export function setupTOTPRoutes(app, authenticateToken, requireAdmin) {
     try {
       const user = db.prepare('SELECT totp_enabled FROM users WHERE id = ?').get(req.user.id);
       res.json({ enabled: user?.totp_enabled === 1 });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });

@@ -557,7 +557,7 @@ process.on('uncaughtException', (error) => {
   gracefulShutdown('uncaughtException');
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
   logger.error('❌ Promesse rejetée non gérée:', reason);
   gracefulShutdown('unhandledRejection');
 });

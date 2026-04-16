@@ -821,7 +821,7 @@ export function setupReservationEquipmentRoutes(app, authenticateToken) {
             if (dims.w && dims.h && dims.d) {
               totalVolume += (dims.w * dims.h * dims.d * item.quantity) / 1000000; // cm³ → m³
             }
-          } catch (e) {
+          } catch (_e) {
             /* ignore parse errors */
           }
         }

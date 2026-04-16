@@ -13,10 +13,7 @@ import {
   loginSchema,
   forgotPasswordSchema,
   selfResetPasswordSchema,
-  checkResetSchema,
-  setNewPasswordSchema,
   forceLoginSchema,
-  changePasswordSchema,
 } from './schemas/auth.js';
 
 export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev }) {

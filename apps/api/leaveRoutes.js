@@ -18,12 +18,10 @@ const __dirname = path.dirname(__filename);
 // ═══════════════════════════════════════
 
 // Acquisition : 2,5 jours ouvrables / mois = 30 jours / an
-const DAYS_PER_MONTH = 2.5;
 const DAYS_PER_YEAR = 30;
 
 // Période de référence : 1er juin → 31 mai
 const REF_PERIOD_START_MONTH = 6; // juin
-const REF_PERIOD_START_DAY = 1;
 
 // Congé principal : min 12 jours ouvrables consécutifs entre 1er mai et 31 octobre
 const MIN_CONSECUTIVE_DAYS = 12;
@@ -31,10 +29,6 @@ const SUMMER_START_MONTH = 5;
 const SUMMER_END_MONTH = 10;
 
 // Fermeture annuelle : 24 décembre → 1er janvier
-const CLOSURE_START_DAY = 24;
-const CLOSURE_START_MONTH = 12;
-const CLOSURE_END_DAY = 1;
-const CLOSURE_END_MONTH = 1;
 
 // Date limite de pose des congés : 28 février
 const DEADLINE_MONTH = 2;
@@ -453,7 +447,6 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       // Vérifier le solde pour les congés payés
       if (leaveType === 'conge_paye') {
-        const refPeriod = getReferencePeriod(startDate);
         const year = new Date(startDate).getFullYear();
         const balance = db
           .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')

@@ -10,7 +10,6 @@ import logger from './logger.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // 128 bits
-const TAG_LENGTH = 16; // 128 bits
 
 // Cache mémoire des access_tokens (user_id → { token, expiresAt })
 const accessTokenCache = new Map();

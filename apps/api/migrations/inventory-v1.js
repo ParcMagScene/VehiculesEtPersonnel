@@ -135,7 +135,7 @@ export function runInventoryMigrations(db) {
   for (const idx of indexes) {
     try {
       db.exec(idx);
-    } catch (e) {
+    } catch (_e) {
       /* index exists */
     }
   }

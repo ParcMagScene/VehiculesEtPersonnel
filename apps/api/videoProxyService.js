@@ -65,9 +65,8 @@ function getKeyBuffer() {
     const generated = crypto.randomBytes(32).toString('hex');
     const envPath = join(__dir, '.env');
     try {
-      let content = '';
       try {
-        content = fs.readFileSync(envPath, 'utf8');
+        fs.readFileSync(envPath, 'utf8');
       } catch {
         /* ignored */
       }
@@ -75,7 +74,7 @@ function getKeyBuffer() {
       fs.appendFileSync(envPath, line);
       process.env.VIDEO_CIPHER_KEY = generated;
       logger.info('🔑 VIDEO_CIPHER_KEY générée et sauvegardée dans .env (dev uniquement)');
-    } catch (writeErr) {
+    } catch (_writeErr) {
       logger.warn(
         "⚠️  VIDEO_CIPHER_KEY non défini et impossible d'écrire dans .env — les mots de passe caméra seront perdus au redémarrage",
       );

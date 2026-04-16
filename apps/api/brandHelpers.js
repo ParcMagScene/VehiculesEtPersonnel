@@ -122,7 +122,7 @@ export function resolveUnifiedFamily(article) {
         /* invalid regex, skip */
       }
     }
-  } catch (e) {
+  } catch (_e) {
     // taxonomy_family_mapping may not exist yet
   }
   return null;

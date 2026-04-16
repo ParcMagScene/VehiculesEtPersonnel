@@ -175,16 +175,12 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
         name,
         code_libre,
         email,
-        phone,
-        phone2,
         address,
         postal_code,
         city,
         country,
         type,
         legal_structure,
-        siret,
-        tva_intra,
         website,
         activity_sector,
         service_types,
@@ -254,16 +250,12 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
         name,
         code_libre,
         email,
-        phone,
-        phone2,
         address,
         postal_code,
         city,
         country,
         type,
         legal_structure,
-        siret,
-        tva_intra,
         website,
         activity_sector,
         service_types,
@@ -411,16 +403,12 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
         code_libre,
         contact_name,
         email,
-        phone,
-        phone2,
         address,
         postal_code,
         city,
         country,
         type,
         legal_structure,
-        siret,
-        tva_intra,
         website,
         activity_sector,
         service_types,
@@ -493,16 +481,12 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
         code_libre,
         contact_name,
         email,
-        phone,
-        phone2,
         address,
         postal_code,
         city,
         country,
         type,
         legal_structure,
-        siret,
-        tva_intra,
         website,
         activity_sector,
         service_types,
@@ -645,15 +629,11 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
         name,
         code_libre,
         email,
-        phone,
-        phone2,
         address,
         postal_code,
         city,
         country,
         legal_structure,
-        siret,
-        tva_intra,
         website,
         activity_sector,
         service_types,
@@ -723,15 +703,11 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
         name,
         code_libre,
         email,
-        phone,
-        phone2,
         address,
         postal_code,
         city,
         country,
         legal_structure,
-        siret,
-        tva_intra,
         website,
         activity_sector,
         service_types,
@@ -1194,7 +1170,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
               commentaire || null,
             );
             imported++;
-          } catch (e) {
+          } catch (_e) {
             errors++;
           }
         }
@@ -1343,7 +1319,7 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
 
             insertOrUpdate.run(code, name, postalCode, city || null, phone);
             imported++;
-          } catch (e) {
+          } catch (_e) {
             errors++;
           }
         }
@@ -1536,14 +1512,13 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
                 );
                 imported++;
               }
-            } catch (e) {
+            } catch (_e) {
               errors++;
             }
           }
         });
 
         importTransaction();
-        const total = imported + updated;
         logger.info(
           `Import contacts CSV: ${imported} créés, ${updated} mis à jour, ${skipped} ignorés, ${errors} erreurs`,
         );

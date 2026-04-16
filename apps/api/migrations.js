@@ -282,7 +282,7 @@ export function runPostInitMigrations(db) {
   } catch (migErr5) {
     try {
       db.exec('ROLLBACK');
-    } catch (e) {
+    } catch (_e) {
       /* ignored */
     }
     logger.warn('Migration prep_tournees:', migErr5.message);
@@ -343,7 +343,7 @@ export function runPostInitMigrations(db) {
   } catch (migErr6) {
     try {
       db.exec('ROLLBACK');
-    } catch (e) {
+    } catch (_e) {
       /* ignored */
     }
     logger.warn('Migration ical_event source_type:', migErr6.message);
@@ -405,7 +405,7 @@ export function runPostInitMigrations(db) {
   } catch (migErr7) {
     try {
       db.exec('ROLLBACK');
-    } catch (e) {
+    } catch (_e) {
       /* ignored */
     }
     logger.warn('Migration montage/demontage:', migErr7.message);

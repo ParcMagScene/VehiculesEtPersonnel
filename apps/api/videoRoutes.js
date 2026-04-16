@@ -86,7 +86,7 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
       // Ne jamais exposer username/password — ajouter flag playback & retirer rtsp_url
       const result = cameras.map((c) => {
         const supportsPlayback = !!extractDahuaChannel(c);
-        const { rtsp_url, ...rest } = c;
+        const { rtsp_url: _rtsp_url, ...rest } = c;
         return { ...rest, supports_playback: supportsPlayback };
       });
       res.json(result);

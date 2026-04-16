@@ -15,8 +15,6 @@ import { dirname, join, extname, basename, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import multer from 'multer';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import db from './database.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';
@@ -58,8 +56,6 @@ function isValidEventId(id) {
     typeof id === 'string' && id.length > 0 && id.length <= 200 && /^[a-zA-Z0-9_\-:.]+$/.test(id)
   );
 }
-
-const execFileAsync = promisify(execFile);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -212,7 +208,7 @@ function logAction(screenId, action, details, userId) {
   }
 }
 
-import { verifyTvToken, optionalTvToken } from './middleware/tvAuth.js';
+import { optionalTvToken } from './middleware/tvAuth.js';
 import { getSonosNowPlaying } from './sonosRoutes.js';
 
 // ════════════════════════════════════════════════════════════════
@@ -2364,7 +2360,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         if (fs.existsSync(filePath)) return res.sendFile(filePath);
       }
       res.status(404).json({ success: false, error: 'Aucune photo active' });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
@@ -2379,7 +2375,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         return res.sendFile(join(logoDir, files[0]));
       }
       res.status(404).json({ success: false, error: 'Aucun logo trouvé' });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });

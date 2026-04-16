@@ -611,9 +611,6 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           return res.status(400).json({ success: false, error: 'Données CSV vides' });
         }
 
-        // Récupérer les catégories existantes
-        const existingCats = db.prepare('SELECT * FROM equipment_categories').all();
-
         // Collecter les familles, sous-familles, catégories uniques du CSV
         const familiesSet = new Map();
         const subfamiliesSet = new Map();
@@ -1577,7 +1574,7 @@ export function setupSavTicketsRoutes(
 
         const duplicates = processed
           .filter((r) => r._isDuplicate)
-          .map((r, i) => ({
+          .map((r, _i) => ({
             index: processed.indexOf(r),
             intervention: r.intervention,
             nom: r.nom_article,
@@ -2141,7 +2138,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
         photos = readdirSync(photosDir)
           .filter((f) => /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(f))
           .slice(0, 500);
-      } catch (e) {
+      } catch (_e) {
         /* dossier inexistant */
       }
 
@@ -2149,7 +2146,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
         logos = readdirSync(logosDir)
           .filter((f) => /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(f))
           .slice(0, 500);
-      } catch (e) {
+      } catch (_e) {
         /* dossier inexistant */
       }
 

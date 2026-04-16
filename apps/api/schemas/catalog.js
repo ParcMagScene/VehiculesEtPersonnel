@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 // ── Helpers ──
 const optStr = (max = 255) => z.string().max(max).trim().optional().or(z.literal('')).or(z.null());
-const optInt = z.coerce.number().int().optional().nullable();
 const optNum = z.coerce.number().optional().nullable();
 
 // ── Equipment Catalog ──

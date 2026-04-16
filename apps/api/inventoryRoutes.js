@@ -18,12 +18,6 @@ import {
   inventoryCountSchema,
 } from './schemas/inventory.js';
 
-// ─── Helpers ───
-function paginate(query, params, page = 1, limit = 50) {
-  const offset = (Math.max(1, page) - 1) * limit;
-  return { query: `${query} LIMIT ? OFFSET ?`, params: [...params, limit, offset] };
-}
-
 // ═══════════════════════════════════════════════════════════════
 // MOTEUR DE PRIX INTELLIGENT
 // ═══════════════════════════════════════════════════════════════
@@ -911,7 +905,7 @@ export function setupInventoryRoutes(app, authenticate) {
     try {
       db.prepare("DELETE FROM inventory_stats_cache WHERE cache_key = 'global_stats'").run();
       res.json({ success: true, message: 'Cache invalidé' });
-    } catch (err) {
+    } catch (_err) {
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });

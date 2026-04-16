@@ -85,7 +85,7 @@ function isValidTime(str) {
 // AFFICHAGE DYNAMIQUE — CRUD
 // ═══════════════════════════════════════════════
 
-export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
+export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
   // ─── GET /api/planning/display-events ───
   // Liste avec filtres optionnels : date, dateFrom, dateTo, type, category, affaire_id
   // Enrichit chaque événement avec nom/client de l'affaire liée (LEFT JOIN)
@@ -782,7 +782,6 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
                 if (existingAffaire) {
                   // Mise à jour de l'affaire avec les nouvelles données parsées (si des champs sont vides)
                   try {
-                    const today = new Date().toISOString().slice(0, 10);
                     let dateDebut = pd?.date || pd?.dateLivraison || pd?.dateDebut || null;
                     let dateFin = pd?.dateFin || null;
                     if (pd?.sections && Array.isArray(pd.sections)) {
@@ -1318,7 +1317,7 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
 
   const handleExportPdf = (req, res) => {
     try {
-      const { date, taskIds, affaireIds, eventIds } = req.query;
+      const { date, taskIds, eventIds } = req.query;
       const gcalEvents = req.body?.gcalEvents || [];
       if (!date) {
         return res.status(400).json({ success: false, error: 'Le paramètre date est requis' });
@@ -1523,14 +1522,6 @@ export function setupPlanningRoutes(app, authenticateToken, requireAdmin) {
         demontage: 'Démontage',
       };
 
-      const STATUS_LABELS = {
-        pending: 'Effectué',
-        in_progress: 'En cours',
-        done: 'Fait',
-        cancelled: 'Annulé',
-      };
-
-      // Helper: dessiner une case à cocher carrée
       const drawCheckbox = (x, y, checked = false, size = 10) => {
         doc.save();
         doc.rect(x, y, size, size).strokeColor('#333333').lineWidth(0.8).stroke();

@@ -1590,7 +1590,6 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
           }
 
           // Add item to order
-          const itemTotal = (request.quantity || 1) * 0; // No price on requests
           db.prepare(
             `INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, ref_code, source_requester_id, source_requester_name, source_affaire_id, source_type)
             VALUES (?, ?, ?, 'u', 0, 20, 0, ?, ?, ?, ?, ?)`,
@@ -2100,7 +2099,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
     }
   }
 
-  function checkAffaireCompletion(affaireId, user) {
+  function checkAffaireCompletion(affaireId, _user) {
     try {
       // Check if all orders linked to this affaire are received
       const pendingOrders = db

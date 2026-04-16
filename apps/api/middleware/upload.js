@@ -57,7 +57,6 @@ export const uploadMedia = multer({
     destination: (_req, _file, cb) => cb(null, mediaDir),
     filename: (_req, file, cb) => {
       const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const ext = path.extname(file.originalname).toLowerCase();
       const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_{2,}/g, '_');
       cb(null, `display-${unique}-${safeName}`);
     },

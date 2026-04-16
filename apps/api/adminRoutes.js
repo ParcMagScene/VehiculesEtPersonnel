@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import db from './database.js';
-import { alertAccessRequest, initEmailTransporter, getTransporter } from './emailService.js';
+import { alertAccessRequest, initEmailTransporter } from './emailService.js';
 import logger from './logger.js';
 import { getAllCacheStats, ALL_CACHES } from './cache.js';
 import { encryptPassword, decryptPassword } from './videoProxyService.js';
@@ -198,7 +198,7 @@ export function setupAdminRoutes(
       }
 
       res.json({ authorized: !!authorized, name });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
@@ -683,7 +683,7 @@ export function setupAdminRoutes(
 
       // Invalider toutes les sessions
       const deleteSessionsStmt = db.prepare('DELETE FROM active_sessions WHERE user_id = ?');
-      const result = deleteSessionsStmt.run(id);
+      deleteSessionsStmt.run(id);
 
       // Récupérer l'email pour le retour
       const userStmt = db.prepare('SELECT email FROM users WHERE id = ?');

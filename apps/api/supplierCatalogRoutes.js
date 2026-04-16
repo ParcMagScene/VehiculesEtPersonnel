@@ -672,7 +672,7 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
     validate(analyzeSchema),
     (req, res) => {
       try {
-        const { items, totalLines, parserId, text } = req.body;
+        const { items, totalLines, text } = req.body;
 
         const lines = (text || '').split('\n').filter((l) => l.trim());
 

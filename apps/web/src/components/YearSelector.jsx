@@ -1,9 +1,8 @@
 import './YearSelector.css';
 
-import { X } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { Button } from '@/design-system';
+import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] }) {
   // Générer une grille de 16 années centrée sur l'année actuelle
@@ -39,18 +38,9 @@ function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] })
   const todayYear = new Date().getFullYear();
 
   return (
-    <div
-      className="year-selector-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="year-selector-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="year-selector-header">
-          <h3>Sélectionner une année</h3>
-          <Button variant="ghost" className="close-button" onClick={onClose}>
-            <X size={20} />
-          </Button>
-        </div>
-
+    <Modal open onClose={onClose} size="sm" className="year-selector-modal">
+      <ModalHeader onClose={onClose}>Sélectionner une année</ModalHeader>
+      <ModalBody>
         <div className="year-selector-grid">
           {years.map((year) => {
             const isCurrent = year === currentYear;
@@ -74,8 +64,8 @@ function YearSelector({ currentDate, onSelectYear, onClose, reservations = [] })
             );
           })}
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 }
 

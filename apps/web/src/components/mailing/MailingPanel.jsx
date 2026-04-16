@@ -15,7 +15,6 @@ import {
   Send,
   Settings,
   Trash2,
-  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -24,6 +23,9 @@ import {
   Checkbox,
   EmptyState,
   Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
   Select,
   Tab,
   TabList,
@@ -310,19 +312,11 @@ export default function MailingPanel({ isOpen, onClose }) {
   const smtpConfigured = emailConfig?.smtp_host && emailConfig?.enabled;
 
   return (
-    <div className="mailing-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="mailing-panel">
-        {/* Header */}
-        <div className="mailing-header">
-          <div className="mailing-header-left">
-            <Mail size={20} />
-            <h2>Mailing</h2>
-          </div>
-          <Button variant="ghost" className="mailing-close" onClick={onClose} aria-label="Fermer">
-            <X size={20} />
-          </Button>
-        </div>
-
+    <Modal open={isOpen} onClose={onClose} size="lg" className="mailing-panel">
+      <ModalHeader icon={<Mail size={20} />} onClose={onClose}>
+        Mailing
+      </ModalHeader>
+      <ModalBody>
         {/* Tabs */}
         <Tabs value={activeTab} onChange={setActiveTab}>
           <TabList className="mailing-tabs">
@@ -535,23 +529,22 @@ export default function MailingPanel({ isOpen, onClose }) {
 
                   {/* Preview modal */}
                   {showPreview && (
-                    <div
-                      className="mailing-preview-overlay"
-                      onMouseDown={(e) => e.target === e.currentTarget && setShowPreview(false)}
+                    <Modal
+                      open={showPreview}
+                      onClose={() => setShowPreview(false)}
+                      size="lg"
+                      className="mailing-preview-modal"
                     >
-                      <div className="mailing-preview-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="mailing-preview-header">
-                          <h3>Prévisualisation</h3>
-                          <Button variant="ghost" onClick={() => setShowPreview(false)}>
-                            <X size={18} />
-                          </Button>
-                        </div>
+                      <ModalHeader onClose={() => setShowPreview(false)}>
+                        Prévisualisation
+                      </ModalHeader>
+                      <ModalBody>
                         <div
                           className="mailing-preview-body"
                           dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewHtml) }}
                         />
-                      </div>
-                    </div>
+                      </ModalBody>
+                    </Modal>
                   )}
                 </div>
               )}
@@ -890,8 +883,8 @@ export default function MailingPanel({ isOpen, onClose }) {
             </TabPanel>
           </div>
         </Tabs>
-      </div>
+      </ModalBody>
       {ConfirmDialogRenderer}
-    </div>
+    </Modal>
   );
 }

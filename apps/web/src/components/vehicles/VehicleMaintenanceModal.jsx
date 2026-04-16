@@ -1,9 +1,18 @@
 import './VehicleMaintenanceModal.css';
 
-import { Calendar, Gauge, Plus, Save, Trash2, X } from 'lucide-react';
+import { Calendar, Gauge, Plus, Save, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, Dialog, FormField, Input, Select } from '@/design-system';
+import {
+  Button,
+  Dialog,
+  FormField,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Select,
+} from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
@@ -308,33 +317,20 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   };
 
   return (
-    <div
-      className="vm-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}
-    >
-      <div
-        className="vehicle-maintenance-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="modal-header">
-          <div className="modal-header-title">
-            <h2>🔧 Maintenance - {vehicle?.name}</h2>
-            {(vehicle?.type || vehicle?.registration) && (
-              <div className="vehicle-info">
-                {vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}
-                {vehicle.registration && (
-                  <span className="vehicle-registration">{vehicle.registration}</span>
-                )}
-              </div>
+    <Modal open onClose={handleSafeClose} size="lg" className="vehicle-maintenance-modal">
+      <ModalHeader onClose={handleSafeClose}>
+        🔧 Maintenance - {vehicle?.name}
+        {(vehicle?.type || vehicle?.registration) && (
+          <div className="vehicle-info">
+            {vehicle.type && <span className="vehicle-type">{vehicle.type}</span>}
+            {vehicle.registration && (
+              <span className="vehicle-registration">{vehicle.registration}</span>
             )}
           </div>
-          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
-            <X size={24} />
-          </Button>
-        </div>
+        )}
+      </ModalHeader>
 
+      <ModalBody>
         <form onSubmit={handleSubmit} className="maintenance-form">
           {/* Kilométrage */}
           <div className="form-section">
@@ -486,7 +482,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
             </Button>
           </div>
         </form>
-      </div>
+      </ModalBody>
 
       <Dialog
         open={showUnsavedWarning}
@@ -503,7 +499,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
       >
         Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
       </Dialog>
-    </div>
+    </Modal>
   );
 };
 

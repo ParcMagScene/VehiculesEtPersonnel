@@ -16,11 +16,19 @@ import {
   RefreshCw,
   Send,
   Trash2,
-  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import {
+  Button,
+  DetailRow,
+  EmptyState,
+  InlineAlert,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Tooltip,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useToast } from '../../hooks/useToast';
@@ -138,37 +146,23 @@ const LeaveRequestsPanel = ({
   };
 
   return (
-    <div className="lrp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="lrp-panel"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Mes demandes de congés"
-      >
-        {/* En-tête */}
-        <div className="lrp-header">
-          <div className="lrp-header-title">
-            <Calendar size={20} />
-            <h2>Mes demandes de congés</h2>
-          </div>
-          <div className="lrp-header-actions">
-            <Tooltip content="Rafraîchir">
-              <Button variant="ghost" className="lrp-btn-refresh" onClick={loadRequests}>
-                <RefreshCw size={16} />
-              </Button>
-            </Tooltip>
-            {onNewRequest && (
-              <Button variant="ghost" className="lrp-btn-new" onClick={onNewRequest}>
-                <Send size={14} /> Nouvelle demande
-              </Button>
-            )}
-            <Button variant="ghost" className="lrp-close-btn" onClick={onClose} aria-label="Fermer">
-              <X size={20} />
+    <Modal open onClose={onClose} size="lg" className="lrp-panel">
+      <ModalHeader icon={<Calendar size={20} />} onClose={onClose}>
+        <span>Mes demandes de congés</span>
+        <div className="lrp-header-actions">
+          <Tooltip content="Rafraîchir">
+            <Button variant="ghost" className="lrp-btn-refresh" onClick={loadRequests}>
+              <RefreshCw size={16} />
             </Button>
-          </div>
+          </Tooltip>
+          {onNewRequest && (
+            <Button variant="ghost" className="lrp-btn-new" onClick={onNewRequest}>
+              <Send size={14} /> Nouvelle demande
+            </Button>
+          )}
         </div>
-
+      </ModalHeader>
+      <ModalBody>
         {/* Solde */}
         {balance && (
           <div className="lrp-balance-bar">
@@ -426,8 +420,8 @@ const LeaveRequestsPanel = ({
             })
           )}
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 };
 

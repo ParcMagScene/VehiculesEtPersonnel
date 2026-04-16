@@ -1,10 +1,10 @@
 import './EquipmentLabelPrint.css';
 
-import { Download, Printer, Tag, X } from 'lucide-react';
+import { Download, Printer, Tag } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef, useState } from 'react';
 
-import { Button, Input } from '@/design-system';
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader } from '@/design-system';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -218,179 +218,166 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   const qrPreviewSize = Math.min(format.height * 2.2, 55);
 
   return (
-    <div
-      className="elp-overlay"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="elp-modal">
-        <div className="elp-header">
-          <div className="elp-header-title">
-            <Tag size={18} />
-            <span>Étiquette — {eq.reference || cleanName(eq.name)}</span>
-          </div>
-          <Button variant="ghost" className="elp-close" onClick={onClose} aria-label="Fermer">
-            <X size={18} />
-          </Button>
-        </div>
+    <Modal open onClose={onClose} size="lg" className="elp-modal">
+      <ModalHeader icon={<Tag size={18} />} onClose={onClose}>
+        Étiquette — {eq.reference || cleanName(eq.name)}
+      </ModalHeader>
 
-        <div className="elp-body">
-          <div className="elp-preview-container">
-            <h4>Aperçu</h4>
+      <ModalBody>
+        <div className="elp-preview-container">
+          <h4>Aperçu</h4>
+          <div
+            className="elp-label-preview"
+            ref={svgRef}
+            style={{
+              width: format.width * 3 + 'px',
+              height: format.height * 3 + 'px',
+              maxWidth: '100%',
+            }}
+          >
             <div
-              className="elp-label-preview"
-              ref={svgRef}
-              style={{
-                width: format.width * 3 + 'px',
-                height: format.height * 3 + 'px',
-                maxWidth: '100%',
-              }}
+              className="elp-label-content"
+              style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}
             >
-              <div
-                className="elp-label-content"
-                style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}
-              >
-                {showLogo && (
-                  <div className="elp-label-logo">
-                    <img
-                      src="/Logos/logo_Noir_Transp.png"
-                      alt="Logo"
-                      style={{ height: qrPreviewSize + 'px', width: 'auto' }}
-                    />
+              {showLogo && (
+                <div className="elp-label-logo">
+                  <img
+                    src="/Logos/logo_Noir_Transp.png"
+                    alt="Logo"
+                    style={{ height: qrPreviewSize + 'px', width: 'auto' }}
+                  />
+                </div>
+              )}
+              <div className="elp-label-info">
+                <div className="elp-label-ref">{eq.reference || '—'}</div>
+                {eq.uid && (
+                  <div className="elp-label-uid">
+                    <strong>UID: {eq.uid}</strong>
                   </div>
                 )}
-                <div className="elp-label-info">
-                  <div className="elp-label-ref">{eq.reference || '—'}</div>
-                  {eq.uid && (
-                    <div className="elp-label-uid">
-                      <strong>UID: {eq.uid}</strong>
-                    </div>
-                  )}
-                  {(eq.serialNumber || eq.serial_number) && (
-                    <div className="elp-label-serial">
-                      <strong>S/N: {eq.serialNumber || eq.serial_number}</strong>
-                    </div>
-                  )}
-                </div>
-                <div className="elp-label-qr">
-                  {qrUrl && <QRCodeSVG value={qrUrl} size={qrPreviewSize} level="M" />}
-                </div>
+                {(eq.serialNumber || eq.serial_number) && (
+                  <div className="elp-label-serial">
+                    <strong>S/N: {eq.serialNumber || eq.serial_number}</strong>
+                  </div>
+                )}
               </div>
-            </div>
-            <span className="elp-dimensions">
-              {format.width} × {format.height} mm{selectedPreset === 0 ? ' (auto)' : ''}
-            </span>
-          </div>
-
-          <div className="elp-settings">
-            <div className="elp-field">
-              <label>Format :</label>
-              <div className="elp-format-options">
-                {LABEL_FORMATS.map((f, i) => (
-                  <Button
-                    variant="ghost"
-                    key={i}
-                    className={'elp-format-btn ' + (selectedPreset === i ? 'active' : '')}
-                    onClick={() => setSelectedPreset(i)}
-                  >
-                    {f.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {selectedPreset === LABEL_FORMATS.length - 1 && (
-              <div className="elp-custom-size">
-                <div className="elp-field-inline">
-                  <label>Largeur (mm) :</label>
-                  <Input
-                    type="number"
-                    value={customWidth}
-                    onChange={(e) => setCustomWidth(Math.max(15, parseInt(e.target.value) || 15))}
-                    min={15}
-                    max={200}
-                  />
-                </div>
-                <div className="elp-field-inline">
-                  <label>Hauteur (mm) :</label>
-                  <Input
-                    type="number"
-                    value={customHeight}
-                    onChange={(e) => setCustomHeight(Math.max(10, parseInt(e.target.value) || 10))}
-                    min={10}
-                    max={100}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="elp-field-inline">
-              <label>Logo entreprise :</label>
-              <div className="elp-toggle-group">
-                <Button
-                  variant="ghost"
-                  className={'elp-toggle-btn ' + (showLogo ? 'active' : '')}
-                  onClick={() => setShowLogo(true)}
-                >
-                  Avec
-                </Button>
-                <Button
-                  variant="ghost"
-                  className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')}
-                  onClick={() => setShowLogo(false)}
-                >
-                  Sans
-                </Button>
-              </div>
-            </div>
-
-            <div className="elp-field-inline">
-              <label>Quantité :</label>
-              <Input
-                type="number"
-                value={quantity}
-                onChange={(e) =>
-                  setQuantity(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))
-                }
-                min={1}
-                max={100}
-              />
-            </div>
-
-            <div className="elp-field-inline">
-              <label>Export :</label>
-              <div className="elp-toggle-group">
-                {EXPORT_FORMATS.map((f) => (
-                  <Button
-                    variant="ghost"
-                    key={f}
-                    className={'elp-toggle-btn ' + (exportFormat === f ? 'active' : '')}
-                    onClick={() => setExportFormat(f)}
-                  >
-                    {f}
-                  </Button>
-                ))}
+              <div className="elp-label-qr">
+                {qrUrl && <QRCodeSVG value={qrUrl} size={qrPreviewSize} level="M" />}
               </div>
             </div>
           </div>
+          <span className="elp-dimensions">
+            {format.width} × {format.height} mm{selectedPreset === 0 ? ' (auto)' : ''}
+          </span>
         </div>
 
-        <div className="elp-footer">
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="secondary" onClick={handleExport}>
-            <Download size={16} />
-            {exportFormat}
-          </Button>
-          <Button variant="primary" onClick={handlePrint}>
-            <Printer size={16} />
-            Imprimer {quantity > 1 ? '(' + quantity + ')' : ''}
-          </Button>
+        <div className="elp-settings">
+          <div className="elp-field">
+            <label>Format :</label>
+            <div className="elp-format-options">
+              {LABEL_FORMATS.map((f, i) => (
+                <Button
+                  variant="ghost"
+                  key={i}
+                  className={'elp-format-btn ' + (selectedPreset === i ? 'active' : '')}
+                  onClick={() => setSelectedPreset(i)}
+                >
+                  {f.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {selectedPreset === LABEL_FORMATS.length - 1 && (
+            <div className="elp-custom-size">
+              <div className="elp-field-inline">
+                <label>Largeur (mm) :</label>
+                <Input
+                  type="number"
+                  value={customWidth}
+                  onChange={(e) => setCustomWidth(Math.max(15, parseInt(e.target.value) || 15))}
+                  min={15}
+                  max={200}
+                />
+              </div>
+              <div className="elp-field-inline">
+                <label>Hauteur (mm) :</label>
+                <Input
+                  type="number"
+                  value={customHeight}
+                  onChange={(e) => setCustomHeight(Math.max(10, parseInt(e.target.value) || 10))}
+                  min={10}
+                  max={100}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="elp-field-inline">
+            <label>Logo entreprise :</label>
+            <div className="elp-toggle-group">
+              <Button
+                variant="ghost"
+                className={'elp-toggle-btn ' + (showLogo ? 'active' : '')}
+                onClick={() => setShowLogo(true)}
+              >
+                Avec
+              </Button>
+              <Button
+                variant="ghost"
+                className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')}
+                onClick={() => setShowLogo(false)}
+              >
+                Sans
+              </Button>
+            </div>
+          </div>
+
+          <div className="elp-field-inline">
+            <label>Quantité :</label>
+            <Input
+              type="number"
+              value={quantity}
+              onChange={(e) =>
+                setQuantity(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))
+              }
+              min={1}
+              max={100}
+            />
+          </div>
+
+          <div className="elp-field-inline">
+            <label>Export :</label>
+            <div className="elp-toggle-group">
+              {EXPORT_FORMATS.map((f) => (
+                <Button
+                  variant="ghost"
+                  key={f}
+                  className={'elp-toggle-btn ' + (exportFormat === f ? 'active' : '')}
+                  onClick={() => setExportFormat(f)}
+                >
+                  {f}
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </ModalBody>
+
+      <ModalFooter>
+        <Button variant="ghost" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button variant="secondary" onClick={handleExport}>
+          <Download size={16} />
+          {exportFormat}
+        </Button>
+        <Button variant="primary" onClick={handlePrint}>
+          <Printer size={16} />
+          Imprimer {quantity > 1 ? '(' + quantity + ')' : ''}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 };
 

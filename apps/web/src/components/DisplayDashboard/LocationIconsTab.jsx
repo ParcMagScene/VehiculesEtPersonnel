@@ -6,7 +6,15 @@
 import { Film, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 
-import { Button, SectionHeader, Select, Tooltip } from '@/design-system';
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  SectionHeader,
+  Select,
+  Tooltip,
+} from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
@@ -259,40 +267,36 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
       </div>
 
       {/* Overlay mosaïque de sélection d'icône */}
-      {showMosaic !== null && (
-        <div className="dtv-mosaic-overlay" onClick={() => setShowMosaic(null)}>
-          <div className="dtv-mosaic-container" onClick={(e) => e.stopPropagation()}>
-            <h3>Choisir une icône</h3>
-            {gifs.length === 0 ? (
-              <p className="dtv-hint">
-                Aucune icône disponible. Importez des fichiers GIF d'abord.
-              </p>
-            ) : (
-              <div className="dtv-mosaic-grid">
-                {gifs.map((gif) => (
-                  <div
-                    key={gif}
-                    className="dtv-mosaic-item"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleSelectIcon(gif)}
-                  >
-                    <img src={gifUrl(gif)} alt={gif} />
-                  </div>
-                ))}
-              </div>
-            )}
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowMosaic(null)}
-              style={{ marginTop: 12, width: '100%' }}
-            >
-              <X size={14} /> Annuler
-            </Button>
-          </div>
-        </div>
-      )}
+      <Modal open={showMosaic !== null} onClose={() => setShowMosaic(null)} size="md">
+        <ModalHeader onClose={() => setShowMosaic(null)}>Choisir une icône</ModalHeader>
+        <ModalBody>
+          {gifs.length === 0 ? (
+            <p className="dtv-hint">Aucune icône disponible. Importez des fichiers GIF d'abord.</p>
+          ) : (
+            <div className="dtv-mosaic-grid">
+              {gifs.map((gif) => (
+                <div
+                  key={gif}
+                  className="dtv-mosaic-item"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleSelectIcon(gif)}
+                >
+                  <img src={gifUrl(gif)} alt={gif} />
+                </div>
+              ))}
+            </div>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowMosaic(null)}
+            style={{ marginTop: 12, width: '100%' }}
+          >
+            <X size={14} /> Annuler
+          </Button>
+        </ModalBody>
+      </Modal>
       {ConfirmDialogRenderer}
     </div>
   );

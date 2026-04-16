@@ -19,7 +19,6 @@ import {
   Truck,
   Upload,
   UserCircle2,
-  X,
 } from 'lucide-react';
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 
@@ -42,7 +41,7 @@ import UserManagement from './UserManagement';
 const PersonnelPanel = React.lazy(() => import('../personnel/PersonnelPanel'));
 import './ManagementPanel.css';
 
-import { Button, Input, Select } from '@/design-system';
+import { Button, Input, Modal, ModalBody, ModalHeader, Select } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -781,22 +780,9 @@ const ManagementPanel = ({
   // Si gestion personnel, déléguer entièrement à PersonnelPanel
   if (panelType === 'management' && activeModule === 'personnel') {
     return (
-      <div
-        className="management-overlay"
-        onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-      >
-        <div
-          className="management-panel"
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="management-header">
-            <h2>{panelTitle}</h2>
-            <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer">
-              <X size={24} />
-            </Button>
-          </div>
+      <Modal open={true} onClose={onClose} size="xl" className="management-panel">
+        <ModalHeader onClose={onClose}>{panelTitle}</ModalHeader>
+        <ModalBody>
           <Suspense
             fallback={
               <div className="u-text-center" style={{ padding: '2rem' }}>
@@ -805,834 +791,532 @@ const ManagementPanel = ({
             }
           >
             <PersonnelPanel currentUser={currentUser} mode="management" />
-          </Suspense>{' '}
-        </div>
-      </div>
+          </Suspense>
+        </ModalBody>
+      </Modal>
     );
   }
 
   return (
-    <div
-      className={`management-overlay${panelType === 'settings' ? ' management-overlay--modal' : ''}`}
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    <Modal
+      open={true}
+      onClose={onClose}
+      size={panelType === 'settings' ? 'lg' : 'xl'}
+      className={`management-panel${panelType === 'settings' ? ' management-panel--modal' : ''}`}
     >
-      <div
-        className={`management-panel${panelType === 'settings' ? ' management-panel--modal' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="management-header">
-          <h2>{panelTitle}</h2>
-          <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer">
-            <X size={24} />
-          </Button>
+      <ModalHeader onClose={onClose}>{panelTitle}</ModalHeader>
+      <ModalBody className={panelType === 'settings' ? 'settings-body' : 'panel-body'}>
+        <div className="management-tabs">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <Button
+                variant="ghost"
+                key={tab.id}
+                className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+                style={{ '--tab-color': tab.color }}
+              >
+                <div
+                  className="tab-icon"
+                  style={{ backgroundColor: activeTab === tab.id ? tab.color : 'transparent' }}
+                >
+                  <Icon size={20} style={{ color: activeTab === tab.id ? 'white' : tab.color }} />
+                </div>
+                <span className="tab-label">{tab.label}</span>
+                {tab.id === 'users' && pendingAccessCount > 0 && (
+                  <span className="tab-badge">{pendingAccessCount}</span>
+                )}
+              </Button>
+            );
+          })}
         </div>
 
-        {/* Tabs + Content — wrapped in settings-body for sidebar layout in settings mode */}
-        <div className={panelType === 'settings' ? 'settings-body' : 'panel-body'}>
-          <div className="management-tabs">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <Button
-                  variant="ghost"
-                  key={tab.id}
-                  className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
-                  style={{ '--tab-color': tab.color }}
-                >
-                  <div
-                    className="tab-icon"
-                    style={{ backgroundColor: activeTab === tab.id ? tab.color : 'transparent' }}
-                  >
-                    <Icon size={20} style={{ color: activeTab === tab.id ? 'white' : tab.color }} />
-                  </div>
-                  <span className="tab-label">{tab.label}</span>
-                  {tab.id === 'users' && pendingAccessCount > 0 && (
-                    <span className="tab-badge">{pendingAccessCount}</span>
-                  )}
-                </Button>
-              );
-            })}
-          </div>
-
-          <div className="management-content">
-            {/* Formulaire d'ajout */}
-            {activeTab !== 'sync' &&
-              activeTab !== 'account' &&
-              activeTab !== 'users' &&
-              activeTab !== 'google-config' &&
-              activeTab !== 'mobile' &&
-              activeTab !== 'requests' &&
-              activeTab !== 'depot-map' && (
-                <div className="add-section">
-                  <div className="add-section-header">
-                    <h3>
-                      Ajouter{' '}
-                      {activeTab === 'vehicles'
-                        ? 'un véhicule'
-                        : activeTab === 'clients'
-                          ? 'un client'
-                          : activeTab === 'drivers'
-                            ? 'un conducteur'
-                            : 'un lieu'}
-                    </h3>
-                    <div className="u-flex-center u-gap-1">
-                      {activeTab === 'locations' && (
-                        <Button
-                          variant="ghost"
-                          onClick={() => setShowMapPanel(true)}
-                          title="Voir sur la carte"
-                        >
-                          <Map size={20} />
-                        </Button>
-                      )}
+        <div className="management-content">
+          {/* Formulaire d'ajout */}
+          {activeTab !== 'sync' &&
+            activeTab !== 'account' &&
+            activeTab !== 'users' &&
+            activeTab !== 'google-config' &&
+            activeTab !== 'mobile' &&
+            activeTab !== 'requests' &&
+            activeTab !== 'depot-map' && (
+              <div className="add-section">
+                <div className="add-section-header">
+                  <h3>
+                    Ajouter{' '}
+                    {activeTab === 'vehicles'
+                      ? 'un véhicule'
+                      : activeTab === 'clients'
+                        ? 'un client'
+                        : activeTab === 'drivers'
+                          ? 'un conducteur'
+                          : 'un lieu'}
+                  </h3>
+                  <div className="u-flex-center u-gap-1">
+                    {activeTab === 'locations' && (
                       <Button
                         variant="ghost"
-                        className="toggle-add-form-btn"
-                        onClick={() => {
-                          if (activeTab === 'locations') {
-                            handleAddLocation();
-                          } else if (activeTab === 'clients') {
-                            setClientToEdit(null);
-                            setShowClientDialog(true);
-                          } else {
-                            setShowAddForm(!showAddForm);
-                          }
-                        }}
-                        title={
-                          activeTab === 'locations'
-                            ? 'Ajouter un lieu'
-                            : activeTab === 'clients'
-                              ? 'Ajouter un client'
-                              : showAddForm
-                                ? 'Masquer le formulaire'
-                                : 'Afficher le formulaire'
-                        }
+                        onClick={() => setShowMapPanel(true)}
+                        title="Voir sur la carte"
                       >
-                        {activeTab === 'locations' || activeTab === 'clients' ? (
-                          <Plus size={20} />
-                        ) : showAddForm ? (
-                          <ChevronUp size={20} />
-                        ) : (
-                          <ChevronDown size={20} />
-                        )}
+                        <Map size={20} />
                       </Button>
-                    </div>
-                  </div>
-                  {showAddForm && activeTab !== 'locations' && activeTab !== 'clients' && (
-                    <div className="add-form">
-                      <Input
-                        type="text"
-                        placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : 'lieu'}`}
-                        value={newItem.name}
-                        onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
-                        id={activeTab === 'locations' ? 'location-autocomplete-input' : undefined}
-                      />
-
-                      {activeTab === 'locations' && (
-                        <div className="location-details">
-                          <small className="help-text">
-                            Tapez une adresse et sélectionnez-la dans la liste pour obtenir les
-                            coordonnées GPS
-                          </small>
-                          {newItem.address && (
-                            <div className="location-info">
-                              <div>📍 {newItem.address}</div>
-                              {newItem.lat && newItem.lng && (
-                                <div className="coordinates">
-                                  Coordonnées: {newItem.lat.toFixed(6)}, {newItem.lng.toFixed(6)}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {activeTab === 'vehicles' && (
-                        <>
-                          <Input
-                            type="text"
-                            placeholder="Type (VL 20m3, Porteur...)"
-                            value={newItem.type}
-                            onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
-                          />
-                          <Input
-                            type="text"
-                            placeholder="Immatriculation"
-                            value={newItem.immatriculation}
-                            onChange={(e) =>
-                              setNewItem({ ...newItem, immatriculation: e.target.value })
-                            }
-                          />
-                          <Input
-                            type="text"
-                            placeholder="Marque"
-                            value={newItem.marque}
-                            onChange={(e) => setNewItem({ ...newItem, marque: e.target.value })}
-                          />
-                          <Input
-                            type="text"
-                            placeholder="Couleur véhicule"
-                            value={newItem.couleurVehicule}
-                            onChange={(e) =>
-                              setNewItem({ ...newItem, couleurVehicule: e.target.value })
-                            }
-                          />
-                          <div className="photo-select-wrapper">
-                            <Select
-                              value={newItem.photo}
-                              onChange={(e) => setNewItem({ ...newItem, photo: e.target.value })}
-                            >
-                              <option value="">Pas de photo</option>
-                              {availablePhotos.map((photo) => (
-                                <option key={photo} value={photo}>
-                                  {photo}
-                                </option>
-                              ))}
-                            </Select>
-                            <Button
-                              variant="ghost"
-                              type="button"
-                              className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                              onClick={refreshPhotoList}
-                              title="Rafraîchir la liste des photos"
-                            >
-                              <RefreshCw size={16} />
-                            </Button>
-                          </div>
-                          <div className="color-picker">
-                            <label>Couleur d'affichage:</label>
-                            <div className="color-options-grid">
-                              {colors.map((color) => (
-                                <Button
-                                  variant="ghost"
-                                  key={color}
-                                  className={`color-option ${newItem.color === color ? 'selected' : ''}`}
-                                  style={{ backgroundColor: color }}
-                                  onClick={() =>
-                                    setNewItem({ ...newItem, color, displayColor: color })
-                                  }
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      <Button variant="ghost" className="add-button" onClick={handleAdd}>
-                        <Plus size={20} />
-                        Ajouter
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-            {/* Configuration Google Calendar */}
-            {/* Import/Export (Admin uniquement) */}
-            {activeTab === 'sync' && currentUser?.isAdmin && (
-              <div className="sync-section">
-                <h3>📦 Import / Export des données</h3>
-                <div className="sync-info">
-                  <p>
-                    Sauvegardez ou restaurez toutes vos données (véhicules, réservations, clients,
-                    etc.)
-                  </p>
-                </div>
-
-                <div className="sync-form">
-                  <div className="import-export-buttons">
-                    <Button variant="ghost" className="export-button" onClick={handleExportData}>
-                      <Download size={20} />
-                      Exporter toutes les données
-                    </Button>
-
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      accept=".json"
-                      className="u-hidden"
-                      onChange={handleImportData}
-                    />
+                    )}
                     <Button
                       variant="ghost"
-                      className="import-button"
-                      onClick={() => fileInputRef.current?.click()}
+                      className="toggle-add-form-btn"
+                      onClick={() => {
+                        if (activeTab === 'locations') {
+                          handleAddLocation();
+                        } else if (activeTab === 'clients') {
+                          setClientToEdit(null);
+                          setShowClientDialog(true);
+                        } else {
+                          setShowAddForm(!showAddForm);
+                        }
+                      }}
+                      title={
+                        activeTab === 'locations'
+                          ? 'Ajouter un lieu'
+                          : activeTab === 'clients'
+                            ? 'Ajouter un client'
+                            : showAddForm
+                              ? 'Masquer le formulaire'
+                              : 'Afficher le formulaire'
+                      }
                     >
-                      <Upload size={20} />
-                      Importer des données
+                      {activeTab === 'locations' || activeTab === 'clients' ? (
+                        <Plus size={20} />
+                      ) : showAddForm ? (
+                        <ChevronUp size={20} />
+                      ) : (
+                        <ChevronDown size={20} />
+                      )}
                     </Button>
                   </div>
-
-                  {importStatus && (
-                    <div
-                      className={`sync-status ${importStatus.includes('✅') ? 'success' : 'error'}`}
-                    >
-                      {importStatus}
-                    </div>
-                  )}
-
-                  <div className="sync-tips">
-                    <h4>ℹ️ Utilisation :</h4>
-                    <ul>
-                      <li>
-                        <strong>Export :</strong> Télécharge un fichier JSON avec toutes vos données
-                      </li>
-                      <li>
-                        <strong>Import :</strong> Remplace toutes les données actuelles par celles
-                        du fichier
-                      </li>
-                      <li>
-                        <strong>⚠️ Attention :</strong> L'import écrase complètement les données
-                        existantes
-                      </li>
-                      <li>
-                        Utile pour transférer vos données entre différents navigateurs ou appareils
-                      </li>
-                    </ul>
-                  </div>
                 </div>
-              </div>
-            )}
+                {showAddForm && activeTab !== 'locations' && activeTab !== 'clients' && (
+                  <div className="add-form">
+                    <Input
+                      type="text"
+                      placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : 'lieu'}`}
+                      value={newItem.name}
+                      onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+                      id={activeTab === 'locations' ? 'location-autocomplete-input' : undefined}
+                    />
 
-            {/* Mon compte */}
-            {activeTab === 'account' && <ChangePassword currentUser={currentUser} />}
+                    {activeTab === 'locations' && (
+                      <div className="location-details">
+                        <small className="help-text">
+                          Tapez une adresse et sélectionnez-la dans la liste pour obtenir les
+                          coordonnées GPS
+                        </small>
+                        {newItem.address && (
+                          <div className="location-info">
+                            <div>📍 {newItem.address}</div>
+                            {newItem.lat && newItem.lng && (
+                              <div className="coordinates">
+                                Coordonnées: {newItem.lat.toFixed(6)}, {newItem.lng.toFixed(6)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-            {/* Gestion des utilisateurs (Admin uniquement) */}
-            {activeTab === 'users' && currentUser?.isAdmin && (
-              <UserManagement
-                onAccessRequestChange={() => {
-                  api
-                    .getPendingAccessRequestsCount()
-                    .then((data) => setPendingAccessCount(data.count || 0))
-                    .catch(() => {});
-                }}
-                onNavigateToPersonnel={(person) => {
-                  if (onNavigateToPersonnel) onNavigateToPersonnel(person);
-                }}
-              />
-            )}
+                    {activeTab === 'vehicles' && (
+                      <>
+                        <Input
+                          type="text"
+                          placeholder="Type (VL 20m3, Porteur...)"
+                          value={newItem.type}
+                          onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
+                        />
+                        <Input
+                          type="text"
+                          placeholder="Immatriculation"
+                          value={newItem.immatriculation}
+                          onChange={(e) =>
+                            setNewItem({ ...newItem, immatriculation: e.target.value })
+                          }
+                        />
+                        <Input
+                          type="text"
+                          placeholder="Marque"
+                          value={newItem.marque}
+                          onChange={(e) => setNewItem({ ...newItem, marque: e.target.value })}
+                        />
+                        <Input
+                          type="text"
+                          placeholder="Couleur véhicule"
+                          value={newItem.couleurVehicule}
+                          onChange={(e) =>
+                            setNewItem({ ...newItem, couleurVehicule: e.target.value })
+                          }
+                        />
+                        <div className="photo-select-wrapper">
+                          <Select
+                            value={newItem.photo}
+                            onChange={(e) => setNewItem({ ...newItem, photo: e.target.value })}
+                          >
+                            <option value="">Pas de photo</option>
+                            {availablePhotos.map((photo) => (
+                              <option key={photo} value={photo}>
+                                {photo}
+                              </option>
+                            ))}
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            type="button"
+                            className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                            onClick={refreshPhotoList}
+                            title="Rafraîchir la liste des photos"
+                          >
+                            <RefreshCw size={16} />
+                          </Button>
+                        </div>
+                        <div className="color-picker">
+                          <label>Couleur d'affichage:</label>
+                          <div className="color-options-grid">
+                            {colors.map((color) => (
+                              <Button
+                                variant="ghost"
+                                key={color}
+                                className={`color-option ${newItem.color === color ? 'selected' : ''}`}
+                                style={{ backgroundColor: color }}
+                                onClick={() =>
+                                  setNewItem({ ...newItem, color, displayColor: color })
+                                }
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    )}
 
-            {/* Configuration Google Calendar (Admin uniquement) */}
-            {activeTab === 'google-config' && currentUser?.isAdmin && <GoogleCalendarConfig />}
-
-            {/* Accès Mobile (Admin uniquement) */}
-            {activeTab === 'mobile' && currentUser?.isAdmin && <MobileAccess />}
-
-            {/* Plan du Dépôt (Admin uniquement) */}
-            {activeTab === 'depot-map' && currentUser?.isAdmin && (
-              <div className="depot-map-settings-wrapper" style={{ padding: '0 8px' }}>
-                {/* Sélecteur de dépôt */}
-                <div className="u-flex-center u-gap-2 u-mb-3">
-                  <Button
-                    variant="ghost"
-                    className="u-cursor-pointer"
-                    onClick={() => setActiveDepot(1)}
-                    style={{
-                      padding: '8px 18px',
-                      borderRadius: 8,
-                      border: activeDepot === 1 ? '2px solid #10b981' : '1px solid #334155',
-                      background:
-                        activeDepot === 1 ? 'rgba(16,185,129,0.15)' : 'rgba(30,41,59,0.5)',
-                      color: activeDepot === 1 ? STATUS_COLORS.success : 'var(--theme-text-muted)',
-                      fontWeight: activeDepot === 1 ? 600 : 400,
-                      fontSize: '0.9rem',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    Dépôt 1 — Événementiel
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="u-cursor-pointer"
-                    onClick={() => setActiveDepot(2)}
-                    style={{
-                      padding: '8px 18px',
-                      borderRadius: 8,
-                      border: activeDepot === 2 ? '2px solid #3b82f6' : '1px solid #334155',
-                      background:
-                        activeDepot === 2 ? 'rgba(59,130,246,0.15)' : 'rgba(30,41,59,0.5)',
-                      color: activeDepot === 2 ? STATUS_COLORS.info : 'var(--theme-text-muted)',
-                      fontWeight: activeDepot === 2 ? 600 : 400,
-                      fontSize: '0.9rem',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    Dépôt 2 — Structure
-                  </Button>
-                </div>
-                {depotZones ? (
-                  <DepotMap
-                    zones={depotZones}
-                    stats={locationStats}
-                    selectedZone={null}
-                    onZoneSelect={() => {}}
-                    onZoneFilter={() => {}}
-                  />
-                ) : (
-                  <div className="u-text-center u-text-muted" style={{ padding: 32 }}>
-                    Chargement du plan...
+                    <Button variant="ghost" className="add-button" onClick={handleAdd}>
+                      <Plus size={20} />
+                      Ajouter
+                    </Button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Demandes de réservation (Admin uniquement) */}
-            {activeTab === 'requests' && currentUser?.isAdmin && (
-              <ReservationRequestsPanel
-                onRequestProcessed={() => {
-                  // Recharger les réservations si besoin
-                  if (setReservations) {
-                    // Cette fonction sera appelée quand une demande est approuvée
-                    // pour rafraîchir la liste des réservations
-                  }
-                }}
-              />
-            )}
+          {/* Configuration Google Calendar */}
+          {/* Import/Export (Admin uniquement) */}
+          {activeTab === 'sync' && currentUser?.isAdmin && (
+            <div className="sync-section">
+              <h3>📦 Import / Export des données</h3>
+              <div className="sync-info">
+                <p>
+                  Sauvegardez ou restaurez toutes vos données (véhicules, réservations, clients,
+                  etc.)
+                </p>
+              </div>
 
-            {/* Liste des éléments */}
-            {activeTab !== 'sync' &&
-              activeTab !== 'account' &&
-              activeTab !== 'users' &&
-              activeTab !== 'google-config' &&
-              activeTab !== 'mobile' &&
-              activeTab !== 'requests' &&
-              activeTab !== 'depot-map' && (
-                <div className="items-section">
-                  {activeTab === 'vehicles' ? (
-                    <>
-                      {/* Véhicules entreprise */}
-                      <div className="vehicles-subsection">
-                        <h3>
-                          Véhicules entreprise ({vehicles.filter((v) => !v.isLocation).length})
-                        </h3>
-                        <div className="items-list">
-                          {vehicles
-                            .filter((v) => !v.isLocation)
-                            .map((item, index) => (
-                              <div
-                                key={item.id}
-                                className={`item-card ${draggedSection === 'company' && draggedIndex === index ? 'dragging' : ''}`}
-                                draggable={!editingItem}
-                                onDragStart={() => handleDragStart(index, 'company')}
-                                onDragOver={handleDragOver}
-                                onDrop={() => handleDrop(index, 'company')}
-                              >
-                                {editingItem?.id === item.id ? (
-                                  <div className="edit-form">
-                                    <Input
-                                      type="text"
-                                      value={editingItem.name}
-                                      onChange={(e) =>
-                                        setEditingItem({ ...editingItem, name: e.target.value })
-                                      }
-                                      onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                                      placeholder="Nom"
-                                    />
-                                    {activeTab === 'vehicles' && (
-                                      <>
-                                        <Input
-                                          type="text"
-                                          value={editingItem.type || ''}
-                                          onChange={(e) =>
-                                            setEditingItem({ ...editingItem, type: e.target.value })
-                                          }
-                                          placeholder="Type"
-                                        />
-                                        <Input
-                                          type="text"
-                                          value={
-                                            editingItem.immatriculation ||
-                                            editingItem.registration ||
-                                            ''
-                                          }
-                                          onChange={(e) =>
-                                            setEditingItem({
-                                              ...editingItem,
-                                              immatriculation: e.target.value,
-                                              registration: e.target.value,
-                                            })
-                                          }
-                                          placeholder="Immatriculation"
-                                        />
-                                        <Input
-                                          type="text"
-                                          value={editingItem.marque || editingItem.brand || ''}
-                                          onChange={(e) =>
-                                            setEditingItem({
-                                              ...editingItem,
-                                              marque: e.target.value,
-                                              brand: e.target.value,
-                                            })
-                                          }
-                                          placeholder="Marque"
-                                        />
-                                        <Input
-                                          type="text"
-                                          value={
-                                            editingItem.couleurVehicule || editingItem.color || ''
-                                          }
-                                          onChange={(e) =>
-                                            setEditingItem({
-                                              ...editingItem,
-                                              couleurVehicule: e.target.value,
-                                              color: e.target.value,
-                                            })
-                                          }
-                                          placeholder="Couleur véhicule"
-                                        />
-                                        <div className="photo-select-wrapper">
-                                          <Select
-                                            value={editingItem.photo || ''}
-                                            onChange={(e) =>
-                                              setEditingItem({
-                                                ...editingItem,
-                                                photo: e.target.value,
-                                              })
-                                            }
-                                          >
-                                            <option value="">Pas de photo</option>
-                                            {availablePhotos.map((photo) => (
-                                              <option key={photo} value={photo}>
-                                                {photo}
-                                              </option>
-                                            ))}
-                                          </Select>
-                                          <Button
-                                            variant="ghost"
-                                            type="button"
-                                            className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                                            onClick={refreshPhotoList}
-                                            title="Rafraîchir la liste des photos"
-                                          >
-                                            <RefreshCw size={16} />
-                                          </Button>
-                                        </div>
-                                        <div className="color-picker-inline">
-                                          <label>Couleur d'affichage:</label>
-                                          <div className="color-options-grid">
-                                            {colors.map((color) => (
-                                              <Button
-                                                variant="ghost"
-                                                key={color}
-                                                className={`color-option ${(editingItem.displayColor || editingItem.color) === color ? 'selected' : ''}`}
-                                                style={{ backgroundColor: color }}
-                                                onClick={() =>
-                                                  setEditingItem({
-                                                    ...editingItem,
-                                                    color,
-                                                    displayColor: color,
-                                                  })
-                                                }
-                                              />
-                                            ))}
-                                          </div>
-                                        </div>
-                                      </>
-                                    )}
-                                    <div className="edit-actions">
-                                      <Button variant="primary" onClick={handleSaveEdit}>
-                                        Enregistrer
-                                      </Button>
-                                      <Button variant="ghost" onClick={() => setEditingItem(null)}>
-                                        Annuler
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <>
-                                    <div className="item-info">
-                                      {activeTab === 'vehicles' && (
-                                        <div
-                                          className="item-color"
-                                          style={{
-                                            backgroundColor:
-                                              item.displayColor || item.color || STATUS_COLORS.info,
-                                          }}
-                                        />
-                                      )}
-                                      {activeTab === 'vehicles' && (
-                                        <div className="item-photo">
-                                          {item.photo ? (
-                                            <img
-                                              src={`/Photos/${item.photo}`}
-                                              alt={item.name}
-                                              loading="lazy"
-                                            />
-                                          ) : (
-                                            <img
-                                              src={getVehicleAvatar(item.type)}
-                                              alt={item.name}
-                                              className="vehicle-avatar"
-                                              loading="lazy"
-                                            />
-                                          )}
-                                          {hasExpiredTechnicalControl(item, maintenances) && (
-                                            <div
-                                              className="expired-control-badge"
-                                              title={`Contrôle technique expiré: ${getExpiredTechnicalControls(
-                                                item,
-                                                maintenances,
-                                              )
-                                                .map((c) => `${c.type} (${c.daysExpired}j)`)
-                                                .join(', ')}`}
-                                            >
-                                              🚫
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-                                      <div>
-                                        <div className="item-name">{item.name}</div>
-                                        {activeTab === 'vehicles' && (
-                                          <>
-                                            <div className="item-type">{item.type}</div>
-                                            <div className="item-registration">
-                                              📋 {item.immatriculation || item.registration || ''}
-                                            </div>
-                                            <div className="item-brand">
-                                              🚗 {item.marque || item.brand || ''}{' '}
-                                              {item.couleurVehicule || item.model || ''}
-                                            </div>
-                                          </>
-                                        )}
-                                        {activeTab === 'clients' && (
-                                          <>
-                                            {item.email && (
-                                              <div className="item-detail">@ {item.email}</div>
-                                            )}
-                                            {item.phone && (
-                                              <div className="item-detail">
-                                                📞 {formatPhoneDisplay(item.phone)}
-                                              </div>
-                                            )}
-                                            {item.address && (
-                                              <div className="item-detail">📍 {item.address}</div>
-                                            )}
-                                            {item.lat && item.lng && (
-                                              <div className="item-detail coordinates-detail">
-                                                🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
-                                                <a
-                                                  href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="map-link"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                >
-                                                  Voir sur Google Maps
-                                                </a>
-                                              </div>
-                                            )}
-                                          </>
-                                        )}
-                                        {activeTab === 'locations' && (
-                                          <>
-                                            {item.address && (
-                                              <div className="item-detail">📍 {item.address}</div>
-                                            )}
-                                            {item.lat && item.lng && (
-                                              <div className="item-detail coordinates-detail">
-                                                🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
-                                                <a
-                                                  href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="map-link"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                >
-                                                  Voir sur Google Maps
-                                                </a>
-                                              </div>
-                                            )}
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="item-actions">
-                                      <div className="drag-handle" title="Glisser pour réorganiser">
-                                        <GripVertical size={20} />
-                                      </div>
-                                      <Button
-                                        variant="ghost"
-                                        className="maintenance-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleOpenMaintenance(item);
-                                        }}
-                                        title="Maintenance et contrôle technique"
-                                      >
-                                        <Gauge size={16} />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        className="edit-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEdit(item);
-                                        }}
-                                      >
-                                        <Edit2 size={16} />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        className="delete-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDelete(item.id);
-                                        }}
-                                      >
-                                        <Trash2 size={16} />
-                                      </Button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))}
+              <div className="sync-form">
+                <div className="import-export-buttons">
+                  <Button variant="ghost" className="export-button" onClick={handleExportData}>
+                    <Download size={20} />
+                    Exporter toutes les données
+                  </Button>
 
-                          {vehicles.filter((v) => !v.isLocation).length === 0 && (
-                            <div className="empty-state">
-                              <p>Aucun véhicule entreprise</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".json"
+                    className="u-hidden"
+                    onChange={handleImportData}
+                  />
+                  <Button
+                    variant="ghost"
+                    className="import-button"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload size={20} />
+                    Importer des données
+                  </Button>
+                </div>
 
-                      {/* Véhicules de location */}
-                      <div className="vehicles-subsection">
-                        <h3>
-                          Véhicules de location ({vehicles.filter((v) => v.isLocation).length})
-                        </h3>
-                        <div className="items-list">
-                          {vehicles
-                            .filter((v) => v.isLocation)
-                            .map((item, index) => (
-                              <div
-                                key={item.id}
-                                className={`item-card ${draggedSection === 'location' && draggedIndex === index ? 'dragging' : ''}`}
-                                draggable={!editingItem}
-                                onDragStart={() => handleDragStart(index, 'location')}
-                                onDragOver={handleDragOver}
-                                onDrop={() => handleDrop(index, 'location')}
-                              >
-                                {editingItem?.id === item.id ? (
-                                  <div className="edit-form">
-                                    {/* Contenu d'édition identique */}
-                                    <Input
-                                      type="text"
-                                      value={editingItem.name}
-                                      onChange={(e) =>
-                                        setEditingItem({ ...editingItem, name: e.target.value })
-                                      }
-                                      onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                                      placeholder="Nom"
-                                    />
-                                    <Input
-                                      type="text"
-                                      value={editingItem.type || ''}
-                                      onChange={(e) =>
-                                        setEditingItem({ ...editingItem, type: e.target.value })
-                                      }
-                                      placeholder="Type"
-                                    />
-                                    <Input
-                                      type="text"
-                                      value={
-                                        editingItem.immatriculation ||
-                                        editingItem.registration ||
-                                        ''
-                                      }
-                                      onChange={(e) =>
-                                        setEditingItem({
-                                          ...editingItem,
-                                          immatriculation: e.target.value,
-                                          registration: e.target.value,
-                                        })
-                                      }
-                                      placeholder="Immatriculation"
-                                    />
-                                    <Input
-                                      type="text"
-                                      value={editingItem.marque || editingItem.brand || ''}
-                                      onChange={(e) =>
-                                        setEditingItem({
-                                          ...editingItem,
-                                          marque: e.target.value,
-                                          brand: e.target.value,
-                                        })
-                                      }
-                                      placeholder="Marque"
-                                    />
-                                    <Input
-                                      type="text"
-                                      value={editingItem.couleurVehicule || editingItem.color || ''}
-                                      onChange={(e) =>
-                                        setEditingItem({
-                                          ...editingItem,
-                                          couleurVehicule: e.target.value,
-                                          color: e.target.value,
-                                        })
-                                      }
-                                      placeholder="Couleur véhicule"
-                                    />
-                                    <div className="photo-select-wrapper">
-                                      <Select
-                                        value={editingItem.photo || ''}
+                {importStatus && (
+                  <div
+                    className={`sync-status ${importStatus.includes('✅') ? 'success' : 'error'}`}
+                  >
+                    {importStatus}
+                  </div>
+                )}
+
+                <div className="sync-tips">
+                  <h4>ℹ️ Utilisation :</h4>
+                  <ul>
+                    <li>
+                      <strong>Export :</strong> Télécharge un fichier JSON avec toutes vos données
+                    </li>
+                    <li>
+                      <strong>Import :</strong> Remplace toutes les données actuelles par celles du
+                      fichier
+                    </li>
+                    <li>
+                      <strong>⚠️ Attention :</strong> L'import écrase complètement les données
+                      existantes
+                    </li>
+                    <li>
+                      Utile pour transférer vos données entre différents navigateurs ou appareils
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mon compte */}
+          {activeTab === 'account' && <ChangePassword currentUser={currentUser} />}
+
+          {/* Gestion des utilisateurs (Admin uniquement) */}
+          {activeTab === 'users' && currentUser?.isAdmin && (
+            <UserManagement
+              onAccessRequestChange={() => {
+                api
+                  .getPendingAccessRequestsCount()
+                  .then((data) => setPendingAccessCount(data.count || 0))
+                  .catch(() => {});
+              }}
+              onNavigateToPersonnel={(person) => {
+                if (onNavigateToPersonnel) onNavigateToPersonnel(person);
+              }}
+            />
+          )}
+
+          {/* Configuration Google Calendar (Admin uniquement) */}
+          {activeTab === 'google-config' && currentUser?.isAdmin && <GoogleCalendarConfig />}
+
+          {/* Accès Mobile (Admin uniquement) */}
+          {activeTab === 'mobile' && currentUser?.isAdmin && <MobileAccess />}
+
+          {/* Plan du Dépôt (Admin uniquement) */}
+          {activeTab === 'depot-map' && currentUser?.isAdmin && (
+            <div className="depot-map-settings-wrapper" style={{ padding: '0 8px' }}>
+              {/* Sélecteur de dépôt */}
+              <div className="u-flex-center u-gap-2 u-mb-3">
+                <Button
+                  variant="ghost"
+                  className="u-cursor-pointer"
+                  onClick={() => setActiveDepot(1)}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 8,
+                    border: activeDepot === 1 ? '2px solid #10b981' : '1px solid #334155',
+                    background: activeDepot === 1 ? 'rgba(16,185,129,0.15)' : 'rgba(30,41,59,0.5)',
+                    color: activeDepot === 1 ? STATUS_COLORS.success : 'var(--theme-text-muted)',
+                    fontWeight: activeDepot === 1 ? 600 : 400,
+                    fontSize: '0.9rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  Dépôt 1 — Événementiel
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="u-cursor-pointer"
+                  onClick={() => setActiveDepot(2)}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 8,
+                    border: activeDepot === 2 ? '2px solid #3b82f6' : '1px solid #334155',
+                    background: activeDepot === 2 ? 'rgba(59,130,246,0.15)' : 'rgba(30,41,59,0.5)',
+                    color: activeDepot === 2 ? STATUS_COLORS.info : 'var(--theme-text-muted)',
+                    fontWeight: activeDepot === 2 ? 600 : 400,
+                    fontSize: '0.9rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  Dépôt 2 — Structure
+                </Button>
+              </div>
+              {depotZones ? (
+                <DepotMap
+                  zones={depotZones}
+                  stats={locationStats}
+                  selectedZone={null}
+                  onZoneSelect={() => {}}
+                  onZoneFilter={() => {}}
+                />
+              ) : (
+                <div className="u-text-center u-text-muted" style={{ padding: 32 }}>
+                  Chargement du plan...
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Demandes de réservation (Admin uniquement) */}
+          {activeTab === 'requests' && currentUser?.isAdmin && (
+            <ReservationRequestsPanel
+              onRequestProcessed={() => {
+                // Recharger les réservations si besoin
+                if (setReservations) {
+                  // Cette fonction sera appelée quand une demande est approuvée
+                  // pour rafraîchir la liste des réservations
+                }
+              }}
+            />
+          )}
+
+          {/* Liste des éléments */}
+          {activeTab !== 'sync' &&
+            activeTab !== 'account' &&
+            activeTab !== 'users' &&
+            activeTab !== 'google-config' &&
+            activeTab !== 'mobile' &&
+            activeTab !== 'requests' &&
+            activeTab !== 'depot-map' && (
+              <div className="items-section">
+                {activeTab === 'vehicles' ? (
+                  <>
+                    {/* Véhicules entreprise */}
+                    <div className="vehicles-subsection">
+                      <h3>Véhicules entreprise ({vehicles.filter((v) => !v.isLocation).length})</h3>
+                      <div className="items-list">
+                        {vehicles
+                          .filter((v) => !v.isLocation)
+                          .map((item, index) => (
+                            <div
+                              key={item.id}
+                              className={`item-card ${draggedSection === 'company' && draggedIndex === index ? 'dragging' : ''}`}
+                              draggable={!editingItem}
+                              onDragStart={() => handleDragStart(index, 'company')}
+                              onDragOver={handleDragOver}
+                              onDrop={() => handleDrop(index, 'company')}
+                            >
+                              {editingItem?.id === item.id ? (
+                                <div className="edit-form">
+                                  <Input
+                                    type="text"
+                                    value={editingItem.name}
+                                    onChange={(e) =>
+                                      setEditingItem({ ...editingItem, name: e.target.value })
+                                    }
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                                    placeholder="Nom"
+                                  />
+                                  {activeTab === 'vehicles' && (
+                                    <>
+                                      <Input
+                                        type="text"
+                                        value={editingItem.type || ''}
                                         onChange={(e) =>
-                                          setEditingItem({ ...editingItem, photo: e.target.value })
+                                          setEditingItem({ ...editingItem, type: e.target.value })
                                         }
-                                      >
-                                        <option value="">Pas de photo</option>
-                                        {availablePhotos.map((photo) => (
-                                          <option key={photo} value={photo}>
-                                            {photo}
-                                          </option>
-                                        ))}
-                                      </Select>
-                                      <Button
-                                        variant="ghost"
-                                        type="button"
-                                        className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                                        onClick={refreshPhotoList}
-                                        title="Rafraîchir la liste des photos"
-                                      >
-                                        <RefreshCw size={16} />
-                                      </Button>
-                                    </div>
-                                    <div className="color-picker-inline">
-                                      <label>Couleur d'affichage:</label>
-                                      <div className="color-options-grid">
-                                        {colors.map((color) => (
-                                          <Button
-                                            variant="ghost"
-                                            key={color}
-                                            className={`color-option ${(editingItem.displayColor || editingItem.color) === color ? 'selected' : ''}`}
-                                            style={{ backgroundColor: color }}
-                                            onClick={() =>
-                                              setEditingItem({
-                                                ...editingItem,
-                                                color,
-                                                displayColor: color,
-                                              })
-                                            }
-                                          />
-                                        ))}
+                                        placeholder="Type"
+                                      />
+                                      <Input
+                                        type="text"
+                                        value={
+                                          editingItem.immatriculation ||
+                                          editingItem.registration ||
+                                          ''
+                                        }
+                                        onChange={(e) =>
+                                          setEditingItem({
+                                            ...editingItem,
+                                            immatriculation: e.target.value,
+                                            registration: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Immatriculation"
+                                      />
+                                      <Input
+                                        type="text"
+                                        value={editingItem.marque || editingItem.brand || ''}
+                                        onChange={(e) =>
+                                          setEditingItem({
+                                            ...editingItem,
+                                            marque: e.target.value,
+                                            brand: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Marque"
+                                      />
+                                      <Input
+                                        type="text"
+                                        value={
+                                          editingItem.couleurVehicule || editingItem.color || ''
+                                        }
+                                        onChange={(e) =>
+                                          setEditingItem({
+                                            ...editingItem,
+                                            couleurVehicule: e.target.value,
+                                            color: e.target.value,
+                                          })
+                                        }
+                                        placeholder="Couleur véhicule"
+                                      />
+                                      <div className="photo-select-wrapper">
+                                        <Select
+                                          value={editingItem.photo || ''}
+                                          onChange={(e) =>
+                                            setEditingItem({
+                                              ...editingItem,
+                                              photo: e.target.value,
+                                            })
+                                          }
+                                        >
+                                          <option value="">Pas de photo</option>
+                                          {availablePhotos.map((photo) => (
+                                            <option key={photo} value={photo}>
+                                              {photo}
+                                            </option>
+                                          ))}
+                                        </Select>
+                                        <Button
+                                          variant="ghost"
+                                          type="button"
+                                          className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                                          onClick={refreshPhotoList}
+                                          title="Rafraîchir la liste des photos"
+                                        >
+                                          <RefreshCw size={16} />
+                                        </Button>
                                       </div>
-                                    </div>
-                                    <div className="edit-actions">
-                                      <Button variant="primary" onClick={handleSaveEdit}>
-                                        Enregistrer
-                                      </Button>
-                                      <Button variant="ghost" onClick={() => setEditingItem(null)}>
-                                        Annuler
-                                      </Button>
-                                    </div>
+                                      <div className="color-picker-inline">
+                                        <label>Couleur d'affichage:</label>
+                                        <div className="color-options-grid">
+                                          {colors.map((color) => (
+                                            <Button
+                                              variant="ghost"
+                                              key={color}
+                                              className={`color-option ${(editingItem.displayColor || editingItem.color) === color ? 'selected' : ''}`}
+                                              style={{ backgroundColor: color }}
+                                              onClick={() =>
+                                                setEditingItem({
+                                                  ...editingItem,
+                                                  color,
+                                                  displayColor: color,
+                                                })
+                                              }
+                                            />
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+                                  <div className="edit-actions">
+                                    <Button variant="primary" onClick={handleSaveEdit}>
+                                      Enregistrer
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setEditingItem(null)}>
+                                      Annuler
+                                    </Button>
                                   </div>
-                                ) : (
-                                  <>
-                                    <div className="item-info">
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="item-info">
+                                    {activeTab === 'vehicles' && (
                                       <div
                                         className="item-color"
                                         style={{
@@ -1640,6 +1324,8 @@ const ManagementPanel = ({
                                             item.displayColor || item.color || STATUS_COLORS.info,
                                         }}
                                       />
+                                    )}
+                                    {activeTab === 'vehicles' && (
                                       <div className="item-photo">
                                         {item.photo ? (
                                           <img
@@ -1655,299 +1341,576 @@ const ManagementPanel = ({
                                             loading="lazy"
                                           />
                                         )}
-                                      </div>
-                                      <div>
-                                        <div className="item-name">{item.name}</div>
-                                        <div className="item-type">{item.type}</div>
-                                        <div className="item-registration">
-                                          📋 {item.immatriculation || item.registration || ''}
-                                        </div>
-                                        <div className="item-brand">
-                                          🚗 {item.marque || item.brand || ''}{' '}
-                                          {item.couleurVehicule || item.model || ''}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="item-actions">
-                                      <div className="drag-handle" title="Glisser pour réorganiser">
-                                        <GripVertical size={20} />
-                                      </div>
-                                      <Button
-                                        variant="ghost"
-                                        className="maintenance-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleOpenMaintenance(item);
-                                        }}
-                                        title="Maintenance et contrôle technique"
-                                      >
-                                        <Gauge size={16} />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        className="edit-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEdit(item);
-                                        }}
-                                      >
-                                        <Edit2 size={16} />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        className="delete-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDelete(item.id);
-                                        }}
-                                      >
-                                        <Trash2 size={16} />
-                                      </Button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))}
-
-                          {vehicles.filter((v) => v.isLocation).length === 0 && (
-                            <div className="empty-state">
-                              <p>Aucun véhicule de location</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h3>Liste ({getCurrentList().length})</h3>
-                      <div className="items-list">
-                        {activeTab === 'locations'
-                          ? // Grouper les lieux par type
-                            (() => {
-                              const allLocations = getCurrentList();
-                              const locationTypes = [
-                                'Salle de spectacle',
-                                'Prestataire',
-                                'Dépôt',
-                                'Garage',
-                                'Autre',
-                              ];
-                              const groupedLocations = {};
-                              locationTypes.forEach((type) => {
-                                groupedLocations[type] = allLocations.filter(
-                                  (loc) => loc.type === type,
-                                );
-                              });
-                              // Ajouter les lieux sans type ou avec type inconnu dans "Autre"
-                              const untyped = allLocations.filter(
-                                (loc) => !loc.type || !locationTypes.includes(loc.type),
-                              );
-                              if (untyped.length > 0) {
-                                groupedLocations['Autre'] = [
-                                  ...(groupedLocations['Autre'] || []),
-                                  ...untyped,
-                                ];
-                              }
-
-                              return locationTypes.map((type) => {
-                                const typeLocations = groupedLocations[type] || [];
-                                if (typeLocations.length === 0) return null;
-
-                                return (
-                                  <div key={type} className="locations-group">
-                                    <h4 className="group-title">
-                                      {type} ({typeLocations.length})
-                                    </h4>
-                                    {typeLocations.map((item, _index) => (
-                                      <div key={item.id} className="item-card">
-                                        {editingItem?.id === item.id ? (
-                                          <div className="edit-form">
-                                            <Input
-                                              type="text"
-                                              value={editingItem.name}
-                                              onChange={(e) =>
-                                                setEditingItem({
-                                                  ...editingItem,
-                                                  name: e.target.value,
-                                                })
-                                              }
-                                              onKeyPress={(e) =>
-                                                e.key === 'Enter' && handleSaveEdit()
-                                              }
-                                              placeholder="Nom"
-                                            />
-                                            <div className="edit-actions">
-                                              <Button variant="primary" onClick={handleSaveEdit}>
-                                                Enregistrer
-                                              </Button>
-                                              <Button
-                                                variant="ghost"
-                                                onClick={() => setEditingItem(null)}
-                                              >
-                                                Annuler
-                                              </Button>
-                                            </div>
+                                        {hasExpiredTechnicalControl(item, maintenances) && (
+                                          <div
+                                            className="expired-control-badge"
+                                            title={`Contrôle technique expiré: ${getExpiredTechnicalControls(
+                                              item,
+                                              maintenances,
+                                            )
+                                              .map((c) => `${c.type} (${c.daysExpired}j)`)
+                                              .join(', ')}`}
+                                          >
+                                            🚫
                                           </div>
-                                        ) : (
-                                          <>
-                                            <div className="item-content">
-                                              <div>
-                                                <div className="item-name">
-                                                  {item.name}
-                                                  {item.isCompanyLocation && (
-                                                    <span
-                                                      className="u-font-xs u-font-semibold u-rounded-sm"
-                                                      style={{
-                                                        marginLeft: '8px',
-                                                        padding: '2px 8px',
-                                                        background: 'var(--theme-gradient)',
-                                                        color: 'var(--theme-text-inverse)',
-                                                      }}
-                                                    >
-                                                      Lieu principal
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                {item.type && (
-                                                  <div className="item-detail">🏢 {item.type}</div>
-                                                )}
-                                                {item.address && (
-                                                  <div className="item-detail">
-                                                    📍 {item.address}
-                                                  </div>
-                                                )}
-                                              </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    <div>
+                                      <div className="item-name">{item.name}</div>
+                                      {activeTab === 'vehicles' && (
+                                        <>
+                                          <div className="item-type">{item.type}</div>
+                                          <div className="item-registration">
+                                            📋 {item.immatriculation || item.registration || ''}
+                                          </div>
+                                          <div className="item-brand">
+                                            🚗 {item.marque || item.brand || ''}{' '}
+                                            {item.couleurVehicule || item.model || ''}
+                                          </div>
+                                        </>
+                                      )}
+                                      {activeTab === 'clients' && (
+                                        <>
+                                          {item.email && (
+                                            <div className="item-detail">@ {item.email}</div>
+                                          )}
+                                          {item.phone && (
+                                            <div className="item-detail">
+                                              📞 {formatPhoneDisplay(item.phone)}
                                             </div>
-                                            <div className="item-actions">
-                                              <Button
-                                                variant="ghost"
-                                                className="edit-button"
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  handleEdit(item);
-                                                }}
+                                          )}
+                                          {item.address && (
+                                            <div className="item-detail">📍 {item.address}</div>
+                                          )}
+                                          {item.lat && item.lng && (
+                                            <div className="item-detail coordinates-detail">
+                                              🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
+                                              <a
+                                                href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="map-link"
+                                                onClick={(e) => e.stopPropagation()}
                                               >
-                                                <Edit2 size={16} />
-                                              </Button>
-                                              {!item.isCompanyLocation && (
-                                                <Button
-                                                  variant="ghost"
-                                                  className="delete-button"
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDelete(item.id);
-                                                  }}
-                                                >
-                                                  <Trash2 size={16} />
-                                                </Button>
-                                              )}
+                                                Voir sur Google Maps
+                                              </a>
                                             </div>
-                                          </>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                );
-                              });
-                            })()
-                          : // Affichage normal pour les autres onglets
-                            getCurrentList().map((item, _index) => (
-                              <div key={item.id} className="item-card">
-                                {editingItem?.id === item.id ? (
-                                  <div className="edit-form">
-                                    <Input
-                                      type="text"
-                                      value={editingItem.name}
-                                      onChange={(e) =>
-                                        setEditingItem({ ...editingItem, name: e.target.value })
-                                      }
-                                      onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                                      placeholder="Nom"
-                                    />
-                                    <div className="edit-actions">
-                                      <Button variant="primary" onClick={handleSaveEdit}>
-                                        Enregistrer
-                                      </Button>
-                                      <Button variant="ghost" onClick={() => setEditingItem(null)}>
-                                        Annuler
-                                      </Button>
+                                          )}
+                                        </>
+                                      )}
+                                      {activeTab === 'locations' && (
+                                        <>
+                                          {item.address && (
+                                            <div className="item-detail">📍 {item.address}</div>
+                                          )}
+                                          {item.lat && item.lng && (
+                                            <div className="item-detail coordinates-detail">
+                                              🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
+                                              <a
+                                                href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="map-link"
+                                                onClick={(e) => e.stopPropagation()}
+                                              >
+                                                Voir sur Google Maps
+                                              </a>
+                                            </div>
+                                          )}
+                                        </>
+                                      )}
                                     </div>
                                   </div>
-                                ) : (
-                                  <>
-                                    <div className="item-content">
-                                      <div>
-                                        <div className="item-name">{item.name}</div>
-                                        {activeTab === 'locations' && (
-                                          <>
-                                            {item.type && (
-                                              <div className="item-detail">🏢 {item.type}</div>
-                                            )}
-                                            {item.address && (
-                                              <div className="item-detail">📍 {item.address}</div>
-                                            )}
-                                            {item.lat && item.lng && (
-                                              <div className="item-detail coordinates-detail">
-                                                🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
-                                                <a
-                                                  href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="map-link"
-                                                  onClick={(e) => e.stopPropagation()}
-                                                >
-                                                  Voir sur Google Maps
-                                                </a>
-                                              </div>
-                                            )}
-                                          </>
-                                        )}
-                                      </div>
+                                  <div className="item-actions">
+                                    <div className="drag-handle" title="Glisser pour réorganiser">
+                                      <GripVertical size={20} />
                                     </div>
-                                    <div className="item-actions">
-                                      <Button
-                                        variant="ghost"
-                                        className="edit-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEdit(item);
-                                        }}
-                                      >
-                                        <Edit2 size={16} />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        className="delete-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDelete(item.id);
-                                        }}
-                                      >
-                                        <Trash2 size={16} />
-                                      </Button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            ))}
+                                    <Button
+                                      variant="ghost"
+                                      className="maintenance-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenMaintenance(item);
+                                      }}
+                                      title="Maintenance et contrôle technique"
+                                    >
+                                      <Gauge size={16} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="edit-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEdit(item);
+                                      }}
+                                    >
+                                      <Edit2 size={16} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="delete-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(item.id);
+                                      }}
+                                    >
+                                      <Trash2 size={16} />
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
 
-                        {getCurrentList().length === 0 && activeTab !== 'locations' && (
+                        {vehicles.filter((v) => !v.isLocation).length === 0 && (
                           <div className="empty-state">
-                            <p>Aucun élément pour le moment</p>
-                            <p className="empty-hint">
-                              Utilisez le formulaire ci-dessus pour en ajouter
-                            </p>
+                            <p>Aucun véhicule entreprise</p>
                           </div>
                         )}
                       </div>
-                    </>
-                  )}
-                </div>
-              )}
-          </div>
+                    </div>
+
+                    {/* Véhicules de location */}
+                    <div className="vehicles-subsection">
+                      <h3>Véhicules de location ({vehicles.filter((v) => v.isLocation).length})</h3>
+                      <div className="items-list">
+                        {vehicles
+                          .filter((v) => v.isLocation)
+                          .map((item, index) => (
+                            <div
+                              key={item.id}
+                              className={`item-card ${draggedSection === 'location' && draggedIndex === index ? 'dragging' : ''}`}
+                              draggable={!editingItem}
+                              onDragStart={() => handleDragStart(index, 'location')}
+                              onDragOver={handleDragOver}
+                              onDrop={() => handleDrop(index, 'location')}
+                            >
+                              {editingItem?.id === item.id ? (
+                                <div className="edit-form">
+                                  {/* Contenu d'édition identique */}
+                                  <Input
+                                    type="text"
+                                    value={editingItem.name}
+                                    onChange={(e) =>
+                                      setEditingItem({ ...editingItem, name: e.target.value })
+                                    }
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                                    placeholder="Nom"
+                                  />
+                                  <Input
+                                    type="text"
+                                    value={editingItem.type || ''}
+                                    onChange={(e) =>
+                                      setEditingItem({ ...editingItem, type: e.target.value })
+                                    }
+                                    placeholder="Type"
+                                  />
+                                  <Input
+                                    type="text"
+                                    value={
+                                      editingItem.immatriculation || editingItem.registration || ''
+                                    }
+                                    onChange={(e) =>
+                                      setEditingItem({
+                                        ...editingItem,
+                                        immatriculation: e.target.value,
+                                        registration: e.target.value,
+                                      })
+                                    }
+                                    placeholder="Immatriculation"
+                                  />
+                                  <Input
+                                    type="text"
+                                    value={editingItem.marque || editingItem.brand || ''}
+                                    onChange={(e) =>
+                                      setEditingItem({
+                                        ...editingItem,
+                                        marque: e.target.value,
+                                        brand: e.target.value,
+                                      })
+                                    }
+                                    placeholder="Marque"
+                                  />
+                                  <Input
+                                    type="text"
+                                    value={editingItem.couleurVehicule || editingItem.color || ''}
+                                    onChange={(e) =>
+                                      setEditingItem({
+                                        ...editingItem,
+                                        couleurVehicule: e.target.value,
+                                        color: e.target.value,
+                                      })
+                                    }
+                                    placeholder="Couleur véhicule"
+                                  />
+                                  <div className="photo-select-wrapper">
+                                    <Select
+                                      value={editingItem.photo || ''}
+                                      onChange={(e) =>
+                                        setEditingItem({ ...editingItem, photo: e.target.value })
+                                      }
+                                    >
+                                      <option value="">Pas de photo</option>
+                                      {availablePhotos.map((photo) => (
+                                        <option key={photo} value={photo}>
+                                          {photo}
+                                        </option>
+                                      ))}
+                                    </Select>
+                                    <Button
+                                      variant="ghost"
+                                      type="button"
+                                      className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                                      onClick={refreshPhotoList}
+                                      title="Rafraîchir la liste des photos"
+                                    >
+                                      <RefreshCw size={16} />
+                                    </Button>
+                                  </div>
+                                  <div className="color-picker-inline">
+                                    <label>Couleur d'affichage:</label>
+                                    <div className="color-options-grid">
+                                      {colors.map((color) => (
+                                        <Button
+                                          variant="ghost"
+                                          key={color}
+                                          className={`color-option ${(editingItem.displayColor || editingItem.color) === color ? 'selected' : ''}`}
+                                          style={{ backgroundColor: color }}
+                                          onClick={() =>
+                                            setEditingItem({
+                                              ...editingItem,
+                                              color,
+                                              displayColor: color,
+                                            })
+                                          }
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className="edit-actions">
+                                    <Button variant="primary" onClick={handleSaveEdit}>
+                                      Enregistrer
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setEditingItem(null)}>
+                                      Annuler
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="item-info">
+                                    <div
+                                      className="item-color"
+                                      style={{
+                                        backgroundColor:
+                                          item.displayColor || item.color || STATUS_COLORS.info,
+                                      }}
+                                    />
+                                    <div className="item-photo">
+                                      {item.photo ? (
+                                        <img
+                                          src={`/Photos/${item.photo}`}
+                                          alt={item.name}
+                                          loading="lazy"
+                                        />
+                                      ) : (
+                                        <img
+                                          src={getVehicleAvatar(item.type)}
+                                          alt={item.name}
+                                          className="vehicle-avatar"
+                                          loading="lazy"
+                                        />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <div className="item-name">{item.name}</div>
+                                      <div className="item-type">{item.type}</div>
+                                      <div className="item-registration">
+                                        📋 {item.immatriculation || item.registration || ''}
+                                      </div>
+                                      <div className="item-brand">
+                                        🚗 {item.marque || item.brand || ''}{' '}
+                                        {item.couleurVehicule || item.model || ''}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="item-actions">
+                                    <div className="drag-handle" title="Glisser pour réorganiser">
+                                      <GripVertical size={20} />
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      className="maintenance-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenMaintenance(item);
+                                      }}
+                                      title="Maintenance et contrôle technique"
+                                    >
+                                      <Gauge size={16} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="edit-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEdit(item);
+                                      }}
+                                    >
+                                      <Edit2 size={16} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="delete-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(item.id);
+                                      }}
+                                    >
+                                      <Trash2 size={16} />
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
+
+                        {vehicles.filter((v) => v.isLocation).length === 0 && (
+                          <div className="empty-state">
+                            <p>Aucun véhicule de location</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3>Liste ({getCurrentList().length})</h3>
+                    <div className="items-list">
+                      {activeTab === 'locations'
+                        ? // Grouper les lieux par type
+                          (() => {
+                            const allLocations = getCurrentList();
+                            const locationTypes = [
+                              'Salle de spectacle',
+                              'Prestataire',
+                              'Dépôt',
+                              'Garage',
+                              'Autre',
+                            ];
+                            const groupedLocations = {};
+                            locationTypes.forEach((type) => {
+                              groupedLocations[type] = allLocations.filter(
+                                (loc) => loc.type === type,
+                              );
+                            });
+                            // Ajouter les lieux sans type ou avec type inconnu dans "Autre"
+                            const untyped = allLocations.filter(
+                              (loc) => !loc.type || !locationTypes.includes(loc.type),
+                            );
+                            if (untyped.length > 0) {
+                              groupedLocations['Autre'] = [
+                                ...(groupedLocations['Autre'] || []),
+                                ...untyped,
+                              ];
+                            }
+
+                            return locationTypes.map((type) => {
+                              const typeLocations = groupedLocations[type] || [];
+                              if (typeLocations.length === 0) return null;
+
+                              return (
+                                <div key={type} className="locations-group">
+                                  <h4 className="group-title">
+                                    {type} ({typeLocations.length})
+                                  </h4>
+                                  {typeLocations.map((item, _index) => (
+                                    <div key={item.id} className="item-card">
+                                      {editingItem?.id === item.id ? (
+                                        <div className="edit-form">
+                                          <Input
+                                            type="text"
+                                            value={editingItem.name}
+                                            onChange={(e) =>
+                                              setEditingItem({
+                                                ...editingItem,
+                                                name: e.target.value,
+                                              })
+                                            }
+                                            onKeyPress={(e) =>
+                                              e.key === 'Enter' && handleSaveEdit()
+                                            }
+                                            placeholder="Nom"
+                                          />
+                                          <div className="edit-actions">
+                                            <Button variant="primary" onClick={handleSaveEdit}>
+                                              Enregistrer
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              onClick={() => setEditingItem(null)}
+                                            >
+                                              Annuler
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <div className="item-content">
+                                            <div>
+                                              <div className="item-name">
+                                                {item.name}
+                                                {item.isCompanyLocation && (
+                                                  <span
+                                                    className="u-font-xs u-font-semibold u-rounded-sm"
+                                                    style={{
+                                                      marginLeft: '8px',
+                                                      padding: '2px 8px',
+                                                      background: 'var(--theme-gradient)',
+                                                      color: 'var(--theme-text-inverse)',
+                                                    }}
+                                                  >
+                                                    Lieu principal
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {item.type && (
+                                                <div className="item-detail">🏢 {item.type}</div>
+                                              )}
+                                              {item.address && (
+                                                <div className="item-detail">📍 {item.address}</div>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="item-actions">
+                                            <Button
+                                              variant="ghost"
+                                              className="edit-button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEdit(item);
+                                              }}
+                                            >
+                                              <Edit2 size={16} />
+                                            </Button>
+                                            {!item.isCompanyLocation && (
+                                              <Button
+                                                variant="ghost"
+                                                className="delete-button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleDelete(item.id);
+                                                }}
+                                              >
+                                                <Trash2 size={16} />
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            });
+                          })()
+                        : // Affichage normal pour les autres onglets
+                          getCurrentList().map((item, _index) => (
+                            <div key={item.id} className="item-card">
+                              {editingItem?.id === item.id ? (
+                                <div className="edit-form">
+                                  <Input
+                                    type="text"
+                                    value={editingItem.name}
+                                    onChange={(e) =>
+                                      setEditingItem({ ...editingItem, name: e.target.value })
+                                    }
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                                    placeholder="Nom"
+                                  />
+                                  <div className="edit-actions">
+                                    <Button variant="primary" onClick={handleSaveEdit}>
+                                      Enregistrer
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setEditingItem(null)}>
+                                      Annuler
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="item-content">
+                                    <div>
+                                      <div className="item-name">{item.name}</div>
+                                      {activeTab === 'locations' && (
+                                        <>
+                                          {item.type && (
+                                            <div className="item-detail">🏢 {item.type}</div>
+                                          )}
+                                          {item.address && (
+                                            <div className="item-detail">📍 {item.address}</div>
+                                          )}
+                                          {item.lat && item.lng && (
+                                            <div className="item-detail coordinates-detail">
+                                              🗺️ {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
+                                              <a
+                                                href={`https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="map-link"
+                                                onClick={(e) => e.stopPropagation()}
+                                              >
+                                                Voir sur Google Maps
+                                              </a>
+                                            </div>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="item-actions">
+                                    <Button
+                                      variant="ghost"
+                                      className="edit-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEdit(item);
+                                      }}
+                                    >
+                                      <Edit2 size={16} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="delete-button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(item.id);
+                                      }}
+                                    >
+                                      <Trash2 size={16} />
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ))}
+
+                      {getCurrentList().length === 0 && activeTab !== 'locations' && (
+                        <div className="empty-state">
+                          <p>Aucun élément pour le moment</p>
+                          <p className="empty-hint">
+                            Utilisez le formulaire ci-dessus pour en ajouter
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
         </div>
-        {/* close settings-body wrapper */}
-      </div>
+      </ModalBody>
 
       {/* Dialog pour les lieux */}
       {showLocationDialog && (
@@ -2002,7 +1965,7 @@ const ManagementPanel = ({
       )}
 
       {ConfirmDialogRenderer}
-    </div>
+    </Modal>
   );
 };
 

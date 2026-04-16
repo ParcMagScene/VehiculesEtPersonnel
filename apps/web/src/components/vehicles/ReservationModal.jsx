@@ -2,7 +2,7 @@ import './ReservationModal.css';
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Link2, MapPin, Paperclip, Trash2, Unlink, X } from 'lucide-react';
+import { Link2, MapPin, Paperclip, Trash2, Unlink } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 
 import {
@@ -11,6 +11,10 @@ import {
   Dialog,
   FormField,
   Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   SectionHeader,
   Select,
   Textarea,
@@ -840,68 +844,53 @@ const ReservationModal = ({
     : '';
 
   return (
-    <div
-      className="reservation-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-    >
-      <div className="modal-content reservation-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-header-content">
-            <h2 id="modal-title">
-              {isReadOnly
-                ? '📋 Détails de la réservation'
-                : formData.prestationName ||
-                  (currentUser?.isAdmin ? 'Nouvelle réservation' : 'Nouvelle demande')}{' '}
-              {formData.isTournee && '🚐'}
-            </h2>
-            {(formData.date || formData.endDate) && (
-              <div className="reservation-header-subtitle">
-                {formData.date &&
-                  format(new Date(formData.date + 'T00:00:00'), 'dd MMMM yyyy', { locale: fr })}
-                {formData.endDate && formData.endDate !== formData.date && (
-                  <>
-                    {' '}
-                    →{' '}
-                    {format(new Date(formData.endDate + 'T00:00:00'), 'dd MMMM yyyy', {
-                      locale: fr,
-                    })}
-                  </>
-                )}
-              </div>
-            )}
-            {formData.affaires.length > 0 && (
-              <div className="modal-affaires-badges">
-                {formData.affaires.map((affaire, index) => (
-                  <AffaireBadge key={index} numero={affaire} size="sm" className="inverted" />
-                ))}
-              </div>
-            )}
-          </div>
-          <label
-            className="checkbox-label reservation-tournee-toggle"
-            title="En mode tournée, les détails (client, conducteur, lieu) seront définis individuellement pour chaque événement lié."
-          >
-            <Checkbox
-              checked={formData.isTournee}
-              onChange={(e) => setFormData((prev) => ({ ...prev, isTournee: e.target.checked }))}
-              style={{ margin: 0, cursor: isReadOnly ? 'default' : 'pointer' }}
-              disabled={isReadOnly}
-            />
-            <span className="reservation-tournee-label">🚐 Tournée</span>
-          </label>
-          <Button
-            variant="ghost"
-            className="close-button"
-            onClick={handleSafeClose}
-            aria-label="Fermer la fenêtre"
-          >
-            <X size={24} />
-          </Button>
+    <Modal open={true} onClose={handleSafeClose} size="lg" className="reservation-modal">
+      <ModalHeader onClose={handleSafeClose}>
+        <div className="modal-header-content">
+          <span>
+            {isReadOnly
+              ? '📋 Détails de la réservation'
+              : formData.prestationName ||
+                (currentUser?.isAdmin ? 'Nouvelle réservation' : 'Nouvelle demande')}{' '}
+            {formData.isTournee && '🚐'}
+          </span>
+          {(formData.date || formData.endDate) && (
+            <div className="reservation-header-subtitle">
+              {formData.date &&
+                format(new Date(formData.date + 'T00:00:00'), 'dd MMMM yyyy', { locale: fr })}
+              {formData.endDate && formData.endDate !== formData.date && (
+                <>
+                  {' '}
+                  →{' '}
+                  {format(new Date(formData.endDate + 'T00:00:00'), 'dd MMMM yyyy', {
+                    locale: fr,
+                  })}
+                </>
+              )}
+            </div>
+          )}
+          {formData.affaires.length > 0 && (
+            <div className="modal-affaires-badges">
+              {formData.affaires.map((affaire, index) => (
+                <AffaireBadge key={index} numero={affaire} size="sm" className="inverted" />
+              ))}
+            </div>
+          )}
         </div>
-
+        <label
+          className="checkbox-label reservation-tournee-toggle"
+          title="En mode tournée, les détails (client, conducteur, lieu) seront définis individuellement pour chaque événement lié."
+        >
+          <Checkbox
+            checked={formData.isTournee}
+            onChange={(e) => setFormData((prev) => ({ ...prev, isTournee: e.target.checked }))}
+            style={{ margin: 0, cursor: isReadOnly ? 'default' : 'pointer' }}
+            disabled={isReadOnly}
+          />
+          <span className="reservation-tournee-label">🚐 Tournée</span>
+        </label>
+      </ModalHeader>
+      <ModalBody className="reservation-body">
         <form id="reservation-form" onSubmit={handleSubmit} className="modal-form">
           <fieldset disabled={isReadOnly} className="reservation-fieldset">
             {googleEvent && (
@@ -1887,29 +1876,29 @@ const ReservationModal = ({
             )}
           </fieldset>
         </form>
+      </ModalBody>
 
-        <div className="modal-actions">
-          {isEdit && currentUser?.isAdmin && (
-            <Button variant="ghost" type="button" className="delete-button" onClick={onDelete}>
-              <Trash2 size={18} />
-              Supprimer
-            </Button>
-          )}
-          <Button variant="ghost" onClick={isReadOnly ? onClose : handleSafeClose}>
-            {isReadOnly ? 'Fermer' : 'Annuler'}
+      <ModalFooter className="modal-actions">
+        {isEdit && currentUser?.isAdmin && (
+          <Button variant="ghost" type="button" className="delete-button" onClick={onDelete}>
+            <Trash2 size={18} />
+            Supprimer
           </Button>
-          {!isEdit && (
-            <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
-              {currentUser?.isAdmin ? 'Créer' : 'Demander'}
-            </Button>
-          )}
-          {isEdit && !isReadOnly && (isDirty || formData.isTournee) && (
-            <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
-              Valider les modifications
-            </Button>
-          )}
-        </div>
-      </div>
+        )}
+        <Button variant="ghost" onClick={isReadOnly ? onClose : handleSafeClose}>
+          {isReadOnly ? 'Fermer' : 'Annuler'}
+        </Button>
+        {!isEdit && (
+          <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
+            {currentUser?.isAdmin ? 'Créer' : 'Demander'}
+          </Button>
+        )}
+        {isEdit && !isReadOnly && (isDirty || formData.isTournee) && (
+          <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
+            Valider les modifications
+          </Button>
+        )}
+      </ModalFooter>
 
       {selectedEventForTrip &&
         (() => {
@@ -1989,7 +1978,7 @@ const ReservationModal = ({
       >
         Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
       </Dialog>
-    </div>
+    </Modal>
   );
 };
 

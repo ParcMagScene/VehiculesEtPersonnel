@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Input, Select } from '@/design-system';
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { PLANNING_SECTIONS } from '../../constants/colors';
@@ -319,342 +319,327 @@ export default function AddTaskModal({
   const showVehicle = VEHICLE_SECTIONS.has(section);
 
   return (
-    <div
-      className="atm-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="atm-modal" role="dialog" aria-modal="true">
-        {/* Header */}
-        <div className="atm-header">
-          <h3>
-            <Plus size={18} /> Nouvelle tâche
-          </h3>
-          <Button variant="ghost" className="atm-close" onClick={onClose} aria-label="Fermer">
-            <X size={18} />
-          </Button>
+    <Modal open onClose={onClose} size="lg" className="atm-modal">
+      <ModalHeader icon={<Plus size={18} />} onClose={onClose}>
+        Nouvelle tâche
+      </ModalHeader>
+
+      <ModalBody className="atm-body">
+        {/* Section / Type de tâche */}
+        <div className="atm-field">
+          <label>Type de tâche</label>
+          <Select
+            value={section}
+            onChange={(e) => {
+              const key = e.target.value;
+              setSection(key);
+              if (key !== COURSE_SECTION) setCourseType('');
+              if (!VEHICLE_SECTIONS.has(key)) {
+                setReservationId('');
+                setVehicleId('');
+              }
+              if (key !== COURSE_SECTION) setLocationAddress('');
+            }}
+          >
+            {Object.entries(SECTIONS).map(([key, info]) => (
+              <option key={key} value={key}>
+                {info.emoji} {info.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
-        {/* Body */}
-        <div className="atm-body">
-          {/* Section / Type de tâche */}
+        {/* Course type (sous-type) */}
+        {showCourseType && (
           <div className="atm-field">
-            <label>Type de tâche</label>
-            <Select
-              value={section}
-              onChange={(e) => {
-                const key = e.target.value;
-                setSection(key);
-                if (key !== COURSE_SECTION) setCourseType('');
-                if (!VEHICLE_SECTIONS.has(key)) {
-                  setReservationId('');
-                  setVehicleId('');
-                }
-                if (key !== COURSE_SECTION) setLocationAddress('');
-              }}
-            >
-              {Object.entries(SECTIONS).map(([key, info]) => (
+            <label>Type de course</label>
+            <Select value={courseType} onChange={(e) => setCourseType(e.target.value)}>
+              <option value="">— Sélectionner —</option>
+              {Object.entries(EVENT_TYPES).map(([key, info]) => (
                 <option key={key} value={key}>
                   {info.emoji} {info.label}
                 </option>
               ))}
             </Select>
           </div>
+        )}
 
-          {/* Course type (sous-type) */}
-          {showCourseType && (
-            <div className="atm-field">
-              <label>Type de course</label>
-              <Select value={courseType} onChange={(e) => setCourseType(e.target.value)}>
-                <option value="">— Sélectionner —</option>
-                {Object.entries(EVENT_TYPES).map(([key, info]) => (
-                  <option key={key} value={key}>
-                    {info.emoji} {info.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          )}
+        {/* Titre */}
+        <div className="atm-field">
+          <label>
+            Titre <span className="atm-required">*</span>
+          </label>
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v) setTitle(v.charAt(0).toUpperCase() + v.slice(1));
+            }}
+            placeholder="Titre de la tâche..."
+            autoFocus
+            spellCheck
+            lang="fr"
+            autoComplete="off"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) handleSubmit();
+            }}
+          />
+        </div>
 
-          {/* Titre */}
-          <div className="atm-field">
-            <label>
-              Titre <span className="atm-required">*</span>
-            </label>
-            <Input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={(e) => {
-                const v = e.target.value.trim();
-                if (v) setTitle(v.charAt(0).toUpperCase() + v.slice(1));
-              }}
-              placeholder="Titre de la tâche..."
-              autoFocus
-              spellCheck
-              lang="fr"
-              autoComplete="off"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) handleSubmit();
-              }}
-            />
-          </div>
-
-          {/* Affaire */}
-          <div className="atm-field" ref={affaireRef}>
-            <label>
-              <Briefcase size={13} /> Affaire
-            </label>
-            {affaireNum ? (
-              <div className="atm-affaire-selected">
-                <AffaireBadge numero={affaireNum} type={selectedAffaire?.type} />
-                <span className="atm-affaire-client">{selectedAffaire?.client || ''}</span>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="atm-affaire-clear"
-                  onClick={() => {
-                    setAffaireNum('');
-                    setClient('');
-                    setAffaireSearch('');
-                  }}
-                >
-                  <Unlink size={12} />
-                </Button>
-              </div>
-            ) : (
-              <div className="atm-affaire-wrap">
-                <Search size={13} className="atm-affaire-icon" />
-                <Input
-                  type="text"
-                  value={affaireSearch}
-                  onChange={(e) => {
-                    setAffaireSearch(e.target.value);
-                    setAffaireOpen(true);
-                  }}
-                  onFocus={() => setAffaireOpen(true)}
-                  placeholder="N° affaire, client…"
-                  className="atm-affaire-input"
-                />
-                {affaireOpen && (
-                  <div className="atm-affaire-dropdown">
-                    {filteredAffaires.length === 0 ? (
-                      <div className="atm-affaire-empty">Aucune affaire trouvée</div>
-                    ) : (
-                      filteredAffaires.map((a) => (
-                        <Button
-                          variant="ghost"
-                          key={a.numeroAffaire}
-                          type="button"
-                          className="atm-affaire-option"
-                          onClick={() => {
-                            setAffaireNum(a.numeroAffaire);
-                            setGoogleEventId('');
-                            setClient(a.client || '');
-                            if (!title) setTitle(a.nom || a.event_name || '');
-                            setAffaireSearch('');
-                            setAffaireOpen(false);
-                          }}
-                        >
-                          <span className="atm-affaire-opt-num">{a.numeroAffaire}</span>
-                          <span className="atm-affaire-opt-client">{a.client || a.nom || ''}</span>
-                        </Button>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Google / iCal Event */}
-          {allEvents.length > 0 && (
-            <div className="atm-field">
-              <label>Événement associé</label>
-              <Select
-                value={googleEventId}
-                onChange={(e) => {
-                  const evId = e.target.value;
-                  setGoogleEventId(evId);
+        {/* Affaire */}
+        <div className="atm-field" ref={affaireRef}>
+          <label>
+            <Briefcase size={13} /> Affaire
+          </label>
+          {affaireNum ? (
+            <div className="atm-affaire-selected">
+              <AffaireBadge numero={affaireNum} type={selectedAffaire?.type} />
+              <span className="atm-affaire-client">{selectedAffaire?.client || ''}</span>
+              <Button
+                variant="ghost"
+                type="button"
+                className="atm-affaire-clear"
+                onClick={() => {
                   setAffaireNum('');
-                  if (evId) {
-                    const ev = allEvents.find((ev2) => ev2.id === evId);
-                    if (ev) {
-                      setTitle(ev.summary || ev.title || '');
-                      const startDT =
-                        ev._source === 'ical' ? ev.start || '' : ev.start?.dateTime || '';
-                      if (startDT && startDT.includes('T')) {
-                        const d = safeParseDate(startDT);
-                        if (d) {
-                          setTime(
-                            d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-                          );
-                          setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
-                        }
-                      }
-                    }
-                  }
+                  setClient('');
+                  setAffaireSearch('');
                 }}
               >
-                <option value="">— Événement Google / iCal —</option>
-                {allEvents.map((ev) => (
-                  <option key={ev.id} value={ev.id}>
-                    {ev.summary || ev.title || '(sans titre)'}
-                  </option>
-                ))}
-              </Select>
+                <Unlink size={12} />
+              </Button>
             </div>
-          )}
-
-          {/* Lieu (courses) */}
-          {showLocation && (
-            <div className="atm-field atm-field-location" ref={locationRef}>
-              <label>
-                <MapPin size={13} /> Lieu
-              </label>
-              <AddressAutocomplete
-                value={locationAddress}
-                onChange={(val) => {
-                  setLocationAddress(val);
-                  setLocationDropdownOpen(true);
+          ) : (
+            <div className="atm-affaire-wrap">
+              <Search size={13} className="atm-affaire-icon" />
+              <Input
+                type="text"
+                value={affaireSearch}
+                onChange={(e) => {
+                  setAffaireSearch(e.target.value);
+                  setAffaireOpen(true);
                 }}
-                placeholder="Adresse ou lieu de la course…"
-                className="atm-location-input"
+                onFocus={() => setAffaireOpen(true)}
+                placeholder="N° affaire, client…"
+                className="atm-affaire-input"
               />
-              {locationSuggestions.length > 0 && (
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="atm-location-toggle"
-                  onClick={() => setLocationDropdownOpen((v) => !v)}
-                >
-                  <MapPin size={12} /> Lieux enregistrés <ChevronDown size={12} />
-                </Button>
-              )}
-              {locationDropdownOpen && filteredLocationSuggestions.length > 0 && (
-                <div className="atm-location-dropdown">
-                  {filteredLocationSuggestions.map((s, i) => (
-                    <Button
-                      variant="ghost"
-                      key={i}
-                      type="button"
-                      className="atm-location-option"
-                      onClick={() => {
-                        setLocationAddress(s.value);
-                        setLocationDropdownOpen(false);
-                      }}
-                    >
-                      <strong>{s.name}</strong>
-                      {s.address && s.address !== s.name && (
-                        <span className="atm-location-addr"> — {s.address}</span>
-                      )}
-                    </Button>
-                  ))}
+              {affaireOpen && (
+                <div className="atm-affaire-dropdown">
+                  {filteredAffaires.length === 0 ? (
+                    <div className="atm-affaire-empty">Aucune affaire trouvée</div>
+                  ) : (
+                    filteredAffaires.map((a) => (
+                      <Button
+                        variant="ghost"
+                        key={a.numeroAffaire}
+                        type="button"
+                        className="atm-affaire-option"
+                        onClick={() => {
+                          setAffaireNum(a.numeroAffaire);
+                          setGoogleEventId('');
+                          setClient(a.client || '');
+                          if (!title) setTitle(a.nom || a.event_name || '');
+                          setAffaireSearch('');
+                          setAffaireOpen(false);
+                        }}
+                      >
+                        <span className="atm-affaire-opt-num">{a.numeroAffaire}</span>
+                        <span className="atm-affaire-opt-client">{a.client || a.nom || ''}</span>
+                      </Button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
           )}
+        </div>
 
-          {/* Responsable + Client (row) */}
-          <div className="atm-row">
-            <div className="atm-field atm-field-half">
-              <label>
-                <User size={13} /> Responsable
-              </label>
-              <Select value={personId} onChange={(e) => setPersonId(e.target.value)}>
-                <option value="">— Aucun —</option>
-                {persons.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.firstName} {p.lastName}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="atm-field atm-field-half">
-              <label>Client</label>
-              <Input
-                type="text"
-                value={client}
-                onChange={(e) => setClient(e.target.value)}
-                placeholder="Client..."
-              />
-            </div>
+        {/* Google / iCal Event */}
+        {allEvents.length > 0 && (
+          <div className="atm-field">
+            <label>Événement associé</label>
+            <Select
+              value={googleEventId}
+              onChange={(e) => {
+                const evId = e.target.value;
+                setGoogleEventId(evId);
+                setAffaireNum('');
+                if (evId) {
+                  const ev = allEvents.find((ev2) => ev2.id === evId);
+                  if (ev) {
+                    setTitle(ev.summary || ev.title || '');
+                    const startDT =
+                      ev._source === 'ical' ? ev.start || '' : ev.start?.dateTime || '';
+                    if (startDT && startDT.includes('T')) {
+                      const d = safeParseDate(startDT);
+                      if (d) {
+                        setTime(
+                          d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                        );
+                        setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
+                      }
+                    }
+                  }
+                }
+              }}
+            >
+              <option value="">— Événement Google / iCal —</option>
+              {allEvents.map((ev) => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.summary || ev.title || '(sans titre)'}
+                </option>
+              ))}
+            </Select>
           </div>
+        )}
 
-          {/* Véhicule (si section compatible) */}
-          {showVehicle && (
-            <div className="atm-field">
-              <label>
-                <Truck size={13} /> Réservation véhicule
-              </label>
-              <Select
-                value={reservationId}
-                onChange={(e) => {
-                  setReservationId(e.target.value);
-                  if (e.target.value !== '__new__') setVehicleId('');
-                }}
+        {/* Lieu (courses) */}
+        {showLocation && (
+          <div className="atm-field atm-field-location" ref={locationRef}>
+            <label>
+              <MapPin size={13} /> Lieu
+            </label>
+            <AddressAutocomplete
+              value={locationAddress}
+              onChange={(val) => {
+                setLocationAddress(val);
+                setLocationDropdownOpen(true);
+              }}
+              placeholder="Adresse ou lieu de la course…"
+              className="atm-location-input"
+            />
+            {locationSuggestions.length > 0 && (
+              <Button
+                variant="ghost"
+                type="button"
+                className="atm-location-toggle"
+                onClick={() => setLocationDropdownOpen((v) => !v)}
               >
-                <option value="">— Aucune —</option>
-                {dayReservations.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    🚗 {r.vehicleName || '?'} {r.immatriculation ? `(${r.immatriculation})` : ''} —{' '}
-                    {r.clientName || r.prestationName || r.driverName || 'Sans nom'}
-                  </option>
+                <MapPin size={12} /> Lieux enregistrés <ChevronDown size={12} />
+              </Button>
+            )}
+            {locationDropdownOpen && filteredLocationSuggestions.length > 0 && (
+              <div className="atm-location-dropdown">
+                {filteredLocationSuggestions.map((s, i) => (
+                  <Button
+                    variant="ghost"
+                    key={i}
+                    type="button"
+                    className="atm-location-option"
+                    onClick={() => {
+                      setLocationAddress(s.value);
+                      setLocationDropdownOpen(false);
+                    }}
+                  >
+                    <strong>{s.name}</strong>
+                    {s.address && s.address !== s.name && (
+                      <span className="atm-location-addr"> — {s.address}</span>
+                    )}
+                  </Button>
                 ))}
-                <option value="__new__">＋ Nouvelle réservation…</option>
-              </Select>
-              {reservationId === '__new__' && (
-                <Select
-                  className="atm-vehicle-select"
-                  value={vehicleId}
-                  onChange={(e) => setVehicleId(e.target.value)}
-                >
-                  <option value="">— Véhicule —</option>
-                  {(vehicles || []).map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} {v.registration ? `(${v.registration})` : ''}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+        )}
 
-          {/* Heure + Période */}
-          <div className="atm-row">
-            <div className="atm-field atm-field-half">
-              <label>
-                <Clock size={13} /> Heure
-              </label>
-              <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} />
-            </div>
-            <div className="atm-field atm-field-half">
-              <label>Période</label>
-              <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                <option value="AM">AM (Matin)</option>
-                <option value="PM">PM (Après-midi)</option>
-              </Select>
-            </div>
+        {/* Responsable + Client (row) */}
+        <div className="atm-row">
+          <div className="atm-field atm-field-half">
+            <label>
+              <User size={13} /> Responsable
+            </label>
+            <Select value={personId} onChange={(e) => setPersonId(e.target.value)}>
+              <option value="">— Aucun —</option>
+              {persons.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.firstName} {p.lastName}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="atm-field atm-field-half">
+            <label>Client</label>
+            <Input
+              type="text"
+              value={client}
+              onChange={(e) => setClient(e.target.value)}
+              placeholder="Client..."
+            />
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="atm-footer">
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={submitting || !title.trim()}>
-            {submitting ? (
-              'Ajout…'
-            ) : (
-              <>
-                <Plus size={15} /> Ajouter
-              </>
+        {/* Véhicule (si section compatible) */}
+        {showVehicle && (
+          <div className="atm-field">
+            <label>
+              <Truck size={13} /> Réservation véhicule
+            </label>
+            <Select
+              value={reservationId}
+              onChange={(e) => {
+                setReservationId(e.target.value);
+                if (e.target.value !== '__new__') setVehicleId('');
+              }}
+            >
+              <option value="">— Aucune —</option>
+              {dayReservations.map((r) => (
+                <option key={r.id} value={r.id}>
+                  🚗 {r.vehicleName || '?'} {r.immatriculation ? `(${r.immatriculation})` : ''} —{' '}
+                  {r.clientName || r.prestationName || r.driverName || 'Sans nom'}
+                </option>
+              ))}
+              <option value="__new__">＋ Nouvelle réservation…</option>
+            </Select>
+            {reservationId === '__new__' && (
+              <Select
+                className="atm-vehicle-select"
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+              >
+                <option value="">— Véhicule —</option>
+                {(vehicles || []).map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name} {v.registration ? `(${v.registration})` : ''}
+                  </option>
+                ))}
+              </Select>
             )}
-          </Button>
+          </div>
+        )}
+
+        {/* Heure + Période */}
+        <div className="atm-row">
+          <div className="atm-field atm-field-half">
+            <label>
+              <Clock size={13} /> Heure
+            </label>
+            <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} />
+          </div>
+          <div className="atm-field atm-field-half">
+            <label>Période</label>
+            <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+              <option value="AM">AM (Matin)</option>
+              <option value="PM">PM (Après-midi)</option>
+            </Select>
+          </div>
         </div>
-      </div>
-    </div>
+      </ModalBody>
+
+      <ModalFooter className="atm-footer">
+        <Button variant="ghost" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button variant="primary" onClick={handleSubmit} disabled={submitting || !title.trim()}>
+          {submitting ? (
+            'Ajout…'
+          ) : (
+            <>
+              <Plus size={15} /> Ajouter
+            </>
+          )}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }

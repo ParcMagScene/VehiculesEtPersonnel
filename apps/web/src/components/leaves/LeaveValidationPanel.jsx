@@ -25,7 +25,6 @@ import {
   Send,
   Shield,
   User,
-  X,
   XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -36,6 +35,9 @@ import {
   DetailRow,
   EmptyState,
   InlineAlert,
+  Modal,
+  ModalBody,
+  ModalHeader,
   Tab,
   TabList,
   TabPanel,
@@ -250,35 +252,19 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
   };
 
   return (
-    <div className="lvp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="lvp-panel"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Validation des congés"
-      >
-        {/* En-tête */}
-        <div className="lvp-header">
-          <div className="lvp-header-title">
-            <Shield size={20} />
-            <h2>Validation des congés</h2>
-          </div>
-          <div className="lvp-header-actions">
-            <Button
-              variant="ghost"
-              className="lvp-btn-refresh"
-              onClick={loadData}
-              aria-label="Actualiser"
-            >
-              <RefreshCw size={16} />
-            </Button>
-            <Button variant="ghost" className="lvp-close-btn" onClick={onClose} aria-label="Fermer">
-              <X size={20} />
-            </Button>
-          </div>
-        </div>
-
+    <Modal open={true} onClose={onClose} size="lg" className="lvp-panel">
+      <ModalHeader icon={<Shield size={20} />} onClose={onClose}>
+        Validation des congés
+        <Button
+          variant="ghost"
+          className="lvp-btn-refresh"
+          onClick={loadData}
+          aria-label="Actualiser"
+        >
+          <RefreshCw size={16} />
+        </Button>
+      </ModalHeader>
+      <ModalBody>
         {/* Statistiques */}
         {stats && (
           <div className="lvp-stats-bar">
@@ -782,8 +768,8 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
             )}
           </div>
         </Tabs>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 };
 

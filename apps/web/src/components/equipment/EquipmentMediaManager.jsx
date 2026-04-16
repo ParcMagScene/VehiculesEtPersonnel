@@ -1,8 +1,8 @@
-import { Edit2, Image as ImageIcon, Link2, QrCode, Trash2, Upload, X, ZoomIn } from 'lucide-react';
+import { Edit2, Image as ImageIcon, Link2, QrCode, Trash2, Upload, ZoomIn } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import React, { useMemo, useRef, useState } from 'react';
 
-import { Button, Input, SearchBar, Tooltip } from '@/design-system';
+import { Button, Input, Modal, ModalBody, SearchBar, Tooltip } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
@@ -377,18 +377,13 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
       </div>
 
       {previewPhoto && (
-        <div
-          className="eq-media-preview-overlay"
-          onMouseDown={(e) => e.target === e.currentTarget && setPreviewPhoto(null)}
+        <Modal
+          open
+          onClose={() => setPreviewPhoto(null)}
+          size="lg"
+          className="eq-media-preview-content"
         >
-          <div className="eq-media-preview-content" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="ghost"
-              className="eq-media-preview-close"
-              onClick={() => setPreviewPhoto(null)}
-            >
-              <X size={22} />
-            </Button>
+          <ModalBody>
             <img
               src={
                 typeof previewPhoto === 'string'
@@ -401,8 +396,8 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
             <span className="eq-media-preview-name">
               {typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}
             </span>
-          </div>
-        </div>
+          </ModalBody>
+        </Modal>
       )}
 
       {MediaConfirmRenderer}

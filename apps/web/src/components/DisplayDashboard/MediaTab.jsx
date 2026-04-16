@@ -2,7 +2,7 @@
 import { Eye, Film, Image, Trash2 } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 
-import { Button, EmptyState, Tooltip } from '@/design-system';
+import { Button, EmptyState, Modal, ModalBody, Tooltip } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
@@ -129,35 +129,31 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
       )}
 
       {/* Modal aperçu */}
-      {preview && (
-        <div className="media-preview-overlay" onClick={() => setPreview(null)}>
-          <div className="media-preview-content" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="ghost"
-              className="media-preview-close"
-              onClick={() => setPreview(null)}
-            >
-              ✕
-            </Button>
-            {preview.media_type === 'video' ? (
-              <video
-                src={preview.file_path}
-                controls
-                autoPlay
-                style={{ maxWidth: '100%', maxHeight: '80vh' }}
-              />
-            ) : (
-              <img
-                src={preview.file_path}
-                alt={preview.original_name}
-                loading="lazy"
-                style={{ maxWidth: '100%', maxHeight: '80vh' }}
-              />
-            )}
-            <p className="preview-filename">{preview.original_name}</p>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={!!preview}
+        onClose={() => setPreview(null)}
+        size="lg"
+        className="media-preview-content"
+      >
+        <ModalBody>
+          {preview?.media_type === 'video' ? (
+            <video
+              src={preview?.file_path}
+              controls
+              autoPlay
+              style={{ maxWidth: '100%', maxHeight: '80vh' }}
+            />
+          ) : (
+            <img
+              src={preview?.file_path}
+              alt={preview?.original_name}
+              loading="lazy"
+              style={{ maxWidth: '100%', maxHeight: '80vh' }}
+            />
+          )}
+          {preview && <p className="preview-filename">{preview.original_name}</p>}
+        </ModalBody>
+      </Modal>
       {ConfirmDialogRenderer}
     </div>
   );

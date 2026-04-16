@@ -1,9 +1,9 @@
 import './TripDetailsModal.css';
 
-import { ArrowDown, Clock, MapPin, Plus, Trash2, User, X } from 'lucide-react';
+import { ArrowDown, Clock, MapPin, Plus, Trash2, User } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
-import { Button, Dialog, FormField, Input } from '@/design-system';
+import { Button, Dialog, FormField, Input, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
@@ -972,117 +972,96 @@ const TripDetailsModal = ({
   };
 
   return (
-    <div
-      className="td-overlay"
-      onMouseDown={(e) => {
-        // Fermer uniquement si on clique sur l'overlay (arrière-plan)
-        if (e.target.className === 'td-overlay') {
-          handleSafeClose();
-        }
-      }}
-    >
-      <div
-        className="trip-details-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="modal-header">
-          <div className="u-flex-1">
-            <h2>📍 {isCombinedMode ? 'Trajets liés' : 'Détails du trajet'}</h2>
-            {/* Événement info (mode simple) */}
-            {!isCombinedMode && (
-              <div
-                className="event-info"
-                style={{ margin: '0.5rem 0 0 0', background: 'transparent', padding: 0 }}
-              >
-                <h3 style={{ margin: 0, fontSize: '1rem' }}>{currentEvent.summary}</h3>
-                <div className="u-flex-center u-flex-wrap u-gap-2 u-mt-1">
-                  {currentEvent.affaire && (
-                    <span className="u-font-sm">{currentEvent.affaire}</span>
-                  )}
-                  {vehicle && (
-                    <span
-                      style={{
-                        padding: '0.25rem 0.5rem',
-                        background:
-                          vehicle.type?.toUpperCase().includes('PL') ||
-                          vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                          vehicle.type?.toUpperCase().includes('SEMI')
-                            ? 'var(--btn-warning-bg)'
-                            : 'var(--theme-info-bg-strong)',
-                        color:
-                          vehicle.type?.toUpperCase().includes('PL') ||
-                          vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                          vehicle.type?.toUpperCase().includes('SEMI')
-                            ? 'var(--theme-warning-text)'
-                            : 'var(--theme-info-text)',
-                        borderRadius: '0.25rem',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                      }}
-                    >
-                      🚛 {vehicle.name} ({vehicle.type})
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-            {/* Véhicule info (mode combiné) */}
-            {isCombinedMode && vehicle && (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  padding: '0.25rem 0.5rem',
-                  background:
-                    vehicle.type?.toUpperCase().includes('PL') ||
-                    vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                    vehicle.type?.toUpperCase().includes('SEMI')
-                      ? 'var(--btn-warning-bg)'
-                      : 'var(--theme-info-bg-strong)',
-                  color:
-                    vehicle.type?.toUpperCase().includes('PL') ||
-                    vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                    vehicle.type?.toUpperCase().includes('SEMI')
-                      ? 'var(--theme-warning-text)'
-                      : 'var(--theme-info-text)',
-                  borderRadius: '0.25rem',
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  marginTop: '0.375rem',
-                }}
-              >
-                🚛 {vehicle.name} ({vehicle.type})
-              </span>
-            )}
-          </div>
-          {/* Bandeau de confirmation si sauvegardé */}
-          {isSaved && (
-            <div
-              style={{
-                padding: '0.5rem 0.75rem',
-                background: 'var(--theme-success-bg)',
-                border: `2px solid ${STATUS_COLORS.success}`,
-                borderRadius: '0.375rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                color: 'var(--theme-success-text)',
-                fontWeight: '600',
-                fontSize: '0.75rem',
-                whiteSpace: 'nowrap',
-                marginLeft: '1rem',
-                alignSelf: 'flex-start',
-              }}
-            >
-              ✅ Détails du trajet enregistrés
+    <Modal open={true} onClose={handleSafeClose} size="lg" className="trip-details-modal">
+      <ModalHeader icon={<MapPin size={20} />} onClose={handleSafeClose}>
+        {isCombinedMode ? 'Trajets liés' : 'Détails du trajet'}
+        {/* Événement info (mode simple) */}
+        {!isCombinedMode && (
+          <div
+            className="event-info"
+            style={{ margin: '0.5rem 0 0 0', background: 'transparent', padding: 0 }}
+          >
+            <h3 style={{ margin: 0, fontSize: '1rem' }}>{currentEvent.summary}</h3>
+            <div className="u-flex-center u-flex-wrap u-gap-2 u-mt-1">
+              {currentEvent.affaire && <span className="u-font-sm">{currentEvent.affaire}</span>}
+              {vehicle && (
+                <span
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    background:
+                      vehicle.type?.toUpperCase().includes('PL') ||
+                      vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                      vehicle.type?.toUpperCase().includes('SEMI')
+                        ? 'var(--btn-warning-bg)'
+                        : 'var(--theme-info-bg-strong)',
+                    color:
+                      vehicle.type?.toUpperCase().includes('PL') ||
+                      vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                      vehicle.type?.toUpperCase().includes('SEMI')
+                        ? 'var(--theme-warning-text)'
+                        : 'var(--theme-info-text)',
+                    borderRadius: '0.25rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                  }}
+                >
+                  🚛 {vehicle.name} ({vehicle.type})
+                </span>
+              )}
             </div>
-          )}
-          <Button variant="ghost" onClick={handleSafeClose} className="close-button">
-            <X size={24} />
-          </Button>
-        </div>
-
+          </div>
+        )}
+        {/* Véhicule info (mode combiné) */}
+        {isCombinedMode && vehicle && (
+          <span
+            style={{
+              display: 'inline-flex',
+              padding: '0.25rem 0.5rem',
+              background:
+                vehicle.type?.toUpperCase().includes('PL') ||
+                vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                vehicle.type?.toUpperCase().includes('SEMI')
+                  ? 'var(--btn-warning-bg)'
+                  : 'var(--theme-info-bg-strong)',
+              color:
+                vehicle.type?.toUpperCase().includes('PL') ||
+                vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                vehicle.type?.toUpperCase().includes('SEMI')
+                  ? 'var(--theme-warning-text)'
+                  : 'var(--theme-info-text)',
+              borderRadius: '0.25rem',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              marginTop: '0.375rem',
+            }}
+          >
+            🚛 {vehicle.name} ({vehicle.type})
+          </span>
+        )}
+        {/* Bandeau de confirmation si sauvegardé */}
+        {isSaved && (
+          <div
+            style={{
+              padding: '0.5rem 0.75rem',
+              background: 'var(--theme-success-bg)',
+              border: `2px solid ${STATUS_COLORS.success}`,
+              borderRadius: '0.375rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              color: 'var(--theme-success-text)',
+              fontWeight: '600',
+              fontSize: '0.75rem',
+              whiteSpace: 'nowrap',
+              marginLeft: '1rem',
+              alignSelf: 'flex-start',
+            }}
+          >
+            ✅ Détails du trajet enregistrés
+          </div>
+        )}
+      </ModalHeader>
+      <ModalBody className="trip-details-body">
         {/* Timeline chronologique pour les trajets liés */}
         {isCombinedMode && renderCombinedTimeline()}
 
@@ -1656,7 +1635,7 @@ const TripDetailsModal = ({
             ))}
           </datalist>
         </form>
-      </div>
+      </ModalBody>
 
       {/* Modal LocationDialog */}
       {isLocationDialogOpen && (
@@ -1682,7 +1661,7 @@ const TripDetailsModal = ({
       >
         Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
       </Dialog>
-    </div>
+    </Modal>
   );
 };
 

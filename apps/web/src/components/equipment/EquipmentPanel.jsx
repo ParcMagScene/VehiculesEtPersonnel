@@ -18,13 +18,15 @@ import {
   Tag,
   Upload,
   Wrench,
-  X,
 } from 'lucide-react';
 import React from 'react';
 
 import {
   Button,
   Checkbox,
+  Modal,
+  ModalBody,
+  ModalHeader,
   ModalLayout,
   SearchBar,
   Select,
@@ -776,31 +778,16 @@ const EquipmentPanel = ({
 
       {/* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */}
       {showManagement && (
-        <div
-          className="eq-management-overlay"
-          onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement()}
+        <Modal
+          open={showManagement}
+          onClose={onCloseManagement}
+          size="xl"
+          className="eq-management-panel"
         >
-          <div
-            className="eq-management-panel"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Gestion du Matériel"
-          >
-            <div className="eq-management-header">
-              <h2>
-                <Package size={22} /> Gestion du Matériel
-              </h2>
-              <Button
-                variant="ghost"
-                className="eq-management-close"
-                onClick={onCloseManagement}
-                aria-label="Fermer"
-              >
-                <X size={20} />
-              </Button>
-            </div>
-
+          <ModalHeader icon={<Package size={22} />} onClose={onCloseManagement}>
+            Gestion du Matériel
+          </ModalHeader>
+          <ModalBody>
             {/* Onglets de gestion */}
             <div className="eq-mgmt-tabs">
               {[
@@ -947,8 +934,8 @@ const EquipmentPanel = ({
                 />
               )}
             </div>
-          </div>
-        </div>
+          </ModalBody>
+        </Modal>
       )}
 
       {/* Modal Plan dépôt (ouvert depuis un clic sur une zone) */}

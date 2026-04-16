@@ -1,9 +1,18 @@
 import './LocationDialog.css';
 
-import { Clock, Mail, MapPin, Navigation, Phone, Route, User, X } from 'lucide-react';
+import { Clock, Mail, MapPin, Navigation, Phone, Route, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, Dialog, FormField, InlineAlert, Input } from '@/design-system';
+import {
+  Button,
+  Dialog,
+  FormField,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+} from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -350,28 +359,12 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
   };
 
   return (
-    <div
-      className="location-dialog-overlay"
-      onMouseDown={(e) => {
-        // Fermer seulement si on clique sur l'overlay, pas sur le contenu
-        if (e.target === e.currentTarget) {
-          handleSafeClose();
-        }
-      }}
-    >
-      <div
-        className="location-dialog"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="location-dialog-header">
-          <h2>{client ? 'Modifier le client' : 'Nouveau client'}</h2>
-          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
-            <X size={20} />
-          </Button>
-        </div>
+    <Modal open onClose={handleSafeClose} size="lg" className="location-dialog">
+      <ModalHeader onClose={handleSafeClose}>
+        {client ? 'Modifier le client' : 'Nouveau client'}
+      </ModalHeader>
 
+      <ModalBody>
         {error && <InlineAlert>{error}</InlineAlert>}
 
         <form onSubmit={handleSubmit} className="location-form">
@@ -510,7 +503,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
             </Button>
           </div>
         </form>
-      </div>
+      </ModalBody>
 
       <Dialog
         open={showUnsavedWarning}
@@ -527,7 +520,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
       >
         Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
       </Dialog>
-    </div>
+    </Modal>
   );
 };
 

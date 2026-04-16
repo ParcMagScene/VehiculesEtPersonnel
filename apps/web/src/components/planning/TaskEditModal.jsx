@@ -13,11 +13,10 @@ import {
   Search,
   Unlink,
   User,
-  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, EntityCombobox, Input, Select, Textarea } from '@/design-system';
+import { Button, EntityCombobox, Input, ModalLayout, Select, Textarea } from '@/design-system';
 
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
@@ -191,236 +190,15 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     : null;
 
   return (
-    <div className="tem-overlay" onMouseDown={(e) => e.target === e.currentTarget && safeClose()}>
-      <div className="tem-modal">
-        {/* Header */}
-        <div className="tem-header">
-          <h3>
-            <FileText size={18} /> Modifier la tâche
-          </h3>
-          <Button variant="ghost" className="tem-close" onClick={safeClose} aria-label="Fermer">
-            <X size={20} />
-          </Button>
-        </div>
-
-        {/* Badges info */}
-        <div className="tem-badges">
-          {task.sourceType === 'google_event' && <span className="tem-badge google">G</span>}
-          <span className="tem-badge section">{SECTIONS[form.section] || form.section}</span>
-        </div>
-
-        {/* Form */}
-        <div className="tem-form">
-          {/* Titre */}
-          <div className="tem-field full">
-            <label>
-              <FileText size={13} /> Titre
-            </label>
-            <Input
-              type="text"
-              value={form.title}
-              onChange={(e) => update('title', e.target.value)}
-              onBlur={(e) => {
-                const v = e.target.value.trim();
-                if (v) update('title', v.charAt(0).toUpperCase() + v.slice(1));
-              }}
-              placeholder="Titre de la tâche..."
-              spellCheck
-              lang="fr"
-              autoComplete="off"
-            />
-          </div>
-
-          {/* Date + Période */}
-          <div className="tem-row">
-            <div className="tem-field">
-              <label>
-                <Calendar size={13} /> Date
-              </label>
-              <input
-                type="date"
-                value={form.date}
-                onChange={(e) => update('date', e.target.value)}
-              />
-            </div>
-            <div className="tem-field">
-              <label>Période</label>
-              <Select value={form.period} onChange={(e) => update('period', e.target.value)}>
-                <option value="AM">Matin (AM)</option>
-                <option value="PM">Après-midi (PM)</option>
-              </Select>
-            </div>
-          </div>
-
-          {/* Heure début / fin */}
-          <div className="tem-row">
-            <div className="tem-field">
-              <label>
-                <Clock size={13} /> Heure début
-              </label>
-              <input
-                type="time"
-                value={form.time}
-                onChange={(e) => update('time', e.target.value)}
-              />
-            </div>
-            <div className="tem-field">
-              <label>
-                <Clock size={13} /> Heure fin
-              </label>
-              <input
-                type="time"
-                value={form.endTime}
-                onChange={(e) => update('endTime', e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Personnel */}
-          <div className="tem-field full">
-            <label>
-              <User size={13} /> Personnel assigné
-            </label>
-            <EntityCombobox
-              value={form.personId}
-              onChange={(val) => update('personId', val)}
-              options={persons.map((p) => ({ id: p.id, name: `${p.firstName} ${p.lastName}` }))}
-              placeholder="— Aucun —"
-            />
-          </div>
-
-          {/* Affaire liée */}
-          <div className="tem-field full" ref={affaireRef}>
-            <label>
-              <Link2 size={13} /> Affaire
-            </label>
-            {form.affaireNum ? (
-              <div className="tem-affaire-selected">
-                <AffaireBadge numero={form.affaireNum} type={selectedAffaire?.type} />
-                <span className="tem-affaire-client">{selectedAffaire?.client || ''}</span>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="tem-affaire-clear"
-                  onClick={() => update('affaireNum', '')}
-                  title="Retirer l'affaire"
-                >
-                  <Unlink size={12} />
-                </Button>
-              </div>
-            ) : (
-              <div className="tem-affaire-picker">
-                <div className="tem-affaire-search-wrap">
-                  <Search size={13} className="tem-affaire-search-icon" />
-                  <Input
-                    type="text"
-                    value={affaireSearch}
-                    onChange={(e) => {
-                      setAffaireSearch(e.target.value);
-                      setAffaireDropdownOpen(true);
-                    }}
-                    onFocus={() => setAffaireDropdownOpen(true)}
-                    placeholder="Rechercher une affaire…"
-                    className="tem-affaire-search"
-                  />
-                </div>
-                {affaireDropdownOpen && (
-                  <div className="tem-affaire-dropdown">
-                    {filteredAffaires.length === 0 ? (
-                      <div className="tem-affaire-empty">Aucune affaire trouvée</div>
-                    ) : (
-                      filteredAffaires.map((a) => (
-                        <Button
-                          variant="ghost"
-                          key={a.numeroAffaire}
-                          type="button"
-                          className="tem-affaire-option"
-                          onClick={() => {
-                            update('affaireNum', a.numeroAffaire);
-                            setAffaireSearch('');
-                            setAffaireDropdownOpen(false);
-                          }}
-                        >
-                          <span className="tem-affaire-opt-num">{a.numeroAffaire}</span>
-                          <span className="tem-affaire-opt-client">{a.client || a.nom || ''}</span>
-                          {a.titre && <span className="tem-affaire-opt-titre">{a.titre}</span>}
-                        </Button>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Type de tâche */}
-          <div className="tem-field full">
-            <label>
-              <Briefcase size={13} /> Type
-            </label>
-            <Select value={form.section} onChange={(e) => update('section', e.target.value)}>
-              {Object.entries(SECTIONS).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Lieu / Adresse (affiché pour les sections courses) */}
-          {COURSE_SECTIONS.has(form.section) && (
-            <div className="tem-field full">
-              <label>
-                <MapPin size={13} /> Lieu
-              </label>
-              <div className="tem-location-row">
-                <Input
-                  type="text"
-                  value={form.locationAddress}
-                  onChange={(e) => update('locationAddress', e.target.value)}
-                  placeholder="Adresse ou lieu de la course…"
-                  autoComplete="off"
-                />
-                {form.locationAddress.trim() && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.locationAddress.trim())}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="tem-maps-link"
-                    title="Ouvrir dans Google Maps"
-                  >
-                    <ExternalLink size={14} />
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Statut */}
-          <div className="tem-field full">
-            <label>Statut</label>
-            <Select value={form.status} onChange={(e) => update('status', e.target.value)}>
-              <option value="pending">En attente</option>
-              <option value="in_progress">En cours</option>
-              <option value="done">Terminé</option>
-              <option value="cancelled">Annulé</option>
-            </Select>
-          </div>
-
-          {/* Notes */}
-          <div className="tem-field full">
-            <label>Notes</label>
-            <Textarea
-              value={form.notes}
-              onChange={(e) => update('notes', e.target.value)}
-              placeholder="Notes..."
-              rows={3}
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="tem-footer">
+    <ModalLayout
+      open
+      onClose={safeClose}
+      size="lg"
+      title="Modifier la tâche"
+      icon={<FileText size={18} />}
+      className="tem-modal"
+      footer={
+        <>
           <Button variant="ghost" className="tem-btn secondary" onClick={onClose}>
             Annuler
           </Button>
@@ -433,9 +211,217 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
             {saving ? <Loader size={14} className="spin" /> : <Save size={14} />}
             Enregistrer
           </Button>
+        </>
+      }
+    >
+      {/* Badges info */}
+      <div className="tem-badges">
+        {task.sourceType === 'google_event' && <span className="tem-badge google">G</span>}
+        <span className="tem-badge section">{SECTIONS[form.section] || form.section}</span>
+      </div>
+
+      {/* Form */}
+      <div className="tem-form">
+        {/* Titre */}
+        <div className="tem-field full">
+          <label>
+            <FileText size={13} /> Titre
+          </label>
+          <Input
+            type="text"
+            value={form.title}
+            onChange={(e) => update('title', e.target.value)}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v) update('title', v.charAt(0).toUpperCase() + v.slice(1));
+            }}
+            placeholder="Titre de la tâche..."
+            spellCheck
+            lang="fr"
+            autoComplete="off"
+          />
+        </div>
+
+        {/* Date + Période */}
+        <div className="tem-row">
+          <div className="tem-field">
+            <label>
+              <Calendar size={13} /> Date
+            </label>
+            <input type="date" value={form.date} onChange={(e) => update('date', e.target.value)} />
+          </div>
+          <div className="tem-field">
+            <label>Période</label>
+            <Select value={form.period} onChange={(e) => update('period', e.target.value)}>
+              <option value="AM">Matin (AM)</option>
+              <option value="PM">Après-midi (PM)</option>
+            </Select>
+          </div>
+        </div>
+
+        {/* Heure début / fin */}
+        <div className="tem-row">
+          <div className="tem-field">
+            <label>
+              <Clock size={13} /> Heure début
+            </label>
+            <input type="time" value={form.time} onChange={(e) => update('time', e.target.value)} />
+          </div>
+          <div className="tem-field">
+            <label>
+              <Clock size={13} /> Heure fin
+            </label>
+            <input
+              type="time"
+              value={form.endTime}
+              onChange={(e) => update('endTime', e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Personnel */}
+        <div className="tem-field full">
+          <label>
+            <User size={13} /> Personnel assigné
+          </label>
+          <EntityCombobox
+            value={form.personId}
+            onChange={(val) => update('personId', val)}
+            options={persons.map((p) => ({ id: p.id, name: `${p.firstName} ${p.lastName}` }))}
+            placeholder="— Aucun —"
+          />
+        </div>
+
+        {/* Affaire liée */}
+        <div className="tem-field full" ref={affaireRef}>
+          <label>
+            <Link2 size={13} /> Affaire
+          </label>
+          {form.affaireNum ? (
+            <div className="tem-affaire-selected">
+              <AffaireBadge numero={form.affaireNum} type={selectedAffaire?.type} />
+              <span className="tem-affaire-client">{selectedAffaire?.client || ''}</span>
+              <Button
+                variant="ghost"
+                type="button"
+                className="tem-affaire-clear"
+                onClick={() => update('affaireNum', '')}
+                title="Retirer l'affaire"
+              >
+                <Unlink size={12} />
+              </Button>
+            </div>
+          ) : (
+            <div className="tem-affaire-picker">
+              <div className="tem-affaire-search-wrap">
+                <Search size={13} className="tem-affaire-search-icon" />
+                <Input
+                  type="text"
+                  value={affaireSearch}
+                  onChange={(e) => {
+                    setAffaireSearch(e.target.value);
+                    setAffaireDropdownOpen(true);
+                  }}
+                  onFocus={() => setAffaireDropdownOpen(true)}
+                  placeholder="Rechercher une affaire…"
+                  className="tem-affaire-search"
+                />
+              </div>
+              {affaireDropdownOpen && (
+                <div className="tem-affaire-dropdown">
+                  {filteredAffaires.length === 0 ? (
+                    <div className="tem-affaire-empty">Aucune affaire trouvée</div>
+                  ) : (
+                    filteredAffaires.map((a) => (
+                      <Button
+                        variant="ghost"
+                        key={a.numeroAffaire}
+                        type="button"
+                        className="tem-affaire-option"
+                        onClick={() => {
+                          update('affaireNum', a.numeroAffaire);
+                          setAffaireSearch('');
+                          setAffaireDropdownOpen(false);
+                        }}
+                      >
+                        <span className="tem-affaire-opt-num">{a.numeroAffaire}</span>
+                        <span className="tem-affaire-opt-client">{a.client || a.nom || ''}</span>
+                        {a.titre && <span className="tem-affaire-opt-titre">{a.titre}</span>}
+                      </Button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Type de tâche */}
+        <div className="tem-field full">
+          <label>
+            <Briefcase size={13} /> Type
+          </label>
+          <Select value={form.section} onChange={(e) => update('section', e.target.value)}>
+            {Object.entries(SECTIONS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        {/* Lieu / Adresse (affiché pour les sections courses) */}
+        {COURSE_SECTIONS.has(form.section) && (
+          <div className="tem-field full">
+            <label>
+              <MapPin size={13} /> Lieu
+            </label>
+            <div className="tem-location-row">
+              <Input
+                type="text"
+                value={form.locationAddress}
+                onChange={(e) => update('locationAddress', e.target.value)}
+                placeholder="Adresse ou lieu de la course…"
+                autoComplete="off"
+              />
+              {form.locationAddress.trim() && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.locationAddress.trim())}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="tem-maps-link"
+                  title="Ouvrir dans Google Maps"
+                >
+                  <ExternalLink size={14} />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Statut */}
+        <div className="tem-field full">
+          <label>Statut</label>
+          <Select value={form.status} onChange={(e) => update('status', e.target.value)}>
+            <option value="pending">En attente</option>
+            <option value="in_progress">En cours</option>
+            <option value="done">Terminé</option>
+            <option value="cancelled">Annulé</option>
+          </Select>
+        </div>
+
+        {/* Notes */}
+        <div className="tem-field full">
+          <label>Notes</label>
+          <Textarea
+            value={form.notes}
+            onChange={(e) => update('notes', e.target.value)}
+            placeholder="Notes..."
+            rows={3}
+          />
         </div>
       </div>
-    </div>
+    </ModalLayout>
   );
 }
 

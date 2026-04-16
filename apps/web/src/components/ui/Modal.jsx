@@ -87,9 +87,10 @@ function Modal({ open, onClose, size = 'md', className = '', children }) {
 
 /* ── Sub-components ── */
 
-function ModalHeader({ icon, children, onClose }) {
+function ModalHeader({ icon, children, onClose, className = '', style }) {
+  const cls = ['ui-modal-header', className].filter(Boolean).join(' ');
   return (
-    <div className="ui-modal-header">
+    <div className={cls} style={style}>
       <div className="ui-modal-title">
         {icon && <span className="ui-modal-icon">{icon}</span>}
         <h3>{children}</h3>

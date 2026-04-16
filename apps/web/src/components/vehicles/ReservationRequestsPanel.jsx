@@ -3,7 +3,7 @@ import './ReservationRequestsPanel.css';
 import { Calendar, Check, Clock, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Button, DetailRow, Textarea } from '@/design-system';
+import { Button, DetailRow, ModalLayout, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -265,23 +265,14 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       </div>
 
       {rejectDialogOpen && (
-        <div
-          className="reject-dialog-overlay"
-          onMouseDown={(e) => e.target === e.currentTarget && setRejectDialogOpen(false)}
-        >
-          <div
-            className="reject-dialog"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            <h3>Rejeter la demande</h3>
-            <Textarea
-              placeholder="Indiquez le motif du rejet..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-            />
-            <div className="reject-dialog-actions">
+        <ModalLayout
+          open
+          onClose={() => setRejectDialogOpen(false)}
+          size="sm"
+          title="Rejeter la demande"
+          className="reject-dialog"
+          footer={
+            <>
               <Button variant="ghost" className="cancel" onClick={() => setRejectDialogOpen(false)}>
                 Annuler
               </Button>
@@ -293,9 +284,15 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
               >
                 Confirmer le rejet
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <Textarea
+            placeholder="Indiquez le motif du rejet..."
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+          />
+        </ModalLayout>
       )}
       {ConfirmDialogRenderer}
     </div>

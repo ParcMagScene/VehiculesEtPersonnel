@@ -17,7 +17,15 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, EmptyState, Textarea, Tooltip } from '@/design-system';
+import {
+  Button,
+  EmptyState,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Textarea,
+  Tooltip,
+} from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api, { getApiUrl } from '../../utils/api';
@@ -583,45 +591,38 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       </div>
 
       {/* Modal nouvelle conversation */}
-      {showNewConv && (
-        <div
-          className="msg-new-overlay"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setShowNewConv(false);
-          }}
-        >
-          <div className="msg-new-modal">
-            <h4>Nouveau message</h4>
-            <div className="msg-user-list">
-              {allUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className={`msg-user-option ${selectedUserId === user.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedUserId(user.id)}
-                >
-                  <div className="msg-user-option-avatar">{getInitials(user.name)}</div>
-                  <span className="msg-user-option-name">{user.name}</span>
-                </div>
-              ))}
-              {allUsers.length === 0 && <p className="msg-empty">Aucun autre utilisateur</p>}
-            </div>
-            <div className="msg-new-actions">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowNewConv(false);
-                  setSelectedUserId(null);
-                }}
+      <Modal open={showNewConv} onClose={() => setShowNewConv(false)} size="sm">
+        <ModalHeader onClose={() => setShowNewConv(false)}>Nouveau message</ModalHeader>
+        <ModalBody>
+          <div className="msg-user-list">
+            {allUsers.map((user) => (
+              <div
+                key={user.id}
+                className={`msg-user-option ${selectedUserId === user.id ? 'selected' : ''}`}
+                onClick={() => setSelectedUserId(user.id)}
               >
-                Annuler
-              </Button>
-              <Button variant="primary" onClick={handleNewConversation} disabled={!selectedUserId}>
-                Démarrer
-              </Button>
-            </div>
+                <div className="msg-user-option-avatar">{getInitials(user.name)}</div>
+                <span className="msg-user-option-name">{user.name}</span>
+              </div>
+            ))}
+            {allUsers.length === 0 && <p className="msg-empty">Aucun autre utilisateur</p>}
           </div>
-        </div>
-      )}
+          <div className="msg-new-actions">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowNewConv(false);
+                setSelectedUserId(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleNewConversation} disabled={!selectedUserId}>
+              Démarrer
+            </Button>
+          </div>
+        </ModalBody>
+      </Modal>
     </>
   );
 };

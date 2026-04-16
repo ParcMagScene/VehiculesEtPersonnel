@@ -15,11 +15,20 @@ import {
   Plus,
   ShoppingCart,
   Truck,
-  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, EmptyState, InlineAlert, Select, Table } from '@/design-system';
+import {
+  Button,
+  EmptyState,
+  InlineAlert,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  Table,
+} from '@/design-system';
 
 import api from '../../utils/api';
 
@@ -138,109 +147,92 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
   const totalArticles = activeSuppliers.reduce((sum, s) => sum + (s.items?.length || 0), 0);
 
   return (
-    <div
-      className="shared-overlay gen-orders-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && handleClose()}
-    >
-      <div className="gen-orders-modal">
-        {/* Header */}
-        <div className="theme-modal-header">
-          <h3>
-            <ShoppingCart size={20} /> Commandes — {affaireReference || affaireId}
-          </h3>
-          <Button
-            variant="ghost"
-            className="theme-close-btn"
-            onClick={handleClose}
-            aria-label="Fermer"
-          >
-            <X size={18} />
+    <Modal open onClose={handleClose} size="lg" className="gen-orders-modal">
+      <ModalHeader icon={<ShoppingCart size={20} />} onClose={handleClose}>
+        Commandes — {affaireReference || affaireId}
+      </ModalHeader>
+
+      <ModalBody>
+        {loading && (
+          <div className="gen-orders-loading">
+            <Loader size={24} className="spin-slow" />
+            <span>Analyse des articles et fournisseurs…</span>
+          </div>
+        )}
+
+        {error && <InlineAlert>{error}</InlineAlert>}
+
+        {!loading && !error && data && (
+          <>
+            {data.suppliers.length === 0 ? (
+              <EmptyState
+                icon={<Package size={32} />}
+                title="Aucun fournisseur identifié dans les BL de cette affaire."
+                description="Importez un BL contenant des articles avec fournisseurs."
+              />
+            ) : (
+              <>
+                <div className="gen-orders-summary">
+                  <span>
+                    <Package size={14} /> {data.total_items} article
+                    {data.total_items > 1 ? 's' : ''}
+                  </span>
+                  <span>
+                    <Truck size={14} /> {data.suppliers.length} fournisseur
+                    {data.suppliers.length > 1 ? 's' : ''}
+                  </span>
+                  {data.no_supplier_items?.length > 0 && (
+                    <span className="gen-orders-warn">
+                      <AlertTriangle size={13} /> {data.no_supplier_items.length} sans fournisseur
+                    </span>
+                  )}
+                </div>
+
+                <div className="gen-orders-suppliers">
+                  {data.suppliers.map((supplier) => (
+                    <SupplierBlock
+                      key={supplier.name}
+                      supplier={supplier}
+                      config={supplierActions[supplier.name]}
+                      onChangeAction={setAction}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {results && <ResultsSummary results={results} />}
+          </>
+        )}
+      </ModalBody>
+
+      {/* Footer */}
+      {!loading && !error && data && data.suppliers.length > 0 && !results && (
+        <ModalFooter>
+          <Button variant="ghost" onClick={handleClose}>
+            Annuler
           </Button>
-        </div>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={processing || totalArticles === 0}
+          >
+            <Briefcase size={15} />
+            {processing
+              ? 'Traitement…'
+              : `Exécuter (${activeSuppliers.length} fournisseur${activeSuppliers.length > 1 ? 's' : ''})`}
+          </Button>
+        </ModalFooter>
+      )}
 
-        {/* Body */}
-        <div className="gen-orders-body">
-          {loading && (
-            <div className="gen-orders-loading">
-              <Loader size={24} className="spin-slow" />
-              <span>Analyse des articles et fournisseurs…</span>
-            </div>
-          )}
-
-          {error && <InlineAlert>{error}</InlineAlert>}
-
-          {!loading && !error && data && (
-            <>
-              {data.suppliers.length === 0 ? (
-                <EmptyState
-                  icon={<Package size={32} />}
-                  title="Aucun fournisseur identifié dans les BL de cette affaire."
-                  description="Importez un BL contenant des articles avec fournisseurs."
-                />
-              ) : (
-                <>
-                  <div className="gen-orders-summary">
-                    <span>
-                      <Package size={14} /> {data.total_items} article
-                      {data.total_items > 1 ? 's' : ''}
-                    </span>
-                    <span>
-                      <Truck size={14} /> {data.suppliers.length} fournisseur
-                      {data.suppliers.length > 1 ? 's' : ''}
-                    </span>
-                    {data.no_supplier_items?.length > 0 && (
-                      <span className="gen-orders-warn">
-                        <AlertTriangle size={13} /> {data.no_supplier_items.length} sans fournisseur
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="gen-orders-suppliers">
-                    {data.suppliers.map((supplier) => (
-                      <SupplierBlock
-                        key={supplier.name}
-                        supplier={supplier}
-                        config={supplierActions[supplier.name]}
-                        onChangeAction={setAction}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {results && <ResultsSummary results={results} />}
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        {!loading && !error && data && data.suppliers.length > 0 && !results && (
-          <div className="gen-orders-footer">
-            <Button variant="ghost" onClick={handleClose}>
-              Annuler
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSubmit}
-              disabled={processing || totalArticles === 0}
-            >
-              <Briefcase size={15} />
-              {processing
-                ? 'Traitement…'
-                : `Exécuter (${activeSuppliers.length} fournisseur${activeSuppliers.length > 1 ? 's' : ''})`}
-            </Button>
-          </div>
-        )}
-
-        {results && (
-          <div className="gen-orders-footer">
-            <Button variant="primary" onClick={handleClose}>
-              Fermer
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+      {results && (
+        <ModalFooter>
+          <Button variant="primary" onClick={handleClose}>
+            Fermer
+          </Button>
+        </ModalFooter>
+      )}
+    </Modal>
   );
 }
 

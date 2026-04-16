@@ -12,10 +12,9 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { Button } from '@/design-system';
+import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { STATUS_COLORS } from '../constants/colors';
 
@@ -70,18 +69,11 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
   const _currentWeekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
 
   return (
-    <div
-      className="week-selector-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="week-selector-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="week-selector-header">
-          <h3>Sélectionner une semaine - {format(currentDate, 'MMMM yyyy', { locale: fr })}</h3>
-          <Button variant="ghost" className="close-button" onClick={onClose}>
-            <X size={20} />
-          </Button>
-        </div>
-
+    <Modal open onClose={onClose} size="lg" className="week-selector-modal">
+      <ModalHeader onClose={onClose}>
+        Sélectionner une semaine - {format(currentDate, 'MMMM yyyy', { locale: fr })}
+      </ModalHeader>
+      <ModalBody>
         <div className="week-selector-calendar">
           {/* En-tête des jours */}
           <div className="week-selector-weekdays">
@@ -169,8 +161,8 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 }
 

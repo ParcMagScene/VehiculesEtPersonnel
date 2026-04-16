@@ -12,11 +12,10 @@ import {
   RotateCcw,
   Truck,
   Wrench,
-  X,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { Button, Input, Select } from '@/design-system';
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
@@ -345,22 +344,13 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
   };
 
   return (
-    <div className="etm-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="etm-modal">
-        {/* Header */}
-        <div className="etm-header">
-          <div className="etm-header-info">
-            <h3>
-              <Calendar size={18} /> Définir les tâches
-            </h3>
-            <p className="etm-event-title">{eventInfo.summary}</p>
-          </div>
-          <Button variant="ghost" className="etm-close" onClick={onClose} aria-label="Fermer">
-            <X size={20} />
-          </Button>
-        </div>
+    <Modal open onClose={onClose} size="lg" className="etm-modal">
+      <ModalHeader icon={<Calendar size={18} />} onClose={onClose}>
+        Définir les tâches
+        <p className="etm-event-title">{eventInfo.summary}</p>
+      </ModalHeader>
 
-        {/* Event summary */}
+      <ModalBody>
         <div className="etm-event-summary">
           {eventInfo.affaireNum && (
             <AffaireBadge numero={eventInfo.affaireNum} type={eventInfo.affaireType} showIcon />
@@ -483,38 +473,37 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
             );
           })}
         </div>
+      </ModalBody>
 
-        {/* Footer */}
-        <div className="etm-footer">
-          {hasExistingTasks && (
-            <Button
-              variant="ghost"
-              className="etm-btn danger"
-              onClick={handleDeleteAll}
-              disabled={deleting}
-            >
-              {deleting ? <Loader size={14} className="spin" /> : <AlertCircle size={14} />}
-              Supprimer les tâches
-            </Button>
-          )}
-          <div className="etm-footer-right">
-            <Button variant="ghost" className="etm-btn secondary" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button
-              variant="ghost"
-              className="etm-btn primary"
-              onClick={handleSave}
-              disabled={saving || enabledSteps.length === 0}
-            >
-              {saving ? <Loader size={14} className="spin" /> : <Check size={14} />}
-              {hasExistingTasks ? 'Mettre à jour' : 'Créer'} {enabledSteps.length} tâche
-              {enabledSteps.length > 1 ? 's' : ''}
-            </Button>
-          </div>
+      <ModalFooter className="etm-footer">
+        {hasExistingTasks && (
+          <Button
+            variant="ghost"
+            className="etm-btn danger"
+            onClick={handleDeleteAll}
+            disabled={deleting}
+          >
+            {deleting ? <Loader size={14} className="spin" /> : <AlertCircle size={14} />}
+            Supprimer les tâches
+          </Button>
+        )}
+        <div className="etm-footer-right">
+          <Button variant="ghost" className="etm-btn secondary" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button
+            variant="ghost"
+            className="etm-btn primary"
+            onClick={handleSave}
+            disabled={saving || enabledSteps.length === 0}
+          >
+            {saving ? <Loader size={14} className="spin" /> : <Check size={14} />}
+            {hasExistingTasks ? 'Mettre à jour' : 'Créer'} {enabledSteps.length} tâche
+            {enabledSteps.length > 1 ? 's' : ''}
+          </Button>
         </div>
-      </div>
-    </div>
+      </ModalFooter>
+    </Modal>
   );
 }
 

@@ -13,7 +13,6 @@ import {
   Plus,
   Receipt,
   ShoppingCart,
-  X,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -21,6 +20,10 @@ import {
   Button,
   EntityCombobox,
   Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ProgressBar,
   SearchBar,
   Select,
@@ -58,80 +61,70 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
   });
 
   return (
-    <div className="orders-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="supplier-form-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="modal-header">
-          <h2>{supplier ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer">
-            <X size={20} />
-          </Button>
-        </div>
-        <div className="modal-body">
-          <div className="form-grid">
-            <div className="form-field">
-              <label>Nom *</label>
-              <Input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                required
-              />
-            </div>
-            <div className="form-field">
-              <label>Contact</label>
-              <Input
-                type="text"
-                value={form.contact_name}
-                onChange={(e) => setForm((f) => ({ ...f, contact_name: e.target.value }))}
-              />
-            </div>
-            <div className="form-field">
-              <label>Email</label>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              />
-            </div>
-            <div className="form-field">
-              <label>Téléphone</label>
-              <PhoneInput
-                value={form.phone}
-                onChange={(val) => setForm((f) => ({ ...f, phone: val }))}
-              />
-            </div>
-            <div className="form-field full-width">
-              <label>Adresse</label>
-              <AddressAutocomplete
-                value={form.address}
-                onChange={(val) => setForm((f) => ({ ...f, address: val }))}
-              />
-            </div>
-            <div className="form-field full-width">
-              <label>Notes</label>
-              <Textarea
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                rows={3}
-              />
-            </div>
+    <Modal open={true} onClose={onClose} size="md" className="supplier-form-modal">
+      <ModalHeader onClose={onClose}>
+        {supplier ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}
+      </ModalHeader>
+      <ModalBody>
+        <div className="form-grid">
+          <div className="form-field">
+            <label>Nom *</label>
+            <Input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="form-field">
+            <label>Contact</label>
+            <Input
+              type="text"
+              value={form.contact_name}
+              onChange={(e) => setForm((f) => ({ ...f, contact_name: e.target.value }))}
+            />
+          </div>
+          <div className="form-field">
+            <label>Email</label>
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            />
+          </div>
+          <div className="form-field">
+            <label>Téléphone</label>
+            <PhoneInput
+              value={form.phone}
+              onChange={(val) => setForm((f) => ({ ...f, phone: val }))}
+            />
+          </div>
+          <div className="form-field full-width">
+            <label>Adresse</label>
+            <AddressAutocomplete
+              value={form.address}
+              onChange={(val) => setForm((f) => ({ ...f, address: val }))}
+            />
+          </div>
+          <div className="form-field full-width">
+            <label>Notes</label>
+            <Textarea
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              rows={3}
+            />
           </div>
         </div>
-        <div className="modal-footer">
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" onClick={() => onSave(form)} disabled={!form.name.trim()}>
-            <Check size={16} /> {supplier ? 'Enregistrer' : 'Créer'}
-          </Button>
-        </div>
-      </div>
-    </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="ghost" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button variant="primary" onClick={() => onSave(form)} disabled={!form.name.trim()}>
+          <Check size={16} /> {supplier ? 'Enregistrer' : 'Créer'}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 });
 
@@ -202,25 +195,11 @@ export const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div
-      className="catalog-picker-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="catalog-picker-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="catalog-picker-header">
-          <h2>
-            <BookOpen size={20} /> Sélection depuis les catalogues
-          </h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer">
-            <X size={20} />
-          </Button>
-        </div>
-
+    <Modal open={true} onClose={onClose} size="xl" className="catalog-picker-modal">
+      <ModalHeader icon={<BookOpen size={20} />} onClose={onClose}>
+        Sélection depuis les catalogues
+      </ModalHeader>
+      <ModalBody>
         <div className="catalog-picker-filters">
           <div className="catalog-picker-search">
             <SearchBar
@@ -376,8 +355,8 @@ export const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
             </Button>
           </div>
         )}
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 });
 
@@ -415,140 +394,125 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
   };
 
   return (
-    <div className="orders-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="order-form-modal material-request-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="modal-header">
-          <h2>
-            <ClipboardList size={20} />{' '}
-            {isEditing ? 'Modifier la demande' : 'Nouvelle demande de matériel'}
-          </h2>
-          <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer">
-            <X size={20} />
-          </Button>
-        </div>
-        <div className="modal-body">
-          <div className="form-grid">
-            <div className="form-field full-width">
-              <label>Article *</label>
-              <div className="article-input-group">
-                <Input
-                  type="text"
-                  value={form.article}
-                  onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
-                  placeholder="Nom de l'article"
-                />
-                <Tooltip content="Chercher dans les catalogues fournisseurs" position="bottom">
-                  <Button
-                    variant="ghost"
-                    type="button"
-                    className="catalog-search-btn"
-                    onClick={() => setShowCatalogPicker(true)}
-                  >
-                    <Layers size={14} /> Catalogue
-                  </Button>
-                </Tooltip>
-              </div>
-            </div>
-            <div className="form-field">
-              <label>Réf. article</label>
+    <Modal open={true} onClose={onClose} size="lg" className="material-request-modal">
+      <ModalHeader icon={<ClipboardList size={20} />} onClose={onClose}>
+        {isEditing ? 'Modifier la demande' : 'Nouvelle demande de matériel'}
+      </ModalHeader>
+      <ModalBody className="modal-body">
+        <div className="form-grid">
+          <div className="form-field full-width">
+            <label>Article *</label>
+            <div className="article-input-group">
               <Input
                 type="text"
-                value={form.ref_code}
-                onChange={(e) => setForm((f) => ({ ...f, ref_code: e.target.value }))}
-                placeholder="Référence"
+                value={form.article}
+                onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
+                placeholder="Nom de l'article"
               />
-            </div>
-            <div className="form-field">
-              <label>Quantité</label>
-              <Input
-                type="number"
-                min="1"
-                value={form.quantity}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, quantity: parseInt(e.target.value) || 1 }))
-                }
-              />
-            </div>
-            <div className="form-field">
-              <label>Fournisseur (optionnel)</label>
-              <EntityCombobox
-                value={form.supplier_id}
-                onChange={(val) => handleSupplierChange(val)}
-                options={suppliers}
-                placeholder="— Non spécifié —"
-              />
-            </div>
-            <div className="form-field">
-              <label>Priorité</label>
-              <Select
-                value={form.priority}
-                onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
-              >
-                {Object.entries(REQUEST_PRIORITY).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.icon} {v.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="form-field">
-              <label>Affaire (optionnel)</label>
-              <Input
-                type="text"
-                value={form.affaire_id}
-                onChange={(e) => setForm((f) => ({ ...f, affaire_id: e.target.value }))}
-                placeholder="ex: AF32844"
-              />
-            </div>
-            <div className="form-field">
-              <label>Destination</label>
-              <Select
-                value={form.destination}
-                onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
-              >
-                {DESTINATIONS.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            {form.destination === 'Autre' && (
-              <div className="form-field">
-                <label>Préciser la destination</label>
-                <Input
-                  type="text"
-                  value={form.destination_other}
-                  onChange={(e) => setForm((f) => ({ ...f, destination_other: e.target.value }))}
-                  placeholder="Destination..."
-                />
-              </div>
-            )}
-            <div className="form-field full-width">
-              <label>Notes / Commentaires</label>
-              <Textarea
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                rows={2}
-                placeholder="Informations supplémentaires..."
-              />
+              <Tooltip content="Chercher dans les catalogues fournisseurs" position="bottom">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="catalog-search-btn"
+                  onClick={() => setShowCatalogPicker(true)}
+                >
+                  <Layers size={14} /> Catalogue
+                </Button>
+              </Tooltip>
             </div>
           </div>
+          <div className="form-field">
+            <label>Réf. article</label>
+            <Input
+              type="text"
+              value={form.ref_code}
+              onChange={(e) => setForm((f) => ({ ...f, ref_code: e.target.value }))}
+              placeholder="Référence"
+            />
+          </div>
+          <div className="form-field">
+            <label>Quantité</label>
+            <Input
+              type="number"
+              min="1"
+              value={form.quantity}
+              onChange={(e) => setForm((f) => ({ ...f, quantity: parseInt(e.target.value) || 1 }))}
+            />
+          </div>
+          <div className="form-field">
+            <label>Fournisseur (optionnel)</label>
+            <EntityCombobox
+              value={form.supplier_id}
+              onChange={(val) => handleSupplierChange(val)}
+              options={suppliers}
+              placeholder="— Non spécifié —"
+            />
+          </div>
+          <div className="form-field">
+            <label>Priorité</label>
+            <Select
+              value={form.priority}
+              onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
+            >
+              {Object.entries(REQUEST_PRIORITY).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v.icon} {v.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="form-field">
+            <label>Affaire (optionnel)</label>
+            <Input
+              type="text"
+              value={form.affaire_id}
+              onChange={(e) => setForm((f) => ({ ...f, affaire_id: e.target.value }))}
+              placeholder="ex: AF32844"
+            />
+          </div>
+          <div className="form-field">
+            <label>Destination</label>
+            <Select
+              value={form.destination}
+              onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
+            >
+              {DESTINATIONS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </Select>
+          </div>
+          {form.destination === 'Autre' && (
+            <div className="form-field">
+              <label>Préciser la destination</label>
+              <Input
+                type="text"
+                value={form.destination_other}
+                onChange={(e) => setForm((f) => ({ ...f, destination_other: e.target.value }))}
+                placeholder="Destination..."
+              />
+            </div>
+          )}
+          <div className="form-field full-width">
+            <label>Notes / Commentaires</label>
+            <Textarea
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              rows={2}
+              placeholder="Informations supplémentaires..."
+            />
+          </div>
         </div>
-        <div className="modal-footer">
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" onClick={() => onSave(form)} disabled={!form.article.trim()}>
-            <Check size={16} /> {isEditing ? 'Enregistrer' : 'Créer la demande'}
-          </Button>
-        </div>
-      </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="ghost" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button variant="primary" onClick={() => onSave(form)} disabled={!form.article.trim()}>
+          <Check size={16} /> {isEditing ? 'Enregistrer' : 'Créer la demande'}
+        </Button>
+      </ModalFooter>
 
       {showCatalogPicker && (
         <CatalogPickerModal
@@ -556,7 +520,7 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
           onClose={() => setShowCatalogPicker(false)}
         />
       )}
-    </div>
+    </Modal>
   );
 });
 
@@ -585,24 +549,11 @@ export const SupplierDetailModal = React.memo(
     };
 
     return (
-      <div
-        className="orders-overlay"
-        onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-      >
-        <div
-          className="supplier-detail-modal"
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="modal-header">
-            <h2>
-              <Building2 size={20} /> {supplier.name} — Détail complet
-            </h2>
-            <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer">
-              <X size={20} />
-            </Button>
-          </div>
+      <Modal open={true} onClose={onClose} size="xl" className="supplier-detail-modal">
+        <ModalHeader icon={<Building2 size={20} />} onClose={onClose}>
+          {supplier.name} — Détail complet
+        </ModalHeader>
+        <ModalBody>
           <div className="supplier-detail-tabs">
             <Button
               variant="ghost"
@@ -879,8 +830,8 @@ export const SupplierDetailModal = React.memo(
               </div>
             )}
           </div>
-        </div>
-      </div>
+        </ModalBody>
+      </Modal>
     );
   },
 );

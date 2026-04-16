@@ -1,9 +1,20 @@
 import './LocationDialog.css';
 
-import { Clock, MapPin, Navigation, Route, X } from 'lucide-react';
+import { Clock, MapPin, Navigation, Route } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, Dialog, FormField, InlineAlert, Input, Select, Tooltip } from '@/design-system';
+import {
+  Button,
+  Dialog,
+  FormField,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Select,
+  Tooltip,
+} from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
@@ -407,39 +418,20 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   };
 
   return (
-    <div
-      className="location-dialog-overlay"
-      onMouseDown={(e) => {
-        // Fermer seulement si on clique sur l'overlay, pas sur le contenu
-        if (e.target === e.currentTarget) {
-          handleSafeClose();
-        }
-      }}
-    >
-      <div
-        className="location-dialog"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="location-dialog-header">
-          <h2>
-            <MapPin size={24} />
-            {location ? 'Modifier le lieu' : 'Nouveau lieu'}
-            {formData.lat && formData.lng && (
-              <Tooltip content="Position GPS enregistrée" position="bottom">
-                <span className="gps-badge">
-                  <Navigation size={16} />
-                  GPS
-                </span>
-              </Tooltip>
-            )}
-          </h2>
-          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
-            <X size={24} />
-          </Button>
-        </div>
+    <Modal open onClose={handleSafeClose} size="lg" className="location-dialog">
+      <ModalHeader icon={<MapPin size={24} />} onClose={handleSafeClose}>
+        {location ? 'Modifier le lieu' : 'Nouveau lieu'}
+        {formData.lat && formData.lng && (
+          <Tooltip content="Position GPS enregistrée" position="bottom">
+            <span className="gps-badge">
+              <Navigation size={16} />
+              GPS
+            </span>
+          </Tooltip>
+        )}
+      </ModalHeader>
 
+      <ModalBody>
         <form onSubmit={handleSubmit}>
           {error && <InlineAlert>{error}</InlineAlert>}
 
@@ -581,7 +573,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
             </Button>
           </div>
         </form>
-      </div>
+      </ModalBody>
 
       <Dialog
         open={showUnsavedWarning}
@@ -598,7 +590,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
       >
         Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
       </Dialog>
-    </div>
+    </Modal>
   );
 };
 

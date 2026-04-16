@@ -24,11 +24,19 @@ import {
   Users,
   Volume2,
   VolumeX,
-  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, Dialog, Select, Toggle } from '@/design-system';
+import {
+  Button,
+  Dialog,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  Toggle,
+} from '@/design-system';
 
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { PALETTES } from '../../hooks/useTheme';
@@ -185,318 +193,304 @@ const UserPreferencesModal = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="prefs-overlay"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) handleSafeClose();
-      }}
-    >
-      <div className="prefs-modal">
-        <div className="prefs-header">
-          <h3>
-            <Settings size={18} /> Préférences
-          </h3>
-          <Button variant="ghost" onClick={handleSafeClose} aria-label="Fermer">
-            <X size={18} />
-          </Button>
-        </div>
+    <Modal open={isOpen} onClose={handleSafeClose} size="lg" className="prefs-modal">
+      <ModalHeader icon={<Settings size={18} />} onClose={handleSafeClose}>
+        Préférences
+      </ModalHeader>
 
-        <div className="prefs-body">
-          {/* Section Interface */}
-          <div className="prefs-section">
-            <div className="prefs-section-title">Interface</div>
+      <ModalBody className="prefs-body">
+        {/* Section Interface */}
+        <div className="prefs-section">
+          <div className="prefs-section-title">Interface</div>
 
-            <div className="prefs-field">
-              <span className="prefs-field-label">
-                <Layout size={14} /> Module par défaut
-              </span>
-              <Select
-                className="prefs-select"
-                value={prefs.defaultModule}
-                onChange={(e) => updatePref('defaultModule', e.target.value)}
-              >
-                <option value="vehicles">Parc</option>
-                <option value="personnel">Personnel</option>
-                <option value="affaires">Affaires</option>
-                <option value="equipment">Équipements</option>
-                <option value="orders">Commandes</option>
-                <option value="catalog">Catalogue</option>
-                <option value="stock">Stock</option>
-                <option value="planning">Planning</option>
-              </Select>
-            </div>
-
-            <div className="prefs-field">
-              <span className="prefs-field-label">
-                <Monitor size={14} /> Vue calendrier
-              </span>
-              <Select
-                className="prefs-select"
-                value={prefs.defaultView}
-                onChange={(e) => updatePref('defaultView', e.target.value)}
-              >
-                <option value="week">Semaine</option>
-                <option value="month">Mois</option>
-                <option value="year">Année</option>
-              </Select>
-            </div>
-
-            <div className="prefs-field">
-              <span className="prefs-field-label">
-                <Layout size={14} /> Mode compact
-              </span>
-              <Toggle
-                checked={prefs.compactMode}
-                onChange={(e) => updatePref('compactMode', e.target.checked)}
-              />
-            </div>
+          <div className="prefs-field">
+            <span className="prefs-field-label">
+              <Layout size={14} /> Module par défaut
+            </span>
+            <Select
+              className="prefs-select"
+              value={prefs.defaultModule}
+              onChange={(e) => updatePref('defaultModule', e.target.value)}
+            >
+              <option value="vehicles">Parc</option>
+              <option value="personnel">Personnel</option>
+              <option value="affaires">Affaires</option>
+              <option value="equipment">Équipements</option>
+              <option value="orders">Commandes</option>
+              <option value="catalog">Catalogue</option>
+              <option value="stock">Stock</option>
+              <option value="planning">Planning</option>
+            </Select>
           </div>
 
-          {/* Section Onglets */}
-          <div className="prefs-section">
-            <div className="prefs-section-title">Onglets &amp; Ordre</div>
-            <div className="prefs-tabs-list">
-              {orderedModules.map((mod, idx) => {
-                const Icon = mod.icon;
-                const isHidden = (prefs.hiddenTabs || []).includes(mod.id);
-                return (
-                  <div
-                    key={mod.id}
-                    className={`prefs-tab-row${isHidden ? ' hidden-tab' : ''}${mod.locked ? ' locked' : ''}`}
-                  >
-                    <div className="prefs-tab-info">
-                      <GripVertical size={14} className="prefs-tab-grip" />
-                      <Icon size={16} />
-                      <span>{mod.label}</span>
-                    </div>
-                    <div className="prefs-tab-actions">
-                      {!mod.locked && (
-                        <Button
-                          variant="ghost"
-                          className="prefs-tab-vis-btn"
-                          onClick={() => toggleTabVisibility(mod.id)}
-                          title={isHidden ? 'Afficher' : 'Masquer'}
-                        >
-                          {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        className="prefs-tab-move-btn"
-                        onClick={() => moveTab(mod.id, -1)}
-                        disabled={idx === 0}
-                        title="Monter"
-                      >
-                        <ChevronUp size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className="prefs-tab-move-btn"
-                        onClick={() => moveTab(mod.id, 1)}
-                        disabled={idx === orderedModules.length - 1}
-                        title="Descendre"
-                      >
-                        <ChevronDown size={14} />
-                      </Button>
-                    </div>
+          <div className="prefs-field">
+            <span className="prefs-field-label">
+              <Monitor size={14} /> Vue calendrier
+            </span>
+            <Select
+              className="prefs-select"
+              value={prefs.defaultView}
+              onChange={(e) => updatePref('defaultView', e.target.value)}
+            >
+              <option value="week">Semaine</option>
+              <option value="month">Mois</option>
+              <option value="year">Année</option>
+            </Select>
+          </div>
+
+          <div className="prefs-field">
+            <span className="prefs-field-label">
+              <Layout size={14} /> Mode compact
+            </span>
+            <Toggle
+              checked={prefs.compactMode}
+              onChange={(e) => updatePref('compactMode', e.target.checked)}
+            />
+          </div>
+        </div>
+
+        {/* Section Onglets */}
+        <div className="prefs-section">
+          <div className="prefs-section-title">Onglets &amp; Ordre</div>
+          <div className="prefs-tabs-list">
+            {orderedModules.map((mod, idx) => {
+              const Icon = mod.icon;
+              const isHidden = (prefs.hiddenTabs || []).includes(mod.id);
+              return (
+                <div
+                  key={mod.id}
+                  className={`prefs-tab-row${isHidden ? ' hidden-tab' : ''}${mod.locked ? ' locked' : ''}`}
+                >
+                  <div className="prefs-tab-info">
+                    <GripVertical size={14} className="prefs-tab-grip" />
+                    <Icon size={16} />
+                    <span>{mod.label}</span>
                   </div>
+                  <div className="prefs-tab-actions">
+                    {!mod.locked && (
+                      <Button
+                        variant="ghost"
+                        className="prefs-tab-vis-btn"
+                        onClick={() => toggleTabVisibility(mod.id)}
+                        title={isHidden ? 'Afficher' : 'Masquer'}
+                      >
+                        {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      className="prefs-tab-move-btn"
+                      onClick={() => moveTab(mod.id, -1)}
+                      disabled={idx === 0}
+                      title="Monter"
+                    >
+                      <ChevronUp size={14} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="prefs-tab-move-btn"
+                      onClick={() => moveTab(mod.id, 1)}
+                      disabled={idx === orderedModules.length - 1}
+                      title="Descendre"
+                    >
+                      <ChevronDown size={14} />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Section Thème */}
+        <div className="prefs-section">
+          <div className="prefs-section-title">Apparence</div>
+
+          {/* Mode clair / sombre */}
+          <div className="prefs-field">
+            <span className="prefs-field-label">
+              {isDark ? <Moon size={14} /> : <Sun size={14} />} Mode sombre
+            </span>
+            <Toggle checked={isDark} onChange={() => onToggleTheme && onToggleTheme()} />
+          </div>
+
+          {/* Sélecteur de palette */}
+          <div className="prefs-field prefs-palette-section">
+            <span className="prefs-field-label">
+              <Palette size={14} /> Palette de couleurs
+            </span>
+            <div className="prefs-palette-grid">
+              {PALETTES.map((p) => {
+                const colors = isDark ? p.darkColors : p.colors;
+                const isActive = palette === p.id;
+                return (
+                  <Button
+                    variant="ghost"
+                    key={p.id}
+                    className={`prefs-palette-card${isActive ? ' active' : ''}`}
+                    onClick={() => onPaletteChange && onPaletteChange(p.id)}
+                    title={p.description}
+                  >
+                    <div className="prefs-palette-preview" style={{ background: colors.bg }}>
+                      <div className="prefs-palette-swatches">
+                        <span
+                          className="prefs-palette-swatch"
+                          style={{ background: colors.primary }}
+                        />
+                        <span
+                          className="prefs-palette-swatch"
+                          style={{ background: colors.secondary }}
+                        />
+                        <span
+                          className="prefs-palette-swatch"
+                          style={{ background: colors.accent }}
+                        />
+                      </div>
+                      <div
+                        className="prefs-palette-mini-card"
+                        style={{ background: colors.card, borderColor: colors.primary + '33' }}
+                      >
+                        <div
+                          className="prefs-palette-mini-bar"
+                          style={{
+                            background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="prefs-palette-info">
+                      <span className="prefs-palette-name">{p.name}</span>
+                      {isActive && <Check size={12} className="prefs-palette-check" />}
+                    </div>
+                  </Button>
                 );
               })}
             </div>
           </div>
-
-          {/* Section Thème */}
-          <div className="prefs-section">
-            <div className="prefs-section-title">Apparence</div>
-
-            {/* Mode clair / sombre */}
-            <div className="prefs-field">
-              <span className="prefs-field-label">
-                {isDark ? <Moon size={14} /> : <Sun size={14} />} Mode sombre
-              </span>
-              <Toggle checked={isDark} onChange={() => onToggleTheme && onToggleTheme()} />
-            </div>
-
-            {/* Sélecteur de palette */}
-            <div className="prefs-field prefs-palette-section">
-              <span className="prefs-field-label">
-                <Palette size={14} /> Palette de couleurs
-              </span>
-              <div className="prefs-palette-grid">
-                {PALETTES.map((p) => {
-                  const colors = isDark ? p.darkColors : p.colors;
-                  const isActive = palette === p.id;
-                  return (
-                    <Button
-                      variant="ghost"
-                      key={p.id}
-                      className={`prefs-palette-card${isActive ? ' active' : ''}`}
-                      onClick={() => onPaletteChange && onPaletteChange(p.id)}
-                      title={p.description}
-                    >
-                      <div className="prefs-palette-preview" style={{ background: colors.bg }}>
-                        <div className="prefs-palette-swatches">
-                          <span
-                            className="prefs-palette-swatch"
-                            style={{ background: colors.primary }}
-                          />
-                          <span
-                            className="prefs-palette-swatch"
-                            style={{ background: colors.secondary }}
-                          />
-                          <span
-                            className="prefs-palette-swatch"
-                            style={{ background: colors.accent }}
-                          />
-                        </div>
-                        <div
-                          className="prefs-palette-mini-card"
-                          style={{ background: colors.card, borderColor: colors.primary + '33' }}
-                        >
-                          <div
-                            className="prefs-palette-mini-bar"
-                            style={{
-                              background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div className="prefs-palette-info">
-                        <span className="prefs-palette-name">{p.name}</span>
-                        {isActive && <Check size={12} className="prefs-palette-check" />}
-                      </div>
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Section Notifications */}
-          <div className="prefs-section">
-            <div className="prefs-section-title">Notifications</div>
-
-            <div className="prefs-field">
-              <span className="prefs-field-label">
-                <Bell size={14} /> Notifications navigateur
-              </span>
-              <Toggle
-                checked={prefs.notificationsEnabled}
-                onChange={(e) => updatePref('notificationsEnabled', e.target.checked)}
-              />
-            </div>
-
-            <div className="prefs-field">
-              <span className="prefs-field-label">
-                <Bell size={14} /> Son de notification
-              </span>
-              <Toggle
-                checked={prefs.soundEnabled}
-                onChange={(e) => updatePref('soundEnabled', e.target.checked)}
-              />
-            </div>
-
-            {prefs.soundEnabled && (
-              <div className="prefs-field prefs-volume-row">
-                <span className="prefs-field-label">
-                  {prefs.soundVolume > 0 ? <Volume2 size={14} /> : <VolumeX size={14} />} Volume
-                  <span className="prefs-volume-val">{prefs.soundVolume}%</span>
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="5"
-                  value={prefs.soundVolume}
-                  className="prefs-volume-slider"
-                  onChange={(e) => {
-                    const v = Number(e.target.value);
-                    updatePref('soundVolume', v);
-                    setVolume(v / 100);
-                  }}
-                />
-              </div>
-            )}
-
-            {prefs.soundEnabled && (
-              <div className="prefs-sound-test">
-                <span className="prefs-field-label" style={{ marginBottom: 6 }}>
-                  Tester les sons :
-                </span>
-                <div className="prefs-sound-btns">
-                  {SOUND_TYPES.map((st) => (
-                    <Button
-                      variant="ghost"
-                      key={st}
-                      className="prefs-sound-btn"
-                      onClick={() => {
-                        setVolume(prefs.soundVolume / 100);
-                        playSound(st);
-                      }}
-                      title={st}
-                    >
-                      {st === 'notification'
-                        ? '🔔'
-                        : st === 'success'
-                          ? '✅'
-                          : st === 'error'
-                            ? '❌'
-                            : st === 'warning'
-                              ? '⚠️'
-                              : st === 'click'
-                                ? '👆'
-                                : '🗑️'}
-                      <span>{st}</span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="prefs-field">
-              <Button
-                variant="ghost"
-                className="prefs-test-btn"
-                onClick={async () => {
-                  // Tester le son
-                  setVolume(prefs.soundVolume / 100);
-                  playNotificationSound();
-                  // Tester la notification navigateur
-                  const granted = await requestNotificationPermission();
-                  if (granted) {
-                    showBrowserNotification('Test de notification', {
-                      body: 'Les notifications eM@g fonctionnent \u2705',
-                    });
-                  } else {
-                    toast.info(
-                      'Les notifications navigateur sont bloqu\u00e9es. Autorisez-les dans les param\u00e8tres de votre navigateur.',
-                    );
-                  }
-                }}
-              >
-                <Volume2 size={14} /> Tester les notifications
-              </Button>
-            </div>
-          </div>
         </div>
 
-        <div className="prefs-footer">
-          {saved && (
-            <span className="prefs-saved-msg">
-              <Check size={14} /> Enregistré
+        {/* Section Notifications */}
+        <div className="prefs-section">
+          <div className="prefs-section-title">Notifications</div>
+
+          <div className="prefs-field">
+            <span className="prefs-field-label">
+              <Bell size={14} /> Notifications navigateur
             </span>
+            <Toggle
+              checked={prefs.notificationsEnabled}
+              onChange={(e) => updatePref('notificationsEnabled', e.target.checked)}
+            />
+          </div>
+
+          <div className="prefs-field">
+            <span className="prefs-field-label">
+              <Bell size={14} /> Son de notification
+            </span>
+            <Toggle
+              checked={prefs.soundEnabled}
+              onChange={(e) => updatePref('soundEnabled', e.target.checked)}
+            />
+          </div>
+
+          {prefs.soundEnabled && (
+            <div className="prefs-field prefs-volume-row">
+              <span className="prefs-field-label">
+                {prefs.soundVolume > 0 ? <Volume2 size={14} /> : <VolumeX size={14} />} Volume
+                <span className="prefs-volume-val">{prefs.soundVolume}%</span>
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={prefs.soundVolume}
+                className="prefs-volume-slider"
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  updatePref('soundVolume', v);
+                  setVolume(v / 100);
+                }}
+              />
+            </div>
           )}
-          <Button variant="ghost" onClick={handleSafeClose}>
-            Fermer
-          </Button>
-          <Button variant="primary" onClick={handleSave} disabled={!isDirty || saving}>
-            {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </Button>
+
+          {prefs.soundEnabled && (
+            <div className="prefs-sound-test">
+              <span className="prefs-field-label" style={{ marginBottom: 6 }}>
+                Tester les sons :
+              </span>
+              <div className="prefs-sound-btns">
+                {SOUND_TYPES.map((st) => (
+                  <Button
+                    variant="ghost"
+                    key={st}
+                    className="prefs-sound-btn"
+                    onClick={() => {
+                      setVolume(prefs.soundVolume / 100);
+                      playSound(st);
+                    }}
+                    title={st}
+                  >
+                    {st === 'notification'
+                      ? '🔔'
+                      : st === 'success'
+                        ? '✅'
+                        : st === 'error'
+                          ? '❌'
+                          : st === 'warning'
+                            ? '⚠️'
+                            : st === 'click'
+                              ? '👆'
+                              : '🗑️'}
+                    <span>{st}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="prefs-field">
+            <Button
+              variant="ghost"
+              className="prefs-test-btn"
+              onClick={async () => {
+                // Tester le son
+                setVolume(prefs.soundVolume / 100);
+                playNotificationSound();
+                // Tester la notification navigateur
+                const granted = await requestNotificationPermission();
+                if (granted) {
+                  showBrowserNotification('Test de notification', {
+                    body: 'Les notifications eM@g fonctionnent \u2705',
+                  });
+                } else {
+                  toast.info(
+                    'Les notifications navigateur sont bloqu\u00e9es. Autorisez-les dans les param\u00e8tres de votre navigateur.',
+                  );
+                }
+              }}
+            >
+              <Volume2 size={14} /> Tester les notifications
+            </Button>
+          </div>
         </div>
-      </div>
+      </ModalBody>
+
+      <ModalFooter className="prefs-footer">
+        {saved && (
+          <span className="prefs-saved-msg">
+            <Check size={14} /> Enregistré
+          </span>
+        )}
+        <Button variant="ghost" onClick={handleSafeClose}>
+          Fermer
+        </Button>
+        <Button variant="primary" onClick={handleSave} disabled={!isDirty || saving}>
+          {saving ? 'Enregistrement…' : 'Enregistrer'}
+        </Button>
+      </ModalFooter>
 
       <Dialog
         open={showUnsavedWarning}
@@ -514,7 +508,7 @@ const UserPreferencesModal = ({
       >
         Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
       </Dialog>
-    </div>
+    </Modal>
   );
 };
 

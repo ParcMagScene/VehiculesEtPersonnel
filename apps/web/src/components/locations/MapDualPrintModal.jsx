@@ -5,9 +5,11 @@
 // ═══════════════════════════════════════════════════════════════
 
 import L from 'leaflet';
-import { Download, Printer, X } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
+
+import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import {
@@ -324,43 +326,29 @@ export default function MapDualPrintModal({ locations, onClose }) {
   };
 
   return (
-    <div
-      className="dual-print-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      {/* data-draggable-enhanced="skip" + no-drag : empêcher useDraggableModals */}
-      <div className="dual-print-modal no-drag" data-draggable-enhanced="skip">
-        {/* En-tête */}
-        <div className="dual-print-header">
-          <h2>Impression double carte</h2>
+    <Modal open onClose={onClose} size="full" className="dual-print-modal no-drag">
+      <ModalHeader onClose={onClose}>
+        <div>
+          <span>Impression double carte</span>
           <p className="dual-print-subtitle">
             Positionnez et zoomez les deux cartes avant d'imprimer
           </p>
-          <div className="dual-print-header-actions">
-            <button
-              className="dual-print-btn-action"
-              onClick={handleExportPNG}
-              disabled={printing}
-              title="Exporter en PNG"
-            >
-              <Download size={16} /> PNG
-            </button>
-            <button
-              className="dual-print-btn-print"
-              onClick={handlePrint}
-              disabled={printing}
-              title="Imprimer"
-            >
-              <Printer size={16} /> {printing ? 'Capture…' : 'Imprimer'}
-            </button>
-            <button className="dual-print-close" onClick={onClose} aria-label="Fermer">
-              <X size={18} />
-            </button>
-          </div>
         </div>
-
+        <div className="dual-print-header-actions">
+          <Button
+            variant="ghost"
+            onClick={handleExportPNG}
+            disabled={printing}
+            title="Exporter en PNG"
+          >
+            <Download size={16} /> PNG
+          </Button>
+          <Button variant="primary" onClick={handlePrint} disabled={printing} title="Imprimer">
+            <Printer size={16} /> {printing ? 'Capture…' : 'Imprimer'}
+          </Button>
+        </div>
+      </ModalHeader>
+      <ModalBody>
         {/* Corps : les deux cartes */}
         <div className="dual-print-body">
           {/* Carte générale (principale) */}
@@ -441,7 +429,7 @@ export default function MapDualPrintModal({ locations, onClose }) {
           Garage
           <span className="dual-print-legend-dot" style={{ background: '#94a3b8' }} /> Autre
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 }

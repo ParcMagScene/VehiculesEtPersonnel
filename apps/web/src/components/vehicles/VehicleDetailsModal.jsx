@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Button } from '@/design-system';
+import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
@@ -215,328 +215,315 @@ const VehicleDetailsModal = ({
   };
 
   return (
-    <div className="vd-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="vehicle-details-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* En-tête */}
-        <div className="modal-header">
-          <div className="header-content">
-            <div
-              className="vehicle-color-indicator"
-              style={{
-                backgroundColor: vehicle.displayColor || vehicle.color || STATUS_COLORS.info,
-              }}
-            />
-            <div className="header-info">
-              <h2>{vehicle.name}</h2>
-              <div className="header-badges">
-                {vehicle.type && <span className="vehicle-type-badge">{vehicle.type}</span>}
-                {(vehicle.immatriculation || vehicle.registration) && (
-                  <span className="vehicle-registration-badge">
+    <Modal open onClose={onClose} size="lg" className="vehicle-details-modal">
+      <ModalHeader onClose={onClose}>
+        <div className="header-content">
+          <div
+            className="vehicle-color-indicator"
+            style={{
+              backgroundColor: vehicle.displayColor || vehicle.color || STATUS_COLORS.info,
+            }}
+          />
+          <div className="header-info">
+            <span>{vehicle.name}</span>
+            <div className="header-badges">
+              {vehicle.type && <span className="vehicle-type-badge">{vehicle.type}</span>}
+              {(vehicle.immatriculation || vehicle.registration) && (
+                <span className="vehicle-registration-badge">
+                  {vehicle.immatriculation || vehicle.registration}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </ModalHeader>
+
+      <ModalBody className="modal-body">
+        {/* Section Informations */}
+        <div className="info-section">
+          <h3>
+            <FileText size={18} /> Informations du véhicule
+          </h3>
+          <div className="info-container">
+            {vehicle.photo ? (
+              <div className="vehicle-photo-container">
+                <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" />
+              </div>
+            ) : (
+              <div className="vehicle-photo-container">
+                <img
+                  src={getVehicleAvatar(vehicle.type)}
+                  alt={vehicle.name}
+                  loading="lazy"
+                  className="vehicle-avatar"
+                />
+              </div>
+            )}
+            <div className="info-grid">
+              {(vehicle.immatriculation || vehicle.registration) && (
+                <div className="info-item">
+                  <span className="info-label">Immatriculation :</span>
+                  <span className="info-value">
                     {vehicle.immatriculation || vehicle.registration}
                   </span>
-                )}
-              </div>
-            </div>
-          </div>
-          <Button variant="ghost" className="close-button" onClick={onClose}>
-            <X size={24} />
-          </Button>
-        </div>
-
-        {/* Corps du modal */}
-        <div className="modal-body">
-          {/* Section Informations */}
-          <div className="info-section">
-            <h3>
-              <FileText size={18} /> Informations du véhicule
-            </h3>
-            <div className="info-container">
-              {vehicle.photo ? (
-                <div className="vehicle-photo-container">
-                  <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" />
-                </div>
-              ) : (
-                <div className="vehicle-photo-container">
-                  <img
-                    src={getVehicleAvatar(vehicle.type)}
-                    alt={vehicle.name}
-                    loading="lazy"
-                    className="vehicle-avatar"
-                  />
                 </div>
               )}
-              <div className="info-grid">
-                {(vehicle.immatriculation || vehicle.registration) && (
+              {(vehicle.marque || vehicle.brand) && (
+                <div className="info-item">
+                  <span className="info-label">Marque :</span>
+                  <span className="info-value">{vehicle.marque || vehicle.brand}</span>
+                </div>
+              )}
+              {vehicle.model && (
+                <div className="info-item">
+                  <span className="info-label">Modèle :</span>
+                  <span className="info-value">{vehicle.model}</span>
+                </div>
+              )}
+              {(() => {
+                const realColor = vehicle.couleurVehicule || vehicle.color;
+                return realColor && !realColor.startsWith('#') ? (
                   <div className="info-item">
-                    <span className="info-label">Immatriculation :</span>
-                    <span className="info-value">
-                      {vehicle.immatriculation || vehicle.registration}
-                    </span>
+                    <span className="info-label">Couleur :</span>
+                    <span className="info-value">{realColor}</span>
                   </div>
-                )}
-                {(vehicle.marque || vehicle.brand) && (
-                  <div className="info-item">
-                    <span className="info-label">Marque :</span>
-                    <span className="info-value">{vehicle.marque || vehicle.brand}</span>
-                  </div>
-                )}
-                {vehicle.model && (
-                  <div className="info-item">
-                    <span className="info-label">Modèle :</span>
-                    <span className="info-value">{vehicle.model}</span>
-                  </div>
-                )}
-                {(() => {
-                  const realColor = vehicle.couleurVehicule || vehicle.color;
-                  return realColor && !realColor.startsWith('#') ? (
-                    <div className="info-item">
-                      <span className="info-label">Couleur :</span>
-                      <span className="info-value">{realColor}</span>
-                    </div>
-                  ) : null;
-                })()}
-                {vehicle.owner && (
-                  <div className="info-item">
-                    <span className="info-label">Propriétaire :</span>
-                    <span className="info-value">{vehicle.owner}</span>
-                  </div>
-                )}
-                {vehicle.comment && (
-                  <div className="info-item full-width">
-                    <span className="info-label">Commentaire :</span>
-                    <span className="info-value">{vehicle.comment}</span>
-                  </div>
-                )}
-                {/* Kilométrage intégré dans la grille */}
-                {(() => {
-                  const lastMaintenanceWithKm = vehicleMaintenances.find(
-                    (m) => m.mileage && parseInt(m.mileage) > 0,
-                  );
-                  const vehicleKm = vehicle.kilometrage || 0;
-                  const maintenanceKm = lastMaintenanceWithKm
-                    ? parseInt(lastMaintenanceWithKm.mileage)
-                    : 0;
-                  const lastKm = Math.max(vehicleKm, maintenanceKm);
-                  const lastMileageEntry = mileageHistory.length > 0 ? mileageHistory[0] : null;
-                  const kmDate = lastMileageEntry?.timestamp || lastMileageEntry?.parsed?.date;
-                  const kmUser = lastMileageEntry?.userName || lastMileageEntry?.user_name;
+                ) : null;
+              })()}
+              {vehicle.owner && (
+                <div className="info-item">
+                  <span className="info-label">Propriétaire :</span>
+                  <span className="info-value">{vehicle.owner}</span>
+                </div>
+              )}
+              {vehicle.comment && (
+                <div className="info-item full-width">
+                  <span className="info-label">Commentaire :</span>
+                  <span className="info-value">{vehicle.comment}</span>
+                </div>
+              )}
+              {/* Kilométrage intégré dans la grille */}
+              {(() => {
+                const lastMaintenanceWithKm = vehicleMaintenances.find(
+                  (m) => m.mileage && parseInt(m.mileage) > 0,
+                );
+                const vehicleKm = vehicle.kilometrage || 0;
+                const maintenanceKm = lastMaintenanceWithKm
+                  ? parseInt(lastMaintenanceWithKm.mileage)
+                  : 0;
+                const lastKm = Math.max(vehicleKm, maintenanceKm);
+                const lastMileageEntry = mileageHistory.length > 0 ? mileageHistory[0] : null;
+                const kmDate = lastMileageEntry?.timestamp || lastMileageEntry?.parsed?.date;
+                const kmUser = lastMileageEntry?.userName || lastMileageEntry?.user_name;
 
-                  return lastKm > 0 ? (
-                    <div className="info-item info-item-km full-width">
-                      <span className="info-label">
-                        <Gauge size={14} /> Kilométrage
+                return lastKm > 0 ? (
+                  <div className="info-item info-item-km full-width">
+                    <span className="info-label">
+                      <Gauge size={14} /> Kilométrage
+                    </span>
+                    <span className="info-value info-value-km">
+                      {lastKm.toLocaleString('fr-FR')} km
+                    </span>
+                    {(kmDate || kmUser) && (
+                      <span className="info-km-meta">
+                        {kmDate && (
+                          <span className="km-meta-item">
+                            <Calendar size={12} /> {formatDateSimple(kmDate, 'Non renseigné')}
+                          </span>
+                        )}
+                        {kmUser && (
+                          <span className="km-meta-item">
+                            <User size={12} /> {kmUser}
+                          </span>
+                        )}
                       </span>
-                      <span className="info-value info-value-km">
-                        {lastKm.toLocaleString('fr-FR')} km
-                      </span>
-                      {(kmDate || kmUser) && (
-                        <span className="info-km-meta">
-                          {kmDate && (
-                            <span className="km-meta-item">
-                              <Calendar size={12} /> {formatDateSimple(kmDate, 'Non renseigné')}
-                            </span>
-                          )}
-                          {kmUser && (
-                            <span className="km-meta-item">
-                              <User size={12} /> {kmUser}
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  ) : null;
-                })()}
-              </div>
+                    )}
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
-
-          {/* Boutons d'action */}
-          <div className="action-buttons">
-            {isAdmin && (
-              <>
-                <Button
-                  variant="ghost"
-                  className="action-btn schedule-btn"
-                  onClick={() => {
-                    onScheduleMaintenance(vehicle);
-                    onClose();
-                  }}
-                >
-                  <Calendar size={20} />
-                  Programmer une intervention
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="action-btn maintenance-btn"
-                  onClick={() => {
-                    onRequestMaintenance(vehicle);
-                    onClose();
-                  }}
-                >
-                  <Wrench size={20} />
-                  Demander une intervention
-                </Button>
-
-                {/* Bouton Kilométrage accessible uniquement aux admins */}
-                <Button
-                  variant="ghost"
-                  className="action-btn kilometrage-btn"
-                  onClick={() => {
-                    onOpenMaintenance(vehicle);
-                  }}
-                >
-                  <Gauge size={20} />
-                  Kilométrage & Contrôles techniques
-                </Button>
-              </>
-            )}
-
-            <Button
-              variant="ghost"
-              className="action-btn breakdown-btn"
-              onClick={() => {
-                onReportBreakdown(vehicle);
-                onClose();
-              }}
-            >
-              <AlertTriangle size={20} />
-              Signaler une panne
-            </Button>
-            {!isAdmin && (
-              <p className="info-message">
-                ℹ️ Vous ne pouvez que signaler des pannes. Pour programmer une intervention ou gérer
-                le kilométrage/contrôles techniques, contactez un administrateur.
-              </p>
-            )}
-          </div>
-
-          {/* Section Deadlines */}
-          <div className="deadlines-section">
-            <h3>
-              <Calendar size={18} /> Échéances des contrôles techniques
-            </h3>
-            {controlesTechniques.length > 0 ? (
-              <div className="deadlines-list">
-                {controlesTechniques.map((controle, index) => {
-                  const deadlineInfo = getDeadlineStatus(controle.deadline);
-                  return (
-                    <div key={index} className="deadline-item">
-                      <div className="deadline-header">
-                        <span className="deadline-type">{getControleTypeLabel(controle.type)}</span>
-                        {controle.deadline ? (
-                          deadlineInfo && (
-                            <span className={`deadline-badge ${deadlineInfo.className}`}>
-                              {deadlineInfo.label}
-                            </span>
-                          )
-                        ) : (
-                          <span className="deadline-badge deadline-pending">À programmer</span>
-                        )}
-                      </div>
-                      <div className="deadline-dates">
-                        <div className="deadline-date-item">
-                          <span className="deadline-date-label">Dernier contrôle :</span>
-                          <span className="deadline-date-value">
-                            {formatDateSimple(controle.date, 'Non renseigné')}
-                          </span>
-                        </div>
-                        {controle.deadline && (
-                          <div className="deadline-date-item">
-                            <span className="deadline-date-label">Échéance :</span>
-                            <span className="deadline-date-value">
-                              {formatDateSimple(controle.deadline, 'Non renseigné')}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      {getControleTypePeriodicity(controle.type) && (
-                        <div className="ct-periodicity-info">
-                          <span className="ct-periodicity-icon">🔄</span>
-                          <span className="ct-periodicity-text">
-                            <strong>Périodicité :</strong>{' '}
-                            {getControleTypePeriodicity(controle.type)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="empty-deadlines">
-                <p>Aucun contrôle technique enregistré</p>
-                {isAdmin && (
-                  <Button
-                    variant="ghost"
-                    className="add-control-button"
-                    onClick={() => onOpenMaintenance(vehicle)}
-                  >
-                    <Calendar size={16} />
-                    Ajouter des contrôles techniques
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Section Historique */}
-          <div className="history-section">
-            <h3>
-              <Calendar size={18} /> Historique des interventions
-            </h3>
-            {vehicleMaintenances.length > 0 ? (
-              <div className="maintenance-list">
-                {vehicleMaintenances.map((maintenance) => (
-                  <div
-                    key={maintenance.id}
-                    className={`maintenance-item status-${maintenance.status} ${isAdmin ? 'clickable' : ''}`}
-                    onClick={isAdmin ? () => handleInterventionClick(maintenance) : undefined}
-                    title={isAdmin ? 'Cliquer pour éditer' : undefined}
-                  >
-                    <div className="maintenance-header">
-                      <div className="maintenance-title">
-                        <span className="maintenance-type">{getTypeLabel(maintenance.type)}</span>
-                        {getStatusBadge(maintenance.status)}
-                      </div>
-                      <span className="maintenance-date">
-                        {formatDateSimple(maintenance.date, 'Non renseigné')}
-                      </span>
-                    </div>
-                    {maintenance.description && (
-                      <div className="maintenance-description">{maintenance.description}</div>
-                    )}
-                    {maintenance.garage && (
-                      <div className="maintenance-garage">📍 {maintenance.garage}</div>
-                    )}
-                    <div className="maintenance-tags">
-                      {maintenance.mileage && parseInt(maintenance.mileage) > 0 && (
-                        <span className="maintenance-tag tag-km">
-                          <Gauge size={12} />{' '}
-                          {parseInt(maintenance.mileage).toLocaleString('fr-FR')} km
-                        </span>
-                      )}
-                      {maintenance.cost && (
-                        <span className="maintenance-tag tag-cost">
-                          💰 {parseFloat(maintenance.cost).toFixed(2)} €
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-history">
-                <p>Aucune intervention enregistrée pour ce véhicule</p>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
+
+        {/* Boutons d'action */}
+        <div className="action-buttons">
+          {isAdmin && (
+            <>
+              <Button
+                variant="ghost"
+                className="action-btn schedule-btn"
+                onClick={() => {
+                  onScheduleMaintenance(vehicle);
+                  onClose();
+                }}
+              >
+                <Calendar size={20} />
+                Programmer une intervention
+              </Button>
+              <Button
+                variant="ghost"
+                className="action-btn maintenance-btn"
+                onClick={() => {
+                  onRequestMaintenance(vehicle);
+                  onClose();
+                }}
+              >
+                <Wrench size={20} />
+                Demander une intervention
+              </Button>
+
+              {/* Bouton Kilométrage accessible uniquement aux admins */}
+              <Button
+                variant="ghost"
+                className="action-btn kilometrage-btn"
+                onClick={() => {
+                  onOpenMaintenance(vehicle);
+                }}
+              >
+                <Gauge size={20} />
+                Kilométrage & Contrôles techniques
+              </Button>
+            </>
+          )}
+
+          <Button
+            variant="ghost"
+            className="action-btn breakdown-btn"
+            onClick={() => {
+              onReportBreakdown(vehicle);
+              onClose();
+            }}
+          >
+            <AlertTriangle size={20} />
+            Signaler une panne
+          </Button>
+          {!isAdmin && (
+            <p className="info-message">
+              ℹ️ Vous ne pouvez que signaler des pannes. Pour programmer une intervention ou gérer
+              le kilométrage/contrôles techniques, contactez un administrateur.
+            </p>
+          )}
+        </div>
+
+        {/* Section Deadlines */}
+        <div className="deadlines-section">
+          <h3>
+            <Calendar size={18} /> Échéances des contrôles techniques
+          </h3>
+          {controlesTechniques.length > 0 ? (
+            <div className="deadlines-list">
+              {controlesTechniques.map((controle, index) => {
+                const deadlineInfo = getDeadlineStatus(controle.deadline);
+                return (
+                  <div key={index} className="deadline-item">
+                    <div className="deadline-header">
+                      <span className="deadline-type">{getControleTypeLabel(controle.type)}</span>
+                      {controle.deadline ? (
+                        deadlineInfo && (
+                          <span className={`deadline-badge ${deadlineInfo.className}`}>
+                            {deadlineInfo.label}
+                          </span>
+                        )
+                      ) : (
+                        <span className="deadline-badge deadline-pending">À programmer</span>
+                      )}
+                    </div>
+                    <div className="deadline-dates">
+                      <div className="deadline-date-item">
+                        <span className="deadline-date-label">Dernier contrôle :</span>
+                        <span className="deadline-date-value">
+                          {formatDateSimple(controle.date, 'Non renseigné')}
+                        </span>
+                      </div>
+                      {controle.deadline && (
+                        <div className="deadline-date-item">
+                          <span className="deadline-date-label">Échéance :</span>
+                          <span className="deadline-date-value">
+                            {formatDateSimple(controle.deadline, 'Non renseigné')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {getControleTypePeriodicity(controle.type) && (
+                      <div className="ct-periodicity-info">
+                        <span className="ct-periodicity-icon">🔄</span>
+                        <span className="ct-periodicity-text">
+                          <strong>Périodicité :</strong> {getControleTypePeriodicity(controle.type)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-deadlines">
+              <p>Aucun contrôle technique enregistré</p>
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  className="add-control-button"
+                  onClick={() => onOpenMaintenance(vehicle)}
+                >
+                  <Calendar size={16} />
+                  Ajouter des contrôles techniques
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Section Historique */}
+        <div className="history-section">
+          <h3>
+            <Calendar size={18} /> Historique des interventions
+          </h3>
+          {vehicleMaintenances.length > 0 ? (
+            <div className="maintenance-list">
+              {vehicleMaintenances.map((maintenance) => (
+                <div
+                  key={maintenance.id}
+                  className={`maintenance-item status-${maintenance.status} ${isAdmin ? 'clickable' : ''}`}
+                  onClick={isAdmin ? () => handleInterventionClick(maintenance) : undefined}
+                  title={isAdmin ? 'Cliquer pour éditer' : undefined}
+                >
+                  <div className="maintenance-header">
+                    <div className="maintenance-title">
+                      <span className="maintenance-type">{getTypeLabel(maintenance.type)}</span>
+                      {getStatusBadge(maintenance.status)}
+                    </div>
+                    <span className="maintenance-date">
+                      {formatDateSimple(maintenance.date, 'Non renseigné')}
+                    </span>
+                  </div>
+                  {maintenance.description && (
+                    <div className="maintenance-description">{maintenance.description}</div>
+                  )}
+                  {maintenance.garage && (
+                    <div className="maintenance-garage">📍 {maintenance.garage}</div>
+                  )}
+                  <div className="maintenance-tags">
+                    {maintenance.mileage && parseInt(maintenance.mileage) > 0 && (
+                      <span className="maintenance-tag tag-km">
+                        <Gauge size={12} /> {parseInt(maintenance.mileage).toLocaleString('fr-FR')}{' '}
+                        km
+                      </span>
+                    )}
+                    {maintenance.cost && (
+                      <span className="maintenance-tag tag-cost">
+                        💰 {parseFloat(maintenance.cost).toFixed(2)} €
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-history">
+              <p>Aucune intervention enregistrée pour ce véhicule</p>
+            </div>
+          )}
+        </div>
+      </ModalBody>
 
       {selectedIntervention && (
         <InterventionModal
@@ -548,7 +535,7 @@ const VehicleDetailsModal = ({
           currentUser={currentUser}
         />
       )}
-    </div>
+    </Modal>
   );
 };
 

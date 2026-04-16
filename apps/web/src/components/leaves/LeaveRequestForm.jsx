@@ -18,11 +18,19 @@ import {
   Trash2,
   Upload,
   User,
-  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, InlineAlert, Select, Textarea } from '@/design-system';
+import {
+  Button,
+  InlineAlert,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  Textarea,
+} from '@/design-system';
 
 import api from '../../utils/api';
 
@@ -368,54 +376,39 @@ const LeaveRequestForm = ({
   const _currentTypeInfo = leaveTypes[leaveType];
 
   return (
-    <div className="lrf-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="lrf-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Demande de congé"
-      >
-        {/* En-tête */}
-        <div className="lrf-header">
-          <div className="lrf-header-title">
-            <Calendar size={20} />
-            <h2>Demande de congé</h2>
-          </div>
-          <div className="lrf-header-actions">
-            <Button
-              variant="ghost"
-              type="button"
-              className="lrf-btn-info"
-              onClick={() => setShowLegalInfo(!showLegalInfo)}
-              title="Informations légales"
-            >
-              <Info size={16} />
-            </Button>
-            <Button variant="ghost" className="lrf-close-btn" onClick={onClose} aria-label="Fermer">
-              <X size={20} />
-            </Button>
-          </div>
+    <Modal open={true} onClose={onClose} size="lg" className="lrf-modal">
+      <ModalHeader icon={<Calendar size={20} />} onClose={onClose}>
+        Demande de congé
+        <Button
+          variant="ghost"
+          type="button"
+          className="lrf-btn-info"
+          onClick={() => setShowLegalInfo(!showLegalInfo)}
+          title="Informations légales"
+        >
+          <Info size={16} />
+        </Button>
+      </ModalHeader>
+
+      {/* Bandeau légal */}
+      {showLegalInfo && (
+        <div className="lrf-legal-info">
+          <div className="lrf-legal-title">Références légales</div>
+          <ul>
+            <li>Code du travail — Art. L3141-1 à L3141-33 (Congés payés)</li>
+            <li>Convention collective IDCC 3252 — Spectacle vivant</li>
+            <li>Acquisition : 2,5 jours ouvrables / mois = 30 jours / an</li>
+            <li>Période de référence : 1er juin → 31 mai</li>
+            <li>Congé principal : min. 12 jours consécutifs entre mai et octobre</li>
+            <li>Date limite de pose : 28 février</li>
+            <li>Fermeture annuelle : 24 décembre → 1er janvier</li>
+            <li>Modification impossible &lt; 1 mois avant le départ</li>
+          </ul>
         </div>
+      )}
 
-        {/* Bandeau légal */}
-        {showLegalInfo && (
-          <div className="lrf-legal-info">
-            <div className="lrf-legal-title">Références légales</div>
-            <ul>
-              <li>Code du travail — Art. L3141-1 à L3141-33 (Congés payés)</li>
-              <li>Convention collective IDCC 3252 — Spectacle vivant</li>
-              <li>Acquisition : 2,5 jours ouvrables / mois = 30 jours / an</li>
-              <li>Période de référence : 1er juin → 31 mai</li>
-              <li>Congé principal : min. 12 jours consécutifs entre mai et octobre</li>
-              <li>Date limite de pose : 28 février</li>
-              <li>Fermeture annuelle : 24 décembre → 1er janvier</li>
-              <li>Modification impossible &lt; 1 mois avant le départ</li>
-            </ul>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="lrf-form">
+      <form onSubmit={handleSubmit} className="lrf-form">
+        <ModalBody>
           {/* Erreur globale */}
           {error && <InlineAlert>{error}</InlineAlert>}
 
@@ -732,27 +725,25 @@ const LeaveRequestForm = ({
             onSign={setSignature}
             onClear={() => setSignature(null)}
           />
-
-          {/* Actions */}
-          <div className="lrf-actions">
-            <Button variant="ghost" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" type="submit" disabled={saving}>
-              {saving ? (
-                <>
-                  <Clock size={14} /> Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send size={14} /> Soumettre la demande
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button variant="primary" type="submit" disabled={saving}>
+            {saving ? (
+              <>
+                <Clock size={14} /> Envoi en cours...
+              </>
+            ) : (
+              <>
+                <Send size={14} /> Soumettre la demande
+              </>
+            )}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
   );
 };
 

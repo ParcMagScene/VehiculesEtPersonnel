@@ -20,11 +20,19 @@ import {
   Printer,
   RefreshCw,
   User,
-  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, DetailRow, EmptyState, InlineAlert, Tooltip } from '@/design-system';
+import {
+  Button,
+  DetailRow,
+  EmptyState,
+  InlineAlert,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Tooltip,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import api from '../../utils/api';
@@ -142,24 +150,15 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
   };
 
   return (
-    <div className="mep-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="mep-panel">
-        {/* ─── Header ─── */}
-        <div className="mep-header">
-          <div className="mep-header-left">
-            <User size={20} />
-            <div>
-              <h2 className="mep-title">Mon espace</h2>
-              <span className="mep-subtitle">{currentUser?.name}</span>
-            </div>
-          </div>
-          <Tooltip content="Fermer">
-            <Button variant="ghost" className="mep-close" onClick={onClose}>
-              <X size={18} />
-            </Button>
-          </Tooltip>
+    <Modal open onClose={onClose} size="lg" className="mep-panel">
+      <ModalHeader icon={<User size={20} />} onClose={onClose}>
+        <div>
+          <span>Mon espace</span>
+          <span className="mep-subtitle">{currentUser?.name}</span>
         </div>
+      </ModalHeader>
 
+      <ModalBody>
         {/* ─── Navigation espace ─── */}
         <div className="mep-nav">
           <Button variant="ghost" className="mep-nav-btn active">
@@ -433,8 +432,8 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
             }}
           />
         )}
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 };
 

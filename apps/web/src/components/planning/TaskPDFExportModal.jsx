@@ -13,11 +13,10 @@ import {
   Minus,
   Square,
   User,
-  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button, EmptyState } from '@/design-system';
+import { Button, EmptyState, Modal, ModalBody, ModalFooter, ModalHeader } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import {
@@ -735,151 +734,125 @@ function TaskPDFExportModal({
   };
 
   return (
-    <div
-      className="pdf-export-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="pdf-export-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Header */}
-        <div className="pdf-export-header">
-          <div className="pdf-export-header-left">
-            <FileDown size={20} />
-            <div>
-              <h3>Export PDF — Fiche du jour</h3>
-              <span className="pdf-export-date">{dateFr}</span>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            className="pdf-export-close"
-            onClick={onClose}
-            aria-label="Fermer"
-          >
-            <X size={18} />
-          </Button>
-        </div>
-
-        <div className="pdf-export-body">
-          {/* Panneau de sélection (gauche) */}
-          <div className="pdf-export-selection">
-            <div className="selection-toolbar">
-              <Button variant="ghost" className="select-all-btn" onClick={toggleAll}>
-                {selectedIds.size === totalItems ? (
-                  <>
-                    <CheckSquare size={15} /> Tout désélectionner
-                  </>
-                ) : (
-                  <>
-                    <Square size={15} /> Tout sélectionner
-                  </>
-                )}
-              </Button>
-              <span className="selection-count">
-                {selectedIds.size}/{totalItems} élément{selectedIds.size > 1 ? 's' : ''}
-              </span>
-            </div>
-
-            <div className="selection-sections">
-              {activeSections.map((sectionKey) => {
-                const info = SECTIONS[sectionKey];
-                const sectionItems = grouped[sectionKey] || [];
-                const state = sectionState(sectionKey);
-
-                return (
-                  <div key={sectionKey} className="selection-section">
-                    <div
-                      className="section-checkbox-row"
-                      role="checkbox"
-                      aria-checked={
-                        state === 'all' ? 'true' : state === 'partial' ? 'mixed' : 'false'
-                      }
-                      tabIndex={0}
-                      onClick={() => toggleSection(sectionKey)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          toggleSection(sectionKey);
-                        }
-                      }}
-                    >
-                      <span className="section-cb" style={{ borderColor: info.color }}>
-                        {state === 'all' && <Check size={12} style={{ color: info.color }} />}
-                        {state === 'partial' && <Minus size={12} style={{ color: info.color }} />}
-                      </span>
-                      <span className="section-cb-emoji">{info.emoji}</span>
-                      <span className="section-cb-label">{info.label}</span>
-                      <span className="section-cb-count" style={{ color: info.color }}>
-                        {sectionItems.filter((i) => selectedIds.has(i.uid)).length}/
-                        {sectionItems.length}
-                      </span>
-                    </div>
-
-                    <div className="section-tasks-list">{sectionItems.map(renderItemRow)}</div>
-                  </div>
-                );
-              })}
-
-              {activeSections.length === 0 && (
-                <div className="empty-selection">
-                  <p>Aucun élément pour cette date</p>
-                </div>
+    <Modal open={true} onClose={onClose} size="xl" className="pdf-export-modal">
+      <ModalHeader icon={<FileDown size={20} />} onClose={onClose}>
+        Export PDF — Fiche du jour
+        <span className="pdf-export-date">{dateFr}</span>
+      </ModalHeader>
+      <ModalBody className="pdf-export-body">
+        {/* Panneau de sélection (gauche) */}
+        <div className="pdf-export-selection">
+          <div className="selection-toolbar">
+            <Button variant="ghost" className="select-all-btn" onClick={toggleAll}>
+              {selectedIds.size === totalItems ? (
+                <>
+                  <CheckSquare size={15} /> Tout désélectionner
+                </>
+              ) : (
+                <>
+                  <Square size={15} /> Tout sélectionner
+                </>
               )}
-            </div>
+            </Button>
+            <span className="selection-count">
+              {selectedIds.size}/{totalItems} élément{selectedIds.size > 1 ? 's' : ''}
+            </span>
           </div>
 
-          {/* Aperçu PDF (droite) */}
-          <div className="pdf-export-preview">
-            {generating ? (
-              <div className="preview-loading">
-                <Loader2 size={32} className="spin" />
-                <p>Génération de l'aperçu…</p>
+          <div className="selection-sections">
+            {activeSections.map((sectionKey) => {
+              const info = SECTIONS[sectionKey];
+              const sectionItems = grouped[sectionKey] || [];
+              const state = sectionState(sectionKey);
+
+              return (
+                <div key={sectionKey} className="selection-section">
+                  <div
+                    className="section-checkbox-row"
+                    role="checkbox"
+                    aria-checked={
+                      state === 'all' ? 'true' : state === 'partial' ? 'mixed' : 'false'
+                    }
+                    tabIndex={0}
+                    onClick={() => toggleSection(sectionKey)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSection(sectionKey);
+                      }
+                    }}
+                  >
+                    <span className="section-cb" style={{ borderColor: info.color }}>
+                      {state === 'all' && <Check size={12} style={{ color: info.color }} />}
+                      {state === 'partial' && <Minus size={12} style={{ color: info.color }} />}
+                    </span>
+                    <span className="section-cb-emoji">{info.emoji}</span>
+                    <span className="section-cb-label">{info.label}</span>
+                    <span className="section-cb-count" style={{ color: info.color }}>
+                      {sectionItems.filter((i) => selectedIds.has(i.uid)).length}/
+                      {sectionItems.length}
+                    </span>
+                  </div>
+
+                  <div className="section-tasks-list">{sectionItems.map(renderItemRow)}</div>
+                </div>
+              );
+            })}
+
+            {activeSections.length === 0 && (
+              <div className="empty-selection">
+                <p>Aucun élément pour cette date</p>
               </div>
-            ) : pdfUrl ? (
-              <iframe src={pdfUrl} className="pdf-preview-frame" title="Aperçu PDF" />
-            ) : (
-              <EmptyState
-                icon={<Eye size={40} />}
-                title={
-                  <>
-                    Sélectionnez au moins un élément
-                    <br />
-                    pour voir l'aperçu
-                  </>
-                }
-              />
             )}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="pdf-export-footer">
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleDownload}
-            disabled={selectedIds.size === 0 || downloading}
-          >
-            {downloading ? (
-              <>
-                <Loader2 size={15} className="spin" /> Téléchargement…
-              </>
-            ) : (
-              <>
-                <FileDown size={15} /> Télécharger le PDF ({selectedIds.size} élément
-                {selectedIds.size > 1 ? 's' : ''})
-              </>
-            )}
-          </Button>
+        {/* Aperçu PDF (droite) */}
+        <div className="pdf-export-preview">
+          {generating ? (
+            <div className="preview-loading">
+              <Loader2 size={32} className="spin" />
+              <p>Génération de l'aperçu…</p>
+            </div>
+          ) : pdfUrl ? (
+            <iframe src={pdfUrl} className="pdf-preview-frame" title="Aperçu PDF" />
+          ) : (
+            <EmptyState
+              icon={<Eye size={40} />}
+              title={
+                <>
+                  Sélectionnez au moins un élément
+                  <br />
+                  pour voir l'aperçu
+                </>
+              }
+            />
+          )}
         </div>
-      </div>
-    </div>
+      </ModalBody>
+
+      <ModalFooter className="pdf-export-footer">
+        <Button variant="ghost" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleDownload}
+          disabled={selectedIds.size === 0 || downloading}
+        >
+          {downloading ? (
+            <>
+              <Loader2 size={15} className="spin" /> Téléchargement…
+            </>
+          ) : (
+            <>
+              <FileDown size={15} /> Télécharger le PDF ({selectedIds.size} élément
+              {selectedIds.size > 1 ? 's' : ''})
+            </>
+          )}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }
 

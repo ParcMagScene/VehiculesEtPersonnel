@@ -13,7 +13,17 @@ import {
 } from 'lucide-react';
 import React from 'react';
 
-import { Button, StatusBadge, Table, Tag, Tooltip } from '@/design-system';
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  StatusBadge,
+  Table,
+  Tag,
+  Tooltip,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
@@ -32,62 +42,47 @@ export const OrderDetailDialog = React.memo(
     const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
     const items = order.items || [];
     return (
-      <div
-        className="orders-overlay"
-        onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-      >
-        <div
-          className="order-detail-dialog"
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="order-detail-header">
-            <div className="order-detail-title">
-              <h2>{order.reference}</h2>
-              <StatusBadge color={status.color}>
-                {status.icon} {status.label}
-              </StatusBadge>
-            </div>
-            <div className="order-detail-actions">
-              {order.status === 'draft' && (
-                <Button
-                  variant="ghost"
-                  className="action-btn"
-                  onClick={() => onStatusChange('sent')}
-                >
-                  <Send size={14} /> Envoyer
-                </Button>
-              )}
-              {order.status === 'sent' && (
-                <Button
-                  variant="ghost"
-                  className="action-btn"
-                  onClick={() => onStatusChange('confirmed')}
-                >
-                  <Check size={14} /> Confirmer
-                </Button>
-              )}
-              {order.status === STATUS.CONFIRMED && (
-                <Button
-                  variant="ghost"
-                  className="action-btn"
-                  onClick={() => onStatusChange('received')}
-                >
-                  <Package size={14} /> Réceptionner
-                </Button>
-              )}
-              <Button variant="ghost" className="action-btn" onClick={onEdit}>
-                <Edit2 size={14} /> Modifier
-              </Button>
-              <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
-                <Trash2 size={14} /> Supprimer
-              </Button>
-              <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer">
-                <X size={20} />
-              </Button>
-            </div>
+      <Modal open onClose={onClose} size="lg" className="order-detail-dialog">
+        <ModalHeader onClose={onClose}>
+          <div className="order-detail-title">
+            <span>{order.reference}</span>
+            <StatusBadge color={status.color}>
+              {status.icon} {status.label}
+            </StatusBadge>
           </div>
+          <div className="order-detail-actions">
+            {order.status === 'draft' && (
+              <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}>
+                <Send size={14} /> Envoyer
+              </Button>
+            )}
+            {order.status === 'sent' && (
+              <Button
+                variant="ghost"
+                className="action-btn"
+                onClick={() => onStatusChange('confirmed')}
+              >
+                <Check size={14} /> Confirmer
+              </Button>
+            )}
+            {order.status === STATUS.CONFIRMED && (
+              <Button
+                variant="ghost"
+                className="action-btn"
+                onClick={() => onStatusChange('received')}
+              >
+                <Package size={14} /> Réceptionner
+              </Button>
+            )}
+            <Button variant="ghost" className="action-btn" onClick={onEdit}>
+              <Edit2 size={14} /> Modifier
+            </Button>
+            <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
+              <Trash2 size={14} /> Supprimer
+            </Button>
+          </div>
+        </ModalHeader>
+        <ModalBody>
           <div className="order-detail-grid">
             <div className="detail-section">
               <h3>Informations</h3>
@@ -200,13 +195,13 @@ export const OrderDetailDialog = React.memo(
               <p className="no-items">Aucune ligne</p>
             )}
           </div>
-          <div className="dialog-footer">
-            <Button variant="ghost" className="action-btn" onClick={onClose}>
-              <X size={14} /> Fermer
-            </Button>
-          </div>
-        </div>
-      </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" className="action-btn" onClick={onClose}>
+            Fermer
+          </Button>
+        </ModalFooter>
+      </Modal>
     );
   },
 );
@@ -217,72 +212,57 @@ export const QuoteDetailDialog = React.memo(
     const status = QUOTE_STATUS[quote.status] || QUOTE_STATUS.draft;
     const items = quote.items || [];
     return (
-      <div
-        className="orders-overlay"
-        onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-      >
-        <div
-          className="order-detail-dialog"
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="order-detail-header">
-            <div className="order-detail-title">
-              <h2>{quote.reference}</h2>
-              <StatusBadge color={status.color}>
-                {status.icon} {status.label}
-              </StatusBadge>
-              {quote.converted_to_order_id && (
-                <Tag color="success" size="sm">
-                  <FileCheck size={14} /> Converti en commande
-                </Tag>
-              )}
-            </div>
-            <div className="order-detail-actions">
-              {quote.status === 'draft' && (
+      <Modal open onClose={onClose} size="lg" className="order-detail-dialog">
+        <ModalHeader onClose={onClose}>
+          <div className="order-detail-title">
+            <span>{quote.reference}</span>
+            <StatusBadge color={status.color}>
+              {status.icon} {status.label}
+            </StatusBadge>
+            {quote.converted_to_order_id && (
+              <Tag color="success" size="sm">
+                <FileCheck size={14} /> Converti en commande
+              </Tag>
+            )}
+          </div>
+          <div className="order-detail-actions">
+            {quote.status === 'draft' && (
+              <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}>
+                <Send size={14} /> Envoyer
+              </Button>
+            )}
+            {quote.status === 'sent' && (
+              <>
                 <Button
                   variant="ghost"
-                  className="action-btn"
-                  onClick={() => onStatusChange('sent')}
+                  className="action-btn success"
+                  onClick={() => onStatusChange('accepted')}
                 >
-                  <Send size={14} /> Envoyer
+                  <Check size={14} /> Accepter
                 </Button>
-              )}
-              {quote.status === 'sent' && (
-                <>
-                  <Button
-                    variant="ghost"
-                    className="action-btn success"
-                    onClick={() => onStatusChange('accepted')}
-                  >
-                    <Check size={14} /> Accepter
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="action-btn danger"
-                    onClick={() => onStatusChange('refused')}
-                  >
-                    <X size={14} /> Refuser
-                  </Button>
-                </>
-              )}
-              {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
-                <Button variant="ghost" className="action-btn success" onClick={onConvert}>
-                  <ArrowRight size={14} /> Convertir
+                <Button
+                  variant="ghost"
+                  className="action-btn danger"
+                  onClick={() => onStatusChange('refused')}
+                >
+                  <X size={14} /> Refuser
                 </Button>
-              )}
-              <Button variant="ghost" className="action-btn" onClick={onEdit}>
-                <Edit2 size={14} /> Modifier
+              </>
+            )}
+            {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
+              <Button variant="ghost" className="action-btn success" onClick={onConvert}>
+                <ArrowRight size={14} /> Convertir
               </Button>
-              <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
-                <Trash2 size={14} /> Supprimer
-              </Button>
-              <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer">
-                <X size={20} />
-              </Button>
-            </div>
+            )}
+            <Button variant="ghost" className="action-btn" onClick={onEdit}>
+              <Edit2 size={14} /> Modifier
+            </Button>
+            <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
+              <Trash2 size={14} /> Supprimer
+            </Button>
           </div>
+        </ModalHeader>
+        <ModalBody>
           <div className="order-detail-grid">
             <div className="detail-section">
               <h3>Client</h3>
@@ -366,8 +346,8 @@ export const QuoteDetailDialog = React.memo(
               <p className="no-items">Aucune ligne</p>
             )}
           </div>
-        </div>
-      </div>
+        </ModalBody>
+      </Modal>
     );
   },
 );
@@ -378,71 +358,63 @@ export const RequestDetailDialog = React.memo(
     const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
     const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
     return (
-      <div
-        className="orders-overlay"
-        onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      <Modal
+        open
+        onClose={onClose}
+        size="lg\"
+        className="order-detail-dialog request-detail-dialog"
       >
-        <div
-          className="order-detail-dialog request-detail-dialog"
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="order-detail-header">
-            <div className="order-detail-title">
-              <h2>
-                <ClipboardList size={20} /> {request.article}
-              </h2>
-              <StatusBadge color={status.color}>
-                {status.icon} {status.label}
-              </StatusBadge>
-              <span className="priority-badge" style={{ color: priority.color }}>
-                {priority.icon} {priority.label}
-              </span>
-            </div>
-            <div className="order-detail-actions">
-              {isAdmin && request.status === STATUS.PENDING && (
-                <>
-                  <Button
-                    variant="ghost"
-                    className="action-btn success"
-                    onClick={() => {
-                      onValidate(request, 'approve');
-                      onClose();
-                    }}
-                  >
-                    <Check size={14} /> Approuver
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="action-btn danger"
-                    onClick={() => {
-                      onValidate(request, 'reject');
-                      onClose();
-                    }}
-                  >
-                    <X size={14} /> Refuser
-                  </Button>
-                </>
-              )}
-              <Button variant="ghost" className="action-btn" onClick={() => onEdit(request)}>
-                <Edit2 size={14} /> Modifier
-              </Button>
-              <Button
-                variant="ghost"
-                className="action-btn danger"
-                onClick={() => {
-                  onDelete(request);
-                  onClose();
-                }}
-              >
-                <Trash2 size={14} /> Supprimer
-              </Button>
-              <Button variant="ghost" className="close-btn" onClick={onClose} aria-label="Fermer">
-                <X size={20} />
-              </Button>
-            </div>
+        <ModalHeader icon={<ClipboardList size={20} />} onClose={onClose}>
+          <div className="order-detail-title">
+            <span>{request.article}</span>
+            <StatusBadge color={status.color}>
+              {status.icon} {status.label}
+            </StatusBadge>
+            <span className="priority-badge" style={{ color: priority.color }}>
+              {priority.icon} {priority.label}
+            </span>
           </div>
+          <div className="order-detail-actions">
+            {isAdmin && request.status === STATUS.PENDING && (
+              <>
+                <Button
+                  variant="ghost"
+                  className="action-btn success"
+                  onClick={() => {
+                    onValidate(request, 'approve');
+                    onClose();
+                  }}
+                >
+                  <Check size={14} /> Approuver
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="action-btn danger"
+                  onClick={() => {
+                    onValidate(request, 'reject');
+                    onClose();
+                  }}
+                >
+                  <X size={14} /> Refuser
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" className="action-btn" onClick={() => onEdit(request)}>
+              <Edit2 size={14} /> Modifier
+            </Button>
+            <Button
+              variant="ghost"
+              className="action-btn danger"
+              onClick={() => {
+                onDelete(request);
+                onClose();
+              }}
+            >
+              <Trash2 size={14} /> Supprimer
+            </Button>
+          </div>
+        </ModalHeader>
+        <ModalBody>
           <div className="order-detail-grid">
             <div className="detail-section">
               <h3>Détails</h3>
@@ -500,8 +472,8 @@ export const RequestDetailDialog = React.memo(
               <p>{request.rejection_reason}</p>
             </div>
           )}
-        </div>
-      </div>
+        </ModalBody>
+      </Modal>
     );
   },
 );

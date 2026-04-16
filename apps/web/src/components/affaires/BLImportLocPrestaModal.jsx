@@ -20,7 +20,17 @@ import {
 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
-import { Button, InlineAlert, Input, ProgressBar, Tooltip } from '@/design-system';
+import {
+  Button,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ProgressBar,
+  Tooltip,
+} from '@/design-system';
 
 import { CONF_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
@@ -547,420 +557,400 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
   ];
 
   return (
-    <div className="bl-loc-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="bl-loc-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        {/* Header */}
-        <div className="bl-loc-header">
-          <h3>
-            <Layers size={20} /> Import Bon de Préparation
-          </h3>
-          <span className="bl-loc-header-badge">Location / Prestation</span>
-          <Button variant="ghost" className="bl-loc-close" onClick={onClose} aria-label="Fermer">
-            <X size={18} />
-          </Button>
-        </div>
+    <Modal open={true} onClose={onClose} size="xl" className="bl-loc-modal">
+      <ModalHeader icon={<Layers size={20} />} onClose={onClose}>
+        Import Bon de Préparation
+        <span className="bl-loc-header-badge">Location / Prestation</span>
+      </ModalHeader>
+      <ModalBody className="bl-loc-body">
+        {/* Drop zone ou preview fichier */}
+        {!file ? (
+          <div
+            className={`bl-loc-dropzone ${dragOver ? 'drag-over' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload size={36} />
+            <p className="bl-loc-drop-text">
+              Glissez un <strong>Bon de Préparation</strong> PDF ici
+            </p>
+            <p className="bl-loc-drop-hint">
+              ou cliquez pour sélectionner — PDF uniquement, 20 Mo max
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              className="u-hidden"
+              onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])}
+            />
+          </div>
+        ) : (
+          <>
+            {/* File preview */}
+            <div className="bl-loc-file-preview">
+              <div className="bl-loc-file-icon">
+                <File size={20} />
+              </div>
+              <div className="bl-loc-file-info">
+                <div className="bl-loc-file-name">{file.name}</div>
+                <div className="bl-loc-file-size">{formatFileSize(file.size)}</div>
+              </div>
+              {docType && (
+                <span
+                  className={`bl-loc-badge ${docType === DOC_TYPES.BON_PREPARATION ? 'success' : 'warning'}`}
+                >
+                  {getDocTypeLabel(docType)}
+                </span>
+              )}
+              <Tooltip content="Retirer">
+                <Button variant="ghost" className="bl-loc-file-remove" onClick={handleRemoveFile}>
+                  <X size={16} />
+                </Button>
+              </Tooltip>
+            </div>
 
-        {/* Body */}
-        <div className="bl-loc-body">
-          {/* Drop zone ou preview fichier */}
-          {!file ? (
-            <div
-              className={`bl-loc-dropzone ${dragOver ? 'drag-over' : ''}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload size={36} />
-              <p className="bl-loc-drop-text">
-                Glissez un <strong>Bon de Préparation</strong> PDF ici
-              </p>
-              <p className="bl-loc-drop-hint">
-                ou cliquez pour sélectionner — PDF uniquement, 20 Mo max
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,application/pdf"
-                className="u-hidden"
-                onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])}
+            {/* Parsing progress */}
+            {parsing && <ProgressBar indeterminate color="warning" />}
+
+            {/* Warning si le doc n'est pas un BP */}
+            {isWrongDocType && (
+              <InlineAlert variant="warning">
+                Ce document est un <strong>{getDocTypeLabel(docType)}</strong>, pas un Bon de
+                Préparation. Utilisez l'import BL Vente/Installation pour ce type de document.
+              </InlineAlert>
+            )}
+
+            {/* Association affaire */}
+            <div className="bl-loc-field-section">
+              <label>
+                <Briefcase size={14} /> Associer à une affaire
+              </label>
+              <Input
+                type="text"
+                value={affaireId}
+                onChange={(e) => setAffaireId(e.target.value)}
+                placeholder="AF32844, AF33001..."
               />
             </div>
-          ) : (
-            <>
-              {/* File preview */}
-              <div className="bl-loc-file-preview">
-                <div className="bl-loc-file-icon">
-                  <File size={20} />
-                </div>
-                <div className="bl-loc-file-info">
-                  <div className="bl-loc-file-name">{file.name}</div>
-                  <div className="bl-loc-file-size">{formatFileSize(file.size)}</div>
-                </div>
-                {docType && (
-                  <span
-                    className={`bl-loc-badge ${docType === DOC_TYPES.BON_PREPARATION ? 'success' : 'warning'}`}
+
+            {/* Type d'affaire (Location ou Prestation seulement) */}
+            <div className="bl-loc-field-section">
+              <label>
+                <Tag size={14} /> Type d'affaire
+              </label>
+              <div className="bl-loc-type-buttons">
+                {TYPE_OPTIONS.map((opt) => (
+                  <Button
+                    variant="ghost"
+                    key={opt.value}
+                    type="button"
+                    className={`bl-loc-type-btn ${affaireType === opt.value ? 'active' : ''}`}
+                    onClick={() => setAffaireType(opt.value)}
+                    style={{
+                      '--type-color': opt.color,
+                      borderColor: affaireType === opt.value ? opt.color : undefined,
+                      background: affaireType === opt.value ? `${opt.color}18` : undefined,
+                      color: affaireType === opt.value ? opt.color : undefined,
+                    }}
                   >
-                    {getDocTypeLabel(docType)}
-                  </span>
-                )}
-                <Tooltip content="Retirer">
-                  <Button variant="ghost" className="bl-loc-file-remove" onClick={handleRemoveFile}>
-                    <X size={16} />
+                    {opt.icon} {opt.label}
                   </Button>
-                </Tooltip>
+                ))}
               </div>
+            </div>
 
-              {/* Parsing progress */}
-              {parsing && <ProgressBar indeterminate color="warning" />}
+            {/* Résultats du parsing */}
+            {parsedData &&
+              !isWrongDocType &&
+              (() => {
+                const fc = parsedData._fieldConfidence || {};
+                return (
+                  <div className="bl-loc-results">
+                    <h4>
+                      <CheckCircle size={16} style={{ color: STATUS_COLORS.success }} />
+                      Données extraites
+                      <span className="bl-loc-results-meta">
+                        {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs •{' '}
+                        {parsedData.confidence}% confiance
+                      </span>
+                    </h4>
 
-              {/* Warning si le doc n'est pas un BP */}
-              {isWrongDocType && (
-                <InlineAlert variant="warning">
-                  Ce document est un <strong>{getDocTypeLabel(docType)}</strong>, pas un Bon de
-                  Préparation. Utilisez l'import BL Vente/Installation pour ce type de document.
-                </InlineAlert>
-              )}
-
-              {/* Association affaire */}
-              <div className="bl-loc-field-section">
-                <label>
-                  <Briefcase size={14} /> Associer à une affaire
-                </label>
-                <Input
-                  type="text"
-                  value={affaireId}
-                  onChange={(e) => setAffaireId(e.target.value)}
-                  placeholder="AF32844, AF33001..."
-                />
-              </div>
-
-              {/* Type d'affaire (Location ou Prestation seulement) */}
-              <div className="bl-loc-field-section">
-                <label>
-                  <Tag size={14} /> Type d'affaire
-                </label>
-                <div className="bl-loc-type-buttons">
-                  {TYPE_OPTIONS.map((opt) => (
-                    <Button
-                      variant="ghost"
-                      key={opt.value}
-                      type="button"
-                      className={`bl-loc-type-btn ${affaireType === opt.value ? 'active' : ''}`}
-                      onClick={() => setAffaireType(opt.value)}
-                      style={{
-                        '--type-color': opt.color,
-                        borderColor: affaireType === opt.value ? opt.color : undefined,
-                        background: affaireType === opt.value ? `${opt.color}18` : undefined,
-                        color: affaireType === opt.value ? opt.color : undefined,
-                      }}
-                    >
-                      {opt.icon} {opt.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Résultats du parsing */}
-              {parsedData &&
-                !isWrongDocType &&
-                (() => {
-                  const fc = parsedData._fieldConfidence || {};
-                  return (
-                    <div className="bl-loc-results">
-                      <h4>
-                        <CheckCircle size={16} style={{ color: STATUS_COLORS.success }} />
-                        Données extraites
-                        <span className="bl-loc-results-meta">
-                          {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs •{' '}
-                          {parsedData.confidence}% confiance
-                        </span>
-                      </h4>
-
-                      {/* Champs principaux */}
-                      <div className="bl-loc-fields">
-                        {FIELD_DEFS.map((field) => {
-                          const val = getVal(field.key);
-                          const conf = fc[field.key];
-                          const isEdited = editedFields[field.key] !== undefined;
-                          return (
-                            <div key={field.key} className="bl-loc-parsed-field">
-                              <span
-                                className="bl-loc-conf-dot"
-                                title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
-                                style={{
-                                  color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)',
+                    {/* Champs principaux */}
+                    <div className="bl-loc-fields">
+                      {FIELD_DEFS.map((field) => {
+                        const val = getVal(field.key);
+                        const conf = fc[field.key];
+                        const isEdited = editedFields[field.key] !== undefined;
+                        return (
+                          <div key={field.key} className="bl-loc-parsed-field">
+                            <span
+                              className="bl-loc-conf-dot"
+                              title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
+                              style={{
+                                color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)',
+                              }}
+                            >
+                              ●
+                            </span>
+                            <span className="bl-loc-field-label">{field.label}</span>
+                            {field.key === 'adresse' ? (
+                              <AddressAutocomplete
+                                value={val}
+                                onChange={(v) => setEditedFields((p) => ({ ...p, adresse: v }))}
+                                placeholder="Adresse non détectée"
+                                className="bl-loc-address-input"
+                              />
+                            ) : (
+                              <Input
+                                type="text"
+                                value={val}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  setEditedFields((p) => ({ ...p, [field.key]: v }));
+                                  // Synchroniser le numéro d'affaire avec le champ d'association
+                                  if (field.key === 'numero') setAffaireId(v);
                                 }}
+                                placeholder={`${field.label} non détecté`}
+                                className={`bl-loc-field-input ${isEdited ? 'edited' : ''} ${!val ? 'empty' : ''}`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* ─── Sections avec articles groupés ─── */}
+                    {parsedData.sections && parsedData.sections.length > 0 && (
+                      <div className="bl-loc-sections">
+                        <h5 className="bl-loc-sections-title">
+                          <Layers size={14} />
+                          Sections ({parsedData.sections.length})
+                          <span className="bl-loc-sections-total">
+                            {parsedData.items?.length || 0} article(s) au total
+                          </span>
+                        </h5>
+                        {parsedData.sections.map((sec, idx) => {
+                          const sc = getSecColor(sec.name);
+                          const isExpanded = expandedSections[idx];
+                          return (
+                            <div
+                              key={idx}
+                              className={`bl-loc-section ${isExpanded ? 'expanded' : ''}`}
+                              style={{
+                                '--sec-bg': sc.bg,
+                                '--sec-border': sc.border,
+                                '--sec-text': sc.text,
+                              }}
+                            >
+                              <div
+                                className="bl-loc-section-header"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => toggleSection(idx)}
                               >
-                                ●
-                              </span>
-                              <span className="bl-loc-field-label">{field.label}</span>
-                              {field.key === 'adresse' ? (
-                                <AddressAutocomplete
-                                  value={val}
-                                  onChange={(v) => setEditedFields((p) => ({ ...p, adresse: v }))}
-                                  placeholder="Adresse non détectée"
-                                  className="bl-loc-address-input"
-                                />
-                              ) : (
-                                <Input
-                                  type="text"
-                                  value={val}
-                                  onChange={(e) => {
-                                    const v = e.target.value;
-                                    setEditedFields((p) => ({ ...p, [field.key]: v }));
-                                    // Synchroniser le numéro d'affaire avec le champ d'association
-                                    if (field.key === 'numero') setAffaireId(v);
-                                  }}
-                                  placeholder={`${field.label} non détecté`}
-                                  className={`bl-loc-field-input ${isEdited ? 'edited' : ''} ${!val ? 'empty' : ''}`}
-                                />
+                                <span className="bl-loc-section-icon">{sc.icon}</span>
+                                <span className="bl-loc-section-name">{sec.name}</span>
+                                <span className="bl-loc-section-count">
+                                  {sec.items?.length || 0} art.
+                                </span>
+                                {sec.dateDebut && (
+                                  <span className="bl-loc-section-dates">
+                                    <Calendar size={12} />
+                                    {sec.dateDebut} → {sec.dateFin}
+                                  </span>
+                                )}
+                                <span
+                                  className={`bl-loc-section-chevron ${isExpanded ? 'open' : ''}`}
+                                >
+                                  ▸
+                                </span>
+                              </div>
+                              {isExpanded && sec.items && sec.items.length > 0 && (
+                                <div className="bl-loc-section-items">
+                                  <div className="bl-loc-items-header">
+                                    <Tooltip content="Catalogue" position="bottom">
+                                      <span className="bl-loc-col-match">🔗</span>
+                                    </Tooltip>
+                                    <span className="bl-loc-col-ref">Référence</span>
+                                    <span className="bl-loc-col-desc">Désignation</span>
+                                    <span className="bl-loc-col-qty">Qté</span>
+                                    <span className="bl-loc-col-poids">Poids</span>
+                                    <span className="bl-loc-col-vol">Vol.</span>
+                                  </div>
+                                  {sec.items.map((item, iIdx) => {
+                                    const match = item.reference
+                                      ? catalogMatches[item.reference]
+                                      : null;
+                                    return (
+                                      <div
+                                        key={iIdx}
+                                        className={`bl-loc-item-row ${match ? 'matched' : ''}`}
+                                      >
+                                        <span className="bl-loc-col-match">
+                                          {match ? (
+                                            <span
+                                              title={`✅ ${match.name} (${match.family || ''})`}
+                                              style={{ cursor: 'help' }}
+                                            >
+                                              <Link2
+                                                size={13}
+                                                style={{ color: STATUS_COLORS.success }}
+                                              />
+                                            </span>
+                                          ) : item.reference ? (
+                                            <Tooltip
+                                              content="Référence non trouvée dans le catalogue"
+                                              position="bottom"
+                                            >
+                                              <span className="u-opacity-30">—</span>
+                                            </Tooltip>
+                                          ) : null}
+                                        </span>
+                                        <span className="bl-loc-col-ref">
+                                          {item.reference || '—'}
+                                        </span>
+                                        <span className="bl-loc-col-desc">
+                                          {item.description || '—'}
+                                        </span>
+                                        <span className="bl-loc-col-qty">{item.quantity || 0}</span>
+                                        <span className="bl-loc-col-poids">
+                                          {item.poids || '—'}
+                                        </span>
+                                        <span className="bl-loc-col-vol">{item.volume || '—'}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </div>
                           );
                         })}
                       </div>
+                    )}
 
-                      {/* ─── Sections avec articles groupés ─── */}
-                      {parsedData.sections && parsedData.sections.length > 0 && (
-                        <div className="bl-loc-sections">
-                          <h5 className="bl-loc-sections-title">
-                            <Layers size={14} />
-                            Sections ({parsedData.sections.length})
-                            <span className="bl-loc-sections-total">
-                              {parsedData.items?.length || 0} article(s) au total
-                            </span>
+                    {/* Résumé global si articles sans sections */}
+                    {(!parsedData.sections || parsedData.sections.length === 0) &&
+                      parsedData.items &&
+                      parsedData.items.length > 0 && (
+                        <div className="bl-loc-flat-items">
+                          <h5>
+                            <Package size={14} /> Articles ({parsedData.items.length})
                           </h5>
-                          {parsedData.sections.map((sec, idx) => {
-                            const sc = getSecColor(sec.name);
-                            const isExpanded = expandedSections[idx];
+                          {parsedData.items.slice(0, 40).map((item, idx) => {
+                            const match = item.reference ? catalogMatches[item.reference] : null;
                             return (
                               <div
                                 key={idx}
-                                className={`bl-loc-section ${isExpanded ? 'expanded' : ''}`}
-                                style={{
-                                  '--sec-bg': sc.bg,
-                                  '--sec-border': sc.border,
-                                  '--sec-text': sc.text,
-                                }}
+                                className={`bl-loc-item-row flat ${match ? 'matched' : ''}`}
                               >
-                                <div
-                                  className="bl-loc-section-header"
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={() => toggleSection(idx)}
-                                >
-                                  <span className="bl-loc-section-icon">{sc.icon}</span>
-                                  <span className="bl-loc-section-name">{sec.name}</span>
-                                  <span className="bl-loc-section-count">
-                                    {sec.items?.length || 0} art.
-                                  </span>
-                                  {sec.dateDebut && (
-                                    <span className="bl-loc-section-dates">
-                                      <Calendar size={12} />
-                                      {sec.dateDebut} → {sec.dateFin}
-                                    </span>
-                                  )}
-                                  <span
-                                    className={`bl-loc-section-chevron ${isExpanded ? 'open' : ''}`}
-                                  >
-                                    ▸
-                                  </span>
-                                </div>
-                                {isExpanded && sec.items && sec.items.length > 0 && (
-                                  <div className="bl-loc-section-items">
-                                    <div className="bl-loc-items-header">
-                                      <Tooltip content="Catalogue" position="bottom">
-                                        <span className="bl-loc-col-match">🔗</span>
-                                      </Tooltip>
-                                      <span className="bl-loc-col-ref">Référence</span>
-                                      <span className="bl-loc-col-desc">Désignation</span>
-                                      <span className="bl-loc-col-qty">Qté</span>
-                                      <span className="bl-loc-col-poids">Poids</span>
-                                      <span className="bl-loc-col-vol">Vol.</span>
-                                    </div>
-                                    {sec.items.map((item, iIdx) => {
-                                      const match = item.reference
-                                        ? catalogMatches[item.reference]
-                                        : null;
-                                      return (
-                                        <div
-                                          key={iIdx}
-                                          className={`bl-loc-item-row ${match ? 'matched' : ''}`}
-                                        >
-                                          <span className="bl-loc-col-match">
-                                            {match ? (
-                                              <span
-                                                title={`✅ ${match.name} (${match.family || ''})`}
-                                                style={{ cursor: 'help' }}
-                                              >
-                                                <Link2
-                                                  size={13}
-                                                  style={{ color: STATUS_COLORS.success }}
-                                                />
-                                              </span>
-                                            ) : item.reference ? (
-                                              <Tooltip
-                                                content="Référence non trouvée dans le catalogue"
-                                                position="bottom"
-                                              >
-                                                <span className="u-opacity-30">—</span>
-                                              </Tooltip>
-                                            ) : null}
-                                          </span>
-                                          <span className="bl-loc-col-ref">
-                                            {item.reference || '—'}
-                                          </span>
-                                          <span className="bl-loc-col-desc">
-                                            {item.description || '—'}
-                                          </span>
-                                          <span className="bl-loc-col-qty">
-                                            {item.quantity || 0}
-                                          </span>
-                                          <span className="bl-loc-col-poids">
-                                            {item.poids || '—'}
-                                          </span>
-                                          <span className="bl-loc-col-vol">
-                                            {item.volume || '—'}
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+                                <span className="bl-loc-col-match">
+                                  {match ? (
+                                    <Link2
+                                      size={13}
+                                      style={{ color: STATUS_COLORS.success }}
+                                      title={`✅ ${match.name}`}
+                                    />
+                                  ) : null}
+                                </span>
+                                <span className="bl-loc-col-ref">{item.reference || '—'}</span>
+                                <span className="bl-loc-col-desc">{item.description || '—'}</span>
+                                <span className="bl-loc-col-qty">{item.quantity || 0}</span>
                               </div>
                             );
                           })}
+                          {parsedData.items.length > 40 && (
+                            <p className="bl-loc-items-more">
+                              ... et {parsedData.items.length - 40} autre(s)
+                            </p>
+                          )}
                         </div>
                       )}
 
-                      {/* Résumé global si articles sans sections */}
-                      {(!parsedData.sections || parsedData.sections.length === 0) &&
-                        parsedData.items &&
-                        parsedData.items.length > 0 && (
-                          <div className="bl-loc-flat-items">
-                            <h5>
-                              <Package size={14} /> Articles ({parsedData.items.length})
-                            </h5>
-                            {parsedData.items.slice(0, 40).map((item, idx) => {
-                              const match = item.reference ? catalogMatches[item.reference] : null;
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`bl-loc-item-row flat ${match ? 'matched' : ''}`}
-                                >
-                                  <span className="bl-loc-col-match">
-                                    {match ? (
-                                      <Link2
-                                        size={13}
-                                        style={{ color: STATUS_COLORS.success }}
-                                        title={`✅ ${match.name}`}
-                                      />
-                                    ) : null}
-                                  </span>
-                                  <span className="bl-loc-col-ref">{item.reference || '—'}</span>
-                                  <span className="bl-loc-col-desc">{item.description || '—'}</span>
-                                  <span className="bl-loc-col-qty">{item.quantity || 0}</span>
-                                </div>
-                              );
-                            })}
-                            {parsedData.items.length > 40 && (
-                              <p className="bl-loc-items-more">
-                                ... et {parsedData.items.length - 40} autre(s)
-                              </p>
-                            )}
-                          </div>
-                        )}
+                    {/* Toggle texte brut */}
+                    <Button
+                      variant="ghost"
+                      className="bl-loc-raw-toggle"
+                      onClick={() => setShowRawText(!showRawText)}
+                    >
+                      {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
+                      {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
+                    </Button>
+                    {showRawText && <div className="bl-loc-raw-text">{rawText}</div>}
+                  </div>
+                );
+              })()}
 
-                      {/* Toggle texte brut */}
-                      <Button
-                        variant="ghost"
-                        className="bl-loc-raw-toggle"
-                        onClick={() => setShowRawText(!showRawText)}
-                      >
-                        {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
-                        {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
-                      </Button>
-                      {showRawText && <div className="bl-loc-raw-text">{rawText}</div>}
-                    </div>
-                  );
-                })()}
-
-              {/* Pas de données */}
-              {!parsing && !parsedData && rawText && (
-                <div className="bl-loc-no-data">
-                  <AlertTriangle size={16} />
-                  Aucune donnée structurée détectée dans ce PDF.
-                  <Button
-                    variant="ghost"
-                    className="bl-loc-raw-toggle u-ml-auto"
-                    onClick={() => setShowRawText(!showRawText)}
-                  >
-                    {showRawText ? 'Masquer' : 'Voir texte brut'}
-                  </Button>
-                </div>
-              )}
-              {!parsing && !parsedData && showRawText && rawText && (
-                <div className="bl-loc-raw-text">{rawText}</div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="bl-loc-footer">
-          <div className="bl-loc-footer-left">
-            {parsedData && !isWrongDocType && (
-              <span className="bl-loc-badge success">
-                <CheckCircle size={12} /> Prêt à importer
-              </span>
-            )}
-            {isWrongDocType && (
-              <span
-                className="bl-loc-badge"
-                style={{ background: 'rgba(239,68,68,0.12)', color: STATUS_COLORS.danger }}
-              >
-                <ShieldAlert size={12} /> Type de document incompatible
-              </span>
-            )}
-          </div>
-          <div className="bl-loc-footer-right">
-            <Button variant="ghost" onClick={onClose}>
-              Annuler
-            </Button>
-            {parsedData && !isWrongDocType && (
-              <Tooltip
-                content="Importer et créer les événements d'affichage dynamique"
-                position="bottom"
-              >
+            {/* Pas de données */}
+            {!parsing && !parsedData && rawText && (
+              <div className="bl-loc-no-data">
+                <AlertTriangle size={16} />
+                Aucune donnée structurée détectée dans ce PDF.
                 <Button
                   variant="ghost"
-                  className="bl-loc-btn-events"
-                  onClick={handleGenerateEvents}
-                  disabled={generating || saving || !affaireType}
+                  className="bl-loc-raw-toggle u-ml-auto"
+                  onClick={() => setShowRawText(!showRawText)}
                 >
-                  <Monitor size={15} />
-                  {generating ? 'Génération...' : 'Importer + Événements'}
+                  {showRawText ? 'Masquer' : 'Voir texte brut'}
                 </Button>
-              </Tooltip>
+              </div>
             )}
-            <Button
-              variant="primary"
-              onClick={handleSave}
-              disabled={!file || saving || generating || isWrongDocType || !affaireType}
+            {!parsing && !parsedData && showRawText && rawText && (
+              <div className="bl-loc-raw-text">{rawText}</div>
+            )}
+          </>
+        )}
+      </ModalBody>
+
+      <ModalFooter className="bl-loc-footer">
+        <div className="bl-loc-footer-left">
+          {parsedData && !isWrongDocType && (
+            <span className="bl-loc-badge success">
+              <CheckCircle size={12} /> Prêt à importer
+            </span>
+          )}
+          {isWrongDocType && (
+            <span
+              className="bl-loc-badge"
+              style={{ background: 'rgba(239,68,68,0.12)', color: STATUS_COLORS.danger }}
             >
-              <Save size={15} />
-              {saving ? 'Import...' : 'Enregistrer'}
-            </Button>
-          </div>
+              <ShieldAlert size={12} /> Type de document incompatible
+            </span>
+          )}
         </div>
-      </div>
-    </div>
+        <div className="bl-loc-footer-right">
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          {parsedData && !isWrongDocType && (
+            <Tooltip
+              content="Importer et créer les événements d'affichage dynamique"
+              position="bottom"
+            >
+              <Button
+                variant="ghost"
+                className="bl-loc-btn-events"
+                onClick={handleGenerateEvents}
+                disabled={generating || saving || !affaireType}
+              >
+                <Monitor size={15} />
+                {generating ? 'Génération...' : 'Importer + Événements'}
+              </Button>
+            </Tooltip>
+          )}
+          <Button
+            variant="primary"
+            onClick={handleSave}
+            disabled={!file || saving || generating || isWrongDocType || !affaireType}
+          >
+            <Save size={15} />
+            {saving ? 'Import...' : 'Enregistrer'}
+          </Button>
+        </div>
+      </ModalFooter>
+    </Modal>
   );
 }
 

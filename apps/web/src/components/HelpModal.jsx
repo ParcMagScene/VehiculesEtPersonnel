@@ -12,7 +12,6 @@ import {
   Truck,
   Users,
   Wrench,
-  X,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -21,6 +20,9 @@ import {
   Button,
   Card,
   EmptyState,
+  Modal,
+  ModalBody,
+  ModalHeader,
   SearchBar,
   Tab,
   TabList,
@@ -249,34 +251,18 @@ const HelpModal = ({ isOpen, onClose }) => {
     : FAQ_ITEMS;
 
   return (
-    <div
-      className="help-overlay"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="help-modal">
-        <div className="help-header">
-          <h3>
-            <HelpCircle size={20} /> Aide — eM@g
-          </h3>
-          <div className="help-header-actions">
-            <Tooltip content="Ouvrir le guide complet" position="bottom">
-              <Button variant="ghost" onClick={handleDownloadPDF}>
-                <Download size={14} /> Guide PDF
-              </Button>
-            </Tooltip>
-            <Button
-              variant="ghost"
-              className="help-close-btn"
-              onClick={onClose}
-              aria-label="Fermer l'aide"
-            >
-              <X size={18} />
-            </Button>
-          </div>
-        </div>
+    <Modal open onClose={onClose} size="lg" className="help-modal">
+      <ModalHeader icon={<HelpCircle size={20} />} onClose={onClose}>
+        <span>Aide — eM@g</span>
+        <Tooltip content="Ouvrir le guide complet" position="bottom">
+          <Button variant="ghost" onClick={handleDownloadPDF}>
+            <Download size={14} /> Guide PDF
+          </Button>
+        </Tooltip>
+      </ModalHeader>
 
+      <ModalBody>
+        {' '}
         {/* Tabs */}
         <Tabs value={activeTab} onChange={setActiveTab}>
           <TabList className="help-tabs">
@@ -376,8 +362,8 @@ const HelpModal = ({ isOpen, onClose }) => {
             <div className="help-version">eM@g v2.1 — eM@g © {new Date().getFullYear()}</div>
           </div>
         </Tabs>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 };
 

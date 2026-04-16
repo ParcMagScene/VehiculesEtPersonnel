@@ -14,7 +14,17 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
-import { Button, InlineAlert, Input, ModalLayout, Spinner, Table } from '@/design-system';
+import {
+  Button,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalLayout,
+  Spinner,
+  Table,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
@@ -548,23 +558,16 @@ const SavImportModal = ({ onClose, onImportDone }) => {
 
           {/* Popup de sélection d'équipement pour liaison manuelle */}
           {linkingIndex !== null && (
-            <div
-              className="eq-modal-overlay sav-import-link-overlay"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setLinkingIndex(null);
-              }}
+            <Modal
+              open={linkingIndex !== null}
+              onClose={() => setLinkingIndex(null)}
+              size="md"
+              className="sav-import-link-modal"
             >
-              <div className="sav-import-link-modal">
-                <div className="sav-import-link-header">
-                  <h4>🔗 Lier à un équipement</h4>
-                  <Button
-                    variant="ghost"
-                    className="sav-import-link-close"
-                    onClick={() => setLinkingIndex(null)}
-                  >
-                    <X size={18} />
-                  </Button>
-                </div>
+              <ModalHeader icon={<Link2 size={18} />} onClose={() => setLinkingIndex(null)}>
+                Lier à un équipement
+              </ModalHeader>
+              <ModalBody>
                 {(() => {
                   const item = preview.unmatchedItems?.find((u) => u.index === linkingIndex);
                   return item ? (
@@ -608,8 +611,8 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
+              </ModalBody>
+            </Modal>
           )}
         </div>
       )}

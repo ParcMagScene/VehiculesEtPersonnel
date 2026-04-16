@@ -5,7 +5,16 @@ import { fr } from 'date-fns/locale';
 import { ArrowLeft, Calendar, Car, Check, ChevronRight, Plus, Users } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 
-import { Button, FormField, InlineAlert, Select, Textarea } from '@/design-system';
+import {
+  Button,
+  FormField,
+  InlineAlert,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Select,
+  Textarea,
+} from '@/design-system';
 
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
@@ -222,77 +231,61 @@ const MobileReservations = forwardRef(
               </Button>
 
               {/* Vehicle picker modal */}
-              {showVehiclePicker && (
-                <div
-                  className="vehicle-picker-overlay"
-                  onMouseDown={(e) => e.target === e.currentTarget && setShowVehiclePicker(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') setShowVehiclePicker(false);
-                  }}
-                >
-                  <div className="vehicle-picker-modal" onClick={(e) => e.stopPropagation()}>
-                    <div className="vehicle-picker-modal-header">
-                      <h3>Choisir un véhicule</h3>
+              <Modal open={showVehiclePicker} onClose={() => setShowVehiclePicker(false)} size="md">
+                <ModalHeader onClose={() => setShowVehiclePicker(false)}>
+                  Choisir un véhicule
+                </ModalHeader>
+                <ModalBody>
+                  <div className="vehicle-picker-list">
+                    {availableVehicles.map((vehicle) => (
                       <Button
                         variant="ghost"
+                        key={vehicle.id}
                         type="button"
-                        onClick={() => setShowVehiclePicker(false)}
-                        aria-label="Fermer"
+                        className={`vehicle-picker-item ${String(formData.vehicleId) === String(vehicle.id) ? 'active' : ''}`}
+                        onClick={() => {
+                          setFormData({ ...formData, vehicleId: vehicle.id });
+                          setShowVehiclePicker(false);
+                        }}
                       >
-                        ✕
-                      </Button>
-                    </div>
-                    <div className="vehicle-picker-list">
-                      {availableVehicles.map((vehicle) => (
-                        <Button
-                          variant="ghost"
-                          key={vehicle.id}
-                          type="button"
-                          className={`vehicle-picker-item ${String(formData.vehicleId) === String(vehicle.id) ? 'active' : ''}`}
-                          onClick={() => {
-                            setFormData({ ...formData, vehicleId: vehicle.id });
-                            setShowVehiclePicker(false);
-                          }}
-                        >
-                          <div className="vehicle-picker-item-photo">
-                            <img
-                              src={
-                                vehicle.photo
-                                  ? `/Photos/${vehicle.photo}`
-                                  : getVehicleAvatar(vehicle.type)
-                              }
-                              alt={vehicle.name}
-                              loading="lazy"
-                              onError={(e) => {
-                                e.target.src = getVehicleAvatar(vehicle.type);
-                              }}
-                            />
-                          </div>
-                          <div className="vehicle-picker-item-info">
-                            <span className="vehicle-picker-item-name">{vehicle.name}</span>
-                            <span className="vehicle-picker-item-meta">
-                              {vehicle.brand && <span className="vp-brand">{vehicle.brand}</span>}
-                              <span className="vp-type">{vehicle.type}</span>
-                            </span>
-                            <span className="vehicle-picker-item-reg">
-                              {vehicle.registration || vehicle.immatriculation}
-                            </span>
-                          </div>
-                          {String(formData.vehicleId) === String(vehicle.id) && (
-                            <Check size={20} className="vehicle-picker-check" />
-                          )}
-                        </Button>
-                      ))}
-                      {availableVehicles.length === 0 && (
-                        <div className="vehicle-picker-empty">
-                          <Car size={32} />
-                          <p>Aucun véhicule disponible pour ces dates</p>
+                        <div className="vehicle-picker-item-photo">
+                          <img
+                            src={
+                              vehicle.photo
+                                ? `/Photos/${vehicle.photo}`
+                                : getVehicleAvatar(vehicle.type)
+                            }
+                            alt={vehicle.name}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.target.src = getVehicleAvatar(vehicle.type);
+                            }}
+                          />
                         </div>
-                      )}
-                    </div>
+                        <div className="vehicle-picker-item-info">
+                          <span className="vehicle-picker-item-name">{vehicle.name}</span>
+                          <span className="vehicle-picker-item-meta">
+                            {vehicle.brand && <span className="vp-brand">{vehicle.brand}</span>}
+                            <span className="vp-type">{vehicle.type}</span>
+                          </span>
+                          <span className="vehicle-picker-item-reg">
+                            {vehicle.registration || vehicle.immatriculation}
+                          </span>
+                        </div>
+                        {String(formData.vehicleId) === String(vehicle.id) && (
+                          <Check size={20} className="vehicle-picker-check" />
+                        )}
+                      </Button>
+                    ))}
+                    {availableVehicles.length === 0 && (
+                      <div className="vehicle-picker-empty">
+                        <Car size={32} />
+                        <p>Aucun véhicule disponible pour ces dates</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                </ModalBody>
+              </Modal>
             </FormField>
 
             <div className="form-row">

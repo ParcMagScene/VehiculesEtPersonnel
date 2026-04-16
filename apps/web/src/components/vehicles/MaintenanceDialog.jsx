@@ -21,6 +21,10 @@ import {
   Dialog,
   FormField,
   Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Select,
   StatusBadge,
   Tab,
@@ -558,42 +562,26 @@ function MaintenanceDialog({
   };
 
   return (
-    <div
-      className="maintenance-dialog-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}
-    >
-      <div
-        className="maintenance-dialog"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
+    <Modal open={true} onClose={handleSafeClose} size="lg" className="maintenance-dialog">
+      <ModalHeader
+        onClose={handleSafeClose}
+        style={
+          editingId
+            ? {
+                borderBottom: `3px solid ${getStatusColor(formData.status)}`,
+              }
+            : {}
+        }
       >
-        <div
-          className="maintenance-dialog-header"
-          style={
-            editingId
-              ? {
-                  borderBottom: `3px solid ${getStatusColor(formData.status)}`,
-                }
-              : {}
-          }
-        >
-          <div className="maintenance-dialog-title">
-            <h2>
-              {getDialogTitle()} - {vehicle.name}
-            </h2>
-            <div className="vehicle-info">
-              <span className="vehicle-type">{vehicle.type}</span>
-              {vehicle.registration && (
-                <span className="vehicle-registration">{vehicle.registration}</span>
-              )}
-            </div>
-          </div>
-          <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
-            ✕
-          </Button>
+        {getDialogTitle()} - {vehicle.name}
+        <div className="vehicle-info">
+          <span className="vehicle-type">{vehicle.type}</span>
+          {vehicle.registration && (
+            <span className="vehicle-registration">{vehicle.registration}</span>
+          )}
         </div>
-
+      </ModalHeader>
+      <ModalBody className="maintenance-dialog-body">
         <Tabs value={activeTab} onChange={setActiveTab}>
           <TabList className="maintenance-tabs">
             <Tab value="new">
@@ -1289,201 +1277,195 @@ function MaintenanceDialog({
             </TabPanel>
           </div>
         </Tabs>
+      </ModalBody>
 
-        {/* Footer boutons - fixé en bas */}
-        {activeTab === 'new' && (
-          <div className="form-actions">
-            {isViewMode ? (
-              <div className="form-actions-right u-ml-auto">
-                <Button variant="ghost" type="button" className="submit-button" onClick={onClose}>
-                  Fermer
-                </Button>
-              </div>
-            ) : editingId ? (
-              <>
-                <div className="form-actions-left">
-                  {canManageMaintenance && (
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      className="delete-button"
-                      onClick={() => deleteMaintenance(editingId)}
-                    >
-                      🗑️ Supprimer
-                    </Button>
-                  )}
-                  {canManageMaintenance &&
-                    formData.status !== STATUS.CANCELLED &&
-                    !showCancelForm && (
-                      <Button
-                        variant="ghost"
-                        type="button"
-                        className="cancel-intervention-button"
-                        onClick={() => setShowCancelForm(true)}
-                      >
-                        ❌ Annuler l'intervention
-                      </Button>
-                    )}
-                  {canManageMaintenance && formData.status === STATUS.CANCELLED && (
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      className="reschedule-button"
-                      onClick={() => {
-                        handleChange('status', 'scheduled');
-                        setStatusReason('');
-                      }}
-                    >
-                      📅 Reprogrammer
-                    </Button>
-                  )}
-                </div>
-                <div className="form-actions-right">
-                  {canManageMaintenance && formData.status !== STATUS.CANCELLED && (
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      className="reschedule-button"
-                      onClick={() => {
-                        handleChange('status', 'rescheduled');
-                      }}
-                    >
-                      <Clock size={16} />
-                      Reporter
-                    </Button>
-                  )}
-                  {hasChanges && (
-                    <Button
-                      variant="ghost"
-                      type="submit"
-                      form="maintenance-form"
-                      className="submit-button"
-                    >
-                      ✓ Valider les modifications
-                    </Button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  type="submit"
-                  form="maintenance-form"
-                  className="submit-button"
-                >
-                  {isQuickReport
-                    ? '⚠️ Signaler'
-                    : formData.status === STATUS.PENDING
-                      ? '📝 Enregistrer la demande'
-                      : '📅 Enregistrer'}
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Dialogue d'avertissement de conflit */}
-        {conflictWarning && conflictWarning.length > 0 && (
-          <div
-            className="conflict-warning-overlay"
-            onMouseDown={(e) => e.target === e.currentTarget && setConflictWarning(null)}
-          >
-            <div
-              className="conflict-warning-dialog"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-            >
-              <div className="conflict-warning-header">
-                <h3>⚠️ Conflit détecté</h3>
-              </div>
-              <div className="conflict-warning-content">
-                <p className="conflict-message">
-                  {conflictWarning.length === 1
-                    ? 'Une réservation existe déjà pendant cette période :'
-                    : `${conflictWarning.length} réservations existent déjà pendant cette période :`}
-                </p>
-                <div className="conflict-list">
-                  {conflictWarning.map((conflict, index) => (
-                    <div key={index} className="conflict-item">
-                      <div className="conflict-dates">
-                        📅 {format(parseISO(conflict.date), 'dd/MM/yyyy')}
-                        {conflict.period === 'AM' ? ' (Matin)' : ' (Après-midi)'}
-                        {conflict.endDate && conflict.endDate !== conflict.date && (
-                          <>
-                            {' '}
-                            → {format(parseISO(conflict.endDate), 'dd/MM/yyyy')}
-                            {conflict.endPeriod === 'PM' ? ' (Après-midi)' : ' (Matin)'}
-                          </>
-                        )}
-                      </div>
-                      <div className="conflict-prestation">{conflict.prestationName}</div>
-                    </div>
-                  ))}
-                </div>
-                <p className="conflict-question">Que souhaitez-vous faire ?</p>
-              </div>
-              <div className="conflict-warning-actions">
-                <Button
-                  variant="ghost"
-                  className="conflict-button conflict-cancel"
-                  onClick={() => setConflictWarning(null)}
-                >
-                  Annuler
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="conflict-button conflict-change"
-                  onClick={() => setConflictWarning(null)}
-                >
-                  Changer les dates
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="conflict-button conflict-proceed"
-                  onClick={(_e) => {
-                    // Forcer l'enregistrement malgré le conflit
-                    setConflictWarning(null);
-                    const _fakeEvent = { preventDefault: () => {} };
-                    // Appeler handleSubmit avec le flag de conflit déjà passé
-                    const maintenance = {
-                      id: editingId || Date.now(),
-                      vehicleId: vehicle.id,
-                      vehicleName: vehicle.name,
-                      ...formData,
-                      createdAt: editingId
-                        ? maintenances.find((m) => m.id === editingId)?.createdAt
-                        : new Date().toISOString(),
-                      updatedAt: new Date().toISOString(),
-                    };
-                    onSave(maintenance);
-
-                    // Réinitialiser le formulaire
-                    setEditingId(null);
-                    setIsQuickReport(false);
-                    setFormData({
-                      type: 'revision',
-                      startDate: '',
-                      endDate: '',
-                      description: '',
-                      garageId: '',
-                      cost: '',
-                      mileage: '',
-                      status: STATUS.SCHEDULED,
-                      notes: '',
-                      isImmobilized: false,
-                      isQuickReport: false,
-                    });
-                  }}
-                >
-                  Programmer quand même
-                </Button>
-              </div>
+      {/* Footer boutons - fixé en bas */}
+      {activeTab === 'new' && (
+        <ModalFooter className="form-actions">
+          {isViewMode ? (
+            <div className="form-actions-right u-ml-auto">
+              <Button variant="ghost" type="button" className="submit-button" onClick={onClose}>
+                Fermer
+              </Button>
             </div>
-          </div>
-        )}
-      </div>
+          ) : editingId ? (
+            <>
+              <div className="form-actions-left">
+                {canManageMaintenance && (
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className="delete-button"
+                    onClick={() => deleteMaintenance(editingId)}
+                  >
+                    🗑️ Supprimer
+                  </Button>
+                )}
+                {canManageMaintenance &&
+                  formData.status !== STATUS.CANCELLED &&
+                  !showCancelForm && (
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      className="cancel-intervention-button"
+                      onClick={() => setShowCancelForm(true)}
+                    >
+                      ❌ Annuler l'intervention
+                    </Button>
+                  )}
+                {canManageMaintenance && formData.status === STATUS.CANCELLED && (
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className="reschedule-button"
+                    onClick={() => {
+                      handleChange('status', 'scheduled');
+                      setStatusReason('');
+                    }}
+                  >
+                    📅 Reprogrammer
+                  </Button>
+                )}
+              </div>
+              <div className="form-actions-right">
+                {canManageMaintenance && formData.status !== STATUS.CANCELLED && (
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className="reschedule-button"
+                    onClick={() => {
+                      handleChange('status', 'rescheduled');
+                    }}
+                  >
+                    <Clock size={16} />
+                    Reporter
+                  </Button>
+                )}
+                {hasChanges && (
+                  <Button
+                    variant="ghost"
+                    type="submit"
+                    form="maintenance-form"
+                    className="submit-button"
+                  >
+                    ✓ Valider les modifications
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                type="submit"
+                form="maintenance-form"
+                className="submit-button"
+              >
+                {isQuickReport
+                  ? '⚠️ Signaler'
+                  : formData.status === STATUS.PENDING
+                    ? '📝 Enregistrer la demande'
+                    : '📅 Enregistrer'}
+              </Button>
+            </>
+          )}
+        </ModalFooter>
+      )}
+
+      {/* Dialogue d'avertissement de conflit */}
+      {conflictWarning && conflictWarning.length > 0 && (
+        <Modal
+          open={true}
+          onClose={() => setConflictWarning(null)}
+          size="md"
+          className="conflict-warning-dialog"
+        >
+          <ModalHeader onClose={() => setConflictWarning(null)}>⚠️ Conflit détecté</ModalHeader>
+          <ModalBody className="conflict-warning-content">
+            <p className="conflict-message">
+              {conflictWarning.length === 1
+                ? 'Une réservation existe déjà pendant cette période :'
+                : `${conflictWarning.length} réservations existent déjà pendant cette période :`}
+            </p>
+            <div className="conflict-list">
+              {conflictWarning.map((conflict, index) => (
+                <div key={index} className="conflict-item">
+                  <div className="conflict-dates">
+                    📅 {format(parseISO(conflict.date), 'dd/MM/yyyy')}
+                    {conflict.period === 'AM' ? ' (Matin)' : ' (Après-midi)'}
+                    {conflict.endDate && conflict.endDate !== conflict.date && (
+                      <>
+                        {' '}
+                        → {format(parseISO(conflict.endDate), 'dd/MM/yyyy')}
+                        {conflict.endPeriod === 'PM' ? ' (Après-midi)' : ' (Matin)'}
+                      </>
+                    )}
+                  </div>
+                  <div className="conflict-prestation">{conflict.prestationName}</div>
+                </div>
+              ))}
+            </div>
+            <p className="conflict-question">Que souhaitez-vous faire ?</p>
+          </ModalBody>
+          <ModalFooter className="conflict-warning-actions">
+            <Button
+              variant="ghost"
+              className="conflict-button conflict-cancel"
+              onClick={() => setConflictWarning(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="ghost"
+              className="conflict-button conflict-change"
+              onClick={() => setConflictWarning(null)}
+            >
+              Changer les dates
+            </Button>
+            <Button
+              variant="ghost"
+              className="conflict-button conflict-proceed"
+              onClick={(_e) => {
+                // Forcer l'enregistrement malgré le conflit
+                setConflictWarning(null);
+                const _fakeEvent = { preventDefault: () => {} };
+                // Appeler handleSubmit avec le flag de conflit déjà passé
+                const maintenance = {
+                  id: editingId || Date.now(),
+                  vehicleId: vehicle.id,
+                  vehicleName: vehicle.name,
+                  ...formData,
+                  createdAt: editingId
+                    ? maintenances.find((m) => m.id === editingId)?.createdAt
+                    : new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                };
+                onSave(maintenance);
+
+                // Réinitialiser le formulaire
+                setEditingId(null);
+                setIsQuickReport(false);
+                setFormData({
+                  type: 'revision',
+                  startDate: '',
+                  endDate: '',
+                  description: '',
+                  garageId: '',
+                  cost: '',
+                  mileage: '',
+                  status: STATUS.SCHEDULED,
+                  notes: '',
+                  isImmobilized: false,
+                  isQuickReport: false,
+                });
+              }}
+            >
+              Programmer quand même
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
+
       {ConfirmDialogRenderer}
 
       <Dialog
@@ -1501,7 +1483,7 @@ function MaintenanceDialog({
       >
         Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
       </Dialog>
-    </div>
+    </Modal>
   );
 }
 

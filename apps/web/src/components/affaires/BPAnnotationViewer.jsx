@@ -11,14 +11,13 @@ import {
   Info,
   Layers,
   Printer,
-  X,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, Tooltip } from '@/design-system';
+import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/design-system';
 
 import { AVATAR_COLORS } from '../../constants/colors';
 import { FAMILY_COLORS } from '../../utils/bpAnnotationEngine';
@@ -609,95 +608,82 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
 
   // ─── Rendu ───
   return (
-    <div
-      className="bp-annotation-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bp-annotation-modal">
-        {/* Header */}
-        <div className="bp-annotation-header">
-          <div className="bp-annotation-title">
-            <span>BP Annoté — {affaire?.nom || 'Affaire'}</span>
-            {blImport?.filename && <span className="bp-filename">{blImport.filename}</span>}
-          </div>
-          <div className="bp-annotation-toolbar">
-            <Tooltip content="Zoom -">
-              <Button variant="ghost" onClick={zoomOut} aria-label="Zoom arrière">
-                <ZoomOut size={16} />
-              </Button>
-            </Tooltip>
-            <span className="bp-zoom-label">{Math.round(displayScale * 100)}%</span>
-            <Tooltip content="Zoom +">
-              <Button variant="ghost" onClick={zoomIn} aria-label="Zoom avant">
-                <ZoomIn size={16} />
-              </Button>
-            </Tooltip>
-            <Tooltip content="Ajuster">
-              <Button variant="ghost" onClick={zoomFit}>
-                🔍
-              </Button>
-            </Tooltip>
-            <div className="bp-toolbar-sep" />
-            <Button
-              variant="ghost"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage <= 1}
-            >
-              <ChevronLeft size={16} />
+    <Modal open={true} onClose={onClose} size="full" className="bp-annotation-modal">
+      <ModalHeader onClose={onClose}>
+        <div className="bp-annotation-title">
+          <span>BP Annoté — {affaire?.nom || 'Affaire'}</span>
+          {blImport?.filename && <span className="bp-filename">{blImport.filename}</span>}
+        </div>
+        <div className="bp-annotation-toolbar">
+          <Tooltip content="Zoom -">
+            <Button variant="ghost" onClick={zoomOut} aria-label="Zoom arrière">
+              <ZoomOut size={16} />
             </Button>
-            <span className="bp-page-label">
-              {currentPage} / {numPages}
-            </span>
-            <Button
-              variant="ghost"
-              onClick={() => setCurrentPage((p) => Math.min(numPages, p + 1))}
-              disabled={currentPage >= numPages}
-            >
-              <ChevronRight size={16} />
+          </Tooltip>
+          <span className="bp-zoom-label">{Math.round(displayScale * 100)}%</span>
+          <Tooltip content="Zoom +">
+            <Button variant="ghost" onClick={zoomIn} aria-label="Zoom avant">
+              <ZoomIn size={16} />
             </Button>
-            <div className="bp-toolbar-sep" />
-            <Tooltip content="Légende">
-              <Button
-                variant="ghost"
-                className={showLegend ? 'active' : ''}
-                onClick={() => setShowLegend((v) => !v)}
-              >
-                <Layers size={16} />
-              </Button>
-            </Tooltip>
-            <Tooltip content="Infos affaire">
-              <Button
-                variant="ghost"
-                className={showInfo ? 'active' : ''}
-                onClick={() => setShowInfo((v) => !v)}
-              >
-                <Info size={16} />
-              </Button>
-            </Tooltip>
-            <div className="bp-toolbar-sep" />
-            <Tooltip content="Imprimer">
-              <Button variant="ghost" onClick={handlePrint} aria-label="Imprimer">
-                <Printer size={16} />
-              </Button>
-            </Tooltip>
-            <Tooltip content="Télécharger">
-              <Button variant="ghost" onClick={handleDownload} aria-label="Télécharger">
-                <Download size={16} />
-              </Button>
-            </Tooltip>
-          </div>
+          </Tooltip>
+          <Tooltip content="Ajuster">
+            <Button variant="ghost" onClick={zoomFit}>
+              🔍
+            </Button>
+          </Tooltip>
+          <div className="bp-toolbar-sep" />
           <Button
             variant="ghost"
-            className="bp-annotation-close"
-            onClick={onClose}
-            aria-label="Fermer"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage <= 1}
           >
-            <X size={18} />
+            <ChevronLeft size={16} />
           </Button>
+          <span className="bp-page-label">
+            {currentPage} / {numPages}
+          </span>
+          <Button
+            variant="ghost"
+            onClick={() => setCurrentPage((p) => Math.min(numPages, p + 1))}
+            disabled={currentPage >= numPages}
+          >
+            <ChevronRight size={16} />
+          </Button>
+          <div className="bp-toolbar-sep" />
+          <Tooltip content="Légende">
+            <Button
+              variant="ghost"
+              className={showLegend ? 'active' : ''}
+              onClick={() => setShowLegend((v) => !v)}
+            >
+              <Layers size={16} />
+            </Button>
+          </Tooltip>
+          <Tooltip content="Infos affaire">
+            <Button
+              variant="ghost"
+              className={showInfo ? 'active' : ''}
+              onClick={() => setShowInfo((v) => !v)}
+            >
+              <Info size={16} />
+            </Button>
+          </Tooltip>
+          <div className="bp-toolbar-sep" />
+          <Tooltip content="Imprimer">
+            <Button variant="ghost" onClick={handlePrint} aria-label="Imprimer">
+              <Printer size={16} />
+            </Button>
+          </Tooltip>
+          <Tooltip content="Télécharger">
+            <Button variant="ghost" onClick={handleDownload} aria-label="Télécharger">
+              <Download size={16} />
+            </Button>
+          </Tooltip>
         </div>
+      </ModalHeader>
 
-        {/* Body */}
-        <div className="bp-annotation-body" ref={containerRef}>
+      <ModalBody className="bp-annotation-body">
+        <div ref={containerRef} style={{ height: '100%' }}>
           {/* Légende */}
           {showLegend && (
             <div className="bp-legend">
@@ -735,15 +721,14 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
             </div>
           </div>
         </div>
+      </ModalBody>
 
-        {/* Footer */}
-        <div className="bp-annotation-footer">
-          <span>{stats.total || 0} articles</span>
-          <span>{stats.matched || 0} matchés</span>
-          <span>{stats.kitsCount || 0} kits</span>
-          <span>{Object.keys(stats.byFamily || {}).length} familles</span>
-        </div>
-      </div>
-    </div>
+      <ModalFooter className="bp-annotation-footer">
+        <span>{stats.total || 0} articles</span>
+        <span>{stats.matched || 0} matchés</span>
+        <span>{stats.kitsCount || 0} kits</span>
+        <span>{Object.keys(stats.byFamily || {}).length} familles</span>
+      </ModalFooter>
+    </Modal>
   );
 }

@@ -19,9 +19,19 @@ import {
   X,
 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
 
-import { Button, Dialog, InlineAlert, Input, Spinner, Textarea } from '@/design-system';
+import {
+  Button,
+  Dialog,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Spinner,
+  Textarea,
+} from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
@@ -793,555 +803,521 @@ const AssignmentDialog = ({
   }, [skills]);
 
   const dialogContent = (
-    <div
-      className="assignment-dialog-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && handleSafeClose()}
-    >
-      <div
-        className="assignment-dialog"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Affectation"
+    <Modal open={true} onClose={handleSafeClose} size="xl" className="assignment-dialog">
+      <ModalHeader
+        icon={isEdit ? <Edit2 size={20} /> : <Briefcase size={20} />}
+        onClose={handleSafeClose}
       >
-        {/* Header */}
-        <div className="assignment-dialog-header">
-          <div className="assignment-dialog-title">
-            {isEdit ? <Edit2 size={20} /> : <Briefcase size={20} />}
-            <span>{isEdit ? 'Modifier l\u2019affectation' : 'Nouvelle affectation'}</span>
-          </div>
-          <div className="assignment-dialog-header-actions">
-            {isEdit && onDelete && (
-              <Button
-                variant="ghost"
-                className="asd-btn-header-delete"
-                onClick={() => onDelete(existingMission)}
-                title="Supprimer cette mission"
-              >
-                <Trash2 size={16} />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              className="assignment-dialog-close"
-              onClick={handleSafeClose}
-              aria-label="Fermer"
-            >
-              <X size={18} />
-            </Button>
-          </div>
-        </div>
+        {isEdit ? 'Modifier l\u2019affectation' : 'Nouvelle affectation'}
+        {isEdit && onDelete && (
+          <Button
+            variant="ghost"
+            className="asd-btn-header-delete"
+            onClick={() => onDelete(existingMission)}
+            title="Supprimer cette mission"
+          >
+            <Trash2 size={16} />
+          </Button>
+        )}
+      </ModalHeader>
 
-        {/* Body */}
-        <div className="assignment-dialog-body">
-          {/* Personne */}
-          <div className="asd-section asd-person-section">
-            <div className="asd-section-label">
-              <User size={14} />
-              <span>Personnel</span>
-              {isEdit && <span className="asd-optional">(cliquer pour changer)</span>}
-            </div>
-            {isEdit ? (
-              <div className="asd-person-selector">
-                <div
-                  className="asd-person-badge asd-person-selectable"
-                  onClick={() => setShowPersonDropdown(!showPersonDropdown)}
-                >
-                  <span className="asd-person-name">
-                    {selectedPerson.firstName} {selectedPerson.lastName}
-                  </span>
-                  <span className={`asd-person-type type-${selectedPerson.type}`}>
-                    {selectedPerson.type === 'permanent'
-                      ? 'Permanent'
-                      : selectedPerson.contractType || 'Contractuel'}
-                  </span>
-                  <ChevronDown size={14} className="asd-person-chevron" />
+      <ModalBody className="assignment-dialog-body">
+        {/* Personne */}
+        <div className="asd-section asd-person-section">
+          <div className="asd-section-label">
+            <User size={14} />
+            <span>Personnel</span>
+            {isEdit && <span className="asd-optional">(cliquer pour changer)</span>}
+          </div>
+          {isEdit ? (
+            <div className="asd-person-selector">
+              <div
+                className="asd-person-badge asd-person-selectable"
+                onClick={() => setShowPersonDropdown(!showPersonDropdown)}
+              >
+                <span className="asd-person-name">
+                  {selectedPerson.firstName} {selectedPerson.lastName}
+                </span>
+                <span className={`asd-person-type type-${selectedPerson.type}`}>
+                  {selectedPerson.type === 'permanent'
+                    ? 'Permanent'
+                    : selectedPerson.contractType || 'Contractuel'}
+                </span>
+                <ChevronDown size={14} className="asd-person-chevron" />
+              </div>
+              {showPersonDropdown && (
+                <div className="asd-person-dropdown-wrapper">
+                  <Input
+                    type="text"
+                    className="asd-person-search"
+                    placeholder="Rechercher un personnel…"
+                    value={personSearch}
+                    onChange={(e) => setPersonSearch(e.target.value)}
+                    autoFocus
+                  />
+                  <div className="asd-person-dropdown">
+                    {filteredPersons.map((p) => (
+                      <div
+                        key={p.id}
+                        className={`asd-person-option${p.id === selectedPersonId ? ' selected' : ''}`}
+                        onClick={() => {
+                          setSelectedPersonId(p.id);
+                          setShowPersonDropdown(false);
+                          setPersonSearch('');
+                        }}
+                      >
+                        <span className="asd-person-opt-name">
+                          {p.firstName} {p.lastName}
+                        </span>
+                        <span className={`asd-person-opt-type type-${p.type}`}>
+                          {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
+                        </span>
+                        {p.id === selectedPersonId && <Check size={14} />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {showPersonDropdown && (
-                  <div className="asd-person-dropdown-wrapper">
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="asd-person-badge">
+                <span className="asd-person-name">
+                  {person.firstName} {person.lastName}
+                </span>
+                <span className={`asd-person-type type-${person.type}`}>
+                  {person.type === 'permanent' ? 'Permanent' : person.contractType || 'Contractuel'}
+                </span>
+                {person.skills?.length > 0 && (
+                  <div className="asd-person-skills">
+                    {person.skills.map((s) => {
+                      const cat = SKILL_CATEGORIES.find((c) => c.value === s.category);
+                      return (
+                        <span
+                          key={s.skillId}
+                          className="asd-skill-tag"
+                          style={{
+                            backgroundColor: cat?.color + '20',
+                            color: cat?.color,
+                            borderColor: cat?.color + '40',
+                          }}
+                        >
+                          {s.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Multi-affectation : personnes supplémentaires */}
+              {additionalPersons.length > 0 && (
+                <div className="asd-multi-persons">
+                  {additionalPersons.map((p) => (
+                    <div key={p.id} className="asd-person-badge asd-person-additional">
+                      <span className="asd-person-name">
+                        {p.firstName} {p.lastName}
+                      </span>
+                      <span className={`asd-person-type type-${p.type}`}>
+                        {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        className="asd-person-remove"
+                        onClick={() =>
+                          setAdditionalPersonIds((prev) => prev.filter((id) => id !== p.id))
+                        }
+                        title="Retirer"
+                      >
+                        <X size={12} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Bouton / dropdown d'ajout de personnel supplémentaire */}
+              <div className="asd-add-person-wrapper" ref={addPersonContainerRef}>
+                <Button
+                  variant="ghost"
+                  className="asd-btn-add-person"
+                  onClick={() => {
+                    setShowAddPersonDropdown(!showAddPersonDropdown);
+                    setAddPersonSearch('');
+                  }}
+                  title="Ajouter un personnel à cette mission"
+                >
+                  <Users size={14} />
+                  <Plus size={12} />
+                  <span>Ajouter personnel</span>
+                </Button>
+                {showAddPersonDropdown && (
+                  <div className="asd-add-person-dropdown">
                     <Input
                       type="text"
                       className="asd-person-search"
                       placeholder="Rechercher un personnel…"
-                      value={personSearch}
-                      onChange={(e) => setPersonSearch(e.target.value)}
+                      value={addPersonSearch}
+                      onChange={(e) => setAddPersonSearch(e.target.value)}
                       autoFocus
                     />
                     <div className="asd-person-dropdown">
-                      {filteredPersons.map((p) => (
-                        <div
-                          key={p.id}
-                          className={`asd-person-option${p.id === selectedPersonId ? ' selected' : ''}`}
-                          onClick={() => {
-                            setSelectedPersonId(p.id);
-                            setShowPersonDropdown(false);
-                            setPersonSearch('');
-                          }}
-                        >
-                          <span className="asd-person-opt-name">
-                            {p.firstName} {p.lastName}
-                          </span>
-                          <span className={`asd-person-opt-type type-${p.type}`}>
-                            {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
-                          </span>
-                          {p.id === selectedPersonId && <Check size={14} />}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="asd-person-badge">
-                  <span className="asd-person-name">
-                    {person.firstName} {person.lastName}
-                  </span>
-                  <span className={`asd-person-type type-${person.type}`}>
-                    {person.type === 'permanent'
-                      ? 'Permanent'
-                      : person.contractType || 'Contractuel'}
-                  </span>
-                  {person.skills?.length > 0 && (
-                    <div className="asd-person-skills">
-                      {person.skills.map((s) => {
-                        const cat = SKILL_CATEGORIES.find((c) => c.value === s.category);
-                        return (
-                          <span
-                            key={s.skillId}
-                            className="asd-skill-tag"
-                            style={{
-                              backgroundColor: cat?.color + '20',
-                              color: cat?.color,
-                              borderColor: cat?.color + '40',
+                      {filteredAddPersons.length === 0 ? (
+                        <div className="asd-affaire-empty">Aucun personnel disponible</div>
+                      ) : (
+                        filteredAddPersons.slice(0, 15).map((p) => (
+                          <div
+                            key={p.id}
+                            className="asd-person-option"
+                            onClick={() => {
+                              setAdditionalPersonIds((prev) => [...prev, p.id]);
+                              setAddPersonSearch('');
                             }}
                           >
-                            {s.name}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Multi-affectation : personnes supplémentaires */}
-                {additionalPersons.length > 0 && (
-                  <div className="asd-multi-persons">
-                    {additionalPersons.map((p) => (
-                      <div key={p.id} className="asd-person-badge asd-person-additional">
-                        <span className="asd-person-name">
-                          {p.firstName} {p.lastName}
-                        </span>
-                        <span className={`asd-person-type type-${p.type}`}>
-                          {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          className="asd-person-remove"
-                          onClick={() =>
-                            setAdditionalPersonIds((prev) => prev.filter((id) => id !== p.id))
-                          }
-                          title="Retirer"
-                        >
-                          <X size={12} />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Bouton / dropdown d'ajout de personnel supplémentaire */}
-                <div className="asd-add-person-wrapper" ref={addPersonContainerRef}>
-                  <Button
-                    variant="ghost"
-                    className="asd-btn-add-person"
-                    onClick={() => {
-                      setShowAddPersonDropdown(!showAddPersonDropdown);
-                      setAddPersonSearch('');
-                    }}
-                    title="Ajouter un personnel à cette mission"
-                  >
-                    <Users size={14} />
-                    <Plus size={12} />
-                    <span>Ajouter personnel</span>
-                  </Button>
-                  {showAddPersonDropdown && (
-                    <div className="asd-add-person-dropdown">
-                      <Input
-                        type="text"
-                        className="asd-person-search"
-                        placeholder="Rechercher un personnel…"
-                        value={addPersonSearch}
-                        onChange={(e) => setAddPersonSearch(e.target.value)}
-                        autoFocus
-                      />
-                      <div className="asd-person-dropdown">
-                        {filteredAddPersons.length === 0 ? (
-                          <div className="asd-affaire-empty">Aucun personnel disponible</div>
-                        ) : (
-                          filteredAddPersons.slice(0, 15).map((p) => (
-                            <div
-                              key={p.id}
-                              className="asd-person-option"
-                              onClick={() => {
-                                setAdditionalPersonIds((prev) => [...prev, p.id]);
-                                setAddPersonSearch('');
-                              }}
-                            >
-                              <span className="asd-person-opt-name">
-                                {p.firstName} {p.lastName}
-                              </span>
-                              <span className={`asd-person-opt-type type-${p.type}`}>
-                                {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
-                              </span>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Affaire / Événement */}
-          <div className="asd-section">
-            <div className="asd-section-label">
-              <Calendar size={14} />
-              <span>Événement / Affaire</span>
-              <span className="asd-optional">(optionnel)</span>
-            </div>
-            <div className="asd-affaire-selector">
-              {selectedAffaire ? (
-                <div className="asd-affaire-selected">
-                  <div className="asd-affaire-info">
-                    <AffaireBadge
-                      numero={selectedAffaire.numeroAffaire}
-                      type={selectedAffaire.type}
-                      size="sm"
-                    />
-                    <span className="asd-affaire-titre">
-                      {selectedAffaire.titre || selectedAffaire.eventName || ''}
-                    </span>
-                    <span className="asd-affaire-client">{selectedAffaire.client || ''}</span>
-                    {selectedAffaire.dateDebut && (
-                      <span className="asd-affaire-dates">
-                        {format(parseISO(selectedAffaire.dateDebut.split('T')[0]), 'd MMM', {
-                          locale: fr,
-                        })}
-                        {selectedAffaire.dateFin &&
-                          ` → ${format(parseISO(selectedAffaire.dateFin.split('T')[0]), 'd MMM yyyy', { locale: fr })}`}
-                      </span>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    className="asd-affaire-remove"
-                    onClick={() => setSelectedAffaire(null)}
-                  >
-                    <X size={14} />
-                  </Button>
-                </div>
-              ) : (
-                <div className="asd-affaire-dropdown-wrapper">
-                  <Input
-                    type="text"
-                    className="asd-affaire-search"
-                    placeholder={
-                      loading ? 'Chargement…' : `Rechercher parmi ${affaires.length} affaire(s)…`
-                    }
-                    value={affaireSearch}
-                    onChange={(e) => {
-                      setAffaireSearch(e.target.value);
-                      setShowAffaireDropdown(true);
-                    }}
-                    onFocus={() => setShowAffaireDropdown(true)}
-                  />
-                  {showAffaireDropdown && (
-                    <div className="asd-affaire-dropdown">
-                      {filteredAffaires.length === 0 ? (
-                        <div className="asd-affaire-empty">
-                          {affaires.length === 0
-                            ? 'Aucune affaire en base'
-                            : 'Aucun résultat pour cette recherche'}
-                        </div>
-                      ) : (
-                        filteredAffaires.slice(0, 20).map((a) => (
-                          <div
-                            key={a.id || a.numeroAffaire}
-                            className={`asd-affaire-option ${a._overlaps ? 'overlaps' : 'no-overlap'}`}
-                            onClick={() => selectAffaire(a)}
-                          >
-                            <div className="asd-affaire-opt-left">
-                              <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
-                              <span className="asd-affaire-opt-title">
-                                {a.titre || a.eventName || ''}
-                              </span>
-                            </div>
-                            <div className="asd-affaire-opt-right">
-                              <span className="asd-affaire-opt-client">{a.client || ''}</span>
-                              {a.dateDebut && (
-                                <span className="asd-affaire-opt-dates">
-                                  {format(parseISO(a.dateDebut.split('T')[0]), 'dd/MM', {
-                                    locale: fr,
-                                  })}
-                                  {a.dateFin &&
-                                    ` → ${format(parseISO(a.dateFin.split('T')[0]), 'dd/MM', { locale: fr })}`}
-                                </span>
-                              )}
-                              {!a._overlaps && (
-                                <span className="asd-affaire-opt-warn">hors période</span>
-                              )}
-                            </div>
+                            <span className="asd-person-opt-name">
+                              {p.firstName} {p.lastName}
+                            </span>
+                            <span className={`asd-person-opt-type type-${p.type}`}>
+                              {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
+                            </span>
                           </div>
                         ))
                       )}
                     </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Affaire / Événement */}
+        <div className="asd-section">
+          <div className="asd-section-label">
+            <Calendar size={14} />
+            <span>Événement / Affaire</span>
+            <span className="asd-optional">(optionnel)</span>
+          </div>
+          <div className="asd-affaire-selector">
+            {selectedAffaire ? (
+              <div className="asd-affaire-selected">
+                <div className="asd-affaire-info">
+                  <AffaireBadge
+                    numero={selectedAffaire.numeroAffaire}
+                    type={selectedAffaire.type}
+                    size="sm"
+                  />
+                  <span className="asd-affaire-titre">
+                    {selectedAffaire.titre || selectedAffaire.eventName || ''}
+                  </span>
+                  <span className="asd-affaire-client">{selectedAffaire.client || ''}</span>
+                  {selectedAffaire.dateDebut && (
+                    <span className="asd-affaire-dates">
+                      {format(parseISO(selectedAffaire.dateDebut.split('T')[0]), 'd MMM', {
+                        locale: fr,
+                      })}
+                      {selectedAffaire.dateFin &&
+                        ` → ${format(parseISO(selectedAffaire.dateFin.split('T')[0]), 'd MMM yyyy', { locale: fr })}`}
+                    </span>
                   )}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Dates & Horaires */}
-          <div className="asd-section">
-            <div className="asd-section-label">
-              <Clock size={14} />
-              <span>Dates & Horaires</span>
-            </div>
-            <div className="asd-dates-grid">
-              <div className="asd-field">
-                <label>Début</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div className="asd-field">
-                <label>Fin</label>
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-              </div>
-              <div className="asd-field">
-                <label>Heure début</label>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                />
-              </div>
-              <div className="asd-field">
-                <label>Heure fin</label>
-                <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          {/* Jours ON / OFF si multi-jours */}
-          {rangeDays.length > 1 && (
-            <div className="asd-section">
-              <div className="asd-section-label">
-                <Calendar size={14} />
-                <span>Jours d'activité</span>
-                <span className="asd-day-count">
-                  {onDays.length}/{rangeDays.length} jour(s) ON
-                </span>
-              </div>
-              <div className="asd-days-actions">
-                <Button variant="ghost" className="asd-days-btn" onClick={() => setAllDays('on')}>
-                  Tous ON
-                </Button>
-                <Button variant="ghost" className="asd-days-btn" onClick={() => setAllDays('off')}>
-                  Tous OFF
-                </Button>
                 <Button
                   variant="ghost"
-                  className="asd-days-btn"
-                  onClick={() => {
-                    // Toggle weekends OFF
-                    setDayStates((prev) => {
-                      const next = { ...prev };
-                      rangeDays.forEach((d) => {
-                        const key = format(d, 'yyyy-MM-dd');
-                        if (isWeekendFn(d)) next[key] = next[key] === 'off' ? 'on' : 'off';
-                      });
-                      return next;
-                    });
-                  }}
+                  className="asd-affaire-remove"
+                  onClick={() => setSelectedAffaire(null)}
                 >
-                  Toggle W-E
+                  <X size={14} />
                 </Button>
               </div>
-              <div className="asd-days-grid">
-                {rangeDays.map((d) => {
-                  const key = format(d, 'yyyy-MM-dd');
-                  const isOff = dayStates[key] === 'off';
-                  const weekend = isWeekendFn(d);
-                  const today = isSameDay(d, new Date());
+            ) : (
+              <div className="asd-affaire-dropdown-wrapper">
+                <Input
+                  type="text"
+                  className="asd-affaire-search"
+                  placeholder={
+                    loading ? 'Chargement…' : `Rechercher parmi ${affaires.length} affaire(s)…`
+                  }
+                  value={affaireSearch}
+                  onChange={(e) => {
+                    setAffaireSearch(e.target.value);
+                    setShowAffaireDropdown(true);
+                  }}
+                  onFocus={() => setShowAffaireDropdown(true)}
+                />
+                {showAffaireDropdown && (
+                  <div className="asd-affaire-dropdown">
+                    {filteredAffaires.length === 0 ? (
+                      <div className="asd-affaire-empty">
+                        {affaires.length === 0
+                          ? 'Aucune affaire en base'
+                          : 'Aucun résultat pour cette recherche'}
+                      </div>
+                    ) : (
+                      filteredAffaires.slice(0, 20).map((a) => (
+                        <div
+                          key={a.id || a.numeroAffaire}
+                          className={`asd-affaire-option ${a._overlaps ? 'overlaps' : 'no-overlap'}`}
+                          onClick={() => selectAffaire(a)}
+                        >
+                          <div className="asd-affaire-opt-left">
+                            <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
+                            <span className="asd-affaire-opt-title">
+                              {a.titre || a.eventName || ''}
+                            </span>
+                          </div>
+                          <div className="asd-affaire-opt-right">
+                            <span className="asd-affaire-opt-client">{a.client || ''}</span>
+                            {a.dateDebut && (
+                              <span className="asd-affaire-opt-dates">
+                                {format(parseISO(a.dateDebut.split('T')[0]), 'dd/MM', {
+                                  locale: fr,
+                                })}
+                                {a.dateFin &&
+                                  ` → ${format(parseISO(a.dateFin.split('T')[0]), 'dd/MM', { locale: fr })}`}
+                              </span>
+                            )}
+                            {!a._overlaps && (
+                              <span className="asd-affaire-opt-warn">hors période</span>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Dates & Horaires */}
+        <div className="asd-section">
+          <div className="asd-section-label">
+            <Clock size={14} />
+            <span>Dates & Horaires</span>
+          </div>
+          <div className="asd-dates-grid">
+            <div className="asd-field">
+              <label>Début</label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
+            <div className="asd-field">
+              <label>Fin</label>
+              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+            <div className="asd-field">
+              <label>Heure début</label>
+              <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+            </div>
+            <div className="asd-field">
+              <label>Heure fin</label>
+              <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        {/* Jours ON / OFF si multi-jours */}
+        {rangeDays.length > 1 && (
+          <div className="asd-section">
+            <div className="asd-section-label">
+              <Calendar size={14} />
+              <span>Jours d'activité</span>
+              <span className="asd-day-count">
+                {onDays.length}/{rangeDays.length} jour(s) ON
+              </span>
+            </div>
+            <div className="asd-days-actions">
+              <Button variant="ghost" className="asd-days-btn" onClick={() => setAllDays('on')}>
+                Tous ON
+              </Button>
+              <Button variant="ghost" className="asd-days-btn" onClick={() => setAllDays('off')}>
+                Tous OFF
+              </Button>
+              <Button
+                variant="ghost"
+                className="asd-days-btn"
+                onClick={() => {
+                  // Toggle weekends OFF
+                  setDayStates((prev) => {
+                    const next = { ...prev };
+                    rangeDays.forEach((d) => {
+                      const key = format(d, 'yyyy-MM-dd');
+                      if (isWeekendFn(d)) next[key] = next[key] === 'off' ? 'on' : 'off';
+                    });
+                    return next;
+                  });
+                }}
+              >
+                Toggle W-E
+              </Button>
+            </div>
+            <div className="asd-days-grid">
+              {rangeDays.map((d) => {
+                const key = format(d, 'yyyy-MM-dd');
+                const isOff = dayStates[key] === 'off';
+                const weekend = isWeekendFn(d);
+                const today = isSameDay(d, new Date());
+                return (
+                  <div
+                    key={key}
+                    className={`asd-day-cell ${isOff ? 'off' : 'on'} ${weekend ? 'weekend' : ''} ${today ? 'today' : ''}`}
+                    onClick={() => toggleDayState(key)}
+                    title={`${format(d, 'EEEE d MMMM', { locale: fr })} — ${isOff ? 'OFF' : 'ON'}`}
+                  >
+                    <span className="asd-day-label">{format(d, 'EEE', { locale: fr })}</span>
+                    <span className="asd-day-num">{format(d, 'd', { locale: fr })}</span>
+                    <span className={`asd-day-state ${isOff ? 'off' : 'on'}`}>
+                      {isOff ? 'OFF' : 'ON'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Poste / Compétence requise */}
+        <div className="asd-section">
+          <div className="asd-section-label">
+            <Briefcase size={14} />
+            <span>Poste & Compétence</span>
+          </div>
+          <div className="asd-post-grid">
+            <PositionSelector
+              positions={positions}
+              selectedPositions={selectedPositions}
+              setSelectedPositions={setSelectedPositions}
+            />
+            <div className="asd-field">
+              <label>Compétences requises</label>
+              <div className="asd-skills-multi">
+                {Object.entries(skillsByCategory).map(([cat, catSkills]) => {
+                  const catInfo = SKILL_CATEGORIES.find((c) => c.value === cat);
                   return (
-                    <div
-                      key={key}
-                      className={`asd-day-cell ${isOff ? 'off' : 'on'} ${weekend ? 'weekend' : ''} ${today ? 'today' : ''}`}
-                      onClick={() => toggleDayState(key)}
-                      title={`${format(d, 'EEEE d MMMM', { locale: fr })} — ${isOff ? 'OFF' : 'ON'}`}
-                    >
-                      <span className="asd-day-label">{format(d, 'EEE', { locale: fr })}</span>
-                      <span className="asd-day-num">{format(d, 'd', { locale: fr })}</span>
-                      <span className={`asd-day-state ${isOff ? 'off' : 'on'}`}>
-                        {isOff ? 'OFF' : 'ON'}
+                    <div key={cat} className="asd-skills-category">
+                      <span className="asd-skills-cat-label" style={{ color: catInfo?.color }}>
+                        {catInfo?.label || cat}
                       </span>
+                      <div className="asd-skills-cat-items">
+                        {catSkills.map((s) => {
+                          const checked = selectedSkillIds.includes(s.id);
+                          return (
+                            <div
+                              key={s.id}
+                              className={`asd-skill-checkbox${checked ? ' checked' : ''}`}
+                              style={{
+                                '--skill-color': catInfo?.color || 'var(--theme-text-gray)',
+                              }}
+                              onClick={() => {
+                                setSelectedSkillIds((prev) =>
+                                  prev.includes(s.id)
+                                    ? prev.filter((id) => id !== s.id)
+                                    : [...prev, s.id],
+                                );
+                              }}
+                            >
+                              {checked && <Check size={10} />}
+                              <span className="asd-skill-check-name">{s.name}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })}
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Poste / Compétence requise */}
-          <div className="asd-section">
-            <div className="asd-section-label">
-              <Briefcase size={14} />
-              <span>Poste & Compétence</span>
+          {/* Warning compétences non détenues */}
+          {skillWarnings && <InlineAlert variant="warning">{skillWarnings}</InlineAlert>}
+        </div>
+
+        {/* Statut & Notes */}
+        <div className="asd-section">
+          <div className="asd-section-label">
+            <Info size={14} />
+            <span>Statut & Notes</span>
+          </div>
+          <div className="asd-status-grid">
+            <div className="asd-field">
+              <label>Statut de l'affectation</label>
+              <div className="asd-status-options">
+                {[
+                  { value: 'confirmed', label: 'Confirmé', color: STATUS_COLORS.success },
+                  { value: 'option', label: 'Option', color: STATUS_COLORS.warning },
+                  { value: 'proposed', label: 'Proposé', color: 'var(--theme-text-gray)' },
+                ].map((opt) => (
+                  <Button
+                    variant="ghost"
+                    key={opt.value}
+                    className={`asd-status-btn ${status === opt.value ? 'active' : ''}`}
+                    style={{ '--btn-color': opt.color }}
+                    onClick={() => setStatus(opt.value)}
+                  >
+                    {status === opt.value && <Check size={12} />}
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div className="asd-post-grid">
-              <PositionSelector
-                positions={positions}
-                selectedPositions={selectedPositions}
-                setSelectedPositions={setSelectedPositions}
+            <div className="asd-field">
+              <label>Notes</label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Notes de mission…"
+                rows={2}
               />
-              <div className="asd-field">
-                <label>Compétences requises</label>
-                <div className="asd-skills-multi">
-                  {Object.entries(skillsByCategory).map(([cat, catSkills]) => {
-                    const catInfo = SKILL_CATEGORIES.find((c) => c.value === cat);
-                    return (
-                      <div key={cat} className="asd-skills-category">
-                        <span className="asd-skills-cat-label" style={{ color: catInfo?.color }}>
-                          {catInfo?.label || cat}
-                        </span>
-                        <div className="asd-skills-cat-items">
-                          {catSkills.map((s) => {
-                            const checked = selectedSkillIds.includes(s.id);
-                            return (
-                              <div
-                                key={s.id}
-                                className={`asd-skill-checkbox${checked ? ' checked' : ''}`}
-                                style={{
-                                  '--skill-color': catInfo?.color || 'var(--theme-text-gray)',
-                                }}
-                                onClick={() => {
-                                  setSelectedSkillIds((prev) =>
-                                    prev.includes(s.id)
-                                      ? prev.filter((id) => id !== s.id)
-                                      : [...prev, s.id],
-                                  );
-                                }}
-                              >
-                                {checked && <Check size={10} />}
-                                <span className="asd-skill-check-name">{s.name}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Warning compétences non détenues */}
-            {skillWarnings && <InlineAlert variant="warning">{skillWarnings}</InlineAlert>}
-          </div>
-
-          {/* Statut & Notes */}
-          <div className="asd-section">
-            <div className="asd-section-label">
-              <Info size={14} />
-              <span>Statut & Notes</span>
-            </div>
-            <div className="asd-status-grid">
-              <div className="asd-field">
-                <label>Statut de l'affectation</label>
-                <div className="asd-status-options">
-                  {[
-                    { value: 'confirmed', label: 'Confirmé', color: STATUS_COLORS.success },
-                    { value: 'option', label: 'Option', color: STATUS_COLORS.warning },
-                    { value: 'proposed', label: 'Proposé', color: 'var(--theme-text-gray)' },
-                  ].map((opt) => (
-                    <Button
-                      variant="ghost"
-                      key={opt.value}
-                      className={`asd-status-btn ${status === opt.value ? 'active' : ''}`}
-                      style={{ '--btn-color': opt.color }}
-                      onClick={() => setStatus(opt.value)}
-                    >
-                      {status === opt.value && <Check size={12} />}
-                      {opt.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <div className="asd-field">
-                <label>Notes</label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Notes de mission…"
-                  rows={2}
-                />
-              </div>
             </div>
           </div>
+        </div>
 
-          {/* Erreur / Succès */}
-          {error && <InlineAlert>{error}</InlineAlert>}
-          {success && (
-            <InlineAlert variant="success">
+        {/* Erreur / Succès */}
+        {error && <InlineAlert>{error}</InlineAlert>}
+        {success && (
+          <InlineAlert variant="success">
+            {isEdit
+              ? 'Affectation mise à jour !'
+              : additionalPersonIds.length > 0
+                ? `${1 + additionalPersonIds.length} affectations créées avec succès !`
+                : 'Affectation créée avec succès !'}
+          </InlineAlert>
+        )}
+      </ModalBody>
+
+      <ModalFooter className="assignment-dialog-footer">
+        <Button
+          variant="ghost"
+          className="asd-btn asd-btn-cancel"
+          onClick={handleSafeClose}
+          disabled={saving}
+        >
+          Annuler
+        </Button>
+        <Button
+          variant="ghost"
+          className="asd-btn asd-btn-save"
+          onClick={handleSave}
+          disabled={saving || success}
+        >
+          {saving ? (
+            <>
+              <Spinner size="sm" />
+              Enregistrement…
+            </>
+          ) : (
+            <>
+              <Save size={16} />
               {isEdit
-                ? 'Affectation mise à jour !'
+                ? 'Enregistrer'
                 : additionalPersonIds.length > 0
-                  ? `${1 + additionalPersonIds.length} affectations créées avec succès !`
-                  : 'Affectation créée avec succès !'}
-            </InlineAlert>
+                  ? `Créer ${1 + additionalPersonIds.length} affectations`
+                  : "Créer l'affectation"}
+            </>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="assignment-dialog-footer">
-          <Button
-            variant="ghost"
-            className="asd-btn asd-btn-cancel"
-            onClick={handleSafeClose}
-            disabled={saving}
-          >
-            Annuler
-          </Button>
-          <Button
-            variant="ghost"
-            className="asd-btn asd-btn-save"
-            onClick={handleSave}
-            disabled={saving || success}
-          >
-            {saving ? (
-              <>
-                <Spinner size="sm" />
-                Enregistrement…
-              </>
-            ) : (
-              <>
-                <Save size={16} />
-                {isEdit
-                  ? 'Enregistrer'
-                  : additionalPersonIds.length > 0
-                    ? `Créer ${1 + additionalPersonIds.length} affectations`
-                    : "Créer l'affectation"}
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+        </Button>
+      </ModalFooter>
 
       <Dialog
         open={showUnsavedWarning}
@@ -1358,10 +1334,10 @@ const AssignmentDialog = ({
       >
         Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
       </Dialog>
-    </div>
+    </Modal>
   );
 
-  return ReactDOM.createPortal(dialogContent, document.body);
+  return dialogContent;
 };
 
 export default React.memo(AssignmentDialog);

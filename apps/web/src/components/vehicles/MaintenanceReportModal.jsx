@@ -16,10 +16,10 @@ import {
   subWeeks,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Download, FileText, Printer, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, FileText, Printer } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Select, Table, Tooltip } from '@/design-system';
+import { Button, Modal, ModalBody, ModalHeader, Select, Table, Tooltip } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
@@ -195,25 +195,13 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="mr-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className="mr-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="mr-header">
-          <h2>
-            <FileText size={20} /> Rapport Maintenance Matériel
-          </h2>
-          <Button variant="ghost" className="mr-close" onClick={onClose} aria-label="Fermer">
-            <X size={20} />
-          </Button>
-        </div>
+    <Modal open={isOpen} onClose={onClose} size="xl" className="mr-modal">
+      <ModalHeader icon={<FileText size={20} />} onClose={onClose}>
+        Rapport Maintenance Matériel
+      </ModalHeader>
 
+      <ModalBody>
         {/* Toolbar */}
         <div className="mr-toolbar">
           <div className="mr-toolbar-left">
@@ -422,7 +410,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 }

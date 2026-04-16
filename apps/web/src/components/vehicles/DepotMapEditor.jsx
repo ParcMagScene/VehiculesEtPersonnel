@@ -19,13 +19,12 @@ import {
   Scissors,
   Trash2,
   Undo2,
-  X,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Input, Select, Tooltip } from '@/design-system';
+import { Button, Input, Modal, ModalBody, ModalHeader, Select, Tooltip } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -1036,804 +1035,792 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   };
 
   return (
-    <div className="depot-editor-overlay">
-      <div className="depot-editor-panel">
-        {/* Header */}
-        <div className="depot-editor-header">
-          <div className="depot-editor-title">
-            <Grid3X3 size={18} />
-            <span>Éditeur de plan — {zonesData.name || `Dépôt ${depotId}`}</span>
-            {dirty && <span className="depot-editor-dirty">● Modifié</span>}
-            {saveMsg && (
-              <span className={`depot-editor-msg depot-editor-msg-${saveMsg.type}`}>
-                {saveMsg.text}
-              </span>
-            )}
-          </div>
-          <div className="depot-editor-actions">
-            <Tooltip content="Annuler (⌘Z)" position="bottom">
-              <Button
-                variant="ghost"
-                className="dep-ed-btn"
-                onClick={handleUndo}
-                disabled={history.length === 0}
-              >
-                <Undo2 size={16} /> Annuler
-              </Button>
-            </Tooltip>
-            <Tooltip content="Rétablir (⌘⇧Z)" position="bottom">
-              <Button
-                variant="ghost"
-                className="dep-ed-btn"
-                onClick={handleRedo}
-                disabled={redoStack.length === 0}
-              >
-                <Redo2 size={16} /> Rétablir
-              </Button>
-            </Tooltip>
-            <Tooltip content="Sauvegarder (⌘S)" position="bottom">
-              <Button variant="primary" onClick={handleSave} disabled={saving || !dirty}>
-                <Save size={16} /> {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-              </Button>
-            </Tooltip>
-            <Tooltip content="Fermer (Esc)">
-              <Button variant="ghost" className="dep-ed-btn dep-ed-btn-close" onClick={onClose}>
-                <X size={16} />
-              </Button>
-            </Tooltip>
-          </div>
+    <Modal open={true} onClose={onClose} size="full" className="depot-editor-panel">
+      <ModalHeader icon={<Grid3X3 size={18} />} onClose={onClose}>
+        Éditeur de plan — {zonesData.name || `Dépôt ${depotId}`}
+        {dirty && <span className="depot-editor-dirty">● Modifié</span>}
+        {saveMsg && (
+          <span className={`depot-editor-msg depot-editor-msg-${saveMsg.type}`}>
+            {saveMsg.text}
+          </span>
+        )}
+        <div className="depot-editor-actions">
+          <Tooltip content="Annuler (⌘Z)" position="bottom">
+            <Button
+              variant="ghost"
+              className="dep-ed-btn"
+              onClick={handleUndo}
+              disabled={history.length === 0}
+            >
+              <Undo2 size={16} /> Annuler
+            </Button>
+          </Tooltip>
+          <Tooltip content="Rétablir (⌘⇧Z)" position="bottom">
+            <Button
+              variant="ghost"
+              className="dep-ed-btn"
+              onClick={handleRedo}
+              disabled={redoStack.length === 0}
+            >
+              <Redo2 size={16} /> Rétablir
+            </Button>
+          </Tooltip>
+          <Tooltip content="Sauvegarder (⌘S)" position="bottom">
+            <Button variant="primary" onClick={handleSave} disabled={saving || !dirty}>
+              <Save size={16} /> {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </Button>
+          </Tooltip>
         </div>
-
-        <div className="depot-editor-body">
-          {/* Sidebar */}
-          <div className="depot-editor-sidebar">
-            {/* Floor selector */}
-            <div className="dep-ed-section">
-              <label>Étage</label>
-              <div className="dep-ed-floor-btns">
-                {floors.map((f) => (
-                  <Button
-                    variant="ghost"
-                    key={f.id}
-                    className={`dep-ed-floor-btn ${activeFloor === f.id ? 'active' : ''}`}
-                    onClick={() => setActiveFloor(f.id)}
-                  >
-                    {f.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Overlay controls */}
-            <div className="dep-ed-section">
-              <label>Image de référence</label>
-              <div className="dep-ed-overlay-controls">
+      </ModalHeader>
+      <ModalBody className="depot-editor-body">
+        {/* Sidebar */}
+        <div className="depot-editor-sidebar">
+          {/* Floor selector */}
+          <div className="dep-ed-section">
+            <label>Étage</label>
+            <div className="dep-ed-floor-btns">
+              {floors.map((f) => (
                 <Button
                   variant="ghost"
-                  className={`dep-ed-btn-sm ${overlayVisible ? 'active' : ''}`}
-                  onClick={() => setOverlayVisible(!overlayVisible)}
+                  key={f.id}
+                  className={`dep-ed-floor-btn ${activeFloor === f.id ? 'active' : ''}`}
+                  onClick={() => setActiveFloor(f.id)}
                 >
-                  {overlayVisible ? <Eye size={14} /> : <EyeOff size={14} />}
-                  {overlayVisible ? 'Visible' : 'Masquée'}
+                  {f.label}
                 </Button>
-                <div className="dep-ed-slider-row">
-                  <span>Opacité :</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={overlayOpacity * 100}
-                    onChange={(e) => setOverlayOpacity(e.target.value / 100)}
-                  />
-                  <span>{Math.round(overlayOpacity * 100)}%</span>
-                </div>
-              </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Overlay controls */}
+          <div className="dep-ed-section">
+            <label>Image de référence</label>
+            <div className="dep-ed-overlay-controls">
               <Button
                 variant="ghost"
-                className={`dep-ed-btn-sm ${showGrid ? 'active' : ''} u-mt-1`}
-                onClick={() => setShowGrid(!showGrid)}
+                className={`dep-ed-btn-sm ${overlayVisible ? 'active' : ''}`}
+                onClick={() => setOverlayVisible(!overlayVisible)}
               >
-                <Grid3X3 size={14} /> Grille
+                {overlayVisible ? <Eye size={14} /> : <EyeOff size={14} />}
+                {overlayVisible ? 'Visible' : 'Masquée'}
               </Button>
-            </div>
-
-            {/* SVG dimensions */}
-            <div className="dep-ed-section">
-              <label>Dimensions SVG</label>
-              <div className="dep-ed-dim-inputs">
-                <Input
-                  type="number"
-                  value={SVG_WIDTH}
-                  min={200}
-                  max={2000}
-                  step={10}
-                  onChange={(e) =>
-                    updateSvgDimensions(parseInt(e.target.value) || SVG_WIDTH, SVG_HEIGHT)
-                  }
+              <div className="dep-ed-slider-row">
+                <span>Opacité :</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={overlayOpacity * 100}
+                  onChange={(e) => setOverlayOpacity(e.target.value / 100)}
                 />
-                <span>×</span>
-                <Input
-                  type="number"
-                  value={SVG_HEIGHT}
-                  min={200}
-                  max={2000}
-                  step={10}
-                  onChange={(e) =>
-                    updateSvgDimensions(SVG_WIDTH, parseInt(e.target.value) || SVG_HEIGHT)
-                  }
-                />
+                <span>{Math.round(overlayOpacity * 100)}%</span>
               </div>
             </div>
+            <Button
+              variant="ghost"
+              className={`dep-ed-btn-sm ${showGrid ? 'active' : ''} u-mt-1`}
+              onClick={() => setShowGrid(!showGrid)}
+            >
+              <Grid3X3 size={14} /> Grille
+            </Button>
+          </div>
 
-            {/* Couleurs des catégories */}
-            {zonesData.categories?.length > 0 && (
-              <div className="dep-ed-section">
-                <label>Couleurs catégories</label>
-                {zonesData.categories.map((cat) => (
-                  <div key={cat.id} className="dep-ed-cat-block">
-                    <div className="dep-ed-field dep-ed-cat-color">
-                      <input
-                        type="color"
-                        value={cat.color}
-                        onChange={(e) => {
-                          pushHistory();
-                          const newColor = e.target.value;
-                          setZonesData((prev) => ({
-                            ...prev,
-                            categories: prev.categories.map((c) =>
-                              c.id === cat.id ? { ...c, color: newColor } : c,
-                            ),
-                            zones: prev.zones.map((z) =>
-                              z.category === cat.id ? { ...z, color: newColor } : z,
-                            ),
-                          }));
-                          setDirty(true);
-                        }}
-                      />
-                      <span className="dep-ed-cat-label">{cat.label}</span>
-                    </div>
-                    {usedColors.length > 1 && (
-                      <div className="dep-ed-palette dep-ed-palette-sm">
-                        {usedColors.map((c) => (
-                          <Button
-                            variant="ghost"
-                            key={c}
-                            className={`dep-ed-swatch${c === cat.color?.toLowerCase() ? ' active' : ''}`}
-                            style={{ background: c }}
-                            title={c}
-                            onClick={() => {
-                              pushHistory();
-                              setZonesData((prev) => ({
-                                ...prev,
-                                categories: prev.categories.map((ct) =>
-                                  ct.id === cat.id ? { ...ct, color: c } : ct,
-                                ),
-                                zones: prev.zones.map((z) =>
-                                  z.category === cat.id ? { ...z, color: c } : z,
-                                ),
-                              }));
-                              setDirty(true);
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
+          {/* SVG dimensions */}
+          <div className="dep-ed-section">
+            <label>Dimensions SVG</label>
+            <div className="dep-ed-dim-inputs">
+              <Input
+                type="number"
+                value={SVG_WIDTH}
+                min={200}
+                max={2000}
+                step={10}
+                onChange={(e) =>
+                  updateSvgDimensions(parseInt(e.target.value) || SVG_WIDTH, SVG_HEIGHT)
+                }
+              />
+              <span>×</span>
+              <Input
+                type="number"
+                value={SVG_HEIGHT}
+                min={200}
+                max={2000}
+                step={10}
+                onChange={(e) =>
+                  updateSvgDimensions(SVG_WIDTH, parseInt(e.target.value) || SVG_HEIGHT)
+                }
+              />
+            </div>
+          </div>
+
+          {/* Couleurs des catégories */}
+          {zonesData.categories?.length > 0 && (
+            <div className="dep-ed-section">
+              <label>Couleurs catégories</label>
+              {zonesData.categories.map((cat) => (
+                <div key={cat.id} className="dep-ed-cat-block">
+                  <div className="dep-ed-field dep-ed-cat-color">
+                    <input
+                      type="color"
+                      value={cat.color}
+                      onChange={(e) => {
+                        pushHistory();
+                        const newColor = e.target.value;
+                        setZonesData((prev) => ({
+                          ...prev,
+                          categories: prev.categories.map((c) =>
+                            c.id === cat.id ? { ...c, color: newColor } : c,
+                          ),
+                          zones: prev.zones.map((z) =>
+                            z.category === cat.id ? { ...z, color: newColor } : z,
+                          ),
+                        }));
+                        setDirty(true);
+                      }}
+                    />
+                    <span className="dep-ed-cat-label">{cat.label}</span>
                   </div>
-                ))}
-              </div>
-            )}
+                  {usedColors.length > 1 && (
+                    <div className="dep-ed-palette dep-ed-palette-sm">
+                      {usedColors.map((c) => (
+                        <Button
+                          variant="ghost"
+                          key={c}
+                          className={`dep-ed-swatch${c === cat.color?.toLowerCase() ? ' active' : ''}`}
+                          style={{ background: c }}
+                          title={c}
+                          onClick={() => {
+                            pushHistory();
+                            setZonesData((prev) => ({
+                              ...prev,
+                              categories: prev.categories.map((ct) =>
+                                ct.id === cat.id ? { ...ct, color: c } : ct,
+                              ),
+                              zones: prev.zones.map((z) =>
+                                z.category === cat.id ? { ...z, color: c } : z,
+                              ),
+                            }));
+                            setDirty(true);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
-            {/* Zone actions */}
-            <div className="dep-ed-section">
-              <label>Zones</label>
-              <Button variant="ghost" className="dep-ed-btn-sm" onClick={handleAddZone}>
-                <Plus size={14} /> Nouvelle zone
-              </Button>
-              {selectedZone && (
-                <>
-                  <Button variant="ghost" className="dep-ed-btn-sm" onClick={handleDuplicateZone}>
-                    <Copy size={14} /> Dupliquer
-                  </Button>
-                  <Button variant="danger" size="sm" onClick={handleDeleteZone}>
-                    <Trash2 size={14} /> Supprimer
-                  </Button>
-                  <Tooltip
-                    content="Soustraction booléenne — Découper le chevauchement entre deux zones"
-                    position="bottom"
+          {/* Zone actions */}
+          <div className="dep-ed-section">
+            <label>Zones</label>
+            <Button variant="ghost" className="dep-ed-btn-sm" onClick={handleAddZone}>
+              <Plus size={14} /> Nouvelle zone
+            </Button>
+            {selectedZone && (
+              <>
+                <Button variant="ghost" className="dep-ed-btn-sm" onClick={handleDuplicateZone}>
+                  <Copy size={14} /> Dupliquer
+                </Button>
+                <Button variant="danger" size="sm" onClick={handleDeleteZone}>
+                  <Trash2 size={14} /> Supprimer
+                </Button>
+                <Tooltip
+                  content="Soustraction booléenne — Découper le chevauchement entre deux zones"
+                  position="bottom"
+                >
+                  <Button
+                    variant="ghost"
+                    className={`dep-ed-btn-sm ${subtractMode ? 'active' : ''}`}
+                    onClick={subtractMode ? cancelSubtract : startSubtractMode}
                   >
+                    <Scissors size={14} /> {subtractMode ? 'Annuler soustraction' : 'Soustraire'}
+                  </Button>
+                </Tooltip>
+              </>
+            )}
+          </div>
+
+          {/* Selected zone properties */}
+          {selectedZone && (
+            <div className="dep-ed-section dep-ed-props">
+              <label>Zone : {selectedZone.id}</label>
+              <div className="dep-ed-field">
+                <span>Label</span>
+                <Input
+                  type="text"
+                  value={selectedZone.label}
+                  onChange={(e) => handleZonePropertyChange('label', e.target.value)}
+                />
+              </div>
+              <div className="dep-ed-field">
+                <span>Catégorie</span>
+                <Select
+                  value={selectedZone.category}
+                  onChange={(e) => handleZoneCategoryChange(e.target.value)}
+                >
+                  {zonesData.categories?.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="dep-ed-field dep-ed-color-field">
+                <span>Couleur</span>
+                <input
+                  type="color"
+                  value={selectedZone.color}
+                  onChange={(e) => {
+                    pushHistory();
+                    handleZonePropertyChange('color', e.target.value);
+                  }}
+                />
+                <Input
+                  type="text"
+                  value={selectedZone.color}
+                  className="dep-ed-hex-input"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+                      pushHistory();
+                      handleZonePropertyChange('color', v);
+                    }
+                  }}
+                  onBlur={(e) => {
+                    let v = e.target.value.trim();
+                    if (!v.startsWith('#')) v = '#' + v;
+                    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+                      pushHistory();
+                      handleZonePropertyChange('color', v);
+                    }
+                  }}
+                />
+              </div>
+              {usedColors.length > 1 && (
+                <div className="dep-ed-palette">
+                  {usedColors.map((c) => (
                     <Button
                       variant="ghost"
-                      className={`dep-ed-btn-sm ${subtractMode ? 'active' : ''}`}
-                      onClick={subtractMode ? cancelSubtract : startSubtractMode}
-                    >
-                      <Scissors size={14} /> {subtractMode ? 'Annuler soustraction' : 'Soustraire'}
-                    </Button>
-                  </Tooltip>
-                </>
+                      key={c}
+                      className={`dep-ed-swatch${c === selectedZone.color?.toLowerCase() ? ' active' : ''}`}
+                      style={{ background: c }}
+                      title={c}
+                      onClick={() => {
+                        pushHistory();
+                        handleZonePropertyChange('color', c);
+                      }}
+                    />
+                  ))}
+                </div>
               )}
-            </div>
-
-            {/* Selected zone properties */}
-            {selectedZone && (
-              <div className="dep-ed-section dep-ed-props">
-                <label>Zone : {selectedZone.id}</label>
+              <div className="dep-ed-coords">
                 <div className="dep-ed-field">
-                  <span>Label</span>
+                  <span>X</span>
                   <Input
-                    type="text"
-                    value={selectedZone.label}
-                    onChange={(e) => handleZonePropertyChange('label', e.target.value)}
-                  />
-                </div>
-                <div className="dep-ed-field">
-                  <span>Catégorie</span>
-                  <Select
-                    value={selectedZone.category}
-                    onChange={(e) => handleZoneCategoryChange(e.target.value)}
-                  >
-                    {zonesData.categories?.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="dep-ed-field dep-ed-color-field">
-                  <span>Couleur</span>
-                  <input
-                    type="color"
-                    value={selectedZone.color}
+                    type="number"
+                    value={selectedZone.bbox.x}
+                    step={SNAP_GRID}
                     onChange={(e) => {
                       pushHistory();
-                      handleZonePropertyChange('color', e.target.value);
-                    }}
-                  />
-                  <Input
-                    type="text"
-                    value={selectedZone.color}
-                    className="dep-ed-hex-input"
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-                        pushHistory();
-                        handleZonePropertyChange('color', v);
-                      }
-                    }}
-                    onBlur={(e) => {
-                      let v = e.target.value.trim();
-                      if (!v.startsWith('#')) v = '#' + v;
-                      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-                        pushHistory();
-                        handleZonePropertyChange('color', v);
-                      }
+                      updateZoneBbox(selectedZone.id, { x: parseInt(e.target.value) || 0 });
                     }}
                   />
                 </div>
-                {usedColors.length > 1 && (
-                  <div className="dep-ed-palette">
-                    {usedColors.map((c) => (
-                      <Button
-                        variant="ghost"
-                        key={c}
-                        className={`dep-ed-swatch${c === selectedZone.color?.toLowerCase() ? ' active' : ''}`}
-                        style={{ background: c }}
-                        title={c}
-                        onClick={() => {
-                          pushHistory();
-                          handleZonePropertyChange('color', c);
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-                <div className="dep-ed-coords">
-                  <div className="dep-ed-field">
-                    <span>X</span>
-                    <Input
-                      type="number"
-                      value={selectedZone.bbox.x}
-                      step={SNAP_GRID}
-                      onChange={(e) => {
-                        pushHistory();
-                        updateZoneBbox(selectedZone.id, { x: parseInt(e.target.value) || 0 });
-                      }}
-                    />
-                  </div>
-                  <div className="dep-ed-field">
-                    <span>Y</span>
-                    <Input
-                      type="number"
-                      value={selectedZone.bbox.y}
-                      step={SNAP_GRID}
-                      onChange={(e) => {
-                        pushHistory();
-                        updateZoneBbox(selectedZone.id, { y: parseInt(e.target.value) || 0 });
-                      }}
-                    />
-                  </div>
-                  <div className="dep-ed-field">
-                    <span>L</span>
-                    <Input
-                      type="number"
-                      value={selectedZone.bbox.width}
-                      step={SNAP_GRID}
-                      min={MIN_ZONE_SIZE}
-                      onChange={(e) => {
-                        pushHistory();
-                        updateZoneBbox(selectedZone.id, {
-                          width: parseInt(e.target.value) || MIN_ZONE_SIZE,
-                        });
-                      }}
-                    />
-                  </div>
-                  <div className="dep-ed-field">
-                    <span>H</span>
-                    <Input
-                      type="number"
-                      value={selectedZone.bbox.height}
-                      step={SNAP_GRID}
-                      min={MIN_ZONE_SIZE}
-                      onChange={(e) => {
-                        pushHistory();
-                        updateZoneBbox(selectedZone.id, {
-                          height: parseInt(e.target.value) || MIN_ZONE_SIZE,
-                        });
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Forme */}
                 <div className="dep-ed-field">
-                  <span>Forme</span>
-                  {selectedZone.clipPoints ? (
-                    <div className="dep-ed-clip-info">
-                      <span className="dep-ed-clip-badge">
-                        Polygone ({selectedZone.clipPoints.length} pts)
-                      </span>
+                  <span>Y</span>
+                  <Input
+                    type="number"
+                    value={selectedZone.bbox.y}
+                    step={SNAP_GRID}
+                    onChange={(e) => {
+                      pushHistory();
+                      updateZoneBbox(selectedZone.id, { y: parseInt(e.target.value) || 0 });
+                    }}
+                  />
+                </div>
+                <div className="dep-ed-field">
+                  <span>L</span>
+                  <Input
+                    type="number"
+                    value={selectedZone.bbox.width}
+                    step={SNAP_GRID}
+                    min={MIN_ZONE_SIZE}
+                    onChange={(e) => {
+                      pushHistory();
+                      updateZoneBbox(selectedZone.id, {
+                        width: parseInt(e.target.value) || MIN_ZONE_SIZE,
+                      });
+                    }}
+                  />
+                </div>
+                <div className="dep-ed-field">
+                  <span>H</span>
+                  <Input
+                    type="number"
+                    value={selectedZone.bbox.height}
+                    step={SNAP_GRID}
+                    min={MIN_ZONE_SIZE}
+                    onChange={(e) => {
+                      pushHistory();
+                      updateZoneBbox(selectedZone.id, {
+                        height: parseInt(e.target.value) || MIN_ZONE_SIZE,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Forme */}
+              <div className="dep-ed-field">
+                <span>Forme</span>
+                {selectedZone.clipPoints ? (
+                  <div className="dep-ed-clip-info">
+                    <span className="dep-ed-clip-badge">
+                      Polygone ({selectedZone.clipPoints.length} pts)
+                    </span>
+                    <Button
+                      variant="ghost"
+                      className="dep-ed-btn-sm"
+                      onClick={() => {
+                        pushHistory();
+                        setZonesData((prev) => ({
+                          ...prev,
+                          zones: prev.zones.map((z) =>
+                            z.id === selectedZoneId
+                              ? { ...z, clipPoints: undefined, shape: 'rect' }
+                              : z,
+                          ),
+                        }));
+                        setDirty(true);
+                      }}
+                    >
+                      <RotateCcw size={12} /> Réinitialiser rect
+                    </Button>
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedZone.shape || 'rect'}
+                    onChange={(e) => {
+                      pushHistory();
+                      const newShape = e.target.value;
+                      handleZonePropertyChange('shape', newShape);
+                      if (newShape === 'trapezoid' && !selectedZone.skew) {
+                        handleZonePropertyChange('skew', {
+                          tl: { x: 0, y: 0 },
+                          tr: { x: 0, y: 0 },
+                          bl: { x: 0, y: 0 },
+                          br: { x: 0, y: 0 },
+                        });
+                      }
+                    }}
+                  >
+                    <option value="rect">Rectangle</option>
+                    <option value="trapezoid">Trapèze</option>
+                  </Select>
+                )}
+              </div>
+
+              {/* Contrôles trapèze */}
+              {selectedZone.shape === 'trapezoid' &&
+                (() => {
+                  const sk = selectedZone.skew || {};
+                  const corners = [
+                    { key: 'tl', label: '↖ HG' },
+                    { key: 'tr', label: '↗ HD' },
+                    { key: 'bl', label: '↙ BG' },
+                    { key: 'br', label: '↘ BD' },
+                  ];
+                  return (
+                    <div className="dep-ed-skew-controls">
+                      <label>Décalage coins (px)</label>
+                      <div className="dep-ed-skew-grid">
+                        {corners.map((c) => {
+                          const sv = skewVal(sk[c.key]);
+                          return (
+                            <div className="dep-ed-field dep-ed-skew-corner" key={c.key}>
+                              <span>{c.label}</span>
+                              <div className="dep-ed-skew-xy">
+                                <label>X</label>
+                                <Input
+                                  type="number"
+                                  value={sv.x}
+                                  step={5}
+                                  onChange={(e) => {
+                                    pushHistory();
+                                    updateZoneSkew(selectedZone.id, c.key, {
+                                      x: parseInt(e.target.value) || 0,
+                                      y: sv.y,
+                                    });
+                                  }}
+                                />
+                                <label>Y</label>
+                                <Input
+                                  type="number"
+                                  value={sv.y}
+                                  step={5}
+                                  onChange={(e) => {
+                                    pushHistory();
+                                    updateZoneSkew(selectedZone.id, c.key, {
+                                      x: sv.x,
+                                      y: parseInt(e.target.value) || 0,
+                                    });
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                       <Button
                         variant="ghost"
                         className="dep-ed-btn-sm"
                         onClick={() => {
                           pushHistory();
-                          setZonesData((prev) => ({
-                            ...prev,
-                            zones: prev.zones.map((z) =>
-                              z.id === selectedZoneId
-                                ? { ...z, clipPoints: undefined, shape: 'rect' }
-                                : z,
-                            ),
-                          }));
-                          setDirty(true);
-                        }}
-                      >
-                        <RotateCcw size={12} /> Réinitialiser rect
-                      </Button>
-                    </div>
-                  ) : (
-                    <Select
-                      value={selectedZone.shape || 'rect'}
-                      onChange={(e) => {
-                        pushHistory();
-                        const newShape = e.target.value;
-                        handleZonePropertyChange('shape', newShape);
-                        if (newShape === 'trapezoid' && !selectedZone.skew) {
                           handleZonePropertyChange('skew', {
                             tl: { x: 0, y: 0 },
                             tr: { x: 0, y: 0 },
                             bl: { x: 0, y: 0 },
                             br: { x: 0, y: 0 },
                           });
-                        }
-                      }}
-                    >
-                      <option value="rect">Rectangle</option>
-                      <option value="trapezoid">Trapèze</option>
-                    </Select>
-                  )}
-                </div>
-
-                {/* Contrôles trapèze */}
-                {selectedZone.shape === 'trapezoid' &&
-                  (() => {
-                    const sk = selectedZone.skew || {};
-                    const corners = [
-                      { key: 'tl', label: '↖ HG' },
-                      { key: 'tr', label: '↗ HD' },
-                      { key: 'bl', label: '↙ BG' },
-                      { key: 'br', label: '↘ BD' },
-                    ];
-                    return (
-                      <div className="dep-ed-skew-controls">
-                        <label>Décalage coins (px)</label>
-                        <div className="dep-ed-skew-grid">
-                          {corners.map((c) => {
-                            const sv = skewVal(sk[c.key]);
-                            return (
-                              <div className="dep-ed-field dep-ed-skew-corner" key={c.key}>
-                                <span>{c.label}</span>
-                                <div className="dep-ed-skew-xy">
-                                  <label>X</label>
-                                  <Input
-                                    type="number"
-                                    value={sv.x}
-                                    step={5}
-                                    onChange={(e) => {
-                                      pushHistory();
-                                      updateZoneSkew(selectedZone.id, c.key, {
-                                        x: parseInt(e.target.value) || 0,
-                                        y: sv.y,
-                                      });
-                                    }}
-                                  />
-                                  <label>Y</label>
-                                  <Input
-                                    type="number"
-                                    value={sv.y}
-                                    step={5}
-                                    onChange={(e) => {
-                                      pushHistory();
-                                      updateZoneSkew(selectedZone.id, c.key, {
-                                        x: sv.x,
-                                        y: parseInt(e.target.value) || 0,
-                                      });
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          className="dep-ed-btn-sm"
-                          onClick={() => {
-                            pushHistory();
-                            handleZonePropertyChange('skew', {
-                              tl: { x: 0, y: 0 },
-                              tr: { x: 0, y: 0 },
-                              bl: { x: 0, y: 0 },
-                              br: { x: 0, y: 0 },
-                            });
-                          }}
-                        >
-                          Réinitialiser
-                        </Button>
-                      </div>
-                    );
-                  })()}
-              </div>
-            )}
-
-            {/* Zone list */}
-            <div className="dep-ed-section dep-ed-zone-list">
-              <label>
-                {floorZones.length} zones — {activeFloor}
-              </label>
-              {floorZones.map((zone) => (
-                <Button
-                  variant="ghost"
-                  key={zone.id}
-                  className={`dep-ed-zone-item ${selectedZoneId === zone.id ? 'active' : ''}`}
-                  onClick={() => setSelectedZoneId(zone.id)}
-                >
-                  <span className="dep-ed-zone-dot" style={{ background: zone.color }} />
-                  <span className="dep-ed-zone-name">{zone.id}</span>
-                  <span className="dep-ed-zone-dim">
-                    {zone.bbox.width}×{zone.bbox.height}
-                  </span>
-                </Button>
-              ))}
+                        }}
+                      >
+                        Réinitialiser
+                      </Button>
+                    </div>
+                  );
+                })()}
             </div>
+          )}
+
+          {/* Zone list */}
+          <div className="dep-ed-section dep-ed-zone-list">
+            <label>
+              {floorZones.length} zones — {activeFloor}
+            </label>
+            {floorZones.map((zone) => (
+              <Button
+                variant="ghost"
+                key={zone.id}
+                className={`dep-ed-zone-item ${selectedZoneId === zone.id ? 'active' : ''}`}
+                onClick={() => setSelectedZoneId(zone.id)}
+              >
+                <span className="dep-ed-zone-dot" style={{ background: zone.color }} />
+                <span className="dep-ed-zone-name">{zone.id}</span>
+                <span className="dep-ed-zone-dim">
+                  {zone.bbox.width}×{zone.bbox.height}
+                </span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Main canvas */}
+        <div
+          className="depot-editor-canvas"
+          ref={canvasRef}
+          onMouseDown={handleCanvasMouseDown}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
+          onMouseLeave={handleCanvasMouseUp}
+          style={{ cursor: isPanning ? 'grabbing' : spaceHeld ? 'grab' : undefined }}
+        >
+          {/* Zoom controls floating */}
+          <div className="dep-ed-zoom-controls">
+            <Tooltip content="Dézoomer">
+              <Button
+                variant="ghost"
+                onClick={handleEditorZoomOut}
+                className="dep-ed-btn-sm"
+                aria-label="Dézoomer"
+              >
+                <ZoomOut size={14} />
+              </Button>
+            </Tooltip>
+            <span className="dep-ed-zoom-level">{Math.round(editorZoom * 100)}%</span>
+            <Tooltip content="Zoomer">
+              <Button
+                variant="ghost"
+                onClick={handleEditorZoomIn}
+                className="dep-ed-btn-sm"
+                aria-label="Zoomer"
+              >
+                <ZoomIn size={14} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="100%">
+              <Button variant="ghost" onClick={handleEditorZoomReset} className="dep-ed-btn-sm">
+                1:1
+              </Button>
+            </Tooltip>
+            <Tooltip content="Ajuster">
+              <Button
+                variant="ghost"
+                onClick={handleEditorZoomFit}
+                className="dep-ed-btn-sm"
+                aria-label="Ajuster à l'écran"
+              >
+                <Maximize2 size={14} />
+              </Button>
+            </Tooltip>
           </div>
 
-          {/* Main canvas */}
-          <div
-            className="depot-editor-canvas"
-            ref={canvasRef}
-            onMouseDown={handleCanvasMouseDown}
-            onMouseMove={handleCanvasMouseMove}
-            onMouseUp={handleCanvasMouseUp}
-            onMouseLeave={handleCanvasMouseUp}
-            style={{ cursor: isPanning ? 'grabbing' : spaceHeld ? 'grab' : undefined }}
-          >
-            {/* Zoom controls floating */}
-            <div className="dep-ed-zoom-controls">
-              <Tooltip content="Dézoomer">
-                <Button
-                  variant="ghost"
-                  onClick={handleEditorZoomOut}
-                  className="dep-ed-btn-sm"
-                  aria-label="Dézoomer"
-                >
-                  <ZoomOut size={14} />
-                </Button>
-              </Tooltip>
-              <span className="dep-ed-zoom-level">{Math.round(editorZoom * 100)}%</span>
-              <Tooltip content="Zoomer">
-                <Button
-                  variant="ghost"
-                  onClick={handleEditorZoomIn}
-                  className="dep-ed-btn-sm"
-                  aria-label="Zoomer"
-                >
-                  <ZoomIn size={14} />
-                </Button>
-              </Tooltip>
-              <Tooltip content="100%">
-                <Button variant="ghost" onClick={handleEditorZoomReset} className="dep-ed-btn-sm">
-                  1:1
-                </Button>
-              </Tooltip>
-              <Tooltip content="Ajuster">
-                <Button
-                  variant="ghost"
-                  onClick={handleEditorZoomFit}
-                  className="dep-ed-btn-sm"
-                  aria-label="Ajuster à l'écran"
-                >
-                  <Maximize2 size={14} />
-                </Button>
-              </Tooltip>
+          {/* Subtract mode banner */}
+          {subtractMode === 'pick-target' && (
+            <div className="dep-ed-subtract-banner">
+              <Scissors size={16} />
+              <span>
+                Cliquez sur la zone à soustraire de <strong>{subtractSourceId}</strong>
+              </span>
+              <Button variant="ghost" className="dep-ed-btn-sm" onClick={cancelSubtract}>
+                Annuler
+              </Button>
             </div>
+          )}
 
-            {/* Subtract mode banner */}
-            {subtractMode === 'pick-target' && (
-              <div className="dep-ed-subtract-banner">
-                <Scissors size={16} />
-                <span>
-                  Cliquez sur la zone à soustraire de <strong>{subtractSourceId}</strong>
-                </span>
-                <Button variant="ghost" className="dep-ed-btn-sm" onClick={cancelSubtract}>
+          {/* Subtract choice dialog */}
+          {subtractMode === 'choose' && (
+            <div className="dep-ed-subtract-dialog">
+              <div className="dep-ed-subtract-dialog-inner">
+                <h4>Soustraction booléenne</h4>
+                <p>Garder le chevauchement dans :</p>
+                <div className="dep-ed-subtract-choices">
+                  <Button variant="primary" onClick={() => executeSubtract('source')}>
+                    {subtractSourceId}
+                  </Button>
+                  <span>ou</span>
+                  <Button variant="primary" onClick={() => executeSubtract('target')}>
+                    {subtractTargetId}
+                  </Button>
+                </div>
+                <Button variant="ghost" className="dep-ed-btn-sm u-mt-2" onClick={cancelSubtract}>
                   Annuler
                 </Button>
               </div>
-            )}
-
-            {/* Subtract choice dialog */}
-            {subtractMode === 'choose' && (
-              <div className="dep-ed-subtract-dialog">
-                <div className="dep-ed-subtract-dialog-inner">
-                  <h4>Soustraction booléenne</h4>
-                  <p>Garder le chevauchement dans :</p>
-                  <div className="dep-ed-subtract-choices">
-                    <Button variant="primary" onClick={() => executeSubtract('source')}>
-                      {subtractSourceId}
-                    </Button>
-                    <span>ou</span>
-                    <Button variant="primary" onClick={() => executeSubtract('target')}>
-                      {subtractTargetId}
-                    </Button>
-                  </div>
-                  <Button variant="ghost" className="dep-ed-btn-sm u-mt-2" onClick={cancelSubtract}>
-                    Annuler
-                  </Button>
-                </div>
-              </div>
-            )}
-            <div
-              className="depot-editor-svg-container"
-              style={{
-                transform: `scale(${editorZoom}) translate(${editorPan.x / editorZoom}px, ${editorPan.y / editorZoom}px)`,
-                transformOrigin: 'center center',
-              }}
+            </div>
+          )}
+          <div
+            className="depot-editor-svg-container"
+            style={{
+              transform: `scale(${editorZoom}) translate(${editorPan.x / editorZoom}px, ${editorPan.y / editorZoom}px)`,
+              transformOrigin: 'center center',
+            }}
+          >
+            <svg
+              ref={svgRef}
+              viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`}
+              className="depot-editor-svg u-w-full"
+              onClick={handleSvgClick}
+              overflow="hidden"
+              style={{ height: 'auto', aspectRatio: `${bounds.w} / ${bounds.h}` }}
             >
-              <svg
-                ref={svgRef}
-                viewBox={`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`}
-                className="depot-editor-svg u-w-full"
-                onClick={handleSvgClick}
-                overflow="hidden"
-                style={{ height: 'auto', aspectRatio: `${bounds.w} / ${bounds.h}` }}
-              >
-                {/* Background */}
-                <rect
-                  data-bg="true"
-                  x={bounds.x}
-                  y={bounds.y}
-                  width={bounds.w}
-                  height={bounds.h}
-                  rx="4"
-                  fill={overlayVisible ? 'transparent' : '#1e1e2e'}
-                  stroke="#334155"
-                  strokeWidth="2"
+              {/* Background */}
+              <rect
+                data-bg="true"
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.w}
+                height={bounds.h}
+                rx="4"
+                fill={overlayVisible ? 'transparent' : '#1e1e2e'}
+                stroke="#334155"
+                strokeWidth="2"
+              />
+
+              {/* Reference image overlay inside SVG — preserveAspectRatio keeps proportions */}
+              {overlayVisible && (
+                <image
+                  href={overlayImage}
+                  x="0"
+                  y="0"
+                  width={SVG_WIDTH}
+                  height={SVG_HEIGHT}
+                  opacity={overlayOpacity}
+                  preserveAspectRatio="xMidYMid meet"
+                  className="u-pointer-events-none"
                 />
+              )}
 
-                {/* Reference image overlay inside SVG — preserveAspectRatio keeps proportions */}
-                {overlayVisible && (
-                  <image
-                    href={overlayImage}
-                    x="0"
-                    y="0"
-                    width={SVG_WIDTH}
-                    height={SVG_HEIGHT}
-                    opacity={overlayOpacity}
-                    preserveAspectRatio="xMidYMid meet"
-                    className="u-pointer-events-none"
-                  />
-                )}
-
-                {/* Grid */}
-                {showGrid &&
-                  Array.from({ length: Math.floor(bounds.w / 50) + 1 }, (_, i) => {
-                    const gx = bounds.x + i * 50;
-                    return (
-                      <line
-                        key={`gv${i}`}
-                        x1={gx}
-                        y1={bounds.y}
-                        x2={gx}
-                        y2={bounds.y + bounds.h}
-                        stroke="#ffffff"
-                        strokeWidth="0.3"
-                        strokeOpacity="0.15"
-                        strokeDasharray="2 4"
-                      />
-                    );
-                  })}
-                {showGrid &&
-                  Array.from({ length: Math.floor(bounds.h / 50) + 1 }, (_, i) => {
-                    const gy = bounds.y + i * 50;
-                    return (
-                      <line
-                        key={`gh${i}`}
-                        x1={bounds.x}
-                        y1={gy}
-                        x2={bounds.x + bounds.w}
-                        y2={gy}
-                        stroke="#ffffff"
-                        strokeWidth="0.3"
-                        strokeOpacity="0.15"
-                        strokeDasharray="2 4"
-                      />
-                    );
-                  })}
-
-                {/* Zones */}
-                {floorZones.map((zone) => {
-                  const { x, y, width, height } = zone.bbox;
-                  const isSelected = zone.id === selectedZoneId;
-                  const hasClip = zone.clipPoints && zone.clipPoints.length >= 3;
-                  const isTrapezoid = !hasClip && zone.shape === 'trapezoid' && hasSkew(zone);
-                  const isSubtractHighlight =
-                    subtractMode === 'pick-target' && zone.id !== subtractSourceId;
-                  const shapeProps = {
-                    fill: zone.color,
-                    fillOpacity: isSelected ? 0.7 : 0.5,
-                    stroke: isSubtractHighlight
-                      ? STATUS_COLORS.warning
-                      : isSelected
-                        ? '#ffffff'
-                        : zone.color,
-                    strokeWidth: isSubtractHighlight ? 2.5 : isSelected ? 2 : 1,
-                    strokeDasharray: isSubtractHighlight ? '6 3' : undefined,
-                    style: {
-                      cursor:
-                        subtractMode === 'pick-target' && zone.id !== subtractSourceId
-                          ? 'crosshair'
-                          : 'move',
-                    },
-                    onMouseDown: (e) => handleZoneMouseDown(e, zone),
-                    onTouchStart: (e) => handleZoneMouseDown(e, zone),
-                  };
-
+              {/* Grid */}
+              {showGrid &&
+                Array.from({ length: Math.floor(bounds.w / 50) + 1 }, (_, i) => {
+                  const gx = bounds.x + i * 50;
                   return (
-                    <g key={zone.id}>
-                      {/* Zone shape (rect, trapèze ou polygone découpé) */}
-                      {hasClip ? (
-                        <polygon points={pointsToSvg(zone.clipPoints)} {...shapeProps} />
-                      ) : isTrapezoid ? (
-                        <polygon
-                          points={pointsToSvg(getZonePoints(zone.bbox, zone.skew))}
-                          {...shapeProps}
-                        />
-                      ) : (
-                        <rect x={x} y={y} width={width} height={height} rx="4" {...shapeProps} />
-                      )}
-
-                      {/* Zone label */}
-                      <text
-                        x={x + width / 2}
-                        y={y + height / 2}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fill={zone.textColor || '#ffffff'}
-                        fontSize={Math.min(13, width / 5)}
-                        fontWeight="600"
-                        className="u-pointer-events-none u-select-none"
-                      >
-                        {zone.id}
-                      </text>
-
-                      {/* Resize handles */}
-                      {renderHandles(zone)}
-                    </g>
+                    <line
+                      key={`gv${i}`}
+                      x1={gx}
+                      y1={bounds.y}
+                      x2={gx}
+                      y2={bounds.y + bounds.h}
+                      stroke="#ffffff"
+                      strokeWidth="0.3"
+                      strokeOpacity="0.15"
+                      strokeDasharray="2 4"
+                    />
+                  );
+                })}
+              {showGrid &&
+                Array.from({ length: Math.floor(bounds.h / 50) + 1 }, (_, i) => {
+                  const gy = bounds.y + i * 50;
+                  return (
+                    <line
+                      key={`gh${i}`}
+                      x1={bounds.x}
+                      y1={gy}
+                      x2={bounds.x + bounds.w}
+                      y2={gy}
+                      stroke="#ffffff"
+                      strokeWidth="0.3"
+                      strokeOpacity="0.15"
+                      strokeDasharray="2 4"
+                    />
                   );
                 })}
 
-                {/* Axis labels */}
-                {showGrid && (
-                  <>
-                    {Array.from({ length: Math.floor(bounds.w / 100) + 1 }, (_, i) => {
-                      const lx = Math.round((bounds.x + i * 100) / 100) * 100;
-                      return (
-                        <text
-                          key={`lx${i}`}
-                          x={lx + 2}
-                          y={bounds.y + 12}
-                          fill="#9ca3af"
-                          fontSize="8"
-                          className="u-pointer-events-none"
-                        >
-                          {lx}
-                        </text>
-                      );
-                    })}
-                    {Array.from({ length: Math.floor(bounds.h / 100) + 1 }, (_, i) => {
-                      const ly = Math.round((bounds.y + i * 100) / 100) * 100;
-                      return (
-                        <text
-                          key={`ly${i}`}
-                          x={bounds.x + 2}
-                          y={ly + 10}
-                          fill="#9ca3af"
-                          fontSize="8"
-                          className="u-pointer-events-none"
-                        >
-                          {ly}
-                        </text>
-                      );
-                    })}
-                  </>
-                )}
-              </svg>
-            </div>
+              {/* Zones */}
+              {floorZones.map((zone) => {
+                const { x, y, width, height } = zone.bbox;
+                const isSelected = zone.id === selectedZoneId;
+                const hasClip = zone.clipPoints && zone.clipPoints.length >= 3;
+                const isTrapezoid = !hasClip && zone.shape === 'trapezoid' && hasSkew(zone);
+                const isSubtractHighlight =
+                  subtractMode === 'pick-target' && zone.id !== subtractSourceId;
+                const shapeProps = {
+                  fill: zone.color,
+                  fillOpacity: isSelected ? 0.7 : 0.5,
+                  stroke: isSubtractHighlight
+                    ? STATUS_COLORS.warning
+                    : isSelected
+                      ? '#ffffff'
+                      : zone.color,
+                  strokeWidth: isSubtractHighlight ? 2.5 : isSelected ? 2 : 1,
+                  strokeDasharray: isSubtractHighlight ? '6 3' : undefined,
+                  style: {
+                    cursor:
+                      subtractMode === 'pick-target' && zone.id !== subtractSourceId
+                        ? 'crosshair'
+                        : 'move',
+                  },
+                  onMouseDown: (e) => handleZoneMouseDown(e, zone),
+                  onTouchStart: (e) => handleZoneMouseDown(e, zone),
+                };
 
-            {/* Info bar */}
-            <div className="depot-editor-info">
-              <span>Zoom: {Math.round(editorZoom * 100)}%</span>
-              <span>|</span>
-              <span>
-                Vue: {Math.round(bounds.w)}×{Math.round(bounds.h)}
-              </span>
-              <span>|</span>
-              <span>Zones: {floorZones.length}</span>
-              {selectedZone && (
+                return (
+                  <g key={zone.id}>
+                    {/* Zone shape (rect, trapèze ou polygone découpé) */}
+                    {hasClip ? (
+                      <polygon points={pointsToSvg(zone.clipPoints)} {...shapeProps} />
+                    ) : isTrapezoid ? (
+                      <polygon
+                        points={pointsToSvg(getZonePoints(zone.bbox, zone.skew))}
+                        {...shapeProps}
+                      />
+                    ) : (
+                      <rect x={x} y={y} width={width} height={height} rx="4" {...shapeProps} />
+                    )}
+
+                    {/* Zone label */}
+                    <text
+                      x={x + width / 2}
+                      y={y + height / 2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fill={zone.textColor || '#ffffff'}
+                      fontSize={Math.min(13, width / 5)}
+                      fontWeight="600"
+                      className="u-pointer-events-none u-select-none"
+                    >
+                      {zone.id}
+                    </text>
+
+                    {/* Resize handles */}
+                    {renderHandles(zone)}
+                  </g>
+                );
+              })}
+
+              {/* Axis labels */}
+              {showGrid && (
                 <>
-                  <span>|</span>
-                  <span>
-                    {selectedZone.id}: ({selectedZone.bbox.x}, {selectedZone.bbox.y}){' '}
-                    {selectedZone.bbox.width}×{selectedZone.bbox.height}
-                  </span>
-                  {selectedZone.clipPoints && (
-                    <span> polygone: {selectedZone.clipPoints.length} pts</span>
-                  )}
-                  {selectedZone.shape === 'trapezoid' &&
-                    !selectedZone.clipPoints &&
-                    (() => {
-                      const s = selectedZone.skew || {};
-                      const fmt = (k) => {
-                        const v = skewVal(s[k]);
-                        return `${v.x},${v.y}`;
-                      };
-                      return (
-                        <span>
-                          {' '}
-                          skew: ↖{fmt('tl')} ↗{fmt('tr')} ↙{fmt('bl')} ↘{fmt('br')}
-                        </span>
-                      );
-                    })()}
+                  {Array.from({ length: Math.floor(bounds.w / 100) + 1 }, (_, i) => {
+                    const lx = Math.round((bounds.x + i * 100) / 100) * 100;
+                    return (
+                      <text
+                        key={`lx${i}`}
+                        x={lx + 2}
+                        y={bounds.y + 12}
+                        fill="#9ca3af"
+                        fontSize="8"
+                        className="u-pointer-events-none"
+                      >
+                        {lx}
+                      </text>
+                    );
+                  })}
+                  {Array.from({ length: Math.floor(bounds.h / 100) + 1 }, (_, i) => {
+                    const ly = Math.round((bounds.y + i * 100) / 100) * 100;
+                    return (
+                      <text
+                        key={`ly${i}`}
+                        x={bounds.x + 2}
+                        y={ly + 10}
+                        fill="#9ca3af"
+                        fontSize="8"
+                        className="u-pointer-events-none"
+                      >
+                        {ly}
+                      </text>
+                    );
+                  })}
                 </>
               )}
-              <span className="depot-editor-info-hints">
-                Molette: zoom · Espace+drag / Clic milieu: déplacer la vue · Flèches: déplacer · ⌘Z:
-                annuler · ⌘S: sauvegarder
-              </span>
-            </div>
+            </svg>
+          </div>
+
+          {/* Info bar */}
+          <div className="depot-editor-info">
+            <span>Zoom: {Math.round(editorZoom * 100)}%</span>
+            <span>|</span>
+            <span>
+              Vue: {Math.round(bounds.w)}×{Math.round(bounds.h)}
+            </span>
+            <span>|</span>
+            <span>Zones: {floorZones.length}</span>
+            {selectedZone && (
+              <>
+                <span>|</span>
+                <span>
+                  {selectedZone.id}: ({selectedZone.bbox.x}, {selectedZone.bbox.y}){' '}
+                  {selectedZone.bbox.width}×{selectedZone.bbox.height}
+                </span>
+                {selectedZone.clipPoints && (
+                  <span> polygone: {selectedZone.clipPoints.length} pts</span>
+                )}
+                {selectedZone.shape === 'trapezoid' &&
+                  !selectedZone.clipPoints &&
+                  (() => {
+                    const s = selectedZone.skew || {};
+                    const fmt = (k) => {
+                      const v = skewVal(s[k]);
+                      return `${v.x},${v.y}`;
+                    };
+                    return (
+                      <span>
+                        {' '}
+                        skew: ↖{fmt('tl')} ↗{fmt('tr')} ↙{fmt('bl')} ↘{fmt('br')}
+                      </span>
+                    );
+                  })()}
+              </>
+            )}
+            <span className="depot-editor-info-hints">
+              Molette: zoom · Espace+drag / Clic milieu: déplacer la vue · Flèches: déplacer · ⌘Z:
+              annuler · ⌘S: sauvegarder
+            </span>
           </div>
         </div>
-      </div>
+      </ModalBody>
       {ConfirmDialogRenderer}
-    </div>
+    </Modal>
   );
 }

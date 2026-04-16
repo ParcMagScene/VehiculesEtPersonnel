@@ -10,10 +10,9 @@ import {
   startOfYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { X } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { Button } from '@/design-system';
+import { Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { STATUS_COLORS } from '../constants/colors';
 
@@ -99,17 +98,11 @@ function MonthSelector({ currentDate, onSelectMonth, onClose, reservations = [],
   const currentMonthIndex = currentDate.getMonth();
 
   return (
-    <div
-      className="month-selector-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="month-selector-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="month-selector-header">
-          <h3>Sélectionner un mois - {format(currentDate, 'yyyy', { locale: fr })}</h3>
-          <Button variant="ghost" className="close-button" onClick={onClose}>
-            <X size={20} />
-          </Button>
-        </div>
+    <Modal open onClose={onClose} size="lg" className="month-selector-modal">
+      <ModalHeader onClose={onClose}>
+        Sélectionner un mois - {format(currentDate, 'yyyy', { locale: fr })}
+      </ModalHeader>
+      <ModalBody>
         <div className="month-selector-grid">
           {months.map((monthDate, index) => (
             <div
@@ -122,8 +115,8 @@ function MonthSelector({ currentDate, onSelectMonth, onClose, reservations = [],
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 }
 

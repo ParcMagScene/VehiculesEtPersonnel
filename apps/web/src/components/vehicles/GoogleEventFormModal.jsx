@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { AlignLeft, Calendar, Clock, MapPin, Save, Type } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, Input, Textarea, Toggle } from '@/design-system';
+import { Button, Input, ModalLayout, Textarea, Toggle } from '@/design-system';
 
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
@@ -148,141 +148,125 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="event-form-overlay"
-      onMouseDown={(e) => e.target === e.currentTarget && safeClose()}
-    >
-      <div
-        className="event-form-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="event-form-header">
-          <Calendar size={20} />
-          <h2>{mode === 'edit' ? "Modifier l'événement" : 'Nouvel événement Google'}</h2>
-          <Button variant="ghost" className="event-form-close" onClick={safeClose}>
-            ×
+    <ModalLayout
+      open={isOpen}
+      onClose={safeClose}
+      size="md"
+      title={mode === 'edit' ? "Modifier l'événement" : 'Nouvel événement Google'}
+      icon={<Calendar size={20} />}
+      className="event-form-modal"
+      footer={
+        <>
+          <Button variant="ghost" onClick={safeClose}>
+            Annuler
           </Button>
+          <Button variant="primary" type="submit" form="google-event-form" disabled={saving}>
+            <Save size={16} />
+            {saving ? 'Enregistrement...' : mode === 'edit' ? 'Mettre à jour' : "Créer l'événement"}
+          </Button>
+        </>
+      }
+    >
+      <form id="google-event-form" onSubmit={handleSubmit}>
+        <div className="event-form-body">
+          {/* Titre */}
+          <div className="event-form-field">
+            <label>
+              <Type size={15} /> Titre
+            </label>
+            <Input
+              type="text"
+              value={formData.summary}
+              onChange={(e) => handleChange('summary', e.target.value)}
+              placeholder="Titre de l'événement"
+              autoFocus
+              required
+            />
+          </div>
+
+          {/* Journée entière toggle */}
+          <div className="event-form-field event-form-toggle">
+            <label>
+              <Clock size={15} /> Journée entière
+            </label>
+            <Toggle
+              checked={formData.allDay}
+              onChange={(e) => handleChange('allDay', e.target.checked)}
+            />
+          </div>
+
+          {/* Dates */}
+          {formData.allDay ? (
+            <div className="event-form-row">
+              <div className="event-form-field">
+                <label>Date de début</label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => handleChange('startDate', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="event-form-field">
+                <label>Date de fin</label>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => handleChange('endDate', e.target.value)}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="event-form-row">
+              <div className="event-form-field">
+                <label>Début</label>
+                <input
+                  type="datetime-local"
+                  value={formData.startDateTime}
+                  onChange={(e) => handleChange('startDateTime', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="event-form-field">
+                <label>Fin</label>
+                <input
+                  type="datetime-local"
+                  value={formData.endDateTime}
+                  onChange={(e) => handleChange('endDateTime', e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Lieu */}
+          <div className="event-form-field">
+            <label>
+              <MapPin size={15} /> Lieu
+            </label>
+            <AddressAutocomplete
+              value={formData.location}
+              onChange={(val) => handleChange('location', val)}
+              placeholder="Adresse ou lieu"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="event-form-field">
+            <label>
+              <AlignLeft size={15} /> Description
+            </label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              placeholder="Description de l'événement"
+              rows={4}
+            />
+          </div>
         </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="event-form-body">
-            {/* Titre */}
-            <div className="event-form-field">
-              <label>
-                <Type size={15} /> Titre
-              </label>
-              <Input
-                type="text"
-                value={formData.summary}
-                onChange={(e) => handleChange('summary', e.target.value)}
-                placeholder="Titre de l'événement"
-                autoFocus
-                required
-              />
-            </div>
-
-            {/* Journée entière toggle */}
-            <div className="event-form-field event-form-toggle">
-              <label>
-                <Clock size={15} /> Journée entière
-              </label>
-              <Toggle
-                checked={formData.allDay}
-                onChange={(e) => handleChange('allDay', e.target.checked)}
-              />
-            </div>
-
-            {/* Dates */}
-            {formData.allDay ? (
-              <div className="event-form-row">
-                <div className="event-form-field">
-                  <label>Date de début</label>
-                  <input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => handleChange('startDate', e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="event-form-field">
-                  <label>Date de fin</label>
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleChange('endDate', e.target.value)}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="event-form-row">
-                <div className="event-form-field">
-                  <label>Début</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.startDateTime}
-                    onChange={(e) => handleChange('startDateTime', e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="event-form-field">
-                  <label>Fin</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.endDateTime}
-                    onChange={(e) => handleChange('endDateTime', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Lieu */}
-            <div className="event-form-field">
-              <label>
-                <MapPin size={15} /> Lieu
-              </label>
-              <AddressAutocomplete
-                value={formData.location}
-                onChange={(val) => handleChange('location', val)}
-                placeholder="Adresse ou lieu"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="event-form-field">
-              <label>
-                <AlignLeft size={15} /> Description
-              </label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="Description de l'événement"
-                rows={4}
-              />
-            </div>
-          </div>
-
-          <div className="event-form-footer">
-            <Button variant="ghost" onClick={safeClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" type="submit" disabled={saving}>
-              <Save size={16} />
-              {saving
-                ? 'Enregistrement...'
-                : mode === 'edit'
-                  ? 'Mettre à jour'
-                  : "Créer l'événement"}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </ModalLayout>
   );
 }
 

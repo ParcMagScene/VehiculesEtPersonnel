@@ -1,9 +1,9 @@
 import './ProfileEditModal.css';
 
-import { Camera, Save, Trash2, User, X } from 'lucide-react';
+import { Camera, Save, Trash2, User } from 'lucide-react';
 import { useRef, useState } from 'react';
 
-import { Avatar, Button, InlineAlert, Input } from '@/design-system';
+import { Avatar, Button, InlineAlert, Input, ModalLayout } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
@@ -102,89 +102,15 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
   };
 
   return (
-    <div className="profile-edit-overlay">
-      {ConfirmDialogRenderer}
-      <div className="profile-edit-modal">
-        {/* Header */}
-        <div className="theme-modal-header">
-          <h3 className="profile-edit-header-title">
-            <User size={20} /> {isAdminMode ? `Modifier ${editedUser.name}` : 'Mon profil'}
-          </h3>
-          <Button variant="ghost" onClick={onClose} className="theme-close-btn">
-            <X size={20} />
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="profile-edit-content">
-          {/* Avatar section */}
-          <div className="profile-edit-avatar-section">
-            <div className="profile-edit-avatar-wrapper">
-              {previewUrl ? (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  loading="lazy"
-                  className="profile-edit-avatar-preview"
-                />
-              ) : (
-                <Avatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
-              )}
-
-              <Button
-                variant="ghost"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="profile-edit-avatar-btn"
-              >
-                <Camera size={14} />
-              </Button>
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarSelect}
-              style={{ display: 'none' }}
-            />
-
-            {uploading && <div className="profile-edit-upload-status">Upload en cours...</div>}
-
-            {editedUser.avatar && !uploading && (
-              <Button
-                variant="ghost"
-                onClick={handleDeleteAvatar}
-                className="profile-edit-delete-avatar"
-              >
-                <Trash2 size={14} /> Supprimer la photo
-              </Button>
-            )}
-          </div>
-
-          {/* Name field */}
-          <div className="profile-edit-field">
-            <label className="profile-edit-label">Nom</label>
-            <Input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Votre nom"
-              className="profile-edit-input"
-            />
-          </div>
-
-          {/* Email (read-only) */}
-          <div className="profile-edit-field">
-            <label className="profile-edit-label">Email</label>
-            <div className="profile-edit-readonly">{editedUser.email}</div>
-          </div>
-
-          {error && <InlineAlert style={{ marginBottom: '16px' }}>{error}</InlineAlert>}
-        </div>
-
-        {/* Footer */}
-        <div className="profile-edit-footer">
+    <ModalLayout
+      open
+      onClose={onClose}
+      size="sm"
+      title={isAdminMode ? `Modifier ${editedUser.name}` : 'Mon profil'}
+      icon={<User size={20} />}
+      className="profile-edit-modal"
+      footer={
+        <>
           <Button variant="ghost" onClick={onClose}>
             Fermer
           </Button>
@@ -196,9 +122,79 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
             <Save size={16} />
             {saving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
+        </>
+      }
+    >
+      {ConfirmDialogRenderer}
+
+      {/* Content */}
+      <div className="profile-edit-content">
+        {/* Avatar section */}
+        <div className="profile-edit-avatar-section">
+          <div className="profile-edit-avatar-wrapper">
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt="Preview"
+                loading="lazy"
+                className="profile-edit-avatar-preview"
+              />
+            ) : (
+              <Avatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
+            )}
+
+            <Button
+              variant="ghost"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="profile-edit-avatar-btn"
+            >
+              <Camera size={14} />
+            </Button>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarSelect}
+            style={{ display: 'none' }}
+          />
+
+          {uploading && <div className="profile-edit-upload-status">Upload en cours...</div>}
+
+          {editedUser.avatar && !uploading && (
+            <Button
+              variant="ghost"
+              onClick={handleDeleteAvatar}
+              className="profile-edit-delete-avatar"
+            >
+              <Trash2 size={14} /> Supprimer la photo
+            </Button>
+          )}
         </div>
+
+        {/* Name field */}
+        <div className="profile-edit-field">
+          <label className="profile-edit-label">Nom</label>
+          <Input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Votre nom"
+            className="profile-edit-input"
+          />
+        </div>
+
+        {/* Email (read-only) */}
+        <div className="profile-edit-field">
+          <label className="profile-edit-label">Email</label>
+          <div className="profile-edit-readonly">{editedUser.email}</div>
+        </div>
+
+        {error && <InlineAlert style={{ marginBottom: '16px' }}>{error}</InlineAlert>}
       </div>
-    </div>
+    </ModalLayout>
   );
 };
 

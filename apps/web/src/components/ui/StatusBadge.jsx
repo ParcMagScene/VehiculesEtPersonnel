@@ -11,11 +11,13 @@ import './StatusBadge.css';
  * @param {React.ReactNode} children - Badge label
  */
 export default function StatusBadge({ color, size = 'md', icon, className, children, ...rest }) {
-  const style = color ? {
-    backgroundColor: color + '20',
-    color: color,
-    borderColor: color,
-  } : undefined;
+  const style = color
+    ? {
+        backgroundColor: color + '20',
+        color: color,
+        borderColor: color,
+      }
+    : undefined;
 
   return (
     <span

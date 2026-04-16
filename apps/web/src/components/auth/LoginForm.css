@@ -196,8 +196,14 @@
 }
 
 @keyframes loginStatusFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .login-email-status > div {
@@ -355,7 +361,8 @@
   box-shadow: var(--btn-primary-hover-shadow);
 }
 
-.login-form .btn-primary:disabled, .login-form .btn-secondary:disabled {
+.login-form .btn-primary:disabled,
+.login-form .btn-secondary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
@@ -452,7 +459,10 @@
 }
 
 .login-reset-header {
-  background: var(--theme-gradient-alt, linear-gradient(135deg, var(--theme-accent), var(--theme-warning-dark)));
+  background: var(
+    --theme-gradient-alt,
+    linear-gradient(135deg, var(--theme-accent), var(--theme-warning-dark))
+  );
 }
 
 .login-form-field-spacing {
@@ -488,4 +498,3 @@
 .login-chevron {
   color: var(--theme-text-gray);
 }
-

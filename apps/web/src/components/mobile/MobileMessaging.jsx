@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, Send, Paperclip, Plus, MessageSquare, File, Image, Download, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  Send,
+  Paperclip,
+  Plus,
+  MessageSquare,
+  File,
+  Image,
+  Download,
+  Users,
+} from 'lucide-react';
 import { Button, Input, ModalLayout, Spinner } from '@/design-system';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
@@ -39,7 +49,12 @@ const formatDateSeparator = (dateStr) => {
 
 const getInitials = (name) => {
   if (!name) return '?';
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 };
 
 const getAvatarColor = (name) => {
@@ -84,9 +99,9 @@ function MobileMessaging({ currentUser, onBack }) {
       const data = await api.getMessages(convId);
       setMessages(data);
       await api.markConversationRead(convId);
-      setConversations(prev => prev.map(c =>
-        c.id === convId ? { ...c, unread_count: 0 } : c
-      ));
+      setConversations((prev) =>
+        prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c)),
+      );
     } catch (err) {
       console.error('Erreur chargement messages:', err);
     }
@@ -96,7 +111,10 @@ function MobileMessaging({ currentUser, onBack }) {
     loadConversations();
   }, [loadConversations]);
 
-  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadConversations, { disabled: !!activeConversation });
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(
+    loadConversations,
+    { disabled: !!activeConversation },
+  );
 
   // Polling
   useEffect(() => {
@@ -116,10 +134,10 @@ function MobileMessaging({ currentUser, onBack }) {
   const getConversationName = (conv) => {
     if (conv.title) return conv.title;
     if (conv.type === 'direct' && conv.participants) {
-      const other = conv.participants.find(p => p.id !== currentUser?.id);
+      const other = conv.participants.find((p) => p.id !== currentUser?.id);
       return other?.name || 'Conversation';
     }
-    return conv.participants?.map(p => p.name).join(', ') || 'Conversation';
+    return conv.participants?.map((p) => p.name).join(', ') || 'Conversation';
   };
 
   const handleSend = async () => {
@@ -129,12 +147,19 @@ function MobileMessaging({ currentUser, onBack }) {
 
     try {
       const msg = await api.sendMessage(activeConversation.id, text);
-      setMessages(prev => [...prev, msg]);
-      setConversations(prev => prev.map(c =>
-        c.id === activeConversation.id
-          ? { ...c, last_message: text, last_message_at: msg.created_at, last_message_sender: currentUser?.name }
-          : c
-      ));
+      setMessages((prev) => [...prev, msg]);
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === activeConversation.id
+            ? {
+                ...c,
+                last_message: text,
+                last_message_at: msg.created_at,
+                last_message_sender: currentUser?.name,
+              }
+            : c,
+        ),
+      );
     } catch (err) {
       console.error('Erreur envoi message:', err);
     }
@@ -156,7 +181,7 @@ function MobileMessaging({ currentUser, onBack }) {
       reader.onload = async () => {
         const base64 = reader.result.split(',')[1];
         const msg = await api.sendFileMessage(activeConversation.id, file.name, base64, file.type);
-        setMessages(prev => [...prev, msg]);
+        setMessages((prev) => [...prev, msg]);
       };
       reader.readAsDataURL(file);
     } catch (err) {
@@ -171,7 +196,7 @@ function MobileMessaging({ currentUser, onBack }) {
       setShowNewConv(false);
       setSelectedUserId(null);
       await loadConversations();
-      const conv = (await api.getConversations()).find(c => c.id === result.id);
+      const conv = (await api.getConversations()).find((c) => c.id === result.id);
       if (conv) {
         setActiveConversation(conv);
         await loadMessages(conv.id);
@@ -184,7 +209,7 @@ function MobileMessaging({ currentUser, onBack }) {
   const openNewConvModal = async () => {
     try {
       const users = await api.request('/users/names');
-      setAllUsers(users.filter(u => u.id !== currentUser?.id));
+      setAllUsers(users.filter((u) => u.id !== currentUser?.id));
       setShowNewConv(true);
     } catch (err) {
       console.error('Erreur chargement utilisateurs:', err);
@@ -212,11 +237,26 @@ function MobileMessaging({ currentUser, onBack }) {
     return (
       <div className="mobile-messaging-chat">
         <div className="mmsg-chat-header">
-          <Button variant="ghost" className="mmsg-back" onClick={() => { setActiveConversation(null); setMessages([]); }} aria-label="Retour aux conversations">
+          <Button
+            variant="ghost"
+            className="mmsg-back"
+            onClick={() => {
+              setActiveConversation(null);
+              setMessages([]);
+            }}
+            aria-label="Retour aux conversations"
+          >
             <ArrowLeft size={20} />
           </Button>
-          <div className="mmsg-chat-avatar" style={{ background: getAvatarColor(getConversationName(activeConversation)) }}>
-            {activeConversation.type === 'group' ? <Users size={14} /> : getInitials(getConversationName(activeConversation))}
+          <div
+            className="mmsg-chat-avatar"
+            style={{ background: getAvatarColor(getConversationName(activeConversation)) }}
+          >
+            {activeConversation.type === 'group' ? (
+              <Users size={14} />
+            ) : (
+              getInitials(getConversationName(activeConversation))
+            )}
           </div>
           <span className="mmsg-chat-name">{getConversationName(activeConversation)}</span>
         </div>
@@ -244,18 +284,26 @@ function MobileMessaging({ currentUser, onBack }) {
                       alt={item.attachments[0].original_name}
                       loading="lazy"
                       className="mmsg-img"
-                      onClick={() => window.open(`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`, '_blank')}
+                      onClick={() =>
+                        window.open(
+                          `${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`,
+                          '_blank',
+                        )
+                      }
                     />
                   )}
                   {(item.type === 'file' || item.type === 'video') && item.attachments?.[0] && (
                     <a
                       href={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
-                      target="_blank" rel="noopener noreferrer"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="mmsg-file-link"
                     >
                       {item.type === 'video' ? <Image size={14} /> : <File size={14} />}
                       <span>{item.attachments[0].original_name}</span>
-                      <span className="mmsg-file-size">{formatFileSize(item.attachments[0].size)}</span>
+                      <span className="mmsg-file-size">
+                        {formatFileSize(item.attachments[0].size)}
+                      </span>
                       <Download size={12} />
                     </a>
                   )}
@@ -268,7 +316,12 @@ function MobileMessaging({ currentUser, onBack }) {
         </div>
 
         <div className="mmsg-input-area">
-          <Button variant="ghost" className="mmsg-attach" onClick={() => fileInputRef.current?.click()} aria-label="Joindre un fichier">
+          <Button
+            variant="ghost"
+            className="mmsg-attach"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Joindre un fichier"
+          >
             <Paperclip size={20} />
           </Button>
           <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
@@ -276,10 +329,21 @@ function MobileMessaging({ currentUser, onBack }) {
             className="mmsg-input"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
             placeholder="Écrire un message…"
           />
-          <Button variant="ghost" className="mmsg-send" onClick={handleSend} disabled={!inputText.trim()} aria-label="Envoyer">
+          <Button
+            variant="ghost"
+            className="mmsg-send"
+            onClick={handleSend}
+            disabled={!inputText.trim()}
+            aria-label="Envoyer"
+          >
             <Send size={18} />
           </Button>
         </div>
@@ -295,8 +359,15 @@ function MobileMessaging({ currentUser, onBack }) {
         <Button variant="ghost" className="mmsg-back" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
-        <h2>Messages {totalUnread > 0 && <span className="mmsg-total-badge">{totalUnread}</span>}</h2>
-        <Button variant="ghost" className="mmsg-new-btn" onClick={openNewConvModal} aria-label="Nouvelle conversation">
+        <h2>
+          Messages {totalUnread > 0 && <span className="mmsg-total-badge">{totalUnread}</span>}
+        </h2>
+        <Button
+          variant="ghost"
+          className="mmsg-new-btn"
+          onClick={openNewConvModal}
+          aria-label="Nouvelle conversation"
+        >
           <Plus size={20} />
         </Button>
       </div>
@@ -316,17 +387,33 @@ function MobileMessaging({ currentUser, onBack }) {
         </div>
       ) : (
         <div className="mmsg-conv-list">
-          {conversations.map(conv => (
+          {conversations.map((conv) => (
             <div
               key={conv.id}
               className={`mmsg-conv-item ${conv.unread_count > 0 ? 'unread' : ''}`}
               role="button"
               tabIndex={0}
-              onClick={() => { setActiveConversation(conv); loadMessages(conv.id); }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveConversation(conv); loadMessages(conv.id); } }}
+              onClick={() => {
+                setActiveConversation(conv);
+                loadMessages(conv.id);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setActiveConversation(conv);
+                  loadMessages(conv.id);
+                }
+              }}
             >
-              <div className="mmsg-conv-avatar" style={{ background: getAvatarColor(getConversationName(conv)) }}>
-                {conv.type === 'group' ? <Users size={16} /> : getInitials(getConversationName(conv))}
+              <div
+                className="mmsg-conv-avatar"
+                style={{ background: getAvatarColor(getConversationName(conv)) }}
+              >
+                {conv.type === 'group' ? (
+                  <Users size={16} />
+                ) : (
+                  getInitials(getConversationName(conv))
+                )}
               </div>
               <div className="mmsg-conv-info">
                 <div className="mmsg-conv-top">
@@ -335,13 +422,16 @@ function MobileMessaging({ currentUser, onBack }) {
                 </div>
                 <div className="mmsg-conv-bottom">
                   <span className="mmsg-conv-last">
-                    {conv.last_message_sender && conv.last_message_sender !== getConversationName(conv)
+                    {conv.last_message_sender &&
+                    conv.last_message_sender !== getConversationName(conv)
                       ? `${conv.last_message_sender.split(' ')[0]}: `
                       : ''}
                     {conv.last_message || 'Nouvelle conversation'}
                   </span>
                   {conv.unread_count > 0 && (
-                    <span className="mmsg-badge">{conv.unread_count > 9 ? '9+' : conv.unread_count}</span>
+                    <span className="mmsg-badge">
+                      {conv.unread_count > 9 ? '9+' : conv.unread_count}
+                    </span>
                   )}
                 </div>
               </div>
@@ -360,29 +450,50 @@ function MobileMessaging({ currentUser, onBack }) {
           size="sm"
           footer={
             <>
-              <Button variant="ghost" className="mmsg-cancel" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</Button>
-              <Button variant="ghost" className="mmsg-confirm" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</Button>
+              <Button
+                variant="ghost"
+                className="mmsg-cancel"
+                onClick={() => {
+                  setShowNewConv(false);
+                  setSelectedUserId(null);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="ghost"
+                className="mmsg-confirm"
+                onClick={handleNewConversation}
+                disabled={!selectedUserId}
+              >
+                Démarrer
+              </Button>
             </>
           }
         >
-            <div className="mmsg-user-list">
-              {allUsers.map(user => (
-                <div
-                  key={user.id}
-                  className={`mmsg-user-item ${selectedUserId === user.id ? 'selected' : ''}`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedUserId(user.id)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedUserId(user.id); } }}
-                >
-                  <div className="mmsg-user-avatar" style={{ background: getAvatarColor(user.name) }}>
-                    {getInitials(user.name)}
-                  </div>
-                  <span>{user.name}</span>
+          <div className="mmsg-user-list">
+            {allUsers.map((user) => (
+              <div
+                key={user.id}
+                className={`mmsg-user-item ${selectedUserId === user.id ? 'selected' : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedUserId(user.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedUserId(user.id);
+                  }
+                }}
+              >
+                <div className="mmsg-user-avatar" style={{ background: getAvatarColor(user.name) }}>
+                  {getInitials(user.name)}
                 </div>
-              ))}
-              {allUsers.length === 0 && <p className="mmsg-no-users">Aucun autre utilisateur</p>}
-            </div>
+                <span>{user.name}</span>
+              </div>
+            ))}
+            {allUsers.length === 0 && <p className="mmsg-no-users">Aucun autre utilisateur</p>}
+          </div>
         </ModalLayout>
       )}
     </div>

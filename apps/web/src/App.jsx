@@ -1,8 +1,21 @@
-import { useState, useEffect, useMemo, useCallback, Suspense, lazy, useRef, useTransition } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  Suspense,
+  lazy,
+  useRef,
+  useTransition,
+} from 'react';
 import { format } from 'date-fns';
 import Header from './components/Header';
 const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
-const VehicleSlidePanel = lazy(() => import('./components/vehicles/VehicleDetailPanel').then(m => ({ default: m.VehicleSlidePanel })));
+const VehicleSlidePanel = lazy(() =>
+  import('./components/vehicles/VehicleDetailPanel').then((m) => ({
+    default: m.VehicleSlidePanel,
+  })),
+);
 import LoginForm from './components/auth/LoginForm';
 import ErrorBoundary from './components/ErrorBoundary';
 const PlanningView = lazy(() => import('./components/vehicles/PlanningView'));
@@ -48,7 +61,11 @@ const AnnuairePanel = lazy(() => import('./components/annuaire/AnnuairePanel'));
 const LocationsTab = lazy(() => import('./components/annuaire/LocationsTab'));
 const VideoPanel = lazy(() => import('./components/video/VideoPanel'));
 const SonosPanel = lazy(() => import('./components/sonos/SonosPanel'));
-const AffaireDetailDialog = lazy(() => import('./components/affaires/AffaireDetailPanel').then(m => ({ default: m.AffaireDetailDialog })));
+const AffaireDetailDialog = lazy(() =>
+  import('./components/affaires/AffaireDetailPanel').then((m) => ({
+    default: m.AffaireDetailDialog,
+  })),
+);
 const UserPreferencesModal = lazy(() => import('./components/auth/UserPreferencesModal'));
 const HelpModal = lazy(() => import('./components/HelpModal'));
 
@@ -68,9 +85,15 @@ const detectMobile = () => {
 function AppContent() {
   // ═══ Auth (contexte) ═══
   const {
-    isAuthenticated, currentUser, isAuthLoading,
-    login, logout, updateUser,
-    tabPrefs, userPrefsRef, updatePreferences,
+    isAuthenticated,
+    currentUser,
+    isAuthLoading,
+    login,
+    logout,
+    updateUser,
+    tabPrefs,
+    userPrefsRef,
+    updatePreferences,
   } = useAuth();
 
   // ═══ Silent Refresh (renouvellement automatique du token JWT) ═══
@@ -123,17 +146,23 @@ function AppContent() {
   const [maintenanceActionType, setMaintenanceActionType] = useState(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [vehicleForDialog, setVehicleForDialog] = useState(null);
-  const [selectedVehicleForKilometrageControl, setSelectedVehicleForKilometrageControl] = useState(null);
+  const [selectedVehicleForKilometrageControl, setSelectedVehicleForKilometrageControl] =
+    useState(null);
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [globalAffaireDialog, setGlobalAffaireDialog] = useState(null);
   const openEventDetailsModalRef = useRef(null);
 
   // ═══ Messaging polling (hook) ═══
   const showMessagingRef = useRef(false);
-  useEffect(() => { showMessagingRef.current = showMessaging; }, [showMessaging]);
+  useEffect(() => {
+    showMessagingRef.current = showMessaging;
+  }, [showMessaging]);
 
   const { unreadMsgCount } = useMessagingPolling({
-    currentUser, userPrefsRef, showMessagingRef, toast,
+    currentUser,
+    userPrefsRef,
+    showMessagingRef,
+    toast,
   });
 
   // ═══ Mobile detection ═══
@@ -156,113 +185,174 @@ function AppContent() {
   }, [isMobile]);
 
   // ═══ Raccourcis clavier ═══
-  useKeyboardShortcuts({
-    mod_vehicles: () => { setActiveModule('vehicles'); setShowManagement(false); setShowSettings(false); },
-    mod_personnel: () => { setActiveModule('planning'); setShowManagement(false); setShowSettings(false); },
-    mod_affaires: () => { setActiveModule('affaires'); setShowManagement(false); setShowSettings(false); },
-    mod_equipment: () => { setActiveModule('equipment'); setShowManagement(false); setShowSettings(false); },
-    mod_orders: () => { setActiveModule('orders'); setShowManagement(false); setShowSettings(false); },
-    mod_catalog: () => { setActiveModule('catalog'); setShowManagement(false); setShowSettings(false); },  // Catalogue Fournisseurs
-    open_messaging: () => setShowMessaging(v => !v),
-    open_help: () => setShowHelp(v => !v),
-    open_preferences: () => setShowPreferences(true),
-    new_reservation: () => {
-      setActiveModule('vehicles');
-      setShowManagement(false);
-      setShowSettings(false);
-      setQuickReservationSlot({
-        vehicleId: null,
-        date: new Date().toISOString().slice(0, 10),
-        period: 'morning',
-        endDate: new Date().toISOString().slice(0, 10),
-        endPeriod: 'afternoon',
-      });
+  useKeyboardShortcuts(
+    {
+      mod_vehicles: () => {
+        setActiveModule('vehicles');
+        setShowManagement(false);
+        setShowSettings(false);
+      },
+      mod_personnel: () => {
+        setActiveModule('planning');
+        setShowManagement(false);
+        setShowSettings(false);
+      },
+      mod_affaires: () => {
+        setActiveModule('affaires');
+        setShowManagement(false);
+        setShowSettings(false);
+      },
+      mod_equipment: () => {
+        setActiveModule('equipment');
+        setShowManagement(false);
+        setShowSettings(false);
+      },
+      mod_orders: () => {
+        setActiveModule('orders');
+        setShowManagement(false);
+        setShowSettings(false);
+      },
+      mod_catalog: () => {
+        setActiveModule('catalog');
+        setShowManagement(false);
+        setShowSettings(false);
+      }, // Catalogue Fournisseurs
+      open_messaging: () => setShowMessaging((v) => !v),
+      open_help: () => setShowHelp((v) => !v),
+      open_preferences: () => setShowPreferences(true),
+      new_reservation: () => {
+        setActiveModule('vehicles');
+        setShowManagement(false);
+        setShowSettings(false);
+        setQuickReservationSlot({
+          vehicleId: null,
+          date: new Date().toISOString().slice(0, 10),
+          period: 'morning',
+          endDate: new Date().toISOString().slice(0, 10),
+          endPeriod: 'afternoon',
+        });
+      },
+      close_modal: () => {
+        if (showHelp) {
+          setShowHelp(false);
+          return;
+        }
+        if (showPreferences) {
+          setShowPreferences(false);
+          return;
+        }
+        if (showMessaging) {
+          setShowMessaging(false);
+          return;
+        }
+        if (selectedVehicleForMaintenance) {
+          setSelectedVehicleForMaintenance(null);
+          setMaintenanceToEdit(null);
+          setMaintenanceActionType(null);
+          return;
+        }
+        if (vehicleForDialog) {
+          setVehicleForDialog(null);
+          return;
+        }
+        if (selectedVehicleForDetails) {
+          setSelectedVehicleForDetails(null);
+          return;
+        }
+        if (showManagement) {
+          setShowManagement(false);
+          return;
+        }
+        if (showSettings) {
+          setShowSettings(false);
+          return;
+        }
+      },
+      nav_prev: () => {
+        if (activeModule !== 'vehicles') return;
+        const d = new Date(currentDate);
+        if (view === 'day') d.setDate(d.getDate() - 1);
+        else if (view === 'week') d.setDate(d.getDate() - 7);
+        else if (view === 'month') d.setMonth(d.getMonth() - 1);
+        else d.setFullYear(d.getFullYear() - 1);
+        setCurrentDate(d);
+      },
+      nav_next: () => {
+        if (activeModule !== 'vehicles') return;
+        const d = new Date(currentDate);
+        if (view === 'day') d.setDate(d.getDate() + 1);
+        else if (view === 'week') d.setDate(d.getDate() + 7);
+        else if (view === 'month') d.setMonth(d.getMonth() + 1);
+        else d.setFullYear(d.getFullYear() + 1);
+        setCurrentDate(d);
+      },
+      nav_today: () => {
+        if (activeModule === 'vehicles') setCurrentDate(new Date());
+      },
     },
-    close_modal: () => {
-      if (showHelp) { setShowHelp(false); return; }
-      if (showPreferences) { setShowPreferences(false); return; }
-      if (showMessaging) { setShowMessaging(false); return; }
-      if (selectedVehicleForMaintenance) { setSelectedVehicleForMaintenance(null); setMaintenanceToEdit(null); setMaintenanceActionType(null); return; }
-      if (vehicleForDialog) { setVehicleForDialog(null); return; }
-      if (selectedVehicleForDetails) { setSelectedVehicleForDetails(null); return; }
-      if (showManagement) { setShowManagement(false); return; }
-      if (showSettings) { setShowSettings(false); return; }
-    },
-    nav_prev: () => {
-      if (activeModule !== 'vehicles') return;
-      const d = new Date(currentDate);
-      if (view === 'day') d.setDate(d.getDate() - 1);
-      else if (view === 'week') d.setDate(d.getDate() - 7);
-      else if (view === 'month') d.setMonth(d.getMonth() - 1);
-      else d.setFullYear(d.getFullYear() - 1);
-      setCurrentDate(d);
-    },
-    nav_next: () => {
-      if (activeModule !== 'vehicles') return;
-      const d = new Date(currentDate);
-      if (view === 'day') d.setDate(d.getDate() + 1);
-      else if (view === 'week') d.setDate(d.getDate() + 7);
-      else if (view === 'month') d.setMonth(d.getMonth() + 1);
-      else d.setFullYear(d.getFullYear() + 1);
-      setCurrentDate(d);
-    },
-    nav_today: () => {
-      if (activeModule === 'vehicles') setCurrentDate(new Date());
-    },
-  }, isAuthenticated && !isMobile);
+    isAuthenticated && !isMobile,
+  );
 
   // ═══ Valeurs calculées ═══
   const highlightedReservationIds = useMemo(() => {
     if (!hoveredEventId) return [];
-    return data.reservations
-      .filter(r => r.googleEventId === hoveredEventId)
-      .map(r => r.id);
+    return data.reservations.filter((r) => r.googleEventId === hoveredEventId).map((r) => r.id);
   }, [hoveredEventId, data.reservations]);
 
   // ═══ Login : appliquer les préférences UI ═══
-  const handleLogin = useCallback(async (email, password) => {
-    const result = await login(email, password);
-    const prefs = result.prefs || {};
-    if (prefs.defaultModule === 'trucks') setActiveModule('vehicles');
-    else if (prefs.defaultModule === 'communication' || prefs.defaultModule === 'personnel') setActiveModule('planning');
-    else if (prefs.defaultModule === 'inventory') setActiveModule('stock');
-    else if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
-    if (prefs.defaultView) setView(prefs.defaultView);
-    return result;
-  }, [login, setActiveModule]);
+  const handleLogin = useCallback(
+    async (email, password) => {
+      const result = await login(email, password);
+      const prefs = result.prefs || {};
+      if (prefs.defaultModule === 'trucks') setActiveModule('vehicles');
+      else if (prefs.defaultModule === 'communication' || prefs.defaultModule === 'personnel')
+        setActiveModule('planning');
+      else if (prefs.defaultModule === 'inventory') setActiveModule('stock');
+      else if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
+      if (prefs.defaultView) setView(prefs.defaultView);
+      return result;
+    },
+    [login, setActiveModule],
+  );
 
   // ═══ Navigation croisée entre modules ═══
-  const handleNavigateToEntity = useCallback((type, entityData) => {
-    if (type === 'vehicle') {
-      const v = data.vehicles.find(v => v.id === entityData.id);
-      if (v) {
+  const handleNavigateToEntity = useCallback(
+    (type, entityData) => {
+      if (type === 'vehicle') {
+        const v = data.vehicles.find((v) => v.id === entityData.id);
+        if (v) {
+          setActiveModule('vehicles');
+          setShowManagement(false);
+          setShowSettings(false);
+          setSelectedVehicleForDetails(v);
+        }
+      } else if (type === 'person') {
+        setActiveModule('planning');
+        setShowManagement(false);
+        setShowSettings(false);
+        setNavigateToPersonId(entityData.id);
+      } else if (type === 'reservation') {
         setActiveModule('vehicles');
         setShowManagement(false);
         setShowSettings(false);
-        setSelectedVehicleForDetails(v);
+        setReservationToEdit(entityData.id);
+      } else if (type === 'affaire') {
+        const numero = entityData.numero || entityData.numeroAffaire;
+        if (!numero) return;
+        api
+          .getAffaires()
+          .then((all) => {
+            const affairesArr = Array.isArray(all) ? all : all?.affaires || [];
+            const found = affairesArr.find(
+              (a) => a.numeroAffaire === numero || a.numero_affaire === numero,
+            );
+            if (found) setGlobalAffaireDialog(found);
+          })
+          .catch(() => {});
       }
-    } else if (type === 'person') {
-      setActiveModule('planning');
-      setShowManagement(false);
-      setShowSettings(false);
-      setNavigateToPersonId(entityData.id);
-    } else if (type === 'reservation') {
-      setActiveModule('vehicles');
-      setShowManagement(false);
-      setShowSettings(false);
-      setReservationToEdit(entityData.id);
-    } else if (type === 'affaire') {
-      const numero = entityData.numero || entityData.numeroAffaire;
-      if (!numero) return;
-      api.getAffaires().then(all => {
-        const affairesArr = Array.isArray(all) ? all : (all?.affaires || []);
-        const found = affairesArr.find(
-          a => a.numeroAffaire === numero || a.numero_affaire === numero
-        );
-        if (found) setGlobalAffaireDialog(found);
-      }).catch(() => {});
-    }
-  }, [data.vehicles, setActiveModule]);
+    },
+    [data.vehicles, setActiveModule],
+  );
 
   // ═══ Actions maintenance ═══
   const handleRequestMaintenance = (vehicle) => {
@@ -301,11 +391,13 @@ function AppContent() {
     return (
       <ErrorBoundary>
         <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
-          <MobileApp onSwitchToDesktop={() => {
-            sessionStorage.setItem('forceDesktop', 'true');
-            window.location.hash = '';
-            setIsMobile(false);
-          }} />
+          <MobileApp
+            onSwitchToDesktop={() => {
+              sessionStorage.setItem('forceDesktop', 'true');
+              window.location.hash = '';
+              setIsMobile(false);
+            }}
+          />
         </Suspense>
       </ErrorBoundary>
     );
@@ -343,550 +435,599 @@ function AppContent() {
 
   return (
     <ErrorBoundary>
-    <ToastProvider toast={toast}>
-    <NavigationProvider value={handleNavigateToEntity}>
-    <div className="app">
-      <a href="#main-content" className="skip-link">Aller au contenu principal</a>
-      <Header
-        view={view}
-        setView={setView}
-        currentDate={currentDate}
-        setCurrentDate={setCurrentDate}
-
-        onOpenSettings={() => setShowSettings(true)}
-        activeModule={activeModule}
-        setActiveModule={setActiveModule}
-        maintenances={data.maintenances}
-        vehicles={data.vehicles}
-        reservations={data.reservations}
-        onOpenVehicleMaintenance={setSelectedVehicleForMaintenance}
-        onOpenMaintenance={(vehicle, maintenanceId) => {
-          setSelectedVehicleForMaintenance(vehicle);
-          setMaintenanceToEdit(maintenanceId);
-        }}
-        currentUser={currentUser}
-        onLogout={logout}
-        onUserUpdate={updateUser}
-        onUpdateMaintenance={data.handleUpdateIntervention}
-        onRefreshMaintenances={data.loadMaintenances}
-        onReservationUpdate={async () => {
-          try {
-            const res = await api.getReservations();
-            data.setReservations(res);
-          } catch (e) { console.error('Erreur rechargement réservations:', e); }
-        }}
-        onToggleMessaging={() => setShowMessaging(v => !v)}
-        onToggleMailing={() => setShowMailing(v => !v)}
-        unreadMsgCount={unreadMsgCount}
-        onOpenPreferences={() => setShowPreferences(true)}
-        onOpenHelp={() => setShowHelp(true)}
-        tabPrefs={tabPrefs}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
-      
-      {activeModule === 'vehicles' && (
-      <Suspense fallback={null}>
-      <GoogleCalendarBanner 
-        calendarConfig={data.calendarConfig} 
-        view={view}
-        activeModule={activeModule}
-        currentDate={currentDate}
-        currentUser={currentUser}
-        onScroll={handleBannerScroll}
-        onEventClick={(event) => setGoogleEventForReservation(event)}
-        onEventsChange={handleGoogleEventsChange}
-        clients={data.clients}
-        locations={data.locations}
-        reservations={data.reservations}
-        onEventHover={setHoveredEventId}
-        onRequestEditReservation={setReservationToEdit}
-        onRequestViewEvent={(fn) => { openEventDetailsModalRef.current = fn; }}
-        onReservationsRefresh={async () => {
-          try {
-            const res = await api.getReservations();
-            data.setReservations(res);
-          } catch (e) { console.error('Erreur rechargement réservations:', e); }
-        }}
-        onNewReservation={() => {
-          setActiveModule('vehicles');
-          setShowManagement(false);
-          setShowSettings(false);
-          setQuickReservationSlot({
-            vehicleId: null,
-            date: new Date().toISOString().slice(0, 10),
-            period: 'morning',
-            endDate: new Date().toISOString().slice(0, 10),
-            endPeriod: 'afternoon',
-          });
-        }}
-        onNewAssignment={(event) => {
-          setActiveModule('planning');
-          setShowManagement(false);
-          setShowSettings(false);
-          setQuickAssignmentSlot({
-            day: event?.start ? new Date(event.start).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-            period: 'AM',
-            title: event?.summary || '',
-            affaire: event?.affaire || '',
-          });
-        }}
-        onNewAffaire={async () => {
-          try {
-            const newAffaire = {
-              numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
-              client: '',
-              interlocuteur: '',
-              tel: '',
-              type: 'Prestation',
-              dateDebut: format(new Date(), 'yyyy-MM-dd'),
-              dateFin: '',
-              adresseLivraison: '',
-              description: '',
-              devis: '',
-              source: 'db',
-            };
-            await api.createOrUpdateAffaire(newAffaire);
-            setActiveModule('affaires');
-          } catch (err) {
-            console.error('Erreur création affaire:', err);
-            toast.error('Erreur lors de la création de l\'affaire');
-          }
-        }}
-        onNavigateToAffaire={(affaireNum) => {
-          setActiveModule('affaires');
-          setShowManagement(false);
-          setShowSettings(false);
-          // Le numéro d'affaire sera traité par AffairesPanel comme filtre/sélection
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('emag:navigate-affaire', { detail: { affaireNum } }));
-          }, 100);
-        }}
-      />
-      </Suspense>
-      )}
-
-      <main id="main-content">
-
-      {activeModule === 'vehicles' && (
-        <>
-          {view === 'planning' ? (
-            <Suspense fallback={<LoadingOverlay label="Chargement du planning..." />}>
-            <PlanningView
+      <ToastProvider toast={toast}>
+        <NavigationProvider value={handleNavigateToEntity}>
+          <div className="app">
+            <a href="#main-content" className="skip-link">
+              Aller au contenu principal
+            </a>
+            <Header
+              view={view}
+              setView={setView}
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              onOpenSettings={() => setShowSettings(true)}
+              activeModule={activeModule}
+              setActiveModule={setActiveModule}
+              maintenances={data.maintenances}
               vehicles={data.vehicles}
               reservations={data.reservations}
-              maintenances={data.maintenances}
-              currentDate={currentDate}
-              onOpenReservation={(reservation) => {
-                const vehicle = data.vehicles.find(v => v.id === reservation.vehicleId);
-                if (vehicle) {
-                  // Open reservation (legacy handler preserved)
+              onOpenVehicleMaintenance={setSelectedVehicleForMaintenance}
+              onOpenMaintenance={(vehicle, maintenanceId) => {
+                setSelectedVehicleForMaintenance(vehicle);
+                setMaintenanceToEdit(maintenanceId);
+              }}
+              currentUser={currentUser}
+              onLogout={logout}
+              onUserUpdate={updateUser}
+              onUpdateMaintenance={data.handleUpdateIntervention}
+              onRefreshMaintenances={data.loadMaintenances}
+              onReservationUpdate={async () => {
+                try {
+                  const res = await api.getReservations();
+                  data.setReservations(res);
+                } catch (e) {
+                  console.error('Erreur rechargement réservations:', e);
                 }
               }}
-              onOpenMaintenance={setSelectedVehicleForMaintenance}
-              clients={data.clients}
-              drivers={data.drivers}
-              persons={data.persons}
+              onToggleMessaging={() => setShowMessaging((v) => !v)}
+              onToggleMailing={() => setShowMailing((v) => !v)}
+              unreadMsgCount={unreadMsgCount}
+              onOpenPreferences={() => setShowPreferences(true)}
+              onOpenHelp={() => setShowHelp(true)}
+              tabPrefs={tabPrefs}
+              theme={theme}
+              onToggleTheme={toggleTheme}
             />
-            </Suspense>
-          ) : (
-            <div className="calendar-with-vehicle-panel">
-              <ErrorBoundary moduleName="Calendrier">
-              <Suspense fallback={<LoadingOverlay label="Chargement du calendrier..." />}>
-              <Calendar
-                view={view}
-                setView={setView}
-                currentDate={currentDate}
-                setCurrentDate={setCurrentDate}
-                onOpenManagement={() => setShowManagement(true)}
-                vehicles={data.vehicles}
-                reservations={data.reservations}
-                maintenances={data.maintenances}
-                onAddReservation={data.addReservation}
-                onUpdateReservation={data.updateReservation}
-                onUpdateMaintenance={data.updateMaintenanceFromResize}
-                onScroll={handleCalendarScroll}
-                onDeleteReservation={data.deleteReservation}
-                clients={data.clients}
-                drivers={data.drivers}
-                persons={data.persons}
-                locations={data.locations}
-                users={data.users}
-                googleEvent={googleEventForReservation}
-                onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
-                googleEvents={googleEvents}
-                highlightedReservationIds={highlightedReservationIds}
-                reservationToEdit={reservationToEdit}
-                onReservationEditComplete={() => setReservationToEdit(null)}
-                onVehicleClick={setSelectedVehicleForDetails}
-                onVehicleDoubleClick={(v) => { setSelectedVehicleForDetails(null); setVehicleForDialog(v); }}
-                onMaintenanceClick={(vehicle, maintenanceId) => {
-                  setSelectedVehicleForMaintenance(vehicle);
-                  setMaintenanceToEdit(maintenanceId);
-                }}
-                onRequestViewEvent={(event) => openEventDetailsModalRef.current?.(event)}
-                currentUser={currentUser}
-                quickReservationSlot={quickReservationSlot}
-                onQuickReservationHandled={() => setQuickReservationSlot(null)}
-              />
-              </Suspense>
-              </ErrorBoundary>
+
+            {activeModule === 'vehicles' && (
               <Suspense fallback={null}>
-              <VehicleSlidePanel
-                vehicle={selectedVehicleForDetails}
-                maintenances={data.maintenances}
-                currentUser={currentUser}
-                onClose={() => setSelectedVehicleForDetails(null)}
-                onOpenDialog={(v) => { setSelectedVehicleForDetails(null); setVehicleForDialog(v); }}
-                onAction={(action) => {
-                  const v = selectedVehicleForDetails;
-                  if (!v) return;
-                  if (action === 'schedule') { handleScheduleMaintenance(v); setSelectedVehicleForDetails(null); }
-                  else if (action === 'request') { handleRequestMaintenance(v); setSelectedVehicleForDetails(null); }
-                  else if (action === 'km') { setSelectedVehicleForKilometrageControl(v); setSelectedVehicleForDetails(null); }
-                  else if (action === 'breakdown') { handleReportBreakdown(v); setSelectedVehicleForDetails(null); }
-                }}
-              />
-              </Suspense>
-            </div>
-          )}
-        </>
-      )}
-
-      {activeModule === 'affaires' && (
-        <ErrorBoundary moduleName="Affaires">
-        <Suspense fallback={<LoadingOverlay label="Chargement du module affaires..." />}>
-          <AffairesPanel
-            reservations={data.reservations}
-            onNavigateToEntity={handleNavigateToEntity}
-            currentUser={currentUser}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'equipment' && (
-        <ErrorBoundary moduleName="Équipement">
-        <Suspense fallback={<LoadingOverlay label="Chargement du parc matériel..." />}>
-          <EquipmentPanel
-            currentUser={currentUser}
-            showManagement={showEquipmentManagement}
-            onOpenManagement={() => setShowEquipmentManagement(true)}
-            onCloseManagement={() => setShowEquipmentManagement(false)}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'orders' && (
-        <ErrorBoundary moduleName="Commandes">
-        <Suspense fallback={<LoadingOverlay label="Chargement des commandes..." />}>
-          <OrdersPanel
-            currentUser={currentUser}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'stock' && (
-        <ErrorBoundary moduleName="Stocks">
-          <div className="stocks-container">
-            <div className="sub-tabs">
-              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'vente' ? 'active' : ''}`} onClick={() => setStockSubTab('vente')}>
-                📦 Stock Vente
-              </Button>
-              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'sav' ? 'active' : ''}`} onClick={() => setStockSubTab('sav')}>
-                🔧 SAV (Pièces)
-              </Button>
-              <Button variant="ghost" className={`sub-tab ${stockSubTab === 'inventory' ? 'active' : ''}`} onClick={() => setStockSubTab('inventory')}>
-                📋 Inventaire
-              </Button>
-            </div>
-            {(stockSubTab === 'vente' || stockSubTab === 'sav') && (
-              <Suspense fallback={<LoadingOverlay label="Chargement du stock..." />}>
-                <StockPanel
+                <GoogleCalendarBanner
+                  calendarConfig={data.calendarConfig}
+                  view={view}
+                  activeModule={activeModule}
+                  currentDate={currentDate}
                   currentUser={currentUser}
-                  stockType={stockSubTab}
-                  showManagement={showStockManagement}
-                  onOpenManagement={() => setShowStockManagement(true)}
-                  onCloseManagement={() => setShowStockManagement(false)}
+                  onScroll={handleBannerScroll}
+                  onEventClick={(event) => setGoogleEventForReservation(event)}
+                  onEventsChange={handleGoogleEventsChange}
+                  clients={data.clients}
+                  locations={data.locations}
+                  reservations={data.reservations}
+                  onEventHover={setHoveredEventId}
+                  onRequestEditReservation={setReservationToEdit}
+                  onRequestViewEvent={(fn) => {
+                    openEventDetailsModalRef.current = fn;
+                  }}
+                  onReservationsRefresh={async () => {
+                    try {
+                      const res = await api.getReservations();
+                      data.setReservations(res);
+                    } catch (e) {
+                      console.error('Erreur rechargement réservations:', e);
+                    }
+                  }}
+                  onNewReservation={() => {
+                    setActiveModule('vehicles');
+                    setShowManagement(false);
+                    setShowSettings(false);
+                    setQuickReservationSlot({
+                      vehicleId: null,
+                      date: new Date().toISOString().slice(0, 10),
+                      period: 'morning',
+                      endDate: new Date().toISOString().slice(0, 10),
+                      endPeriod: 'afternoon',
+                    });
+                  }}
+                  onNewAssignment={(event) => {
+                    setActiveModule('planning');
+                    setShowManagement(false);
+                    setShowSettings(false);
+                    setQuickAssignmentSlot({
+                      day: event?.start
+                        ? new Date(event.start).toISOString().slice(0, 10)
+                        : new Date().toISOString().slice(0, 10),
+                      period: 'AM',
+                      title: event?.summary || '',
+                      affaire: event?.affaire || '',
+                    });
+                  }}
+                  onNewAffaire={async () => {
+                    try {
+                      const newAffaire = {
+                        numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+                        client: '',
+                        interlocuteur: '',
+                        tel: '',
+                        type: 'Prestation',
+                        dateDebut: format(new Date(), 'yyyy-MM-dd'),
+                        dateFin: '',
+                        adresseLivraison: '',
+                        description: '',
+                        devis: '',
+                        source: 'db',
+                      };
+                      await api.createOrUpdateAffaire(newAffaire);
+                      setActiveModule('affaires');
+                    } catch (err) {
+                      console.error('Erreur création affaire:', err);
+                      toast.error("Erreur lors de la création de l'affaire");
+                    }
+                  }}
+                  onNavigateToAffaire={(affaireNum) => {
+                    setActiveModule('affaires');
+                    setShowManagement(false);
+                    setShowSettings(false);
+                    // Le numéro d'affaire sera traité par AffairesPanel comme filtre/sélection
+                    setTimeout(() => {
+                      window.dispatchEvent(
+                        new CustomEvent('emag:navigate-affaire', { detail: { affaireNum } }),
+                      );
+                    }, 100);
+                  }}
                 />
               </Suspense>
             )}
-            {stockSubTab === 'inventory' && (
-              <Suspense fallback={<LoadingOverlay label="Chargement de l'inventaire..." />}>
-                <InventoryPanel currentUser={currentUser} />
+
+            <main id="main-content">
+              {activeModule === 'vehicles' && (
+                <>
+                  {view === 'planning' ? (
+                    <Suspense fallback={<LoadingOverlay label="Chargement du planning..." />}>
+                      <PlanningView
+                        vehicles={data.vehicles}
+                        reservations={data.reservations}
+                        maintenances={data.maintenances}
+                        currentDate={currentDate}
+                        onOpenReservation={(reservation) => {
+                          const vehicle = data.vehicles.find((v) => v.id === reservation.vehicleId);
+                          if (vehicle) {
+                            // Open reservation (legacy handler preserved)
+                          }
+                        }}
+                        onOpenMaintenance={setSelectedVehicleForMaintenance}
+                        clients={data.clients}
+                        drivers={data.drivers}
+                        persons={data.persons}
+                      />
+                    </Suspense>
+                  ) : (
+                    <div className="calendar-with-vehicle-panel">
+                      <ErrorBoundary moduleName="Calendrier">
+                        <Suspense fallback={<LoadingOverlay label="Chargement du calendrier..." />}>
+                          <Calendar
+                            view={view}
+                            setView={setView}
+                            currentDate={currentDate}
+                            setCurrentDate={setCurrentDate}
+                            onOpenManagement={() => setShowManagement(true)}
+                            vehicles={data.vehicles}
+                            reservations={data.reservations}
+                            maintenances={data.maintenances}
+                            onAddReservation={data.addReservation}
+                            onUpdateReservation={data.updateReservation}
+                            onUpdateMaintenance={data.updateMaintenanceFromResize}
+                            onScroll={handleCalendarScroll}
+                            onDeleteReservation={data.deleteReservation}
+                            clients={data.clients}
+                            drivers={data.drivers}
+                            persons={data.persons}
+                            locations={data.locations}
+                            users={data.users}
+                            googleEvent={googleEventForReservation}
+                            onCloseGoogleEvent={() => setGoogleEventForReservation(null)}
+                            googleEvents={googleEvents}
+                            highlightedReservationIds={highlightedReservationIds}
+                            reservationToEdit={reservationToEdit}
+                            onReservationEditComplete={() => setReservationToEdit(null)}
+                            onVehicleClick={setSelectedVehicleForDetails}
+                            onVehicleDoubleClick={(v) => {
+                              setSelectedVehicleForDetails(null);
+                              setVehicleForDialog(v);
+                            }}
+                            onMaintenanceClick={(vehicle, maintenanceId) => {
+                              setSelectedVehicleForMaintenance(vehicle);
+                              setMaintenanceToEdit(maintenanceId);
+                            }}
+                            onRequestViewEvent={(event) =>
+                              openEventDetailsModalRef.current?.(event)
+                            }
+                            currentUser={currentUser}
+                            quickReservationSlot={quickReservationSlot}
+                            onQuickReservationHandled={() => setQuickReservationSlot(null)}
+                          />
+                        </Suspense>
+                      </ErrorBoundary>
+                      <Suspense fallback={null}>
+                        <VehicleSlidePanel
+                          vehicle={selectedVehicleForDetails}
+                          maintenances={data.maintenances}
+                          currentUser={currentUser}
+                          onClose={() => setSelectedVehicleForDetails(null)}
+                          onOpenDialog={(v) => {
+                            setSelectedVehicleForDetails(null);
+                            setVehicleForDialog(v);
+                          }}
+                          onAction={(action) => {
+                            const v = selectedVehicleForDetails;
+                            if (!v) return;
+                            if (action === 'schedule') {
+                              handleScheduleMaintenance(v);
+                              setSelectedVehicleForDetails(null);
+                            } else if (action === 'request') {
+                              handleRequestMaintenance(v);
+                              setSelectedVehicleForDetails(null);
+                            } else if (action === 'km') {
+                              setSelectedVehicleForKilometrageControl(v);
+                              setSelectedVehicleForDetails(null);
+                            } else if (action === 'breakdown') {
+                              handleReportBreakdown(v);
+                              setSelectedVehicleForDetails(null);
+                            }
+                          }}
+                        />
+                      </Suspense>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activeModule === 'affaires' && (
+                <ErrorBoundary moduleName="Affaires">
+                  <Suspense fallback={<LoadingOverlay label="Chargement du module affaires..." />}>
+                    <AffairesPanel
+                      reservations={data.reservations}
+                      onNavigateToEntity={handleNavigateToEntity}
+                      currentUser={currentUser}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'equipment' && (
+                <ErrorBoundary moduleName="Équipement">
+                  <Suspense fallback={<LoadingOverlay label="Chargement du parc matériel..." />}>
+                    <EquipmentPanel
+                      currentUser={currentUser}
+                      showManagement={showEquipmentManagement}
+                      onOpenManagement={() => setShowEquipmentManagement(true)}
+                      onCloseManagement={() => setShowEquipmentManagement(false)}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'orders' && (
+                <ErrorBoundary moduleName="Commandes">
+                  <Suspense fallback={<LoadingOverlay label="Chargement des commandes..." />}>
+                    <OrdersPanel currentUser={currentUser} />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'stock' && (
+                <ErrorBoundary moduleName="Stocks">
+                  <div className="stocks-container">
+                    <div className="sub-tabs">
+                      <Button
+                        variant="ghost"
+                        className={`sub-tab ${stockSubTab === 'vente' ? 'active' : ''}`}
+                        onClick={() => setStockSubTab('vente')}
+                      >
+                        📦 Stock Vente
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className={`sub-tab ${stockSubTab === 'sav' ? 'active' : ''}`}
+                        onClick={() => setStockSubTab('sav')}
+                      >
+                        🔧 SAV (Pièces)
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className={`sub-tab ${stockSubTab === 'inventory' ? 'active' : ''}`}
+                        onClick={() => setStockSubTab('inventory')}
+                      >
+                        📋 Inventaire
+                      </Button>
+                    </div>
+                    {(stockSubTab === 'vente' || stockSubTab === 'sav') && (
+                      <Suspense fallback={<LoadingOverlay label="Chargement du stock..." />}>
+                        <StockPanel
+                          currentUser={currentUser}
+                          stockType={stockSubTab}
+                          showManagement={showStockManagement}
+                          onOpenManagement={() => setShowStockManagement(true)}
+                          onCloseManagement={() => setShowStockManagement(false)}
+                        />
+                      </Suspense>
+                    )}
+                    {stockSubTab === 'inventory' && (
+                      <Suspense fallback={<LoadingOverlay label="Chargement de l'inventaire..." />}>
+                        <InventoryPanel currentUser={currentUser} />
+                      </Suspense>
+                    )}
+                  </div>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'planning' && (
+                <ErrorBoundary moduleName="Planning">
+                  <Suspense fallback={<LoadingOverlay label="Chargement du module Planning..." />}>
+                    <PlanningPanel
+                      currentUser={currentUser}
+                      googleEvents={allGoogleEvents}
+                      onNavigateToEntity={handleNavigateToEntity}
+                      personnelRefreshKey={personnelRefreshKey}
+                      view={view}
+                      setView={setView}
+                      currentDate={currentDate}
+                      setCurrentDate={setCurrentDate}
+                      navigateToPersonId={navigateToPersonId}
+                      onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
+                      quickAssignmentSlot={quickAssignmentSlot}
+                      onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'annuaire' && (
+                <ErrorBoundary moduleName="Annuaire">
+                  <Suspense fallback={<LoadingOverlay label="Chargement de l'Annuaire..." />}>
+                    <AnnuairePanel currentUser={currentUser} />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'lieux' && (
+                <ErrorBoundary moduleName="Lieux">
+                  <Suspense fallback={<LoadingOverlay label="Chargement des Lieux..." />}>
+                    <LocationsTab currentUser={currentUser} />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'video' && (
+                <ErrorBoundary moduleName="Vidéo">
+                  <Suspense
+                    fallback={<LoadingOverlay label="Chargement de la surveillance vidéo..." />}
+                  >
+                    <VideoPanel currentUser={currentUser} />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'sonos' && (
+                <ErrorBoundary moduleName="Sonos">
+                  <Suspense fallback={<LoadingOverlay label="Chargement du module Sonos..." />}>
+                    <SonosPanel currentUser={currentUser} />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {showManagement && (
+                <ErrorBoundary moduleName="Gestion">
+                  <Suspense
+                    fallback={<LoadingOverlay label="Chargement du panneau de gestion..." />}
+                  >
+                    <ManagementPanel
+                      vehicles={data.vehicles}
+                      setVehicles={data.setVehicles}
+                      reservations={data.reservations}
+                      setReservations={data.setReservations}
+                      clients={data.clients}
+                      setClients={data.setClients}
+                      drivers={data.drivers}
+                      setDrivers={data.setDrivers}
+                      locations={data.locations}
+                      setLocations={data.setLocations}
+                      calendarConfig={data.calendarConfig}
+                      setCalendarConfig={data.setCalendarConfig}
+                      garages={data.garages}
+                      setGarages={data.setGarages}
+                      maintenances={data.maintenances}
+                      setMaintenances={data.setMaintenances}
+                      currentUser={currentUser}
+                      activeModule={activeModule}
+                      panelType="management"
+                      onClose={() => {
+                        setShowManagement(false);
+                        if (activeModule === 'planning') {
+                          setPersonnelRefreshKey((k) => k + 1);
+                        }
+                      }}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {showSettings && (
+                <ErrorBoundary moduleName="Paramètres">
+                  <Suspense fallback={<LoadingOverlay label="Chargement des paramètres..." />}>
+                    <ManagementPanel
+                      vehicles={data.vehicles}
+                      setVehicles={data.setVehicles}
+                      reservations={data.reservations}
+                      setReservations={data.setReservations}
+                      clients={data.clients}
+                      setClients={data.setClients}
+                      drivers={data.drivers}
+                      setDrivers={data.setDrivers}
+                      locations={data.locations}
+                      setLocations={data.setLocations}
+                      calendarConfig={data.calendarConfig}
+                      setCalendarConfig={data.setCalendarConfig}
+                      garages={data.garages}
+                      setGarages={data.setGarages}
+                      maintenances={data.maintenances}
+                      setMaintenances={data.setMaintenances}
+                      currentUser={currentUser}
+                      panelType="settings"
+                      onClose={() => setShowSettings(false)}
+                      onNavigateToPersonnel={(_person) => {
+                        setShowSettings(false);
+                        setActiveModule('planning');
+                      }}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {selectedVehicleForMaintenance && (
+                <ErrorBoundary moduleName="Maintenance">
+                  <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
+                    <MaintenanceDialog
+                      vehicle={selectedVehicleForMaintenance}
+                      maintenances={data.maintenances}
+                      garages={data.garages}
+                      reservations={data.reservations}
+                      maintenanceToEdit={maintenanceToEdit}
+                      actionType={maintenanceActionType}
+                      currentUser={currentUser}
+                      onSave={data.handleMaintenanceSave}
+                      onClose={() => {
+                        setSelectedVehicleForMaintenance(null);
+                        setMaintenanceToEdit(null);
+                        setMaintenanceActionType(null);
+                      }}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {vehicleForDialog && (
+                <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
+                  <VehicleDetailsModal
+                    vehicle={vehicleForDialog}
+                    maintenances={data.maintenances}
+                    currentUser={currentUser}
+                    onClose={() => setVehicleForDialog(null)}
+                    onRequestMaintenance={handleRequestMaintenance}
+                    onReportBreakdown={handleReportBreakdown}
+                    onScheduleMaintenance={handleScheduleMaintenance}
+                    onUpdateIntervention={data.handleUpdateIntervention}
+                    onDeleteIntervention={data.handleDeleteIntervention}
+                    onOpenMaintenance={(vehicle) => {
+                      setSelectedVehicleForKilometrageControl(vehicle);
+                      setVehicleForDialog(null);
+                    }}
+                  />
+                </Suspense>
+              )}
+
+              {selectedVehicleForKilometrageControl && (
+                <ErrorBoundary moduleName="Kilométrage">
+                  <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
+                    <VehicleMaintenanceModal
+                      vehicle={selectedVehicleForKilometrageControl}
+                      onSave={async (updatedVehicle) => {
+                        try {
+                          const response = await api.updateVehicle(
+                            updatedVehicle.id,
+                            updatedVehicle,
+                          );
+                          data.setVehicles((prevVehicles) =>
+                            prevVehicles.map((v) => (v.id === response.id ? response : v)),
+                          );
+                          setSelectedVehicleForKilometrageControl(response);
+                        } catch (error) {
+                          console.error('Erreur lors de la mise à jour du véhicule:', error);
+                          toast.error('Erreur lors de la mise à jour du véhicule');
+                          throw error;
+                        }
+                      }}
+                      onClose={() => setSelectedVehicleForKilometrageControl(null)}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {/* Messagerie interne */}
+              <ErrorBoundary moduleName="Messagerie">
+                <Suspense fallback={null}>
+                  <MessagingPanel
+                    isOpen={showMessaging}
+                    onClose={() => setShowMessaging(false)}
+                    currentUser={currentUser}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+
+              {/* Mailing avancé */}
+              <ErrorBoundary moduleName="Mailing">
+                <Suspense fallback={null}>
+                  <MailingPanel isOpen={showMailing} onClose={() => setShowMailing(false)} />
+                </Suspense>
+              </ErrorBoundary>
+
+              {/* Préférences utilisateur */}
+              <Suspense fallback={null}>
+                <UserPreferencesModal
+                  isOpen={showPreferences}
+                  onClose={() => setShowPreferences(false)}
+                  palette={palette}
+                  onPaletteChange={setPalette}
+                  isDark={isDark}
+                  onToggleTheme={toggleTheme}
+                  onPreferencesChange={updatePreferences}
+                />
               </Suspense>
+
+              {/* Module d'aide */}
+              <Suspense fallback={null}>
+                <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+              </Suspense>
+
+              {/* Toast notification global */}
+              <Suspense fallback={null}>
+                <ToastContainer ref={toastRef} />
+              </Suspense>
+
+              {/* Modal global de détail d'affaire (ouvert depuis n'importe quel badge) */}
+              {globalAffaireDialog && (
+                <ErrorBoundary moduleName="Détail Affaire">
+                  <Suspense fallback={null}>
+                    <AffaireDetailDialog
+                      affaire={globalAffaireDialog}
+                      reservations={data.reservations}
+                      onClose={() => setGlobalAffaireDialog(null)}
+                      onDataChanged={(updatedAffaire) => {
+                        if (updatedAffaire) setGlobalAffaireDialog(updatedAffaire);
+                      }}
+                      onNavigateToEntity={handleNavigateToEntity}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+            </main>
+
+            {/* Status bar VS Code */}
+            {isVSCode && (
+              <div className="vsc-statusbar">
+                <span>
+                  {activeModule === 'vehicles'
+                    ? '📋'
+                    : activeModule === 'planning'
+                      ? '👥'
+                      : activeModule === 'affaires'
+                        ? '📁'
+                        : activeModule === 'equipment'
+                          ? '🔧'
+                          : activeModule === 'orders'
+                            ? '📦'
+                            : '📊'}{' '}
+                  {activeModule}
+                </span>
+                <span style={{ marginLeft: 'auto', opacity: 0.7 }}>eM@g v2.0</span>
+              </div>
             )}
           </div>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'planning' && (
-        <ErrorBoundary moduleName="Planning">
-        <Suspense fallback={<LoadingOverlay label="Chargement du module Planning..." />}>
-          <PlanningPanel
-            currentUser={currentUser}
-            googleEvents={allGoogleEvents}
-            onNavigateToEntity={handleNavigateToEntity}
-            personnelRefreshKey={personnelRefreshKey}
-            view={view}
-            setView={setView}
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-            navigateToPersonId={navigateToPersonId}
-            onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
-            quickAssignmentSlot={quickAssignmentSlot}
-            onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'annuaire' && (
-        <ErrorBoundary moduleName="Annuaire">
-        <Suspense fallback={<LoadingOverlay label="Chargement de l'Annuaire..." />}>
-          <AnnuairePanel currentUser={currentUser} />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'lieux' && (
-        <ErrorBoundary moduleName="Lieux">
-        <Suspense fallback={<LoadingOverlay label="Chargement des Lieux..." />}>
-          <LocationsTab currentUser={currentUser} />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'video' && (
-        <ErrorBoundary moduleName="Vidéo">
-        <Suspense fallback={<LoadingOverlay label="Chargement de la surveillance vidéo..." />}>
-          <VideoPanel currentUser={currentUser} />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {activeModule === 'sonos' && (
-        <ErrorBoundary moduleName="Sonos">
-        <Suspense fallback={<LoadingOverlay label="Chargement du module Sonos..." />}>
-          <SonosPanel currentUser={currentUser} />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-
-
-      {showManagement && (
-        <ErrorBoundary moduleName="Gestion">
-        <Suspense fallback={<LoadingOverlay label="Chargement du panneau de gestion..." />}>
-          <ManagementPanel
-            vehicles={data.vehicles}
-            setVehicles={data.setVehicles}
-            reservations={data.reservations}
-            setReservations={data.setReservations}
-            clients={data.clients}
-            setClients={data.setClients}
-            drivers={data.drivers}
-            setDrivers={data.setDrivers}
-            locations={data.locations}
-            setLocations={data.setLocations}
-            calendarConfig={data.calendarConfig}
-            setCalendarConfig={data.setCalendarConfig}
-            garages={data.garages}
-            setGarages={data.setGarages}
-            maintenances={data.maintenances}
-            setMaintenances={data.setMaintenances}
-            currentUser={currentUser}
-            activeModule={activeModule}
-            panelType="management"
-            onClose={() => {
-              setShowManagement(false);
-              if (activeModule === 'planning') {
-                setPersonnelRefreshKey(k => k + 1);
-              }
-            }}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {showSettings && (
-        <ErrorBoundary moduleName="Paramètres">
-        <Suspense fallback={<LoadingOverlay label="Chargement des paramètres..." />}>
-          <ManagementPanel
-            vehicles={data.vehicles}
-            setVehicles={data.setVehicles}
-            reservations={data.reservations}
-            setReservations={data.setReservations}
-            clients={data.clients}
-            setClients={data.setClients}
-            drivers={data.drivers}
-            setDrivers={data.setDrivers}
-            locations={data.locations}
-            setLocations={data.setLocations}
-            calendarConfig={data.calendarConfig}
-            setCalendarConfig={data.setCalendarConfig}
-            garages={data.garages}
-            setGarages={data.setGarages}
-            maintenances={data.maintenances}
-            setMaintenances={data.setMaintenances}
-            currentUser={currentUser}
-            panelType="settings"
-            onClose={() => setShowSettings(false)}
-            onNavigateToPersonnel={(_person) => {
-              setShowSettings(false);
-              setActiveModule('planning');
-            }}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {selectedVehicleForMaintenance && (
-        <ErrorBoundary moduleName="Maintenance">
-        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
-          <MaintenanceDialog
-            vehicle={selectedVehicleForMaintenance}
-            maintenances={data.maintenances}
-            garages={data.garages}
-            reservations={data.reservations}
-            maintenanceToEdit={maintenanceToEdit}
-            actionType={maintenanceActionType}
-            currentUser={currentUser}
-            onSave={data.handleMaintenanceSave}
-            onClose={() => {
-              setSelectedVehicleForMaintenance(null);
-              setMaintenanceToEdit(null);
-              setMaintenanceActionType(null);
-            }}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {vehicleForDialog && (
-        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
-        <VehicleDetailsModal
-          vehicle={vehicleForDialog}
-          maintenances={data.maintenances}
-          currentUser={currentUser}
-          onClose={() => setVehicleForDialog(null)}
-          onRequestMaintenance={handleRequestMaintenance}
-          onReportBreakdown={handleReportBreakdown}
-          onScheduleMaintenance={handleScheduleMaintenance}
-          onUpdateIntervention={data.handleUpdateIntervention}
-          onDeleteIntervention={data.handleDeleteIntervention}
-          onOpenMaintenance={(vehicle) => {
-            setSelectedVehicleForKilometrageControl(vehicle);
-            setVehicleForDialog(null);
-          }}
-        />
-        </Suspense>
-      )}
-
-      {selectedVehicleForKilometrageControl && (
-        <ErrorBoundary moduleName="Kilométrage">
-        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
-          <VehicleMaintenanceModal
-            vehicle={selectedVehicleForKilometrageControl}
-            onSave={async (updatedVehicle) => {
-              try {
-                const response = await api.updateVehicle(updatedVehicle.id, updatedVehicle);
-                data.setVehicles(prevVehicles => 
-                  prevVehicles.map(v => v.id === response.id ? response : v)
-                );
-                setSelectedVehicleForKilometrageControl(response);
-              } catch (error) {
-                console.error('Erreur lors de la mise à jour du véhicule:', error);
-                toast.error('Erreur lors de la mise à jour du véhicule');
-                throw error;
-              }
-            }}
-            onClose={() => setSelectedVehicleForKilometrageControl(null)}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {/* Messagerie interne */}
-      <ErrorBoundary moduleName="Messagerie">
-      <Suspense fallback={null}>
-        <MessagingPanel
-          isOpen={showMessaging}
-          onClose={() => setShowMessaging(false)}
-          currentUser={currentUser}
-        />
-      </Suspense>
-      </ErrorBoundary>
-
-      {/* Mailing avancé */}
-      <ErrorBoundary moduleName="Mailing">
-      <Suspense fallback={null}>
-        <MailingPanel
-          isOpen={showMailing}
-          onClose={() => setShowMailing(false)}
-        />
-      </Suspense>
-      </ErrorBoundary>
-
-      {/* Préférences utilisateur */}
-      <Suspense fallback={null}>
-        <UserPreferencesModal
-          isOpen={showPreferences}
-          onClose={() => setShowPreferences(false)}
-          palette={palette}
-          onPaletteChange={setPalette}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
-          onPreferencesChange={updatePreferences}
-        />
-      </Suspense>
-
-      {/* Module d'aide */}
-      <Suspense fallback={null}>
-        <HelpModal
-          isOpen={showHelp}
-          onClose={() => setShowHelp(false)}
-        />
-      </Suspense>
-
-      {/* Toast notification global */}
-      <Suspense fallback={null}>
-        <ToastContainer ref={toastRef} />
-      </Suspense>
-
-      {/* Modal global de détail d'affaire (ouvert depuis n'importe quel badge) */}
-      {globalAffaireDialog && (
-        <ErrorBoundary moduleName="Détail Affaire">
-        <Suspense fallback={null}>
-          <AffaireDetailDialog
-            affaire={globalAffaireDialog}
-            reservations={data.reservations}
-            onClose={() => setGlobalAffaireDialog(null)}
-            onDataChanged={(updatedAffaire) => { if (updatedAffaire) setGlobalAffaireDialog(updatedAffaire); }}
-            onNavigateToEntity={handleNavigateToEntity}
-          />
-        </Suspense>
-        </ErrorBoundary>
-      )}
-      </main>
-
-      {/* Status bar VS Code */}
-      {isVSCode && (
-        <div className="vsc-statusbar">
-          <span>{activeModule === 'vehicles' ? '📋' : activeModule === 'planning' ? '👥' : activeModule === 'affaires' ? '📁' : activeModule === 'equipment' ? '🔧' : activeModule === 'orders' ? '📦' : '📊'} {activeModule}</span>
-          <span style={{ marginLeft: 'auto', opacity: 0.7 }}>eM@g v2.0</span>
-        </div>
-      )}
-    </div>
-    </NavigationProvider>
-    </ToastProvider>
+        </NavigationProvider>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }
-
-
 
 function App() {
   // Fenêtre détachée preset vidéo
@@ -894,7 +1035,20 @@ function App() {
   if (detachedPresetId) {
     return (
       <AuthProvider>
-        <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>Chargement...</div>}>
+        <Suspense
+          fallback={
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100vh',
+              }}
+            >
+              Chargement...
+            </div>
+          }
+        >
           <PresetDetachedView presetId={detachedPresetId} />
         </Suspense>
       </AuthProvider>

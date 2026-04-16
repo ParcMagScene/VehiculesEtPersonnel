@@ -20,7 +20,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   const [editCameraIds, setEditCameraIds] = useState([]);
   const [creating, setCreating] = useState(false);
 
-  const enabledCameras = cameras.filter(c => c.enabled);
+  const enabledCameras = cameras.filter((c) => c.enabled);
 
   // Charger les presets
   const loadPresets = useCallback(async () => {
@@ -33,13 +33,14 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
     }
   }, [activePresetId]);
 
-  useEffect(() => { loadPresets(); 
+  useEffect(() => {
+    loadPresets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const activePreset = presets.find(p => p.id === activePresetId);
+  const activePreset = presets.find((p) => p.id === activePresetId);
   const presetCameras = activePreset
-    ? activePreset.cameraIds.map(id => cameras.find(c => c.id === id)).filter(Boolean)
+    ? activePreset.cameraIds.map((id) => cameras.find((c) => c.id === id)).filter(Boolean)
     : [];
 
   const cols = presetCameras.length <= 1 ? 1 : 2;
@@ -101,10 +102,12 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   };
 
   const toggleCameraInEdit = (camId) => {
-    setEditCameraIds(prev =>
+    setEditCameraIds((prev) =>
       prev.includes(camId)
-        ? prev.filter(id => id !== camId)
-        : prev.length < 4 ? [...prev, camId] : prev
+        ? prev.filter((id) => id !== camId)
+        : prev.length < 4
+          ? [...prev, camId]
+          : prev,
     );
   };
 
@@ -115,7 +118,14 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
         <div className="preset-panel__editor">
           <div className="preset-panel__editor-header">
             <h3>{creating ? 'Nouveau preset' : 'Modifier le preset'}</h3>
-            <Button variant="ghost" size="sm" onClick={() => { setEditing(false); setCreating(false); }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEditing(false);
+                setCreating(false);
+              }}
+            >
               <X size={16} />
             </Button>
           </div>
@@ -125,7 +135,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
             <input
               type="text"
               value={editName}
-              onChange={e => setEditName(e.target.value)}
+              onChange={(e) => setEditName(e.target.value)}
               placeholder="Ex: Entrée principale"
               maxLength={50}
               autoFocus
@@ -135,7 +145,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
           <div className="preset-panel__editor-cameras">
             <label>Caméras ({editCameraIds.length}/4)</label>
             <div className="preset-panel__camera-list">
-              {enabledCameras.map(cam => (
+              {enabledCameras.map((cam) => (
                 <button
                   key={cam.id}
                   type="button"
@@ -150,7 +160,12 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
           </div>
 
           <div className="preset-panel__editor-actions">
-            <Button variant="primary" size="sm" onClick={handleSave} disabled={!editName.trim() || editCameraIds.length === 0}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSave}
+              disabled={!editName.trim() || editCameraIds.length === 0}
+            >
               <Save size={14} /> Sauvegarder
             </Button>
           </div>
@@ -183,21 +198,29 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
         <select
           className="preset-panel__select"
           value={activePresetId || ''}
-          onChange={e => setActivePresetId(Number(e.target.value))}
+          onChange={(e) => setActivePresetId(Number(e.target.value))}
         >
-          {presets.map(p => (
-            <option key={p.id} value={p.id}>{p.name} ({p.cameraIds.length} cam)</option>
+          {presets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} ({p.cameraIds.length} cam)
+            </option>
           ))}
         </select>
         <div className="preset-panel__bar-actions">
           <Tooltip content="Modifier le preset">
-            <Button variant="ghost" size="sm" onClick={startEdit}><Edit2 size={14} /></Button>
+            <Button variant="ghost" size="sm" onClick={startEdit}>
+              <Edit2 size={14} />
+            </Button>
           </Tooltip>
           <Tooltip content="Supprimer le preset">
-            <Button variant="ghost" size="sm" onClick={handleDelete}><Trash2 size={14} /></Button>
+            <Button variant="ghost" size="sm" onClick={handleDelete}>
+              <Trash2 size={14} />
+            </Button>
           </Tooltip>
           <Tooltip content="Nouveau preset">
-            <Button variant="ghost" size="sm" onClick={startCreate}><Plus size={14} /></Button>
+            <Button variant="ghost" size="sm" onClick={startCreate}>
+              <Plus size={14} />
+            </Button>
           </Tooltip>
           {onDetach && (
             <Tooltip content="Détacher dans une fenêtre">
@@ -219,7 +242,9 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
             connectDelay={idx * 500}
           />
         ))}
-        {Array.from({ length: Math.max(0, (activePreset?.cameraIds?.length || 0) - presetCameras.length) }).map((_, i) => (
+        {Array.from({
+          length: Math.max(0, (activePreset?.cameraIds?.length || 0) - presetCameras.length),
+        }).map((_, i) => (
           <div key={`missing-${i}`} className="camera-player camera-player--empty">
             <div className="camera-player__viewport">
               <div className="camera-player__overlay">

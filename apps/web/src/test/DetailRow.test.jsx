@@ -10,17 +10,21 @@ describe('DetailRow', () => {
   });
 
   it('children prime sur value', () => {
-    render(<DetailRow label="Période" value="fallback"><strong>Custom</strong></DetailRow>);
+    render(
+      <DetailRow label="Période" value="fallback">
+        <strong>Custom</strong>
+      </DetailRow>,
+    );
     expect(screen.getByText('Custom')).toBeInTheDocument();
     expect(screen.queryByText('fallback')).not.toBeInTheDocument();
   });
 
-  it('affiche l\'icône', () => {
+  it("affiche l'icône", () => {
     render(<DetailRow label="L" value="V" icon={<span data-testid="ico">📅</span>} />);
     expect(screen.getByTestId('ico')).toBeInTheDocument();
   });
 
-  it('pas d\'icône par défaut', () => {
+  it("pas d'icône par défaut", () => {
     const { container } = render(<DetailRow label="L" value="V" />);
     expect(container.querySelector('.ui-detail-row__icon')).toBeNull();
   });

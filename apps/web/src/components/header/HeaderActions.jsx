@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { Settings, AlertTriangle, XCircle, ClipboardList, CalendarCheck, Bell, Clock, LayoutGrid, UserCog, MessageSquare, Mail } from 'lucide-react';
+import {
+  Settings,
+  AlertTriangle,
+  XCircle,
+  ClipboardList,
+  CalendarCheck,
+  Bell,
+  Clock,
+  LayoutGrid,
+  UserCog,
+  MessageSquare,
+  Mail,
+} from 'lucide-react';
 import { Avatar, Button, Tooltip } from '@/design-system';
 import { STATUS_COLORS } from '../../constants/colors';
 import ProfileEditModal from '../auth/ProfileEditModal';
@@ -30,12 +42,11 @@ const HeaderActions = ({
   return (
     <>
       <div className="header-controls">
-
         <div className="header-right-actions">
           <div className="header-notification-badges">
             {/* Badge 1: Pannes signalées (reported) */}
             {currentUser?.isAdmin && reportedMaintenances.length > 0 && (
-              <div 
+              <div
                 className="notification-badge unified has-reported u-relative"
                 onClick={() => {
                   setNotificationFilter('reported');
@@ -55,7 +66,7 @@ const HeaderActions = ({
 
             {/* Badge 2: Demandes d'intervention / CT (pending) */}
             {currentUser?.isAdmin && pendingMaintenances.length > 0 && (
-              <div 
+              <div
                 className="notification-badge unified has-pending u-relative"
                 onClick={() => {
                   setNotificationFilter('pending');
@@ -70,7 +81,7 @@ const HeaderActions = ({
 
             {/* Badge 3: Demandes de réservation (admin) */}
             {currentUser?.isAdmin && pendingRequestsCounts.reservationRequests > 0 && (
-              <div 
+              <div
                 className="notification-badge unified requests-badge u-relative"
                 onClick={() => {
                   setNotificationFilter('reservations');
@@ -79,17 +90,21 @@ const HeaderActions = ({
                 title={`${pendingRequestsCounts.reservationRequests} demande(s) de réservation`}
               >
                 <CalendarCheck size={16} strokeWidth={2.5} />
-                <span className="notification-count">{pendingRequestsCounts.reservationRequests}</span>
+                <span className="notification-count">
+                  {pendingRequestsCounts.reservationRequests}
+                </span>
               </div>
             )}
 
             {/* Badge 4: Interventions actives (programmées, en cours, en retard) */}
             {activeInterventions.length > 0 && (
-              <div 
+              <div
                 className={`notification-badge unified ${
-                  overdueInterventions.length > 0 ? 'has-overdue' : 
-                  conflictingMaintenances.length > 0 ? 'has-conflict' : 
-                  'has-scheduled'
+                  overdueInterventions.length > 0
+                    ? 'has-overdue'
+                    : conflictingMaintenances.length > 0
+                      ? 'has-conflict'
+                      : 'has-scheduled'
                 } u-relative`}
                 onClick={() => {
                   setNotificationFilter('active');
@@ -107,30 +122,45 @@ const HeaderActions = ({
               </div>
             )}
           </div>
-            
+
           <Tooltip content="Messages" position="bottom">
-            <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages">
+            <Button
+              variant="ghost"
+              className="msg-toggle-button"
+              onClick={onToggleMessaging}
+              aria-label="Messages"
+            >
               <MessageSquare size={20} />
-              {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
+              {unreadMsgCount > 0 && (
+                <span className="msg-toggle-badge">
+                  {unreadMsgCount > 9 ? '9+' : unreadMsgCount}
+                </span>
+              )}
             </Button>
           </Tooltip>
 
           {currentUser?.isAdmin && (
             <Tooltip content="Mailing" position="bottom">
-              <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing">
+              <Button
+                variant="ghost"
+                className="msg-toggle-button"
+                onClick={onToggleMailing}
+                aria-label="Mailing"
+              >
                 <Mail size={20} />
               </Button>
             </Tooltip>
           )}
 
-          <Button variant="ghost" 
-            className="settings-button u-relative" 
-            onClick={onOpenSettings} 
+          <Button
+            variant="ghost"
+            className="settings-button u-relative"
+            onClick={onOpenSettings}
             aria-label="Ouvrir les paramètres"
           >
             <Settings size={18} />
             {currentUser?.isAdmin && pendingAccessRequests > 0 && (
-              <span 
+              <span
                 className="u-absolute u-rounded-full u-flex-center u-font-bold"
                 style={{
                   top: '-4px',
@@ -141,7 +171,7 @@ const HeaderActions = ({
                   height: '20px',
                   fontSize: '11px',
                   border: '2px solid white',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                 }}
               >
                 {pendingAccessRequests}
@@ -151,7 +181,8 @@ const HeaderActions = ({
 
           {currentUser && (
             <div className="u-relative">
-              <Button variant="ghost"
+              <Button
+                variant="ghost"
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 title={currentUser.name}
                 aria-label={`Menu utilisateur (${currentUser.name})`}
@@ -163,7 +194,7 @@ const HeaderActions = ({
                   boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
                   transition: 'all 0.2s',
                   padding: 0,
-                  background: 'transparent'
+                  background: 'transparent',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'scale(1.1)';
@@ -190,40 +221,57 @@ const HeaderActions = ({
                         </div>
                       </div>
                     </div>
-                    
-                    <Button variant="ghost"
+
+                    <Button
+                      variant="ghost"
                       className="user-menu-btn"
-                      onClick={() => { setShowUserMenu(false); setShowProfileModal(true); }}
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        setShowProfileModal(true);
+                      }}
                     >
                       <UserCog size={16} />
                       Mon profil
                     </Button>
 
-                    <Button variant="ghost"
+                    <Button
+                      variant="ghost"
                       className="user-menu-btn"
-                      onClick={() => { setShowUserMenu(false); if (onOpenPreferences) onOpenPreferences(); }}
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        if (onOpenPreferences) onOpenPreferences();
+                      }}
                     >
                       <Settings size={16} />
                       Préférences
                     </Button>
 
-                    <Button variant="ghost"
+                    <Button
+                      variant="ghost"
                       className="user-menu-btn"
-                      onClick={() => { setShowUserMenu(false); onLogout(); }}
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onLogout();
+                      }}
                     >
                       <LayoutGrid size={16} />
                       Changer d'utilisateur
                     </Button>
 
-                    <Button variant="ghost"
+                    <Button
+                      variant="ghost"
                       className="user-menu-btn danger"
-                      onClick={() => { setShowUserMenu(false); onLogout(); }}
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onLogout();
+                      }}
                     >
                       <XCircle size={16} />
                       Se déconnecter
                     </Button>
 
-                    <Button variant="ghost"
+                    <Button
+                      variant="ghost"
                       className="user-menu-cancel"
                       onClick={() => setShowUserMenu(false)}
                     >

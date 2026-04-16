@@ -13,7 +13,9 @@ export default function MapOffScreenIndicators({ locations }) {
   const bump = useCallback(() => setRevision((r) => r + 1), []);
 
   useMapEvents({ moveend: bump, zoomend: bump });
-  useEffect(() => { bump(); }, [bump]);
+  useEffect(() => {
+    bump();
+  }, [bump]);
 
   const offScreen = useMemo(() => {
     if (!locations.length) return [];

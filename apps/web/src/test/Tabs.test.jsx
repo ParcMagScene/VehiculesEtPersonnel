@@ -9,12 +9,14 @@ function renderTabs(props = {}) {
       <TabList>
         <Tab value="a">Onglet A</Tab>
         <Tab value="b">Onglet B</Tab>
-        <Tab value="c" disabled>Onglet C</Tab>
+        <Tab value="c" disabled>
+          Onglet C
+        </Tab>
       </TabList>
       <TabPanel value="a">Contenu A</TabPanel>
       <TabPanel value="b">Contenu B</TabPanel>
       <TabPanel value="c">Contenu C</TabPanel>
-    </Tabs>
+    </Tabs>,
   );
 }
 
@@ -75,7 +77,7 @@ describe('Tabs', () => {
         </TabList>
         <TabPanel value="a">Panel A</TabPanel>
         <TabPanel value="b">Panel B</TabPanel>
-      </Tabs>
+      </Tabs>,
     );
     expect(screen.getByText('Panel A')).toBeInTheDocument();
     await user.click(screen.getByText('B'));
@@ -91,7 +93,7 @@ describe('Tabs', () => {
         </TabList>
         <TabPanel value="a">Panel A</TabPanel>
         <TabPanel value="b">Panel B</TabPanel>
-      </Tabs>
+      </Tabs>,
     );
     expect(screen.getByText('Panel B')).toBeInTheDocument();
   });

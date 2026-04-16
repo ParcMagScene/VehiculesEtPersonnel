@@ -12,7 +12,7 @@
 /* ─────────────────────────────────────────
    1. TOKENS — Espacement réduit (~75%)
    ───────────────────────────────────────── */
-[data-density="compact"] {
+[data-density='compact'] {
   /* Spacing scale réduit */
   --space-1: 2px;
   --space-2: 4px;
@@ -60,7 +60,7 @@
 /* ─────────────────────────────────────────
    2. BOUTONS — Hauteurs réduites
    ───────────────────────────────────────── */
-[data-density="compact"] {
+[data-density='compact'] {
   --btn-height: 32px;
   --btn-height-xs: 22px;
   --btn-height-sm: 26px;
@@ -89,7 +89,7 @@
 /* ─────────────────────────────────────────
    3. TABLE — Cellules condensées
    ───────────────────────────────────────── */
-[data-density="compact"] {
+[data-density='compact'] {
   --table-header-padding: 4px 8px;
   --table-cell-padding: 4px 8px;
   --table-header-font-size: var(--font-xs);
@@ -98,7 +98,7 @@
 /* ─────────────────────────────────────────
    4. ICÔNES — Un cran plus petit
    ───────────────────────────────────────── */
-[data-density="compact"] {
+[data-density='compact'] {
   --icon-xs: 12px;
   --icon-sm: 14px;
   --icon-md: 16px;
@@ -110,7 +110,7 @@
 /* ─────────────────────────────────────────
    5. SCROLLBAR — Plus fin
    ───────────────────────────────────────── */
-[data-density="compact"] {
+[data-density='compact'] {
   --scrollbar-width: 6px;
   --scrollbar-width-thin: 4px;
 }
@@ -120,57 +120,57 @@
    ───────────────────────────────────────── */
 
 /* Modal header compact */
-[data-density="compact"] .theme-modal-header,
-[data-density="compact"] .ui-modal-header {
+[data-density='compact'] .theme-modal-header,
+[data-density='compact'] .ui-modal-header {
   padding: 12px 16px;
 }
 
 /* Modal body/footer compact */
-[data-density="compact"] .theme-modal-body,
-[data-density="compact"] .ui-modal-body {
+[data-density='compact'] .theme-modal-body,
+[data-density='compact'] .ui-modal-body {
   padding: 12px 16px;
 }
 
-[data-density="compact"] .theme-modal-footer,
-[data-density="compact"] .ui-modal-footer {
+[data-density='compact'] .theme-modal-footer,
+[data-density='compact'] .ui-modal-footer {
   padding: 10px 16px;
 }
 
 /* Panels compacts */
-[data-density="compact"] .panel-body,
-[data-density="compact"] .ui-panel .panel-body {
+[data-density='compact'] .panel-body,
+[data-density='compact'] .ui-panel .panel-body {
   padding: 8px 12px;
 }
 
 /* Formulaires compacts */
-[data-density="compact"] .ui-form-section {
+[data-density='compact'] .ui-form-section {
   padding: 8px 0;
   gap: 6px;
 }
 
-[data-density="compact"] .ui-form-row {
+[data-density='compact'] .ui-form-row {
   gap: 8px;
 }
 
 /* Inputs compacts */
-[data-density="compact"] .ui-input {
+[data-density='compact'] .ui-input {
   height: 32px;
   padding: 4px 10px;
   font-size: var(--font-sm);
 }
 
-[data-density="compact"] .ui-input[data-size="sm"] {
+[data-density='compact'] .ui-input[data-size='sm'] {
   height: 26px;
   padding: 2px 8px;
 }
 
 /* Tags/Badges compacts */
-[data-density="compact"] .ui-tag {
+[data-density='compact'] .ui-tag {
   padding: 1px 6px;
   font-size: var(--font-xs);
 }
 
-[data-density="compact"] .ui-badge {
+[data-density='compact'] .ui-badge {
   padding: 0 5px;
   font-size: var(--font-xs);
   min-width: 16px;
@@ -178,73 +178,73 @@
 }
 
 /* Tabs compact */
-[data-density="compact"] .ui-tab {
+[data-density='compact'] .ui-tab {
   padding: 6px 12px;
   font-size: var(--font-sm);
 }
 
 /* Accordion compact */
-[data-density="compact"] .ui-accordion-trigger {
+[data-density='compact'] .ui-accordion-trigger {
   padding: 8px 12px;
 }
 
 /* Card compact */
-[data-density="compact"] .ui-card,
-[data-density="compact"] .card {
+[data-density='compact'] .ui-card,
+[data-density='compact'] .card {
   padding: 8px 12px;
 }
 
 /* SectionHeader compact */
-[data-density="compact"] .section-header {
+[data-density='compact'] .section-header {
   padding: 8px 12px;
 }
 
 /* PageHeader compact */
-[data-density="compact"] .ui-page-header {
+[data-density='compact'] .ui-page-header {
   padding: 12px 16px;
   gap: 8px;
 }
 
 /* SearchBar compact */
-[data-density="compact"] .ui-search-bar input {
+[data-density='compact'] .ui-search-bar input {
   height: 32px;
 }
 
 /* Drawer compact */
-[data-density="compact"] .ui-drawer-header {
+[data-density='compact'] .ui-drawer-header {
   padding: 10px 14px;
 }
 
-[data-density="compact"] .ui-drawer-body {
+[data-density='compact'] .ui-drawer-body {
   padding: 10px 14px;
 }
 
 /* ListItem compact */
-[data-density="compact"] .ui-list-item {
+[data-density='compact'] .ui-list-item {
   padding: 6px 10px;
   min-height: 32px;
 }
 
 /* Dropdown compact */
-[data-density="compact"] .ui-dropdown-menu {
+[data-density='compact'] .ui-dropdown-menu {
   padding: 2px;
 }
 
-[data-density="compact"] .ui-dropdown-item {
+[data-density='compact'] .ui-dropdown-item {
   padding: 4px 10px;
   font-size: var(--font-sm);
 }
 
 /* Gap général réduit */
-[data-density="compact"] .ui-module-toolbar {
+[data-density='compact'] .ui-module-toolbar {
   padding: 8px 12px;
   gap: 6px;
 }
 
-[data-density="compact"] .ui-module-content {
+[data-density='compact'] .ui-module-content {
   padding: 8px 12px;
 }
 
-[data-density="compact"] .ui-module-footer {
+[data-density='compact'] .ui-module-footer {
   padding: 8px 12px;
 }

@@ -35,10 +35,12 @@ describe('useMobileRouter', () => {
   });
 
   /* ─── Navigation ─── */
-  it('navigate() change le hash et l\'écran', async () => {
+  it("navigate() change le hash et l'écran", async () => {
     const { result } = renderHook(() => useMobileRouter());
 
-    act(() => { result.current.navigate('messaging'); });
+    act(() => {
+      result.current.navigate('messaging');
+    });
 
     // hashchange est asynchrone dans jsdom — lire le hash directement
     expect(window.location.hash).toBe('#/mobile/messaging');
@@ -47,7 +49,9 @@ describe('useMobileRouter', () => {
   it('navigate() supporte tous les écrans définis', () => {
     const { result } = renderHook(() => useMobileRouter());
     for (const screen of Object.keys(ROUTES)) {
-      act(() => { result.current.navigate(screen); });
+      act(() => {
+        result.current.navigate(screen);
+      });
       expect(window.location.hash).toBe('#' + ROUTES[screen]);
     }
   });
@@ -58,7 +62,9 @@ describe('useMobileRouter', () => {
     const { result } = renderHook(() => useMobileRouter());
     expect(result.current.currentScreen).toBe('planning');
 
-    act(() => { result.current.goBack(); });
+    act(() => {
+      result.current.goBack();
+    });
 
     expect(result.current.currentScreen).toBe('parc-dashboard');
     expect(window.location.hash).toBe('#/mobile/parc');
@@ -68,7 +74,9 @@ describe('useMobileRouter', () => {
     window.location.hash = '#/mobile/affaires';
     const { result } = renderHook(() => useMobileRouter());
 
-    act(() => { result.current.goBack(); });
+    act(() => {
+      result.current.goBack();
+    });
 
     expect(result.current.currentScreen).toBe('home');
     expect(window.location.hash).toBe('#/mobile');
@@ -78,7 +86,9 @@ describe('useMobileRouter', () => {
     const { result } = renderHook(() => useMobileRouter());
     expect(result.current.currentScreen).toBe('home');
 
-    act(() => { result.current.goBack(); });
+    act(() => {
+      result.current.goBack();
+    });
 
     expect(result.current.currentScreen).toBe('home');
     expect(window.location.hash).toBe('#/mobile');
@@ -90,7 +100,9 @@ describe('useMobileRouter', () => {
       const { result } = renderHook(() => useMobileRouter());
       const expectedParent = BACK_TARGET[screen];
 
-      act(() => { result.current.goBack(); });
+      act(() => {
+        result.current.goBack();
+      });
 
       expect(result.current.currentScreen).toBe(expectedParent);
     }

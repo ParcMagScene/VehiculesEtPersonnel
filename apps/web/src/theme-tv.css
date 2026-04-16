@@ -20,10 +20,10 @@
 /* ─────────────────────────────────────────
    1. MODE SOMBRE FORCÉ (fond noir)
    ───────────────────────────────────────── */
-[data-palette="tv-display"] {
+[data-palette='tv-display'] {
   /* Force le color-scheme dark */
   color-scheme: dark;
-  
+
   /* ─── Couleurs principales : Cyan néon ─── */
   --theme-primary: #00e1ff;
   --theme-secondary: #00b8d4;
@@ -157,7 +157,7 @@
 /* ─────────────────────────────────────────
    2. TYPOGRAPHIE TV — Tailles agrandies
    ───────────────────────────────────────── */
-[data-palette="tv-display"] {
+[data-palette='tv-display'] {
   --font-2xs: 0.75rem;
   --font-xs: 0.85rem;
   --font-sm: 0.95rem;
@@ -185,7 +185,7 @@
 /* ─────────────────────────────────────────
    3. BOUTONS TV — Cibles tactiles agrandies
    ───────────────────────────────────────── */
-[data-palette="tv-display"] {
+[data-palette='tv-display'] {
   --btn-height: 48px;
   --btn-height-xs: 32px;
   --btn-height-sm: 40px;
@@ -209,7 +209,7 @@
 /* ─────────────────────────────────────────
    4. TABLE TV — Lignes plus hautes
    ───────────────────────────────────────── */
-[data-palette="tv-display"] {
+[data-palette='tv-display'] {
   --table-header-padding: 12px 16px;
   --table-cell-padding: 10px 16px;
   --table-header-font-size: var(--font-sm);
@@ -219,7 +219,7 @@
 /* ─────────────────────────────────────────
    5. ICÔNES TV — Plus grandes
    ───────────────────────────────────────── */
-[data-palette="tv-display"] {
+[data-palette='tv-display'] {
   --icon-xs: 18px;
   --icon-sm: 20px;
   --icon-md: 24px;
@@ -231,12 +231,12 @@
 /* ─────────────────────────────────────────
    6. BORDURES RENFORCÉES — Visibilité TV
    ───────────────────────────────────────── */
-[data-palette="tv-display"] .ui-card,
-[data-palette="tv-display"] .card,
-[data-palette="tv-display"] .ui-panel {
+[data-palette='tv-display'] .ui-card,
+[data-palette='tv-display'] .card,
+[data-palette='tv-display'] .ui-panel {
   border-width: 2px;
 }
 
-[data-palette="tv-display"] .ui-input {
+[data-palette='tv-display'] .ui-input {
   border-width: 2px;
 }

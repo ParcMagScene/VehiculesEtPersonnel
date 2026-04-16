@@ -39,23 +39,26 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
     loadMedia();
   }, [loadMedia, refreshKey]);
 
-  const handleDelete = useCallback((item) => {
-    confirm({
-      title: 'Supprimer',
-      message: `Supprimer \xAB ${item.original_name} \xBB ?`,
-      variant: 'danger',
-      confirmLabel: 'Supprimer',
-      onConfirm: async () => {
-        try {
-          await api.deleteDisplayMedia(item.id);
-          toast.success('M\xE9dia supprim\xE9');
-          onRefresh();
-        } catch {
-          toast.error('Erreur suppression');
-        }
-      },
-    });
-  }, [confirm, toast, onRefresh]);
+  const handleDelete = useCallback(
+    (item) => {
+      confirm({
+        title: 'Supprimer',
+        message: `Supprimer \xAB ${item.original_name} \xBB ?`,
+        variant: 'danger',
+        confirmLabel: 'Supprimer',
+        onConfirm: async () => {
+          try {
+            await api.deleteDisplayMedia(item.id);
+            toast.success('M\xE9dia supprim\xE9');
+            onRefresh();
+          } catch {
+            toast.error('Erreur suppression');
+          }
+        },
+      });
+    },
+    [confirm, toast, onRefresh],
+  );
 
   if (loading) return <div className="display-loading">Chargement des médias…</div>;
 
@@ -63,8 +66,10 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
     <div className="display-media-tab">
       {/* Filtres */}
       <div className="media-filters">
-        {['all', 'image', 'video'].map(f => (
-          <Button variant="ghost"             key={f}
+        {['all', 'image', 'video'].map((f) => (
+          <Button
+            variant="ghost"
+            key={f}
             className={`filter-btn ${filter === f ? 'active' : ''}`}
             onClick={() => setFilter(f)}
           >
@@ -75,12 +80,21 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
       </div>
 
       {media.length === 0 ? (
-        <EmptyState icon={<Image size={48} strokeWidth={1} />} title="Aucun média" description="Uploadez des images ou vidéos pour vos écrans d'affichage." />
+        <EmptyState
+          icon={<Image size={48} strokeWidth={1} />}
+          title="Aucun média"
+          description="Uploadez des images ou vidéos pour vos écrans d'affichage."
+        />
       ) : (
         <div className="media-grid">
-          {media.map(item => (
+          {media.map((item) => (
             <div key={item.id} className="media-card">
-              <div className="media-preview" role="button" tabIndex={0} onClick={() => setPreview(item)}>
+              <div
+                className="media-preview"
+                role="button"
+                tabIndex={0}
+                onClick={() => setPreview(item)}
+              >
                 {item.media_type === 'video' ? (
                   <div className="media-video-thumb">
                     <Film size={32} />
@@ -115,12 +129,28 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
       {/* Modal aperçu */}
       {preview && (
         <div className="media-preview-overlay" onClick={() => setPreview(null)}>
-          <div className="media-preview-content" onClick={e => e.stopPropagation()}>
-            <Button variant="ghost" className="media-preview-close" onClick={() => setPreview(null)}>✕</Button>
+          <div className="media-preview-content" onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              className="media-preview-close"
+              onClick={() => setPreview(null)}
+            >
+              ✕
+            </Button>
             {preview.media_type === 'video' ? (
-              <video src={preview.file_path} controls autoPlay style={{ maxWidth: '100%', maxHeight: '80vh' }} />
+              <video
+                src={preview.file_path}
+                controls
+                autoPlay
+                style={{ maxWidth: '100%', maxHeight: '80vh' }}
+              />
             ) : (
-              <img src={preview.file_path} alt={preview.original_name} loading="lazy" style={{ maxWidth: '100%', maxHeight: '80vh' }} />
+              <img
+                src={preview.file_path}
+                alt={preview.original_name}
+                loading="lazy"
+                style={{ maxWidth: '100%', maxHeight: '80vh' }}
+              />
             )}
             <p className="preview-filename">{preview.original_name}</p>
           </div>

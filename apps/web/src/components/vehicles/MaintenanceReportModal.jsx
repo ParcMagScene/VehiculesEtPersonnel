@@ -1,10 +1,24 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from 'date-fns';
+import {
+  format,
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  addDays,
+  addWeeks,
+  addMonths,
+  subDays,
+  subWeeks,
+  subMonths,
+} from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X, Printer, FileText, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import api from '../../utils/api';
 import './MaintenanceReportModal.css';
-import { Button, Select, Table , Tooltip} from '@/design-system';
+import { Button, Select, Table, Tooltip } from '@/design-system';
 import { STATUS_COLORS } from '../../constants/colors';
 import { formatDateTime, formatDateSimple } from '../../utils/formatUtils';
 
@@ -74,27 +88,29 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
   }, [isOpen, loadData]);
 
   const goPrev = () => {
-    if (periodMode === 'day') setAnchorDate(d => subDays(d, 1));
-    else if (periodMode === 'week') setAnchorDate(d => subWeeks(d, 1));
-    else setAnchorDate(d => subMonths(d, 1));
+    if (periodMode === 'day') setAnchorDate((d) => subDays(d, 1));
+    else if (periodMode === 'week') setAnchorDate((d) => subWeeks(d, 1));
+    else setAnchorDate((d) => subMonths(d, 1));
   };
 
   const goNext = () => {
-    if (periodMode === 'day') setAnchorDate(d => addDays(d, 1));
-    else if (periodMode === 'week') setAnchorDate(d => addWeeks(d, 1));
-    else setAnchorDate(d => addMonths(d, 1));
+    if (periodMode === 'day') setAnchorDate((d) => addDays(d, 1));
+    else if (periodMode === 'week') setAnchorDate((d) => addWeeks(d, 1));
+    else setAnchorDate((d) => addMonths(d, 1));
   };
 
   const goToday = () => setAnchorDate(new Date());
 
   // Catégoriser les tickets dans le rapport
   const reportRows = useMemo(() => {
-    return data.map(ticket => {
-      const isEntry = ticket.createdAt && 
-        new Date(ticket.createdAt) >= start && 
+    return data.map((ticket) => {
+      const isEntry =
+        ticket.createdAt &&
+        new Date(ticket.createdAt) >= start &&
         new Date(ticket.createdAt) <= end;
-      const isExit = ticket.resolvedAt && 
-        new Date(ticket.resolvedAt) >= start && 
+      const isExit =
+        ticket.resolvedAt &&
+        new Date(ticket.resolvedAt) >= start &&
         new Date(ticket.resolvedAt) <= end;
 
       return {
@@ -180,17 +196,28 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
 
   return (
     <div className="mr-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="mr-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div
+        className="mr-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="mr-header">
-          <h2><FileText size={20} /> Rapport Maintenance Matériel</h2>
-          <Button variant="ghost" className="mr-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
+          <h2>
+            <FileText size={20} /> Rapport Maintenance Matériel
+          </h2>
+          <Button variant="ghost" className="mr-close" onClick={onClose} aria-label="Fermer">
+            <X size={20} />
+          </Button>
         </div>
 
         {/* Toolbar */}
         <div className="mr-toolbar">
           <div className="mr-toolbar-left">
-            {PERIOD_MODES.map(m => (
-              <Button variant="ghost"                 key={m.value}
+            {PERIOD_MODES.map((m) => (
+              <Button
+                variant="ghost"
+                key={m.value}
                 className={`mr-period-btn ${periodMode === m.value ? 'active' : ''}`}
                 onClick={() => setPeriodMode(m.value)}
               >
@@ -199,25 +226,54 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
             ))}
           </div>
           <div className="mr-toolbar-center">
-            <Button variant="ghost" className="mr-nav-btn" onClick={goPrev} aria-label="Rapport précédent"><ChevronLeft size={18} /></Button>
-            <Button variant="ghost" className="mr-today-btn" onClick={goToday}>Aujourd'hui</Button>
-            <Button variant="ghost" className="mr-nav-btn" onClick={goNext} aria-label="Rapport suivant"><ChevronRight size={18} /></Button>
+            <Button
+              variant="ghost"
+              className="mr-nav-btn"
+              onClick={goPrev}
+              aria-label="Rapport précédent"
+            >
+              <ChevronLeft size={18} />
+            </Button>
+            <Button variant="ghost" className="mr-today-btn" onClick={goToday}>
+              Aujourd'hui
+            </Button>
+            <Button
+              variant="ghost"
+              className="mr-nav-btn"
+              onClick={goNext}
+              aria-label="Rapport suivant"
+            >
+              <ChevronRight size={18} />
+            </Button>
             <span className="mr-date-label">{label}</span>
           </div>
           <div className="mr-toolbar-right">
-            <Select className="mr-type-select" value={reportType} onChange={e => setReportType(e.target.value)}>
-              {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            <Select
+              className="mr-type-select"
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value)}
+            >
+              {REPORT_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
             </Select>
- <Tooltip content="Imprimer" position="bottom">
-   <Button variant="ghost" className="mr-action-btn" onClick={handlePrint}>
-              <Printer size={16} /> Imprimer
-            </Button>
- </Tooltip>
- <Tooltip content="Télécharger en PDF" position="bottom">
-   <Button variant="ghost" className="mr-action-btn export" onClick={handleExportPDF} disabled={exporting}>
-              <Download size={16} /> {exporting ? 'Export...' : 'PDF'}
-            </Button>
- </Tooltip>
+            <Tooltip content="Imprimer" position="bottom">
+              <Button variant="ghost" className="mr-action-btn" onClick={handlePrint}>
+                <Printer size={16} /> Imprimer
+              </Button>
+            </Tooltip>
+            <Tooltip content="Télécharger en PDF" position="bottom">
+              <Button
+                variant="ghost"
+                className="mr-action-btn export"
+                onClick={handleExportPDF}
+                disabled={exporting}
+              >
+                <Download size={16} /> {exporting ? 'Export...' : 'PDF'}
+              </Button>
+            </Tooltip>
           </div>
         </div>
 
@@ -248,7 +304,9 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                   {reportRows.map((row, i) => (
                     <tr key={row.id || i}>
                       <td>
-                        <span className={`mr-badge ${row.isEntry && row.isExit ? 'both' : row.isEntry ? 'entry' : 'exit'}`}>
+                        <span
+                          className={`mr-badge ${row.isEntry && row.isExit ? 'both' : row.isEntry ? 'entry' : 'exit'}`}
+                        >
                           {row.movement}
                         </span>
                       </td>
@@ -256,8 +314,17 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                       <td>{row.equipmentName || '—'}</td>
                       <td className="mr-mono">{row.equipmentUid || '—'}</td>
                       <td className="mr-mono">{row.equipmentSerialNumber || '—'}</td>
-                      <td className="mr-desc">{row.title}{row.description ? ` — ${row.description}` : ''}</td>
-                      <td>{row.entryDate ? formatDateTime(row.entryDate) : (row.createdAt ? formatDateSimple(row.createdAt) : '—')}</td>
+                      <td className="mr-desc">
+                        {row.title}
+                        {row.description ? ` — ${row.description}` : ''}
+                      </td>
+                      <td>
+                        {row.entryDate
+                          ? formatDateTime(row.entryDate)
+                          : row.createdAt
+                            ? formatDateSimple(row.createdAt)
+                            : '—'}
+                      </td>
                       <td>{row.exitDate ? formatDateTime(row.exitDate) : '—'}</td>
                       <td>{row.reportedByName || '—'}</td>
                       <td className="mr-cost">{formatCost(row.cost)}</td>
@@ -267,8 +334,12 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
               </Table>
 
               <div className="mr-summary">
-                <span>{reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}</span>
-                <span>Coût total : <strong>{formatCost(totalCost)}</strong></span>
+                <span>
+                  {reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}
+                </span>
+                <span>
+                  Coût total : <strong>{formatCost(totalCost)}</strong>
+                </span>
               </div>
             </div>
           )}
@@ -278,10 +349,14 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
         <div style={{ display: 'none' }}>
           <div ref={printRef}>
             <h1>Rapport Maintenance Matériel</h1>
-            <p className="report-subtitle">{label} — {REPORT_TYPES.find(t => t.value === reportType)?.label}</p>
+            <p className="report-subtitle">
+              {label} — {REPORT_TYPES.find((t) => t.value === reportType)?.label}
+            </p>
             <div className="report-meta">
               <span>Généré le {format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}</span>
-              <span>{reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}</span>
+              <span>
+                {reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}
+              </span>
             </div>
             <Table>
               <thead>
@@ -302,7 +377,15 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                 {reportRows.map((row, i) => (
                   <tr key={row.id || i}>
                     <td>
-                      <span className={row.isEntry && row.isExit ? 'both-badge' : row.isEntry ? 'entry-badge' : 'exit-badge'}>
+                      <span
+                        className={
+                          row.isEntry && row.isExit
+                            ? 'both-badge'
+                            : row.isEntry
+                              ? 'entry-badge'
+                              : 'exit-badge'
+                        }
+                      >
                         {row.movement}
                       </span>
                     </td>
@@ -310,8 +393,17 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
                     <td>{row.equipmentName || '—'}</td>
                     <td>{row.equipmentUid || '—'}</td>
                     <td>{row.equipmentSerialNumber || '—'}</td>
-                    <td>{row.title}{row.description ? ` — ${row.description}` : ''}</td>
-                    <td>{row.entryDate ? formatDateTime(row.entryDate) : (row.createdAt ? formatDateSimple(row.createdAt) : '—')}</td>
+                    <td>
+                      {row.title}
+                      {row.description ? ` — ${row.description}` : ''}
+                    </td>
+                    <td>
+                      {row.entryDate
+                        ? formatDateTime(row.entryDate)
+                        : row.createdAt
+                          ? formatDateSimple(row.createdAt)
+                          : '—'}
+                    </td>
                     <td>{row.exitDate ? formatDateTime(row.exitDate) : '—'}</td>
                     <td>{row.reportedByName || '—'}</td>
                     <td>{formatCost(row.cost)}</td>
@@ -320,7 +412,9 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
               </tbody>
             </Table>
             <div className="report-footer">
-              <span>Total : {reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}</span>
+              <span>
+                Total : {reportRows.length} intervention{reportRows.length > 1 ? 's' : ''}
+              </span>
               <span>Coût total : {formatCost(totalCost)}</span>
             </div>
           </div>

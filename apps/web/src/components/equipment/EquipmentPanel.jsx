@@ -1,5 +1,24 @@
 import React from 'react';
-import { Package, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Tag, MapPin, Upload, Star, Eye, Image as ImageIcon, Hash, Printer, FileText, Map, Download } from 'lucide-react';
+import {
+  Package,
+  Plus,
+  Wrench,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  X,
+  Tag,
+  MapPin,
+  Upload,
+  Star,
+  Eye,
+  Image as ImageIcon,
+  Hash,
+  Printer,
+  FileText,
+  Map,
+  Download,
+} from 'lucide-react';
 import api from '../../utils/api';
 import EquipmentImportModal from './EquipmentImportModal';
 import SavImportModal from '../affaires/SavImportModal';
@@ -10,7 +29,15 @@ import MaintenanceReportModal from '../vehicles/MaintenanceReportModal';
 import DepotMap from '../vehicles/DepotMap';
 import './EquipmentPanel.css';
 import { useToast } from '../../hooks/useToast';
-import { Button, ModalLayout, Select, Checkbox, Spinner, SearchBar, Tooltip } from '@/design-system';
+import {
+  Button,
+  ModalLayout,
+  Select,
+  Checkbox,
+  Spinner,
+  SearchBar,
+  Tooltip,
+} from '@/design-system';
 import { STATUS } from '../../constants';
 import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import { SAV_STATUS } from './equipmentConstants';
@@ -21,56 +48,132 @@ import EquipmentGrid from './EquipmentGrid';
 import { EquipmentSlidePanel, EquipmentDetailDialog } from './EquipmentDetail';
 import EquipmentFormModal from './EquipmentFormModal';
 import EquipmentMediaManager from './EquipmentMediaManager';
-import { SavTicketsList, SavTicketFormModal, MobileSavRequestForm, SavSlidePanel, SavDetailDialog } from './EquipmentSAV';
+import {
+  SavTicketsList,
+  SavTicketFormModal,
+  MobileSavRequestForm,
+  SavSlidePanel,
+  SavDetailDialog,
+} from './EquipmentSAV';
 
 // ═══ COMPOSANT PRINCIPAL ═══
-const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onCloseManagement, initialTab, isMobile }) => {
+const EquipmentPanel = ({
+  currentUser,
+  showManagement,
+  onOpenManagement,
+  onCloseManagement,
+  initialTab,
+  isMobile,
+}) => {
   const toast = useToast();
   const {
     // Data
-    equipment, categories, savTickets, persons, brandsList, loading,
-    photosList, logosList, depotZones, allDepotZones, locationStats,
+    equipment,
+    categories,
+    savTickets,
+    persons,
+    brandsList,
+    loading,
+    photosList,
+    logosList,
+    depotZones,
+    allDepotZones,
+    locationStats,
     // Category hierarchy
-    families, subfamilies, leafCategories,
+    families,
+    subfamilies,
+    leafCategories,
     // Filtered
-    filteredEquipment, filteredTickets, stats,
-    favoriteIds, watchIds,
+    filteredEquipment,
+    filteredTickets,
+    stats,
+    favoriteIds,
+    watchIds,
     // Tabs
-    subTab, setSubTab,
+    subTab,
+    setSubTab,
     // Filters
-    search, setSearch, filterStatus, setFilterStatus, filterCatTree, setFilterCatTree,
-    savFilterStatus, setSavFilterStatus, savSearch, setSavSearch,
-    filterZone, setFilterZone, filterSerialized, setFilterSerialized,
-    listFilter, setListFilter,
+    search,
+    setSearch,
+    filterStatus,
+    setFilterStatus,
+    filterCatTree,
+    setFilterCatTree,
+    savFilterStatus,
+    setSavFilterStatus,
+    savSearch,
+    setSavSearch,
+    filterZone,
+    setFilterZone,
+    filterSerialized,
+    setFilterSerialized,
+    listFilter,
+    setListFilter,
     // Equipment modals
-    showEquipmentModal, setShowEquipmentModal, editingEquipment, setEditingEquipment,
-    selectedEquipment, setSelectedEquipment, dialogEquipment, setDialogEquipment,
+    showEquipmentModal,
+    setShowEquipmentModal,
+    editingEquipment,
+    setEditingEquipment,
+    selectedEquipment,
+    setSelectedEquipment,
+    dialogEquipment,
+    setDialogEquipment,
     clickTimerRef,
     // SAV modals
-    showSavModal, setShowSavModal, editingSavTicket, setEditingSavTicket,
-    savTicketEquipment, setSavTicketEquipment,
-    selectedTicket, setSelectedTicket, dialogTicket, setDialogTicket,
+    showSavModal,
+    setShowSavModal,
+    editingSavTicket,
+    setEditingSavTicket,
+    savTicketEquipment,
+    setSavTicketEquipment,
+    selectedTicket,
+    setSelectedTicket,
+    dialogTicket,
+    setDialogTicket,
     ticketClickTimerRef,
     // Other modals
-    showImportModal, setShowImportModal, showSavImportModal, setShowSavImportModal,
-    showReportModal, setShowReportModal, exportingSavPdf,
-    showMobileSavRequest, setShowMobileSavRequest,
-    labelPrintEquipment, setLabelPrintEquipment,
-    mgmtTab, setMgmtTab,
+    showImportModal,
+    setShowImportModal,
+    showSavImportModal,
+    setShowSavImportModal,
+    showReportModal,
+    setShowReportModal,
+    exportingSavPdf,
+    showMobileSavRequest,
+    setShowMobileSavRequest,
+    labelPrintEquipment,
+    setLabelPrintEquipment,
+    mgmtTab,
+    setMgmtTab,
     // Depot map
-    showDepotMap, setShowDepotMap, depotMapModalZone, setDepotMapModalZone, modalDepotData,
+    showDepotMap,
+    setShowDepotMap,
+    depotMapModalZone,
+    setDepotMapModalZone,
+    modalDepotData,
     // Permissions
-    isAdmin, canManageEquipmentMaintenance,
+    isAdmin,
+    canManageEquipmentMaintenance,
     // Handlers
-    loadData, handleSaveEquipment, handleDeleteEquipment, handleSerializeEquipment,
-    handleSaveSavTicket, toggleList, handleExportSavPdf,
+    loadData,
+    handleSaveEquipment,
+    handleDeleteEquipment,
+    handleSerializeEquipment,
+    handleSaveSavTicket,
+    toggleList,
+    handleExportSavPdf,
     // Confirm dialog
-    confirm, ConfirmDialogRenderer,
+    confirm,
+    ConfirmDialogRenderer,
   } = useEquipment({ currentUser, initialTab });
 
   // ═══ RENDU ═══
   if (loading && equipment.length === 0) {
-    return <div className="eq-loading"><Spinner size="lg" /> Chargement du parc matériel...</div>;
+    return (
+      <div className="eq-loading">
+        <Spinner size="lg" /> Chargement du parc matériel...
+      </div>
+    );
   }
 
   return (
@@ -79,16 +182,29 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
       <div className="eq-toolbar">
         <div className="eq-toolbar-top">
           <div className="eq-tabs">
-            <Button variant="ghost" className={`eq-tab ${subTab === 'inventory' ? 'active' : ''}`} onClick={() => setSubTab('inventory')}>
+            <Button
+              variant="ghost"
+              className={`eq-tab ${subTab === 'inventory' ? 'active' : ''}`}
+              onClick={() => setSubTab('inventory')}
+            >
               <Package size={14} /> Équipements
             </Button>
-            <Button variant="ghost" className={`eq-tab ${subTab === 'sav' ? 'active' : ''}`} onClick={() => setSubTab('sav')}>
+            <Button
+              variant="ghost"
+              className={`eq-tab ${subTab === 'sav' ? 'active' : ''}`}
+              onClick={() => setSubTab('sav')}
+            >
               <Wrench size={14} /> SAV
               {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
             </Button>
           </div>
           {onOpenManagement && (
-            <Button variant="ghost" className="eq-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion du matériel">
+            <Button
+              variant="ghost"
+              className="eq-management-btn"
+              onClick={onOpenManagement}
+              aria-label="Ouvrir la gestion du matériel"
+            >
               <Package size={16} /> Gestion
             </Button>
           )}
@@ -97,7 +213,12 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
         <div className="eq-toolbar-actions">
           {subTab === 'inventory' && (
             <>
-              <SearchBar value={search} onChange={setSearch} placeholder="Rechercher..." size="sm" />
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder="Rechercher..."
+                size="sm"
+              />
               <CategoryCascadeFilter
                 families={families}
                 subfamilies={subfamilies}
@@ -106,71 +227,127 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
                 onChange={setFilterCatTree}
                 isMobile={isMobile}
               />
- <Tooltip content="Afficher uniquement les matériels sérialisés" position="bottom">
-   <label className="eq-filter-check">
-                <Checkbox checked={filterSerialized} onChange={(e) => setFilterSerialized(e.target.checked)} />
-                <span>Sérialisés</span>
-              </label>
- </Tooltip>
+              <Tooltip content="Afficher uniquement les matériels sérialisés" position="bottom">
+                <label className="eq-filter-check">
+                  <Checkbox
+                    checked={filterSerialized}
+                    onChange={(e) => setFilterSerialized(e.target.checked)}
+                  />
+                  <span>Sérialisés</span>
+                </label>
+              </Tooltip>
               {depotZones && (
-                <Select className="eq-filter eq-zone-filter" value={filterZone} onChange={(e) => setFilterZone(e.target.value)} title="Filtrer par zone dépôt">
+                <Select
+                  className="eq-filter eq-zone-filter"
+                  value={filterZone}
+                  onChange={(e) => setFilterZone(e.target.value)}
+                  title="Filtrer par zone dépôt"
+                >
                   <option value="">Toutes zones</option>
                   <option value="_none">📍 Sans zone</option>
-                  {allDepotZones?.depots ? allDepotZones.depots.map(d => (
-                    <optgroup key={d.id} label={d.name || `Dépôt ${d.id}`}>
-                      {d.zones.map(z => <option key={`${d.id}-${z.id}`} value={z.id}>📍 {z.label}</option>)}
-                    </optgroup>
-                  )) : depotZones.zones.map(z => <option key={z.id} value={z.id}>📍 {z.label}</option>)}
+                  {allDepotZones?.depots
+                    ? allDepotZones.depots.map((d) => (
+                        <optgroup key={d.id} label={d.name || `Dépôt ${d.id}`}>
+                          {d.zones.map((z) => (
+                            <option key={`${d.id}-${z.id}`} value={z.id}>
+                              📍 {z.label}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))
+                    : depotZones.zones.map((z) => (
+                        <option key={z.id} value={z.id}>
+                          📍 {z.label}
+                        </option>
+                      ))}
                 </Select>
               )}
               {depotZones && (
- <Tooltip content="Plan du dépôt" position="bottom">
-   <Button variant="secondary" className={showDepotMap ? 'active' : ''} onClick={() => setShowDepotMap(!showDepotMap)}>
-                  <Map size={14} />
-                </Button>
- </Tooltip>
+                <Tooltip content="Plan du dépôt" position="bottom">
+                  <Button
+                    variant="secondary"
+                    className={showDepotMap ? 'active' : ''}
+                    onClick={() => setShowDepotMap(!showDepotMap)}
+                  >
+                    <Map size={14} />
+                  </Button>
+                </Tooltip>
               )}
-              <Button variant="primary" onClick={() => { setEditingEquipment(null); setShowEquipmentModal(true); }}>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setEditingEquipment(null);
+                  setShowEquipmentModal(true);
+                }}
+              >
                 <Plus size={14} /> Équipement
               </Button>
             </>
           )}
           {subTab === 'sav' && (
             <>
-              <SearchBar value={savSearch} onChange={setSavSearch} placeholder="Rechercher ticket, matériel..." size="sm" />
+              <SearchBar
+                value={savSearch}
+                onChange={setSavSearch}
+                placeholder="Rechercher ticket, matériel..."
+                size="sm"
+              />
               {isAdmin && (
- <Tooltip content="Importer interventions SAV" position="bottom">
-   <Button variant="secondary" onClick={() => setShowSavImportModal(true)}>
-                  <Upload size={14} /> Import SAV
-                </Button>
- </Tooltip>
+                <Tooltip content="Importer interventions SAV" position="bottom">
+                  <Button variant="secondary" onClick={() => setShowSavImportModal(true)}>
+                    <Upload size={14} /> Import SAV
+                  </Button>
+                </Tooltip>
               )}
               {canManageEquipmentMaintenance && (
- <Tooltip content="Rapport maintenance matériel" position="bottom">
-   <Button variant="secondary" onClick={() => setShowReportModal(true)}>
-                  <FileText size={14} /> Rapport
-                </Button>
- </Tooltip>
+                <Tooltip content="Rapport maintenance matériel" position="bottom">
+                  <Button variant="secondary" onClick={() => setShowReportModal(true)}>
+                    <FileText size={14} /> Rapport
+                  </Button>
+                </Tooltip>
               )}
               {canManageEquipmentMaintenance && (
- <Tooltip content="Exporter PDF du matériel en SAV" position="bottom">
-   <Button variant="secondary" onClick={handleExportSavPdf} disabled={exportingSavPdf}>
-                  <Download size={14} /> {exportingSavPdf ? 'Export...' : 'PDF SAV'}
-                </Button>
- </Tooltip>
+                <Tooltip content="Exporter PDF du matériel en SAV" position="bottom">
+                  <Button
+                    variant="secondary"
+                    onClick={handleExportSavPdf}
+                    disabled={exportingSavPdf}
+                  >
+                    <Download size={14} /> {exportingSavPdf ? 'Export...' : 'PDF SAV'}
+                  </Button>
+                </Tooltip>
               )}
-              <Select className="eq-filter" value={savFilterStatus} onChange={(e) => setSavFilterStatus(e.target.value)}>
+              <Select
+                className="eq-filter"
+                value={savFilterStatus}
+                onChange={(e) => setSavFilterStatus(e.target.value)}
+              >
                 <option value="_active">En cours (actifs)</option>
                 <option value="">Tous statuts</option>
-                {Object.entries(SAV_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                {Object.entries(SAV_STATUS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.label}
+                  </option>
+                ))}
               </Select>
               {canManageEquipmentMaintenance && !isMobile && (
-                <Button variant="primary" onClick={() => { setSavTicketEquipment(null); setEditingSavTicket(null); setShowSavModal(true); }}>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setSavTicketEquipment(null);
+                    setEditingSavTicket(null);
+                    setShowSavModal(true);
+                  }}
+                >
                   <Plus size={14} /> Ticket SAV
                 </Button>
               )}
               {isMobile && (
-                <Button variant="primary" className="eq-mobile-sav-request" onClick={() => setShowMobileSavRequest(true)}>
+                <Button
+                  variant="primary"
+                  className="eq-mobile-sav-request"
+                  onClick={() => setShowMobileSavRequest(true)}
+                >
                   <Plus size={14} /> Demande SAV
                 </Button>
               )}
@@ -180,53 +357,106 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
 
         {/* Stats */}
         <div className="eq-stats-row">
- <Tooltip content="Tous" position="bottom">
-   <Button variant="ghost" className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`} onClick={() => { setFilterStatus(''); setListFilter(''); setSubTab('inventory'); }}>
-            <Package size={13} />
-            <span className="eq-stat-value">{stats.total}</span>
-          </Button>
- </Tooltip>
- <Tooltip content="Disponibles" position="bottom">
-   <Button variant="ghost" className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`} onClick={() => { setFilterStatus('available'); setListFilter(''); setSubTab('inventory'); }}>
-            <CheckCircle size={13} />
-            <span className="eq-stat-value">{stats.available}</span>
-          </Button>
- </Tooltip>
- <Tooltip content="En service" position="bottom">
-   <Button variant="ghost" className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_use'); setListFilter(''); setSubTab('inventory'); }}>
-            <Clock size={13} />
-            <span className="eq-stat-value">{stats.in_use}</span>
-          </Button>
- </Tooltip>
- <Tooltip content="Maintenance" position="bottom">
-   <Button variant="ghost" className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`} onClick={() => { setFilterStatus('maintenance'); setListFilter(''); setSubTab('inventory'); }}>
-            <Wrench size={13} />
-            <span className="eq-stat-value">{stats.maintenance}</span>
-          </Button>
- </Tooltip>
-          {stats.openTickets > 0 && (
- <Tooltip content="Tickets SAV" position="bottom">
-   <Button variant="ghost" className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`} onClick={() => { setSavFilterStatus('_active'); setSubTab('sav'); }}>
-              <AlertTriangle size={13} />
-              <span className="eq-stat-value">{stats.openTickets}</span>
+          <Tooltip content="Tous" position="bottom">
+            <Button
+              variant="ghost"
+              className={`eq-stat-btn ${filterStatus === '' && subTab === 'inventory' && listFilter === '' ? 'active' : ''}`}
+              onClick={() => {
+                setFilterStatus('');
+                setListFilter('');
+                setSubTab('inventory');
+              }}
+            >
+              <Package size={13} />
+              <span className="eq-stat-value">{stats.total}</span>
             </Button>
- </Tooltip>
+          </Tooltip>
+          <Tooltip content="Disponibles" position="bottom">
+            <Button
+              variant="ghost"
+              className={`eq-stat-btn eq-stat-available ${filterStatus === 'available' ? 'active' : ''}`}
+              onClick={() => {
+                setFilterStatus('available');
+                setListFilter('');
+                setSubTab('inventory');
+              }}
+            >
+              <CheckCircle size={13} />
+              <span className="eq-stat-value">{stats.available}</span>
+            </Button>
+          </Tooltip>
+          <Tooltip content="En service" position="bottom">
+            <Button
+              variant="ghost"
+              className={`eq-stat-btn eq-stat-inuse ${filterStatus === 'in_use' ? 'active' : ''}`}
+              onClick={() => {
+                setFilterStatus('in_use');
+                setListFilter('');
+                setSubTab('inventory');
+              }}
+            >
+              <Clock size={13} />
+              <span className="eq-stat-value">{stats.in_use}</span>
+            </Button>
+          </Tooltip>
+          <Tooltip content="Maintenance" position="bottom">
+            <Button
+              variant="ghost"
+              className={`eq-stat-btn eq-stat-maint ${filterStatus === STATUS.MAINTENANCE ? 'active' : ''}`}
+              onClick={() => {
+                setFilterStatus('maintenance');
+                setListFilter('');
+                setSubTab('inventory');
+              }}
+            >
+              <Wrench size={13} />
+              <span className="eq-stat-value">{stats.maintenance}</span>
+            </Button>
+          </Tooltip>
+          {stats.openTickets > 0 && (
+            <Tooltip content="Tickets SAV" position="bottom">
+              <Button
+                variant="ghost"
+                className={`eq-stat-btn eq-stat-tickets ${subTab === 'sav' ? 'active' : ''}`}
+                onClick={() => {
+                  setSavFilterStatus('_active');
+                  setSubTab('sav');
+                }}
+              >
+                <AlertTriangle size={13} />
+                <span className="eq-stat-value">{stats.openTickets}</span>
+              </Button>
+            </Tooltip>
           )}
           {favoriteIds.size > 0 && (
- <Tooltip content="Favoris" position="bottom">
-   <Button variant="ghost" className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'favorite' ? '' : 'favorite'); setSubTab('inventory'); }}>
-              <Star size={13} />
-              <span className="eq-stat-value">{favoriteIds.size}</span>
-            </Button>
- </Tooltip>
+            <Tooltip content="Favoris" position="bottom">
+              <Button
+                variant="ghost"
+                className={`eq-stat-btn eq-stat-fav ${listFilter === 'favorite' ? 'active' : ''}`}
+                onClick={() => {
+                  setListFilter(listFilter === 'favorite' ? '' : 'favorite');
+                  setSubTab('inventory');
+                }}
+              >
+                <Star size={13} />
+                <span className="eq-stat-value">{favoriteIds.size}</span>
+              </Button>
+            </Tooltip>
           )}
           {watchIds.size > 0 && (
- <Tooltip content="Surveillance" position="bottom">
-   <Button variant="ghost" className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`} onClick={() => { setListFilter(listFilter === 'watch' ? '' : 'watch'); setSubTab('inventory'); }}>
-              <Eye size={13} />
-              <span className="eq-stat-value">{watchIds.size}</span>
-            </Button>
- </Tooltip>
+            <Tooltip content="Surveillance" position="bottom">
+              <Button
+                variant="ghost"
+                className={`eq-stat-btn eq-stat-watch ${listFilter === 'watch' ? 'active' : ''}`}
+                onClick={() => {
+                  setListFilter(listFilter === 'watch' ? '' : 'watch');
+                  setSubTab('inventory');
+                }}
+              >
+                <Eye size={13} />
+                <span className="eq-stat-value">{watchIds.size}</span>
+              </Button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -248,83 +478,99 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
             </div>
           )}
           <div className="eq-content">
-          {subTab === 'inventory' && (
-            <EquipmentGrid
-              equipment={filteredEquipment}
-              depotZones={depotZones}
-              allDepotZones={allDepotZones}
-              selectedId={selectedEquipment?.id}
-              photosList={photosList}
-              logosList={logosList}
-              favoriteIds={favoriteIds}
-              watchIds={watchIds}
-              onToggleList={toggleList}
-              categories={categories}
-              onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
-              onSelect={(eq) => {
-                clearTimeout(clickTimerRef.current);
-                if (isMobile) {
-                  setDialogEquipment(eq);
-                  api.getEquipmentById(eq.id).then(detail => setDialogEquipment(detail)).catch(() => {});
-                } else {
-                  clickTimerRef.current = setTimeout(() => {
-                    if (selectedEquipment?.id === eq.id) {
-                      setSelectedEquipment(null);
-                    } else {
-                      setSelectedEquipment(eq);
-                      api.getEquipmentById(eq.id).then(detail => setSelectedEquipment(detail)).catch(() => {});
-                    }
-                  }, 200);
+            {subTab === 'inventory' && (
+              <EquipmentGrid
+                equipment={filteredEquipment}
+                depotZones={depotZones}
+                allDepotZones={allDepotZones}
+                selectedId={selectedEquipment?.id}
+                photosList={photosList}
+                logosList={logosList}
+                favoriteIds={favoriteIds}
+                watchIds={watchIds}
+                onToggleList={toggleList}
+                categories={categories}
+                onOpenDepotMap={(zoneId, eqName) =>
+                  setDepotMapModalZone({ zoneId, equipmentName: eqName })
                 }
-              }}
-              onDoubleClick={(eq) => {
-                clearTimeout(clickTimerRef.current);
-                setSelectedEquipment(null);
-                setDialogEquipment(eq);
-                api.getEquipmentById(eq.id).then(detail => setDialogEquipment(detail)).catch(() => {});
-              }}
-            />
-          )}
+                onSelect={(eq) => {
+                  clearTimeout(clickTimerRef.current);
+                  if (isMobile) {
+                    setDialogEquipment(eq);
+                    api
+                      .getEquipmentById(eq.id)
+                      .then((detail) => setDialogEquipment(detail))
+                      .catch(() => {});
+                  } else {
+                    clickTimerRef.current = setTimeout(() => {
+                      if (selectedEquipment?.id === eq.id) {
+                        setSelectedEquipment(null);
+                      } else {
+                        setSelectedEquipment(eq);
+                        api
+                          .getEquipmentById(eq.id)
+                          .then((detail) => setSelectedEquipment(detail))
+                          .catch(() => {});
+                      }
+                    }, 200);
+                  }
+                }}
+                onDoubleClick={(eq) => {
+                  clearTimeout(clickTimerRef.current);
+                  setSelectedEquipment(null);
+                  setDialogEquipment(eq);
+                  api
+                    .getEquipmentById(eq.id)
+                    .then((detail) => setDialogEquipment(detail))
+                    .catch(() => {});
+                }}
+              />
+            )}
 
-          {subTab === 'sav' && (
-          <SavTicketsList
-            tickets={filteredTickets}
-            equipment={equipment}
-            persons={persons}
-            selectedId={selectedTicket?.id}
-            onSelect={(t) => {
-              clearTimeout(ticketClickTimerRef.current);
-              if (isMobile) {
-                setDialogTicket(t);
-              } else {
-                ticketClickTimerRef.current = setTimeout(() => {
-                  setSelectedTicket(selectedTicket?.id === t.id ? null : t);
-                }, 200);
-              }
-            }}
-            onDoubleClick={(t) => {
-              clearTimeout(ticketClickTimerRef.current);
-              setSelectedTicket(null);
-              setDialogTicket(t);
-            }}
-            onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
-            onDelete={(id) => {
-              confirm({
-                title: 'Supprimer le ticket',
-                message: 'Supprimer ce ticket ?',
-                variant: 'danger',
-                confirmLabel: 'Supprimer',
-                onConfirm: async () => {
-                  try {
-                    await api.deleteSavTicket(id);
-                    loadData();
-                  } catch (err) { toast.error('Erreur: ' + err.message); }
-                },
-              });
-            }}
-          />
-          )}
-        </div>
+            {subTab === 'sav' && (
+              <SavTicketsList
+                tickets={filteredTickets}
+                equipment={equipment}
+                persons={persons}
+                selectedId={selectedTicket?.id}
+                onSelect={(t) => {
+                  clearTimeout(ticketClickTimerRef.current);
+                  if (isMobile) {
+                    setDialogTicket(t);
+                  } else {
+                    ticketClickTimerRef.current = setTimeout(() => {
+                      setSelectedTicket(selectedTicket?.id === t.id ? null : t);
+                    }, 200);
+                  }
+                }}
+                onDoubleClick={(t) => {
+                  clearTimeout(ticketClickTimerRef.current);
+                  setSelectedTicket(null);
+                  setDialogTicket(t);
+                }}
+                onEdit={(t) => {
+                  setEditingSavTicket(t);
+                  setShowSavModal(true);
+                }}
+                onDelete={(id) => {
+                  confirm({
+                    title: 'Supprimer le ticket',
+                    message: 'Supprimer ce ticket ?',
+                    variant: 'danger',
+                    confirmLabel: 'Supprimer',
+                    onConfirm: async () => {
+                      try {
+                        await api.deleteSavTicket(id);
+                        loadData();
+                      } catch (err) {
+                        toast.error('Erreur: ' + err.message);
+                      }
+                    },
+                  });
+                }}
+              />
+            )}
+          </div>
         </div>
 
         {/* Volet de détail rapide – Matériel (clic simple) */}
@@ -339,12 +585,20 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
             watchIds={watchIds}
             onToggleList={toggleList}
             onClose={() => setSelectedEquipment(null)}
-            onOpenDialog={(eq) => { setSelectedEquipment(null); setDialogEquipment(eq); }}
-            onEdit={(eq) => { setEditingEquipment(eq); setShowEquipmentModal(true); }}
+            onOpenDialog={(eq) => {
+              setSelectedEquipment(null);
+              setDialogEquipment(eq);
+            }}
+            onEdit={(eq) => {
+              setEditingEquipment(eq);
+              setShowEquipmentModal(true);
+            }}
             onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
             onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
             isAdmin={isAdmin}
-            onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
+            onOpenDepotMap={(zoneId, eqName) =>
+              setDepotMapModalZone({ zoneId, equipmentName: eqName })
+            }
           />
         )}
 
@@ -355,7 +609,10 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
             equipment={equipment}
             persons={persons}
             onClose={() => setSelectedTicket(null)}
-            onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
+            onEdit={(t) => {
+              setEditingSavTicket(t);
+              setShowSavModal(true);
+            }}
             onDelete={(id) => {
               confirm({
                 title: 'Supprimer le ticket',
@@ -367,12 +624,20 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
                     await api.deleteSavTicket(id);
                     setSelectedTicket(null);
                     loadData();
-                  } catch (err) { toast.error('Erreur: ' + err.message); }
+                  } catch (err) {
+                    toast.error('Erreur: ' + err.message);
+                  }
                 },
               });
             }}
-            onOpenDialog={(t) => { setSelectedTicket(null); setDialogTicket(t); }}
-            onOpenEquipmentDialog={(eq) => { setSelectedTicket(null); setDialogEquipment(eq); }}
+            onOpenDialog={(t) => {
+              setSelectedTicket(null);
+              setDialogTicket(t);
+            }}
+            onOpenEquipmentDialog={(eq) => {
+              setSelectedTicket(null);
+              setDialogEquipment(eq);
+            }}
           />
         )}
       </div>
@@ -389,11 +654,21 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
         onToggleList={toggleList}
         isAdmin={isAdmin}
         onClose={() => setDialogEquipment(null)}
-        onEdit={(eq) => { setEditingEquipment(eq); setShowEquipmentModal(true); }}
+        onEdit={(eq) => {
+          setEditingEquipment(eq);
+          setShowEquipmentModal(true);
+        }}
         onDelete={handleDeleteEquipment}
-        onCreateTicket={(eq) => { setSavTicketEquipment(eq); setEditingSavTicket(null); setShowSavModal(true); }}
+        onCreateTicket={(eq) => {
+          setSavTicketEquipment(eq);
+          setEditingSavTicket(null);
+          setShowSavModal(true);
+        }}
         onRefresh={loadData}
-        onOpenTicketDialog={(t) => { setDialogEquipment(null); setDialogTicket(t); }}
+        onOpenTicketDialog={(t) => {
+          setDialogEquipment(null);
+          setDialogTicket(t);
+        }}
         onPrintLabel={isMobile ? undefined : (eq) => setLabelPrintEquipment(eq)}
         onPrintSheet={isMobile ? undefined : (eq) => printEquipmentSheet(eq, photosList, logosList)}
         onSerialize={handleSerializeEquipment}
@@ -407,7 +682,10 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
         persons={persons}
         isAdmin={isAdmin}
         onClose={() => setDialogTicket(null)}
-        onEdit={(t) => { setEditingSavTicket(t); setShowSavModal(true); }}
+        onEdit={(t) => {
+          setEditingSavTicket(t);
+          setShowSavModal(true);
+        }}
         onDelete={(id) => {
           confirm({
             title: 'Supprimer le ticket',
@@ -419,11 +697,16 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
                 await api.deleteSavTicket(id);
                 setDialogTicket(null);
                 loadData();
-              } catch (err) { toast.error('Erreur: ' + err.message); }
+              } catch (err) {
+                toast.error('Erreur: ' + err.message);
+              }
             },
           });
         }}
-        onOpenEquipmentDialog={(eq) => { setDialogTicket(null); setDialogEquipment(eq); }}
+        onOpenEquipmentDialog={(eq) => {
+          setDialogTicket(null);
+          setDialogEquipment(eq);
+        }}
       />
 
       {/* Modals */}
@@ -436,7 +719,10 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
           allDepotZones={allDepotZones}
           photosList={photosList}
           onSave={handleSaveEquipment}
-          onClose={() => { setShowEquipmentModal(false); setEditingEquipment(null); }}
+          onClose={() => {
+            setShowEquipmentModal(false);
+            setEditingEquipment(null);
+          }}
         />
       )}
 
@@ -448,7 +734,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
           persons={persons}
           preselectedEquipment={savTicketEquipment || selectedEquipment}
           onSave={handleSaveSavTicket}
-          onClose={() => { setShowSavModal(false); setEditingSavTicket(null); setSavTicketEquipment(null); }}
+          onClose={() => {
+            setShowSavModal(false);
+            setEditingSavTicket(null);
+            setSavTicketEquipment(null);
+          }}
         />
       )}
 
@@ -465,17 +755,11 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
       )}
 
       {showImportModal && (
-        <EquipmentImportModal
-          onClose={() => setShowImportModal(false)}
-          onImportDone={loadData}
-        />
+        <EquipmentImportModal onClose={() => setShowImportModal(false)} onImportDone={loadData} />
       )}
 
       {showSavImportModal && (
-        <SavImportModal
-          onClose={() => setShowSavImportModal(false)}
-          onImportDone={loadData}
-        />
+        <SavImportModal onClose={() => setShowSavImportModal(false)} onImportDone={loadData} />
       )}
 
       {labelPrintEquipment && (
@@ -485,30 +769,52 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
         />
       )}
 
-      <MaintenanceReportModal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-      />
+      <MaintenanceReportModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} />
 
       {/* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */}
       {showManagement && (
-        <div className="eq-management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement()}>
-          <div className="eq-management-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Gestion du Matériel">
+        <div
+          className="eq-management-overlay"
+          onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement()}
+        >
+          <div
+            className="eq-management-panel"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Gestion du Matériel"
+          >
             <div className="eq-management-header">
-              <h2><Package size={22} /> Gestion du Matériel</h2>
-              <Button variant="ghost" className="eq-management-close" onClick={onCloseManagement} aria-label="Fermer"><X size={20} /></Button>
+              <h2>
+                <Package size={22} /> Gestion du Matériel
+              </h2>
+              <Button
+                variant="ghost"
+                className="eq-management-close"
+                onClick={onCloseManagement}
+                aria-label="Fermer"
+              >
+                <X size={20} />
+              </Button>
             </div>
 
             {/* Onglets de gestion */}
             <div className="eq-mgmt-tabs">
               {[
                 { id: 'imports', label: 'Imports', icon: Upload, color: STATUS_COLORS.info },
-                { id: 'categories', label: 'Familles et catégories', icon: Tag, color: ACCENT_COLORS.violet },
+                {
+                  id: 'categories',
+                  label: 'Familles et catégories',
+                  icon: Tag,
+                  color: ACCENT_COLORS.violet,
+                },
                 { id: 'labels', label: 'Étiquettes', icon: Printer, color: ACCENT_COLORS.orange },
                 { id: 'stats', label: 'Statistiques', icon: Hash, color: STATUS_COLORS.success },
                 { id: 'media', label: 'Médias', icon: ImageIcon, color: ACCENT_COLORS.pink },
-              ].map(tab => (
-                <Button variant="ghost"                   key={tab.id}
+              ].map((tab) => (
+                <Button
+                  variant="ghost"
+                  key={tab.id}
                   className={`eq-mgmt-tab ${mgmtTab === tab.id ? 'active' : ''}`}
                   onClick={() => setMgmtTab(tab.id)}
                   style={{ '--tab-color': tab.color }}
@@ -519,21 +825,47 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
               ))}
             </div>
 
-            <div className={`eq-management-content ${mgmtTab === 'labels' ? 'eq-mgmt-content-labels' : ''}`}>
+            <div
+              className={`eq-management-content ${mgmtTab === 'labels' ? 'eq-mgmt-content-labels' : ''}`}
+            >
               {/* Onglet Imports */}
               {mgmtTab === 'imports' && (
                 <>
                   <div className="eq-management-section">
-                    <h3><Upload size={18} /> Import CSV Inventaire</h3>
-                    <p>Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent). Les familles, catégories et types seront automatiquement créés.</p>
-                    <Button variant="primary" className="eq-mgmt-import-btn" onClick={() => { onCloseManagement(); setShowImportModal(true); }}>
+                    <h3>
+                      <Upload size={18} /> Import CSV Inventaire
+                    </h3>
+                    <p>
+                      Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent).
+                      Les familles, catégories et types seront automatiquement créés.
+                    </p>
+                    <Button
+                      variant="primary"
+                      className="eq-mgmt-import-btn"
+                      onClick={() => {
+                        onCloseManagement();
+                        setShowImportModal(true);
+                      }}
+                    >
                       <Upload size={16} /> Importer un fichier CSV
                     </Button>
                   </div>
                   <div className="eq-management-section">
-                    <h3><Wrench size={18} /> Import Interventions SAV</h3>
-                    <p>Importez les interventions SAV depuis un fichier CSV Locmat. Les interventions seront automatiquement liées aux équipements via leur numéro de série.</p>
-                    <Button variant="primary" className="eq-mgmt-import-btn" onClick={() => { onCloseManagement(); setShowSavImportModal(true); }}>
+                    <h3>
+                      <Wrench size={18} /> Import Interventions SAV
+                    </h3>
+                    <p>
+                      Importez les interventions SAV depuis un fichier CSV Locmat. Les interventions
+                      seront automatiquement liées aux équipements via leur numéro de série.
+                    </p>
+                    <Button
+                      variant="primary"
+                      className="eq-mgmt-import-btn"
+                      onClick={() => {
+                        onCloseManagement();
+                        setShowSavImportModal(true);
+                      }}
+                    >
                       <Upload size={16} /> Importer les interventions
                     </Button>
                   </div>
@@ -543,8 +875,17 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
               {/* Onglet Catégories */}
               {mgmtTab === 'categories' && (
                 <div className="eq-management-section">
-                  <h3><Tag size={18} /> Familles et catégories ({categories.length})</h3>
-                  <EquipmentCategoriesTree families={families} subfamilies={subfamilies} leafCategories={leafCategories} categories={categories} equipment={equipment} onRefresh={loadData} />
+                  <h3>
+                    <Tag size={18} /> Familles et catégories ({categories.length})
+                  </h3>
+                  <EquipmentCategoriesTree
+                    families={families}
+                    subfamilies={subfamilies}
+                    leafCategories={leafCategories}
+                    categories={categories}
+                    equipment={equipment}
+                    onRefresh={loadData}
+                  />
                 </div>
               )}
 
@@ -563,12 +904,32 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
                 <div className="eq-management-section">
                   <h3>📊 Statistiques</h3>
                   <div className="eq-management-stats">
-                    <div className="eq-mgmt-stat"><strong>{equipment.length}</strong><span>Équipements</span></div>
-                    <div className="eq-mgmt-stat"><strong>{families.length}</strong><span>Familles</span></div>
-                    <div className="eq-mgmt-stat"><strong>{subfamilies.length}</strong><span>Catégories</span></div>
-                    <div className="eq-mgmt-stat"><strong>{leafCategories.length}</strong><span>Types</span></div>
-                    <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === 'available').length}</strong><span>Disponibles</span></div>
-                    <div className="eq-mgmt-stat"><strong>{equipment.filter(e => e.status === STATUS.MAINTENANCE).length}</strong><span>En maintenance</span></div>
+                    <div className="eq-mgmt-stat">
+                      <strong>{equipment.length}</strong>
+                      <span>Équipements</span>
+                    </div>
+                    <div className="eq-mgmt-stat">
+                      <strong>{families.length}</strong>
+                      <span>Familles</span>
+                    </div>
+                    <div className="eq-mgmt-stat">
+                      <strong>{subfamilies.length}</strong>
+                      <span>Catégories</span>
+                    </div>
+                    <div className="eq-mgmt-stat">
+                      <strong>{leafCategories.length}</strong>
+                      <span>Types</span>
+                    </div>
+                    <div className="eq-mgmt-stat">
+                      <strong>{equipment.filter((e) => e.status === 'available').length}</strong>
+                      <span>Disponibles</span>
+                    </div>
+                    <div className="eq-mgmt-stat">
+                      <strong>
+                        {equipment.filter((e) => e.status === STATUS.MAINTENANCE).length}
+                      </strong>
+                      <span>En maintenance</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -592,22 +953,28 @@ const EquipmentPanel = ({ currentUser, showManagement, onOpenManagement, onClose
         <ModalLayout
           open
           onClose={() => setDepotMapModalZone(null)}
-          title={<><MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone {depotMapModalZone.zoneId}{depotMapModalZone.equipmentName ? ` · ${depotMapModalZone.equipmentName}` : ''}</>}
+          title={
+            <>
+              <MapPin size={18} /> Plan {modalDepotData.name || 'du dépôt'} — Zone{' '}
+              {depotMapModalZone.zoneId}
+              {depotMapModalZone.equipmentName ? ` · ${depotMapModalZone.equipmentName}` : ''}
+            </>
+          }
           size="xl"
           className="eq-depot-map-modal"
         >
-            <div className="eq-depot-map-modal-body">
-              <DepotMap
-                zones={modalDepotData}
-                stats={locationStats}
-                selectedZone={depotMapModalZone.zoneId}
-                focusZoneId={depotMapModalZone.zoneId}
-                focusEquipmentName={depotMapModalZone.equipmentName}
-                onZoneSelect={(_zoneId) => {}}
-                onZoneFilter={() => {}}
-                compact={true}
-              />
-            </div>
+          <div className="eq-depot-map-modal-body">
+            <DepotMap
+              zones={modalDepotData}
+              stats={locationStats}
+              selectedZone={depotMapModalZone.zoneId}
+              focusZoneId={depotMapModalZone.zoneId}
+              focusEquipmentName={depotMapModalZone.equipmentName}
+              onZoneSelect={(_zoneId) => {}}
+              onZoneFilter={() => {}}
+              compact={true}
+            />
+          </div>
         </ModalLayout>
       )}
 

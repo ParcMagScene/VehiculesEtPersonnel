@@ -33,9 +33,17 @@
   border-radius: var(--radius-md);
   cursor: pointer;
 }
-.mobile-tasks-refresh:active { background: var(--theme-bg-hover, var(--theme-border-light)); }
-.mobile-tasks-refresh .spin { animation: mt-spin 0.8s linear infinite; }
-@keyframes mt-spin { to { transform: rotate(360deg); } }
+.mobile-tasks-refresh:active {
+  background: var(--theme-bg-hover, var(--theme-border-light));
+}
+.mobile-tasks-refresh .spin {
+  animation: mt-spin 0.8s linear infinite;
+}
+@keyframes mt-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* Barre de progression */
 .mobile-tasks-progress {
@@ -112,8 +120,13 @@
   color: var(--theme-text-muted, var(--theme-text-muted));
   text-align: center;
 }
-.mobile-tasks-empty p { margin: 0; font-size: var(--font-md); }
-.mobile-tasks-empty span { font-size: 0.82rem; }
+.mobile-tasks-empty p {
+  margin: 0;
+  font-size: var(--font-md);
+}
+.mobile-tasks-empty span {
+  font-size: 0.82rem;
+}
 
 /* Section */
 .mobile-tasks-section {
@@ -133,9 +146,16 @@
   font-weight: 600;
   color: var(--theme-text-primary);
 }
-.mobile-tasks-section-header:active { opacity: 0.7; }
-.mobile-tasks-section-emoji { font-size: var(--font-lg); }
-.mobile-tasks-section-label { flex: 1; text-align: left; }
+.mobile-tasks-section-header:active {
+  opacity: 0.7;
+}
+.mobile-tasks-section-emoji {
+  font-size: var(--font-lg);
+}
+.mobile-tasks-section-label {
+  flex: 1;
+  text-align: left;
+}
 .mobile-tasks-section-count {
   font-size: 0.78rem;
   font-weight: 600;
@@ -158,13 +178,18 @@
   background: var(--theme-bg-secondary, var(--theme-bg-card));
   border-radius: var(--radius-md-lg);
   border-left: 3px solid transparent;
-  transition: opacity 0.2s, background 0.2s;
+  transition:
+    opacity 0.2s,
+    background 0.2s;
 }
 .mobile-task-card.done {
   opacity: 0.65;
   border-left-color: var(--theme-success, var(--theme-success-alt));
 }
-.mobile-task-card.updating { opacity: 0.5; pointer-events: none; }
+.mobile-task-card.updating {
+  opacity: 0.5;
+  pointer-events: none;
+}
 
 /* Status button */
 .mobile-task-status-btn {
@@ -181,11 +206,24 @@
   transition: all 0.15s;
   padding: 0;
 }
-.mobile-task-status-btn:active { transform: scale(0.9); }
-.mobile-task-status-btn.pending { color: var(--theme-text-muted); }
-.mobile-task-status-btn.in_progress { color: var(--theme-warning); background: var(--theme-warning-bg); }
-.mobile-task-status-btn.done { color: var(--theme-success-alt); background: var(--theme-success-bg-strong); }
-.mobile-task-status-btn.cancelled { color: var(--theme-danger); background: var(--theme-danger-bg); }
+.mobile-task-status-btn:active {
+  transform: scale(0.9);
+}
+.mobile-task-status-btn.pending {
+  color: var(--theme-text-muted);
+}
+.mobile-task-status-btn.in_progress {
+  color: var(--theme-warning);
+  background: var(--theme-warning-bg);
+}
+.mobile-task-status-btn.done {
+  color: var(--theme-success-alt);
+  background: var(--theme-success-bg-strong);
+}
+.mobile-task-status-btn.cancelled {
+  color: var(--theme-danger);
+  background: var(--theme-danger-bg);
+}
 
 /* Content */
 .mobile-task-content {
@@ -218,10 +256,19 @@
   font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
-.mobile-task-time { color: var(--theme-primary, var(--theme-info)) !important; font-weight: 500; }
-.mobile-task-affaire { color: var(--theme-primary-light) !important; }
-.mobile-task-location { color: var(--theme-success-text) !important; }
-.mobile-task-person { color: var(--theme-danger) !important; }
+.mobile-task-time {
+  color: var(--theme-primary, var(--theme-info)) !important;
+  font-weight: 500;
+}
+.mobile-task-affaire {
+  color: var(--theme-primary-light) !important;
+}
+.mobile-task-location {
+  color: var(--theme-success-text) !important;
+}
+.mobile-task-person {
+  color: var(--theme-danger) !important;
+}
 
 /* Notes */
 .mobile-task-notes {

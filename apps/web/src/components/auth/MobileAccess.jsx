@@ -24,10 +24,10 @@ function MobileAccess() {
   const [copied, setCopied] = useState(false);
   const [posterCount, setPosterCount] = useState(1);
   const [posterFormat, setPosterFormat] = useState('A4');
-  
+
   // URL de l'interface mobile
   const mobileUrl = `${window.location.origin}/#/mobile`;
-  
+
   // Générer le QR code au chargement
   useEffect(() => {
     generateQRCode();
@@ -44,7 +44,9 @@ function MobileAccess() {
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(mobileUrl)}`;
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => { ctx.drawImage(img, 0, 0, size, size); };
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, size, size);
+    };
     img.src = qrApiUrl;
   };
 
@@ -66,8 +68,9 @@ function MobileAccess() {
     const featIconSize = posterFormat === 'A5' ? '11pt' : '14pt';
     const urlSize = posterFormat === 'A5' ? '8pt' : '10pt';
 
-    const featuresHtml = MOBILE_FEATURES.map(f =>
-      `<div class="feat"><span class="feat-icon">${f.icon}</span><div><strong>${f.label}</strong><span class="feat-desc">${f.desc}</span></div></div>`
+    const featuresHtml = MOBILE_FEATURES.map(
+      (f) =>
+        `<div class="feat"><span class="feat-icon">${f.icon}</span><div><strong>${f.label}</strong><span class="feat-desc">${f.desc}</span></div></div>`,
     ).join('');
 
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(mobileUrl)}`;
@@ -248,9 +251,14 @@ function MobileAccess() {
 
         {/* Impression affichettes */}
         <div className="poster-section">
-          <h3><Printer size={18} /> Imprimer des affichettes</h3>
-          <p className="poster-desc">Imprimez des affichettes avec le QR code et les fonctionnalités pour les afficher dans vos locaux.</p>
-          
+          <h3>
+            <Printer size={18} /> Imprimer des affichettes
+          </h3>
+          <p className="poster-desc">
+            Imprimez des affichettes avec le QR code et les fonctionnalités pour les afficher dans
+            vos locaux.
+          </p>
+
           <div className="poster-options">
             <div className="poster-option-group">
               <label>Format</label>
@@ -259,8 +267,10 @@ function MobileAccess() {
                   { id: 'A4', label: 'A4 Portrait' },
                   { id: 'A4-paysage', label: 'A4 Paysage' },
                   { id: 'A5', label: 'A5' },
-                ].map(f => (
-                  <Button variant="ghost"                     key={f.id}
+                ].map((f) => (
+                  <Button
+                    variant="ghost"
+                    key={f.id}
                     className={`poster-format-btn ${posterFormat === f.id ? 'active' : ''}`}
                     onClick={() => setPosterFormat(f.id)}
                   >
@@ -276,7 +286,9 @@ function MobileAccess() {
                 min={1}
                 max={20}
                 value={posterCount}
-                onChange={(e) => setPosterCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                onChange={(e) =>
+                  setPosterCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))
+                }
                 className="poster-qty-input"
               />
             </div>
@@ -290,9 +302,8 @@ function MobileAccess() {
 
         <div className="access-info">
           <p>
-            <strong>Note :</strong> Les utilisateurs doivent disposer d'un compte 
-            autorisé pour accéder à l'interface mobile. Gérez les accès dans 
-            l'onglet "Utilisateurs".
+            <strong>Note :</strong> Les utilisateurs doivent disposer d'un compte autorisé pour
+            accéder à l'interface mobile. Gérez les accès dans l'onglet "Utilisateurs".
           </p>
         </div>
       </div>

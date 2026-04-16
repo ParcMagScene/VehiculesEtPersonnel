@@ -1,12 +1,28 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  format, addWeeks, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
-  eachDayOfInterval, isSameMonth, isToday, isWeekend,
+  format,
+  addWeeks,
+  addMonths,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isToday,
+  isWeekend,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
-  ChevronLeft, ChevronRight, Calendar as CalIcon, Users, Briefcase,
-  Clock, MapPin, Ban, Palmtree,
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalIcon,
+  Users,
+  Briefcase,
+  Clock,
+  MapPin,
+  Ban,
+  Palmtree,
 } from 'lucide-react';
 import api from '../../utils/api';
 import './PersonnelAgenda.css';
@@ -17,10 +33,26 @@ import { STATUS_COLORS } from '../../constants/colors';
 
 // Couleurs par type d'événement
 const EVENT_COLORS = {
-  mission: { bg: 'var(--theme-info-bg-strong)', border: STATUS_COLORS.info, text: 'var(--theme-info-text)' },
-  leave: { bg: 'var(--theme-success-bg-strong)', border: STATUS_COLORS.success, text: 'var(--theme-success-text)' },
-  unavailability: { bg: 'var(--btn-danger-bg)', border: STATUS_COLORS.danger, text: 'var(--theme-danger-text)' },
-  google: { bg: 'var(--btn-warning-bg)', border: STATUS_COLORS.warning, text: 'var(--theme-warning-text)' },
+  mission: {
+    bg: 'var(--theme-info-bg-strong)',
+    border: STATUS_COLORS.info,
+    text: 'var(--theme-info-text)',
+  },
+  leave: {
+    bg: 'var(--theme-success-bg-strong)',
+    border: STATUS_COLORS.success,
+    text: 'var(--theme-success-text)',
+  },
+  unavailability: {
+    bg: 'var(--btn-danger-bg)',
+    border: STATUS_COLORS.danger,
+    text: 'var(--theme-danger-text)',
+  },
+  google: {
+    bg: 'var(--btn-warning-bg)',
+    border: STATUS_COLORS.warning,
+    text: 'var(--theme-warning-text)',
+  },
 };
 
 const MISSION_TYPE_LABELS = {
@@ -56,9 +88,10 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
   // Sélection auto de la personne connectée
   useEffect(() => {
     if (!selectedPersonId && persons.length > 0 && currentUser) {
-      const self = persons.find(p =>
-        p.email === currentUser.email ||
-        (p.first_name === currentUser.firstName && p.last_name === currentUser.lastName)
+      const self = persons.find(
+        (p) =>
+          p.email === currentUser.email ||
+          (p.first_name === currentUser.firstName && p.last_name === currentUser.lastName),
       );
       setSelectedPersonId(self?.id || persons[0]?.id);
     }
@@ -78,9 +111,9 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
     };
   }, [agendaView, agendaDate]);
 
-  const visibleDays = useMemo(() =>
-    eachDayOfInterval({ start: dateRange.start, end: dateRange.end }),
-    [dateRange]
+  const visibleDays = useMemo(
+    () => eachDayOfInterval({ start: dateRange.start, end: dateRange.end }),
+    [dateRange],
   );
 
   // Charger les données
@@ -93,16 +126,23 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
 
       const [missionsData, leavesData, availData] = await Promise.all([
         api.getMissions({ startDate: startStr, endDate: endStr }).catch(() => []),
-        api.getAllLeaves({ personId: selectedPersonId, startDate: startStr, endDate: endStr }).catch(() => []),
-        api.getAvailabilities({ personId: selectedPersonId, startDate: startStr, endDate: endStr }).catch(() => []),
+        api
+          .getAllLeaves({ personId: selectedPersonId, startDate: startStr, endDate: endStr })
+          .catch(() => []),
+        api
+          .getAvailabilities({ personId: selectedPersonId, startDate: startStr, endDate: endStr })
+          .catch(() => []),
       ]);
 
       // Filtrer les missions assignées à cette personne
-      const personMissions = (missionsData || []).filter(m => {
-        const assignments = typeof m.assignments_json === 'string'
-          ? JSON.parse(m.assignments_json || '[]')
-          : (m.assignments || []);
-        return assignments.some(a => a.person_id === selectedPersonId || a.personId === selectedPersonId);
+      const personMissions = (missionsData || []).filter((m) => {
+        const assignments =
+          typeof m.assignments_json === 'string'
+            ? JSON.parse(m.assignments_json || '[]')
+            : m.assignments || [];
+        return assignments.some(
+          (a) => a.person_id === selectedPersonId || a.personId === selectedPersonId,
+        );
       });
 
       setEvents({
@@ -117,119 +157,131 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
     }
   }, [selectedPersonId, dateRange]);
 
-  useEffect(() => { loadAgendaData(); }, [loadAgendaData]);
+  useEffect(() => {
+    loadAgendaData();
+  }, [loadAgendaData]);
 
   // Événements Google Calendar pour la personne
   const personGoogleEvents = useMemo(() => {
     if (!selectedPersonId || !googleEvents.length) return [];
-    const person = persons.find(p => p.id === selectedPersonId);
+    const person = persons.find((p) => p.id === selectedPersonId);
     if (!person?.email) return [];
-    return googleEvents.filter(e =>
-      e.attendees?.some(a => a.email === person.email) ||
-      e.organizer?.email === person.email
+    return googleEvents.filter(
+      (e) =>
+        e.attendees?.some((a) => a.email === person.email) || e.organizer?.email === person.email,
     );
   }, [selectedPersonId, googleEvents, persons]);
 
   // Événements d'un jour donné
-  const getEventsForDay = useCallback((day) => {
-    const dayStr = format(day, 'yyyy-MM-dd');
-    const result = [];
+  const getEventsForDay = useCallback(
+    (day) => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const result = [];
 
-    // Missions
-    events.missions.forEach(m => {
-      const start = m.start_date || m.startDate;
-      const end = m.end_date || m.endDate || start;
-      if (start <= dayStr && end >= dayStr) {
-        result.push({
-          id: `mission-${m.id}`,
-          type: 'mission',
-          title: MISSION_TYPE_LABELS[m.type] || m.type || 'Mission',
-          subtitle: m.client_name || m.clientName || '',
-          location: m.location || '',
-          raw: m,
-        });
-      }
-    });
+      // Missions
+      events.missions.forEach((m) => {
+        const start = m.start_date || m.startDate;
+        const end = m.end_date || m.endDate || start;
+        if (start <= dayStr && end >= dayStr) {
+          result.push({
+            id: `mission-${m.id}`,
+            type: 'mission',
+            title: MISSION_TYPE_LABELS[m.type] || m.type || 'Mission',
+            subtitle: m.client_name || m.clientName || '',
+            location: m.location || '',
+            raw: m,
+          });
+        }
+      });
 
-    // Congés
-    events.leaves.forEach(l => {
-      const start = l.start_date || l.startDate;
-      const end = l.end_date || l.endDate || start;
-      if (start <= dayStr && end >= dayStr) {
-        result.push({
-          id: `leave-${l.id}`,
-          type: 'leave',
-          title: LEAVE_TYPE_LABELS[l.leave_type || l.leaveType] || l.leave_type || 'Congé',
-          subtitle: l.status === STATUS.APPROVED ? 'Validé' : l.status === STATUS.PENDING ? 'En attente' : l.status,
-          raw: l,
-        });
-      }
-    });
+      // Congés
+      events.leaves.forEach((l) => {
+        const start = l.start_date || l.startDate;
+        const end = l.end_date || l.endDate || start;
+        if (start <= dayStr && end >= dayStr) {
+          result.push({
+            id: `leave-${l.id}`,
+            type: 'leave',
+            title: LEAVE_TYPE_LABELS[l.leave_type || l.leaveType] || l.leave_type || 'Congé',
+            subtitle:
+              l.status === STATUS.APPROVED
+                ? 'Validé'
+                : l.status === STATUS.PENDING
+                  ? 'En attente'
+                  : l.status,
+            raw: l,
+          });
+        }
+      });
 
-    // Indisponibilités
-    events.unavailabilities.forEach(u => {
-      const start = u.start_date || u.startDate;
-      const end = u.end_date || u.endDate || start;
-      if (start <= dayStr && end >= dayStr) {
-        result.push({
-          id: `unavail-${u.id}`,
-          type: 'unavailability',
-          title: u.reason || 'Indisponible',
-          subtitle: u.type || '',
-          raw: u,
-        });
-      }
-    });
+      // Indisponibilités
+      events.unavailabilities.forEach((u) => {
+        const start = u.start_date || u.startDate;
+        const end = u.end_date || u.endDate || start;
+        if (start <= dayStr && end >= dayStr) {
+          result.push({
+            id: `unavail-${u.id}`,
+            type: 'unavailability',
+            title: u.reason || 'Indisponible',
+            subtitle: u.type || '',
+            raw: u,
+          });
+        }
+      });
 
-    // Google Calendar
-    personGoogleEvents.forEach(g => {
-      const gStart = g.start?.dateTime || g.start?.date || '';
-      const gEnd = g.end?.dateTime || g.end?.date || '';
-      const gStartDate = gStart.substring(0, 10);
-      const gEndDate = gEnd.substring(0, 10);
-      if (gStartDate <= dayStr && gEndDate >= dayStr) {
-        result.push({
-          id: `google-${g.id}`,
-          type: 'google',
-          title: g.summary || 'Événement',
-          subtitle: g.location || '',
-          raw: g,
-        });
-      }
-    });
+      // Google Calendar
+      personGoogleEvents.forEach((g) => {
+        const gStart = g.start?.dateTime || g.start?.date || '';
+        const gEnd = g.end?.dateTime || g.end?.date || '';
+        const gStartDate = gStart.substring(0, 10);
+        const gEndDate = gEnd.substring(0, 10);
+        if (gStartDate <= dayStr && gEndDate >= dayStr) {
+          result.push({
+            id: `google-${g.id}`,
+            type: 'google',
+            title: g.summary || 'Événement',
+            subtitle: g.location || '',
+            raw: g,
+          });
+        }
+      });
 
-    return result;
-  }, [events, personGoogleEvents]);
+      return result;
+    },
+    [events, personGoogleEvents],
+  );
 
   // Navigation
   const navigate = (direction) => {
     const delta = direction === 'prev' ? -1 : 1;
     if (agendaView === 'week') {
-      setAgendaDate(d => addWeeks(d, delta));
+      setAgendaDate((d) => addWeeks(d, delta));
     } else {
-      setAgendaDate(d => addMonths(d, delta));
+      setAgendaDate((d) => addMonths(d, delta));
     }
   };
 
   const goToday = () => setAgendaDate(new Date());
 
   // Personne sélectionnée
-  const selectedPerson = persons.find(p => p.id === selectedPersonId);
+  const selectedPerson = persons.find((p) => p.id === selectedPersonId);
 
   // Filtre personnes
   const filteredPersons = useMemo(() => {
     if (!searchPerson) return persons;
     const q = searchPerson.toLowerCase();
-    return persons.filter(p =>
-      `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
-      (p.email || '').toLowerCase().includes(q)
+    return persons.filter(
+      (p) =>
+        `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
+        (p.email || '').toLowerCase().includes(q),
     );
   }, [persons, searchPerson]);
 
   // Titre de la période
-  const periodTitle = agendaView === 'week'
-    ? format(dateRange.start, "'Semaine du' d MMMM yyyy", { locale: fr })
-    : format(agendaDate, 'MMMM yyyy', { locale: fr });
+  const periodTitle =
+    agendaView === 'week'
+      ? format(dateRange.start, "'Semaine du' d MMMM yyyy", { locale: fr })
+      : format(agendaDate, 'MMMM yyyy', { locale: fr });
 
   return (
     <div className="personnel-agenda">
@@ -239,10 +291,17 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
           <Users size={18} />
           <span>Personnel</span>
         </div>
-        <SearchBar value={searchPerson} onChange={setSearchPerson} placeholder="Rechercher..." size="sm" />
+        <SearchBar
+          value={searchPerson}
+          onChange={setSearchPerson}
+          placeholder="Rechercher..."
+          size="sm"
+        />
         <div className="agenda-person-list">
-          {filteredPersons.map(person => (
-            <Button variant="ghost"               key={person.id}
+          {filteredPersons.map((person) => (
+            <Button
+              variant="ghost"
+              key={person.id}
               className={`agenda-person-item ${person.id === selectedPersonId ? 'active' : ''}`}
               onClick={() => setSelectedPersonId(person.id)}
             >
@@ -269,7 +328,10 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
             <span>Congés</span>
           </div>
           <div className="legend-item">
-            <span className="legend-dot" style={{ background: EVENT_COLORS.unavailability.border }} />
+            <span
+              className="legend-dot"
+              style={{ background: EVENT_COLORS.unavailability.border }}
+            />
             <span>Indisponible</span>
           </div>
           <div className="legend-item">
@@ -304,12 +366,20 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
           </div>
           <div className="agenda-toolbar-right">
             <div className="agenda-view-toggle">
-              <Button variant="ghost"                 className={agendaView === 'week' ? 'active' : ''}
+              <Button
+                variant="ghost"
+                className={agendaView === 'week' ? 'active' : ''}
                 onClick={() => setAgendaView('week')}
-              >Semaine</Button>
-              <Button variant="ghost"                 className={agendaView === 'month' ? 'active' : ''}
+              >
+                Semaine
+              </Button>
+              <Button
+                variant="ghost"
+                className={agendaView === 'month' ? 'active' : ''}
                 onClick={() => setAgendaView('month')}
-              >Mois</Button>
+              >
+                Mois
+              </Button>
             </div>
           </div>
         </div>
@@ -321,12 +391,15 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
             <span>Chargement...</span>
           </div>
         ) : !selectedPersonId ? (
-          <EmptyState icon={<Users size={48} />} title="Sélectionnez une personne pour voir son agenda" />
+          <EmptyState
+            icon={<Users size={48} />}
+            title="Sélectionnez une personne pour voir son agenda"
+          />
         ) : agendaView === 'week' ? (
           /* === VUE SEMAINE === */
           <div className="agenda-week">
             <div className="agenda-week-header">
-              {visibleDays.map(day => (
+              {visibleDays.map((day) => (
                 <div
                   key={day.toString()}
                   className={`agenda-week-day-header ${isToday(day) ? 'today' : ''} ${isWeekend(day) ? 'weekend' : ''}`}
@@ -339,17 +412,15 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
               ))}
             </div>
             <div className="agenda-week-body">
-              {visibleDays.map(day => {
+              {visibleDays.map((day) => {
                 const dayEvents = getEventsForDay(day);
                 return (
                   <div
                     key={day.toString()}
                     className={`agenda-week-day ${isToday(day) ? 'today' : ''} ${isWeekend(day) ? 'weekend' : ''}`}
                   >
-                    {dayEvents.length === 0 && (
-                      <div className="agenda-day-free">Disponible</div>
-                    )}
-                    {dayEvents.map(evt => (
+                    {dayEvents.length === 0 && <div className="agenda-day-free">Disponible</div>}
+                    {dayEvents.map((evt) => (
                       <div
                         key={evt.id}
                         className="agenda-event"
@@ -388,8 +459,10 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
           /* === VUE MOIS === */
           <div className="agenda-month">
             <div className="agenda-month-header">
-              {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(d => (
-                <div key={d} className="agenda-month-day-label">{d}</div>
+              {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((d) => (
+                <div key={d} className="agenda-month-day-label">
+                  {d}
+                </div>
               ))}
             </div>
             <div className="agenda-month-grid">
@@ -403,7 +476,7 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
                 }
                 return padding;
               })()}
-              {visibleDays.map(day => {
+              {visibleDays.map((day) => {
                 const dayEvents = getEventsForDay(day);
                 return (
                   <div
@@ -411,12 +484,10 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
                     className={`agenda-month-cell ${isToday(day) ? 'today' : ''} ${!isSameMonth(day, agendaDate) ? 'other-month' : ''} ${isWeekend(day) ? 'weekend' : ''}`}
                   >
                     <div className="month-cell-date">
-                      <span className={isToday(day) ? 'today-badge' : ''}>
-                        {format(day, 'd')}
-                      </span>
+                      <span className={isToday(day) ? 'today-badge' : ''}>{format(day, 'd')}</span>
                     </div>
                     <div className="month-cell-events">
-                      {dayEvents.slice(0, 3).map(evt => (
+                      {dayEvents.slice(0, 3).map((evt) => (
                         <div
                           key={evt.id}
                           className="month-event-dot"

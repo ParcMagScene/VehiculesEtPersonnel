@@ -69,7 +69,13 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
             <>
               <div className="map-print-menu-divider" />
               <div className="map-print-menu-title">Double carte</div>
-              <button role="menuitem" onClick={() => { onDualPrint(); setOpen(false); }}>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  onDualPrint();
+                  setOpen(false);
+                }}
+              >
                 Générale + Locale
               </button>
             </>

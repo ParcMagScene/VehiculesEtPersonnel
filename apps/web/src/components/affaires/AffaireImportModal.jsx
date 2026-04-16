@@ -1,22 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
-import logger from "../../utils/logger";
+import logger from '../../utils/logger';
 import api from '../../utils/api';
 import './AffaireImportModal.css';
 import { extractTextFromPDF, smartParse, batchParsePDFs } from '../../utils/pdfParser';
-import { addToIndexedDB, updateInIndexedDB, loadFromIndexedDB, STORES } from '../../utils/indexedDB';
+import {
+  addToIndexedDB,
+  updateInIndexedDB,
+  loadFromIndexedDB,
+  STORES,
+} from '../../utils/indexedDB';
 import PhoneInput from '../PhoneInput';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { useToast } from '../../hooks/useToast';
-import { Button, FormField, ModalLayout, Input, Textarea, Select, Spinner, ProgressBar } from '@/design-system';
+import {
+  Button,
+  FormField,
+  ModalLayout,
+  Input,
+  Textarea,
+  Select,
+  Spinner,
+  ProgressBar,
+} from '@/design-system';
 import { STATUS_COLORS } from '../../constants/colors';
 
-const AffaireImportModal = ({ 
-  isOpen, 
-  onClose, 
+const AffaireImportModal = ({
+  isOpen,
+  onClose,
   event,
   _onEventCreated,
   onEventUpdated,
-  _onRequestEditReservation
+  _onRequestEditReservation,
 }) => {
   const toast = useToast();
   const [step, setStep] = useState('upload'); // 'choice', 'upload', 'form', 'edit-event', 'upload-additional'
@@ -35,19 +49,19 @@ const AffaireImportModal = ({
     devis: '',
     adresseLivraison: '',
     titre: '',
-    description: ''
+    description: '',
   });
   const [_eventFormData, setEventFormData] = useState({
     titre: '',
     description: '',
     dateDebut: '',
-    dateFin: ''
+    dateFin: '',
   });
   const [existingAffaires, setExistingAffaires] = useState([]);
   const [replaceConfirm, setReplaceConfirm] = useState(null);
   const [initialFormData, setInitialFormData] = useState(null);
   const [_hasChanges, setHasChanges] = useState(false);
-  
+
   // ═══ Nouveaux états : aperçu PDF, détection type, batch ═══
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -57,7 +71,7 @@ const AffaireImportModal = ({
   const [batchResults, setBatchResults] = useState([]); // [{ file, docType, confidence, info, error }]
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
   const [selectedBatchIndex, setSelectedBatchIndex] = useState(-1);
-  
+
   const fileInputRef = useRef(null);
   const additionalFileInputRef = useRef(null);
   const dropZoneRef = useRef(null);
@@ -81,19 +95,21 @@ const AffaireImportModal = ({
   };
 
   // Déterminer le workflow en fonction de l'événement
-  const workflow = event 
-    ? (event.extendedProps?.numeroAffaire ? 'update' : 'import-or-create')
+  const workflow = event
+    ? event.extendedProps?.numeroAffaire
+      ? 'update'
+      : 'import-or-create'
     : 'new';
 
   useEffect(() => {
     if (isOpen && event) {
       logger.log('🔄 Modal ouvert pour event:', event.id, event.summary);
       logger.log('📅 Event complet:', event);
-      
+
       // Réinitialiser complètement tous les états
       setAdditionalBLs([]);
       setExistingAffaires([]);
-      
+
       // Nettoyer le titre en enlevant le numéro d'affaire
       const cleanTitle = (title, numeroAffaire) => {
         if (!title || !numeroAffaire) return title || '';
@@ -101,7 +117,7 @@ const AffaireImportModal = ({
         const pattern = new RegExp(`\\s*${numeroAffaire.replace(/\s+/g, '\\s*')}\\s*`, 'gi');
         return title.replace(pattern, ' ').trim();
       };
-      
+
       // Réinitialiser le formulaire avec les données de l'événement Google
       const initialFormData = {
         numeroAffaire: event.affaire || event.extendedProps?.numeroAffaire || '',
@@ -114,47 +130,55 @@ const AffaireImportModal = ({
         devis: '',
         adresseLivraison: '',
         titre: cleanTitle(event.summary, event.affaire || event.extendedProps?.numeroAffaire),
-        description: event.extendedProps?.description || event.description || ''
+        description: event.extendedProps?.description || event.description || '',
       };
-      
-      logger.log('📝 Formulaire initialisé avec:', initialFormData.titre, '- N° affaire:', initialFormData.numeroAffaire);
-      
+
+      logger.log(
+        '📝 Formulaire initialisé avec:',
+        initialFormData.titre,
+        '- N° affaire:',
+        initialFormData.numeroAffaire,
+      );
+
       setFormData(initialFormData);
       setInitialFormData(initialFormData); // Sauvegarder pour comparaison
       setHasChanges(false); // Reset des changements
-      
+
       // Log immédiat après setFormData
       setTimeout(() => {
         logger.log('🔍 State formData après setFormData:', formData.client, formData.titre);
       }, 100);
-      
+
       setEventFormData({
         titre: event.summary || '',
         description: event.extendedProps?.description || event.description || '',
         dateDebut: getDateString(event.start),
-        dateFin: getDateString(event.end)
+        dateFin: getDateString(event.end),
       });
       setPdfFile(null);
-      
+
       // Charger les affaires de CET événement spécifique
       const loadAffaires = async () => {
         try {
           const allAffaires = await loadFromIndexedDB(STORES.affaires, []);
-          logger.log('📦 Toutes les affaires:', allAffaires.map(a => ({ id: a.eventId, client: a.client })));
-          
-          const affaires = allAffaires.filter(a => a.eventId === event.id);
+          logger.log(
+            '📦 Toutes les affaires:',
+            allAffaires.map((a) => ({ id: a.eventId, client: a.client })),
+          );
+
+          const affaires = allAffaires.filter((a) => a.eventId === event.id);
           logger.log('🎯 Affaires pour cet event:', affaires);
-          
+
           setExistingAffaires(affaires);
-          
+
           // Définir le step en fonction de l'existence d'affaires
           setStep(affaires.length > 0 ? 'choice' : 'upload');
-          
+
           // Si une affaire existe, pré-remplir le formulaire
           if (affaires.length > 0) {
             const affaire = affaires[0];
             logger.log('✏️ Pré-remplissage avec affaire:', affaire.client);
-            
+
             setFormData({
               ...initialFormData,
               numeroAffaire: affaire.numeroAffaire || '',
@@ -167,9 +191,9 @@ const AffaireImportModal = ({
               devis: affaire.devis || '',
               adresseLivraison: affaire.adresseLivraison || '',
               titre: event.summary || '',
-              description: affaire.description || initialFormData.description
+              description: affaire.description || initialFormData.description,
             });
-            
+
             // Charger les BL additionnels
             if (affaire.additionalBLs) {
               setAdditionalBLs(affaire.additionalBLs);
@@ -181,7 +205,7 @@ const AffaireImportModal = ({
           console.error('Erreur chargement affaires:', error);
         }
       };
-      
+
       loadAffaires();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -193,23 +217,23 @@ const AffaireImportModal = ({
       setHasChanges(false);
       return;
     }
-    
+
     const hasChanged = JSON.stringify(formData) !== JSON.stringify(initialFormData);
     setHasChanges(hasChanged);
   }, [formData, initialFormData]);
 
   const _loadExistingAffaires = async () => {
     if (!event?.id) return;
-    
+
     try {
       const allAffaires = await loadFromIndexedDB(STORES.affaires, []);
-      const affaires = allAffaires.filter(a => a.eventId === event.id);
+      const affaires = allAffaires.filter((a) => a.eventId === event.id);
       setExistingAffaires(affaires);
-      
+
       // Si une affaire existe, pré-remplir le formulaire avec les données de l'affaire
       if (affaires.length > 0) {
         const affaire = affaires[0];
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           numeroAffaire: affaire.numeroAffaire || '',
           type: affaire.type || 'Prestation',
@@ -221,9 +245,9 @@ const AffaireImportModal = ({
           devis: affaire.devis || '',
           adresseLivraison: affaire.adresseLivraison || '',
           titre: event.summary || '',
-          description: affaire.description || prev.description
+          description: affaire.description || prev.description,
         }));
-        
+
         // Charger les BL additionnels
         if (affaire.additionalBLs) {
           setAdditionalBLs(affaire.additionalBLs);
@@ -251,14 +275,14 @@ const AffaireImportModal = ({
       const newBL = {
         fileName: file.name,
         data: pdfData,
-        uploadedAt: new Date().toISOString()
+        uploadedAt: new Date().toISOString(),
       };
 
-      setAdditionalBLs(prev => [...prev, newBL]);
+      setAdditionalBLs((prev) => [...prev, newBL]);
       setStep('form');
     } catch (error) {
       console.error('Erreur upload BL additionnel:', error);
-      toast.error('Erreur lors de l\'upload du BL');
+      toast.error("Erreur lors de l'upload du BL");
     }
   };
 
@@ -306,7 +330,7 @@ const AffaireImportModal = ({
     }
 
     // Vérifier si le PDF existe déjà
-    const existingPdf = existingAffaires.find(a => a.pdfFileName === file.name);
+    const existingPdf = existingAffaires.find((a) => a.pdfFileName === file.name);
     if (existingPdf && workflow === 'update') {
       setReplaceConfirm({ file, existing: existingPdf });
       return;
@@ -321,46 +345,55 @@ const AffaireImportModal = ({
 
     try {
       logger.log('🚀 Démarrage du traitement PDF:', file.name);
-      
+
       // Extraire le texte du PDF
       const text = await extractTextFromPDF(file);
       logger.log('📝 Texte extrait:', text.substring(0, 200) + '...');
       setExtractedText(text);
-      
+
       // Générer l'aperçu PDF
       const previewUrl = URL.createObjectURL(file);
       if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
       setPdfPreviewUrl(previewUrl);
-      
+
       // Parse intelligent : détection auto du type + parseur spécialisé
       const parsed = smartParse(text);
       const info = parsed.info;
-      setDetectedDocType({ docType: parsed.docType, docTypeLabel: parsed.docTypeLabel, confidence: parsed.confidence });
-      logger.log('📊 Informations parsées (%s, confiance %d%):', parsed.docTypeLabel, parsed.confidence, info);
+      setDetectedDocType({
+        docType: parsed.docType,
+        docTypeLabel: parsed.docTypeLabel,
+        confidence: parsed.confidence,
+      });
+      logger.log(
+        '📊 Informations parsées (%s, confiance %d%):',
+        parsed.docTypeLabel,
+        parsed.confidence,
+        info,
+      );
 
       // Vérifier si ce numéro d'affaire existe déjà
       const numeroAffaire = info.numeroAffaire || '';
       if (numeroAffaire && existingAffaires.length > 0 && !forceReplace) {
-        const existing = existingAffaires.find(a => 
-          a.numeroAffaire && a.numeroAffaire.toLowerCase() === numeroAffaire.toLowerCase()
+        const existing = existingAffaires.find(
+          (a) => a.numeroAffaire && a.numeroAffaire.toLowerCase() === numeroAffaire.toLowerCase(),
         );
-        
+
         if (existing) {
           // BL existe déjà, demander confirmation
           setReplaceConfirm({
             file,
             numeroAffaire,
             existing,
-            action: 'replace' // ou 'add' si l'utilisateur choisit d'ajouter
+            action: 'replace', // ou 'add' si l'utilisateur choisit d'ajouter
           });
           setIsProcessing(false);
           return;
         }
       }
-      
+
       // Préremplir le formulaire (dateLocation est normalisé par smartParse)
       const dateValue = info.dateLocation || info.dateDevis || info.dateFacture || null;
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         numeroAffaire: info.numeroAffaire || prev.numeroAffaire,
         type: info.type || prev.type,
@@ -372,14 +405,16 @@ const AffaireImportModal = ({
         devis: info.devis || prev.devis,
         adresseLivraison: info.adresseLivraison || prev.adresseLivraison,
         titre: prev.titre || info.nomAffaire || '',
-        description: prev.description || `${info.client || ''} - ${info.nomAffaire || ''}`
+        description: prev.description || `${info.client || ''} - ${info.nomAffaire || ''}`,
       }));
 
       logger.log('✅ Formulaire prérempli avec succès');
       setStep('form');
     } catch (error) {
       console.error('❌ Erreur traitement PDF:', error);
-      toast.warning(`Erreur lors de l'analyse du PDF: ${error.message} Veuillez remplir le formulaire manuellement.`);
+      toast.warning(
+        `Erreur lors de l'analyse du PDF: ${error.message} Veuillez remplir le formulaire manuellement.`,
+      );
       setStep('form');
     } finally {
       setIsProcessing(false);
@@ -409,7 +444,7 @@ const AffaireImportModal = ({
     try {
       // Créer un dossier virtuel pour l'événement dans IndexedDB
       const reader = new FileReader();
-      
+
       return new Promise((resolve, reject) => {
         reader.onload = async (e) => {
           try {
@@ -418,9 +453,9 @@ const AffaireImportModal = ({
               affaireId,
               fileName: file.name,
               data: e.target.result,
-              uploadDate: new Date().toISOString()
+              uploadDate: new Date().toISOString(),
             };
-            
+
             // Sauvegarder aussi le PDF physiquement sur le serveur
             try {
               const result = await api.uploadBL(file, affaireId);
@@ -428,7 +463,7 @@ const AffaireImportModal = ({
             } catch (serverError) {
               console.warn('⚠️ Erreur sauvegarde serveur:', serverError);
             }
-            
+
             // Pour l'instant, on stocke les métadonnées dans l'affaire
             // Le blob PDF sera stocké dans le navigateur via IndexedDB
             resolve(pdfData);
@@ -436,7 +471,7 @@ const AffaireImportModal = ({
             reject(error);
           }
         };
-        
+
         reader.onerror = () => reject(reader.error);
         reader.readAsDataURL(file);
       });
@@ -448,7 +483,7 @@ const AffaireImportModal = ({
 
   const handleSubmit = async () => {
     if (!formData.numeroAffaire || !formData.client) {
-      toast.warning('Veuillez renseigner au moins le numéro d\'affaire et le client');
+      toast.warning("Veuillez renseigner au moins le numéro d'affaire et le client");
       return;
     }
 
@@ -483,9 +518,10 @@ const AffaireImportModal = ({
 
       // Calculer date_fin depuis l'événement si disponible
       if (event?.end) {
-        affairePayload.date_fin = typeof event.end === 'string'
-          ? event.end.split('T')[0]
-          : event.end?.date || event.end?.dateTime?.split('T')[0] || '';
+        affairePayload.date_fin =
+          typeof event.end === 'string'
+            ? event.end.split('T')[0]
+            : event.end?.date || event.end?.dateTime?.split('T')[0] || '';
       }
 
       try {
@@ -511,12 +547,12 @@ const AffaireImportModal = ({
         pdfData: pdfData?.data,
         additionalBLs: additionalBLs,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       // Vérifier si l'affaire existe déjà dans IndexedDB
-      const existing = existingAffaires.find(a => a.numeroAffaire === formData.numeroAffaire);
-      
+      const existing = existingAffaires.find((a) => a.numeroAffaire === formData.numeroAffaire);
+
       if (existing) {
         affaire.id = existing.id;
         await updateInIndexedDB(STORES.affaires, affaire);
@@ -532,10 +568,10 @@ const AffaireImportModal = ({
           extendedProps: {
             ...event.extendedProps,
             numeroAffaire: formData.numeroAffaire,
-            description: formData.description
-          }
+            description: formData.description,
+          },
         };
-        
+
         // Notifier le parent que l'événement a été mis à jour
         if (onEventUpdated) {
           onEventUpdated(updatedEvent);
@@ -546,7 +582,7 @@ const AffaireImportModal = ({
       resetForm();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      toast.error('Erreur lors de la sauvegarde de l\'affaire');
+      toast.error("Erreur lors de la sauvegarde de l'affaire");
     } finally {
       setIsProcessing(false);
     }
@@ -558,7 +594,7 @@ const AffaireImportModal = ({
 
   // ═══ Handlers batch mode ═══
   const handleBatchUpload = async (files) => {
-    const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+    const pdfFiles = Array.from(files).filter((f) => f.type === 'application/pdf');
     if (pdfFiles.length === 0) {
       toast.warning('Aucun fichier PDF sélectionné');
       return;
@@ -577,7 +613,7 @@ const AffaireImportModal = ({
 
     const results = await batchParsePDFs(pdfFiles, (current, total, result) => {
       setBatchProgress({ current, total });
-      setBatchResults(prev => [...prev, result]);
+      setBatchResults((prev) => [...prev, result]);
     });
 
     setIsProcessing(false);
@@ -590,12 +626,16 @@ const AffaireImportModal = ({
     if (!result || result.error) return;
 
     setPdfFile(result.file);
-    setDetectedDocType({ docType: result.docType, docTypeLabel: result.docTypeLabel, confidence: result.confidence });
+    setDetectedDocType({
+      docType: result.docType,
+      docTypeLabel: result.docTypeLabel,
+      confidence: result.confidence,
+    });
     setExtractedText(result.text);
 
     const info = result.info;
     const dateValue = info.dateLocation || info.dateDevis || info.dateFacture || null;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       numeroAffaire: info.numeroAffaire || prev.numeroAffaire,
       type: info.type || prev.type,
@@ -607,7 +647,7 @@ const AffaireImportModal = ({
       devis: info.devis || prev.devis,
       adresseLivraison: info.adresseLivraison || prev.adresseLivraison,
       titre: prev.titre || info.nomAffaire || '',
-      description: prev.description || `${info.client || ''} - ${info.nomAffaire || ''}`
+      description: prev.description || `${info.client || ''} - ${info.nomAffaire || ''}`,
     }));
 
     // Preview URL
@@ -642,7 +682,7 @@ const AffaireImportModal = ({
       devis: '',
       adresseLivraison: '',
       titre: '',
-      description: ''
+      description: '',
     });
     setExistingAffaires([]);
     setReplaceConfirm(null);
@@ -674,500 +714,514 @@ const AffaireImportModal = ({
       size="xl"
       className="affaire-modal-content"
     >
-        <div className="affaire-modal-body">
-          {/* Étape 1: Choix de l'action */}
-          {step === 'choice' && (
-            <div className="choice-step">
-              {workflow === 'new' && (
-                <>
-                  <Button variant="ghost" 
-                    className="choice-button"
-                    onClick={() => setStep('upload')}
-                  >
-                    📄 Importer un BL pour cet événement
-                  </Button>
-                </>
-              )}
-              
-              {workflow === 'import-or-create' && (
-                <>
-                  <Button variant="ghost" 
-                    className="choice-button"
-                    onClick={() => setStep('form')}
-                  >
-                    ✏️ Modifier les informations
-                  </Button>
-                  <Button variant="ghost" 
-                    className="choice-button"
-                    onClick={() => setStep('upload')}
-                  >
-                    📄 {existingAffaires.length > 0 ? 'Remplacer le BL' : 'Importer un BL'}
-                  </Button>
-                  <Button variant="ghost" 
-                    className="choice-button"
-                    onClick={() => setStep('upload-additional')}
-                  >
-                    📎 Ajouter un BL supplémentaire
-                  </Button>
-                </>
-              )}
-              
-              {workflow === 'update' && (
-                <Button variant="ghost" 
+      <div className="affaire-modal-body">
+        {/* Étape 1: Choix de l'action */}
+        {step === 'choice' && (
+          <div className="choice-step">
+            {workflow === 'new' && (
+              <>
+                <Button variant="ghost" className="choice-button" onClick={() => setStep('upload')}>
+                  📄 Importer un BL pour cet événement
+                </Button>
+              </>
+            )}
+
+            {workflow === 'import-or-create' && (
+              <>
+                <Button variant="ghost" className="choice-button" onClick={() => setStep('form')}>
+                  ✏️ Modifier les informations
+                </Button>
+                <Button variant="ghost" className="choice-button" onClick={() => setStep('upload')}>
+                  📄 {existingAffaires.length > 0 ? 'Remplacer le BL' : 'Importer un BL'}
+                </Button>
+                <Button
+                  variant="ghost"
                   className="choice-button"
-                  onClick={() => setStep('upload')}
+                  onClick={() => setStep('upload-additional')}
                 >
-                  📄 Importer/Remplacer le BL
+                  📎 Ajouter un BL supplémentaire
                 </Button>
-              )}
-            </div>
-          )}
+              </>
+            )}
 
-          {/* Étape 2: Upload du PDF (simple ou batch) */}
-          {step === 'upload' && !isProcessing && !batchMode && (
-            <div 
-              ref={dropZoneRef}
-              className={`drop-zone ${isDragging ? 'dragging' : ''}`}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(false);
-                const files = e.dataTransfer.files;
-                if (files.length > 1) {
-                  handleBatchUpload(files);
-                } else if (files.length === 1) {
-                  handleFileSelection(files[0]);
-                }
-              }}
-            >
-              <div className="drop-zone-content">
-                <div className="drop-zone-icon">📁</div>
-                <p className="drop-zone-text">
-                  Glissez-déposez un ou plusieurs PDF ici
-                </p>
-                <p className="drop-zone-or">ou</p>
-                <div className="u-flex" style={{ gap: '10px', justifyContent: 'center' }}>
-                  <Button variant="ghost" 
-                    className="browse-button"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Parcourir
-                  </Button>
-                  <Button variant="ghost" 
-                    className="browse-button batch-browse"
-                    onClick={() => {
-                      fileInputRef.current.multiple = true;
-                      fileInputRef.current?.click();
-                    }}
-                  >
-                    📦 Lot de PDFs
-                  </Button>
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  className="u-hidden"
-                  onChange={(e) => {
-                    const files = e.target.files;
-                    if (files.length > 1) {
-                      handleBatchUpload(files);
-                    } else if (files.length === 1) {
-                      handleFileSelection(files[0]);
-                    }
-                    fileInputRef.current.multiple = false;
+            {workflow === 'update' && (
+              <Button variant="ghost" className="choice-button" onClick={() => setStep('upload')}>
+                📄 Importer/Remplacer le BL
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Étape 2: Upload du PDF (simple ou batch) */}
+        {step === 'upload' && !isProcessing && !batchMode && (
+          <div
+            ref={dropZoneRef}
+            className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDragging(false);
+              const files = e.dataTransfer.files;
+              if (files.length > 1) {
+                handleBatchUpload(files);
+              } else if (files.length === 1) {
+                handleFileSelection(files[0]);
+              }
+            }}
+          >
+            <div className="drop-zone-content">
+              <div className="drop-zone-icon">📁</div>
+              <p className="drop-zone-text">Glissez-déposez un ou plusieurs PDF ici</p>
+              <p className="drop-zone-or">ou</p>
+              <div className="u-flex" style={{ gap: '10px', justifyContent: 'center' }}>
+                <Button
+                  variant="ghost"
+                  className="browse-button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Parcourir
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="browse-button batch-browse"
+                  onClick={() => {
+                    fileInputRef.current.multiple = true;
+                    fileInputRef.current?.click();
                   }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Résultats batch */}
-          {step === 'upload' && !isProcessing && batchMode && batchResults.length > 0 && (
-            <div className="batch-results-panel">
-              <div className="batch-results-header">
-                <h3>📦 {batchResults.length} documents analysés</h3>
-                <Button variant="secondary" onClick={() => { setBatchMode(false); setBatchResults([]); }}>
-                  ← Retour
+                >
+                  📦 Lot de PDFs
                 </Button>
               </div>
-              <div className="batch-results-list">
-                {batchResults.map((result, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`batch-result-item ${selectedBatchIndex === idx ? 'selected' : ''} ${result.error ? 'error' : ''}`}
-                    onClick={() => !result.error && handleSelectBatchResult(idx)}
-                  >
-                    <div className="batch-result-file">
-                      <span className="batch-result-icon">{result.error ? '❌' : '📄'}</span>
-                      <span className="batch-result-name">{result.file.name}</span>
-                    </div>
-                    {result.error ? (
-                      <span className="batch-result-error">{result.error}</span>
-                    ) : (
-                      <div className="batch-result-meta">
-                        <span className="doc-type-badge" style={{ background: getConfidenceColor(result.confidence) + '20', color: getConfidenceColor(result.confidence), border: `1px solid ${getConfidenceColor(result.confidence)}40` }}>
-                          {result.docTypeLabel}
-                        </span>
-                        <span className="batch-result-fields">
-                          {result.info.fieldsFound}/{result.info.fieldsTotal} champs
-                        </span>
-                        {result.info.numeroAffaire && (
-                          <span className="batch-result-affaire">{result.info.numeroAffaire}</span>
-                        )}
-                      </div>
-                    )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                className="u-hidden"
+                onChange={(e) => {
+                  const files = e.target.files;
+                  if (files.length > 1) {
+                    handleBatchUpload(files);
+                  } else if (files.length === 1) {
+                    handleFileSelection(files[0]);
+                  }
+                  fileInputRef.current.multiple = false;
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Résultats batch */}
+        {step === 'upload' && !isProcessing && batchMode && batchResults.length > 0 && (
+          <div className="batch-results-panel">
+            <div className="batch-results-header">
+              <h3>📦 {batchResults.length} documents analysés</h3>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setBatchMode(false);
+                  setBatchResults([]);
+                }}
+              >
+                ← Retour
+              </Button>
+            </div>
+            <div className="batch-results-list">
+              {batchResults.map((result, idx) => (
+                <div
+                  key={idx}
+                  className={`batch-result-item ${selectedBatchIndex === idx ? 'selected' : ''} ${result.error ? 'error' : ''}`}
+                  onClick={() => !result.error && handleSelectBatchResult(idx)}
+                >
+                  <div className="batch-result-file">
+                    <span className="batch-result-icon">{result.error ? '❌' : '📄'}</span>
+                    <span className="batch-result-name">{result.file.name}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {isProcessing && (
-            <div className="processing-indicator">
-              <Spinner size="lg" />
-              {batchMode ? (
-                <div>
-                  <p>Analyse des PDFs... {batchProgress.current}/{batchProgress.total}</p>
-                  <ProgressBar value={batchProgress.current} max={batchProgress.total || 1} />
+                  {result.error ? (
+                    <span className="batch-result-error">{result.error}</span>
+                  ) : (
+                    <div className="batch-result-meta">
+                      <span
+                        className="doc-type-badge"
+                        style={{
+                          background: getConfidenceColor(result.confidence) + '20',
+                          color: getConfidenceColor(result.confidence),
+                          border: `1px solid ${getConfidenceColor(result.confidence)}40`,
+                        }}
+                      >
+                        {result.docTypeLabel}
+                      </span>
+                      <span className="batch-result-fields">
+                        {result.info.fieldsFound}/{result.info.fieldsTotal} champs
+                      </span>
+                      {result.info.numeroAffaire && (
+                        <span className="batch-result-affaire">{result.info.numeroAffaire}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <p>Analyse du PDF en cours...</p>
-              )}
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Confirmation de remplacement */}
-          {replaceConfirm && (
-            <div className="replace-confirm">
-              <p className="warning-text">
-                ⚠️ Le BL <strong>{replaceConfirm.numeroAffaire}</strong> existe déjà pour cet événement
-              </p>
-              <p className="u-mb-4 u-text-secondary">
-                Que souhaitez-vous faire ?
-              </p>
-              <div className="button-group">
-                <Button variant="ghost" onClick={handleCancelReplace}>
-                  Annuler
-                </Button>
-                <Button 
-                  variant="success" 
-                  onClick={() => handleConfirmReplace('add')}
-                >
-                  ➕ Ajouter comme nouvelle affaire
-                </Button>
-                <Button 
-                  variant="primary" 
-                  onClick={() => handleConfirmReplace('replace')}
-                >
-                  🔄 Remplacer les données existantes
-                </Button>
+        {isProcessing && (
+          <div className="processing-indicator">
+            <Spinner size="lg" />
+            {batchMode ? (
+              <div>
+                <p>
+                  Analyse des PDFs... {batchProgress.current}/{batchProgress.total}
+                </p>
+                <ProgressBar value={batchProgress.current} max={batchProgress.total || 1} />
               </div>
-              <p className="u-font-xs u-text-muted u-mt-3">
-                <strong>Ajouter :</strong> Crée une nouvelle affaire avec ce BL, liée à cet événement<br/>
-                <strong>Remplacer :</strong> Met à jour les données de l'affaire existante avec ce BL
-              </p>
-            </div>
-          )}
+            ) : (
+              <p>Analyse du PDF en cours...</p>
+            )}
+          </div>
+        )}
 
-          {/* Étape 3: Formulaire */}
-          {step === 'form' && !isProcessing && (
-            <div className="form-step">
-              {/* Informations de l'événement Google */}
-              {event && (
-                <div className="event-info" style={{
+        {/* Confirmation de remplacement */}
+        {replaceConfirm && (
+          <div className="replace-confirm">
+            <p className="warning-text">
+              ⚠️ Le BL <strong>{replaceConfirm.numeroAffaire}</strong> existe déjà pour cet
+              événement
+            </p>
+            <p className="u-mb-4 u-text-secondary">Que souhaitez-vous faire ?</p>
+            <div className="button-group">
+              <Button variant="ghost" onClick={handleCancelReplace}>
+                Annuler
+              </Button>
+              <Button variant="success" onClick={() => handleConfirmReplace('add')}>
+                ➕ Ajouter comme nouvelle affaire
+              </Button>
+              <Button variant="primary" onClick={() => handleConfirmReplace('replace')}>
+                🔄 Remplacer les données existantes
+              </Button>
+            </div>
+            <p className="u-font-xs u-text-muted u-mt-3">
+              <strong>Ajouter :</strong> Crée une nouvelle affaire avec ce BL, liée à cet événement
+              <br />
+              <strong>Remplacer :</strong> Met à jour les données de l'affaire existante avec ce BL
+            </p>
+          </div>
+        )}
+
+        {/* Étape 3: Formulaire */}
+        {step === 'form' && !isProcessing && (
+          <div className="form-step">
+            {/* Informations de l'événement Google */}
+            {event && (
+              <div
+                className="event-info"
+                style={{
                   background: 'var(--theme-info-bg)',
                   padding: '12px',
                   borderRadius: '6px',
                   marginBottom: '20px',
                   fontSize: '14px',
-                  border: '1px solid var(--theme-info-border)'
-                }}>
-                  <div className="u-font-bold u-mb-2" style={{ color: 'var(--theme-info-text)' }}>
-                    📅 Événement Google Calendar
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    <div>
-                      <strong>Début :</strong> {getDateString(event.start) || 'Non défini'}
-                    </div>
-                    <div>
-                      <strong>Fin :</strong> {getDateString(event.end) || 'Non défini'}
-                    </div>
-                  </div>
-                  {event.location && (
-                    <div className="u-mt-2">
-                      <strong>Lieu :</strong> {event.location}
-                    </div>
-                  )}
+                  border: '1px solid var(--theme-info-border)',
+                }}
+              >
+                <div className="u-font-bold u-mb-2" style={{ color: 'var(--theme-info-text)' }}>
+                  📅 Événement Google Calendar
                 </div>
-              )}
-              
-              {/* Badge type de document détecté */}
-              {detectedDocType && (
-                <div className="detected-doc-banner">
-                  <div className="doc-type-info">
-                    <span className="doc-type-badge" style={{ background: getConfidenceColor(detectedDocType.confidence) + '20', color: getConfidenceColor(detectedDocType.confidence), border: `1px solid ${getConfidenceColor(detectedDocType.confidence)}40` }}>
-                      {detectedDocType.docTypeLabel}
-                    </span>
-                    <span className="doc-confidence">
-                      Confiance : <strong style={{ color: getConfidenceColor(detectedDocType.confidence) }}>{detectedDocType.confidence}%</strong>
-                      <span className="confidence-label"> ({getConfidenceLabel(detectedDocType.confidence)})</span>
-                    </span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <strong>Début :</strong> {getDateString(event.start) || 'Non défini'}
+                  </div>
+                  <div>
+                    <strong>Fin :</strong> {getDateString(event.end) || 'Non défini'}
                   </div>
                 </div>
-              )}
+                {event.location && (
+                  <div className="u-mt-2">
+                    <strong>Lieu :</strong> {event.location}
+                  </div>
+                )}
+              </div>
+            )}
 
-              {pdfFile && (
-                <div className="pdf-indicator u-flex-between">
-                  <span>✅ PDF analysé: {pdfFile.name}</span>
-                  <div className="u-flex u-gap-2">
-                    <Button variant="ghost" 
-                      className="btn-view-pdf"
-                      onClick={() => setShowPreview(!showPreview)}
-                    >
-                      {showPreview ? '🔽 Masquer' : '👁️ Aperçu'}
-                    </Button>
-                    <Button variant="ghost" 
-                      className="btn-view-pdf"
-                      onClick={() => {
-                        if (pdfPreviewUrl) {
-                          window.open(pdfPreviewUrl, '_blank');
-                        } else {
-                          const reader = new FileReader();
-                          reader.onload = (e) => {
-                            const blob = new Blob([e.target.result], { type: 'application/pdf' });
-                            window.open(URL.createObjectURL(blob), '_blank');
-                          };
-                          reader.readAsArrayBuffer(pdfFile);
-                        }
-                      }}
-                    >
-                      🔗 Ouvrir
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Aperçu PDF inline */}
-              {showPreview && pdfPreviewUrl && (
-                <div className="pdf-preview-container">
-                  <iframe
-                    src={pdfPreviewUrl}
-                    title="Aperçu PDF"
-                    className="pdf-preview-iframe"
-                  />
-                </div>
-              )}
-              
-              {/* Afficher le BL existant */}
-              {!pdfFile && existingAffaires.length > 0 && existingAffaires[0].pdfData && (
-                <div className="pdf-indicator u-flex-between">
-                  <span>📄 BL principal: {existingAffaires[0].pdfFileName}</span>
-                  <Button variant="ghost" 
-                    className="btn-view-pdf"
-                    onClick={() => {
-                      const pdfData = existingAffaires[0].pdfData;
-                      const byteCharacters = atob(pdfData.split(',')[1]);
-                      const byteNumbers = new Array(byteCharacters.length);
-                      for (let i = 0; i < byteCharacters.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                      }
-                      const byteArray = new Uint8Array(byteNumbers);
-                      const blob = new Blob([byteArray], { type: 'application/pdf' });
-                      const url = URL.createObjectURL(blob);
-                      window.open(url, '_blank');
+            {/* Badge type de document détecté */}
+            {detectedDocType && (
+              <div className="detected-doc-banner">
+                <div className="doc-type-info">
+                  <span
+                    className="doc-type-badge"
+                    style={{
+                      background: getConfidenceColor(detectedDocType.confidence) + '20',
+                      color: getConfidenceColor(detectedDocType.confidence),
+                      border: `1px solid ${getConfidenceColor(detectedDocType.confidence)}40`,
                     }}
                   >
-                    👁️ Voir le PDF
+                    {detectedDocType.docTypeLabel}
+                  </span>
+                  <span className="doc-confidence">
+                    Confiance :{' '}
+                    <strong style={{ color: getConfidenceColor(detectedDocType.confidence) }}>
+                      {detectedDocType.confidence}%
+                    </strong>
+                    <span className="confidence-label">
+                      {' '}
+                      ({getConfidenceLabel(detectedDocType.confidence)})
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {pdfFile && (
+              <div className="pdf-indicator u-flex-between">
+                <span>✅ PDF analysé: {pdfFile.name}</span>
+                <div className="u-flex u-gap-2">
+                  <Button
+                    variant="ghost"
+                    className="btn-view-pdf"
+                    onClick={() => setShowPreview(!showPreview)}
+                  >
+                    {showPreview ? '🔽 Masquer' : '👁️ Aperçu'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="btn-view-pdf"
+                    onClick={() => {
+                      if (pdfPreviewUrl) {
+                        window.open(pdfPreviewUrl, '_blank');
+                      } else {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          const blob = new Blob([e.target.result], { type: 'application/pdf' });
+                          window.open(URL.createObjectURL(blob), '_blank');
+                        };
+                        reader.readAsArrayBuffer(pdfFile);
+                      }
+                    }}
+                  >
+                    🔗 Ouvrir
                   </Button>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Afficher les BL additionnels */}
-              {additionalBLs.length > 0 && (
-                <div className="additional-bls-list">
-                  <h4>BL additionnels ({additionalBLs.length})</h4>
-                  {additionalBLs.map((bl, index) => (
-                    <div key={index} className="pdf-indicator u-flex-between u-mt-2">
-                      <span>📎 {bl.fileName}</span>
-                      <div className="u-flex u-gap-2">
-                        <Button variant="ghost" 
-                          className="btn-view-pdf"
-                          onClick={() => {
-                            const byteCharacters = atob(bl.data.split(',')[1]);
-                            const byteNumbers = new Array(byteCharacters.length);
-                            for (let i = 0; i < byteCharacters.length; i++) {
-                              byteNumbers[i] = byteCharacters.charCodeAt(i);
-                            }
-                            const byteArray = new Uint8Array(byteNumbers);
-                            const blob = new Blob([byteArray], { type: 'application/pdf' });
-                            const url = URL.createObjectURL(blob);
-                            window.open(url, '_blank');
-                          }}
-                        >
-                          👁️ Voir
-                        </Button>
-                        <Button variant="ghost" 
-                          className="btn-delete-pdf"
-                          onClick={() => {
-                            setAdditionalBLs(prev => prev.filter((_, i) => i !== index));
-                          }}
-                        >
-                          🗑️
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              <FormField className="form-group" label="Numéro d'affaire" required>
-                <Input
-                  type="text"
-                  value={formData.numeroAffaire}
-                  onChange={(e) => setFormData(prev => ({ ...prev, numeroAffaire: e.target.value }))}
-                  placeholder="AF32742"
-                />
-              </FormField>
+            {/* Aperçu PDF inline */}
+            {showPreview && pdfPreviewUrl && (
+              <div className="pdf-preview-container">
+                <iframe src={pdfPreviewUrl} title="Aperçu PDF" className="pdf-preview-iframe" />
+              </div>
+            )}
 
-              <FormField className="form-group" label="Type" required>
-                <Select
-                  value={formData.type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+            {/* Afficher le BL existant */}
+            {!pdfFile && existingAffaires.length > 0 && existingAffaires[0].pdfData && (
+              <div className="pdf-indicator u-flex-between">
+                <span>📄 BL principal: {existingAffaires[0].pdfFileName}</span>
+                <Button
+                  variant="ghost"
+                  className="btn-view-pdf"
+                  onClick={() => {
+                    const pdfData = existingAffaires[0].pdfData;
+                    const byteCharacters = atob(pdfData.split(',')[1]);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                      byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    const blob = new Blob([byteArray], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                  }}
                 >
-                  <option value="Prestation">Prestation</option>
-                  <option value="Location">Location</option>
-                  <option value="Installation">Installation</option>
-                </Select>
-              </FormField>
-
-              <FormField className="form-group" label="Client">
-                <Input
-                  type="text"
-                  value={formData.client}
-                  onChange={(e) => setFormData(prev => ({ ...prev, client: e.target.value }))}
-                  placeholder="VILLE DU CHAMBON FEUGEROLLES"
-                />
-              </FormField>
-
-              <FormField className="form-group" label="Interlocuteur">
-                <Input
-                  type="text"
-                  value={formData.interlocuteur}
-                  onChange={(e) => setFormData(prev => ({ ...prev, interlocuteur: e.target.value }))}
-                  placeholder="Monsieur Guillaume RIBOUAT"
-                />
-              </FormField>
-
-              <div className="form-row">
-                <FormField className="form-group" label="Téléphone">
-                  <PhoneInput
-                    value={formData.tel}
-                    onChange={(val) => setFormData(prev => ({ ...prev, tel: val }))}
-                  />
-                </FormField>
-
-                <FormField className="form-group" label="Fax">
-                  <PhoneInput
-                    value={formData.fax}
-                    onChange={(val) => setFormData(prev => ({ ...prev, fax: val }))}
-                    placeholder="01 23 45 67 89"
-                  />
-                </FormField>
-              </div>
-
-              <div className="form-row">
-                <FormField className="form-group" label="Date de l'affaire" required>
-                  <input
-                    type="date"
-                    value={formData.dateDebut}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dateDebut: e.target.value }))}
-                  />
-                  <small className="u-font-xs" style={{ color: 'var(--theme-text-gray)' }}>
-                    Date de la prestation (doit être dans la période de l'événement)
-                  </small>
-                </FormField>
-
-                <FormField className="form-group" label="Devis">
-                  <Input
-                    type="text"
-                    value={formData.devis}
-                    onChange={(e) => setFormData(prev => ({ ...prev, devis: e.target.value }))}
-                    placeholder="1001 du 20/01/2026"
-                  />
-                </FormField>
-              </div>
-
-              <FormField className="form-group" label="Adresse de livraison">
-                <AddressAutocomplete
-                  as="textarea"
-                  value={formData.adresseLivraison}
-                  onChange={(val) => setFormData(prev => ({ ...prev, adresseLivraison: val }))}
-                  placeholder="Adresse complète de livraison"
-                  rows={3}
-                />
-              </FormField>
-
-              <FormField className="form-group" label="Titre de l'événement">
-                <Input
-                  type="text"
-                  value={formData.titre}
-                  onChange={(e) => setFormData(prev => ({ ...prev, titre: e.target.value }))}
-                  placeholder="Titre qui apparaîtra dans le calendrier"
-                />
-              </FormField>
-
-              <FormField className="form-group" label="Description">
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Notes ou informations complémentaires"
-                  rows="3"
-                />
-              </FormField>
-
-              <div className="form-actions">
-                <Button variant="primary" onClick={handleSubmit}>
-                  Valider l'import
+                  👁️ Voir le PDF
                 </Button>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Étape 4: Upload BL additionnel */}
-          {step === 'upload-additional' && !isProcessing && (
-            <div className="upload-additional-step">
-              <p className="u-text-secondary" style={{ marginBottom: '20px' }}>
-                Ajoutez des BL supplémentaires sans analyse automatique
-              </p>
-              <div 
-                className="drop-zone"
-                onClick={() => additionalFileInputRef.current?.click()}
-              >
-                <div className="drop-zone-content">
-                  <div className="drop-zone-icon">📎</div>
-                  <p className="drop-zone-text">
-                    Cliquez pour sélectionner un PDF
-                  </p>
-                </div>
-                <input
-                  ref={additionalFileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  multiple
-                  className="u-hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files);
-                    files.forEach(file => handleAdditionalBLUpload(file));
-                  }}
-                />
+            {/* Afficher les BL additionnels */}
+            {additionalBLs.length > 0 && (
+              <div className="additional-bls-list">
+                <h4>BL additionnels ({additionalBLs.length})</h4>
+                {additionalBLs.map((bl, index) => (
+                  <div key={index} className="pdf-indicator u-flex-between u-mt-2">
+                    <span>📎 {bl.fileName}</span>
+                    <div className="u-flex u-gap-2">
+                      <Button
+                        variant="ghost"
+                        className="btn-view-pdf"
+                        onClick={() => {
+                          const byteCharacters = atob(bl.data.split(',')[1]);
+                          const byteNumbers = new Array(byteCharacters.length);
+                          for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                          }
+                          const byteArray = new Uint8Array(byteNumbers);
+                          const blob = new Blob([byteArray], { type: 'application/pdf' });
+                          const url = URL.createObjectURL(blob);
+                          window.open(url, '_blank');
+                        }}
+                      >
+                        👁️ Voir
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="btn-delete-pdf"
+                        onClick={() => {
+                          setAdditionalBLs((prev) => prev.filter((_, i) => i !== index));
+                        }}
+                      >
+                        🗑️
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
+            )}
+
+            <FormField className="form-group" label="Numéro d'affaire" required>
+              <Input
+                type="text"
+                value={formData.numeroAffaire}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, numeroAffaire: e.target.value }))
+                }
+                placeholder="AF32742"
+              />
+            </FormField>
+
+            <FormField className="form-group" label="Type" required>
+              <Select
+                value={formData.type}
+                onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
+              >
+                <option value="Prestation">Prestation</option>
+                <option value="Location">Location</option>
+                <option value="Installation">Installation</option>
+              </Select>
+            </FormField>
+
+            <FormField className="form-group" label="Client">
+              <Input
+                type="text"
+                value={formData.client}
+                onChange={(e) => setFormData((prev) => ({ ...prev, client: e.target.value }))}
+                placeholder="VILLE DU CHAMBON FEUGEROLLES"
+              />
+            </FormField>
+
+            <FormField className="form-group" label="Interlocuteur">
+              <Input
+                type="text"
+                value={formData.interlocuteur}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, interlocuteur: e.target.value }))
+                }
+                placeholder="Monsieur Guillaume RIBOUAT"
+              />
+            </FormField>
+
+            <div className="form-row">
+              <FormField className="form-group" label="Téléphone">
+                <PhoneInput
+                  value={formData.tel}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, tel: val }))}
+                />
+              </FormField>
+
+              <FormField className="form-group" label="Fax">
+                <PhoneInput
+                  value={formData.fax}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, fax: val }))}
+                  placeholder="01 23 45 67 89"
+                />
+              </FormField>
             </div>
-          )}
-        </div>
+
+            <div className="form-row">
+              <FormField className="form-group" label="Date de l'affaire" required>
+                <input
+                  type="date"
+                  value={formData.dateDebut}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, dateDebut: e.target.value }))}
+                />
+                <small className="u-font-xs" style={{ color: 'var(--theme-text-gray)' }}>
+                  Date de la prestation (doit être dans la période de l'événement)
+                </small>
+              </FormField>
+
+              <FormField className="form-group" label="Devis">
+                <Input
+                  type="text"
+                  value={formData.devis}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, devis: e.target.value }))}
+                  placeholder="1001 du 20/01/2026"
+                />
+              </FormField>
+            </div>
+
+            <FormField className="form-group" label="Adresse de livraison">
+              <AddressAutocomplete
+                as="textarea"
+                value={formData.adresseLivraison}
+                onChange={(val) => setFormData((prev) => ({ ...prev, adresseLivraison: val }))}
+                placeholder="Adresse complète de livraison"
+                rows={3}
+              />
+            </FormField>
+
+            <FormField className="form-group" label="Titre de l'événement">
+              <Input
+                type="text"
+                value={formData.titre}
+                onChange={(e) => setFormData((prev) => ({ ...prev, titre: e.target.value }))}
+                placeholder="Titre qui apparaîtra dans le calendrier"
+              />
+            </FormField>
+
+            <FormField className="form-group" label="Description">
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                placeholder="Notes ou informations complémentaires"
+                rows="3"
+              />
+            </FormField>
+
+            <div className="form-actions">
+              <Button variant="primary" onClick={handleSubmit}>
+                Valider l'import
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Étape 4: Upload BL additionnel */}
+        {step === 'upload-additional' && !isProcessing && (
+          <div className="upload-additional-step">
+            <p className="u-text-secondary" style={{ marginBottom: '20px' }}>
+              Ajoutez des BL supplémentaires sans analyse automatique
+            </p>
+            <div className="drop-zone" onClick={() => additionalFileInputRef.current?.click()}>
+              <div className="drop-zone-content">
+                <div className="drop-zone-icon">📎</div>
+                <p className="drop-zone-text">Cliquez pour sélectionner un PDF</p>
+              </div>
+              <input
+                ref={additionalFileInputRef}
+                type="file"
+                accept=".pdf"
+                multiple
+                className="u-hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files);
+                  files.forEach((file) => handleAdditionalBLUpload(file));
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </ModalLayout>
   );
 };

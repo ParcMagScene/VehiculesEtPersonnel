@@ -67,35 +67,36 @@ function MobileSonos({ currentUser, onBack }) {
           />
 
           {/* Contrôles + Volume */}
-          {sonos.displayState && (sonos.displayState.playing || sonos.displayState.state === 'paused') && (
-            <>
-              <MobileSonosControls
-                state={sonos.displayState.state}
-                position={sonos.displayState.position}
-                duration={sonos.displayState.duration}
-                shuffleActive={sonos.displayState.shuffle}
-                repeatMode={sonos.displayState.repeat}
-                onPlay={sonos.play}
-                onPause={sonos.pause}
-                onNext={sonos.next}
-                onPrevious={sonos.previous}
-                onSeek={sonos.seek}
-                onShuffle={sonos.setShuffle}
-                onRepeat={sonos.setRepeat}
-                busy={sonos.busy}
-                isAdmin={isAdmin}
-              />
-              <MobileSonosVolume
-                volume={sonos.displayState.volume ?? sonos.zoneState?.volume}
-                muted={sonos.displayState.muted ?? sonos.zoneState?.muted}
-                onSetVolume={sonos.setVolume}
-                onMute={sonos.mute}
-                onUnmute={sonos.unmute}
-                busy={sonos.busy}
-                isAdmin={isAdmin}
-              />
-            </>
-          )}
+          {sonos.displayState &&
+            (sonos.displayState.playing || sonos.displayState.state === 'paused') && (
+              <>
+                <MobileSonosControls
+                  state={sonos.displayState.state}
+                  position={sonos.displayState.position}
+                  duration={sonos.displayState.duration}
+                  shuffleActive={sonos.displayState.shuffle}
+                  repeatMode={sonos.displayState.repeat}
+                  onPlay={sonos.play}
+                  onPause={sonos.pause}
+                  onNext={sonos.next}
+                  onPrevious={sonos.previous}
+                  onSeek={sonos.seek}
+                  onShuffle={sonos.setShuffle}
+                  onRepeat={sonos.setRepeat}
+                  busy={sonos.busy}
+                  isAdmin={isAdmin}
+                />
+                <MobileSonosVolume
+                  volume={sonos.displayState.volume ?? sonos.zoneState?.volume}
+                  muted={sonos.displayState.muted ?? sonos.zoneState?.muted}
+                  onSetVolume={sonos.setVolume}
+                  onMute={sonos.mute}
+                  onUnmute={sonos.unmute}
+                  busy={sonos.busy}
+                  isAdmin={isAdmin}
+                />
+              </>
+            )}
 
           {/* Favoris */}
           <MobileSonosFavorites

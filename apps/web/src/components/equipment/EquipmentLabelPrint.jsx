@@ -18,7 +18,12 @@ const EXPORT_FORMATS = ['SVG', 'PNG', 'JPG'];
 
 const APP_BASE_URL = window.location.origin;
 
-const escSvg = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const escSvg = (s) =>
+  String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 
 const EquipmentLabelPrint = ({ equipment, onClose }) => {
   const [selectedPreset, setSelectedPreset] = useState(0);
@@ -40,7 +45,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
     const hasSerial = !!(eq.serialNumber || eq.serial_number);
     const refLen = (eq.reference || '').length;
     const uidLen = hasUid ? (eq.uid || '').length + 5 : 0; // "UID: " prefix
-    const serialLen = hasSerial ? ((eq.serialNumber || eq.serial_number || '').length + 5) : 0;
+    const serialLen = hasSerial ? (eq.serialNumber || eq.serial_number || '').length + 5 : 0;
     const maxTextLen = Math.max(refLen, uidLen, serialLen);
     const textW = maxTextLen * 2.8 + (hasQr ? 22 : 0) + (showLogo ? 15 : 0) + 8;
     const w = Math.min(100, Math.max(45, textW));
@@ -51,8 +56,12 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
 
   const getFormat = () => {
     if (selectedPreset === 0) return getAutoSize();
-    if (selectedPreset === LABEL_FORMATS.length - 1) return { width: customWidth, height: customHeight };
-    return { width: LABEL_FORMATS[selectedPreset].width, height: LABEL_FORMATS[selectedPreset].height };
+    if (selectedPreset === LABEL_FORMATS.length - 1)
+      return { width: customWidth, height: customHeight };
+    return {
+      width: LABEL_FORMATS[selectedPreset].width,
+      height: LABEL_FORMATS[selectedPreset].height,
+    };
   };
 
   const format = getFormat();
@@ -60,7 +69,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   const downloadBlob = (blob, filename) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
+    a.href = url;
+    a.download = filename;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -83,12 +94,23 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
     const ctx = canvas.getContext('2d');
     const img = new Image();
     img.onload = () => {
-      if (fmt === 'JPG') { ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+      if (fmt === 'JPG') {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const mimeType = fmt === 'JPG' ? 'image/jpeg' : 'image/png';
-      canvas.toBlob((blob) => {
-        if (blob) downloadBlob(blob, `etiquette-${eq.reference || eq.uid || 'label'}.${fmt.toLowerCase()}`);
-      }, mimeType, 0.95);
+      canvas.toBlob(
+        (blob) => {
+          if (blob)
+            downloadBlob(
+              blob,
+              `etiquette-${eq.reference || eq.uid || 'label'}.${fmt.toLowerCase()}`,
+            );
+        },
+        mimeType,
+        0.95,
+      );
     };
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
@@ -104,37 +126,65 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
 
     for (let i = 0; i < quantity; i++) {
       labels.push(
-        '<div class="label" style="width: ' + format.width + 'mm; height: ' + format.height + 'mm;">' +
+        '<div class="label" style="width: ' +
+          format.width +
+          'mm; height: ' +
+          format.height +
+          'mm;">' +
           '<div class="label-content">' +
-            (showLogo ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Logo" /></div>' : '') +
-            '<div class="label-info">' +
-              '<div class="label-ref">' + escSvg(eq.reference || '') + '</div>' +
-              (eq.uid ? '<div class="label-uid"><b>UID: ' + escSvg(eq.uid) + '</b></div>' : '') +
-              ((eq.serialNumber || eq.serial_number) ? '<div class="label-serial"><b>S/N: ' + escSvg(eq.serialNumber || eq.serial_number) + '</b></div>' : '') +
-            '</div>' +
-            '<div class="label-qr">' +
-              (qrUrl ? '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl) + '" alt="QR" />' : '') +
-            '</div>' +
+          (showLogo
+            ? '<div class="label-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Logo" /></div>'
+            : '') +
+          '<div class="label-info">' +
+          '<div class="label-ref">' +
+          escSvg(eq.reference || '') +
           '</div>' +
-        '</div>'
+          (eq.uid ? '<div class="label-uid"><b>UID: ' + escSvg(eq.uid) + '</b></div>' : '') +
+          (eq.serialNumber || eq.serial_number
+            ? '<div class="label-serial"><b>S/N: ' +
+              escSvg(eq.serialNumber || eq.serial_number) +
+              '</b></div>'
+            : '') +
+          '</div>' +
+          '<div class="label-qr">' +
+          (qrUrl
+            ? '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' +
+              encodeURIComponent(qrUrl) +
+              '" alt="QR" />'
+            : '') +
+          '</div>' +
+          '</div>' +
+          '</div>',
       );
     }
 
     const htmlContent =
-      '<!DOCTYPE html><html><head><title>Etiquettes - ' + escSvg(eq.reference || cleanName(eq.name)) + '</title>' +
+      '<!DOCTYPE html><html><head><title>Etiquettes - ' +
+      escSvg(eq.reference || cleanName(eq.name)) +
+      '</title>' +
       '<style>' +
-        '@page { size: A4; margin: 5mm; }' +
-        '* { margin: 0; padding: 0; box-sizing: border-box; }' +
-        'body { font-family: -apple-system, BlinkMacSystemFont, monospace; display: flex; flex-wrap: wrap; gap: 2mm; padding: 5mm; align-content: flex-start; }' +
-        '.label { border: 0.5px dashed #999; border-radius: 2px; overflow: hidden; page-break-inside: avoid; }' +
-        '.label-content { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
-        '.label-logo { flex-shrink: 0; display: flex; align-items: center; }' +
-        '.label-logo img { height: ' + qrSize + 'mm; width: auto; }' +
-        '.label-qr { flex-shrink: 0; }' +
-        '.label-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
-        '.label-info { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
-        '.label-ref { font-weight: 800; font-size: ' + (format.height < 25 ? '8' : format.height < 35 ? '10' : '12') + 'pt; line-height: 1.1; white-space: nowrap; }' +
-        '.label-uid, .label-serial { font-size: ' + (format.height < 25 ? '6' : format.height < 35 ? '7.5' : '9') + 'pt; color: #222; font-family: monospace; font-weight: 700; line-height: 1.1; white-space: nowrap; }' +
+      '@page { size: A4; margin: 5mm; }' +
+      '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+      'body { font-family: -apple-system, BlinkMacSystemFont, monospace; display: flex; flex-wrap: wrap; gap: 2mm; padding: 5mm; align-content: flex-start; }' +
+      '.label { border: 0.5px dashed #999; border-radius: 2px; overflow: hidden; page-break-inside: avoid; }' +
+      '.label-content { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
+      '.label-logo { flex-shrink: 0; display: flex; align-items: center; }' +
+      '.label-logo img { height: ' +
+      qrSize +
+      'mm; width: auto; }' +
+      '.label-qr { flex-shrink: 0; }' +
+      '.label-qr img { width: ' +
+      qrSize +
+      'mm; height: ' +
+      qrSize +
+      'mm; }' +
+      '.label-info { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
+      '.label-ref { font-weight: 800; font-size: ' +
+      (format.height < 25 ? '8' : format.height < 35 ? '10' : '12') +
+      'pt; line-height: 1.1; white-space: nowrap; }' +
+      '.label-uid, .label-serial { font-size: ' +
+      (format.height < 25 ? '6' : format.height < 35 ? '7.5' : '9') +
+      'pt; color: #222; font-family: monospace; font-weight: 700; line-height: 1.1; white-space: nowrap; }' +
       '</style></head><body>' +
       labels.join('') +
       '</body></html>';
@@ -166,14 +216,21 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   const qrPreviewSize = Math.min(format.height * 2.2, 55);
 
   return (
-    <div className="elp-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div
+      className="elp-overlay"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="elp-modal">
         <div className="elp-header">
           <div className="elp-header-title">
             <Tag size={18} />
             <span>Étiquette — {eq.reference || cleanName(eq.name)}</span>
           </div>
-          <Button variant="ghost" className="elp-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
+          <Button variant="ghost" className="elp-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </Button>
         </div>
 
         <div className="elp-body">
@@ -182,19 +239,36 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             <div
               className="elp-label-preview"
               ref={svgRef}
-              style={{ width: format.width * 3 + 'px', height: format.height * 3 + 'px', maxWidth: '100%' }}
+              style={{
+                width: format.width * 3 + 'px',
+                height: format.height * 3 + 'px',
+                maxWidth: '100%',
+              }}
             >
-              <div className="elp-label-content" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
+              <div
+                className="elp-label-content"
+                style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}
+              >
                 {showLogo && (
                   <div className="elp-label-logo">
-                    <img src="/Logos/logo_Noir_Transp.png" alt="Logo" style={{ height: qrPreviewSize + 'px', width: 'auto' }} />
+                    <img
+                      src="/Logos/logo_Noir_Transp.png"
+                      alt="Logo"
+                      style={{ height: qrPreviewSize + 'px', width: 'auto' }}
+                    />
                   </div>
                 )}
                 <div className="elp-label-info">
                   <div className="elp-label-ref">{eq.reference || '—'}</div>
-                  {eq.uid && <div className="elp-label-uid"><strong>UID: {eq.uid}</strong></div>}
+                  {eq.uid && (
+                    <div className="elp-label-uid">
+                      <strong>UID: {eq.uid}</strong>
+                    </div>
+                  )}
                   {(eq.serialNumber || eq.serial_number) && (
-                    <div className="elp-label-serial"><strong>S/N: {eq.serialNumber || eq.serial_number}</strong></div>
+                    <div className="elp-label-serial">
+                      <strong>S/N: {eq.serialNumber || eq.serial_number}</strong>
+                    </div>
                   )}
                 </div>
                 <div className="elp-label-qr">
@@ -202,7 +276,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
                 </div>
               </div>
             </div>
-            <span className="elp-dimensions">{format.width} × {format.height} mm{selectedPreset === 0 ? ' (auto)' : ''}</span>
+            <span className="elp-dimensions">
+              {format.width} × {format.height} mm{selectedPreset === 0 ? ' (auto)' : ''}
+            </span>
           </div>
 
           <div className="elp-settings">
@@ -210,7 +286,12 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <label>Format :</label>
               <div className="elp-format-options">
                 {LABEL_FORMATS.map((f, i) => (
-                  <Button variant="ghost" key={i} className={'elp-format-btn ' + (selectedPreset === i ? 'active' : '')} onClick={() => setSelectedPreset(i)}>
+                  <Button
+                    variant="ghost"
+                    key={i}
+                    className={'elp-format-btn ' + (selectedPreset === i ? 'active' : '')}
+                    onClick={() => setSelectedPreset(i)}
+                  >
                     {f.name}
                   </Button>
                 ))}
@@ -221,11 +302,23 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
               <div className="elp-custom-size">
                 <div className="elp-field-inline">
                   <label>Largeur (mm) :</label>
-                  <Input type="number" value={customWidth} onChange={(e) => setCustomWidth(Math.max(15, parseInt(e.target.value) || 15))} min={15} max={200} />
+                  <Input
+                    type="number"
+                    value={customWidth}
+                    onChange={(e) => setCustomWidth(Math.max(15, parseInt(e.target.value) || 15))}
+                    min={15}
+                    max={200}
+                  />
                 </div>
                 <div className="elp-field-inline">
                   <label>Hauteur (mm) :</label>
-                  <Input type="number" value={customHeight} onChange={(e) => setCustomHeight(Math.max(10, parseInt(e.target.value) || 10))} min={10} max={100} />
+                  <Input
+                    type="number"
+                    value={customHeight}
+                    onChange={(e) => setCustomHeight(Math.max(10, parseInt(e.target.value) || 10))}
+                    min={10}
+                    max={100}
+                  />
                 </div>
               </div>
             )}
@@ -233,21 +326,46 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             <div className="elp-field-inline">
               <label>Logo entreprise :</label>
               <div className="elp-toggle-group">
-                <Button variant="ghost" className={'elp-toggle-btn ' + (showLogo ? 'active' : '')} onClick={() => setShowLogo(true)}>Avec</Button>
-                <Button variant="ghost" className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')} onClick={() => setShowLogo(false)}>Sans</Button>
+                <Button
+                  variant="ghost"
+                  className={'elp-toggle-btn ' + (showLogo ? 'active' : '')}
+                  onClick={() => setShowLogo(true)}
+                >
+                  Avec
+                </Button>
+                <Button
+                  variant="ghost"
+                  className={'elp-toggle-btn ' + (!showLogo ? 'active' : '')}
+                  onClick={() => setShowLogo(false)}
+                >
+                  Sans
+                </Button>
               </div>
             </div>
 
             <div className="elp-field-inline">
               <label>Quantité :</label>
-              <Input type="number" value={quantity} onChange={(e) => setQuantity(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))} min={1} max={100} />
+              <Input
+                type="number"
+                value={quantity}
+                onChange={(e) =>
+                  setQuantity(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))
+                }
+                min={1}
+                max={100}
+              />
             </div>
 
             <div className="elp-field-inline">
               <label>Export :</label>
               <div className="elp-toggle-group">
-                {EXPORT_FORMATS.map(f => (
-                  <Button variant="ghost" key={f} className={'elp-toggle-btn ' + (exportFormat === f ? 'active' : '')} onClick={() => setExportFormat(f)}>
+                {EXPORT_FORMATS.map((f) => (
+                  <Button
+                    variant="ghost"
+                    key={f}
+                    className={'elp-toggle-btn ' + (exportFormat === f ? 'active' : '')}
+                    onClick={() => setExportFormat(f)}
+                  >
                     {f}
                   </Button>
                 ))}
@@ -257,7 +375,9 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         </div>
 
         <div className="elp-footer">
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
           <Button variant="secondary" onClick={handleExport}>
             <Download size={16} />
             {exportFormat}

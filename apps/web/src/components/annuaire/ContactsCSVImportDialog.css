@@ -26,8 +26,14 @@
 }
 
 @keyframes csvDialogIn {
-  from { opacity: 0; transform: translateY(16px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ── Header ── */
@@ -233,7 +239,9 @@
 }
 
 @keyframes csvSpin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Result ── */
@@ -273,10 +281,18 @@
   font-size: 22px;
   font-weight: 700;
 }
-.stat-number.created { color: var(--theme-success-alt); }
-.stat-number.updated { color: var(--theme-info); }
-.stat-number.skipped { color: var(--theme-text-gray); }
-.stat-number.errored { color: var(--theme-danger); }
+.stat-number.created {
+  color: var(--theme-success-alt);
+}
+.stat-number.updated {
+  color: var(--theme-info);
+}
+.stat-number.skipped {
+  color: var(--theme-text-gray);
+}
+.stat-number.errored {
+  color: var(--theme-danger);
+}
 
 .stat-label {
   font-size: var(--font-xs);

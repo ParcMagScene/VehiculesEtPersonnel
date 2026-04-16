@@ -1,6 +1,6 @@
 /**
  * Design System — Barrel export
- * 
+ *
  * Usage :
  *   import { Card, Panel, Button, Input, Tag, Badge, Tabs, Tab } from '../components/ui';
  */
@@ -77,4 +77,10 @@ export { default as Drawer } from './Drawer';
 export { default as BottomSheet } from './BottomSheet';
 export { default as PageHeader } from './PageHeader';
 export { FormLayout, FormSection, FormRow, FormActions } from './FormLayout';
-export { ModuleLayout, ModuleToolbar, ModuleContent, ModuleFooter, SplitLayout } from './ModuleLayout';
+export {
+  ModuleLayout,
+  ModuleToolbar,
+  ModuleContent,
+  ModuleFooter,
+  SplitLayout,
+} from './ModuleLayout';

@@ -18,7 +18,11 @@ function Page({ title, icon, subtitle, badge, actions, breadcrumb, className = '
     <div className={cls}>
       {title && (
         <header className="ui-page-header-bar">
-          {breadcrumb && <nav className="ui-page-breadcrumb" aria-label="Fil d'Ariane">{breadcrumb}</nav>}
+          {breadcrumb && (
+            <nav className="ui-page-breadcrumb" aria-label="Fil d'Ariane">
+              {breadcrumb}
+            </nav>
+          )}
           <div className="ui-page-header-row">
             <div className="ui-page-title-group">
               {icon && <span className="ui-page-icon">{icon}</span>}
@@ -34,9 +38,7 @@ function Page({ title, icon, subtitle, badge, actions, breadcrumb, className = '
           </div>
         </header>
       )}
-      <div className="ui-page-content">
-        {children}
-      </div>
+      <div className="ui-page-content">{children}</div>
     </div>
   );
 }

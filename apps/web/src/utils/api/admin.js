@@ -2,7 +2,6 @@
 
 export function registerAdminMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Configuration
     async getConfig(key) {
       return this.request(`/config/${key}`);
@@ -16,7 +15,10 @@ export function registerAdminMethods(ApiClient) {
       return this.request('/authorized-emails');
     },
     async addAuthorizedEmail(email) {
-      return this.request('/authorized-emails', { method: 'POST', body: JSON.stringify({ email }) });
+      return this.request('/authorized-emails', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
     },
     async removeAuthorizedEmail(id) {
       return this.request(`/authorized-emails/${id}`, { method: 'DELETE' });
@@ -24,8 +26,16 @@ export function registerAdminMethods(ApiClient) {
     async getUsers() {
       return this.request('/users');
     },
-    async createUser(email, name, password, { isAdmin = false, readOnly = false, permissions } = {}) {
-      return this.request('/users', { method: 'POST', body: JSON.stringify({ email, name, password, isAdmin, readOnly, permissions }) });
+    async createUser(
+      email,
+      name,
+      password,
+      { isAdmin = false, readOnly = false, permissions } = {},
+    ) {
+      return this.request('/users', {
+        method: 'POST',
+        body: JSON.stringify({ email, name, password, isAdmin, readOnly, permissions }),
+      });
     },
     async updateUser(id, updates) {
       return this.request(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
@@ -34,10 +44,16 @@ export function registerAdminMethods(ApiClient) {
       return this.request(`/users/${id}`, { method: 'DELETE' });
     },
     async resetUserPassword(userId, newPassword) {
-      return this.request('/admin/reset-password', { method: 'POST', body: JSON.stringify({ userId, newPassword }) });
+      return this.request('/admin/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ userId, newPassword }),
+      });
     },
     async changePassword(currentPassword, newPassword) {
-      return this.request('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
+      return this.request('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
     },
 
     // Configuration Google Calendar
@@ -51,13 +67,22 @@ export function registerAdminMethods(ApiClient) {
       return this.request('/config/google/maps-api-key');
     },
     async saveGoogleClientId(value) {
-      return this.request('/config/google/client-id', { method: 'POST', body: JSON.stringify({ value }) });
+      return this.request('/config/google/client-id', {
+        method: 'POST',
+        body: JSON.stringify({ value }),
+      });
     },
     async saveGoogleCalendarId(value) {
-      return this.request('/config/google/calendar-id', { method: 'POST', body: JSON.stringify({ value }) });
+      return this.request('/config/google/calendar-id', {
+        method: 'POST',
+        body: JSON.stringify({ value }),
+      });
     },
     async saveGoogleMapsApiKey(value) {
-      return this.request('/config/google/maps-api-key', { method: 'POST', body: JSON.stringify({ value }) });
+      return this.request('/config/google/maps-api-key', {
+        method: 'POST',
+        body: JSON.stringify({ value }),
+      });
     },
 
     // Google OAuth2 v2 (Authorization Code Flow — backend-managed tokens)
@@ -89,18 +114,28 @@ export function registerAdminMethods(ApiClient) {
     },
     async createGoogleEventV2(eventData, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google/events${qs}`, { method: 'POST', body: JSON.stringify(eventData) });
+      return this.request(`/google/events${qs}`, {
+        method: 'POST',
+        body: JSON.stringify(eventData),
+      });
     },
     async updateGoogleEventV2(eventId, eventData, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, { method: 'PATCH', body: JSON.stringify(eventData) });
+      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, {
+        method: 'PATCH',
+        body: JSON.stringify(eventData),
+      });
     },
     async deleteGoogleEventV2(eventId, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, { method: 'DELETE' });
+      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, {
+        method: 'DELETE',
+      });
     },
     async syncPullReservations(days = 90) {
-      return this.request(`/google/sync/pull-reservations?days=${encodeURIComponent(days)}`, { method: 'POST' });
+      return this.request(`/google/sync/pull-reservations?days=${encodeURIComponent(days)}`, {
+        method: 'POST',
+      });
     },
 
     // Demandes d'accès
@@ -108,13 +143,19 @@ export function registerAdminMethods(ApiClient) {
       return this.request('/access-requests');
     },
     async checkEmailAccessRequest(email) {
-      return this.request('/access-requests/check-email', { method: 'POST', body: JSON.stringify({ email }) });
+      return this.request('/access-requests/check-email', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
     },
     async createAccessRequest(data) {
       return this.request('/access-requests', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateAccessRequest(requestId, status, isAdmin = false) {
-      return this.request(`/access-requests/${requestId}`, { method: 'PATCH', body: JSON.stringify({ status, is_admin: isAdmin }) });
+      return this.request(`/access-requests/${requestId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, is_admin: isAdmin }),
+      });
     },
     async getPendingAccessRequestsCount() {
       return this.request('/access-requests/count/pending');

@@ -12,22 +12,15 @@ export default function MapPopup({ location, onEdit }) {
     <Popup className="emag-map-popup" maxWidth={280} minWidth={200}>
       <div className="map-popup-content">
         <div className="map-popup-header">
-          <span
-            className="map-popup-type-badge"
-            style={{ background: config.color }}
-          >
+          <span className="map-popup-type-badge" style={{ background: config.color }}>
             {config.label}
           </span>
-          {location.isCompanyLocation && (
-            <span className="map-popup-hq-badge">Siège</span>
-          )}
+          {location.isCompanyLocation && <span className="map-popup-hq-badge">Siège</span>}
         </div>
 
         <h3 className="map-popup-title">{location.name}</h3>
 
-        {location.address && (
-          <p className="map-popup-address">{location.address}</p>
-        )}
+        {location.address && <p className="map-popup-address">{location.address}</p>}
 
         {location.lat != null && location.lng != null && (
           <p className="map-popup-coords">
@@ -37,10 +30,7 @@ export default function MapPopup({ location, onEdit }) {
 
         <div className="map-popup-actions">
           {onEdit && !location.isCompanyLocation && (
-            <button
-              className="map-popup-btn map-popup-btn-edit"
-              onClick={() => onEdit(location)}
-            >
+            <button className="map-popup-btn map-popup-btn-edit" onClick={() => onEdit(location)}>
               Modifier
             </button>
           )}

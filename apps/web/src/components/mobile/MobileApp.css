@@ -17,7 +17,7 @@
   transform: translateY(-50%);
   width: 28px;
   height: 56px;
-  background: var(--theme-bg-card, rgba(0,0,0,0.2));
+  background: var(--theme-bg-card, rgba(0, 0, 0, 0.2));
   border-radius: 0 14px 14px 0;
   display: flex;
   align-items: center;
@@ -394,8 +394,13 @@
 }
 
 @keyframes badge-pulse-mobile {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
 }
 
 /* Toast notification mobile */
@@ -420,8 +425,14 @@
 }
 
 @keyframes toast-slide-up {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -541,11 +552,11 @@
   .mobile-header h1 {
     font-size: var(--font-lg);
   }
-  
+
   .mobile-content {
     padding: 0;
   }
-  
+
   .menu-content {
     width: 260px;
   }
@@ -555,4 +566,3 @@
 .mobile-msg-toast {
   bottom: 16px;
 }
-

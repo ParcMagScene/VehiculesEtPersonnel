@@ -22,11 +22,7 @@ function FormField({
   children,
   ...rest
 }) {
-  const cls = [
-    'ui-form-field',
-    horizontal && 'ui-form-field--horizontal',
-    className,
-  ]
+  const cls = ['ui-form-field', horizontal && 'ui-form-field--horizontal', className]
     .filter(Boolean)
     .join(' ');
 

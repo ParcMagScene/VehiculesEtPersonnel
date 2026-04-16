@@ -56,7 +56,10 @@
 }
 
 .mmsg-new-btn {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   border: none;
   color: var(--theme-text-inverse);
   width: 36px;
@@ -86,7 +89,10 @@
 }
 
 .mmsg-start-btn {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   color: var(--theme-text-inverse);
   border: none;
   padding: var(--space-2-5) var(--space-6);
@@ -278,7 +284,10 @@
 }
 
 .mmsg-bubble-wrap.sent .mmsg-bubble {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   color: var(--theme-text-inverse);
   border-bottom-right-radius: 4px;
 }
@@ -351,7 +360,10 @@
 }
 
 .mmsg-send {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   border: none;
   color: var(--theme-text-inverse);
   width: 38px;
@@ -460,7 +472,10 @@
   padding: var(--space-3);
   border: none;
   border-radius: var(--radius-md-lg);
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   color: var(--theme-text-inverse);
   font-size: var(--font-base);
   font-weight: 600;

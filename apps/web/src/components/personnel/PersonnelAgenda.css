@@ -376,7 +376,9 @@
   border-radius: var(--radius-sm);
   border-left: 3px solid;
   cursor: default;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 .agenda-event:hover {

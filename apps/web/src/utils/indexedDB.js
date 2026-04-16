@@ -34,7 +34,7 @@ const openDB = () => {
       const db = event.target.result;
 
       // Créer les object stores si ils n'existent pas
-      Object.values(STORES).forEach(storeName => {
+      Object.values(STORES).forEach((storeName) => {
         if (!db.objectStoreNames.contains(storeName)) {
           db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
         }
@@ -56,12 +56,12 @@ export const saveToIndexedDB = async (storeName, data) => {
       clearRequest.onsuccess = () => resolve();
       clearRequest.onerror = () => reject(clearRequest.error);
     });
-    
+
     // Ajouter toutes les données après le clear
     if (Array.isArray(data)) {
       for (const item of data) {
         // Vérifier que l'objet a un ID valide avant de le sauvegarder
-        if (item && (item.id !== undefined && item.id !== null)) {
+        if (item && item.id !== undefined && item.id !== null) {
           store.put(item);
         } else {
           console.warn('⚠️ IndexedDB: Objet sans ID ignoré dans', storeName, ':', item);
@@ -104,14 +104,14 @@ export const loadFromIndexedDB = async (storeName, defaultValue = []) => {
       request.onsuccess = () => {
         db.close();
         const result = request.result;
-        
+
         // Si c'est un objet unique (comme calendarConfig), retourner le premier élément
         if (storeName === STORES.calendarConfig && result && result.length > 0) {
           const { id: _id, ...config } = result[0];
           resolve(config);
           return;
         }
-        
+
         resolve(result && result.length > 0 ? result : defaultValue);
       };
       request.onerror = () => {
@@ -183,10 +183,18 @@ export const saveAuthToIDB = async (user) => {
     const tx = db.transaction(STORES.auth, 'readwrite');
     tx.objectStore(STORES.auth).put({ id: 1, user, updatedAt: Date.now() });
     return new Promise((resolve, reject) => {
-      tx.oncomplete = () => { db.close(); resolve(); };
-      tx.onerror = () => { db.close(); reject(tx.error); };
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        reject(tx.error);
+      };
     });
-  } catch { /* silencieux — fallback non critique */ }
+  } catch {
+    /* silencieux — fallback non critique */
+  }
 };
 
 export const loadAuthFromIDB = async () => {
@@ -195,10 +203,18 @@ export const loadAuthFromIDB = async () => {
     const tx = db.transaction(STORES.auth, 'readonly');
     const request = tx.objectStore(STORES.auth).get(1);
     return new Promise((resolve, reject) => {
-      request.onsuccess = () => { db.close(); resolve(request.result?.user || null); };
-      request.onerror = () => { db.close(); reject(request.error); };
+      request.onsuccess = () => {
+        db.close();
+        resolve(request.result?.user || null);
+      };
+      request.onerror = () => {
+        db.close();
+        reject(request.error);
+      };
     });
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 };
 
 export const clearAuthFromIDB = async () => {
@@ -207,10 +223,18 @@ export const clearAuthFromIDB = async () => {
     const tx = db.transaction(STORES.auth, 'readwrite');
     tx.objectStore(STORES.auth).clear();
     return new Promise((resolve) => {
-      tx.oncomplete = () => { db.close(); resolve(); };
-      tx.onerror = () => { db.close(); resolve(); };
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve();
+      };
     });
-  } catch { /* silencieux */ }
+  } catch {
+    /* silencieux */
+  }
 };
 
 // [AUDIT FIX MED-F4] Vider tous les stores au logout (PII: clients, personnel, conducteurs)
@@ -223,8 +247,16 @@ export const clearAllIndexedDB = async () => {
       tx.objectStore(name).clear();
     }
     return new Promise((resolve) => {
-      tx.oncomplete = () => { db.close(); resolve(); };
-      tx.onerror = () => { db.close(); resolve(); };
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve();
+      };
     });
-  } catch { /* silencieux — non bloquant au logout */ }
+  } catch {
+    /* silencieux — non bloquant au logout */
+  }
 };

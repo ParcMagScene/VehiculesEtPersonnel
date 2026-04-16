@@ -8,9 +8,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../utils/api';
 
 const CHANNEL_NAME = 'emag-google-sync';
-const SYNC_INTERVAL_MS = 5 * 60 * 1000;       // 5 min entre chaque sync
-const LEADER_HEARTBEAT_MS = 15 * 1000;         // 15s heartbeat leader
-const LEADER_TIMEOUT_MS = 30 * 1000;           // 30s sans heartbeat → leader mort
+const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 min entre chaque sync
+const LEADER_HEARTBEAT_MS = 15 * 1000; // 15s heartbeat leader
+const LEADER_TIMEOUT_MS = 30 * 1000; // 30s sans heartbeat → leader mort
 const IDB_STORE = 'googleEventsCache';
 const IDB_DB_NAME = 'emagGoogleSync';
 const IDB_VERSION = 1;
@@ -41,7 +41,9 @@ async function idbGet(key) {
       req.onerror = () => reject(req.error);
       tx.oncomplete = () => db.close();
     });
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function idbSet(key, value) {
@@ -50,10 +52,15 @@ async function idbSet(key, value) {
     return new Promise((resolve, reject) => {
       const tx = db.transaction(IDB_STORE, 'readwrite');
       tx.objectStore(IDB_STORE).put(value, key);
-      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
       tx.onerror = () => reject(tx.error);
     });
-  } catch { /* silencieux */ }
+  } catch {
+    /* silencieux */
+  }
 }
 
 // ── Diff engine ──
@@ -63,8 +70,8 @@ async function idbSet(key, value) {
  * @returns {{ added: Event[], removed: Event[], updated: Event[], unchanged: number }}
  */
 function diffEvents(oldEvents, newEvents) {
-  const oldMap = new Map(oldEvents.map(e => [e.id, e]));
-  const newMap = new Map(newEvents.map(e => [e.id, e]));
+  const oldMap = new Map(oldEvents.map((e) => [e.id, e]));
+  const newMap = new Map(newEvents.map((e) => [e.id, e]));
   const added = [];
   const removed = [];
   const updated = [];
@@ -74,9 +81,14 @@ function diffEvents(oldEvents, newEvents) {
     const old = oldMap.get(id);
     if (!old) {
       added.push(ev);
-    } else if (old.updated !== ev.updated || old.summary !== ev.summary ||
-               old.start?.dateTime !== ev.start?.dateTime || old.end?.dateTime !== ev.end?.dateTime ||
-               old.start?.date !== ev.start?.date || old.end?.date !== ev.end?.date) {
+    } else if (
+      old.updated !== ev.updated ||
+      old.summary !== ev.summary ||
+      old.start?.dateTime !== ev.start?.dateTime ||
+      old.end?.dateTime !== ev.end?.dateTime ||
+      old.start?.date !== ev.start?.date ||
+      old.end?.date !== ev.end?.date
+    ) {
       updated.push(ev);
     } else {
       unchanged++;
@@ -121,7 +133,9 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
   const timerRef = useRef(null);
   const heartbeatTimerRef = useRef(null);
   const lastLeaderHeartbeatRef = useRef(Date.now());
-  const tabIdRef = useRef(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36));
+  const tabIdRef = useRef(
+    crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
+  );
   const currentFetchRef = useRef(null); // guard against concurrent fetches
   const mountedRef = useRef(true);
   const eventsRef = useRef([]); // stable ref pour le diff (évite de recréer fetchEvents)
@@ -153,7 +167,11 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
 
         case 'events-updated':
           // Another tab fetched events — apply if same cache key
-          if (tabId !== tabIdRef.current && payload?.cacheKey === cacheKeyRef.current && payload?.events) {
+          if (
+            tabId !== tabIdRef.current &&
+            payload?.cacheKey === cacheKeyRef.current &&
+            payload?.events
+          ) {
             setEvents(payload.events);
             setLastSync(payload.timestamp);
           }
@@ -222,77 +240,88 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
 
   // ── Core fetch function ──
 
-  const fetchEvents = useCallback(async (silent = false) => {
-    if (!isSignedIn || !view || !currentDate) return;
-    if (currentFetchRef.current) return; // already fetching
+  const fetchEvents = useCallback(
+    async (silent = false) => {
+      if (!isSignedIn || !view || !currentDate) return;
+      if (currentFetchRef.current) return; // already fetching
 
-    currentFetchRef.current = true;
-    if (!silent) setLoading(true);
+      currentFetchRef.current = true;
+      if (!silent) setLoading(true);
 
-    try {
-      const { startOfWeek: sow, endOfWeek: eow, startOfMonth: som, endOfMonth: eom, startOfYear: soy, endOfYear: eoy } = await import('date-fns');
+      try {
+        const {
+          startOfWeek: sow,
+          endOfWeek: eow,
+          startOfMonth: som,
+          endOfMonth: eom,
+          startOfYear: soy,
+          endOfYear: eoy,
+        } = await import('date-fns');
 
-      let timeMin, timeMax;
-      if (view === 'week') {
-        timeMin = sow(currentDate, { weekStartsOn: 1 });
-        timeMax = eow(currentDate, { weekStartsOn: 1 });
-      } else if (view === 'month') {
-        timeMin = som(currentDate);
-        timeMax = eom(currentDate);
-      } else if (view === 'year') {
-        timeMin = soy(currentDate);
-        timeMax = eoy(currentDate);
-      } else {
+        let timeMin, timeMax;
+        if (view === 'week') {
+          timeMin = sow(currentDate, { weekStartsOn: 1 });
+          timeMax = eow(currentDate, { weekStartsOn: 1 });
+        } else if (view === 'month') {
+          timeMin = som(currentDate);
+          timeMax = eom(currentDate);
+        } else if (view === 'year') {
+          timeMin = soy(currentDate);
+          timeMax = eoy(currentDate);
+        } else {
+          currentFetchRef.current = null;
+          if (!silent) setLoading(false);
+          return;
+        }
+
+        const data = await api.getGoogleEventsV2({
+          calendarId: calendarId || 'primary',
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+          singleEvents: true,
+          maxResults: 2500,
+          orderBy: 'startTime',
+        });
+
+        const freshEvents = data.items || [];
+
+        if (!mountedRef.current) return;
+
+        // Diff against current state (via ref pour stabilité)
+        const diff = diffEvents(eventsRef.current, freshEvents);
+        const hasChanges =
+          diff.added.length > 0 || diff.removed.length > 0 || diff.updated.length > 0;
+
+        if (hasChanges) {
+          setEvents(freshEvents);
+          eventsRef.current = freshEvents;
+
+          // Persist to IndexedDB
+          await idbSet(cacheKey, { events: freshEvents, timestamp: Date.now() });
+
+          // Broadcast to other tabs
+          channelRef.current?.postMessage({
+            type: 'events-updated',
+            tabId: tabIdRef.current,
+            payload: { cacheKey, events: freshEvents, timestamp: Date.now() },
+          });
+        }
+
+        const now = Date.now();
+        setLastSync(now);
+        setFetchError(null);
+      } catch (err) {
+        if (!silent) {
+          console.debug('[GoogleSync] Fetch failed:', err.message);
+          setFetchError(err);
+        }
+      } finally {
         currentFetchRef.current = null;
         if (!silent) setLoading(false);
-        return;
       }
-
-      const data = await api.getGoogleEventsV2({
-        calendarId: calendarId || 'primary',
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        singleEvents: true,
-        maxResults: 2500,
-        orderBy: 'startTime',
-      });
-
-      const freshEvents = data.items || [];
-
-      if (!mountedRef.current) return;
-
-      // Diff against current state (via ref pour stabilité)
-      const diff = diffEvents(eventsRef.current, freshEvents);
-      const hasChanges = diff.added.length > 0 || diff.removed.length > 0 || diff.updated.length > 0;
-
-      if (hasChanges) {
-        setEvents(freshEvents);
-        eventsRef.current = freshEvents;
-
-        // Persist to IndexedDB
-        await idbSet(cacheKey, { events: freshEvents, timestamp: Date.now() });
-
-        // Broadcast to other tabs
-        channelRef.current?.postMessage({
-          type: 'events-updated',
-          tabId: tabIdRef.current,
-          payload: { cacheKey, events: freshEvents, timestamp: Date.now() },
-        });
-      }
-
-      const now = Date.now();
-      setLastSync(now);
-      setFetchError(null);
-    } catch (err) {
-      if (!silent) {
-        console.debug('[GoogleSync] Fetch failed:', err.message);
-        setFetchError(err);
-      }
-    } finally {
-      currentFetchRef.current = null;
-      if (!silent) setLoading(false);
-    }
-  }, [isSignedIn, view, currentDate, calendarId, cacheKey]);
+    },
+    [isSignedIn, view, currentDate, calendarId, cacheKey],
+  );
 
   // ── Load from IndexedDB cache on mount / view change ──
 
@@ -308,7 +337,9 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [isSignedIn, cacheKey]);
 
   // ── Cleanup quand déconnecté ──
@@ -355,7 +386,9 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   // ── Public API ──

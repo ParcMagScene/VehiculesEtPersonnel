@@ -1,34 +1,51 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
-import { format, addDays, startOfMonth, endOfMonth, startOfDay, addMonths, subMonths, isSameDay } from 'date-fns';
+import {
+  format,
+  addDays,
+  startOfMonth,
+  endOfMonth,
+  startOfDay,
+  addMonths,
+  subMonths,
+  isSameDay,
+} from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Wrench, AlertTriangle, Calendar, X, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import {
+  Wrench,
+  AlertTriangle,
+  Calendar,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+} from 'lucide-react';
 import { STATUS } from '../../constants';
 import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 
-import { Button , Tooltip} from '@/design-system';
+import { Button, Tooltip } from '@/design-system';
 import './MobilePlanning.css';
 
-function MobilePlanning({ 
-  vehicles, 
-  reservations, 
-  maintenances, 
+function MobilePlanning({
+  vehicles,
+  reservations,
+  maintenances,
   currentDate,
   onClose,
   clients: _clients = [],
   drivers: _drivers = [],
-  onRefresh
+  onRefresh,
 }) {
   const [selectedMonth, setSelectedMonth] = useState(currentDate);
   const scrollWrapperRef = useRef(null);
 
-  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(onRefresh, { disabled: !onRefresh });
-
-
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(onRefresh, {
+    disabled: !onRefresh,
+  });
 
   // Filtrer les véhicules propres (pas de location)
-  const ownVehicles = vehicles.filter(v => v.type !== 'location');
+  const ownVehicles = vehicles.filter((v) => v.type !== 'location');
 
   // Générer tous les jours du mois sélectionné
   const monthDays = useMemo(() => {
@@ -46,19 +63,20 @@ function MobilePlanning({
   // Obtenir les réservations qui commencent un jour donné OU qui sont en cours ce jour
   const getReservationsForDay = (vehicleId, day) => {
     const dayStart = startOfDay(day);
-    
-    return reservations.filter(r => {
+
+    return reservations.filter((r) => {
       if (r.vehicleId !== vehicleId) return false;
       if (!r.startDate || !r.endDate) return false;
       try {
         const resStart = startOfDay(new Date(r.startDate));
         const resEnd = startOfDay(new Date(r.endDate));
         if (isNaN(resStart.getTime()) || isNaN(resEnd.getTime())) return false;
-        
+
         // Afficher la réservation si elle commence ce jour OU si elle est en cours ce jour
         const startsOnDay = resStart.getTime() === dayStart.getTime();
-        const isOngoingOnDay = resStart.getTime() <= dayStart.getTime() && resEnd.getTime() >= dayStart.getTime();
-        
+        const isOngoingOnDay =
+          resStart.getTime() <= dayStart.getTime() && resEnd.getTime() >= dayStart.getTime();
+
         return startsOnDay || isOngoingOnDay;
       } catch (e) {
         return false;
@@ -69,8 +87,8 @@ function MobilePlanning({
   // Obtenir les interventions qui commencent un jour donné
   const getMaintenancesStartingOnDay = (vehicleId, day) => {
     const dayStart = startOfDay(day);
-    
-    return maintenances.filter(m => {
+
+    return maintenances.filter((m) => {
       if (m.vehicleId !== vehicleId) return false;
       if (!m.startDate) return false;
       // Ne pas afficher les pannes signalées et les demandes d'intervention
@@ -101,13 +119,21 @@ function MobilePlanning({
     if (end1 < start2 || end2 < start1) return false;
 
     // Si même jour, vérifier les périodes
-    if (start1.toDateString() === start2.toDateString() && 
-        end1.toDateString() === end2.toDateString()) {
+    if (
+      start1.toDateString() === start2.toDateString() &&
+      end1.toDateString() === end2.toDateString()
+    ) {
       // AM et PM ne se chevauchent pas
-      if ((elem1.startPeriod === 'AM' && elem1.endPeriod === 'AM' &&
-           elem2.startPeriod === 'PM' && elem2.endPeriod === 'PM') ||
-          (elem1.startPeriod === 'PM' && elem1.endPeriod === 'PM' &&
-           elem2.startPeriod === 'AM' && elem2.endPeriod === 'AM')) {
+      if (
+        (elem1.startPeriod === 'AM' &&
+          elem1.endPeriod === 'AM' &&
+          elem2.startPeriod === 'PM' &&
+          elem2.endPeriod === 'PM') ||
+        (elem1.startPeriod === 'PM' &&
+          elem1.endPeriod === 'PM' &&
+          elem2.startPeriod === 'AM' &&
+          elem2.endPeriod === 'AM')
+      ) {
         return false;
       }
     }
@@ -118,36 +144,35 @@ function MobilePlanning({
   // Calculer les rows pour un ensemble d'éléments (réservations + interventions)
   const calculateRows = (vehicleId, days) => {
     const allElements = [];
-    
-    
+
     // Collecter toutes les réservations
     days.forEach((day, dayIndex) => {
       const dayReservations = getReservationsForDay(vehicleId, day);
-      dayReservations.forEach(res => {
+      dayReservations.forEach((res) => {
         allElements.push({
           ...res,
           type: 'reservation',
           dayIndex,
-          duration: calculateDuration(res.startDate, res.endDate)
+          duration: calculateDuration(res.startDate, res.endDate),
         });
       });
 
       const dayMaintenances = getMaintenancesStartingOnDay(vehicleId, day);
-      dayMaintenances.forEach(maint => {
+      dayMaintenances.forEach((maint) => {
         allElements.push({
           ...maint,
           type: 'maintenance',
           dayIndex,
-          duration: calculateDuration(maint.startDate, maint.endDate)
+          duration: calculateDuration(maint.startDate, maint.endDate),
         });
       });
     });
 
     // Assigner les rows en évitant les chevauchements
     const rows = [];
-    allElements.forEach(elem => {
+    allElements.forEach((elem) => {
       let assignedRow = -1;
-      
+
       // Chercher une row disponible
       for (let r = 0; r < rows.length; r++) {
         let hasOverlap = false;
@@ -176,29 +201,34 @@ function MobilePlanning({
     return allElements;
   };
 
-
-
   const getStatusColor = (status) => {
-    switch(status) {
-      case 'reported': return STATUS_COLORS.danger;
-      case 'scheduled': return STATUS_COLORS.warning;
+    switch (status) {
+      case 'reported':
+        return STATUS_COLORS.danger;
+      case 'scheduled':
+        return STATUS_COLORS.warning;
       case 'in_progress':
-      case 'IN_PROGRESS': return STATUS_COLORS.info;
+      case 'IN_PROGRESS':
+        return STATUS_COLORS.info;
       case 'pending':
-      case 'PENDING': return ACCENT_COLORS.violet;
+      case 'PENDING':
+        return ACCENT_COLORS.violet;
       case 'completed':
-      case 'COMPLETED': return STATUS_COLORS.success;
-      case 'rescheduled': return ACCENT_COLORS.orange;
-      default: return 'var(--theme-text-gray)';
+      case 'COMPLETED':
+        return STATUS_COLORS.success;
+      case 'rescheduled':
+        return ACCENT_COLORS.orange;
+      default:
+        return 'var(--theme-text-gray)';
     }
   };
 
   const goToPreviousMonth = () => {
-    setSelectedMonth(prev => subMonths(prev, 1));
+    setSelectedMonth((prev) => subMonths(prev, 1));
   };
 
   const goToNextMonth = () => {
-    setSelectedMonth(prev => addMonths(prev, 1));
+    setSelectedMonth((prev) => addMonths(prev, 1));
   };
 
   const goToCurrentMonth = () => {
@@ -210,16 +240,17 @@ function MobilePlanning({
   const scrollToToday = () => {
     const today = new Date();
     // Vérifier si aujourd'hui est dans le mois affiché
-    if (today.getMonth() === selectedMonth.getMonth() && 
-        today.getFullYear() === selectedMonth.getFullYear()) {
-      
-      const todayIndex = monthDays.findIndex(day => isSameDay(day, today));
+    if (
+      today.getMonth() === selectedMonth.getMonth() &&
+      today.getFullYear() === selectedMonth.getFullYear()
+    ) {
+      const todayIndex = monthDays.findIndex((day) => isSameDay(day, today));
       if (todayIndex !== -1 && scrollWrapperRef.current) {
         // Calculer la position de scroll (80px par colonne)
         const scrollPosition = todayIndex * 80;
         scrollWrapperRef.current.scrollTo({
           left: scrollPosition,
-          behavior: 'smooth'
+          behavior: 'smooth',
         });
       }
     }
@@ -240,23 +271,38 @@ function MobilePlanning({
       <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="mobile-planning-header">
         <div className="month-navigation">
-          <Button variant="ghost" className="month-nav-btn" onClick={goToPreviousMonth} aria-label="Mois précédent">
+          <Button
+            variant="ghost"
+            className="month-nav-btn"
+            onClick={goToPreviousMonth}
+            aria-label="Mois précédent"
+          >
             <ChevronLeft size={20} />
           </Button>
           <h2 onClick={goToCurrentMonth} style={{ cursor: 'pointer' }}>
             {format(selectedMonth, 'MMMM yyyy', { locale: fr })}
           </h2>
-          <Button variant="ghost" className="month-nav-btn" onClick={goToNextMonth} aria-label="Mois suivant">
+          <Button
+            variant="ghost"
+            className="month-nav-btn"
+            onClick={goToNextMonth}
+            aria-label="Mois suivant"
+          >
             <ChevronRight size={20} />
           </Button>
- <Tooltip content="Aller à aujourd'hui" position="bottom">
-   <Button variant="ghost" className="today-btn" onClick={scrollToToday}>
-            <CalendarDays size={18} />
-            <span>Aujourd'hui</span>
-          </Button>
- </Tooltip>
+          <Tooltip content="Aller à aujourd'hui" position="bottom">
+            <Button variant="ghost" className="today-btn" onClick={scrollToToday}>
+              <CalendarDays size={18} />
+              <span>Aujourd'hui</span>
+            </Button>
+          </Tooltip>
         </div>
-        <Button variant="ghost" className="close-button" onClick={onClose} aria-label="Fermer le planning">
+        <Button
+          variant="ghost"
+          className="close-button"
+          onClick={onClose}
+          aria-label="Fermer le planning"
+        >
           <X size={24} />
         </Button>
       </div>
@@ -266,57 +312,64 @@ function MobilePlanning({
           <div className="mobile-planning-scroll-content">
             {/* En-tête des jours - sticky */}
             <div className="mobile-days-header">
-              {monthDays.map(day => {
+              {monthDays.map((day) => {
                 const isToday = isSameDay(day, new Date());
                 return (
-                <div key={day.toString()} className={`mobile-day-column ${isToday ? 'today' : ''}`}>
-                  <div className="mobile-day-name">
-                    {format(day, 'EEE', { locale: fr })}
+                  <div
+                    key={day.toString()}
+                    className={`mobile-day-column ${isToday ? 'today' : ''}`}
+                  >
+                    <div className="mobile-day-name">{format(day, 'EEE', { locale: fr })}</div>
+                    <div className="mobile-day-date">{format(day, 'd', { locale: fr })}</div>
                   </div>
-                  <div className="mobile-day-date">
-                    {format(day, 'd', { locale: fr })}
-                  </div>
-                </div>
-              );
+                );
               })}
             </div>
 
             {/* Grille des véhicules */}
             <div className="mobile-planning-vehicles">
-              {ownVehicles.map(vehicle => {
+              {ownVehicles.map((vehicle) => {
                 // Calculer le nombre exact de colonnes
                 const gridTemplateColumns = monthDays.map(() => '80px').join(' ');
-                
+
                 // Calculer les rows pour ce véhicule
                 const vehicleElements = calculateRows(vehicle.id, monthDays);
-                const reservationsWithRows = vehicleElements.filter(e => e.type === 'reservation');
-                const maintenancesWithRows = vehicleElements.filter(e => e.type === STATUS.MAINTENANCE);
-                
-                return (
-                <div key={vehicle.id} className="mobile-vehicle-row">
-                  <div className="mobile-vehicle-label-wrapper">
-                    <div className="mobile-vehicle-label">
-                      <div className="mobile-vehicle-name">{vehicle.name}</div>
-                      <div className="mobile-vehicle-registration">{vehicle.registration}</div>
-                    </div>
-                  </div>
+                const reservationsWithRows = vehicleElements.filter(
+                  (e) => e.type === 'reservation',
+                );
+                const maintenancesWithRows = vehicleElements.filter(
+                  (e) => e.type === STATUS.MAINTENANCE,
+                );
 
-                  <div className="mobile-days-grid" style={{ gridTemplateColumns }}>
-                    {/* Cellules vides pour la structure */}
-                    {monthDays.map((day, index) => (
-                      <div key={day.toString()} className="mobile-day-cell" style={{ gridColumn: index + 1 }}>
+                return (
+                  <div key={vehicle.id} className="mobile-vehicle-row">
+                    <div className="mobile-vehicle-label-wrapper">
+                      <div className="mobile-vehicle-label">
+                        <div className="mobile-vehicle-name">{vehicle.name}</div>
+                        <div className="mobile-vehicle-registration">{vehicle.registration}</div>
                       </div>
-                    ))}
-                    {/* Réservations (affichées en premier, en arrière-plan) */}
-                    {reservationsWithRows.map(reservation => {
+                    </div>
+
+                    <div className="mobile-days-grid" style={{ gridTemplateColumns }}>
+                      {/* Cellules vides pour la structure */}
+                      {monthDays.map((day, index) => (
+                        <div
+                          key={day.toString()}
+                          className="mobile-day-cell"
+                          style={{ gridColumn: index + 1 }}
+                        ></div>
+                      ))}
+                      {/* Réservations (affichées en premier, en arrière-plan) */}
+                      {reservationsWithRows.map((reservation) => {
                         return (
                           <div
                             key={reservation.id}
                             className="mobile-reservation"
-                            style={{ 
+                            style={{
                               gridColumn: `${reservation.dayIndex + 1} / span ${reservation.duration}`,
                               gridRow: reservation.row,
-                              backgroundColor: vehicle.displayColor || vehicle.color || STATUS_COLORS.info
+                              backgroundColor:
+                                vehicle.displayColor || vehicle.color || STATUS_COLORS.info,
                             }}
                           >
                             <div className="mobile-reservation-content-wrapper">
@@ -326,11 +379,15 @@ function MobilePlanning({
                                 </div>
                                 <div className="mobile-item-content">
                                   <div className="mobile-item-title">
-                                    {reservation.clientName || reservation.driverName || 'Réservation'}
+                                    {reservation.clientName ||
+                                      reservation.driverName ||
+                                      'Réservation'}
                                   </div>
                                   <div className="mobile-item-subtitle">
                                     {format(new Date(reservation.startDate), 'dd/MM')}
-                                    {reservation.endDate && reservation.endDate !== reservation.startDate && ` - ${format(new Date(reservation.endDate), 'dd/MM')}`}
+                                    {reservation.endDate &&
+                                      reservation.endDate !== reservation.startDate &&
+                                      ` - ${format(new Date(reservation.endDate), 'dd/MM')}`}
                                   </div>
                                 </div>
                               </div>
@@ -339,16 +396,16 @@ function MobilePlanning({
                         );
                       })}
 
-                    {/* Interventions (affichées par-dessus les réservations) */}
-                    {maintenancesWithRows.map(maintenance => {
+                      {/* Interventions (affichées par-dessus les réservations) */}
+                      {maintenancesWithRows.map((maintenance) => {
                         return (
                           <div
                             key={maintenance.id}
                             className={`mobile-maintenance mobile-maintenance-${maintenance.status}`}
-                            style={{ 
+                            style={{
                               borderLeftColor: getStatusColor(maintenance.status),
                               gridColumn: `${maintenance.dayIndex + 1} / span ${maintenance.duration}`,
-                              gridRow: maintenance.row
+                              gridRow: maintenance.row,
                             }}
                           >
                             <div className="mobile-maintenance-content-wrapper">
@@ -366,7 +423,8 @@ function MobilePlanning({
                                   </div>
                                   <div className="mobile-item-subtitle">
                                     {format(new Date(maintenance.startDate), 'dd/MM')}
-                                    {maintenance.endDate && ` - ${format(new Date(maintenance.endDate), 'dd/MM')}`}
+                                    {maintenance.endDate &&
+                                      ` - ${format(new Date(maintenance.endDate), 'dd/MM')}`}
                                   </div>
                                 </div>
                               </div>
@@ -374,9 +432,9 @@ function MobilePlanning({
                           </div>
                         );
                       })}
+                    </div>
                   </div>
-                </div>
-              );
+                );
               })}
             </div>
           </div>

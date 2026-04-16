@@ -1,7 +1,17 @@
 import { useState, useMemo } from 'react';
 import {
-  X, Calendar, Clock, MapPin, Check, Loader,
-  Package, Truck, ArrowRight, RotateCcw, Wrench, AlertCircle
+  X,
+  Calendar,
+  Clock,
+  MapPin,
+  Check,
+  Loader,
+  Package,
+  Truck,
+  ArrowRight,
+  RotateCcw,
+  Wrench,
+  AlertCircle,
 } from 'lucide-react';
 import api from '../../utils/api';
 import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../../utils/affaireConstants';
@@ -15,16 +25,86 @@ import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 // ═══ Définition des étapes opérationnelles ═══
 const TASK_STEPS = [
-  { key: 'preparation',  label: 'Préparation',  emoji: '🔧', icon: Wrench,      color: ACCENT_COLORS.indigo, defaultSection: 'prep_locations' },
-  { key: 'chargement',   label: 'Chargement',   emoji: '📦', icon: Package,     color: STATUS_COLORS.warning, defaultSection: 'chargement' },
-  { key: 'depart',       label: 'Départ',        emoji: '🚀', icon: ArrowRight,  color: STATUS_COLORS.info, defaultSection: 'depart' },
-  { key: 'livraison',    label: 'Livraison',    emoji: '🚚', icon: Truck,       color: ACCENT_COLORS.orange, defaultSection: 'courses' },
-  { key: 'enlevement',   label: 'Enlèvement',   emoji: '📦', icon: Truck,       color: STATUS_COLORS.success, defaultSection: 'courses' },
-  { key: 'retour',       label: 'Retour',        emoji: '↩️', icon: RotateCcw,   color: ACCENT_COLORS.violet, defaultSection: 'courses' },
-  { key: 'recuperation', label: 'Récupération', emoji: '📥', icon: Package,     color: STATUS_COLORS.danger, defaultSection: 'courses' },
-  { key: 'installation', label: 'Installation', emoji: '🛠️', icon: Wrench,      color: STATUS_COLORS.success, defaultSection: 'installation' },
-  { key: 'montage',      label: 'Montage',      emoji: '🔩', icon: Wrench,      color: ACCENT_COLORS.cyanDark, defaultSection: 'montage' },
-  { key: 'demontage',    label: 'Démontage',    emoji: '🔧', icon: Wrench,      color: STATUS_COLORS.dangerDark, defaultSection: 'demontage' },
+  {
+    key: 'preparation',
+    label: 'Préparation',
+    emoji: '🔧',
+    icon: Wrench,
+    color: ACCENT_COLORS.indigo,
+    defaultSection: 'prep_locations',
+  },
+  {
+    key: 'chargement',
+    label: 'Chargement',
+    emoji: '📦',
+    icon: Package,
+    color: STATUS_COLORS.warning,
+    defaultSection: 'chargement',
+  },
+  {
+    key: 'depart',
+    label: 'Départ',
+    emoji: '🚀',
+    icon: ArrowRight,
+    color: STATUS_COLORS.info,
+    defaultSection: 'depart',
+  },
+  {
+    key: 'livraison',
+    label: 'Livraison',
+    emoji: '🚚',
+    icon: Truck,
+    color: ACCENT_COLORS.orange,
+    defaultSection: 'courses',
+  },
+  {
+    key: 'enlevement',
+    label: 'Enlèvement',
+    emoji: '📦',
+    icon: Truck,
+    color: STATUS_COLORS.success,
+    defaultSection: 'courses',
+  },
+  {
+    key: 'retour',
+    label: 'Retour',
+    emoji: '↩️',
+    icon: RotateCcw,
+    color: ACCENT_COLORS.violet,
+    defaultSection: 'courses',
+  },
+  {
+    key: 'recuperation',
+    label: 'Récupération',
+    emoji: '📥',
+    icon: Package,
+    color: STATUS_COLORS.danger,
+    defaultSection: 'courses',
+  },
+  {
+    key: 'installation',
+    label: 'Installation',
+    emoji: '🛠️',
+    icon: Wrench,
+    color: STATUS_COLORS.success,
+    defaultSection: 'installation',
+  },
+  {
+    key: 'montage',
+    label: 'Montage',
+    emoji: '🔩',
+    icon: Wrench,
+    color: ACCENT_COLORS.cyanDark,
+    defaultSection: 'montage',
+  },
+  {
+    key: 'demontage',
+    label: 'Démontage',
+    emoji: '🔧',
+    icon: Wrench,
+    color: STATUS_COLORS.dangerDark,
+    defaultSection: 'demontage',
+  },
 ];
 
 // Toutes les étapes sont disponibles pour tous les types d'événement
@@ -46,23 +126,38 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     const startDate = startDT.slice(0, 10);
     const parsedStart = startDT.includes('T') ? new Date(startDT) : null;
     const parsedEnd = endDT.includes('T') ? new Date(endDT) : null;
-    const startTime = parsedStart && !isNaN(parsedStart)
-      ? parsedStart.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      : '';
-    const endTime = parsedEnd && !isNaN(parsedEnd)
-      ? parsedEnd.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-      : '';
+    const startTime =
+      parsedStart && !isNaN(parsedStart)
+        ? parsedStart.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        : '';
+    const endTime =
+      parsedEnd && !isNaN(parsedEnd)
+        ? parsedEnd.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        : '';
     const location = event?.location || '';
     const description = event?.description || '';
     // Extraire numéro d'affaire (AF xxxxx ou AFxxxxx pattern)
     const affaireMatch = summary.match(/\bAF\s*\d{4,}/i);
     const affaireNum = affaireMatch ? affaireMatch[0].toUpperCase().replace(/\s+/g, '') : '';
     // Titre nettoyé sans le N° d'affaire (affiché en badge séparé)
-    const cleanSummary = summary.replace(/\bAF\s*\d{4,}\s*/i, '').replace(/^\s*[-—]\s*/, '').trim();
+    const cleanSummary = summary
+      .replace(/\bAF\s*\d{4,}\s*/i, '')
+      .replace(/^\s*[-—]\s*/, '')
+      .trim();
     // Déduire le type à partir du titre
     const affaireType = guessAffaireType(summary);
 
-    return { summary, cleanSummary, startDate, startTime, endTime, location, description, affaireNum, affaireType };
+    return {
+      summary,
+      cleanSummary,
+      startDate,
+      startTime,
+      endTime,
+      location,
+      description,
+      affaireNum,
+      affaireType,
+    };
   }, [event]);
 
   // ═══ État des tâches par étape ═══
@@ -75,16 +170,19 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       return hour < 12 ? 'AM' : 'PM';
     })();
 
-    TASK_STEPS.forEach(step => {
+    TASK_STEPS.forEach((step) => {
       // Chercher si une tâche existe déjà pour cette étape
-      const existing = existingTasks.find(t =>
-        t.sourceId === event?.id && t.section?.includes(step.key)
-      ) || existingTasks.find(t =>
-        t.sourceId === event?.id && (t.title || '').toLowerCase().includes(step.label.toLowerCase())
-      );
+      const existing =
+        existingTasks.find((t) => t.sourceId === event?.id && t.section?.includes(step.key)) ||
+        existingTasks.find(
+          (t) =>
+            t.sourceId === event?.id &&
+            (t.title || '').toLowerCase().includes(step.label.toLowerCase()),
+        );
 
       // Période par défaut : basée sur l'heure de l'événement, sinon prep/chargement=AM, reste=PM
-      const defaultPeriod = eventPeriod || (step.key === 'preparation' || step.key === 'chargement' ? 'AM' : 'PM');
+      const defaultPeriod =
+        eventPeriod || (step.key === 'preparation' || step.key === 'chargement' ? 'AM' : 'PM');
 
       initial[step.key] = {
         enabled: !!existing,
@@ -100,34 +198,38 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     return initial;
   });
 
-  const hasExistingTasks = existingTasks.filter(t => t.sourceId === event?.id).length > 0;
+  const hasExistingTasks = existingTasks.filter((t) => t.sourceId === event?.id).length > 0;
 
   const toggleStep = (key) => {
-    setSteps(prev => ({
+    setSteps((prev) => ({
       ...prev,
       [key]: { ...prev[key], enabled: !prev[key].enabled },
     }));
   };
 
   const updateStep = (key, field, value) => {
-    setSteps(prev => ({
+    setSteps((prev) => ({
       ...prev,
       [key]: { ...prev[key], [field]: value },
     }));
   };
 
-  const visibleSteps = useMemo(() => getVisibleSteps(eventInfo.affaireType), [eventInfo.affaireType]);
+  const visibleSteps = useMemo(
+    () => getVisibleSteps(eventInfo.affaireType),
+    [eventInfo.affaireType],
+  );
 
-  const enabledSteps = useMemo(() =>
-    visibleSteps.filter(s => steps[s.key]?.enabled),
-  [steps, visibleSteps]);
+  const enabledSteps = useMemo(
+    () => visibleSteps.filter((s) => steps[s.key]?.enabled),
+    [steps, visibleSteps],
+  );
 
   // Déterminer la section en fonction du type de step + affaire
   const getSectionForStep = (stepKey) => {
     if (stepKey === 'preparation') {
       return AFFAIRE_TYPE_SECTIONS[eventInfo.affaireType] || 'prep_locations';
     }
-    const stepDef = TASK_STEPS.find(s => s.key === stepKey);
+    const stepDef = TASK_STEPS.find((s) => s.key === stepKey);
     return stepDef?.defaultSection || 'manual';
   };
 
@@ -144,10 +246,10 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
 
   // Mapping affaire type → catégorie d'affichage
   const AFFAIRE_TYPE_TO_CATEGORY = {
-    'Location': 'location',
-    'Prestation': 'prestation',
-    'Vente': 'vente',
-    'Installation': 'installation',
+    Location: 'location',
+    Prestation: 'prestation',
+    Vente: 'vente',
+    Installation: 'installation',
   };
 
   // ═══ Sauvegarde ═══
@@ -165,7 +267,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       }
 
       // 1) Créer les événements d'affichage correspondants
-      const displayEventsToCreate = enabledSteps.map(step => {
+      const displayEventsToCreate = enabledSteps.map((step) => {
         const s = steps[step.key];
         return {
           affaire_id: eventInfo.affaireNum || null,
@@ -210,7 +312,9 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       });
 
       await api.createTasksBatch(tasksToCreate);
-      toast.success(`${tasksToCreate.length} tâche${tasksToCreate.length > 1 ? 's' : ''} créée${tasksToCreate.length > 1 ? 's' : ''}`);
+      toast.success(
+        `${tasksToCreate.length} tâche${tasksToCreate.length > 1 ? 's' : ''} créée${tasksToCreate.length > 1 ? 's' : ''}`,
+      );
       // Passer la date de la première tâche pour naviguer automatiquement
       const firstTaskDate = tasksToCreate[0]?.date || null;
       onSave?.(firstTaskDate);
@@ -244,10 +348,14 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         {/* Header */}
         <div className="etm-header">
           <div className="etm-header-info">
-            <h3><Calendar size={18} /> Définir les tâches</h3>
+            <h3>
+              <Calendar size={18} /> Définir les tâches
+            </h3>
             <p className="etm-event-title">{eventInfo.summary}</p>
           </div>
-          <Button variant="ghost" className="etm-close" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
+          <Button variant="ghost" className="etm-close" onClick={onClose} aria-label="Fermer">
+            <X size={20} />
+          </Button>
         </div>
 
         {/* Event summary */}
@@ -256,26 +364,41 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
             <AffaireBadge numero={eventInfo.affaireNum} type={eventInfo.affaireType} showIcon />
           )}
           {eventInfo.startTime && (
-            <span className="etm-badge time"><Clock size={12} /> {eventInfo.startTime}{eventInfo.endTime ? ` → ${eventInfo.endTime}` : ''}</span>
+            <span className="etm-badge time">
+              <Clock size={12} /> {eventInfo.startTime}
+              {eventInfo.endTime ? ` → ${eventInfo.endTime}` : ''}
+            </span>
           )}
           {eventInfo.location && (
-            <span className="etm-badge location"><MapPin size={12} /> {eventInfo.location}</span>
+            <span className="etm-badge location">
+              <MapPin size={12} /> {eventInfo.location}
+            </span>
           )}
         </div>
 
         {/* Steps */}
         <div className="etm-steps">
-          {visibleSteps.map(step => {
+          {visibleSteps.map((step) => {
             const s = steps[step.key];
             const Icon = step.icon;
             return (
               <div key={step.key} className={`etm-step ${s.enabled ? 'enabled' : ''}`}>
-                <div className="etm-step-header" role="button" tabIndex={0} onClick={() => toggleStep(step.key)}>
-                  <div className={`etm-step-check ${s.enabled ? 'checked' : ''}`} style={s.enabled ? { background: step.color } : {}}>
+                <div
+                  className="etm-step-header"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleStep(step.key)}
+                >
+                  <div
+                    className={`etm-step-check ${s.enabled ? 'checked' : ''}`}
+                    style={s.enabled ? { background: step.color } : {}}
+                  >
                     {s.enabled && <Check size={12} />}
                   </div>
                   <Icon size={16} style={{ color: step.color }} />
-                  <span className="etm-step-label">{step.emoji} {step.label}</span>
+                  <span className="etm-step-label">
+                    {step.emoji} {step.label}
+                  </span>
                 </div>
 
                 {s.enabled && (
@@ -285,14 +408,14 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                       <input
                         type="date"
                         value={s.date}
-                        onChange={e => updateStep(step.key, 'date', e.target.value)}
+                        onChange={(e) => updateStep(step.key, 'date', e.target.value)}
                       />
                     </div>
                     <div className="etm-field">
                       <label>Période</label>
                       <Select
                         value={s.period}
-                        onChange={e => updateStep(step.key, 'period', e.target.value)}
+                        onChange={(e) => updateStep(step.key, 'period', e.target.value)}
                       >
                         <option value="AM">Matin (AM)</option>
                         <option value="PM">Après-midi (PM)</option>
@@ -303,7 +426,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                       <input
                         type="time"
                         value={s.time}
-                        onChange={e => updateStep(step.key, 'time', e.target.value)}
+                        onChange={(e) => updateStep(step.key, 'time', e.target.value)}
                       />
                     </div>
                     <div className="etm-field">
@@ -311,7 +434,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                       <input
                         type="time"
                         value={s.endTime}
-                        onChange={e => updateStep(step.key, 'endTime', e.target.value)}
+                        onChange={(e) => updateStep(step.key, 'endTime', e.target.value)}
                       />
                     </div>
                     <div className="etm-field full">
@@ -320,18 +443,22 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                         type="text"
                         placeholder="Notes..."
                         value={s.notes}
-                        onChange={e => updateStep(step.key, 'notes', e.target.value)}
+                        onChange={(e) => updateStep(step.key, 'notes', e.target.value)}
                       />
                     </div>
                     {step.defaultSection === 'courses' && (
                       <div className="etm-field full">
-                        <label><MapPin size={12} /> Lieu</label>
+                        <label>
+                          <MapPin size={12} /> Lieu
+                        </label>
                         <div className="etm-location-row">
                           <Input
                             type="text"
                             placeholder="Adresse ou lieu…"
                             value={s.locationAddress}
-                            onChange={e => updateStep(step.key, 'locationAddress', e.target.value)}
+                            onChange={(e) =>
+                              updateStep(step.key, 'locationAddress', e.target.value)
+                            }
                           />
                           {s.locationAddress?.trim() && (
                             <a
@@ -340,7 +467,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                               rel="noopener noreferrer"
                               className="etm-maps-link"
                               title="Ouvrir dans Google Maps"
-                              onClick={e => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <MapPin size={14} />
                             </a>
@@ -358,16 +485,29 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         {/* Footer */}
         <div className="etm-footer">
           {hasExistingTasks && (
-            <Button variant="ghost" className="etm-btn danger" onClick={handleDeleteAll} disabled={deleting}>
+            <Button
+              variant="ghost"
+              className="etm-btn danger"
+              onClick={handleDeleteAll}
+              disabled={deleting}
+            >
               {deleting ? <Loader size={14} className="spin" /> : <AlertCircle size={14} />}
               Supprimer les tâches
             </Button>
           )}
           <div className="etm-footer-right">
-            <Button variant="ghost" className="etm-btn secondary" onClick={onClose}>Annuler</Button>
-            <Button variant="ghost" className="etm-btn primary" onClick={handleSave} disabled={saving || enabledSteps.length === 0}>
+            <Button variant="ghost" className="etm-btn secondary" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button
+              variant="ghost"
+              className="etm-btn primary"
+              onClick={handleSave}
+              disabled={saving || enabledSteps.length === 0}
+            >
               {saving ? <Loader size={14} className="spin" /> : <Check size={14} />}
-              {hasExistingTasks ? 'Mettre à jour' : 'Créer'} {enabledSteps.length} tâche{enabledSteps.length > 1 ? 's' : ''}
+              {hasExistingTasks ? 'Mettre à jour' : 'Créer'} {enabledSteps.length} tâche
+              {enabledSteps.length > 1 ? 's' : ''}
             </Button>
           </div>
         </div>

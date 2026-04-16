@@ -98,16 +98,18 @@
   height: var(--close-btn-size, 32px);
   border-radius: var(--close-btn-radius, 8px);
   border: 1px solid var(--close-btn-border, var(--close-btn-border));
-  background: var(--close-btn-bg, rgba(255,255,255,0.12));
+  background: var(--close-btn-bg, rgba(255, 255, 255, 0.12));
   color: var(--close-btn-color, var(--theme-bg-card));
   cursor: pointer;
-  transition: background var(--duration-fast), border-color var(--duration-fast);
+  transition:
+    background var(--duration-fast),
+    border-color var(--duration-fast);
   padding: 0;
   flex-shrink: 0;
 }
 
 .ui-drawer-close:hover {
-  background: var(--close-btn-hover-bg, rgba(255,255,255,0.22));
+  background: var(--close-btn-hover-bg, rgba(255, 255, 255, 0.22));
   border-color: var(--close-btn-hover-border, var(--glass));
 }
 
@@ -137,7 +139,13 @@
     max-width: 100vw;
     width: 100vw !important;
   }
-  .ui-drawer-header { padding: var(--space-3) var(--space-4); }
-  .ui-drawer-body   { padding: var(--space-4); }
-  .ui-drawer-footer { padding: var(--space-3) var(--space-4); }
+  .ui-drawer-header {
+    padding: var(--space-3) var(--space-4);
+  }
+  .ui-drawer-body {
+    padding: var(--space-4);
+  }
+  .ui-drawer-footer {
+    padding: var(--space-3) var(--space-4);
+  }
 }

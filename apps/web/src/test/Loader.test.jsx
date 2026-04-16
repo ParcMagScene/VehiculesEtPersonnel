@@ -23,7 +23,10 @@ describe('Spinner', () => {
   });
 
   it.each([
-    ['sm', '16'], ['md', '24'], ['lg', '32'], ['xl', '48'],
+    ['sm', '16'],
+    ['md', '24'],
+    ['lg', '32'],
+    ['xl', '48'],
   ])('size %s → %spx', (size, px) => {
     const { container } = render(<Spinner size={size} />);
     const svg = container.querySelector('svg');

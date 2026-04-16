@@ -30,8 +30,14 @@
 }
 
 @keyframes mepSlideIn {
-  from { opacity: 0; transform: translateY(12px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ─── Header ─── */
@@ -124,7 +130,7 @@
   background: var(--success-tint-faint);
 }
 
-[data-theme="dark"] .mep-nav-btn.active {
+[data-theme='dark'] .mep-nav-btn.active {
   color: var(--theme-info);
   border-bottom-color: var(--theme-info);
 }
@@ -160,7 +166,7 @@
   font-size: var(--font-base);
 }
 
-[data-theme="dark"] .mep-error {
+[data-theme='dark'] .mep-error {
   background: rgba(220, 38, 38, 0.15);
   color: var(--theme-danger-border);
 }
@@ -204,9 +210,15 @@
   line-height: 1.2;
 }
 
-.mep-balance-value.accent { color: var(--theme-info); }
-.mep-balance-value.warn { color: var(--theme-warning); }
-.mep-balance-value.success { color: var(--theme-success-alt); }
+.mep-balance-value.accent {
+  color: var(--theme-info);
+}
+.mep-balance-value.warn {
+  color: var(--theme-warning);
+}
+.mep-balance-value.success {
+  color: var(--theme-success-alt);
+}
 
 .mep-balance-label {
   font-size: var(--font-xs);
@@ -230,8 +242,12 @@
   color: var(--theme-text-secondary);
 }
 
-.mep-stat.pending { color: var(--theme-warning); }
-.mep-stat.accepted { color: var(--theme-success-alt); }
+.mep-stat.pending {
+  color: var(--theme-warning);
+}
+.mep-stat.accepted {
+  color: var(--theme-success-alt);
+}
 
 .mep-filters {
   display: flex;
@@ -262,7 +278,7 @@
   border-color: var(--theme-info-text);
 }
 
-[data-theme="dark"] .mep-filter-btn.active {
+[data-theme='dark'] .mep-filter-btn.active {
   background: var(--theme-info-dark);
   border-color: var(--theme-info-dark);
 }
@@ -285,8 +301,12 @@
 }
 
 @keyframes mepSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ─── Liste de cartes ─── */
@@ -309,11 +329,21 @@
   box-shadow: 0 2px 8px var(--shadow-inner);
 }
 
-.mep-card.accepted { border-left: 3px solid var(--theme-success-alt); }
-.mep-card.refused { border-left: 3px solid var(--theme-danger); }
-.mep-card.pending { border-left: 3px solid var(--theme-warning); }
-.mep-card.modified { border-left: 3px solid var(--theme-info); }
-.mep-card.cancelled { border-left: 3px solid var(--theme-neutral); }
+.mep-card.accepted {
+  border-left: 3px solid var(--theme-success-alt);
+}
+.mep-card.refused {
+  border-left: 3px solid var(--theme-danger);
+}
+.mep-card.pending {
+  border-left: 3px solid var(--theme-warning);
+}
+.mep-card.modified {
+  border-left: 3px solid var(--theme-info);
+}
+.mep-card.cancelled {
+  border-left: 3px solid var(--theme-neutral);
+}
 
 .mep-card-header {
   display: flex;
@@ -381,8 +411,14 @@
 }
 
 @keyframes mepExpand {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 500px; }
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
 }
 
 .mep-detail-grid {

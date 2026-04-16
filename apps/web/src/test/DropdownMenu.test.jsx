@@ -5,14 +5,22 @@ import { DropdownMenu, DropdownItem, DropdownDivider } from '../components/ui/Dr
 
 describe('DropdownMenu', () => {
   it('rend le trigger avec aria-haspopup', () => {
-    render(<DropdownMenu trigger={<span>Menu</span>}><DropdownItem>A</DropdownItem></DropdownMenu>);
+    render(
+      <DropdownMenu trigger={<span>Menu</span>}>
+        <DropdownItem>A</DropdownItem>
+      </DropdownMenu>,
+    );
     expect(screen.getByRole('button')).toHaveAttribute('aria-haspopup', 'true');
     expect(screen.getByRole('button')).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('ouvre le menu au clic', async () => {
     const user = userEvent.setup();
-    render(<DropdownMenu trigger={<span>Menu</span>}><DropdownItem>Action</DropdownItem></DropdownMenu>);
+    render(
+      <DropdownMenu trigger={<span>Menu</span>}>
+        <DropdownItem>Action</DropdownItem>
+      </DropdownMenu>,
+    );
     await user.click(screen.getByRole('button'));
     expect(screen.getByRole('menu')).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Action' })).toBeInTheDocument();
@@ -20,15 +28,23 @@ describe('DropdownMenu', () => {
 
   it('ferme le menu au clic sur un item', async () => {
     const user = userEvent.setup();
-    render(<DropdownMenu trigger={<span>Menu</span>}><DropdownItem>Action</DropdownItem></DropdownMenu>);
+    render(
+      <DropdownMenu trigger={<span>Menu</span>}>
+        <DropdownItem>Action</DropdownItem>
+      </DropdownMenu>,
+    );
     await user.click(screen.getByRole('button'));
     await user.click(screen.getByRole('menuitem', { name: 'Action' }));
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('aria-expanded reflète l\'état', async () => {
+  it("aria-expanded reflète l'état", async () => {
     const user = userEvent.setup();
-    render(<DropdownMenu trigger={<span>Menu</span>}><DropdownItem>A</DropdownItem></DropdownMenu>);
+    render(
+      <DropdownMenu trigger={<span>Menu</span>}>
+        <DropdownItem>A</DropdownItem>
+      </DropdownMenu>,
+    );
     const trigger = screen.getByRole('button');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
     await user.click(trigger);
@@ -52,7 +68,7 @@ describe('DropdownItem', () => {
     expect(screen.getByRole('menuitem')).toBeDisabled();
   });
 
-  it('affiche l\'icône', () => {
+  it("affiche l'icône", () => {
     render(<DropdownItem icon={<span data-testid="ico">★</span>}>Go</DropdownItem>);
     expect(screen.getByTestId('ico')).toBeInTheDocument();
   });

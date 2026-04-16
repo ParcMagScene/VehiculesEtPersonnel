@@ -5,13 +5,22 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  X, Calendar, Clock, CheckCircle, FileText,
-  Upload, Trash2, User, Info, Pen, Send,
+  X,
+  Calendar,
+  Clock,
+  CheckCircle,
+  FileText,
+  Upload,
+  Trash2,
+  User,
+  Info,
+  Pen,
+  Send,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import api from '../../utils/api';
-import { Button, Select, Textarea, InlineAlert} from '@/design-system';
+import { Button, Select, Textarea, InlineAlert } from '@/design-system';
 import './LeaveRequestForm.css';
 
 // ═══════════════════════════════════════
@@ -180,7 +189,10 @@ const LeaveRequestForm = ({
     if (!selectedPersonId || !isAdmin) return;
     const loadBalance = async () => {
       try {
-        const data = await api.getLeaveBalances({ personId: selectedPersonId, year: new Date().getFullYear() });
+        const data = await api.getLeaveBalances({
+          personId: selectedPersonId,
+          year: new Date().getFullYear(),
+        });
         setBalance(data);
       } catch (err) {
         console.error('Erreur chargement solde:', err);
@@ -219,8 +231,12 @@ const LeaveRequestForm = ({
     const calculate = async () => {
       try {
         const result = await api.calculateLeaveWorkingDays({
-          startDate, endDate, startPeriod, endPeriod,
-          leaveType, exceptionalType: leaveType === 'exceptionnel' ? exceptionalType : undefined,
+          startDate,
+          endDate,
+          startPeriod,
+          endPeriod,
+          leaveType,
+          exceptionalType: leaveType === 'exceptionnel' ? exceptionalType : undefined,
         });
         if (!cancelled) {
           setCalculation(result);
@@ -231,7 +247,9 @@ const LeaveRequestForm = ({
       }
     };
     calculate();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [startDate, endDate, startPeriod, endPeriod, leaveType, exceptionalType]);
 
   // Auto-calculer la date de fin pour les congés exceptionnels
@@ -338,7 +356,9 @@ const LeaveRequestForm = ({
     if (!d) return '';
     try {
       return format(parseISO(d), 'd MMMM yyyy', { locale: fr });
-    } catch { return d; }
+    } catch {
+      return d;
+    }
   };
 
   // Obtenir l'info du type sélectionné
@@ -346,7 +366,13 @@ const LeaveRequestForm = ({
 
   return (
     <div className="lrf-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="lrf-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Demande de congé">
+      <div
+        className="lrf-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Demande de congé"
+      >
         {/* En-tête */}
         <div className="lrf-header">
           <div className="lrf-header-title">
@@ -354,7 +380,9 @@ const LeaveRequestForm = ({
             <h2>Demande de congé</h2>
           </div>
           <div className="lrf-header-actions">
-            <Button variant="ghost"               type="button"
+            <Button
+              variant="ghost"
+              type="button"
               className="lrf-btn-info"
               onClick={() => setShowLegalInfo(!showLegalInfo)}
               title="Informations légales"
@@ -386,15 +414,15 @@ const LeaveRequestForm = ({
 
         <form onSubmit={handleSubmit} className="lrf-form">
           {/* Erreur globale */}
-          {error && (
-            <InlineAlert>{error}</InlineAlert>
-          )}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           {/* Avertissements légaux */}
           {warnings.length > 0 && (
             <div className="lrf-warnings">
               {warnings.map((w, i) => (
-                <InlineAlert key={i} variant="warning">{w}</InlineAlert>
+                <InlineAlert key={i} variant="warning">
+                  {w}
+                </InlineAlert>
               ))}
             </div>
           )}
@@ -408,12 +436,12 @@ const LeaveRequestForm = ({
             {isAdmin ? (
               <Select
                 value={selectedPersonId}
-                onChange={e => setSelectedPersonId(e.target.value)}
+                onChange={(e) => setSelectedPersonId(e.target.value)}
                 className="lrf-select"
                 required
               >
                 <option value="">— Sélectionner —</option>
-                {persons.map(p => (
+                {persons.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.firstName || p.first_name} {p.lastName || p.last_name}
                   </option>
@@ -421,7 +449,9 @@ const LeaveRequestForm = ({
               </Select>
             ) : (
               <div className="lrf-person-display">
-                {person ? `${person.firstName || person.first_name} ${person.lastName || person.last_name}` : '—'}
+                {person
+                  ? `${person.firstName || person.first_name} ${person.lastName || person.last_name}`
+                  : '—'}
               </div>
             )}
           </div>
@@ -434,10 +464,15 @@ const LeaveRequestForm = ({
             </label>
             <div className="lrf-type-grid">
               {Object.entries(leaveTypes).map(([key, info]) => (
-                <Button variant="ghost"                   key={key}
+                <Button
+                  variant="ghost"
+                  key={key}
                   type="button"
                   className={`lrf-type-btn ${leaveType === key ? 'active' : ''}`}
-                  onClick={() => { setLeaveType(key); setExceptionalType(''); }}
+                  onClick={() => {
+                    setLeaveType(key);
+                    setExceptionalType('');
+                  }}
                   style={{ '--type-color': info.color }}
                 >
                   <span className="lrf-type-icon">{info.icon}</span>
@@ -456,7 +491,7 @@ const LeaveRequestForm = ({
               </label>
               <Select
                 value={exceptionalType}
-                onChange={e => setExceptionalType(e.target.value)}
+                onChange={(e) => setExceptionalType(e.target.value)}
                 className="lrf-select"
                 required
               >
@@ -471,9 +506,17 @@ const LeaveRequestForm = ({
                 <div className="lrf-exceptional-info">
                   <CheckCircle size={12} />
                   <span>
-                    Durée légale : <strong>{exceptionalTypes[exceptionalType].days} jour{exceptionalTypes[exceptionalType].days > 1 ? 's' : ''} ouvrable{exceptionalTypes[exceptionalType].days > 1 ? 's' : ''}</strong>
+                    Durée légale :{' '}
+                    <strong>
+                      {exceptionalTypes[exceptionalType].days} jour
+                      {exceptionalTypes[exceptionalType].days > 1 ? 's' : ''} ouvrable
+                      {exceptionalTypes[exceptionalType].days > 1 ? 's' : ''}
+                    </strong>
                     {exceptionalTypes[exceptionalType].requiresJustification && (
-                      <> — <em>Justificatif obligatoire</em></>
+                      <>
+                        {' '}
+                        — <em>Justificatif obligatoire</em>
+                      </>
                     )}
                   </span>
                 </div>
@@ -488,18 +531,22 @@ const LeaveRequestForm = ({
               <input
                 type="date"
                 value={startDate}
-                onChange={e => setStartDate(e.target.value)}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="lrf-input"
                 required
               />
               <div className="lrf-period-btns">
-                <Button variant="ghost"                   type="button"
+                <Button
+                  variant="ghost"
+                  type="button"
                   className={`lrf-period-btn ${startPeriod === 'AM' ? 'active' : ''}`}
                   onClick={() => setStartPeriod('AM')}
                 >
                   Matin
                 </Button>
-                <Button variant="ghost"                   type="button"
+                <Button
+                  variant="ghost"
+                  type="button"
                   className={`lrf-period-btn ${startPeriod === 'PM' ? 'active' : ''}`}
                   onClick={() => setStartPeriod('PM')}
                 >
@@ -513,19 +560,23 @@ const LeaveRequestForm = ({
               <input
                 type="date"
                 value={endDate}
-                onChange={e => setEndDate(e.target.value)}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="lrf-input"
                 required
                 min={startDate}
               />
               <div className="lrf-period-btns">
-                <Button variant="ghost"                   type="button"
+                <Button
+                  variant="ghost"
+                  type="button"
                   className={`lrf-period-btn ${endPeriod === 'AM' ? 'active' : ''}`}
                   onClick={() => setEndPeriod('AM')}
                 >
                   Matin
                 </Button>
-                <Button variant="ghost"                   type="button"
+                <Button
+                  variant="ghost"
+                  type="button"
                   className={`lrf-period-btn ${endPeriod === 'PM' ? 'active' : ''}`}
                   onClick={() => setEndPeriod('PM')}
                 >
@@ -541,7 +592,10 @@ const LeaveRequestForm = ({
               <div className="lrf-calc-main">
                 <Calendar size={16} />
                 <span className="lrf-calc-days">{calculation.workingDays}</span>
-                <span>jour{calculation.workingDays > 1 ? 's' : ''} ouvrable{calculation.workingDays > 1 ? 's' : ''}</span>
+                <span>
+                  jour{calculation.workingDays > 1 ? 's' : ''} ouvrable
+                  {calculation.workingDays > 1 ? 's' : ''}
+                </span>
                 {calculation.fixedDuration && (
                   <span className="lrf-calc-fixed">(durée légale fixe)</span>
                 )}
@@ -572,29 +626,42 @@ const LeaveRequestForm = ({
               <div className="lrf-balance-title">Solde de congés payés</div>
               <div className="lrf-balance-grid">
                 <div className="lrf-balance-item">
-                  <span className="lrf-balance-value">{balance.daysEntitled ?? balance.days_entitled ?? 30}</span>
+                  <span className="lrf-balance-value">
+                    {balance.daysEntitled ?? balance.days_entitled ?? 30}
+                  </span>
                   <span className="lrf-balance-label">Acquis</span>
                 </div>
                 <div className="lrf-balance-item">
-                  <span className="lrf-balance-value">{balance.daysTaken ?? balance.days_taken ?? 0}</span>
+                  <span className="lrf-balance-value">
+                    {balance.daysTaken ?? balance.days_taken ?? 0}
+                  </span>
                   <span className="lrf-balance-label">Pris</span>
                 </div>
                 <div className="lrf-balance-item highlight">
-                  <span className="lrf-balance-value">{balance.remaining ?? (balance.daysEntitled || balance.days_entitled || 30) - (balance.daysTaken || balance.days_taken || 0)}</span>
+                  <span className="lrf-balance-value">
+                    {balance.remaining ??
+                      (balance.daysEntitled || balance.days_entitled || 30) -
+                        (balance.daysTaken || balance.days_taken || 0)}
+                  </span>
                   <span className="lrf-balance-label">Restant</span>
                 </div>
                 {(balance.carryOver ?? balance.carry_over) > 0 && (
                   <div className="lrf-balance-item carry">
-                    <span className="lrf-balance-value">+{balance.carryOver ?? balance.carry_over}</span>
+                    <span className="lrf-balance-value">
+                      +{balance.carryOver ?? balance.carry_over}
+                    </span>
                     <span className="lrf-balance-label">Report</span>
                   </div>
                 )}
               </div>
-              {calculation && balance.remaining != null && calculation.workingDays > balance.remaining + (balance.carryOver || 0) && (
-                <InlineAlert variant="warning">
-                  Solde insuffisant ({balance.remaining + (balance.carryOver || 0)} jours disponibles, {calculation.workingDays} demandés)
-                </InlineAlert>
-              )}
+              {calculation &&
+                balance.remaining != null &&
+                calculation.workingDays > balance.remaining + (balance.carryOver || 0) && (
+                  <InlineAlert variant="warning">
+                    Solde insuffisant ({balance.remaining + (balance.carryOver || 0)} jours
+                    disponibles, {calculation.workingDays} demandés)
+                  </InlineAlert>
+                )}
             </div>
           )}
 
@@ -603,7 +670,7 @@ const LeaveRequestForm = ({
             <label className="lrf-label">Remarques (optionnel)</label>
             <Textarea
               value={comment}
-              onChange={e => setComment(e.target.value)}
+              onChange={(e) => setComment(e.target.value)}
               className="lrf-textarea"
               rows={3}
               placeholder="Précisions complémentaires..."
@@ -622,12 +689,21 @@ const LeaveRequestForm = ({
                   <div className="lrf-upload-file">
                     <FileText size={14} />
                     <span>{justificationName}</span>
-                    <Button variant="ghost" type="button" onClick={() => { setJustificationFile(null); setJustificationName(''); }}>
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      onClick={() => {
+                        setJustificationFile(null);
+                        setJustificationName('');
+                      }}
+                    >
                       <Trash2 size={12} />
                     </Button>
                   </div>
                 ) : (
-                  <Button variant="ghost"                     type="button"
+                  <Button
+                    variant="ghost"
+                    type="button"
                     className="lrf-upload-btn"
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -659,11 +735,7 @@ const LeaveRequestForm = ({
             <Button variant="ghost" onClick={onClose}>
               Annuler
             </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={saving}
-            >
+            <Button variant="primary" type="submit" disabled={saving}>
               {saving ? (
                 <>
                   <Clock size={14} /> Envoi en cours...

@@ -23,25 +23,62 @@ const parsePrice = (s) => {
 
 // Mapping codes internes Algam → noms de marques canoniques (sync brands table)
 export const ALGAM_BRAND_MAP = {
-  SAH: 'Allen & Heath', SMA: 'Mackie', SMK: 'Mackie',
-  SQS: 'QSC', SQC: 'QSC',
-  SSP: 'Shure', SSR: 'Shure', SSX: 'Shure', SSI: 'Shure', SSE: 'Shure',
-  SHK: 'Sennheiser', SHL: 'HK Audio', SHP: 'L-Acoustics',
-  SRA: 'Radial', SDE: 'Denon', SDA: 'Audinate', SFC: 'SoundTube',
-  SLT: 'Alto', SSL: 'SSL',
-  IPA: 'Panasonic', IPB: 'Panasonic',
-  IBM: 'Blackmagic Design', IDK: 'IDK', IBA: 'Barco',
-  IMU: 'MuxLab', IAV: 'AVer', ING: 'Extron',
-  LCL: 'Clay Paky', LSU: 'Luminex', LMA: 'Luminex', LMP: 'Luminex',
-  LUN: 'Unilumin', LMR: 'Martin', LSF: 'Look Solutions',
-  RFC: 'Focal', RFR: 'Focusrite', RFO: 'Focusrite',
-  RSL: 'SSL', RHA: 'Heritage Audio', RAZ: 'Audeze',
-  SAU: 'Ecler', SPG: 'Apart', SPT: 'SoundTube',
-  IPC: 'Projecta', ISK: 'SKB',
-  LAV: 'Avolites', LAL: 'Algam Lighting',
+  SAH: 'Allen & Heath',
+  SMA: 'Mackie',
+  SMK: 'Mackie',
+  SQS: 'QSC',
+  SQC: 'QSC',
+  SSP: 'Shure',
+  SSR: 'Shure',
+  SSX: 'Shure',
+  SSI: 'Shure',
+  SSE: 'Shure',
+  SHK: 'Sennheiser',
+  SHL: 'HK Audio',
+  SHP: 'L-Acoustics',
+  SRA: 'Radial',
+  SDE: 'Denon',
+  SDA: 'Audinate',
+  SFC: 'SoundTube',
+  SLT: 'Alto',
+  SSL: 'SSL',
+  IPA: 'Panasonic',
+  IPB: 'Panasonic',
+  IBM: 'Blackmagic Design',
+  IDK: 'IDK',
+  IBA: 'Barco',
+  IMU: 'MuxLab',
+  IAV: 'AVer',
+  ING: 'Extron',
+  LCL: 'Clay Paky',
+  LSU: 'Luminex',
+  LMA: 'Luminex',
+  LMP: 'Luminex',
+  LUN: 'Unilumin',
+  LMR: 'Martin',
+  LSF: 'Look Solutions',
+  RFC: 'Focal',
+  RFR: 'Focusrite',
+  RFO: 'Focusrite',
+  RSL: 'SSL',
+  RHA: 'Heritage Audio',
+  RAZ: 'Audeze',
+  SAU: 'Ecler',
+  SPG: 'Apart',
+  SPT: 'SoundTube',
+  IPC: 'Projecta',
+  ISK: 'SKB',
+  LAV: 'Avolites',
+  LAL: 'Algam Lighting',
   HGF: 'Gator',
-  TCH: 'Chief', TKM: 'K&M', TEU: 'EuroMet', TQA: 'Quiklok',
-  EAU: 'IsoAcoustics', ECL: 'Procab', ENE: 'Neutrik', EPC: 'APG',
+  TCH: 'Chief',
+  TKM: 'K&M',
+  TEU: 'EuroMet',
+  TQA: 'Quiklok',
+  EAU: 'IsoAcoustics',
+  ECL: 'Procab',
+  ENE: 'Neutrik',
+  EPC: 'APG',
   SAF: 'Fohhn',
 };
 
@@ -50,7 +87,8 @@ export function parseAlgam(text) {
   const lines = text.split('\n');
 
   // Pattern: code(5-6 digits) [spaces] brand_prefix(3 lettres) model [spaces] designation [spaces] prix ,XX HT
-  const lineRx = /^(\d{5,6})\s+(\d\s+)?([A-Z]{2,4})\s+([\w./-]+(?:\s+[\w./-]+)?)\s+(.+?)\s+([\d\s]+,\d{2})\s+HT\s*$/;
+  const lineRx =
+    /^(\d{5,6})\s+(\d\s+)?([A-Z]{2,4})\s+([\w./-]+(?:\s+[\w./-]+)?)\s+(.+?)\s+([\d\s]+,\d{2})\s+HT\s*$/;
   // Also try a more relaxed pattern for price-only-end lines
   const relaxedRx = /^(\d{5,6})\s+(.+?)\s+([\d\s]+,\d{2})\s+HT\s*$/;
 
@@ -97,7 +135,10 @@ export function parseAlgam(text) {
     }
   }
 
-  return { items, stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length } };
+  return {
+    items,
+    stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -112,11 +153,16 @@ export function parseESL(text) {
   const lines = text.split('\n');
 
   // Pattern: [optional line number] code designation prix € [HT] [category]
-  const lineRx = /^(?:\d{1,4}\s+)?([A-Z0-9][\w./-]{1,25})\s+(.+?)\s+([\d\s,.]+)\s*€\s*(?:HT)?\s*(\d{2})?\s*$/;
+  const lineRx =
+    /^(?:\d{1,4}\s+)?([A-Z0-9][\w./-]{1,25})\s+(.+?)\s+([\d\s,.]+)\s*€\s*(?:HT)?\s*(\d{2})?\s*$/;
 
   for (const raw of lines) {
     // Strip U+FFFD replacement chars (from PDF leader dots) and checkmarks
-    let line = raw.trim().replace(/[\uFFFD✓]/g, '').replace(/\s+/g, ' ').trim();
+    let line = raw
+      .trim()
+      .replace(/[\uFFFD✓]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     if (!line || line.length < 8) continue;
 
     const match = line.match(lineRx);
@@ -136,7 +182,10 @@ export function parseESL(text) {
     }
   }
 
-  return { items, stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length } };
+  return {
+    items,
+    stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -163,7 +212,9 @@ export function parseLABS(text) {
     if (!line || line.length < 5) continue;
 
     // Skip lines with >30% garbled characters (encoded PDF text)
-    const garbled = (line.match(/[^\x20-\x7E\u00C0-\u00FF\u0152\u0153\u0178€°±²³µ¹º¼½¾×÷øŸŹŻŵŷ✓]/g) || []).length;
+    const garbled = (
+      line.match(/[^\x20-\x7E\u00C0-\u00FF\u0152\u0153\u0178€°±²³µ¹º¼½¾×÷øŸŹŻŵŷ✓]/g) || []
+    ).length;
     if (garbled > line.length * 0.3) continue;
 
     // Detect section headers
@@ -174,7 +225,10 @@ export function parseLABS(text) {
     }
 
     // Skip header lines (also reset pending on new table)
-    if (/^C\s*ode\b/i.test(line)) { pendingCodes = []; continue; }
+    if (/^C\s*ode\b/i.test(line)) {
+      pendingCodes = [];
+      continue;
+    }
     if (/^(page|catalogue|prix|attention|contact|www\.|la-bs)/i.test(line)) continue;
 
     // Find first price€ pattern — strict thousand-separator format to avoid
@@ -239,7 +293,10 @@ export function parseLABS(text) {
     pendingCodes = [];
   }
 
-  return { items, stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length } };
+  return {
+    items,
+    stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -271,9 +328,7 @@ export function parseASD(text) {
         supplier_ref: ref,
         brand: 'ASD',
         model: null,
-        designation: currentFamily
-          ? `${currentFamily}${lengthVal ? ' — ' + lengthVal : ''}`
-          : ref,
+        designation: currentFamily ? `${currentFamily}${lengthVal ? ' — ' + lengthVal : ''}` : ref,
         price_ht: null, // ASD n'affiche pas de prix dans le catalogue
         weight: weightVal ? String(weightVal) : null,
         family: currentFamily,
@@ -295,7 +350,10 @@ export function parseASD(text) {
 
     // Detect section/product family headers
     // Typically lines like "POUTRE TRIANGULAIRE", "POUTRE CARRÉE", etc.
-    if (/^[A-ZÉÈÊÀÂÔÛÎÙ][A-ZÉÈÊÀÂÔÛÎÙ\s\-&]{4,60}$/.test(line) && !/RÉFÉRENCE|LONGUEUR|POIDS/.test(line)) {
+    if (
+      /^[A-ZÉÈÊÀÂÔÛÎÙ][A-ZÉÈÊÀÂÔÛÎÙ\s\-&]{4,60}$/.test(line) &&
+      !/RÉFÉRENCE|LONGUEUR|POIDS/.test(line)
+    ) {
       if (pendingFlush) flushBlock();
       currentFamily = clean(line);
       continue;
@@ -304,25 +362,39 @@ export function parseASD(text) {
     // RÉFÉRENCE line — extract refs by splitting on whitespace, keeping alpha+digit tokens
     if (/^R[ÉE]F[ÉE]RENCE/i.test(line)) {
       if (pendingFlush) flushBlock();
-      refs = line.replace(/^R[ÉE]F[ÉE]RENCE\s*/i, '').split(/\s{2,}/).map(s => s.trim()).filter(Boolean);
+      refs = line
+        .replace(/^R[ÉE]F[ÉE]RENCE\s*/i, '')
+        .split(/\s{2,}/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       // Handle refs merged by single space (e.g. "SDC25300 SDC25400")
-      refs = refs.flatMap(r => {
-        const parts = r.split(/\s+/).filter(p => /^[A-Z]/.test(p) && /\d/.test(p));
-        return parts.length > 1 ? parts : [r];
-      }).filter(Boolean);
+      refs = refs
+        .flatMap((r) => {
+          const parts = r.split(/\s+/).filter((p) => /^[A-Z]/.test(p) && /\d/.test(p));
+          return parts.length > 1 ? parts : [r];
+        })
+        .filter(Boolean);
       pendingFlush = true;
       continue;
     }
 
     // LONGUEUR line — strip (m) prefix
     if (/^LONGUEUR/i.test(line)) {
-      lengths = line.replace(/^LONGUEUR\s*(?:\([^)]*\))?\s*/i, '').split(/\s{2,}/).map(s => s.trim()).filter(Boolean);
+      lengths = line
+        .replace(/^LONGUEUR\s*(?:\([^)]*\))?\s*/i, '')
+        .split(/\s{2,}/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       continue;
     }
 
     // POIDS line — strip (kg) prefix
     if (/^POIDS/i.test(line)) {
-      weights = line.replace(/^POIDS\s*(?:\([^)]*\))?\s*/i, '').split(/\s{2,}/).map(s => s.trim()).filter(Boolean);
+      weights = line
+        .replace(/^POIDS\s*(?:\([^)]*\))?\s*/i, '')
+        .split(/\s{2,}/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       pendingFlush = true;
       continue;
     }
@@ -331,7 +403,10 @@ export function parseASD(text) {
   // Flush remaining
   flushBlock();
 
-  return { items, stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length } };
+  return {
+    items,
+    stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -354,7 +429,8 @@ export function parseGeneric(text) {
     if (match) {
       const designation = clean(match[2]);
       // Filtrer les en-têtes et lignes parasites
-      if (/^(code|ref|désignation|description|page|total|sous-total|catalogue)/i.test(designation)) continue;
+      if (/^(code|ref|désignation|description|page|total|sous-total|catalogue)/i.test(designation))
+        continue;
       if (/^(code|ref|page|\d{1,3}\s*$)/i.test(match[1])) continue;
 
       const price = parsePrice(match[3]);
@@ -368,7 +444,10 @@ export function parseGeneric(text) {
     }
   }
 
-  return { items, stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length } };
+  return {
+    items,
+    stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length },
+  };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -376,10 +455,30 @@ export function parseGeneric(text) {
 // Analyse les premières pages pour identifier le format
 // ═══════════════════════════════════════════════════════════
 const SUPPLIER_PATTERNS = [
-  { id: 'algam',  rx: /algam\s+entreprises|soundcraft|allen.*heath|mackie/i, parser: parseAlgam, label: 'Algam Entreprises' },
-  { id: 'esl',    rx: /esl|music.*lights|briteq|jb\s*systems/i,            parser: parseESL,   label: 'ESL Music & Lights' },
-  { id: 'asd',    rx: /\basd\b|structure.*alumin|poutre.*triangul|CHARGES\s+MAXIMALES|RÉFÉRENCE\s+S[DXZC]/i, parser: parseASD, label: 'ASD' },
-  { id: 'labs',   rx: /la[\s-]?bs|le\s+grossiste|drisse|manille/i,         parser: parseLABS,  label: 'LA-BS' },
+  {
+    id: 'algam',
+    rx: /algam\s+entreprises|soundcraft|allen.*heath|mackie/i,
+    parser: parseAlgam,
+    label: 'Algam Entreprises',
+  },
+  {
+    id: 'esl',
+    rx: /esl|music.*lights|briteq|jb\s*systems/i,
+    parser: parseESL,
+    label: 'ESL Music & Lights',
+  },
+  {
+    id: 'asd',
+    rx: /\basd\b|structure.*alumin|poutre.*triangul|CHARGES\s+MAXIMALES|RÉFÉRENCE\s+S[DXZC]/i,
+    parser: parseASD,
+    label: 'ASD',
+  },
+  {
+    id: 'labs',
+    rx: /la[\s-]?bs|le\s+grossiste|drisse|manille/i,
+    parser: parseLABS,
+    label: 'LA-BS',
+  },
 ];
 
 /**
@@ -399,37 +498,115 @@ export function detectSupplier(text) {
 // Classées du plus long au plus court pour éviter les faux positifs (ex: "JB" avant "J")
 const KNOWN_BRANDS = [
   // ESL / Music & Lights
-  'JB SYSTEMS', 'JB-SYSTEMS', 'POWER LIGHTING', 'BRITEQ', 'BRITE-Q',
-  'AUDIOPHONY', 'DEFINITIVE AUDIO', 'CONTEST', 'SHOWTEC', 'DAP AUDIO',
-  'DAP', 'ELATION', 'CHAUVET', 'AMERICAN DJ', 'ADJ', 'BEAMZ',
-  'CAMEO', 'STAIRVILLE', 'EUROLITE', 'INVOLIGHT', 'IBIZA',
-  'GHOST', 'NICOLS', 'RONDSON', 'SYNQ', 'JB', 'BST',
+  'JB SYSTEMS',
+  'JB-SYSTEMS',
+  'POWER LIGHTING',
+  'BRITEQ',
+  'BRITE-Q',
+  'AUDIOPHONY',
+  'DEFINITIVE AUDIO',
+  'CONTEST',
+  'SHOWTEC',
+  'DAP AUDIO',
+  'DAP',
+  'ELATION',
+  'CHAUVET',
+  'AMERICAN DJ',
+  'ADJ',
+  'BEAMZ',
+  'CAMEO',
+  'STAIRVILLE',
+  'EUROLITE',
+  'INVOLIGHT',
+  'IBIZA',
+  'GHOST',
+  'NICOLS',
+  'RONDSON',
+  'SYNQ',
+  'JB',
+  'BST',
   // Algam / Audio
-  'ALLEN & HEATH', 'ALLEN&HEATH', 'SOUNDCRAFT', 'MACKIE', 'YAMAHA',
-  'QSC', 'DYNACORD', 'ELECTRO-VOICE', 'EV', 'SENNHEISER', 'SHURE',
-  'HARMAN', 'JBL', 'BOSE', 'NEXO', 'RCF', 'HK AUDIO', 'DAS',
-  'PIONEER', 'DENON', 'RANE', 'MIDAS', 'BEHRINGER', 'TASCAM',
-  'ALTO', 'LD SYSTEMS', 'AMATE', 'FBT', 'PROEL', 'WHARFEDALE',
+  'ALLEN & HEATH',
+  'ALLEN&HEATH',
+  'SOUNDCRAFT',
+  'MACKIE',
+  'YAMAHA',
+  'QSC',
+  'DYNACORD',
+  'ELECTRO-VOICE',
+  'EV',
+  'SENNHEISER',
+  'SHURE',
+  'HARMAN',
+  'JBL',
+  'BOSE',
+  'NEXO',
+  'RCF',
+  'HK AUDIO',
+  'DAS',
+  'PIONEER',
+  'DENON',
+  'RANE',
+  'MIDAS',
+  'BEHRINGER',
+  'TASCAM',
+  'ALTO',
+  'LD SYSTEMS',
+  'AMATE',
+  'FBT',
+  'PROEL',
+  'WHARFEDALE',
   // LA-BS / Accroche-rigging
-  'DOUGHTY', 'PROLYTE', 'MOBILTECHLIFTS', 'MANFROTTO', 'AVENGER',
-  'KUPO', 'GLOBAL TRUSS', 'MILOS', 'WORK', 'FENIX', 'LITEC',
-  'PROLYFT', 'CHAINMASTER', 'CM', 'VERLINDE',
+  'DOUGHTY',
+  'PROLYTE',
+  'MOBILTECHLIFTS',
+  'MANFROTTO',
+  'AVENGER',
+  'KUPO',
+  'GLOBAL TRUSS',
+  'MILOS',
+  'WORK',
+  'FENIX',
+  'LITEC',
+  'PROLYFT',
+  'CHAINMASTER',
+  'CM',
+  'VERLINDE',
   // ASD
   'ASD',
   // Câbles / Connectique
-  'NEUTRIK', 'CORDIAL', 'SOMMER', 'KLOTZ', 'CANARE', 'HICON',
-  'ADAM HALL', 'DAP', 'SWIT',
+  'NEUTRIK',
+  'CORDIAL',
+  'SOMMER',
+  'KLOTZ',
+  'CANARE',
+  'HICON',
+  'ADAM HALL',
+  'DAP',
+  'SWIT',
   // Vidéo
-  'PANASONIC', 'SONY', 'EPSON', 'BARCO', 'CHRISTIE', 'NEC', 'OPTOMA',
-  'BENQ', 'SAMSUNG', 'LG', 'BLACKMAGIC',
+  'PANASONIC',
+  'SONY',
+  'EPSON',
+  'BARCO',
+  'CHRISTIE',
+  'NEC',
+  'OPTOMA',
+  'BENQ',
+  'SAMSUNG',
+  'LG',
+  'BLACKMAGIC',
   // LED / Écrans
-  'ABSEN', 'UNILUMIN', 'ROE', 'BROMPTON',
+  'ABSEN',
+  'UNILUMIN',
+  'ROE',
+  'BROMPTON',
 ];
 
 // Construit une regex à partir des marques connues (insensible à la casse)
 const BRAND_RX = new RegExp(
-  '\\b(' + KNOWN_BRANDS.map(b => b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b',
-  'i'
+  '\\b(' + KNOWN_BRANDS.map((b) => b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b',
+  'i',
 );
 
 // Mapping normalisation marques détectées → noms canoniques (sync brands table)
@@ -439,13 +616,20 @@ for (const b of KNOWN_BRANDS) {
 }
 // Ajout entrées supplémentaires pour cohérence avec la table brands
 Object.assign(BRAND_CANONICAL, {
-  'ALLEN&HEATH': 'Allen & Heath', 'ALLEN & HEATH': 'Allen & Heath',
-  'ELECTRO-VOICE': 'Electro-Voice', 'EV': 'Electro-Voice',
-  'AMERICAN DJ': 'ADJ', 'ADJ': 'ADJ',
-  'JB-SYSTEMS': 'JB Systems', 'JB SYSTEMS': 'JB Systems',
-  'BRITE-Q': 'Briteq', 'BRITEQ': 'Briteq',
-  'BLACKMAGIC': 'Blackmagic Design',
-  'HK AUDIO': 'HK Audio', 'DAP AUDIO': 'DAP Audio', 'DAP': 'DAP Audio',
+  'ALLEN&HEATH': 'Allen & Heath',
+  'ALLEN & HEATH': 'Allen & Heath',
+  'ELECTRO-VOICE': 'Electro-Voice',
+  EV: 'Electro-Voice',
+  'AMERICAN DJ': 'ADJ',
+  ADJ: 'ADJ',
+  'JB-SYSTEMS': 'JB Systems',
+  'JB SYSTEMS': 'JB Systems',
+  'BRITE-Q': 'Briteq',
+  BRITEQ: 'Briteq',
+  BLACKMAGIC: 'Blackmagic Design',
+  'HK AUDIO': 'HK Audio',
+  'DAP AUDIO': 'DAP Audio',
+  DAP: 'DAP Audio',
   'DEFINITIVE AUDIO': 'Definitive Audio',
 });
 
@@ -478,7 +662,7 @@ export function parseCatalog(text, forceParserId) {
   let parser, parserId, parserLabel;
 
   if (forceParserId) {
-    const found = SUPPLIER_PATTERNS.find(p => p.id === forceParserId);
+    const found = SUPPLIER_PATTERNS.find((p) => p.id === forceParserId);
     if (found) {
       parser = found.parser;
       parserId = found.id;
@@ -516,6 +700,6 @@ export function parseCatalog(text, forceParserId) {
 // ─── Liste des parsers disponibles pour le front ───
 export const AVAILABLE_PARSERS = [
   { id: 'auto', label: 'Détection automatique' },
-  ...SUPPLIER_PATTERNS.map(p => ({ id: p.id, label: p.label })),
+  ...SUPPLIER_PATTERNS.map((p) => ({ id: p.id, label: p.label })),
   { id: 'generic', label: 'Générique (fallback)' },
 ];

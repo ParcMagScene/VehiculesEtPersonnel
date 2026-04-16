@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import logger from "../../utils/logger";
+import logger from '../../utils/logger';
 import { X, MapPin, Navigation, Clock, Route, Mail, Phone, User } from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Dialog, Input, InlineAlert, FormField } from '@/design-system';
@@ -17,7 +17,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
     address: client?.address || '',
     lat: client?.lat || null,
     lng: client?.lng || null,
-    placeId: client?.placeId || ''
+    placeId: client?.placeId || '',
   });
 
   const [distance, setDistance] = useState(null);
@@ -25,15 +25,17 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [error, setError] = useState(null);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  const initialFormDataRef = useRef(JSON.stringify({
-    name: client?.name || '',
-    email: client?.email || '',
-    phone: client?.phone || '',
-    address: client?.address || '',
-    lat: client?.lat || null,
-    lng: client?.lng || null,
-    placeId: client?.placeId || ''
-  }));
+  const initialFormDataRef = useRef(
+    JSON.stringify({
+      name: client?.name || '',
+      email: client?.email || '',
+      phone: client?.phone || '',
+      address: client?.address || '',
+      lat: client?.lat || null,
+      lng: client?.lng || null,
+      placeId: client?.placeId || '',
+    }),
+  );
 
   const handleSafeClose = () => {
     if (JSON.stringify(formData) !== initialFormDataRef.current) {
@@ -61,9 +63,11 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         // Charger la clé API depuis la configuration
         const configData = await api.getGoogleMapsApiKey();
         const apiKey = configData.value;
-        
+
         if (!apiKey) {
-          throw new Error('Clé API Google Maps non configurée.\n\nAllez dans:\nGestion → Config Google → Clé API Google Maps\n\nPuis ajoutez votre clé API.');
+          throw new Error(
+            'Clé API Google Maps non configurée.\n\nAllez dans:\nGestion → Config Google → Clé API Google Maps\n\nPuis ajoutez votre clé API.',
+          );
         }
 
         await loadGoogleMapsAPI(apiKey);
@@ -82,7 +86,11 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         }
 
         // Vérifier que toutes les classes nécessaires sont disponibles
-        if (!window.google.maps.Marker || !window.google.maps.places || !window.google.maps.places.Autocomplete) {
+        if (
+          !window.google.maps.Marker ||
+          !window.google.maps.places ||
+          !window.google.maps.places.Autocomplete
+        ) {
           console.error('❌ Classes Google Maps non disponibles');
           setError('Erreur de chargement de Google Maps. Veuillez recharger la page.');
           return;
@@ -98,9 +106,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
 
         // Créer la carte
         const map = new window.google.maps.Map(mapRef.current, {
-          center: formData.lat && formData.lng 
-            ? { lat: formData.lat, lng: formData.lng }
-            : { lat: 48.8566, lng: 2.3522 }, // Paris par défaut
+          center:
+            formData.lat && formData.lng
+              ? { lat: formData.lat, lng: formData.lng }
+              : { lat: 48.8566, lng: 2.3522 }, // Paris par défaut
           zoom: formData.lat ? 15 : 6,
           mapTypeControl: true,
           streetViewControl: true,
@@ -115,7 +124,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
             position: { lat: formData.lat, lng: formData.lng },
             map: map,
             draggable: true,
-            title: formData.name
+            title: formData.name,
           });
 
           markerRef.current = marker;
@@ -124,10 +133,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           marker.addListener('dragend', (event) => {
             const newLat = event.latLng.lat();
             const newLng = event.latLng.lng();
-            setFormData(prev => ({
+            setFormData((prev) => ({
               ...prev,
               lat: newLat,
-              lng: newLng
+              lng: newLng,
             }));
             reverseGeocode(newLat, newLng);
           });
@@ -137,12 +146,12 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         if (inputRef.current) {
           const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
             componentRestrictions: { country: 'fr' },
-            fields: ['formatted_address', 'geometry', 'name', 'place_id']
+            fields: ['formatted_address', 'geometry', 'name', 'place_id'],
           });
 
           autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace();
-            
+
             if (!place.geometry) {
               console.error('Pas de géométrie pour ce lieu');
               return;
@@ -151,12 +160,12 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
 
-            setFormData(prev => ({
+            setFormData((prev) => ({
               ...prev,
               address: place.formatted_address,
               lat: lat,
               lng: lng,
-              placeId: place.place_id
+              placeId: place.place_id,
             }));
 
             // Mettre à jour la carte et le marqueur
@@ -170,7 +179,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 position: { lat, lng },
                 map: map,
                 draggable: true,
-                title: formData.name
+                title: formData.name,
               });
 
               markerRef.current = marker;
@@ -178,10 +187,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
               marker.addListener('dragend', (event) => {
                 const newLat = event.latLng.lat();
                 const newLng = event.latLng.lng();
-                setFormData(prev => ({
+                setFormData((prev) => ({
                   ...prev,
                   lat: newLat,
-                  lng: newLng
+                  lng: newLng,
                 }));
                 reverseGeocode(newLat, newLng);
               });
@@ -201,7 +210,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           calculateRoute(companyAddress, { lat: formData.lat, lng: formData.lng });
         }
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('❌ Erreur chargement Google Maps:', error);
         setError(error.message);
       });
@@ -222,10 +231,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
       if (status === 'OK' && results[0]) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           address: results[0].formatted_address,
-          placeId: results[0].place_id
+          placeId: results[0].place_id,
         }));
       }
     });
@@ -243,23 +252,26 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
 
     const directionsService = new window.google.maps.DirectionsService();
 
-    directionsService.route({
-      origin: origin,
-      destination: destination,
-      travelMode: window.google.maps.TravelMode.DRIVING,
-    }, (result, status) => {
-      setIsLoadingRoute(false);
-      
-      if (status === 'OK') {
-        const route = result.routes[0].legs[0];
-        setDistance(route.distance.text);
-        setDuration(route.duration.text);
-        logger.log(`📍 Distance: ${route.distance.text}, Durée: ${route.duration.text}`);
-      } else {
-        console.error('Erreur calcul itinéraire:', status);
-        setError('Impossible de calculer l\'itinéraire');
-      }
-    });
+    directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        setIsLoadingRoute(false);
+
+        if (status === 'OK') {
+          const route = result.routes[0].legs[0];
+          setDistance(route.distance.text);
+          setDuration(route.duration.text);
+          logger.log(`📍 Distance: ${route.distance.text}, Durée: ${route.duration.text}`);
+        } else {
+          console.error('Erreur calcul itinéraire:', status);
+          setError("Impossible de calculer l'itinéraire");
+        }
+      },
+    );
   };
 
   const handleSubmit = (e) => {
@@ -273,7 +285,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
 
   const handleGeolocalise = () => {
     if (!navigator.geolocation) {
-      toast.warning('La géolocalisation n\'est pas supportée par votre navigateur');
+      toast.warning("La géolocalisation n'est pas supportée par votre navigateur");
       return;
     }
 
@@ -282,10 +294,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           lat: lat,
-          lng: lng
+          lng: lng,
         }));
 
         // Mettre à jour la carte
@@ -302,7 +314,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
             position: { lat, lng },
             map: mapInstanceRef.current,
             draggable: true,
-            title: formData.name
+            title: formData.name,
           });
 
           markerRef.current = marker;
@@ -310,10 +322,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           marker.addListener('dragend', (event) => {
             const newLat = event.latLng.lat();
             const newLng = event.latLng.lng();
-            setFormData(prev => ({
+            setFormData((prev) => ({
               ...prev,
               lat: newLat,
-              lng: newLng
+              lng: newLng,
             }));
             reverseGeocode(newLat, newLng);
           });
@@ -329,19 +341,27 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
       },
       (error) => {
         console.error('Erreur géolocalisation:', error);
-        toast.info('Impossible d\'obtenir votre position');
-      }
+        toast.info("Impossible d'obtenir votre position");
+      },
     );
   };
 
   return (
-    <div className="location-dialog-overlay" onMouseDown={(e) => {
-      // Fermer seulement si on clique sur l'overlay, pas sur le contenu
-      if (e.target === e.currentTarget) {
-        handleSafeClose();
-      }
-    }}>
-      <div className="location-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+    <div
+      className="location-dialog-overlay"
+      onMouseDown={(e) => {
+        // Fermer seulement si on clique sur l'overlay, pas sur le contenu
+        if (e.target === e.currentTarget) {
+          handleSafeClose();
+        }
+      }}
+    >
+      <div
+        className="location-dialog"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="location-dialog-header">
           <h2>{client ? 'Modifier le client' : 'Nouveau client'}</h2>
           <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
@@ -349,14 +369,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           </Button>
         </div>
 
-        {error && (
-          <InlineAlert>{error}</InlineAlert>
-        )}
+        {error && <InlineAlert>{error}</InlineAlert>}
 
         <form onSubmit={handleSubmit} className="location-form">
-          {error && (
-            <InlineAlert>{error}</InlineAlert>
-          )}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           <div className="location-dialog-content">
             <div className="form-section">
@@ -364,7 +380,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 <User size={18} />
                 Informations du client
               </h3>
-              
+
               <FormField className="form-group" label="Nom" htmlFor="client-name" required>
                 <Input
                   id="client-name"
@@ -376,7 +392,15 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 />
               </FormField>
 
-              <FormField className="form-group" label={<><Mail size={16} /> Email</>} htmlFor="client-email">
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <Mail size={16} /> Email
+                  </>
+                }
+                htmlFor="client-email"
+              >
                 <Input
                   id="client-email"
                   type="email"
@@ -386,7 +410,15 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 />
               </FormField>
 
-              <FormField className="form-group" label={<><Phone size={16} /> Téléphone</>} htmlFor="client-phone">
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <Phone size={16} /> Téléphone
+                  </>
+                }
+                htmlFor="client-phone"
+              >
                 <PhoneInput
                   id="client-phone"
                   value={formData.phone}
@@ -398,7 +430,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 <MapPin size={18} />
                 Adresse
               </h3>
-              
+
               <FormField className="form-group" label="Adresse complète" htmlFor="client-address">
                 <Input
                   id="client-address"
@@ -408,13 +440,12 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   placeholder="Rechercher une adresse..."
                 />
-                <small className="help-text">
-                  Commencez à taper pour rechercher une adresse
-                </small>
+                <small className="help-text">Commencez à taper pour rechercher une adresse</small>
               </FormField>
 
-              <Button variant="ghost" 
-                type="button" 
+              <Button
+                variant="ghost"
+                type="button"
                 className="geolocate-button"
                 onClick={handleGeolocalise}
               >
@@ -452,11 +483,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 </div>
               )}
 
-              {isLoadingRoute && (
-                <div className="loading-route">
-                  Calcul de l'itinéraire...
-                </div>
-              )}
+              {isLoadingRoute && <div className="loading-route">Calcul de l'itinéraire...</div>}
 
               <div className="map-preview-container">
                 <h4 className="map-preview-title">
@@ -466,9 +493,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                 <div className="map-preview-wrapper">
                   <div ref={mapRef} className="map" />
                 </div>
-                <small className="help-text">
-                  Déplacez le marqueur pour ajuster la position
-                </small>
+                <small className="help-text">Déplacez le marqueur pour ajuster la position</small>
               </div>
             </div>
           </div>
@@ -487,7 +512,10 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
       <Dialog
         open={showUnsavedWarning}
         onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        onConfirm={() => {
+          setShowUnsavedWarning(false);
+          onClose();
+        }}
         title="Modifications non enregistrées"
         variant="warning"
         confirmLabel="Ne pas enregistrer"

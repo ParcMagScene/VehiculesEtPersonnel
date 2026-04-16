@@ -23,7 +23,7 @@ export default function Accordion({
   const id = useId();
 
   const toggle = () => {
-    if (controlledOpen === undefined) setInternal(o => !o);
+    if (controlledOpen === undefined) setInternal((o) => !o);
     onToggle?.(!isOpen);
   };
 

@@ -1,21 +1,41 @@
 import React from 'react';
 import {
-  format, isWeekend, isToday, getWeek,
-  startOfMonth, endOfMonth, eachWeekOfInterval,
+  format,
+  isWeekend,
+  isToday,
+  getWeek,
+  startOfMonth,
+  endOfMonth,
+  eachWeekOfInterval,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Tooltip } from '@/design-system';
 
-const CalendarHeaders = ({ view, days, currentDate, gridColumns, handleMonthClick, handleWeekClick, handleDayClick }) => (
+const CalendarHeaders = ({
+  view,
+  days,
+  currentDate,
+  gridColumns,
+  handleMonthClick,
+  handleWeekClick,
+  handleDayClick,
+}) => (
   <div className="calendar-headers-scroll-area">
-    <div className={`calendar-grid-headers ${view}-view`} style={{ gridTemplateColumns: gridColumns }}>
+    <div
+      className={`calendar-grid-headers ${view}-view`}
+      style={{ gridTemplateColumns: gridColumns }}
+    >
       {view === 'day' ? (
         <div className="calendar-header">
-          <div className={`calendar-header-cell day-header day-view-header ${isToday(currentDate) ? 'today' : ''}`}>
+          <div
+            className={`calendar-header-cell day-header day-view-header ${isToday(currentDate) ? 'today' : ''}`}
+          >
             <div className="day-name">Matin</div>
             <div className="day-number">{format(currentDate, 'EEEE d MMMM', { locale: fr })}</div>
           </div>
-          <div className={`calendar-header-cell day-header day-view-header ${isToday(currentDate) ? 'today' : ''}`}>
+          <div
+            className={`calendar-header-cell day-header day-view-header ${isToday(currentDate) ? 'today' : ''}`}
+          >
             <div className="day-name">Après-midi</div>
           </div>
         </div>
@@ -24,7 +44,10 @@ const CalendarHeaders = ({ view, days, currentDate, gridColumns, handleMonthClic
           {days.map((monthDate, monthIndex) => {
             const monthStart = startOfMonth(monthDate);
             const monthEnd = endOfMonth(monthDate);
-            const weeksInMonth = eachWeekOfInterval({ start: monthStart, end: monthEnd }, { weekStartsOn: 1 });
+            const weeksInMonth = eachWeekOfInterval(
+              { start: monthStart, end: monthEnd },
+              { weekStartsOn: 1 },
+            );
             return (
               <div
                 key={monthIndex}
@@ -40,7 +63,10 @@ const CalendarHeaders = ({ view, days, currentDate, gridColumns, handleMonthClic
                       <Tooltip key={idx} content="Cliquer pour voir la semaine" position="bottom">
                         <span
                           className="week-number-small clickable"
-                          onClick={(e) => { e.stopPropagation(); handleWeekClick(weekStart); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWeekClick(weekStart);
+                          }}
                         >
                           S{weekNum}
                         </span>
@@ -74,10 +100,16 @@ const CalendarHeaders = ({ view, days, currentDate, gridColumns, handleMonthClic
           <div className="calendar-subheader">
             {days.map((day, index) => (
               <React.Fragment key={index}>
-                <div className={`calendar-header-cell period-cell ${isWeekend(day) ? 'weekend' : ''} ${isToday(day) ? 'today today-left' : ''}`} data-day-index={index}>
+                <div
+                  className={`calendar-header-cell period-cell ${isWeekend(day) ? 'weekend' : ''} ${isToday(day) ? 'today today-left' : ''}`}
+                  data-day-index={index}
+                >
                   AM
                 </div>
-                <div className={`calendar-header-cell period-cell ${isWeekend(day) ? 'weekend' : ''} ${isToday(day) ? 'today today-right' : ''}`} data-day-index={index}>
+                <div
+                  className={`calendar-header-cell period-cell ${isWeekend(day) ? 'weekend' : ''} ${isToday(day) ? 'today today-right' : ''}`}
+                  data-day-index={index}
+                >
                   PM
                 </div>
               </React.Fragment>

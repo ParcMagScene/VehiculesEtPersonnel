@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import logger from "../../utils/logger";
+import logger from '../../utils/logger';
 import { X, MapPin, Navigation, Clock, Route } from 'lucide-react';
 import api from '../../utils/api';
-import { Button, Dialog, FormField, Input, Select, InlineAlert , Tooltip} from '@/design-system';
+import { Button, Dialog, FormField, Input, Select, InlineAlert, Tooltip } from '@/design-system';
 import { STATUS_COLORS } from '../../constants/colors';
 import './LocationDialog.css';
 import { loadGoogleMapsAPI, isGoogleMapsLoaded } from '../../utils/googleMapsLoader';
@@ -16,7 +16,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     lat: location?.lat || null,
     lng: location?.lng || null,
     placeId: location?.placeId || '',
-    type: location?.type || 'Salle de spectacle'
+    type: location?.type || 'Salle de spectacle',
   });
 
   const [distance, setDistance] = useState(null);
@@ -26,14 +26,16 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  const initialFormDataRef = useRef(JSON.stringify({
-    name: location?.name || '',
-    address: location?.address || '',
-    lat: location?.lat || null,
-    lng: location?.lng || null,
-    placeId: location?.placeId || '',
-    type: location?.type || 'Salle de spectacle'
-  }));
+  const initialFormDataRef = useRef(
+    JSON.stringify({
+      name: location?.name || '',
+      address: location?.address || '',
+      lat: location?.lat || null,
+      lng: location?.lng || null,
+      placeId: location?.placeId || '',
+      type: location?.type || 'Salle de spectacle',
+    }),
+  );
 
   const handleSafeClose = () => {
     if (JSON.stringify(formData) !== initialFormDataRef.current) {
@@ -60,9 +62,11 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         // Charger la clé API depuis la configuration
         const configData = await api.getGoogleMapsApiKey();
         const apiKey = configData.value;
-        
+
         if (!apiKey) {
-          throw new Error('Clé API Google Maps non configurée.\n\nAllez dans:\nGestion → Config Google → Clé API Google Maps\n\nPuis ajoutez votre clé API.');
+          throw new Error(
+            'Clé API Google Maps non configurée.\n\nAllez dans:\nGestion → Config Google → Clé API Google Maps\n\nPuis ajoutez votre clé API.',
+          );
         }
 
         await loadGoogleMapsAPI(apiKey);
@@ -81,7 +85,11 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         }
 
         // Vérifier que toutes les classes nécessaires sont disponibles
-        if (!window.google.maps.Marker || !window.google.maps.places || !window.google.maps.places.Autocomplete) {
+        if (
+          !window.google.maps.Marker ||
+          !window.google.maps.places ||
+          !window.google.maps.places.Autocomplete
+        ) {
           console.error('❌ Classes Google Maps non disponibles');
           setError('Erreur de chargement de Google Maps. Veuillez recharger la page.');
           return;
@@ -97,150 +105,149 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
 
         // Importer l'API Places (Autocomplete classique)
         // Note: on n'a plus besoin d'importLibrary pour l'ancienne API
-        
+
         // Créer la carte
-    const map = new window.google.maps.Map(mapRef.current, {
-      center: formData.lat && formData.lng 
-        ? { lat: formData.lat, lng: formData.lng }
-        : { lat: 48.8566, lng: 2.3522 }, // Paris par défaut
-      zoom: formData.lat ? 15 : 6,
-      mapTypeControl: true,
-      streetViewControl: true,
-      fullscreenControl: true,
-    });
-
-    mapInstanceRef.current = map;
-
-    // Ajouter un marqueur si position existe
-    if (formData.lat && formData.lng) {
-      const marker = new window.google.maps.Marker({
-        position: { lat: formData.lat, lng: formData.lng },
-        map: map,
-        draggable: true,
-        title: formData.name
-      });
-
-      markerRef.current = marker;
-
-      // Permettre de déplacer le marqueur
-      marker.addListener('dragend', (event) => {
-        const newLat = event.latLng.lat();
-        const newLng = event.latLng.lng();
-        setFormData(prev => ({
-          ...prev,
-          lat: newLat,
-          lng: newLng
-        }));
-        reverseGeocode(newLat, newLng);
-      });
-    }
-
-    // === API PLACES : Autocomplete classique (fonctionne partout) ===
-    // Attendre que le DOM soit prêt avec un setTimeout
-    setTimeout(() => {
-      if (!addressAutocompleteContainerRef.current) {
-        console.error('❌ Conteneur autocomplete non trouvé dans le DOM');
-        return;
-      }
-      
-      if (!window.google?.maps?.places) {
-        console.error('❌ Google Places API non disponible');
-        return;
-      }
-      
-      try {
-        
-        // Vérifier si un input existe déjà
-        let input = addressAutocompleteContainerRef.current.querySelector('#address-autocomplete-input');
-        
-        if (!input) {
-          addressAutocompleteContainerRef.current.innerHTML = '';
-          input = document.createElement('input');
-          input.type = 'text';
-          input.placeholder = 'Rechercher une adresse...';
-          input.className = 'autocomplete-input';
-          input.id = 'address-autocomplete-input';
-          input.style.cssText = `width: 100%; padding: 0.75rem; border: 2px solid ${STATUS_COLORS.info}; border-radius: 8px; font-size: 1rem; display: block; box-sizing: border-box; margin-bottom: 0.5rem; background: var(--theme-bg-card); color: var(--theme-text-primary); font-family: inherit;`;
-          addressAutocompleteContainerRef.current.appendChild(input);
-        }
-        
-        const autocomplete = new window.google.maps.places.Autocomplete(input, {
-          componentRestrictions: { country: 'fr' },
-          fields: ['name', 'formatted_address', 'geometry', 'place_id']
+        const map = new window.google.maps.Map(mapRef.current, {
+          center:
+            formData.lat && formData.lng
+              ? { lat: formData.lat, lng: formData.lng }
+              : { lat: 48.8566, lng: 2.3522 }, // Paris par défaut
+          zoom: formData.lat ? 15 : 6,
+          mapTypeControl: true,
+          streetViewControl: true,
+          fullscreenControl: true,
         });
-        
-        
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          
-          if (!place.geometry || !place.geometry.location) {
-            console.error('Pas de localisation pour ce lieu');
+
+        mapInstanceRef.current = map;
+
+        // Ajouter un marqueur si position existe
+        if (formData.lat && formData.lng) {
+          const marker = new window.google.maps.Marker({
+            position: { lat: formData.lat, lng: formData.lng },
+            map: map,
+            draggable: true,
+            title: formData.name,
+          });
+
+          markerRef.current = marker;
+
+          // Permettre de déplacer le marqueur
+          marker.addListener('dragend', (event) => {
+            const newLat = event.latLng.lat();
+            const newLng = event.latLng.lng();
+            setFormData((prev) => ({
+              ...prev,
+              lat: newLat,
+              lng: newLng,
+            }));
+            reverseGeocode(newLat, newLng);
+          });
+        }
+
+        // === API PLACES : Autocomplete classique (fonctionne partout) ===
+        // Attendre que le DOM soit prêt avec un setTimeout
+        setTimeout(() => {
+          if (!addressAutocompleteContainerRef.current) {
+            console.error('❌ Conteneur autocomplete non trouvé dans le DOM');
             return;
           }
 
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-
-
-          setFormData(prev => ({
-            ...prev,
-            address: place.formatted_address,
-            lat: lat,
-            lng: lng,
-            placeId: place.place_id
-          }));
-
-          // Mettre à jour la carte
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.setCenter({ lat, lng });
-            mapInstanceRef.current.setZoom(15);
+          if (!window.google?.maps?.places) {
+            console.error('❌ Google Places API non disponible');
+            return;
           }
 
-          // Mettre à jour le marqueur
-          if (markerRef.current) {
-            markerRef.current.setPosition({ lat, lng });
-          } else if (mapInstanceRef.current) {
-            const marker = new window.google.maps.Marker({
-              position: { lat, lng },
-              map: mapInstanceRef.current,
-              draggable: true,
-              title: place.name
+          try {
+            // Vérifier si un input existe déjà
+            let input = addressAutocompleteContainerRef.current.querySelector(
+              '#address-autocomplete-input',
+            );
+
+            if (!input) {
+              addressAutocompleteContainerRef.current.innerHTML = '';
+              input = document.createElement('input');
+              input.type = 'text';
+              input.placeholder = 'Rechercher une adresse...';
+              input.className = 'autocomplete-input';
+              input.id = 'address-autocomplete-input';
+              input.style.cssText = `width: 100%; padding: 0.75rem; border: 2px solid ${STATUS_COLORS.info}; border-radius: 8px; font-size: 1rem; display: block; box-sizing: border-box; margin-bottom: 0.5rem; background: var(--theme-bg-card); color: var(--theme-text-primary); font-family: inherit;`;
+              addressAutocompleteContainerRef.current.appendChild(input);
+            }
+
+            const autocomplete = new window.google.maps.places.Autocomplete(input, {
+              componentRestrictions: { country: 'fr' },
+              fields: ['name', 'formatted_address', 'geometry', 'place_id'],
             });
 
-            marker.addListener('dragend', (event) => {
-              const newLat = event.latLng.lat();
-              const newLng = event.latLng.lng();
-              setFormData(prev => ({
+            autocomplete.addListener('place_changed', () => {
+              const place = autocomplete.getPlace();
+
+              if (!place.geometry || !place.geometry.location) {
+                console.error('Pas de localisation pour ce lieu');
+                return;
+              }
+
+              const lat = place.geometry.location.lat();
+              const lng = place.geometry.location.lng();
+
+              setFormData((prev) => ({
                 ...prev,
-                lat: newLat,
-                lng: newLng
+                address: place.formatted_address,
+                lat: lat,
+                lng: lng,
+                placeId: place.place_id,
               }));
-              reverseGeocode(newLat, newLng);
+
+              // Mettre à jour la carte
+              if (mapInstanceRef.current) {
+                mapInstanceRef.current.setCenter({ lat, lng });
+                mapInstanceRef.current.setZoom(15);
+              }
+
+              // Mettre à jour le marqueur
+              if (markerRef.current) {
+                markerRef.current.setPosition({ lat, lng });
+              } else if (mapInstanceRef.current) {
+                const marker = new window.google.maps.Marker({
+                  position: { lat, lng },
+                  map: mapInstanceRef.current,
+                  draggable: true,
+                  title: place.name,
+                });
+
+                marker.addListener('dragend', (event) => {
+                  const newLat = event.latLng.lat();
+                  const newLng = event.latLng.lng();
+                  setFormData((prev) => ({
+                    ...prev,
+                    lat: newLat,
+                    lng: newLng,
+                  }));
+                  reverseGeocode(newLat, newLng);
+                });
+
+                markerRef.current = marker;
+              }
+
+              logger.log('📍 Lieu sélectionné:', place.formatted_address);
             });
 
-            markerRef.current = marker;
+            logger.log('✅ Autocomplete initialisé avec succès');
+          } catch (error) {
+            console.error("❌ Erreur lors de l'initialisation de l'autocomplétion:", error);
+            setError("Erreur lors de l'initialisation de l'autocomplétion");
           }
-
-          logger.log('📍 Lieu sélectionné:', place.formatted_address);
-        });
-        
-        logger.log('✅ Autocomplete initialisé avec succès');
-      } catch (error) {
-        console.error('❌ Erreur lors de l\'initialisation de l\'autocomplétion:', error);
-        setError('Erreur lors de l\'initialisation de l\'autocomplétion');
-      }
-    }, 500); // Délai de 500ms pour attendre que le DOM soit monté
-
+        }, 500); // Délai de 500ms pour attendre que le DOM soit monté
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('❌ Erreur chargement Google Maps:', error);
         setError(error.message || 'Impossible de charger Google Maps');
-        
+
         // Afficher un message détaillé
-        const errorMsg = error.message.includes('ApiNotActivatedMapError') 
-          ? '⚠️ L\'API Maps JavaScript n\'est pas activée pour votre clé API.\n\nConsultez le fichier GOOGLE_MAPS_ACTIVATION.md pour les instructions.'
+        const errorMsg = error.message.includes('ApiNotActivatedMapError')
+          ? "⚠️ L'API Maps JavaScript n'est pas activée pour votre clé API.\n\nConsultez le fichier GOOGLE_MAPS_ACTIVATION.md pour les instructions."
           : error.message;
-        
+
         toast.error(errorMsg);
       });
 
@@ -256,16 +263,16 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   // Mettre à jour la carte et le marqueur quand les coordonnées changent
   useEffect(() => {
     if (!mapInstanceRef.current) return;
-    
+
     const map = mapInstanceRef.current;
-    
+
     if (formData.lat && formData.lng) {
       const position = { lat: formData.lat, lng: formData.lng };
-      
+
       // Centrer la carte sur la nouvelle position avec zoom
       map.setCenter(position);
       map.setZoom(15);
-      
+
       // Mettre à jour ou créer le marqueur
       if (markerRef.current) {
         markerRef.current.setPosition(position);
@@ -275,16 +282,16 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           position,
           map,
           draggable: true,
-          title: formData.name
+          title: formData.name,
         });
 
         marker.addListener('dragend', (event) => {
           const newLat = event.latLng.lat();
           const newLng = event.latLng.lng();
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             lat: newLat,
-            lng: newLng
+            lng: newLng,
           }));
           reverseGeocode(newLat, newLng);
         });
@@ -310,7 +317,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
       },
       (response, status) => {
         setIsLoadingRoute(false);
-        
+
         if (status === 'OK' && response.rows[0]?.elements[0]?.status === 'OK') {
           const element = response.rows[0].elements[0];
           setDistance(element.distance.text);
@@ -318,7 +325,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         } else {
           console.error('Erreur calcul distance:', status);
         }
-      }
+      },
     );
   }, [formData.lat, formData.lng, companyAddress]);
 
@@ -327,10 +334,10 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
       if (status === 'OK' && results[0]) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           address: results[0].formatted_address,
-          placeId: results[0].place_id
+          placeId: results[0].place_id,
         }));
       }
     });
@@ -338,17 +345,16 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    
+
     if (!formData.name.trim()) {
       toast.warning('Le nom du lieu est obligatoire');
       return;
     }
-    
+
     setIsSaving(true);
     setSuccessMessage(null);
     setError(null);
-    
+
     try {
       // Mapper placeId → place_id pour l'API backend
       const locationData = {
@@ -357,10 +363,9 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         lat: formData.lat,
         lng: formData.lng,
         place_id: formData.placeId,
-        type: formData.type
+        type: formData.type,
       };
-      
-      
+
       let savedLocation;
       if (location?.id) {
         // Mise à jour d'un lieu existant
@@ -372,22 +377,22 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         // Transformer place_id en placeId pour compatibilité frontend
         savedLocation = {
           ...response,
-          placeId: response.place_id
+          placeId: response.place_id,
         };
         setSuccessMessage('✅ Lieu créé avec succès !');
       }
-      
+
       // Mettre à jour formData avec l'ID pour permettre des modifications ultérieures
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        id: savedLocation.id
+        id: savedLocation.id,
       }));
-      
+
       // Appeler onSave pour mettre à jour le parent
       if (onSave) {
         onSave(savedLocation);
       }
-      
+
       // Effacer le message après 3 secondes
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
@@ -399,24 +404,32 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   };
 
   return (
-    <div className="location-dialog-overlay" onMouseDown={(e) => {
-      // Fermer seulement si on clique sur l'overlay, pas sur le contenu
-      if (e.target === e.currentTarget) {
-        handleSafeClose();
-      }
-    }}>
-      <div className="location-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+    <div
+      className="location-dialog-overlay"
+      onMouseDown={(e) => {
+        // Fermer seulement si on clique sur l'overlay, pas sur le contenu
+        if (e.target === e.currentTarget) {
+          handleSafeClose();
+        }
+      }}
+    >
+      <div
+        className="location-dialog"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="location-dialog-header">
           <h2>
             <MapPin size={24} />
             {location ? 'Modifier le lieu' : 'Nouveau lieu'}
             {formData.lat && formData.lng && (
- <Tooltip content="Position GPS enregistrée" position="bottom">
-   <span className="gps-badge">
-                <Navigation size={16} />
-                GPS
-              </span>
- </Tooltip>
+              <Tooltip content="Position GPS enregistrée" position="bottom">
+                <span className="gps-badge">
+                  <Navigation size={16} />
+                  GPS
+                </span>
+              </Tooltip>
             )}
           </h2>
           <Button variant="ghost" className="close-button" onClick={handleSafeClose}>
@@ -425,17 +438,18 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {error && (
-            <InlineAlert>{error}</InlineAlert>
-          )}
-          
-          {successMessage && (
-            <InlineAlert variant="success">{successMessage}</InlineAlert>
-          )}
+          {error && <InlineAlert>{error}</InlineAlert>}
+
+          {successMessage && <InlineAlert variant="success">{successMessage}</InlineAlert>}
 
           <div className="location-dialog-content">
             <div className="form-section">
-              <FormField className="form-group" label="Nom du lieu" htmlFor="location-name" required>
+              <FormField
+                className="form-group"
+                label="Nom du lieu"
+                htmlFor="location-name"
+                required
+              >
                 <Input
                   id="location-name"
                   type="text"
@@ -446,7 +460,12 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                 />
               </FormField>
 
-              <FormField className="form-group" label="Type de lieu" htmlFor="location-type" required>
+              <FormField
+                className="form-group"
+                label="Type de lieu"
+                htmlFor="location-type"
+                required
+              >
                 <Select
                   id="location-type"
                   value={formData.type}
@@ -461,7 +480,11 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                 </Select>
               </FormField>
 
-              <FormField className="form-group" label="Rechercher une adresse" htmlFor="location-address">
+              <FormField
+                className="form-group"
+                label="Rechercher une adresse"
+                htmlFor="location-address"
+              >
                 <div ref={addressAutocompleteContainerRef} className="autocomplete-container"></div>
                 <small className="help-text">
                   Utilisez l'autocomplétion pour trouver une adresse précise
@@ -469,7 +492,11 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
               </FormField>
 
               {formData.address && (
-                <FormField className="form-group" label="Adresse sélectionnée" htmlFor="location-address-display">
+                <FormField
+                  className="form-group"
+                  label="Adresse sélectionnée"
+                  htmlFor="location-address-display"
+                >
                   <Input
                     id="location-address-display"
                     type="text"
@@ -486,7 +513,9 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                     <Navigation size={16} />
                     <span>
                       <strong>Position GPS enregistrée</strong>
-                      <small>Lat: {formData.lat.toFixed(6)}, Lng: {formData.lng.toFixed(6)}</small>
+                      <small>
+                        Lat: {formData.lat.toFixed(6)}, Lng: {formData.lng.toFixed(6)}
+                      </small>
                     </span>
                   </div>
                 ) : (
@@ -509,13 +538,17 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                       {distance && (
                         <div className="route-item">
                           <Route size={16} />
-                          <span><strong>Distance:</strong> {distance}</span>
+                          <span>
+                            <strong>Distance:</strong> {distance}
+                          </span>
                         </div>
                       )}
                       {duration && (
                         <div className="route-item">
                           <Clock size={16} />
-                          <span><strong>Temps de trajet:</strong> {duration}</span>
+                          <span>
+                            <strong>Temps de trajet:</strong> {duration}
+                          </span>
                         </div>
                       )}
                     </>
@@ -531,9 +564,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                 <div className="map-preview-wrapper">
                   <div ref={mapRef} className="google-map"></div>
                 </div>
-                <small className="help-text">
-                  Déplacez le marqueur pour ajuster la position
-                </small>
+                <small className="help-text">Déplacez le marqueur pour ajuster la position</small>
               </div>
             </div>
           </div>
@@ -543,7 +574,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
               Fermer
             </Button>
             <Button variant="primary" type="submit" disabled={isSaving}>
-              {isSaving ? 'Enregistrement...' : (location ? 'Mettre à jour' : 'Ajouter')}
+              {isSaving ? 'Enregistrement...' : location ? 'Mettre à jour' : 'Ajouter'}
             </Button>
           </div>
         </form>
@@ -552,7 +583,10 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
       <Dialog
         open={showUnsavedWarning}
         onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        onConfirm={() => {
+          setShowUnsavedWarning(false);
+          onClose();
+        }}
         title="Modifications non enregistrées"
         variant="warning"
         confirmLabel="Ne pas enregistrer"

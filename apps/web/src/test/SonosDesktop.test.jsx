@@ -95,10 +95,17 @@ describe('SonosNowPlaying', () => {
 
   it('shows track info when playing', () => {
     render(
-      <SonosNowPlaying displayState={{
-        playing: true, title: 'My Song', artist: 'Artist', album: 'Album',
-        position: 65, duration: 200, albumArtURI: 'http://img/art.jpg',
-      }} />
+      <SonosNowPlaying
+        displayState={{
+          playing: true,
+          title: 'My Song',
+          artist: 'Artist',
+          album: 'Album',
+          position: 65,
+          duration: 200,
+          albumArtURI: 'http://img/art.jpg',
+        }}
+      />,
     );
     expect(screen.getByText('My Song')).toBeInTheDocument();
     expect(screen.getByText('Artist')).toBeInTheDocument();
@@ -109,9 +116,14 @@ describe('SonosNowPlaying', () => {
 describe('SonosControls', () => {
   const baseProps = {
     state: 'playing',
-    shuffleActive: false, repeatMode: 'none',
-    onPlay: vi.fn(), onPause: vi.fn(), onNext: vi.fn(), onPrevious: vi.fn(),
-    onShuffle: vi.fn(), onRepeat: vi.fn(),
+    shuffleActive: false,
+    repeatMode: 'none',
+    onPlay: vi.fn(),
+    onPause: vi.fn(),
+    onNext: vi.fn(),
+    onPrevious: vi.fn(),
+    onShuffle: vi.fn(),
+    onRepeat: vi.fn(),
     busy: false,
   };
 
@@ -123,8 +135,11 @@ describe('SonosControls', () => {
 
 describe('SonosVolumeSlider', () => {
   const baseProps = {
-    volume: 50, muted: false,
-    onSetVolume: vi.fn(), onMute: vi.fn(), onUnmute: vi.fn(),
+    volume: 50,
+    muted: false,
+    onSetVolume: vi.fn(),
+    onMute: vi.fn(),
+    onUnmute: vi.fn(),
     busy: false,
   };
 
@@ -136,8 +151,13 @@ describe('SonosVolumeSlider', () => {
 
 describe('SonosFavorites', () => {
   const baseProps = {
-    favorites: [{ title: 'Radio 1', uri: 'x-1' }, { title: 'Jazz FM', uri: 'x-2' }],
-    favoritesLoading: false, loadFavorites: vi.fn(), playFavorite: vi.fn(),
+    favorites: [
+      { title: 'Radio 1', uri: 'x-1' },
+      { title: 'Jazz FM', uri: 'x-2' },
+    ],
+    favoritesLoading: false,
+    loadFavorites: vi.fn(),
+    playFavorite: vi.fn(),
     nowPlaying: null,
   };
 
@@ -150,7 +170,13 @@ describe('SonosFavorites', () => {
 describe('SonosZoneSelector', () => {
   it('returns null when no zones', () => {
     const { container } = render(
-      <SonosZoneSelector zones={[]} activeZone={null} onZoneSelect={vi.fn()} zonesOpen={false} setZonesOpen={vi.fn()} />
+      <SonosZoneSelector
+        zones={[]}
+        activeZone={null}
+        onZoneSelect={vi.fn()}
+        zonesOpen={false}
+        setZonesOpen={vi.fn()}
+      />,
     );
     expect(container.innerHTML).toBe('');
   });
@@ -159,15 +185,20 @@ describe('SonosZoneSelector', () => {
     render(
       <SonosZoneSelector
         zones={[{ name: 'Salon', coordinator: '10.0.0.1', members: ['a'] }]}
-        activeZone={null} onZoneSelect={vi.fn()} zonesOpen={true} setZonesOpen={vi.fn()}
-      />
+        activeZone={null}
+        onZoneSelect={vi.fn()}
+        zonesOpen={true}
+        setZonesOpen={vi.fn()}
+      />,
     );
     expect(screen.getByText('Salon')).toBeInTheDocument();
   });
 });
 
 describe('SonosPanel', () => {
-  beforeEach(() => { mockSonos = { ...defaultSonos }; });
+  beforeEach(() => {
+    mockSonos = { ...defaultSonos };
+  });
 
   it('shows loading state', () => {
     mockSonos = { ...defaultSonos, configLoading: true };

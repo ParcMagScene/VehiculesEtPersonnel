@@ -71,7 +71,14 @@ function Table({
         <tbody>
           {data.length === 0 ? (
             <tr>
-              <td colSpan={(columns || []).length} style={{ textAlign: 'center', padding: 'var(--space-6)', color: 'var(--theme-text-muted)' }}>
+              <td
+                colSpan={(columns || []).length}
+                style={{
+                  textAlign: 'center',
+                  padding: 'var(--space-6)',
+                  color: 'var(--theme-text-muted)',
+                }}
+              >
                 {emptyMessage}
               </td>
             </tr>

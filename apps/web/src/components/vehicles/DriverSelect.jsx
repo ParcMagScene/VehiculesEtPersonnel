@@ -5,7 +5,7 @@ import './DriverSelect.css';
 
 /**
  * Sélecteur de conducteur avec avatars (photo ou initiales).
- * 
+ *
  * @param {string} value - Nom du conducteur sélectionné
  * @param {Function} onChange - Callback (driverName: string)
  * @param {Array} qualifiedDrivers - [{id, name, photo, skills: string[]}]
@@ -13,7 +13,14 @@ import './DriverSelect.css';
  * @param {string} placeholder - Texte placeholder
  * @param {boolean} disabled - Désactiver le sélecteur
  */
-const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestions = [], placeholder = 'Sélectionner un conducteur', disabled = false }) => {
+const DriverSelect = ({
+  value,
+  onChange,
+  qualifiedDrivers = [],
+  historySuggestions = [],
+  placeholder = 'Sélectionner un conducteur',
+  disabled = false,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -42,10 +49,12 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
   }, [isOpen]);
 
   // Suggestions historiques non qualifiées
-  const otherDrivers = historySuggestions.filter(s => !qualifiedDrivers.some(q => q.name === s));
+  const otherDrivers = historySuggestions.filter(
+    (s) => !qualifiedDrivers.some((q) => q.name === s),
+  );
 
   // Trouver le conducteur sélectionné
-  const selectedDriver = qualifiedDrivers.find(d => d.name === value);
+  const selectedDriver = qualifiedDrivers.find((d) => d.name === value);
 
   const handleSelect = (name) => {
     onChange(name);
@@ -53,13 +62,19 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
   };
 
   const renderAvatar = (driver, size = 28) => (
-    <Avatar name={driver?.name || ''} avatar={driver?.photo ? `/avatars/${driver.photo}` : undefined} size={size} />
+    <Avatar
+      name={driver?.name || ''}
+      avatar={driver?.photo ? `/avatars/${driver.photo}` : undefined}
+      size={size}
+    />
   );
 
   return (
     <div className={`driver-select ${disabled ? 'disabled' : ''}`} ref={containerRef}>
       {/* Bouton trigger */}
-      <Button variant="ghost"         type="button"
+      <Button
+        variant="ghost"
+        type="button"
         className={`driver-select-trigger ${isOpen ? 'open' : ''} ${value ? 'has-value' : ''}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
@@ -89,7 +104,10 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
             <div className="driver-select-option-avatar">
               <User size={16} style={{ color: 'var(--theme-text-muted)' }} />
             </div>
-            <span className="driver-select-option-label" style={{ color: 'var(--theme-text-muted)' }}>
+            <span
+              className="driver-select-option-label"
+              style={{ color: 'var(--theme-text-muted)' }}
+            >
               Aucun conducteur
             </span>
           </div>
@@ -104,9 +122,7 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
                   className={`driver-select-option ${value === driver.name ? 'selected' : ''}`}
                   onClick={() => handleSelect(driver.name)}
                 >
-                  <div className="driver-select-option-avatar">
-                    {renderAvatar(driver, 28)}
-                  </div>
+                  <div className="driver-select-option-avatar">{renderAvatar(driver, 28)}</div>
                   <div className="driver-select-option-info">
                     <span className="driver-select-option-name">{driver.name}</span>
                     {driver.skills?.length > 0 && (
@@ -129,9 +145,7 @@ const DriverSelect = ({ value, onChange, qualifiedDrivers = [], historySuggestio
                   className={`driver-select-option ${value === name ? 'selected' : ''}`}
                   onClick={() => handleSelect(name)}
                 >
-                  <div className="driver-select-option-avatar">
-                    {renderAvatar({ name }, 28)}
-                  </div>
+                  <div className="driver-select-option-avatar">{renderAvatar({ name }, 28)}</div>
                   <div className="driver-select-option-info">
                     <span className="driver-select-option-name">{name}</span>
                     <span className="driver-select-option-skill">historique</span>

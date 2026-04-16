@@ -94,14 +94,21 @@ describe('EquipmentGrid', () => {
 
   it('applique la classe selected sur la ligne selectionnee', () => {
     const eq = makeEquipment();
-    const { container } = render(<EquipmentGrid {...defaultProps} equipment={[eq]} selectedId={1} />);
+    const { container } = render(
+      <EquipmentGrid {...defaultProps} equipment={[eq]} selectedId={1} />,
+    );
     expect(container.querySelector('.eq-table-row.selected')).toBeInTheDocument();
   });
 
   it('affiche les icones favori et surveillance', () => {
     const eq = makeEquipment();
     const { container } = render(
-      <EquipmentGrid {...defaultProps} equipment={[eq]} favoriteIds={new Set([1])} watchIds={new Set([1])} />
+      <EquipmentGrid
+        {...defaultProps}
+        equipment={[eq]}
+        favoriteIds={new Set([1])}
+        watchIds={new Set([1])}
+      />,
     );
     expect(container.querySelector('.eq-list-star.active')).toBeInTheDocument();
     expect(container.querySelector('.eq-list-eye.active')).toBeInTheDocument();

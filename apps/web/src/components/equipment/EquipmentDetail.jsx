@@ -1,14 +1,60 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Hash, Tag, Clipboard, Package, MapPin, Calendar, DollarSign, CheckCircle, Wrench, ChevronRight, Star, Eye, QrCode, Map, ExternalLink, Edit2, Trash2, Printer, FileText, X } from 'lucide-react';
+import {
+  Hash,
+  Tag,
+  Clipboard,
+  Package,
+  MapPin,
+  Calendar,
+  DollarSign,
+  CheckCircle,
+  Wrench,
+  ChevronRight,
+  Star,
+  Eye,
+  QrCode,
+  Map,
+  ExternalLink,
+  Edit2,
+  Trash2,
+  Printer,
+  FileText,
+  X,
+} from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { EQUIPMENT_STATUS, SAV_STATUS, SAV_PRIORITY, SAV_TYPES, cleanName, APP_BASE_URL } from './equipmentConstants';
+import {
+  EQUIPMENT_STATUS,
+  SAV_STATUS,
+  SAV_PRIORITY,
+  SAV_TYPES,
+  cleanName,
+  APP_BASE_URL,
+} from './equipmentConstants';
 import { matchPhotoToEquipment, matchLogoToBrand, getCategoryHierarchy } from './equipmentUtils';
 import { resolveGenericImage } from '../../utils/genericImages';
 import { safeDate } from '../../utils/formatUtils';
 import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 import { Button, Tooltip } from '@/design-system';
 
-const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCreateTicket, _onDelete, _onSerialize, _onPrintLabel, _onPrintSheet, photosList, logosList, favoriteIds, watchIds, onToggleList, onOpenTicketDialog, onOpenDepotMap, categories: catList }) => {
+const EquipmentDetailContent = ({
+  eq,
+  _isAdmin,
+  compact = false,
+  _onEdit,
+  _onCreateTicket,
+  _onDelete,
+  _onSerialize,
+  _onPrintLabel,
+  _onPrintSheet,
+  photosList,
+  logosList,
+  favoriteIds,
+  watchIds,
+  onToggleList,
+  onOpenTicketDialog,
+  onOpenDepotMap,
+  categories: catList,
+}) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
@@ -29,10 +75,22 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
           </div>
         )}
         <div className="eq-detail-identity">
-          <h2 className="eq-detail-name">{eq.categoryIcon || eq.category_icon || '📦'} {cleanName(eq.name)}</h2>
+          <h2 className="eq-detail-name">
+            {eq.categoryIcon || eq.category_icon || '📦'} {cleanName(eq.name)}
+          </h2>
           <div className="eq-detail-meta-row">
-            <span className="eq-detail-status" style={{ background: st.color }}>{st.icon} {st.label}</span>
-            {logo && <img className="eq-detail-brand-img" src={logo} alt={eq.brand_canonical || eq.brand} loading="lazy" title={eq.brand_canonical || eq.brand} />}
+            <span className="eq-detail-status" style={{ background: st.color }}>
+              {st.icon} {st.label}
+            </span>
+            {logo && (
+              <img
+                className="eq-detail-brand-img"
+                src={logo}
+                alt={eq.brand_canonical || eq.brand}
+                loading="lazy"
+                title={eq.brand_canonical || eq.brand}
+              />
+            )}
           </div>
           {eq.uid && (
             <div className="eq-detail-uid-row">
@@ -46,12 +104,28 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
               {onToggleList && (
                 <>
                   <Tooltip content={isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}>
-                    <Button variant="ghost" className={`eq-btn-list-star ${isFav ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'favorite'); }}>
+                    <Button
+                      variant="ghost"
+                      className={`eq-btn-list-star ${isFav ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleList(eq.id, 'favorite');
+                      }}
+                    >
                       <Star size={16} fill={isFav ? STATUS_COLORS.warning : 'none'} />
                     </Button>
                   </Tooltip>
-                  <Tooltip content={isWatch ? 'Retirer de la surveillance' : 'Mettre en surveillance'}>
-                    <Button variant="ghost" className={`eq-btn-list-eye ${isWatch ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); onToggleList(eq.id, 'watch'); }}>
+                  <Tooltip
+                    content={isWatch ? 'Retirer de la surveillance' : 'Mettre en surveillance'}
+                  >
+                    <Button
+                      variant="ghost"
+                      className={`eq-btn-list-eye ${isWatch ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleList(eq.id, 'watch');
+                      }}
+                    >
                       <Eye size={16} />
                     </Button>
                   </Tooltip>
@@ -72,7 +146,10 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
       {hierarchy && (
         <div className="eq-detail-hierarchy">
           {hierarchy.family && (
-            <span className="eq-hier-badge eq-hier-family" style={{ background: hierarchy.family.color || ACCENT_COLORS.indigo }}>
+            <span
+              className="eq-hier-badge eq-hier-family"
+              style={{ background: hierarchy.family.color || ACCENT_COLORS.indigo }}
+            >
               {hierarchy.family.icon || '📦'} {hierarchy.family.name}
             </span>
           )}
@@ -93,63 +170,90 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
 
       {/* Informations */}
       <div className="eq-detail-grid eq-detail-info-grid">
-          {eq.reference && (
-            <div className="eq-detail-field">
-              <span className="eq-field-label"><Tag size={14} /> Référence</span>
-              <span className="eq-field-value">{eq.reference}</span>
-            </div>
-          )}
-          {(eq.serialNumber || eq.serial_number) && (
-            <div className="eq-detail-field">
-              <span className="eq-field-label"><Clipboard size={14} /> N° série</span>
-              <span className="eq-field-value">{eq.serialNumber || eq.serial_number}</span>
-            </div>
-          )}
-          {eq.brand && (
-            <div className="eq-detail-field">
-              <span className="eq-field-label">🏭 Marque</span>
-              <span className="eq-field-value">{eq.brand_canonical || eq.brand}</span>
-            </div>
-          )}
-          {(eq.stockQuantity || eq.stock_quantity) > 1 && (
-            <div className="eq-detail-field">
-              <span className="eq-field-label"><Package size={14} /> Quantité</span>
-              <span className="eq-field-value">{eq.stockQuantity || eq.stock_quantity}</span>
-            </div>
-          )}
-          {(eq.location_zone || eq.locationZone || eq.location) && (
-            <div className="eq-detail-field eq-field-wide">
-              <span className="eq-field-label"><MapPin size={14} /> Zone dépôt</span>
-              <span className="eq-field-value">
-                {(eq.location_zone || eq.locationZone) ? `${(eq.location_depot || eq.locationDepot) ? `D${eq.location_depot || eq.locationDepot} — ` : ''}${eq.location_zone || eq.locationZone}${(eq.location_code || eq.locationCode) ? ` — ${eq.location_code || eq.locationCode}` : ''}${(eq.location_floor || eq.locationFloor) ? ` (${eq.location_floor || eq.locationFloor})` : ''}` : eq.location}
-                {(eq.location_zone || eq.locationZone) && onOpenDepotMap && (
- <Tooltip content="Voir sur le plan" position="bottom">
-   <Button variant="ghost" className="eq-zone-map-btn" onClick={(e) => { e.stopPropagation(); onOpenDepotMap(eq.location_zone || eq.locationZone, eq.name); }}>
+        {eq.reference && (
+          <div className="eq-detail-field">
+            <span className="eq-field-label">
+              <Tag size={14} /> Référence
+            </span>
+            <span className="eq-field-value">{eq.reference}</span>
+          </div>
+        )}
+        {(eq.serialNumber || eq.serial_number) && (
+          <div className="eq-detail-field">
+            <span className="eq-field-label">
+              <Clipboard size={14} /> N° série
+            </span>
+            <span className="eq-field-value">{eq.serialNumber || eq.serial_number}</span>
+          </div>
+        )}
+        {eq.brand && (
+          <div className="eq-detail-field">
+            <span className="eq-field-label">🏭 Marque</span>
+            <span className="eq-field-value">{eq.brand_canonical || eq.brand}</span>
+          </div>
+        )}
+        {(eq.stockQuantity || eq.stock_quantity) > 1 && (
+          <div className="eq-detail-field">
+            <span className="eq-field-label">
+              <Package size={14} /> Quantité
+            </span>
+            <span className="eq-field-value">{eq.stockQuantity || eq.stock_quantity}</span>
+          </div>
+        )}
+        {(eq.location_zone || eq.locationZone || eq.location) && (
+          <div className="eq-detail-field eq-field-wide">
+            <span className="eq-field-label">
+              <MapPin size={14} /> Zone dépôt
+            </span>
+            <span className="eq-field-value">
+              {eq.location_zone || eq.locationZone
+                ? `${eq.location_depot || eq.locationDepot ? `D${eq.location_depot || eq.locationDepot} — ` : ''}${eq.location_zone || eq.locationZone}${eq.location_code || eq.locationCode ? ` — ${eq.location_code || eq.locationCode}` : ''}${eq.location_floor || eq.locationFloor ? ` (${eq.location_floor || eq.locationFloor})` : ''}`
+                : eq.location}
+              {(eq.location_zone || eq.locationZone) && onOpenDepotMap && (
+                <Tooltip content="Voir sur le plan" position="bottom">
+                  <Button
+                    variant="ghost"
+                    className="eq-zone-map-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenDepotMap(eq.location_zone || eq.locationZone, eq.name);
+                    }}
+                  >
                     <Map size={13} /> Plan
                   </Button>
- </Tooltip>
-                )}
-              </span>
-            </div>
-          )}
-          {(eq.purchaseDate || eq.purchase_date) && (
-            <div className="eq-detail-field">
-              <span className="eq-field-label"><Calendar size={14} /> Achat</span>
-              <span className="eq-field-value">{safeDate(eq.purchaseDate || eq.purchase_date)}</span>
-            </div>
-          )}
-          {(eq.purchasePrice || eq.purchase_price) && (
-            <div className="eq-detail-field">
-              <span className="eq-field-label"><DollarSign size={14} /> Prix</span>
-              <span className="eq-field-value">{parseFloat(eq.purchasePrice || eq.purchase_price).toFixed(2)} €</span>
-            </div>
-          )}
-          {(eq.warrantyEnd || eq.warranty_end) && (
-            <div className="eq-detail-field">
-              <span className="eq-field-label"><CheckCircle size={14} /> Garantie</span>
-              <span className="eq-field-value">jusqu'au {safeDate(eq.warrantyEnd || eq.warranty_end)}</span>
-            </div>
-          )}
+                </Tooltip>
+              )}
+            </span>
+          </div>
+        )}
+        {(eq.purchaseDate || eq.purchase_date) && (
+          <div className="eq-detail-field">
+            <span className="eq-field-label">
+              <Calendar size={14} /> Achat
+            </span>
+            <span className="eq-field-value">{safeDate(eq.purchaseDate || eq.purchase_date)}</span>
+          </div>
+        )}
+        {(eq.purchasePrice || eq.purchase_price) && (
+          <div className="eq-detail-field">
+            <span className="eq-field-label">
+              <DollarSign size={14} /> Prix
+            </span>
+            <span className="eq-field-value">
+              {parseFloat(eq.purchasePrice || eq.purchase_price).toFixed(2)} €
+            </span>
+          </div>
+        )}
+        {(eq.warrantyEnd || eq.warranty_end) && (
+          <div className="eq-detail-field">
+            <span className="eq-field-label">
+              <CheckCircle size={14} /> Garantie
+            </span>
+            <span className="eq-field-value">
+              jusqu'au {safeDate(eq.warrantyEnd || eq.warranty_end)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Notes */}
@@ -163,31 +267,53 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
       {/* Interventions SAV */}
       {(() => {
         const tickets = eq.savTickets || [];
-        const activeTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress' || t.status === 'waiting_parts');
-        const historyTickets = tickets.filter(t => t.status === 'closed' || t.status === 'resolved');
-        
-        if (tickets.length === 0) return (
-          <div className="eq-detail-section">
-            <h3><Wrench size={16} /> Interventions SAV</h3>
-            <p className="eq-detail-empty">Aucune intervention</p>
-          </div>
+        const activeTickets = tickets.filter(
+          (t) => t.status === 'open' || t.status === 'in_progress' || t.status === 'waiting_parts',
         );
+        const historyTickets = tickets.filter(
+          (t) => t.status === 'closed' || t.status === 'resolved',
+        );
+
+        if (tickets.length === 0)
+          return (
+            <div className="eq-detail-section">
+              <h3>
+                <Wrench size={16} /> Interventions SAV
+              </h3>
+              <p className="eq-detail-empty">Aucune intervention</p>
+            </div>
+          );
 
         const renderTicket = (t) => {
           const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
           const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
           return (
-            <div key={t.id} className={`eq-ticket-item ${onOpenTicketDialog ? 'eq-clickable-ticket' : ''}`} role="button" tabIndex={0} onClick={() => onOpenTicketDialog && onOpenTicketDialog(t)} style={onOpenTicketDialog ? { cursor: 'pointer' } : {}}>
+            <div
+              key={t.id}
+              className={`eq-ticket-item ${onOpenTicketDialog ? 'eq-clickable-ticket' : ''}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => onOpenTicketDialog && onOpenTicketDialog(t)}
+              style={onOpenTicketDialog ? { cursor: 'pointer' } : {}}
+            >
               <div className="eq-ticket-header">
                 <span className="eq-ticket-type">{SAV_TYPES[t.type] || t.type}</span>
-                <span className="eq-ticket-priority" style={{ color: pri.color }}>{pri.label}</span>
-                <span className="eq-ticket-status" style={{ background: tst.color }}>{tst.label}</span>
+                <span className="eq-ticket-priority" style={{ color: pri.color }}>
+                  {pri.label}
+                </span>
+                <span className="eq-ticket-status" style={{ background: tst.color }}>
+                  {tst.label}
+                </span>
               </div>
               <strong>{t.title}</strong>
               {!compact && t.description && <p>{t.description}</p>}
-              {!compact && t.resolution && <p className="eq-ticket-resolution">✅ {t.resolution}</p>}
+              {!compact && t.resolution && (
+                <p className="eq-ticket-resolution">✅ {t.resolution}</p>
+              )}
               <div className="eq-ticket-meta">
-                <span>{safeDate(t.createdAt)} → {safeDate(t.resolvedAt)}</span>
+                <span>
+                  {safeDate(t.createdAt)} → {safeDate(t.resolvedAt)}
+                </span>
                 {t.cost != null && t.cost > 0 && <span>{parseFloat(t.cost).toFixed(2)} €</span>}
               </div>
             </div>
@@ -198,19 +324,25 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
           <>
             {activeTickets.length > 0 && (
               <div className="eq-detail-section">
-                <h3 className="eq-interventions-title"><Wrench size={16} /> Interventions en cours ({activeTickets.length})</h3>
+                <h3 className="eq-interventions-title">
+                  <Wrench size={16} /> Interventions en cours ({activeTickets.length})
+                </h3>
                 <div className="eq-detail-list">{activeTickets.map(renderTicket)}</div>
               </div>
             )}
             <div className="eq-detail-section">
-              <h3><Wrench size={16} /> Historique interventions ({historyTickets.length})</h3>
+              <h3>
+                <Wrench size={16} /> Historique interventions ({historyTickets.length})
+              </h3>
               {historyTickets.length === 0 ? (
                 <p className="eq-detail-empty">Aucun historique</p>
               ) : (
                 <div className="eq-detail-list">
                   {(compact ? historyTickets.slice(0, 5) : historyTickets).map(renderTicket)}
                   {compact && historyTickets.length > 5 && (
-                    <p className="eq-detail-empty eq-detail-empty-more">+ {historyTickets.length - 5} autre(s)… Double-cliquez pour tout voir</p>
+                    <p className="eq-detail-empty eq-detail-empty-more">
+                      + {historyTickets.length - 5} autre(s)… Double-cliquez pour tout voir
+                    </p>
                   )}
                 </div>
               )}
@@ -222,7 +354,23 @@ const EquipmentDetailContent = ({ eq, _isAdmin, compact = false, _onEdit, _onCre
   );
 };
 
-const EquipmentSlidePanel = ({ equipment: eq, categories, _persons, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onOpenDialog, _onEdit, onPrintLabel, onPrintSheet, isAdmin, onOpenDepotMap }) => {
+const EquipmentSlidePanel = ({
+  equipment: eq,
+  categories,
+  _persons,
+  photosList,
+  logosList,
+  favoriteIds,
+  watchIds,
+  onToggleList,
+  onClose,
+  onOpenDialog,
+  _onEdit,
+  onPrintLabel,
+  onPrintSheet,
+  isAdmin,
+  onOpenDepotMap,
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -240,7 +388,10 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, _persons, photosList, 
     } else {
       setIsOpen(false);
       setIsClosing(true);
-      const timer = setTimeout(() => { setIsVisible(false); setIsClosing(false); }, 350);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setIsClosing(false);
+      }, 350);
       return () => clearTimeout(timer);
     }
   }, [eq]);
@@ -270,11 +421,17 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, _persons, photosList, 
   const _st = EQUIPMENT_STATUS[currentEq.status] || EQUIPMENT_STATUS.available;
 
   return (
-    <div className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
+    <div
+      className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
+      ref={panelRef}
+    >
       <div className="eq-slide-header">
         <div className="eq-slide-title-row">
           <span className="eq-slide-name">{currentEq.reference || cleanName(currentEq.name)}</span>
-          <span className="eq-slide-type">{currentEq.categoryIcon || currentEq.category_icon || '📦'} {currentEq.categoryName || currentEq.category_name || ''}</span>
+          <span className="eq-slide-type">
+            {currentEq.categoryIcon || currentEq.category_icon || '📦'}{' '}
+            {currentEq.categoryName || currentEq.category_name || ''}
+          </span>
         </div>
         <Tooltip content="Fermer">
           <Button variant="ghost" className="eq-slide-close" onClick={handleClose}>
@@ -283,24 +440,53 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, _persons, photosList, 
         </Tooltip>
       </div>
       <div className="eq-slide-body">
-        <EquipmentDetailContent eq={currentEq} isAdmin={isAdmin} compact={true} photosList={photosList} logosList={logosList} favoriteIds={favoriteIds} watchIds={watchIds} onToggleList={onToggleList} onOpenDepotMap={onOpenDepotMap} categories={categories} />
+        <EquipmentDetailContent
+          eq={currentEq}
+          isAdmin={isAdmin}
+          compact={true}
+          photosList={photosList}
+          logosList={logosList}
+          favoriteIds={favoriteIds}
+          watchIds={watchIds}
+          onToggleList={onToggleList}
+          onOpenDepotMap={onOpenDepotMap}
+          categories={categories}
+        />
       </div>
       <div className="eq-slide-footer">
         {onPrintLabel && (
           <Tooltip content="Imprimer étiquette">
-            <Button variant="secondary" className="eq-footer-icon-btn" iconOnly aria-label="Imprimer étiquette" onClick={() => onPrintLabel(currentEq)}>
+            <Button
+              variant="secondary"
+              className="eq-footer-icon-btn"
+              iconOnly
+              aria-label="Imprimer étiquette"
+              onClick={() => onPrintLabel(currentEq)}
+            >
               <Printer size={14} />
             </Button>
           </Tooltip>
         )}
         {onPrintSheet && (
           <Tooltip content="Imprimer la fiche">
-            <Button variant="secondary" className="eq-footer-icon-btn" iconOnly aria-label="Imprimer la fiche" onClick={() => onPrintSheet(currentEq)}>
+            <Button
+              variant="secondary"
+              className="eq-footer-icon-btn"
+              iconOnly
+              aria-label="Imprimer la fiche"
+              onClick={() => onPrintSheet(currentEq)}
+            >
               <FileText size={14} />
             </Button>
           </Tooltip>
         )}
-        <Button variant="ghost" className="eq-slide-open-btn" onClick={() => { if (onOpenDialog) onOpenDialog(currentEq); }}>
+        <Button
+          variant="ghost"
+          className="eq-slide-open-btn"
+          onClick={() => {
+            if (onOpenDialog) onOpenDialog(currentEq);
+          }}
+        >
           <ExternalLink size={14} /> Ouvrir la fiche complète
         </Button>
       </div>
@@ -308,16 +494,41 @@ const EquipmentSlidePanel = ({ equipment: eq, categories, _persons, photosList, 
   );
 };
 
-const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, photosList, logosList, favoriteIds, watchIds, onToggleList, onClose, onEdit, onDelete, onCreateTicket, _onRefresh, onOpenTicketDialog, onPrintLabel, onPrintSheet, onSerialize, onOpenDepotMap }) => {
+const EquipmentDetailDialog = ({
+  equipment: eq,
+  categories,
+  _persons,
+  isAdmin,
+  photosList,
+  logosList,
+  favoriteIds,
+  watchIds,
+  onToggleList,
+  onClose,
+  onEdit,
+  onDelete,
+  onCreateTicket,
+  _onRefresh,
+  onOpenTicketDialog,
+  onPrintLabel,
+  onPrintSheet,
+  onSerialize,
+  onOpenDepotMap,
+}) => {
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
-    setTimeout(() => { onClose(); setIsClosing(false); }, 200);
+    setTimeout(() => {
+      onClose();
+      setIsClosing(false);
+    }, 200);
   }, [onClose]);
 
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') handleClose(); };
+    const handler = (e) => {
+      if (e.key === 'Escape') handleClose();
+    };
     if (eq) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsClosing(false);
@@ -331,13 +542,22 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, p
   const _st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
 
   return (
-    <div className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) handleClose(); }}>
+    <div
+      className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
       <div className="eq-dialog">
         <div className="eq-dialog-header">
           <div className="eq-dialog-title-row">
             <span className="eq-dialog-name">{eq.reference || cleanName(eq.name)}</span>
-            <span className="eq-dialog-cat" style={{ background: (eq.categoryColor || eq.category_color || ACCENT_COLORS.indigo) }}>
-              {eq.categoryIcon || eq.category_icon || '📦'} {eq.categoryName || eq.category_name || ''}
+            <span
+              className="eq-dialog-cat"
+              style={{ background: eq.categoryColor || eq.category_color || ACCENT_COLORS.indigo }}
+            >
+              {eq.categoryIcon || eq.category_icon || '📦'}{' '}
+              {eq.categoryName || eq.category_name || ''}
             </span>
           </div>
           <Tooltip content="Fermer">
@@ -364,7 +584,9 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, p
         <div className="eq-dialog-footer">
           <div className="eq-dialog-actions">
             <div className="eq-actions-group">
-              <Button variant="primary" onClick={() => onEdit(eq)}><Edit2 size={14} /> Modifier</Button>
+              <Button variant="primary" onClick={() => onEdit(eq)}>
+                <Edit2 size={14} /> Modifier
+              </Button>
             </div>
             <div className="eq-actions-group">
               {onCreateTicket && (
@@ -373,7 +595,10 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, p
                 </Button>
               )}
               {onOpenDepotMap && (
-                <Button variant="secondary" onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}>
+                <Button
+                  variant="secondary"
+                  onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}
+                >
                   <MapPin size={14} /> Localisation
                 </Button>
               )}
@@ -387,14 +612,29 @@ const EquipmentDetailDialog = ({ equipment: eq, categories, _persons, isAdmin, p
                   <FileText size={14} /> Fiche
                 </Button>
               )}
-              {isAdmin && onSerialize && ((eq.stockQuantity || eq.stock_quantity || 1) > 1 || !eq.uid) && (
-                <Button variant="secondary" onClick={() => onSerialize(eq)} title={(eq.stockQuantity || eq.stock_quantity || 1) > 1 ? `Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID` : 'Attribuer un UID unique à cet équipement'}>
-                  <Package size={14} /> Sérialiser{(eq.stockQuantity || eq.stock_quantity || 1) > 1 ? ` (${eq.stockQuantity || eq.stock_quantity})` : ''}
-                </Button>
-              )}
+              {isAdmin &&
+                onSerialize &&
+                ((eq.stockQuantity || eq.stock_quantity || 1) > 1 || !eq.uid) && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => onSerialize(eq)}
+                    title={
+                      (eq.stockQuantity || eq.stock_quantity || 1) > 1
+                        ? `Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`
+                        : 'Attribuer un UID unique à cet équipement'
+                    }
+                  >
+                    <Package size={14} /> Sérialiser
+                    {(eq.stockQuantity || eq.stock_quantity || 1) > 1
+                      ? ` (${eq.stockQuantity || eq.stock_quantity})`
+                      : ''}
+                  </Button>
+                )}
             </div>
             {isAdmin && onDelete && (
-              <Button variant="danger" onClick={() => onDelete(eq.id)}><Trash2 size={14} /> Supprimer</Button>
+              <Button variant="danger" onClick={() => onDelete(eq.id)}>
+                <Trash2 size={14} /> Supprimer
+              </Button>
             )}
           </div>
         </div>

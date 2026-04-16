@@ -7,7 +7,7 @@ import './AddressAutocomplete.css';
 
 /**
  * Composant réutilisable d'autocomplétion d'adresse via Google Maps Places API
- * 
+ *
  * Props:
  * - value: string - valeur actuelle
  * - onChange: (value: string) => void - callback appelé avec la nouvelle valeur
@@ -17,7 +17,7 @@ import './AddressAutocomplete.css';
  * - required: boolean - champ obligatoire
  * - className: string - classes CSS additionnelles
  * - disabled: boolean - désactivé
- * - country: string|string[] - restriction pays (défaut: ['fr', 're'])  
+ * - country: string|string[] - restriction pays (défaut: ['fr', 're'])
  * - onPlaceSelect: (place) => void - callback optionnel avec le place complet
  * - as: 'input'|'textarea' - type d'élément (défaut: 'input')
  * - rows: number - nombre de lignes pour textarea

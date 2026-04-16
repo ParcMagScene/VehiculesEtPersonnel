@@ -2,7 +2,6 @@
 
 export function registerDisplayMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Écrans
     async getDisplayScreens() {
       return this.request('/display/screens');
@@ -34,13 +33,19 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/playlists', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateDisplayPlaylist(id, data) {
-      return this.request(`/display/playlists/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      return this.request(`/display/playlists/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
     },
     async deleteDisplayPlaylist(id) {
       return this.request(`/display/playlists/${id}`, { method: 'DELETE' });
     },
     async updateDisplayPlaylistItems(id, items) {
-      return this.request(`/display/playlists/${id}/items`, { method: 'PUT', body: JSON.stringify({ items }) });
+      return this.request(`/display/playlists/${id}/items`, {
+        method: 'PUT',
+        body: JSON.stringify({ items }),
+      });
     },
 
     // Médias
@@ -78,7 +83,10 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/templates', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateDisplayTemplate(id, data) {
-      return this.request(`/display/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      return this.request(`/display/templates/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
     },
     async deleteDisplayTemplate(id) {
       return this.request(`/display/templates/${id}`, { method: 'DELETE' });
@@ -106,7 +114,10 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/welcome-messages');
     },
     async saveDisplayWelcomeMessages(data) {
-      return this.request('/display/welcome-messages', { method: 'POST', body: JSON.stringify(data) });
+      return this.request('/display/welcome-messages', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
     },
     async getDisplayWelcomeMessage() {
       return this.request('/display/welcome-message');
@@ -117,7 +128,10 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/color-rules');
     },
     async saveDisplayColorRules(rules) {
-      return this.request('/display/color-rules', { method: 'POST', body: JSON.stringify({ rules }) });
+      return this.request('/display/color-rules', {
+        method: 'POST',
+        body: JSON.stringify({ rules }),
+      });
     },
 
     // Sidebar config
@@ -125,7 +139,10 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/sidebar-config');
     },
     async saveDisplaySidebarConfig(sections) {
-      return this.request('/display/sidebar-config', { method: 'POST', body: JSON.stringify({ sections }) });
+      return this.request('/display/sidebar-config', {
+        method: 'POST',
+        body: JSON.stringify({ sections }),
+      });
     },
 
     // GIFs / Icônes de lieux
@@ -136,13 +153,18 @@ export function registerDisplayMethods(ApiClient) {
       return this.requestFormData('/display/location-gifs', formData);
     },
     async deleteDisplayLocationGif(filename) {
-      return this.request(`/display/location-gifs/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      return this.request(`/display/location-gifs/${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+      });
     },
     async getDisplayLocationIconRules() {
       return this.request('/display/location-icon-rules');
     },
     async saveDisplayLocationIconRules(rules) {
-      return this.request('/display/location-icon-rules', { method: 'POST', body: JSON.stringify({ rules }) });
+      return this.request('/display/location-icon-rules', {
+        method: 'POST',
+        body: JSON.stringify({ rules }),
+      });
     },
 
     // Logo
@@ -166,7 +188,10 @@ export function registerDisplayMethods(ApiClient) {
 
     // Message furtif
     async activateDisplaySneakyMessage(message, duration) {
-      return this.request('/display/sneaky-message', { method: 'POST', body: JSON.stringify({ message, duration }) });
+      return this.request('/display/sneaky-message', {
+        method: 'POST',
+        body: JSON.stringify({ message, duration }),
+      });
     },
     async getDisplaySneakyMessageStatus() {
       return this.request('/display/sneaky-message/status');

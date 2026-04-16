@@ -23,7 +23,11 @@ describe('Panel', () => {
   it('affiche le bouton fermer avec onClose', async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
-    render(<Panel title="T" onClose={onClose}>body</Panel>);
+    render(
+      <Panel title="T" onClose={onClose}>
+        body
+      </Panel>,
+    );
     const btn = screen.getByRole('button', { name: 'Fermer' });
     await user.click(btn);
     expect(onClose).toHaveBeenCalledOnce();
@@ -39,8 +43,12 @@ describe('Panel', () => {
     expect(screen.getByText('Pied')).toBeInTheDocument();
   });
 
-  it('affiche l\'icône', () => {
-    render(<Panel title="T" icon={<span data-testid="ico">★</span>}>body</Panel>);
+  it("affiche l'icône", () => {
+    render(
+      <Panel title="T" icon={<span data-testid="ico">★</span>}>
+        body
+      </Panel>,
+    );
     expect(screen.getByTestId('ico')).toBeInTheDocument();
   });
 

@@ -10,14 +10,27 @@ import { filterGeoLocations, MAG_SCENE, haversineDistance } from './map-utils';
 
 function decodePolyline(encoded) {
   const points = [];
-  let lat = 0, lng = 0, index = 0;
+  let lat = 0,
+    lng = 0,
+    index = 0;
   while (index < encoded.length) {
-    let b, shift = 0, result = 0;
-    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    lat += (result & 1) ? ~(result >> 1) : (result >> 1);
-    shift = 0; result = 0;
-    do { b = encoded.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
-    lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+    let b,
+      shift = 0,
+      result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    lng += result & 1 ? ~(result >> 1) : result >> 1;
     points.push([lat / 1e5, lng / 1e5]);
   }
   return points;
@@ -49,18 +62,24 @@ export default function MapRouteControl({ locations }) {
 
   const geoLocations = useMemo(() => {
     const hq = { id: 'hq', name: 'Mag Scène — Siège', lat: MAG_SCENE[0], lng: MAG_SCENE[1] };
-    return [hq, ...filterGeoLocations(locations).filter(l => !l.isCompanyLocation)];
+    return [hq, ...filterGeoLocations(locations).filter((l) => !l.isCompanyLocation)];
   }, [locations]);
 
-  const getCoords = useCallback((id) => {
-    const loc = geoLocations.find(l => String(l.id) === String(id));
-    return loc ? [loc.lng, loc.lat] : null;
-  }, [geoLocations]);
+  const getCoords = useCallback(
+    (id) => {
+      const loc = geoLocations.find((l) => String(l.id) === String(id));
+      return loc ? [loc.lng, loc.lat] : null;
+    },
+    [geoLocations],
+  );
 
   const calculateRoute = useCallback(async () => {
     const coordsA = getCoords(origin);
     const coordsB = getCoords(destination);
-    if (!coordsA || !coordsB) { setError('Sélectionnez deux lieux'); return; }
+    if (!coordsA || !coordsB) {
+      setError('Sélectionnez deux lieux');
+      return;
+    }
 
     setLoading(true);
     setError('');
@@ -89,8 +108,8 @@ export default function MapRouteControl({ locations }) {
         distance: r.distance,
         duration: r.duration,
         straightLine,
-        originName: geoLocations.find(l => String(l.id) === String(origin))?.name,
-        destName: geoLocations.find(l => String(l.id) === String(destination))?.name,
+        originName: geoLocations.find((l) => String(l.id) === String(origin))?.name,
+        destName: geoLocations.find((l) => String(l.id) === String(destination))?.name,
       });
 
       // Fit bounds to route
@@ -117,7 +136,12 @@ export default function MapRouteControl({ locations }) {
   };
 
   // Nettoyage au démontage
-  useEffect(() => () => { if (abortRef.current) abortRef.current.abort(); }, []);
+  useEffect(
+    () => () => {
+      if (abortRef.current) abortRef.current.abort();
+    },
+    [],
+  );
 
   return (
     <>
@@ -138,7 +162,13 @@ export default function MapRouteControl({ locations }) {
         <div className="map-route-panel">
           <div className="map-route-panel-header">
             <span>Calculer un trajet</span>
-            <button onClick={() => { setOpen(false); handleReset(); }} aria-label="Fermer">
+            <button
+              onClick={() => {
+                setOpen(false);
+                handleReset();
+              }}
+              aria-label="Fermer"
+            >
               <X size={16} />
             </button>
           </div>
@@ -146,10 +176,18 @@ export default function MapRouteControl({ locations }) {
           <div className="map-route-form">
             <div className="map-route-field">
               <label>Départ</label>
-              <select value={origin} onChange={(e) => { setOrigin(e.target.value); setRoute(null); }}>
+              <select
+                value={origin}
+                onChange={(e) => {
+                  setOrigin(e.target.value);
+                  setRoute(null);
+                }}
+              >
                 <option value="">— Choisir —</option>
-                {geoLocations.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                {geoLocations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -160,10 +198,18 @@ export default function MapRouteControl({ locations }) {
 
             <div className="map-route-field">
               <label>Arrivée</label>
-              <select value={destination} onChange={(e) => { setDestination(e.target.value); setRoute(null); }}>
+              <select
+                value={destination}
+                onChange={(e) => {
+                  setDestination(e.target.value);
+                  setRoute(null);
+                }}
+              >
                 <option value="">— Choisir —</option>
-                {geoLocations.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                {geoLocations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -191,11 +237,15 @@ export default function MapRouteControl({ locations }) {
             <div className="map-route-result">
               <div className="map-route-result-row">
                 <Ruler size={14} />
-                <span>Distance routière : <strong>{formatDistance(route.distance)}</strong></span>
+                <span>
+                  Distance routière : <strong>{formatDistance(route.distance)}</strong>
+                </span>
               </div>
               <div className="map-route-result-row">
                 <Clock size={14} />
-                <span>Durée estimée : <strong>{formatDuration(route.duration)}</strong></span>
+                <span>
+                  Durée estimée : <strong>{formatDuration(route.duration)}</strong>
+                </span>
               </div>
               <div className="map-route-result-row straight">
                 <span>Vol d'oiseau : {formatDistance(route.straightLine)}</span>

@@ -7,39 +7,39 @@ import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
 
 // ═══ Types d'affaire avec métadonnées ═══
 export const AFFAIRE_TYPES = [
-  { value: 'Prestation',   label: 'Prestation',   color: STATUS_COLORS.info, icon: '🎭' },
-  { value: 'Location',     label: 'Location',     color: STATUS_COLORS.warning, icon: '🏗️' },
+  { value: 'Prestation', label: 'Prestation', color: STATUS_COLORS.info, icon: '🎭' },
+  { value: 'Location', label: 'Location', color: STATUS_COLORS.warning, icon: '🏗️' },
   { value: 'Installation', label: 'Installation', color: STATUS_COLORS.success, icon: '⚙️' },
-  { value: 'Vente',        label: 'Vente',        color: ACCENT_COLORS.violet, icon: '💰' },
-  { value: 'Tournée',      label: 'Tournée',      color: ACCENT_COLORS.pink, icon: '🚐' },
+  { value: 'Vente', label: 'Vente', color: ACCENT_COLORS.violet, icon: '💰' },
+  { value: 'Tournée', label: 'Tournée', color: ACCENT_COLORS.pink, icon: '🚐' },
 ];
 
 // ═══ Lookup rapide par valeur ═══
-export const AFFAIRE_TYPE_MAP = Object.fromEntries(
-  AFFAIRE_TYPES.map(t => [t.value, t])
-);
+export const AFFAIRE_TYPE_MAP = Object.fromEntries(AFFAIRE_TYPES.map((t) => [t.value, t]));
 
 /** Retourne les infos du type, ou Prestation par défaut */
-export const getTypeInfo = (type) =>
-  AFFAIRE_TYPE_MAP[type] || AFFAIRE_TYPES[0];
+export const getTypeInfo = (type) => AFFAIRE_TYPE_MAP[type] || AFFAIRE_TYPES[0];
 
 // ═══ Mapping type → section planning ═══
 export const AFFAIRE_TYPE_SECTIONS = {
-  'Location':     'prep_locations',
-  'Prestation':   'prep_prestations',
-  'Vente':        'prep_ventes',
-  'Installation': 'prep_installations',
-  'Tournée':      'prep_tournees',
+  Location: 'prep_locations',
+  Prestation: 'prep_prestations',
+  Vente: 'prep_ventes',
+  Installation: 'prep_installations',
+  Tournée: 'prep_tournees',
 };
 
 // ═══ Info complète pour le planning (avec emoji + section) ═══
 export const AFFAIRE_TYPE_INFO = Object.fromEntries(
-  AFFAIRE_TYPES.map(t => [t.value, {
-    label: t.label,
-    emoji: t.icon,
-    color: t.color,
-    section: AFFAIRE_TYPE_SECTIONS[t.value] || 'manual',
-  }])
+  AFFAIRE_TYPES.map((t) => [
+    t.value,
+    {
+      label: t.label,
+      emoji: t.icon,
+      color: t.color,
+      section: AFFAIRE_TYPE_SECTIONS[t.value] || 'manual',
+    },
+  ]),
 );
 
 /** Deviner le type d'affaire à partir d'un titre d'événement */

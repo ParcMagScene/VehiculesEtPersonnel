@@ -96,8 +96,14 @@
   cursor: pointer;
   color: var(--text-secondary, var(--theme-text-secondary));
 }
-.video-panel__page-controls button:disabled { opacity: 0.3; cursor: default; }
-.video-panel__page-info { font-size: var(--font-sm); opacity: 0.7; }
+.video-panel__page-controls button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.video-panel__page-info {
+  font-size: var(--font-sm);
+  opacity: 0.7;
+}
 
 /* Indicateur PTZ clavier */
 .video-panel__ptz-indicator {
@@ -248,9 +254,16 @@
   border-radius: var(--radius-full);
   background: var(--theme-text-muted);
 }
-.status-dot--online { background: var(--theme-success); box-shadow: 0 0 6px rgba(34, 197, 94, 0.4); }
-.status-dot--offline { background: var(--theme-text-muted); }
-.status-dot--error { background: var(--theme-danger); }
+.status-dot--online {
+  background: var(--theme-success);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
+}
+.status-dot--offline {
+  background: var(--theme-text-muted);
+}
+.status-dot--error {
+  background: var(--theme-danger);
+}
 
 /* ── Camera Grid ── */
 .camera-grid {
@@ -309,8 +322,14 @@
   background: var(--bg-secondary, var(--theme-bg-card));
   cursor: pointer;
 }
-.camera-grid__page-btn:disabled { opacity: 0.3; cursor: default; }
-.camera-grid__page-info { font-size: var(--font-sm); opacity: 0.7; }
+.camera-grid__page-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.camera-grid__page-info {
+  font-size: var(--font-sm);
+  opacity: 0.7;
+}
 
 .camera-grid__rotate-btn {
   padding: 4px 8px;
@@ -341,7 +360,9 @@
   border: 2px solid var(--border-color, var(--theme-text-body));
   min-height: 0;
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 .camera-player--empty {
   background: var(--bg-accent, var(--theme-text-primary));
@@ -381,8 +402,13 @@
   height: 8px;
   border-radius: var(--radius-full);
 }
-.camera-player__name { font-weight: 600; }
-.camera-player__status-text { opacity: 0.7; font-size: 0.7rem; }
+.camera-player__name {
+  font-weight: 600;
+}
+.camera-player__status-text {
+  opacity: 0.7;
+  font-size: 0.7rem;
+}
 
 .camera-player__actions {
   display: flex;
@@ -400,8 +426,14 @@
   opacity: 0.7;
   transition: opacity 0.15s;
 }
-.camera-player__btn:hover { opacity: 1; background: var(--glass-subtle); }
-.camera-player__btn:disabled { opacity: 0.3; cursor: default; }
+.camera-player__btn:hover {
+  opacity: 1;
+  background: var(--glass-subtle);
+}
+.camera-player__btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
 
 .camera-player__viewport {
   flex: 1;
@@ -444,7 +476,9 @@
   color: var(--theme-bg-card);
   cursor: pointer;
 }
-.camera-player__retry-btn:hover { background: var(--glass-light); }
+.camera-player__retry-btn:hover {
+  background: var(--glass-light);
+}
 .camera-player__play-btn {
   padding: 10px 24px;
   border: 1px solid var(--close-btn-hover-bg);
@@ -454,11 +488,19 @@
   cursor: pointer;
   font-size: var(--font-base);
 }
-.camera-player__play-btn:hover { background: var(--glass-light); }
+.camera-player__play-btn:hover {
+  background: var(--glass-light);
+}
 
 /* Spin animation */
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* ── PTZ Controls ── */
 .ptz-controls {
@@ -562,8 +604,16 @@
   border-radius: var(--radius-xs);
   font-size: var(--font-base);
 }
-.camera-test-result--ok { background: var(--theme-success-bg); color: var(--theme-success-dark); border: 1px solid var(--theme-success-border); }
-.camera-test-result--fail { background: var(--theme-danger-bg); color: var(--theme-danger-dark); border: 1px solid var(--theme-danger-border); }
+.camera-test-result--ok {
+  background: var(--theme-success-bg);
+  color: var(--theme-success-dark);
+  border: 1px solid var(--theme-success-border);
+}
+.camera-test-result--fail {
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-dark);
+  border: 1px solid var(--theme-danger-border);
+}
 
 /* ── Responsive (mobile) ── */
 @media (max-width: 768px) {
@@ -588,10 +638,10 @@
 }
 
 /* ── Dark mode ── */
-[data-theme="dark"] .video-panel {
+[data-theme='dark'] .video-panel {
   background: var(--bg-primary, var(--theme-bg-darker));
 }
-[data-theme="dark"] .video-panel__error {
+[data-theme='dark'] .video-panel__error {
   background: var(--theme-danger-border);
   border-color: var(--danger-tint-medium);
 }

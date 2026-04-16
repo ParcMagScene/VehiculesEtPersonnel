@@ -1,8 +1,13 @@
 import { useMemo, useCallback } from 'react';
 import {
-  startOfWeek, endOfWeek, startOfMonth, endOfMonth,
-  startOfYear, endOfYear,
-  eachDayOfInterval, eachMonthOfInterval,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  eachDayOfInterval,
+  eachMonthOfInterval,
 } from 'date-fns';
 import { getPeriodTimestamp, formatLocalDate } from '../../utils/dateUtils';
 import { STATUS } from '../../constants';
@@ -11,13 +16,19 @@ import { STATUS } from '../../constants';
  * Hook encapsulating all computed/memoized calendar data.
  */
 export default function useCalendarData({
-  view, currentDate, reservations, maintenances, vehicles, windowWidth, reservationLookup: _externalLookup,
+  view,
+  currentDate,
+  reservations,
+  maintenances,
+  vehicles,
+  windowWidth,
+  reservationLookup: _externalLookup,
 }) {
   // Convertir les maintenances programmées en pseudo-réservations
   const maintenancesAsReservations = useMemo(() => {
     return maintenances
-      .filter(m => m.startDate && m.endDate)
-      .map(m => ({
+      .filter((m) => m.startDate && m.endDate)
+      .map((m) => ({
         id: `maint-${m.id}`,
         vehicleId: m.vehicleId,
         date: m.startDate,
@@ -34,7 +45,7 @@ export default function useCalendarData({
         createdBy: m.createdBy,
         description: m.description,
         garageName: m.garageName,
-        startDate: m.startDate
+        startDate: m.startDate,
       }));
   }, [maintenances]);
 
@@ -90,38 +101,41 @@ export default function useCalendarData({
     return lookup;
   }, [allReservations, days, view]);
 
-  const getMaintenanceConflicts = useCallback((maintenanceBlock) => {
-    if (!maintenanceBlock.isMaintenance || !maintenanceBlock.date) return [];
-    const newStart = getPeriodTimestamp(maintenanceBlock.date, 'AM');
-    const newEnd = getPeriodTimestamp(maintenanceBlock.endDate || maintenanceBlock.date, 'PM');
-    const conflicts = [];
-    for (const r of reservations) {
-      if (String(r.vehicleId) !== String(maintenanceBlock.vehicleId)) continue;
-      const existingStart = getPeriodTimestamp(r.date, r.period);
-      const existingEnd = getPeriodTimestamp(r.endDate || r.date, r.endPeriod || r.period);
-      if (Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd)) {
-        conflicts.push(r);
+  const getMaintenanceConflicts = useCallback(
+    (maintenanceBlock) => {
+      if (!maintenanceBlock.isMaintenance || !maintenanceBlock.date) return [];
+      const newStart = getPeriodTimestamp(maintenanceBlock.date, 'AM');
+      const newEnd = getPeriodTimestamp(maintenanceBlock.endDate || maintenanceBlock.date, 'PM');
+      const conflicts = [];
+      for (const r of reservations) {
+        if (String(r.vehicleId) !== String(maintenanceBlock.vehicleId)) continue;
+        const existingStart = getPeriodTimestamp(r.date, r.period);
+        const existingEnd = getPeriodTimestamp(r.endDate || r.date, r.endPeriod || r.period);
+        if (Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd)) {
+          conflicts.push(r);
+        }
       }
-    }
-    return conflicts;
-  }, [reservations]);
+      return conflicts;
+    },
+    [reservations],
+  );
 
   const vehicleGroups = useMemo(() => {
-    const companyVehicles = vehicles.filter(v => !v.isLocation);
-    const locationVehicles = vehicles.filter(v => v.isLocation);
+    const companyVehicles = vehicles.filter((v) => !v.isLocation);
+    const locationVehicles = vehicles.filter((v) => v.isLocation);
     return { companyVehicles, locationVehicles };
   }, [vehicles]);
 
   const availabilityCount = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
     const isOccupied = (vehicleId) => {
-      const hasReservation = reservations.some(r => {
+      const hasReservation = reservations.some((r) => {
         if (r.vehicleId !== vehicleId) return false;
         const start = r.startDate?.slice(0, 10) || '';
         const end = r.endDate?.slice(0, 10) || start;
         return start <= today && today <= end;
       });
-      const hasMaintenance = maintenances.some(m => {
+      const hasMaintenance = maintenances.some((m) => {
         if (m.vehicleId !== vehicleId) return false;
         if (m.status === STATUS.COMPLETED) return false;
         const start = m.startDate?.slice(0, 10) || m.date?.slice(0, 10) || '';
@@ -130,8 +144,8 @@ export default function useCalendarData({
       });
       return hasReservation || hasMaintenance;
     };
-    const companyAvail = vehicleGroups.companyVehicles.filter(v => !isOccupied(v.id)).length;
-    const locationAvail = vehicleGroups.locationVehicles.filter(v => !isOccupied(v.id)).length;
+    const companyAvail = vehicleGroups.companyVehicles.filter((v) => !isOccupied(v.id)).length;
+    const locationAvail = vehicleGroups.locationVehicles.filter((v) => !isOccupied(v.id)).length;
     return {
       company: { available: companyAvail, total: vehicleGroups.companyVehicles.length },
       location: { available: locationAvail, total: vehicleGroups.locationVehicles.length },
@@ -145,9 +159,9 @@ export default function useCalendarData({
     const allVehicles = [...vehicleGroups.companyVehicles, ...vehicleGroups.locationVehicles];
     const timeSlots = [];
     if (view === 'year') {
-      days.forEach(monthDate => timeSlots.push({ day: monthDate, period: 'M' }));
+      days.forEach((monthDate) => timeSlots.push({ day: monthDate, period: 'M' }));
     } else {
-      days.forEach(day => periods.forEach(period => timeSlots.push({ day, period })));
+      days.forEach((day) => periods.forEach((period) => timeSlots.push({ day, period })));
     }
 
     for (const vehicle of allVehicles) {
@@ -158,15 +172,21 @@ export default function useCalendarData({
         timeSlots.forEach((slot, index) => {
           const monthStart = startOfMonth(slot.day);
           const monthEnd = endOfMonth(slot.day);
-          const hasReservation = reservations.some(r => {
+          const hasReservation = reservations.some((r) => {
             const rDate = new Date(r.date);
             return r.vehicleId === vehicle.id && rDate >= monthStart && rDate <= monthEnd;
           });
           if (hasReservation) {
-            if (!currentBlock) { currentBlock = { clientName: 'Occupé', startIndex: index, span: 1 }; }
-            else { currentBlock.span++; }
+            if (!currentBlock) {
+              currentBlock = { clientName: 'Occupé', startIndex: index, span: 1 };
+            } else {
+              currentBlock.span++;
+            }
           } else {
-            if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
+            if (currentBlock) {
+              blocks.push(currentBlock);
+              currentBlock = null;
+            }
           }
         });
       } else {
@@ -174,14 +194,30 @@ export default function useCalendarData({
           const key = `${vehicle.id}-${formatLocalDate(slot.day)}-${slot.period}`;
           const reservation = reservationLookup.get(key) || null;
           if (reservation) {
-            const currentName = currentBlock ? (currentBlock.isMaintenance ? currentBlock.prestationName : currentBlock.clientName) : null;
-            const newName = reservation.isMaintenance ? reservation.prestationName : reservation.clientName;
-            if (!currentBlock || currentBlock.id !== reservation.id || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
+            const currentName = currentBlock
+              ? currentBlock.isMaintenance
+                ? currentBlock.prestationName
+                : currentBlock.clientName
+              : null;
+            const newName = reservation.isMaintenance
+              ? reservation.prestationName
+              : reservation.clientName;
+            if (
+              !currentBlock ||
+              currentBlock.id !== reservation.id ||
+              currentName !== newName ||
+              currentBlock.isMaintenance !== reservation.isMaintenance
+            ) {
               if (currentBlock) blocks.push(currentBlock);
               currentBlock = { ...reservation, startIndex: index, span: 1 };
-            } else { currentBlock.span++; }
+            } else {
+              currentBlock.span++;
+            }
           } else {
-            if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
+            if (currentBlock) {
+              blocks.push(currentBlock);
+              currentBlock = null;
+            }
           }
         });
       }
@@ -195,7 +231,8 @@ export default function useCalendarData({
   const gridColumns = useMemo(() => {
     let minWidth;
     if (view === 'year') {
-      minWidth = windowWidth <= 480 ? 80 : windowWidth <= 768 ? 100 : windowWidth <= 1024 ? 120 : 150;
+      minWidth =
+        windowWidth <= 480 ? 80 : windowWidth <= 768 ? 100 : windowWidth <= 1024 ? 120 : 150;
       return `repeat(12, minmax(${minWidth}px, 1fr))`;
     }
     if (view === 'day') return `repeat(2, 1fr)`;
@@ -207,16 +244,25 @@ export default function useCalendarData({
     return `repeat(${days.length * 2}, minmax(${minWidth}px, 1fr))`;
   }, [view, days.length, windowWidth]);
 
-  const getReservation = useCallback((vehicleId, date, period) => {
-    const key = `${vehicleId}-${formatLocalDate(date)}-${period}`;
-    return reservationLookup.get(key) || null;
-  }, [reservationLookup]);
+  const getReservation = useCallback(
+    (vehicleId, date, period) => {
+      const key = `${vehicleId}-${formatLocalDate(date)}-${period}`;
+      return reservationLookup.get(key) || null;
+    },
+    [reservationLookup],
+  );
 
   return {
-    maintenancesAsReservations, allReservations,
-    days, periods,
-    reservationLookup, getReservation, getMaintenanceConflicts,
-    vehicleGroups, availabilityCount,
-    allVehicleBlocks, gridColumns,
+    maintenancesAsReservations,
+    allReservations,
+    days,
+    periods,
+    reservationLookup,
+    getReservation,
+    getMaintenanceConflicts,
+    vehicleGroups,
+    availabilityCount,
+    allVehicleBlocks,
+    gridColumns,
   };
 }

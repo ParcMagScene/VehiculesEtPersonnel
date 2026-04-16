@@ -9,7 +9,9 @@ export default { title: 'Atomes/Formulaires' };
 export const InputDefault = () => <Input placeholder="Saisir du texte…" />;
 export const InputSizes = () => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 300 }}>
-    {['sm', 'md', 'lg'].map(s => <Input key={s} size={s} placeholder={`Taille ${s}`} />)}
+    {['sm', 'md', 'lg'].map((s) => (
+      <Input key={s} size={s} placeholder={`Taille ${s}`} />
+    ))}
   </div>
 );
 export const InputError = () => <Input error placeholder="Champ en erreur" />;
@@ -39,6 +41,8 @@ export const CheckboxDisabled = () => <Checkbox label="Désactivé" disabled che
 export const ToggleDefault = () => <Toggle label="Mode sombre" />;
 export const ToggleSizes = () => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-    {['sm', 'md', 'lg'].map(s => <Toggle key={s} size={s} label={`Taille ${s}`} />)}
+    {['sm', 'md', 'lg'].map((s) => (
+      <Toggle key={s} size={s} label={`Taille ${s}`} />
+    ))}
   </div>
 );

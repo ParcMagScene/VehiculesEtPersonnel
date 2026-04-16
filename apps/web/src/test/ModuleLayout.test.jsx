@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ModuleLayout, ModuleToolbar, ModuleContent, ModuleFooter, SplitLayout } from '../components/ui/ModuleLayout';
+import {
+  ModuleLayout,
+  ModuleToolbar,
+  ModuleContent,
+  ModuleFooter,
+  SplitLayout,
+} from '../components/ui/ModuleLayout';
 
 describe('ModuleLayout', () => {
   it('rend les enfants avec la classe', () => {
@@ -54,12 +60,20 @@ describe('SplitLayout', () => {
   });
 
   it('side right', () => {
-    const { container } = render(<SplitLayout sidebar={<nav>S</nav>} side="right">M</SplitLayout>);
+    const { container } = render(
+      <SplitLayout sidebar={<nav>S</nav>} side="right">
+        M
+      </SplitLayout>,
+    );
     expect(container.firstChild).toHaveClass('ui-split-layout--right');
   });
 
   it('sidebarWidth applique le style', () => {
-    const { container } = render(<SplitLayout sidebar={<nav>S</nav>} sidebarWidth={350}>M</SplitLayout>);
+    const { container } = render(
+      <SplitLayout sidebar={<nav>S</nav>} sidebarWidth={350}>
+        M
+      </SplitLayout>,
+    );
     const aside = container.querySelector('.ui-split-sidebar');
     expect(aside).toHaveStyle({ width: '350px' });
   });

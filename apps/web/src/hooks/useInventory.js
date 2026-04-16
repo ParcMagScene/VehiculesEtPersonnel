@@ -44,34 +44,47 @@ export function useInventory({ isAuthenticated, toast }) {
         setLocations(loc);
         setAlerts(al);
         setAnomalies(an);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     } finally {
       setIsLoading(false);
     }
   }, [isAuthenticated]);
 
-  useEffect(() => { loadInventoryData(); }, [loadInventoryData]);
+  useEffect(() => {
+    loadInventoryData();
+  }, [loadInventoryData]);
 
   // ── Emplacements CRUD ──
-  const createLocation = useCallback(async (data) => {
-    const loc = await api.createInventoryLocation(data);
-    setLocations(prev => [...prev, loc]);
-    toast?.success('Emplacement créé');
-    return loc;
-  }, [toast]);
+  const createLocation = useCallback(
+    async (data) => {
+      const loc = await api.createInventoryLocation(data);
+      setLocations((prev) => [...prev, loc]);
+      toast?.success('Emplacement créé');
+      return loc;
+    },
+    [toast],
+  );
 
-  const updateLocation = useCallback(async (id, data) => {
-    const loc = await api.updateInventoryLocation(id, data);
-    setLocations(prev => prev.map(l => l.id === id ? loc : l));
-    toast?.success('Emplacement modifié');
-    return loc;
-  }, [toast]);
+  const updateLocation = useCallback(
+    async (id, data) => {
+      const loc = await api.updateInventoryLocation(id, data);
+      setLocations((prev) => prev.map((l) => (l.id === id ? loc : l)));
+      toast?.success('Emplacement modifié');
+      return loc;
+    },
+    [toast],
+  );
 
-  const deleteLocation = useCallback(async (id) => {
-    await api.deleteInventoryLocation(id);
-    setLocations(prev => prev.filter(l => l.id !== id));
-    toast?.success('Emplacement supprimé');
-  }, [toast]);
+  const deleteLocation = useCallback(
+    async (id) => {
+      await api.deleteInventoryLocation(id);
+      setLocations((prev) => prev.filter((l) => l.id !== id));
+      toast?.success('Emplacement supprimé');
+    },
+    [toast],
+  );
 
   // ── Prix ──
   const getPriceHistory = useCallback(async (itemId) => {
@@ -100,27 +113,35 @@ export function useInventory({ isAuthenticated, toast }) {
     return result;
   }, [toast]);
 
-  const resolveAnomaly = useCallback(async (id, status) => {
-    await api.updateAnomaly(id, { status });
-    setAnomalies(prev => prev.map(a => a.id === id ? { ...a, status } : a));
-    toast?.success('Anomalie mise à jour');
-  }, [toast]);
+  const resolveAnomaly = useCallback(
+    async (id, status) => {
+      await api.updateAnomaly(id, { status });
+      setAnomalies((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
+      toast?.success('Anomalie mise à jour');
+    },
+    [toast],
+  );
 
   // ── Comptage inventaire ──
-  const submitCount = useCallback(async (items) => {
-    const result = await api.submitInventoryCount(items);
-    // Recharger alertes & stats après comptage
-    const [al, st] = await Promise.all([api.getInventoryAlerts(), api.getInventoryStats()]);
-    setAlerts(al);
-    setStats(st);
-    toast?.success(`${result.counted} article(s) comptés, ${result.adjustments} ajustement(s)`);
-    return result;
-  }, [toast]);
+  const submitCount = useCallback(
+    async (items) => {
+      const result = await api.submitInventoryCount(items);
+      // Recharger alertes & stats après comptage
+      const [al, st] = await Promise.all([api.getInventoryAlerts(), api.getInventoryStats()]);
+      setAlerts(al);
+      setStats(st);
+      toast?.success(`${result.counted} article(s) comptés, ${result.adjustments} ajustement(s)`);
+      return result;
+    },
+    [toast],
+  );
 
   // ── Classification ABC ──
   const runAbcClassification = useCallback(async () => {
     const result = await api.runAbcClassification();
-    toast?.success(`Classification ABC: A=${result.distribution.A}, B=${result.distribution.B}, C=${result.distribution.C}`);
+    toast?.success(
+      `Classification ABC: A=${result.distribution.A}, B=${result.distribution.B}, C=${result.distribution.C}`,
+    );
     return result;
   }, [toast]);
 
@@ -157,15 +178,26 @@ export function useInventory({ isAuthenticated, toast }) {
 
   return {
     // State
-    locations, alerts, anomalies, stats, isLoading,
+    locations,
+    alerts,
+    anomalies,
+    stats,
+    isLoading,
     // Actions
     reload: loadInventoryData,
-    createLocation, updateLocation, deleteLocation,
-    getPriceHistory, addPrice, getPriceAnalysis, fusionPrices,
-    detectAnomalies, resolveAnomaly,
+    createLocation,
+    updateLocation,
+    deleteLocation,
+    getPriceHistory,
+    addPrice,
+    getPriceAnalysis,
+    fusionPrices,
+    detectAnomalies,
+    resolveAnomaly,
     submitCount,
     runAbcClassification,
     refreshStats,
-    exportCSV, exportJSON,
+    exportCSV,
+    exportJSON,
   };
 }

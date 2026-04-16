@@ -21,25 +21,41 @@ const CameraPTZControls = ({ camera }) => {
     <div className="ptz-controls">
       <div className="ptz-controls__dpad">
         <Tooltip content="Haut">
-          <Button variant="ghost" className="ptz-controls__btn ptz-controls__btn--up" {...makeHandlers('up')}>
+          <Button
+            variant="ghost"
+            className="ptz-controls__btn ptz-controls__btn--up"
+            {...makeHandlers('up')}
+          >
             <ChevronUp size={20} />
           </Button>
         </Tooltip>
         <div className="ptz-controls__row">
           <Tooltip content="Gauche">
-            <Button variant="ghost" className="ptz-controls__btn ptz-controls__btn--left" {...makeHandlers('left')}>
+            <Button
+              variant="ghost"
+              className="ptz-controls__btn ptz-controls__btn--left"
+              {...makeHandlers('left')}
+            >
               <ChevronLeft size={20} />
             </Button>
           </Tooltip>
           <div className="ptz-controls__center" />
           <Tooltip content="Droite">
-            <Button variant="ghost" className="ptz-controls__btn ptz-controls__btn--right" {...makeHandlers('right')}>
+            <Button
+              variant="ghost"
+              className="ptz-controls__btn ptz-controls__btn--right"
+              {...makeHandlers('right')}
+            >
               <ChevronRight size={20} />
             </Button>
           </Tooltip>
         </div>
         <Tooltip content="Bas">
-          <Button variant="ghost" className="ptz-controls__btn ptz-controls__btn--down" {...makeHandlers('down')}>
+          <Button
+            variant="ghost"
+            className="ptz-controls__btn ptz-controls__btn--down"
+            {...makeHandlers('down')}
+          >
             <ChevronDown size={20} />
           </Button>
         </Tooltip>

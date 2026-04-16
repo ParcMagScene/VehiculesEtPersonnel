@@ -160,7 +160,11 @@
 
 /* Réservations */
 .planning-reservation {
-  background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-info-bg-strong) 0%,
+    var(--theme-info-border) 100%
+  );
   border-left: 3px solid var(--theme-info);
   border-radius: var(--radius-sm);
   padding: 8px;
@@ -230,11 +234,19 @@
 }
 
 .planning-maintenance-in_progress {
-  background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-info-bg-strong) 0%,
+    var(--theme-info-border) 100%
+  );
 }
 
 .planning-maintenance-pending {
-  background: linear-gradient(135deg, var(--theme-purple-bg) 0%, var(--theme-purple-bg-strong) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-purple-bg) 0%,
+    var(--theme-purple-bg-strong) 100%
+  );
 }
 
 .planning-maintenance-completed {

@@ -13,8 +13,12 @@
 }
 
 @keyframes tem-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .tem-modal {
@@ -80,7 +84,7 @@
   font-weight: 600;
 }
 .tem-badge.affaire {
-  background: var(--theme-info)20;
+  background: var(--theme-info) 20;
   color: var(--theme-info);
 }
 .tem-badge.google {
@@ -309,7 +313,9 @@
   color: var(--theme-info);
   border: 1px solid #4285f430;
   flex-shrink: 0;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 .tem-maps-link:hover {
   background: #4285f425;

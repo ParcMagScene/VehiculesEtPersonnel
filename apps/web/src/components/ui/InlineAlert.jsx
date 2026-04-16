@@ -15,10 +15,10 @@
 import { AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
 
 const DEFAULT_ICONS = {
-  error:   <AlertTriangle size={14} />,
+  error: <AlertTriangle size={14} />,
   warning: <AlertTriangle size={14} />,
   success: <CheckCircle size={14} />,
-  info:    <Info size={14} />,
+  info: <Info size={14} />,
 };
 
 export default function InlineAlert({
@@ -31,11 +31,9 @@ export default function InlineAlert({
   className = '',
   ...props
 }) {
-  const classes = [
-    'ui-inline-alert',
-    `ui-inline-alert--${variant}`,
-    className
-  ].filter(Boolean).join(' ');
+  const classes = ['ui-inline-alert', `ui-inline-alert--${variant}`, className]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className={classes} role="alert" {...props}>

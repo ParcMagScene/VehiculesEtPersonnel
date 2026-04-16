@@ -47,7 +47,10 @@
 }
 
 .cal-nav-view-btn.active {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%)
+  );
   color: var(--theme-text-inverse);
   box-shadow: 0 1px 3px var(--shadow-dropdown);
 }
@@ -79,7 +82,10 @@
 }
 
 .cal-nav-today.highlight {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%)
+  );
   color: var(--theme-text-inverse);
   border-color: transparent;
 }
@@ -116,34 +122,34 @@
 }
 
 /* Dark mode toolbar navigation */
-[data-theme="dark"] .cal-nav-toolbar {
+[data-theme='dark'] .cal-nav-toolbar {
   background: var(--theme-bg-card);
   border-bottom-color: var(--theme-border);
 }
 
-[data-theme="dark"] .cal-nav-views {
+[data-theme='dark'] .cal-nav-views {
   background: var(--theme-bg-tertiary);
 }
 
-[data-theme="dark"] .cal-nav-view-btn {
+[data-theme='dark'] .cal-nav-view-btn {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .cal-nav-view-btn:hover {
+[data-theme='dark'] .cal-nav-view-btn:hover {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .cal-nav-btn {
+[data-theme='dark'] .cal-nav-btn {
   background: var(--theme-bg-tertiary);
   border-color: var(--theme-border);
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .cal-nav-btn:hover {
+[data-theme='dark'] .cal-nav-btn:hover {
   background: var(--theme-bg-hover);
 }
 
-[data-theme="dark"] .cal-nav-label {
+[data-theme='dark'] .cal-nav-label {
   color: var(--theme-text-primary);
 }
 
@@ -546,7 +552,11 @@
   height: 3.5rem;
   position: static;
   left: auto;
-  background: linear-gradient(135deg, var(--theme-bg-indigo-light) 0%, var(--theme-purple-bg-strong) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-bg-indigo-light) 0%,
+    var(--theme-purple-bg-strong) 100%
+  ) !important;
   color: var(--theme-text-body) !important;
 }
 
@@ -565,7 +575,11 @@
   font-size: 0.65rem;
   padding: 0.5rem 0.25rem;
   font-weight: 600;
-  background: linear-gradient(135deg, var(--theme-purple-accent) 0%, var(--theme-accent) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-purple-accent) 0%,
+    var(--theme-accent) 100%
+  ) !important;
   height: 2rem;
   position: static;
   left: auto;
@@ -708,7 +722,8 @@
 }
 
 @keyframes pulse-warning {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -739,7 +754,8 @@
 }
 
 @keyframes pulse-danger {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
     box-shadow: 0 2px 6px rgba(220, 38, 38, 0.5);
@@ -830,16 +846,20 @@
   min-height: 0;
   display: block;
   position: relative;
-  box-shadow: 0 2px 4px var(--shadow-xl), 
-              inset 0 0 0 1px var(--shadow-modal);
+  box-shadow:
+    0 2px 4px var(--shadow-xl),
+    inset 0 0 0 1px var(--shadow-modal);
   border-radius: var(--radius-xs);
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
 }
 
 .reservation.highlighted {
-  box-shadow: 0 0 0 3px var(--theme-info), 
-              0 4px 12px var(--primary-tint-bold),
-              inset 0 0 0 1px var(--shadow-modal);
+  box-shadow:
+    0 0 0 3px var(--theme-info),
+    0 4px 12px var(--primary-tint-bold),
+    inset 0 0 0 1px var(--shadow-modal);
   transform: scale(1.02);
   z-index: var(--z-dropdown);
 }
@@ -888,7 +908,9 @@
   background-color: var(--theme-orange-bg) !important;
   border: 2px dashed var(--theme-warning) !important;
 }
-.reservation.maintenance-block.maintenance-conflict:not(.maintenance-status-completed):not(.maintenance-status-cancelled) {
+.reservation.maintenance-block.maintenance-conflict:not(.maintenance-status-completed):not(
+    .maintenance-status-cancelled
+  ) {
   background-color: var(--theme-danger-bg) !important;
   border: 2px solid var(--theme-danger-dark) !important;
 }
@@ -906,7 +928,9 @@
   cursor: ew-resize;
   z-index: 20;
   opacity: 0;
-  transition: opacity 0.2s, width 0.2s;
+  transition:
+    opacity 0.2s,
+    width 0.2s;
   pointer-events: auto;
   background: var(--overlay-light);
   border-radius: var(--radius-xs);
@@ -1148,7 +1172,10 @@
   justify-self: center;
   align-self: center;
   box-shadow: 0 1px 3px var(--shadow-modal);
-  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    transform 0.1s,
+    box-shadow 0.15s;
   pointer-events: auto;
   position: relative;
   z-index: 20;
@@ -1192,7 +1219,9 @@
   margin-left: 3px;
   flex-shrink: 0;
   box-shadow: 0 1px 2px var(--shadow-xl);
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
 .tournee-trip-btn:hover {
@@ -1247,7 +1276,9 @@
   margin-left: 4px;
   vertical-align: middle;
   box-shadow: 0 1px 2px var(--shadow-xl);
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
   pointer-events: auto;
   position: relative;
   z-index: 20;
@@ -1280,8 +1311,13 @@
 }
 
 @keyframes pulse-link {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
 }
 
 /* Responsive */
@@ -1415,71 +1451,71 @@
    DARK THEME OVERRIDES — Calendar.css
    ═══════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .calendar-header-cell.day-header {
+[data-theme='dark'] .calendar-header-cell.day-header {
   background: linear-gradient(to bottom, var(--theme-bg-tertiary), var(--theme-bg-card));
 }
 
-[data-theme="dark"] .calendar-header-cell.period-cell {
+[data-theme='dark'] .calendar-header-cell.period-cell {
   background: linear-gradient(135deg, #4c1d95, var(--theme-primary-dark));
 }
 
-[data-theme="dark"] .calendar-header-cell.period-cell.weekend {
+[data-theme='dark'] .calendar-header-cell.period-cell.weekend {
   background: linear-gradient(135deg, #3b0764, #581c87);
 }
 
-[data-theme="dark"] .calendar-header-cell.period-cell.today.today-left {
+[data-theme='dark'] .calendar-header-cell.period-cell.today.today-left {
   background: linear-gradient(135deg, var(--theme-success-text), var(--theme-success-text));
 }
 
-[data-theme="dark"] .vehicle-cell .vehicle-brand {
+[data-theme='dark'] .vehicle-cell .vehicle-brand {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .vehicle-period {
+[data-theme='dark'] .vehicle-period {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .time-slot.drag-selected {
+[data-theme='dark'] .time-slot.drag-selected {
   background: rgba(96, 165, 250, 0.15);
 }
 
-[data-theme="dark"] .reservation.maintenance-block.maintenance-status-scheduled {
+[data-theme='dark'] .reservation.maintenance-block.maintenance-status-scheduled {
   background: var(--primary-tint-medium);
 }
 
-[data-theme="dark"] .reservation.maintenance-block.maintenance-status-completed {
+[data-theme='dark'] .reservation.maintenance-block.maintenance-status-completed {
   background: rgba(34, 197, 94, 0.15);
 }
 
-[data-theme="dark"] .reservation.maintenance-block.maintenance-status-reported {
+[data-theme='dark'] .reservation.maintenance-block.maintenance-status-reported {
   background: var(--theme-danger-border);
 }
 
-[data-theme="dark"] .reservation.maintenance-block.maintenance-status-pending {
+[data-theme='dark'] .reservation.maintenance-block.maintenance-status-pending {
   background: var(--violet-tint);
 }
 
-[data-theme="dark"] .reservation.maintenance-block.maintenance-status-in_progress {
+[data-theme='dark'] .reservation.maintenance-block.maintenance-status-in_progress {
   background: rgba(245, 158, 11, 0.15);
 }
 
-[data-theme="dark"] .reservation.maintenance-block.maintenance-status-rescheduled {
+[data-theme='dark'] .reservation.maintenance-block.maintenance-status-rescheduled {
   background: rgba(249, 115, 22, 0.15);
   border-color: var(--theme-warning);
 }
 
-[data-theme="dark"] .reservation.maintenance-block.maintenance-conflict {
+[data-theme='dark'] .reservation.maintenance-block.maintenance-conflict {
   background: var(--theme-danger-border);
 }
 
-[data-theme="dark"] .reservation-affaire {
+[data-theme='dark'] .reservation-affaire {
   color: var(--theme-primary);
 }
 
-[data-theme="dark"] .tournee-linked-sep {
+[data-theme='dark'] .tournee-linked-sep {
   color: var(--theme-primary);
 }
 
-[data-theme="dark"] .tournee-event-chip.in-trip-group {
+[data-theme='dark'] .tournee-event-chip.in-trip-group {
   border-color: var(--theme-primary);
 }

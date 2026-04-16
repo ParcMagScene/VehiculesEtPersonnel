@@ -13,17 +13,27 @@
 }
 
 /* ── Tailles ── */
-.ui-empty-state--sm { padding: var(--space-4); }
-.ui-empty-state--md { padding: var(--space-8) var(--space-4); }
-.ui-empty-state--lg { padding: var(--space-12) var(--space-6); }
+.ui-empty-state--sm {
+  padding: var(--space-4);
+}
+.ui-empty-state--md {
+  padding: var(--space-8) var(--space-4);
+}
+.ui-empty-state--lg {
+  padding: var(--space-12) var(--space-6);
+}
 
 /* ── Icône ── */
 .ui-empty-state__icon {
   opacity: 0.5;
   margin-bottom: var(--space-1);
 }
-.ui-empty-state--sm .ui-empty-state__icon { opacity: 0.4; }
-.ui-empty-state--lg .ui-empty-state__icon { opacity: 0.6; }
+.ui-empty-state--sm .ui-empty-state__icon {
+  opacity: 0.4;
+}
+.ui-empty-state--lg .ui-empty-state__icon {
+  opacity: 0.6;
+}
 
 /* ── Titre ── */
 .ui-empty-state__title {
@@ -31,9 +41,15 @@
   font-weight: var(--weight-medium);
   color: var(--text-primary);
 }
-.ui-empty-state--sm .ui-empty-state__title { font-size: var(--font-sm); }
-.ui-empty-state--md .ui-empty-state__title { font-size: var(--font-base); }
-.ui-empty-state--lg .ui-empty-state__title { font-size: var(--font-lg); }
+.ui-empty-state--sm .ui-empty-state__title {
+  font-size: var(--font-sm);
+}
+.ui-empty-state--md .ui-empty-state__title {
+  font-size: var(--font-base);
+}
+.ui-empty-state--lg .ui-empty-state__title {
+  font-size: var(--font-lg);
+}
 
 /* ── Description ── */
 .ui-empty-state__description {

@@ -13,7 +13,7 @@ describe('EmptyState', () => {
     expect(screen.getByText('Essayez autre chose')).toBeInTheDocument();
   });
 
-  it('affiche un bouton d\'action', () => {
+  it("affiche un bouton d'action", () => {
     render(<EmptyState title="Vide" action={<button>Ajouter</button>} />);
     expect(screen.getByRole('button', { name: 'Ajouter' })).toBeInTheDocument();
   });
@@ -25,7 +25,7 @@ describe('EmptyState', () => {
     expect(container.querySelector('.ui-empty-state--lg')).toBeInTheDocument();
   });
 
-  it('ne rend pas l\'icône si non fournie', () => {
+  it("ne rend pas l'icône si non fournie", () => {
     const { container } = render(<EmptyState title="T" />);
     expect(container.querySelector('.ui-empty-state__icon')).not.toBeInTheDocument();
   });

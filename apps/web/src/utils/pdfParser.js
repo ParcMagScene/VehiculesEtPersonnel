@@ -39,7 +39,8 @@ const DOC_TYPE_LABELS = {
   [DOC_TYPES.INCONNU]: 'Document inconnu',
 };
 
-export const getDocTypeLabel = (type) => DOC_TYPE_LABELS[type] || DOC_TYPE_LABELS[DOC_TYPES.INCONNU];
+export const getDocTypeLabel = (type) =>
+  DOC_TYPE_LABELS[type] || DOC_TYPE_LABELS[DOC_TYPES.INCONNU];
 
 /**
  * Extrait le texte complet d'un fichier PDF
@@ -137,16 +138,20 @@ const extractPhone = (text, label) => {
 /** Extrait une adresse postale */
 const extractAddress = (text) => {
   // Format: "3 Rue de la TÉLÉMATIQUE  42000 SAINT-ETIENNE"
-  const match1 = text.match(/(\d+\s+(?:Rue|Avenue|Boulevard|Place|Allée|Impasse|Chemin|Route)[^\d]*?)\s+(\d{5}\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ\s-]+)/i);
+  const match1 = text.match(
+    /(\d+\s+(?:Rue|Avenue|Boulevard|Place|Allée|Impasse|Chemin|Route)[^\d]*?)\s+(\d{5}\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ\s-]+)/i,
+  );
   if (match1) return `${match1[1].trim()}\n${match1[2].trim()}`;
-  
-  const match2 = text.match(/((?:Rue|Avenue|Boulevard|Place|Allée|Impasse|Chemin|Route)[^\d]*?)\s+(\d{5}\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ\s-]+)/i);
+
+  const match2 = text.match(
+    /((?:Rue|Avenue|Boulevard|Place|Allée|Impasse|Chemin|Route)[^\d]*?)\s+(\d{5}\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ\s-]+)/i,
+  );
   if (match2) return `${match2[1].trim()}\n${match2[2].trim()}`;
-  
+
   // Code postal seul
   const match3 = text.match(/(\d{5})\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ\s-]{2,})/);
   if (match3) return `${match3[1]} ${match3[2].trim()}`;
-  
+
   return null;
 };
 
@@ -179,15 +184,20 @@ export const detectDocumentType = (text) => {
   // ─── BL Vente / Installation (Format A — "BON DE LIVRAISON VENTE") ───
   if (/bon\s+de\s+livraison\s+vente/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 60;
   if (/notre\s+r[eé]f\s*:/i.test(t) && /objet\s*:/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 20;
-  if (/conditions\s+g[eé]n[eé]rales/i.test(t) && /bon\s+de\s+livraison/i.test(t)) scores[DOC_TYPES.BL_VENTE] += 15;
-  if (/votre\s+interlocuteur/i.test(t) && COMPANY_NAME_PATTERN.test(t)) scores[DOC_TYPES.BL_VENTE] += 10;
+  if (/conditions\s+g[eé]n[eé]rales/i.test(t) && /bon\s+de\s+livraison/i.test(t))
+    scores[DOC_TYPES.BL_VENTE] += 15;
+  if (/votre\s+interlocuteur/i.test(t) && COMPANY_NAME_PATTERN.test(t))
+    scores[DOC_TYPES.BL_VENTE] += 10;
   if (/\bVTE\b/.test(text)) scores[DOC_TYPES.BL_VENTE] += 10;
 
   // ─── Bon de Préparation (Format B — "Bon de préparation") ───
   if (/bon\s+de\s+pr[eé]paration/i.test(t)) scores[DOC_TYPES.BON_PREPARATION] += 60;
-  if (/r[eé]f[eé]rence\s+nom\s+qt[eé]\s+poids\s+volume/i.test(t)) scores[DOC_TYPES.BON_PREPARATION] += 20;
-  if (/\bsonorisation\b/i.test(t) && /\blumi[eè]re\b/i.test(t)) scores[DOC_TYPES.BON_PREPARATION] += 15;
-  if (/adresse\s+de\s+livraison/i.test(t) && /\bdevis\b/i.test(t)) scores[DOC_TYPES.BON_PREPARATION] += 10;
+  if (/r[eé]f[eé]rence\s+nom\s+qt[eé]\s+poids\s+volume/i.test(t))
+    scores[DOC_TYPES.BON_PREPARATION] += 20;
+  if (/\bsonorisation\b/i.test(t) && /\blumi[eè]re\b/i.test(t))
+    scores[DOC_TYPES.BON_PREPARATION] += 15;
+  if (/adresse\s+de\s+livraison/i.test(t) && /\bdevis\b/i.test(t))
+    scores[DOC_TYPES.BON_PREPARATION] += 10;
   if (/\b\d{2}\/\d{2}\/\d{4}\s+(AM|PM)\b/.test(text)) scores[DOC_TYPES.BON_PREPARATION] += 15;
 
   // ─── Bon de Livraison générique ───
@@ -268,7 +278,7 @@ export const parseBonLivraison = (text) => {
     items: [],
     fournisseurs: [],
     fieldsFound: 0,
-    fieldsTotal: 10
+    fieldsTotal: 10,
   };
 
   try {
@@ -277,9 +287,13 @@ export const parseBonLivraison = (text) => {
     if (info.numeroAffaire) info.fieldsFound++;
 
     // Extraction du type et date
-    const prestationMatch1 = text.match(/(Prestation|Location|Installation|Vente)\s+du\s+(\d{2})\/(\d{2})\/(\d{4})\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z\s]+?)\s+(?:Monsieur|Madame)/i);
-    const prestationMatch2 = text.match(/(Prestation|Location|Installation|Vente)\s+([^\d]+?)\s+(\d{2})\/(\d{2})\/(\d{4})/i);
-    
+    const prestationMatch1 = text.match(
+      /(Prestation|Location|Installation|Vente)\s+du\s+(\d{2})\/(\d{2})\/(\d{4})\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z\s]+?)\s+(?:Monsieur|Madame)/i,
+    );
+    const prestationMatch2 = text.match(
+      /(Prestation|Location|Installation|Vente)\s+([^\d]+?)\s+(\d{2})\/(\d{2})\/(\d{4})/i,
+    );
+
     if (prestationMatch1) {
       const [, type, jour, mois, annee, nom] = prestationMatch1;
       info.type = type;
@@ -295,27 +309,48 @@ export const parseBonLivraison = (text) => {
     } else {
       // Fallback: chercher juste le type
       const typeMatch = text.match(/\b(Prestation|Location|Installation|Vente)\b/i);
-      if (typeMatch) { info.type = typeMatch[1]; info.fieldsFound++; }
+      if (typeMatch) {
+        info.type = typeMatch[1];
+        info.fieldsFound++;
+      }
       // Fallback: première date trouvée
       const dates = extractAllDates(text);
-      if (dates.length > 0) { info.dateLocation = dates[0].iso; info.fieldsFound++; }
+      if (dates.length > 0) {
+        info.dateLocation = dates[0].iso;
+        info.fieldsFound++;
+      }
     }
 
     // Extraction de l'interlocuteur
-    const interlocuteurMatch = text.match(/(Monsieur|Madame|M\.|Mme)\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][a-zàâéèêëîïôùûüç]+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z]+){0,2})/);
+    const interlocuteurMatch = text.match(
+      /(Monsieur|Madame|M\.|Mme)\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][a-zàâéèêëîïôùûüç]+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z]+){0,2})/,
+    );
     if (interlocuteurMatch) {
       info.interlocuteur = `${interlocuteurMatch[1]} ${interlocuteurMatch[2].trim()}`;
       info.fieldsFound++;
     }
 
     // Extraction du client
-    const clientMatch0 = text.match(/Client\s*:?\s*([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ\s'.-]+?)(?=\s+(?:Monsieur|Madame|M\.|Mme|Tél|Fax|\d+\s+(?:Rue|Place|Avenue|Boulevard)|$))/i);
-    const clientMatch1 = text.match(/(?:Monsieur|Madame|M\.|Mme)\s+[A-ZÀÂa-z]+\s+[A-Z]+\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ']+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ']+)*?)\s+(?=\d+\s+(?:Place|Rue|Avenue|Boulevard))/i);
-    const clientMatch2 = text.match(/(?:Monsieur|Madame|M\.|Mme)\s+[A-ZÀÂa-z]+\s+[A-Z]+\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ']+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ']+)*?)\s+(?=Place|Rue|Avenue|Boulevard)/i);
-    
-    if (clientMatch0) { info.client = clientMatch0[1].trim(); info.fieldsFound++; }
-    else if (clientMatch1) { info.client = clientMatch1[1].trim(); info.fieldsFound++; }
-    else if (clientMatch2) { info.client = clientMatch2[1].trim(); info.fieldsFound++; }
+    const clientMatch0 = text.match(
+      /Client\s*:?\s*([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ\s'.-]+?)(?=\s+(?:Monsieur|Madame|M\.|Mme|Tél|Fax|\d+\s+(?:Rue|Place|Avenue|Boulevard)|$))/i,
+    );
+    const clientMatch1 = text.match(
+      /(?:Monsieur|Madame|M\.|Mme)\s+[A-ZÀÂa-z]+\s+[A-Z]+\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ']+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ']+)*?)\s+(?=\d+\s+(?:Place|Rue|Avenue|Boulevard))/i,
+    );
+    const clientMatch2 = text.match(
+      /(?:Monsieur|Madame|M\.|Mme)\s+[A-ZÀÂa-z]+\s+[A-Z]+\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ']+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ']+)*?)\s+(?=Place|Rue|Avenue|Boulevard)/i,
+    );
+
+    if (clientMatch0) {
+      info.client = clientMatch0[1].trim();
+      info.fieldsFound++;
+    } else if (clientMatch1) {
+      info.client = clientMatch1[1].trim();
+      info.fieldsFound++;
+    } else if (clientMatch2) {
+      info.client = clientMatch2[1].trim();
+      info.fieldsFound++;
+    }
 
     // Téléphone & Fax
     info.tel = extractPhone(text, 'Tél(?:éphone)?');
@@ -326,8 +361,13 @@ export const parseBonLivraison = (text) => {
     // Devis référence
     const devisMatch = text.match(/(\d+)\s+Devis\s+(\d{2}\/\d{2}\/\d{4})/i);
     const devisMatch2 = text.match(/Devis\s+(?:n[°o]?\s*)?(\d+)\s+du\s+(\d{2}\/\d{2}\/\d{4})/i);
-    if (devisMatch) { info.devis = `${devisMatch[1]} du ${devisMatch[2]}`; info.fieldsFound++; }
-    else if (devisMatch2) { info.devis = `${devisMatch2[1]} du ${devisMatch2[2]}`; info.fieldsFound++; }
+    if (devisMatch) {
+      info.devis = `${devisMatch[1]} du ${devisMatch[2]}`;
+      info.fieldsFound++;
+    } else if (devisMatch2) {
+      info.devis = `${devisMatch2[1]} du ${devisMatch2[2]}`;
+      info.fieldsFound++;
+    }
 
     // Adresse de livraison
     info.adresseLivraison = extractAddress(text);
@@ -349,7 +389,10 @@ export const parseBonLivraison = (text) => {
 // Structure : interlocuteur, client, Notre Réf AF, Objet, articles simples
 // ═══════════════════════════════════════════════════════════════
 export const parseBLVente = (text) => {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l);
   const info = {
     numeroAffaire: null,
     variante: null,
@@ -373,7 +416,10 @@ export const parseBLVente = (text) => {
   try {
     // Interlocuteur : "Votre interlocuteur : Richard FOUVET"
     const interMatch = text.match(/Votre\s+interlocuteur\s*:\s*(.+)/i);
-    if (interMatch) { info.interlocuteur = interMatch[1].trim(); info.fieldsFound++; }
+    if (interMatch) {
+      info.interlocuteur = interMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // Notre Réf : AF30883 / 3
     const refMatch = text.match(/Notre\s+R[eé]f\s*:?\s*\n?\s*(AF\d{4,6})\s*\/?\s*(\d*)/i);
@@ -387,9 +433,17 @@ export const parseBLVente = (text) => {
     }
 
     // Client : bloc entre l'email entreprise et "Votre Réf."
-    const clientBlockMatch = text.match(new RegExp(COMPANY_EMAIL_PATTERN.source + '\\.com\\s*\\n([\\s\\S]*?)(?=Votre\\s+R[eé]f)', 'i'));
+    const clientBlockMatch = text.match(
+      new RegExp(
+        COMPANY_EMAIL_PATTERN.source + '\\.com\\s*\\n([\\s\\S]*?)(?=Votre\\s+R[eé]f)',
+        'i',
+      ),
+    );
     if (clientBlockMatch) {
-      const clientLines = clientBlockMatch[1].split('\n').map(l => l.trim()).filter(l => l && !/^p\.\d+$/.test(l));
+      const clientLines = clientBlockMatch[1]
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l && !/^p\.\d+$/.test(l));
       if (clientLines.length > 0) {
         info.client = clientLines[0];
         info.fieldsFound++;
@@ -402,9 +456,15 @@ export const parseBLVente = (text) => {
 
     // Téléphone & Fax client
     const telMatch = text.match(/V\.\s*T[eé]l\s*:\s*\n?\s*(\d[\d\s.]+)/i);
-    if (telMatch) { info.tel = telMatch[1].trim(); info.fieldsFound++; }
+    if (telMatch) {
+      info.tel = telMatch[1].trim();
+      info.fieldsFound++;
+    }
     const faxMatch = text.match(/V\.\s*Fax\s*:\s*\n?\s*(\d[\d\s.]+)/i);
-    if (faxMatch) { info.fax = faxMatch[1].trim(); info.fieldsFound++; }
+    if (faxMatch) {
+      info.fax = faxMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // Objet : "VTE MICROS HF/SIMPLES-DOUBLES du 30/10/24 au 30/10/24"
     const objetMatch = text.match(/Objet\s*:\s*\n?\s*(.+)/i);
@@ -420,7 +480,9 @@ export const parseBLVente = (text) => {
       else if (/\bPREST/i.test(info.objet)) info.type = 'Prestation';
 
       // Dates du/au dans l'objet
-      const datesMatch = info.objet.match(/du\s+(\d{2})\/(\d{2})\/(\d{2,4})\s+au\s+(\d{2})\/(\d{2})\/(\d{2,4})/i);
+      const datesMatch = info.objet.match(
+        /du\s+(\d{2})\/(\d{2})\/(\d{2,4})\s+au\s+(\d{2})\/(\d{2})\/(\d{2,4})/i,
+      );
       if (datesMatch) {
         const [, j1, m1, a1, j2, m2, a2] = datesMatch;
         const y1 = a1.length === 2 ? '20' + a1 : a1;
@@ -442,8 +504,18 @@ export const parseBLVente = (text) => {
     // ─── Extraction des articles ───
     // Fournisseurs connus (après la qté dans le BL)
     const KNOWN_FOURNISSEURS = new Set([
-      'ESL', 'LA BS', 'ALGAM', 'STOCK', 'CSI', 'KLOTZ', 'R&S', 'BS',
-      'ADAM HALL', 'ROBE', 'CLAY PAKY', 'PROLIGHTS TRIBE',
+      'ESL',
+      'LA BS',
+      'ALGAM',
+      'STOCK',
+      'CSI',
+      'KLOTZ',
+      'R&S',
+      'BS',
+      'ADAM HALL',
+      'ROBE',
+      'CLAY PAKY',
+      'PROLIGHTS TRIBE',
     ]);
     const isFournisseurLine = (line) => {
       if (!line || line.length < 2 || line.length > 20) return false;
@@ -455,8 +527,10 @@ export const parseBLVente = (text) => {
     };
 
     // Bloc entre "Qté" (ou header contenant Qté) et "Conditions générales"
-    const qteIdx = lines.findIndex(l => /\bQt[eé](?:\b|\s|$)/i.test(l));
-    const condIdx = lines.findIndex((l, i) => i > qteIdx && /conditions\s+g[eé]n[eé]rales/i.test(l));
+    const qteIdx = lines.findIndex((l) => /\bQt[eé](?:\b|\s|$)/i.test(l));
+    const condIdx = lines.findIndex(
+      (l, i) => i > qteIdx && /conditions\s+g[eé]n[eé]rales/i.test(l),
+    );
     if (qteIdx >= 0) {
       const isJoinedHeader = !/^Qt[eé]$/i.test(lines[qteIdx]);
       const endIdx = condIdx >= 0 ? condIdx : lines.length;
@@ -464,14 +538,20 @@ export const parseBLVente = (text) => {
 
       // Helper : séparer code / description
       const splitCodeDesc = (fullDesc) => {
-        let code = '', description = fullDesc;
+        let code = '',
+          description = fullDesc;
         const codeSplit = fullDesc.match(/^([A-Z0-9][A-Z0-9._&-]{1,15})\s+(.{10,})$/);
-        if (codeSplit) { code = codeSplit[1]; description = codeSplit[2]; }
+        if (codeSplit) {
+          code = codeSplit[1];
+          description = codeSplit[2];
+        }
         return { code, description };
       };
 
       // Skip page headers dans BL multi-pages
-      const isPageHeader = (line) => /^(Votre interlocuteur|Sarl au capital|Parc d'activit|Tel\.|p\.\d+$)/i.test(line) || COMPANY_EMAIL_PATTERN.test(line);
+      const isPageHeader = (line) =>
+        /^(Votre interlocuteur|Sarl au capital|Parc d'activit|Tel\.|p\.\d+$)/i.test(line) ||
+        COMPANY_EMAIL_PATTERN.test(line);
 
       if (isJoinedHeader) {
         // ─── Mode lignes jointes (pdfjs-dist) ───
@@ -483,7 +563,9 @@ export const parseBLVente = (text) => {
           if (/\bCode\b/i.test(line) && /\bQt[eé](?:\b|\s|$)/i.test(line)) continue;
 
           // 1) "desc QTY FOURNISSEUR" — texte après le chiffre en fin de ligne
-          const rowWithFourn = line.match(/^(.+)\s+(\d{1,5})\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s&'.]{0,19})\s*$/);
+          const rowWithFourn = line.match(
+            /^(.+)\s+(\d{1,5})\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s&'.]{0,19})\s*$/,
+          );
           if (rowWithFourn) {
             const { code, description } = splitCodeDesc(rowWithFourn[1].trim());
             const qty = parseInt(rowWithFourn[2]);
@@ -522,19 +604,30 @@ export const parseBLVente = (text) => {
 
             // Remonter pour trouver description + code
             let descIdx = i - 1;
-            while (descIdx > qteIdx && (/^(Code|Nom|Qt[eé])$/i.test(lines[descIdx]) || isPageHeader(lines[descIdx]))) descIdx--;
+            while (
+              descIdx > qteIdx &&
+              (/^(Code|Nom|Qt[eé])$/i.test(lines[descIdx]) || isPageHeader(lines[descIdx]))
+            )
+              descIdx--;
 
-            if (descIdx > qteIdx && !/^\d{1,5}$/.test(lines[descIdx]) && !isFournisseurLine(lines[descIdx])) {
+            if (
+              descIdx > qteIdx &&
+              !/^\d{1,5}$/.test(lines[descIdx]) &&
+              !isFournisseurLine(lines[descIdx])
+            ) {
               description = lines[descIdx];
               // Ligne précédente = potentiel code article
               const codeIdx = descIdx - 1;
               if (codeIdx > qteIdx && !isPageHeader(lines[codeIdx])) {
                 const maybeCode = lines[codeIdx];
-                if (maybeCode && maybeCode.length <= 20
-                    && /^[A-Z0-9][A-Z0-9._&\s-]{0,19}$/i.test(maybeCode)
-                    && !/^(Code|Nom|Qt[eé])$/i.test(maybeCode)
-                    && !/^\d{1,5}$/.test(maybeCode)
-                    && !isFournisseurLine(maybeCode)) {
+                if (
+                  maybeCode &&
+                  maybeCode.length <= 20 &&
+                  /^[A-Z0-9][A-Z0-9._&\s-]{0,19}$/i.test(maybeCode) &&
+                  !/^(Code|Nom|Qt[eé])$/i.test(maybeCode) &&
+                  !/^\d{1,5}$/.test(maybeCode) &&
+                  !isFournisseurLine(maybeCode)
+                ) {
                   code = maybeCode;
                 }
               }
@@ -570,11 +663,49 @@ export const parseBLVente = (text) => {
 // PARSEUR FORMAT B — "BON DE PRÉPARATION" (BL Affaires Location/Presta)
 // Structure : AF, nom affaire, client, adresse, devis, sections catégorisées
 // ═══════════════════════════════════════════════════════════════
-const SECTION_NAMES = ['SONORISATION', 'LUMIERE', 'LUMIÈRE', 'ÉCLAIRAGE', 'ECLAIRAGE', 'REGIE', 'RÉGIE', 'REGIE/PLATEAU', 'RÉGIE/PLATEAU', 'VIDEO', 'VIDÉO', 'AUDIOVISUEL', 'STRUCTURE', 'MOBILIER', 'DIVERS', 'ACCROCHE', 'MOTORISATION', 'PRATICABLE', 'PRATICABLES', 'ELECTRICITE', 'ÉLECTRICITÉ', 'CÂBLAGE', 'CABLAGE', 'DISTRIBUTION', 'DIFFUSION', 'BACKLINE', 'RIDEAU', 'RIDEAU-MACHINERIE', 'MACHINERIE', 'INFORMATIQUE', 'OUTILLAGE', 'VENTE', 'VTE'];
-const SECTION_PATTERN = /^(SONORISATION|LUMIERE|LUMIÈRE|ÉCLAIRAGE|ECLAIRAGE|REGIE|RÉGIE|REGIE\/PLATEAU|RÉGIE\/PLATEAU|VIDEO|VIDÉO|AUDIOVISUEL|STRUCTURE|MOBILIER|DIVERS|ACCROCHE|MOTORISATION|PRATICABLES?|ELECTRICITE|ÉLECTRICITÉ|CÂBLAGE|CABLAGE|DISTRIBUTION|DIFFUSION|BACKLINE|RIDEAU(?:-MACHINERIE)?|MACHINERIE|INFORMATIQUE|OUTILLAGE|VENTE|VTE)(\s|$)/i;
+const SECTION_NAMES = [
+  'SONORISATION',
+  'LUMIERE',
+  'LUMIÈRE',
+  'ÉCLAIRAGE',
+  'ECLAIRAGE',
+  'REGIE',
+  'RÉGIE',
+  'REGIE/PLATEAU',
+  'RÉGIE/PLATEAU',
+  'VIDEO',
+  'VIDÉO',
+  'AUDIOVISUEL',
+  'STRUCTURE',
+  'MOBILIER',
+  'DIVERS',
+  'ACCROCHE',
+  'MOTORISATION',
+  'PRATICABLE',
+  'PRATICABLES',
+  'ELECTRICITE',
+  'ÉLECTRICITÉ',
+  'CÂBLAGE',
+  'CABLAGE',
+  'DISTRIBUTION',
+  'DIFFUSION',
+  'BACKLINE',
+  'RIDEAU',
+  'RIDEAU-MACHINERIE',
+  'MACHINERIE',
+  'INFORMATIQUE',
+  'OUTILLAGE',
+  'VENTE',
+  'VTE',
+];
+const SECTION_PATTERN =
+  /^(SONORISATION|LUMIERE|LUMIÈRE|ÉCLAIRAGE|ECLAIRAGE|REGIE|RÉGIE|REGIE\/PLATEAU|RÉGIE\/PLATEAU|VIDEO|VIDÉO|AUDIOVISUEL|STRUCTURE|MOBILIER|DIVERS|ACCROCHE|MOTORISATION|PRATICABLES?|ELECTRICITE|ÉLECTRICITÉ|CÂBLAGE|CABLAGE|DISTRIBUTION|DIFFUSION|BACKLINE|RIDEAU(?:-MACHINERIE)?|MACHINERIE|INFORMATIQUE|OUTILLAGE|VENTE|VTE)(\s|$)/i;
 
 export const parseBonPreparation = (text) => {
-  const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l);
   const info = {
     numeroAffaire: null,
     type: null,
@@ -605,17 +736,21 @@ export const parseBonPreparation = (text) => {
     // AF number — essayer d'abord ligne isolée, sinon fallback regex souple
     const afMatch = text.match(/^(AF\d{4,6})$/m);
     if (afMatch) {
-      info.numeroAffaire = afMatch[1]; info.fieldsFound++;
+      info.numeroAffaire = afMatch[1];
+      info.fieldsFound++;
     } else {
       // Fallback : AF dans le texte (avec espace optionnel, milieu de ligne)
       const afFallback = extractNumeroAffaire(text);
-      if (afFallback) { info.numeroAffaire = afFallback; info.fieldsFound++; }
+      if (afFallback) {
+        info.numeroAffaire = afFallback;
+        info.fieldsFound++;
+      }
     }
 
     // Trouver l'index AF dans les lignes (essai strict puis souple)
-    let afIdx = lines.findIndex(l => /^AF\d{4,6}$/.test(l));
+    let afIdx = lines.findIndex((l) => /^AF\d{4,6}$/.test(l));
     if (afIdx < 0) {
-      afIdx = lines.findIndex(l => /\bAF\s?\d{4,6}\b/i.test(l));
+      afIdx = lines.findIndex((l) => /\bAF\s?\d{4,6}\b/i.test(l));
     }
     if (afIdx >= 0) {
       // Nom affaire = ligne après AF
@@ -632,9 +767,10 @@ export const parseBonPreparation = (text) => {
       // Trouver "Devis" keyword — soit ligne isolée, soit fusionnée "1001 Devis 05/02/2026"
       const devisIdx = lines.findIndex((l, i) => i > afIdx && l === 'Devis');
       // Aussi chercher la ligne fusionnée contenant "Devis"
-      const devisInlineIdx = devisIdx < 0
-        ? lines.findIndex((l, i) => i > afIdx && /\bDevis\b/i.test(l) && /\d{3,}/.test(l))
-        : -1;
+      const devisInlineIdx =
+        devisIdx < 0
+          ? lines.findIndex((l, i) => i > afIdx && /\bDevis\b/i.test(l) && /\d{3,}/.test(l))
+          : -1;
       // Index effectif de la ligne contenant l'info devis
       const devisLineIdx = devisIdx >= 0 ? devisIdx : devisInlineIdx;
 
@@ -675,9 +811,8 @@ export const parseBonPreparation = (text) => {
       if (devisLineIdx >= 0) {
         const clientStart = afIdx + 2;
         // Pour le cas classique, exclure le numéro de devis s'il est sur la ligne avant
-        const clientEnd = (devisIdx >= 0 && /^\d+$/.test(lines[devisIdx - 1]))
-          ? devisIdx - 1
-          : devisLineIdx;
+        const clientEnd =
+          devisIdx >= 0 && /^\d+$/.test(lines[devisIdx - 1]) ? devisIdx - 1 : devisLineIdx;
         const clientLines = lines.slice(clientStart, clientEnd);
         if (clientLines.length > 0 && !info.client) {
           info.client = clientLines[0];
@@ -733,11 +868,16 @@ export const parseBonPreparation = (text) => {
     // ── Fallback : recherche du client via le label "Client" ──
     // pdfjs-dist peut produire "Client NomDuClient" sur une même ligne ou "Client" suivi du nom sur la ligne suivante
     if (!info.client) {
-      const clientLabelIdx = lines.findIndex(l => /^Client$/i.test(l));
+      const clientLabelIdx = lines.findIndex((l) => /^Client$/i.test(l));
       if (clientLabelIdx >= 0 && clientLabelIdx + 1 < lines.length) {
         // Le client est sur la ligne suivante (si ce n'est pas un autre label connu)
         const nextLine = lines[clientLabelIdx + 1];
-        if (nextLine && !/^(du|au|Adresse|R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|Interlocuteur|Affaire|Devis)\b/i.test(nextLine)) {
+        if (
+          nextLine &&
+          !/^(du|au|Adresse|R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|Interlocuteur|Affaire|Devis)\b/i.test(
+            nextLine,
+          )
+        ) {
           info.client = nextLine;
           info.fieldsFound++;
         }
@@ -758,14 +898,23 @@ export const parseBonPreparation = (text) => {
 
     // ── Fallback : recherche de l'adresse via "Adresse de livraison" ou patterns ──
     if (!info.adresseLivraison) {
-      const addrLabelIdx = lines.findIndex(l => /Adresse de livraison/i.test(l));
+      const addrLabelIdx = lines.findIndex((l) => /Adresse de livraison/i.test(l));
       if (addrLabelIdx >= 0) {
         // D'abord chercher APRÈS le label (format classique)
         const addrLinesAfter = [];
         for (let j = addrLabelIdx + 1; j < Math.min(addrLabelIdx + 5, lines.length); j++) {
           const ln = lines[j];
-          if (/^(R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|SONORISATION|LUMIERE|ÉCLAIRAGE|STRUCTURE|REGIE|VIDEO|AUDIOVISUEL|BACKLINE|INFORMATIQUE)\b/i.test(ln)) break;
-          if (/\d{5}\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(ln) || /^\d+\s+(Rue|Avenue|Boulevard|Bd|Place|All[eé]e|Impasse|Chemin|Route)\b/i.test(ln) || /^(FRANCE|FR)$/i.test(ln)) {
+          if (
+            /^(R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|SONORISATION|LUMIERE|ÉCLAIRAGE|STRUCTURE|REGIE|VIDEO|AUDIOVISUEL|BACKLINE|INFORMATIQUE)\b/i.test(
+              ln,
+            )
+          )
+            break;
+          if (
+            /\d{5}\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ]/.test(ln) ||
+            /^\d+\s+(Rue|Avenue|Boulevard|Bd|Place|All[eé]e|Impasse|Chemin|Route)\b/i.test(ln) ||
+            /^(FRANCE|FR)$/i.test(ln)
+          ) {
             addrLinesAfter.push(ln);
           } else if (addrLinesAfter.length > 0 || ln.length > 5) {
             addrLinesAfter.push(ln);
@@ -778,16 +927,27 @@ export const parseBonPreparation = (text) => {
       }
       // Si toujours rien, chercher des lignes d'adresse AVANT le label (format Locmat : labels après valeurs)
       if (!info.adresseLivraison && info.client) {
-        const clientIdx = lines.findIndex(l => l === info.client);
+        const clientIdx = lines.findIndex((l) => l === info.client);
         if (clientIdx >= 0) {
           const addrLinesBefore = [];
           const stopIdx = addrLabelIdx >= 0 ? addrLabelIdx : Math.min(clientIdx + 6, lines.length);
           for (let j = clientIdx + 1; j < stopIdx; j++) {
             const ln = lines[j];
             // S'arrêter si on tombe sur un label ou la ligne devis fusionnée
-            if (/\bDevis\b/i.test(ln) || /^(Affaire|Interlocuteur|Client|du|Adresse|R[eé]f[eé]rence)\b/i.test(ln)) break;
+            if (
+              /\bDevis\b/i.test(ln) ||
+              /^(Affaire|Interlocuteur|Client|du|Adresse|R[eé]f[eé]rence)\b/i.test(ln)
+            )
+              break;
             // Accepter les lignes qui ressemblent à une adresse
-            if (/\d{5}\s+\S/.test(ln) || /\d+\s*(Rue|Avenue|Boulevard|Bd|Place|All[eé]e|Impasse|Chemin|Route|Av\.|Cours)\b/i.test(ln) || /^(FRANCE|FR)$/i.test(ln) || ln.length > 5) {
+            if (
+              /\d{5}\s+\S/.test(ln) ||
+              /\d+\s*(Rue|Avenue|Boulevard|Bd|Place|All[eé]e|Impasse|Chemin|Route|Av\.|Cours)\b/i.test(
+                ln,
+              ) ||
+              /^(FRANCE|FR)$/i.test(ln) ||
+              ln.length > 5
+            ) {
               addrLinesBefore.push(ln);
             }
           }
@@ -801,10 +961,16 @@ export const parseBonPreparation = (text) => {
 
     // ── Fallback : interlocuteur via le label ──
     if (!info.interlocuteur) {
-      const interLabelIdx = lines.findIndex(l => /^Interlocuteur$/i.test(l));
+      const interLabelIdx = lines.findIndex((l) => /^Interlocuteur$/i.test(l));
       if (interLabelIdx >= 0 && interLabelIdx + 1 < lines.length) {
         const nextLine = lines[interLabelIdx + 1];
-        if (nextLine && !/^(Client|du|au|Adresse|R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|Affaire|Devis)\b/i.test(nextLine) && nextLine.length > 1) {
+        if (
+          nextLine &&
+          !/^(Client|du|au|Adresse|R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|T[eé]l|Fax|Affaire|Devis)\b/i.test(
+            nextLine,
+          ) &&
+          nextLine.length > 1
+        ) {
           info.interlocuteur = nextLine;
           info.fieldsFound++;
         }
@@ -813,15 +979,23 @@ export const parseBonPreparation = (text) => {
 
     // Tél & Fax
     const telMatch = text.match(/T[eé]l\s*:\s*\n?\s*(\d[\d\s.]{3,})/i);
-    if (telMatch) { info.tel = telMatch[1].trim(); info.fieldsFound++; }
+    if (telMatch) {
+      info.tel = telMatch[1].trim();
+      info.fieldsFound++;
+    }
     const faxMatch = text.match(/Fax\s*:\s*\n?\s*(\d[\d\s.]{3,})/i);
-    if (faxMatch) { info.fax = faxMatch[1].trim(); info.fieldsFound++; }
+    if (faxMatch) {
+      info.fax = faxMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // ─── Extraction des sections et articles ───
     // Scanner après "Fax :" (exact ou contenu dans une ligne) ou header joint "Référence Nom Qté"
-    const faxLineIdx = lines.findIndex(l => /\bFax\s*:/i.test(l));
-    const headerLineIdx = lines.findIndex(l => /\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(l));
-    const scanStart = headerLineIdx >= 0 ? headerLineIdx + 1 : (faxLineIdx >= 0 ? faxLineIdx + 1 : 0);
+    const faxLineIdx = lines.findIndex((l) => /\bFax\s*:/i.test(l));
+    const headerLineIdx = lines.findIndex((l) =>
+      /\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(l),
+    );
+    const scanStart = headerLineIdx >= 0 ? headerLineIdx + 1 : faxLineIdx >= 0 ? faxLineIdx + 1 : 0;
     let currentSection = null;
     let firstSectionDate = null;
     let lastSectionDate = null;
@@ -834,9 +1008,14 @@ export const parseBonPreparation = (text) => {
       if (/Bon de pr[eé]paration/i.test(line) || /^-\s*\d+\s*-$/.test(line)) {
         // Chercher le prochain header / Fax pour reprendre le scan
         const nextFaxIdx = lines.findIndex((l, j) => j > i && /\bFax\s*:/i.test(l));
-        const nextHeaderIdx = lines.findIndex((l, j) => j > i && /\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(l));
-        const skipTo = [nextFaxIdx, nextHeaderIdx].filter(x => x > i);
-        if (skipTo.length > 0) { i = Math.min(...skipTo) + 1; continue; }
+        const nextHeaderIdx = lines.findIndex(
+          (l, j) => j > i && /\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(l),
+        );
+        const skipTo = [nextFaxIdx, nextHeaderIdx].filter((x) => x > i);
+        if (skipTo.length > 0) {
+          i = Math.min(...skipTo) + 1;
+          continue;
+        }
       }
 
       // Nouveau header de section (exact ou suivi de chiffres)
@@ -847,7 +1026,9 @@ export const parseBonPreparation = (text) => {
         info.sections.push(currentSection);
         // Chercher dates dans les lignes suivantes (jusqu'à 8 lignes)
         for (let j = i + 1; j < Math.min(i + 8, lines.length); j++) {
-          const dm = lines[j].match(/(\d{2}\/\d{2}\/\d{4})\s+(AM|PM)\s+(\d{2}\/\d{2}\/\d{4})\s+(AM|PM)/);
+          const dm = lines[j].match(
+            /(\d{2}\/\d{2}\/\d{4})\s+(AM|PM)\s+(\d{2}\/\d{2}\/\d{4})\s+(AM|PM)/,
+          );
           if (dm && !currentSection.dateDebut) {
             currentSection.dateDebut = `${dm[1]} ${dm[2]}`;
             currentSection.dateFin = `${dm[3]} ${dm[4]}`;
@@ -880,8 +1061,15 @@ export const parseBonPreparation = (text) => {
             reference = refSplit[2];
           }
           // Skip si c'est un agrégat de section (fullDesc = nom de section)
-          if (!SECTION_NAMES.some(s => fullDesc.toUpperCase().startsWith(s))) {
-            const item = { reference, description: fullDesc, quantity: qty, poids, volume, section: currentSection.name };
+          if (!SECTION_NAMES.some((s) => fullDesc.toUpperCase().startsWith(s))) {
+            const item = {
+              reference,
+              description: fullDesc,
+              quantity: qty,
+              poids,
+              volume,
+              section: currentSection.name,
+            };
             currentSection.items.push(item);
             info.items.push(item);
           }
@@ -890,19 +1078,26 @@ export const parseBonPreparation = (text) => {
         }
 
         // Mode séparé : détection de ligne descriptive (avec • ou longue avec lettres)
-        if (!SECTION_PATTERN.test(line)
-          && !/^(du|au)$/i.test(line)
-          && !/^\d{2}\/\d{2}\/\d{4}\s+(AM|PM)/.test(line)
-          && !/\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(line)
-          && !/^(R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|Affaire|Interlocuteur|Client|Adresse|T[eé]l|Fax)\s*:?$/i.test(line)
-          && !/Bon de pr[eé]paration/i.test(line)
-          && !/^-\s*\d+\s*-$/.test(line)
-          && !/^AF\d{4,6}$/.test(line)
-          && (line.includes('•') || line.includes('!') || (line.length > 20 && /[a-zA-ZÀ-ÿ]/.test(line)))
+        if (
+          !SECTION_PATTERN.test(line) &&
+          !/^(du|au)$/i.test(line) &&
+          !/^\d{2}\/\d{2}\/\d{4}\s+(AM|PM)/.test(line) &&
+          !/\bR[eé]f[eé]rence\b.*\bNom\b.*\bQt[eé]\b/i.test(line) &&
+          !/^(R[eé]f[eé]rence|Nom|Qt[eé]|Poids|Volume|Affaire|Interlocuteur|Client|Adresse|T[eé]l|Fax)\s*:?$/i.test(
+            line,
+          ) &&
+          !/Bon de pr[eé]paration/i.test(line) &&
+          !/^-\s*\d+\s*-$/.test(line) &&
+          !/^AF\d{4,6}$/.test(line) &&
+          (line.includes('•') ||
+            line.includes('!') ||
+            (line.length > 20 && /[a-zA-ZÀ-ÿ]/.test(line)))
         ) {
           const description = line.replace(/^!\s*/, '').trim();
           let reference = '';
-          let qty = 0, poids = 0, volume = 0;
+          let qty = 0,
+            poids = 0,
+            volume = 0;
 
           let j = i + 1;
           // Ligne suivante : référence (court, non numérique) ou quantité
@@ -911,8 +1106,12 @@ export const parseBonPreparation = (text) => {
             if (/^\d+$/.test(nextLine)) {
               qty = parseInt(nextLine);
               j++;
-            } else if (!SECTION_PATTERN.test(lines[j]) && !lines[j].includes('•')
-                       && !/^(du|au)$/i.test(lines[j]) && lines[j].length < 30) {
+            } else if (
+              !SECTION_PATTERN.test(lines[j]) &&
+              !lines[j].includes('•') &&
+              !/^(du|au)$/i.test(lines[j]) &&
+              lines[j].length < 30
+            ) {
               reference = lines[j];
               j++;
               if (j < lines.length && /^\d+$/.test(lines[j].replace(/\s/g, ''))) {
@@ -932,7 +1131,14 @@ export const parseBonPreparation = (text) => {
             j++;
           }
 
-          const item = { reference, description, quantity: qty, poids, volume, section: currentSection.name };
+          const item = {
+            reference,
+            description,
+            quantity: qty,
+            poids,
+            volume,
+            section: currentSection.name,
+          };
           currentSection.items.push(item);
           info.items.push(item);
           i = j;
@@ -982,7 +1188,7 @@ export const parseDevis = (text) => {
     montantTTC: null,
     tva: null,
     fieldsFound: 0,
-    fieldsTotal: 14
+    fieldsTotal: 14,
   };
 
   try {
@@ -991,21 +1197,31 @@ export const parseDevis = (text) => {
 
     // Numéro de devis
     const devisNumMatch = text.match(/Devis\s+(?:n[°o]?\s*)?[:\s]*(\d[\d\s/-]*)/i);
-    if (devisNumMatch) { info.devis = devisNumMatch[1].trim(); info.fieldsFound++; }
+    if (devisNumMatch) {
+      info.devis = devisNumMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // Date du devis
-    const dateDevisMatch = text.match(/(?:Date\s+(?:du\s+)?devis|Établi\s+le|Emis\s+le)\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i);
+    const dateDevisMatch = text.match(
+      /(?:Date\s+(?:du\s+)?devis|Établi\s+le|Emis\s+le)\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i,
+    );
     if (dateDevisMatch) {
       const [jour, mois, annee] = dateDevisMatch[1].split('/');
       info.dateDevis = `${annee}-${mois}-${jour}`;
       info.fieldsFound++;
     } else {
       const dates = extractAllDates(text);
-      if (dates.length > 0) { info.dateDevis = dates[0].iso; info.fieldsFound++; }
+      if (dates.length > 0) {
+        info.dateDevis = dates[0].iso;
+        info.fieldsFound++;
+      }
     }
 
     // Validité du devis
-    const validiteMatch = text.match(/(?:Validité|valable\s+jusqu'au)\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i);
+    const validiteMatch = text.match(
+      /(?:Validité|valable\s+jusqu'au)\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i,
+    );
     if (validiteMatch) {
       const [jour, mois, annee] = validiteMatch[1].split('/');
       info.validiteDevis = `${annee}-${mois}-${jour}`;
@@ -1013,20 +1229,38 @@ export const parseDevis = (text) => {
     }
 
     // Client
-    const clientMatch = text.match(/(?:Client|Destinataire|À l'attention de)\s*[:\s]*([^\n\r]{3,50})/i);
-    if (clientMatch) { info.client = clientMatch[1].trim(); info.fieldsFound++; }
+    const clientMatch = text.match(
+      /(?:Client|Destinataire|À l'attention de)\s*[:\s]*([^\n\r]{3,50})/i,
+    );
+    if (clientMatch) {
+      info.client = clientMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // Objet / Nom affaire
-    const objetMatch = text.match(/(?:Objet|Désignation|Référence|Intitulé)\s*[:\s]*([^\n\r]{3,80})/i);
-    if (objetMatch) { info.nomAffaire = objetMatch[1].trim(); info.fieldsFound++; }
+    const objetMatch = text.match(
+      /(?:Objet|Désignation|Référence|Intitulé)\s*[:\s]*([^\n\r]{3,80})/i,
+    );
+    if (objetMatch) {
+      info.nomAffaire = objetMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // Type de prestation
     const typeMatch = text.match(/\b(Prestation|Location|Installation|Vente)\b/i);
-    if (typeMatch) { info.type = typeMatch[1]; info.fieldsFound++; }
+    if (typeMatch) {
+      info.type = typeMatch[1];
+      info.fieldsFound++;
+    }
 
     // Interlocuteur
-    const interMatch = text.match(/(Monsieur|Madame|M\.|Mme)\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][a-zàâéèêëîïôùûüç]+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z]+){0,2})/);
-    if (interMatch) { info.interlocuteur = `${interMatch[1]} ${interMatch[2].trim()}`; info.fieldsFound++; }
+    const interMatch = text.match(
+      /(Monsieur|Madame|M\.|Mme)\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][a-zàâéèêëîïôùûüç]+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z]+){0,2})/,
+    );
+    if (interMatch) {
+      info.interlocuteur = `${interMatch[1]} ${interMatch[2].trim()}`;
+      info.fieldsFound++;
+    }
 
     // Téléphone & Fax
     info.tel = extractPhone(text, 'Tél(?:éphone)?');
@@ -1074,7 +1308,7 @@ export const parseFacture = (text) => {
     montantTTC: null,
     tva: null,
     fieldsFound: 0,
-    fieldsTotal: 14
+    fieldsTotal: 14,
   };
 
   try {
@@ -1083,21 +1317,31 @@ export const parseFacture = (text) => {
 
     // Numéro de facture
     const factureNumMatch = text.match(/Facture\s+(?:n[°o]?\s*)?[:\s]*([A-Z0-9][\w\s/-]*)/i);
-    if (factureNumMatch) { info.numeroFacture = factureNumMatch[1].trim(); info.fieldsFound++; }
+    if (factureNumMatch) {
+      info.numeroFacture = factureNumMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // Date facture
-    const dateFactMatch = text.match(/(?:Date\s+(?:de\s+)?facture|Émise?\s+le|Date\s+d'émission)\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i);
+    const dateFactMatch = text.match(
+      /(?:Date\s+(?:de\s+)?facture|Émise?\s+le|Date\s+d'émission)\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i,
+    );
     if (dateFactMatch) {
       const [jour, mois, annee] = dateFactMatch[1].split('/');
       info.dateFacture = `${annee}-${mois}-${jour}`;
       info.fieldsFound++;
     } else {
       const dates = extractAllDates(text);
-      if (dates.length > 0) { info.dateFacture = dates[0].iso; info.fieldsFound++; }
+      if (dates.length > 0) {
+        info.dateFacture = dates[0].iso;
+        info.fieldsFound++;
+      }
     }
 
     // Échéance
-    const echeanceMatch = text.match(/(?:Échéance|Echeance|Date\s+de\s+paiement|Payable\s+avant\s+le)\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i);
+    const echeanceMatch = text.match(
+      /(?:Échéance|Echeance|Date\s+de\s+paiement|Payable\s+avant\s+le)\s*[:\s]*(\d{2}\/\d{2}\/\d{4})/i,
+    );
     if (echeanceMatch) {
       const [jour, mois, annee] = echeanceMatch[1].split('/');
       info.dateEcheance = `${annee}-${mois}-${jour}`;
@@ -1106,19 +1350,33 @@ export const parseFacture = (text) => {
 
     // Client
     const clientMatch = text.match(/(?:Client|Facturé à|Destinataire)\s*[:\s]*([^\n\r]{3,50})/i);
-    if (clientMatch) { info.client = clientMatch[1].trim(); info.fieldsFound++; }
+    if (clientMatch) {
+      info.client = clientMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // Objet
     const objetMatch = text.match(/(?:Objet|Désignation|Référence)\s*[:\s]*([^\n\r]{3,80})/i);
-    if (objetMatch) { info.nomAffaire = objetMatch[1].trim(); info.fieldsFound++; }
+    if (objetMatch) {
+      info.nomAffaire = objetMatch[1].trim();
+      info.fieldsFound++;
+    }
 
     // Type
     const typeMatch = text.match(/\b(Prestation|Location|Installation|Vente)\b/i);
-    if (typeMatch) { info.type = typeMatch[1]; info.fieldsFound++; }
+    if (typeMatch) {
+      info.type = typeMatch[1];
+      info.fieldsFound++;
+    }
 
     // Interlocuteur
-    const interMatch = text.match(/(Monsieur|Madame|M\.|Mme)\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][a-zàâéèêëîïôùûüç]+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z]+){0,2})/);
-    if (interMatch) { info.interlocuteur = `${interMatch[1]} ${interMatch[2].trim()}`; info.fieldsFound++; }
+    const interMatch = text.match(
+      /(Monsieur|Madame|M\.|Mme)\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][a-zàâéèêëîïôùûüç]+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z]+){0,2})/,
+    );
+    if (interMatch) {
+      info.interlocuteur = `${interMatch[1]} ${interMatch[2].trim()}`;
+      info.fieldsFound++;
+    }
 
     // Téléphone
     info.tel = extractPhone(text, 'Tél(?:éphone)?');
@@ -1160,7 +1418,7 @@ export const parseGeneric = (text) => {
     devis: null,
     adresseLivraison: null,
     fieldsFound: 0,
-    fieldsTotal: 10
+    fieldsTotal: 10,
   };
 
   try {
@@ -1168,16 +1426,32 @@ export const parseGeneric = (text) => {
     if (info.numeroAffaire) info.fieldsFound++;
 
     const typeMatch = text.match(/\b(Prestation|Location|Installation|Vente)\b/i);
-    if (typeMatch) { info.type = typeMatch[1]; info.fieldsFound++; }
+    if (typeMatch) {
+      info.type = typeMatch[1];
+      info.fieldsFound++;
+    }
 
     const dates = extractAllDates(text);
-    if (dates.length > 0) { info.dateLocation = dates[0].iso; info.fieldsFound++; }
+    if (dates.length > 0) {
+      info.dateLocation = dates[0].iso;
+      info.fieldsFound++;
+    }
 
-    const clientMatch = text.match(/(?:Client|Destinataire|À l'attention de|Société)\s*[:\s]*([^\n\r]{3,50})/i);
-    if (clientMatch) { info.client = clientMatch[1].trim(); info.fieldsFound++; }
+    const clientMatch = text.match(
+      /(?:Client|Destinataire|À l'attention de|Société)\s*[:\s]*([^\n\r]{3,50})/i,
+    );
+    if (clientMatch) {
+      info.client = clientMatch[1].trim();
+      info.fieldsFound++;
+    }
 
-    const interMatch = text.match(/(Monsieur|Madame|M\.|Mme)\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][a-zàâéèêëîïôùûüç]+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z]+){0,2})/);
-    if (interMatch) { info.interlocuteur = `${interMatch[1]} ${interMatch[2].trim()}`; info.fieldsFound++; }
+    const interMatch = text.match(
+      /(Monsieur|Madame|M\.|Mme)\s+([A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z][a-zàâéèêëîïôùûüç]+(?:\s+[A-ZÀÂÉÈÊËÎÏÔÙÛÜÇ][A-ZÀÂÉÈÊËÎÏÔÙÛÜÇa-z]+){0,2})/,
+    );
+    if (interMatch) {
+      info.interlocuteur = `${interMatch[1]} ${interMatch[2].trim()}`;
+      info.fieldsFound++;
+    }
 
     info.tel = extractPhone(text, 'Tél(?:éphone)?');
     if (info.tel) info.fieldsFound++;
@@ -1188,8 +1462,13 @@ export const parseGeneric = (text) => {
     if (info.adresseLivraison) info.fieldsFound++;
 
     // Objet/titre
-    const objetMatch = text.match(/(?:Objet|Désignation|Référence|Intitulé)\s*[:\s]*([^\n\r]{3,80})/i);
-    if (objetMatch) { info.nomAffaire = objetMatch[1].trim(); info.fieldsFound++; }
+    const objetMatch = text.match(
+      /(?:Objet|Désignation|Référence|Intitulé)\s*[:\s]*([^\n\r]{3,80})/i,
+    );
+    if (objetMatch) {
+      info.nomAffaire = objetMatch[1].trim();
+      info.fieldsFound++;
+    }
   } catch (error) {
     console.error('❌ Erreur parsing générique:', error);
   }
@@ -1206,7 +1485,9 @@ const computeFieldConfidence = (result) => {
   }
   // Type
   if (result.type) {
-    fc.type = ['Prestation', 'Location', 'Installation', 'Vente'].includes(result.type) ? 'high' : 'low';
+    fc.type = ['Prestation', 'Location', 'Installation', 'Vente'].includes(result.type)
+      ? 'high'
+      : 'low';
   }
   // Client
   if (result.client) {
@@ -1278,7 +1559,9 @@ export const smartParse = (text) => {
             info.items = venteInfo.items;
             info.fournisseurs = venteInfo.fournisseurs || [];
           }
-        } catch (_) { /* ignore */ }
+        } catch (_) {
+          /* ignore */
+        }
       }
       break;
     case DOC_TYPES.DEVIS:
@@ -1356,7 +1639,15 @@ export const batchParsePDFs = async (files, onProgress) => {
       results.push(result);
       if (onProgress) onProgress(i + 1, files.length, result);
     } catch (error) {
-      const result = { file, docType: DOC_TYPES.INCONNU, docTypeLabel: 'Erreur', confidence: 0, info: {}, text: '', error: error.message };
+      const result = {
+        file,
+        docType: DOC_TYPES.INCONNU,
+        docTypeLabel: 'Erreur',
+        confidence: 0,
+        info: {},
+        text: '',
+        error: error.message,
+      };
       results.push(result);
       if (onProgress) onProgress(i + 1, files.length, result);
     }
@@ -1371,10 +1662,10 @@ export const batchParsePDFs = async (files, onProgress) => {
  */
 export const parseDate = (dateStr) => {
   if (!dateStr) return null;
-  
+
   const parts = dateStr.split('/');
   if (parts.length !== 3) return null;
-  
+
   const [day, month, year] = parts;
   return new Date(year, month - 1, day);
 };

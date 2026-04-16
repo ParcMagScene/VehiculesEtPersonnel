@@ -80,8 +80,6 @@
   border-width: 2px;
 }
 
-
-
 /* ═══ Toolbar (recherche + filtres + navigation dates) ═══ */
 
 .affaires-toolbar-bar {
@@ -238,7 +236,10 @@
 }
 
 .affaires-tb-view-btn.active {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   color: var(--theme-text-inverse);
   box-shadow: 0 1px 3px var(--btn-primary-shadow);
 }
@@ -297,7 +298,7 @@
   flex-shrink: 0;
 }
 
-.affaires-tb-toggle input[type="checkbox"] {
+.affaires-tb-toggle input[type='checkbox'] {
   width: 14px;
   height: 14px;
   accent-color: var(--theme-primary);
@@ -404,7 +405,10 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%)
+  );
   color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--radius-md);
@@ -413,7 +417,9 @@
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: opacity 0.2s, transform 0.15s;
+  transition:
+    opacity 0.2s,
+    transform 0.15s;
 }
 
 .affaires-new-btn:hover {
@@ -486,7 +492,9 @@
   height: 10px;
   border-radius: var(--radius-xs);
   opacity: 0.55;
-  transition: opacity 0.15s, box-shadow 0.15s;
+  transition:
+    opacity 0.15s,
+    box-shadow 0.15s;
   min-width: 3px;
   z-index: var(--z-base);
 }
@@ -673,19 +681,83 @@
   flex-shrink: 0;
 }
 
-.ath-status { width: 20px; flex-shrink: 0; }
-.ath-numero { width: 80px; flex-shrink: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ath-type { width: 100px; flex-shrink: 1; min-width: 85px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ath-dates { width: 200px; flex-shrink: 1; min-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ath-client { flex: 1; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ath-titre { flex: 1.5; min-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ath-lieu { flex: 1; min-width: 50px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ath-bl { width: 26px; flex-shrink: 0; text-align: center; }
-.ath-orders { width: 30px; flex-shrink: 0; text-align: center; }
-.ath-icons { width: 50px; flex-shrink: 0; }
-.ath-tasks { width: 90px; flex-shrink: 0; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ath-status {
+  width: 20px;
+  flex-shrink: 0;
+}
+.ath-numero {
+  width: 80px;
+  flex-shrink: 1;
+  min-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ath-type {
+  width: 100px;
+  flex-shrink: 1;
+  min-width: 85px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ath-dates {
+  width: 200px;
+  flex-shrink: 1;
+  min-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ath-client {
+  flex: 1;
+  min-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ath-titre {
+  flex: 1.5;
+  min-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ath-lieu {
+  flex: 1;
+  min-width: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ath-bl {
+  width: 26px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.ath-orders {
+  width: 30px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.ath-icons {
+  width: 50px;
+  flex-shrink: 0;
+}
+.ath-tasks {
+  width: 90px;
+  flex-shrink: 0;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .ath-resa,
-.ath-pers { width: 35px; flex-shrink: 0; text-align: center; }
+.ath-pers {
+  width: 35px;
+  flex-shrink: 0;
+  text-align: center;
+}
 
 /* En-têtes cliquables */
 .affaire-table-header .sortable {
@@ -769,7 +841,13 @@
 }
 
 /* Indicateur de statut (pastille) */
-.ar-status { width: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.ar-status {
+  width: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .status-dot {
   width: 8px;
@@ -998,8 +1076,12 @@
   color: var(--theme-text-subtle);
 }
 
-.ar-resa { color: var(--theme-info, #0284c7); }
-.ar-pers { color: var(--theme-warning-dark); }
+.ar-resa {
+  color: var(--theme-info, #0284c7);
+}
+.ar-pers {
+  color: var(--theme-warning-dark);
+}
 
 /* ═══ Responsive ═══ */
 

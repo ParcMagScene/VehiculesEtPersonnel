@@ -57,10 +57,18 @@
   border-top: 1px solid var(--theme-border-light);
 }
 
-.ui-form-actions--end     { justify-content: flex-end; }
-.ui-form-actions--start   { justify-content: flex-start; }
-.ui-form-actions--between { justify-content: space-between; }
-.ui-form-actions--center  { justify-content: center; }
+.ui-form-actions--end {
+  justify-content: flex-end;
+}
+.ui-form-actions--start {
+  justify-content: flex-start;
+}
+.ui-form-actions--between {
+  justify-content: space-between;
+}
+.ui-form-actions--center {
+  justify-content: center;
+}
 
 /* ── Responsive ── */
 @media (max-width: 640px) {

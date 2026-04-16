@@ -1,9 +1,9 @@
 /**
  * Logger conditionnel pour environnement de développement/production
- * 
+ *
  * En production, seules les erreurs sont loggées dans la console.
  * En développement, tous les logs sont affichés.
- * 
+ *
  * Pour activer le mode debug en production:
  * localStorage.setItem('debug_mode', 'true')
  */
@@ -11,7 +11,10 @@
 // Fonction pour vérifier si on est en mode développement
 const isDev = () => {
   try {
-    return import.meta.env.DEV || (typeof localStorage !== 'undefined' && localStorage.getItem('debug_mode') === 'true');
+    return (
+      import.meta.env.DEV ||
+      (typeof localStorage !== 'undefined' && localStorage.getItem('debug_mode') === 'true')
+    );
   } catch (e) {
     return false;
   }
@@ -113,7 +116,7 @@ export const logger = {
     if (isDev()) {
       console.timeEnd(label);
     }
-  }
+  },
 };
 
 /**

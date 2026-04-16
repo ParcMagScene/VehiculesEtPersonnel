@@ -14,19 +14,16 @@
 import { useEffect, useRef, useCallback } from 'react';
 import './BottomSheet.css';
 
-export default function BottomSheet({
-  open,
-  onClose,
-  title,
-  children,
-  className = '',
-}) {
+export default function BottomSheet({ open, onClose, title, children, className = '' }) {
   const panelRef = useRef(null);
 
   // Fermer avec Escape
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Escape') onClose?.();
-  }, [onClose]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Escape') onClose?.();
+    },
+    [onClose],
+  );
 
   useEffect(() => {
     if (open) {
@@ -61,9 +58,7 @@ export default function BottomSheet({
             <h3 className="ui-bottomsheet-title">{title}</h3>
           </div>
         )}
-        <div className="ui-bottomsheet-body">
-          {children}
-        </div>
+        <div className="ui-bottomsheet-body">{children}</div>
       </div>
     </>
   );

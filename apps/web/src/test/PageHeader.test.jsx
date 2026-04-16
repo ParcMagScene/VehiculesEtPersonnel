@@ -23,7 +23,7 @@ describe('PageHeader', () => {
     expect(container.querySelector('.ui-page-header-badge')).toBeNull();
   });
 
-  it('affiche l\'icône', () => {
+  it("affiche l'icône", () => {
     render(<PageHeader title="T" icon={<span data-testid="ico">★</span>} />);
     expect(screen.getByTestId('ico')).toBeInTheDocument();
   });
@@ -40,7 +40,11 @@ describe('PageHeader', () => {
   });
 
   it('children dans la toolbar', () => {
-    render(<PageHeader title="T"><input placeholder="Rechercher" /></PageHeader>);
+    render(
+      <PageHeader title="T">
+        <input placeholder="Rechercher" />
+      </PageHeader>,
+    );
     expect(screen.getByPlaceholderText('Rechercher')).toBeInTheDocument();
   });
 

@@ -28,7 +28,7 @@ describe('SectionHeader', () => {
     expect(screen.getByText('0')).toHaveClass('ui-section-badge');
   });
 
-  it('affiche l\'icône', () => {
+  it("affiche l'icône", () => {
     render(<SectionHeader title="T" icon={<span data-testid="ico">★</span>} />);
     expect(screen.getByTestId('ico')).toBeInTheDocument();
   });

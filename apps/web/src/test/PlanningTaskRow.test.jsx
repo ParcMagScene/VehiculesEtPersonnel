@@ -5,7 +5,9 @@ import userEvent from '@testing-library/user-event';
 // Mock design-system
 vi.mock('@/design-system', () => ({
   Button: ({ children, onClick, className, title, ...rest }) => (
-    <button onClick={onClick} className={className} title={title} {...rest}>{children}</button>
+    <button onClick={onClick} className={className} title={title} {...rest}>
+      {children}
+    </button>
   ),
   Input: ({ onChange, ...props }) => <input onChange={onChange} {...props} />,
   Tooltip: ({ children }) => <>{children}</>,
@@ -136,12 +138,16 @@ describe('PlanningTaskRow', () => {
   });
 
   it('ajoute la classe task-done-row quand status done', () => {
-    const { container } = render(<PlanningTaskRow {...baseProps} task={makeTask({ status: 'done' })} />);
+    const { container } = render(
+      <PlanningTaskRow {...baseProps} task={makeTask({ status: 'done' })} />,
+    );
     expect(container.querySelector('.task-done-row')).toBeInTheDocument();
   });
 
   it('ajoute la classe google-task-row quand sourceType google_event', () => {
-    const { container } = render(<PlanningTaskRow {...baseProps} task={makeTask({ sourceType: 'google_event' })} />);
+    const { container } = render(
+      <PlanningTaskRow {...baseProps} task={makeTask({ sourceType: 'google_event' })} />,
+    );
     expect(container.querySelector('.google-task-row')).toBeInTheDocument();
   });
 
@@ -151,17 +157,23 @@ describe('PlanningTaskRow', () => {
   });
 
   it('ajoute la classe hidden-display quand visible=0', () => {
-    const { container } = render(<PlanningTaskRow {...baseProps} task={makeTask({ visible: 0 })} />);
+    const { container } = render(
+      <PlanningTaskRow {...baseProps} task={makeTask({ visible: 0 })} />,
+    );
     expect(container.querySelector('.hidden-display')).toBeInTheDocument();
   });
 
   it('affiche le vehicule quand reservation_vehicle_name', () => {
-    render(<PlanningTaskRow {...baseProps} task={makeTask({ reservation_vehicle_name: 'Camion 1' })} />);
+    render(
+      <PlanningTaskRow {...baseProps} task={makeTask({ reservation_vehicle_name: 'Camion 1' })} />,
+    );
     expect(screen.getByText(/Camion 1/)).toBeInTheDocument();
   });
 
   it('affiche le lien adresse quand locationAddress', () => {
-    render(<PlanningTaskRow {...baseProps} task={makeTask({ locationAddress: '12 rue de la Paix' })} />);
+    render(
+      <PlanningTaskRow {...baseProps} task={makeTask({ locationAddress: '12 rue de la Paix' })} />,
+    );
     const link = screen.getByText(/12 rue de la Paix/);
     expect(link.closest('a')).toHaveAttribute('href', expect.stringContaining('google.com/maps'));
   });

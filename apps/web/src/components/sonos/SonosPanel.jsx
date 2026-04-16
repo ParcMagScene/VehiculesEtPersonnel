@@ -25,7 +25,8 @@ function SonosPanel({ currentUser, _currentUser }) {
     return <div className="sonos-loading">Chargement Sonos…</div>;
   }
 
-  const isActive = sonos.displayState && (sonos.displayState.playing || sonos.displayState.state === 'paused');
+  const isActive =
+    sonos.displayState && (sonos.displayState.playing || sonos.displayState.state === 'paused');
 
   return (
     <div className="sonos-app">
@@ -65,7 +66,7 @@ function SonosPanel({ currentUser, _currentUser }) {
               type="text"
               placeholder="Rechercher…"
               value={sourceSearch}
-              onChange={e => setSourceSearch(e.target.value)}
+              onChange={(e) => setSourceSearch(e.target.value)}
             />
           </div>
           <button className="sonos-icon-btn" onClick={sonos.refresh} title="Rafraîchir">
@@ -73,7 +74,7 @@ function SonosPanel({ currentUser, _currentUser }) {
           </button>
           <button
             className={`sonos-icon-btn${configOpen ? ' sonos-icon-active' : ''}`}
-            onClick={() => setConfigOpen(o => !o)}
+            onClick={() => setConfigOpen((o) => !o)}
             title="Configuration"
           >
             <Settings size={15} />
@@ -87,11 +88,21 @@ function SonosPanel({ currentUser, _currentUser }) {
           <div className="sonos-config-row">
             <Wifi size={14} />
             <label>IP Sonos</label>
-            <Input type="text" value={sonos.sonosIP} onChange={e => sonos.setSonosIP(e.target.value)} placeholder="192.168.1.xxx" />
-            <Button variant="primary" size="sm" onClick={sonos.saveConfig}>Enregistrer</Button>
+            <Input
+              type="text"
+              value={sonos.sonosIP}
+              onChange={(e) => sonos.setSonosIP(e.target.value)}
+              placeholder="192.168.1.xxx"
+            />
+            <Button variant="primary" size="sm" onClick={sonos.saveConfig}>
+              Enregistrer
+            </Button>
           </div>
           <div className="sonos-config-row">
-            <Checkbox checked={sonos.polling} onChange={e => sonos.setPolling(e.target.checked)} />
+            <Checkbox
+              checked={sonos.polling}
+              onChange={(e) => sonos.setPolling(e.target.checked)}
+            />
             <label>Monitoring temps réel (5s)</label>
           </div>
         </div>

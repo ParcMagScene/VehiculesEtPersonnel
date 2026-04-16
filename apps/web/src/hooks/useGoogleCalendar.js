@@ -13,26 +13,28 @@ export function useGoogleCalendar() {
   const handleGoogleEventsChange = useCallback((newEvents) => {
     setGoogleEvents(newEvents);
     if (newEvents && newEvents.length > 0) {
-      newEvents.forEach(ev => {
+      newEvents.forEach((ev) => {
         if (ev.id) allGoogleEventsRef.current.set(ev.id, ev);
       });
 
       // Sync automatique : détecter les events avec numéro d'affaire non encore traités
       const affaireRegex = /\baf\s*\d{3,}\b/i;
-      const eventsToSync = newEvents.filter(ev =>
-        ev.id &&
-        !syncedGoogleEventIdsRef.current.has(ev.id) &&
-        affaireRegex.test(ev.summary || ev.title || '')
+      const eventsToSync = newEvents.filter(
+        (ev) =>
+          ev.id &&
+          !syncedGoogleEventIdsRef.current.has(ev.id) &&
+          affaireRegex.test(ev.summary || ev.title || ''),
       );
 
       if (eventsToSync.length > 0) {
-        eventsToSync.forEach(ev => syncedGoogleEventIdsRef.current.add(ev.id));
+        eventsToSync.forEach((ev) => syncedGoogleEventIdsRef.current.add(ev.id));
 
-        api.syncGoogleEventsToAffaires(eventsToSync)
+        api
+          .syncGoogleEventsToAffaires(eventsToSync)
           .then(() => {})
-          .catch(err => {
+          .catch((err) => {
             console.warn('⚠️ Sync affaires/Google échouée:', err);
-            eventsToSync.forEach(ev => syncedGoogleEventIdsRef.current.delete(ev.id));
+            eventsToSync.forEach((ev) => syncedGoogleEventIdsRef.current.delete(ev.id));
           });
       }
     }

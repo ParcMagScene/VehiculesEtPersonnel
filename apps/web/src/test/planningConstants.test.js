@@ -57,19 +57,27 @@ describe('planningConstants', () => {
   // ═══ mapEventToSection ═══
   describe('mapEventToSection', () => {
     it('mappe preparation/location → prep_locations', () => {
-      expect(mapEventToSection({ type: 'preparation', category: 'location' })).toBe('prep_locations');
+      expect(mapEventToSection({ type: 'preparation', category: 'location' })).toBe(
+        'prep_locations',
+      );
     });
     it('mappe preparation/prestation → prep_prestations', () => {
-      expect(mapEventToSection({ type: 'preparation', category: 'prestation' })).toBe('prep_prestations');
+      expect(mapEventToSection({ type: 'preparation', category: 'prestation' })).toBe(
+        'prep_prestations',
+      );
     });
     it('mappe preparation/vente → prep_ventes', () => {
       expect(mapEventToSection({ type: 'preparation', category: 'vente' })).toBe('prep_ventes');
     });
     it('mappe preparation/installation → prep_installations', () => {
-      expect(mapEventToSection({ type: 'preparation', category: 'installation' })).toBe('prep_installations');
+      expect(mapEventToSection({ type: 'preparation', category: 'installation' })).toBe(
+        'prep_installations',
+      );
     });
     it('mappe preparation sans catégorie → prep_locations (défaut)', () => {
-      expect(mapEventToSection({ type: 'preparation', category: 'unknown' })).toBe('prep_locations');
+      expect(mapEventToSection({ type: 'preparation', category: 'unknown' })).toBe(
+        'prep_locations',
+      );
     });
     it('mappe enlevement → courses', () => {
       expect(mapEventToSection({ type: 'enlevement' })).toBe('courses');

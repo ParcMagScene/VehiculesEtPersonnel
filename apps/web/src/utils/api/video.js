@@ -2,7 +2,6 @@
 import { toCamelCase, toSnakeCase, API_URL } from './base.js';
 
 export function registerVideoMethods(ApiClient) {
-
   // ── Caméras CRUD ──
 
   ApiClient.prototype.getVideoCameras = async function () {

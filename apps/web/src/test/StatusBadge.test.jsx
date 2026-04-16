@@ -26,22 +26,38 @@ describe('StatusBadge', () => {
   });
 
   it('applies sm size class', () => {
-    render(<StatusBadge color="#333" size="sm">Petit</StatusBadge>);
+    render(
+      <StatusBadge color="#333" size="sm">
+        Petit
+      </StatusBadge>,
+    );
     expect(screen.getByText('Petit')).toHaveClass('ui-status-badge--sm');
   });
 
   it('does not apply sm class for md size', () => {
-    render(<StatusBadge color="#333" size="md">Normal</StatusBadge>);
+    render(
+      <StatusBadge color="#333" size="md">
+        Normal
+      </StatusBadge>,
+    );
     expect(screen.getByText('Normal')).not.toHaveClass('ui-status-badge--sm');
   });
 
   it('renders icon when provided', () => {
-    render(<StatusBadge color="#333" icon={<span data-testid="icon">🔴</span>}>Avec icône</StatusBadge>);
+    render(
+      <StatusBadge color="#333" icon={<span data-testid="icon">🔴</span>}>
+        Avec icône
+      </StatusBadge>,
+    );
     expect(screen.getByTestId('icon')).toBeInTheDocument();
   });
 
   it('applies custom className', () => {
-    render(<StatusBadge color="#333" className="custom">Test</StatusBadge>);
+    render(
+      <StatusBadge color="#333" className="custom">
+        Test
+      </StatusBadge>,
+    );
     expect(screen.getByText('Test')).toHaveClass('custom');
   });
 });

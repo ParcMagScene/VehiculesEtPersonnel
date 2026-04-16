@@ -78,9 +78,7 @@ describe('Input', () => {
   });
 
   it('renders both prefix and suffix', () => {
-    const { container } = render(
-      <Input prefix={<span>A</span>} suffix={<span>B</span>} />
-    );
+    const { container } = render(<Input prefix={<span>A</span>} suffix={<span>B</span>} />);
     expect(container.querySelector('.ui-input__prefix')).toBeInTheDocument();
     expect(container.querySelector('.ui-input__suffix')).toBeInTheDocument();
   });

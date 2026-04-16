@@ -6,8 +6,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AVATAR_COLORS } from '../../constants/colors';
 import * as pdfjsLib from 'pdfjs-dist';
 import {
-  X, Download, Printer, ZoomIn, ZoomOut,
-  ChevronLeft, ChevronRight, Layers, Info
+  X,
+  Download,
+  Printer,
+  ZoomIn,
+  ZoomOut,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
+  Info,
 } from 'lucide-react';
 import { Button, Tooltip } from '@/design-system';
 import { FAMILY_COLORS } from '../../utils/bpAnnotationEngine';
@@ -32,26 +39,29 @@ function groupTextIntoLines(textItems, viewport) {
   }
   const mainFont = Object.entries(fontCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
 
-  const positioned = textItems.map(item => {
-    const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-    const isMainFont = (item.fontName || '') === mainFont;
-    const rawT = item.transform;
-    const hasShear = Math.abs(rawT[1]) > 0.01 || Math.abs(rawT[2]) > 0.01;
-    return {
-      text: item.str.trim(),
-      x: tx[4],
-      y: tx[5],
-      width: item.width * viewport.scale,
-      height: Math.abs(tx[3] - tx[1]) || item.height * viewport.scale || 12,
-      italic: !isMainFont || hasShear };
-  }).filter(p => p.text.length > 0);
+  const positioned = textItems
+    .map((item) => {
+      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      const isMainFont = (item.fontName || '') === mainFont;
+      const rawT = item.transform;
+      const hasShear = Math.abs(rawT[1]) > 0.01 || Math.abs(rawT[2]) > 0.01;
+      return {
+        text: item.str.trim(),
+        x: tx[4],
+        y: tx[5],
+        width: item.width * viewport.scale,
+        height: Math.abs(tx[3] - tx[1]) || item.height * viewport.scale || 12,
+        italic: !isMainFont || hasShear,
+      };
+    })
+    .filter((p) => p.text.length > 0);
 
   const tolerance = 4;
   const lines = [];
   const sorted = [...positioned].sort((a, b) => a.y - b.y);
 
   for (const item of sorted) {
-    const existing = lines.find(l => Math.abs(l.y - item.y) < tolerance);
+    const existing = lines.find((l) => Math.abs(l.y - item.y) < tolerance);
     if (existing) {
       existing.items.push(item);
       existing.text += ' ' + item.text;
@@ -70,7 +80,8 @@ function groupTextIntoLines(textItems, viewport) {
         text: item.text,
         items: [item],
         italicChars: item.italic ? item.text.length : 0,
-        totalChars: item.text.length });
+        totalChars: item.text.length,
+      });
     }
   }
 
@@ -134,9 +145,9 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
     }
     // Par description
     for (const [desc, item] of itemsByDesc) {
-      const words = desc.split(/\s+/).filter(w => w.length > 2);
+      const words = desc.split(/\s+/).filter((w) => w.length > 2);
       if (words.length === 0) continue;
-      const matchCount = words.filter(w => upper.includes(w)).length;
+      const matchCount = words.filter((w) => upper.includes(w)).length;
       if (matchCount / words.length >= 0.6 && item._color) return item._color;
     }
     return null;
@@ -166,7 +177,7 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
 
     // Inclure la ligne précédente seulement pour COMPRENANT (titre de l'article kit)
     const isComprenant = /\bCOMPRENANT\s*:/i.test(lines[i].text);
-    const startIdx = (isComprenant && i > 0) ? i - 1 : i;
+    const startIdx = isComprenant && i > 0 ? i - 1 : i;
 
     // Collecter les lignes italiques qui suivent (= sous-items du kit)
     let endIdx = i;
@@ -216,7 +227,7 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
 
     // Dessiner le surlignage
     ctx.save();
-    ctx.globalAlpha = isSection ? 0.40 : 0.25;
+    ctx.globalAlpha = isSection ? 0.4 : 0.25;
     ctx.fillStyle = color.bg || color;
 
     const rectH = isSection ? line.height + 8 : line.height + 4;
@@ -279,7 +290,7 @@ function drawInfoBlock(ctx, canvasWidth, lines, affaireData, scale) {
   const padding = 8 * s;
   const lineH = 13 * s;
   // Position du cadre dans le BP (approx. top-right)
-  const x = canvasWidth - (356 * s);
+  const x = canvasWidth - 356 * s;
   const y = 125 * s;
 
   // Couleurs pour les avatars personnel (rotation)
@@ -382,7 +393,9 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [pdfUrl]);
 
   // ─── Calculer l'échelle auto-fit ───
@@ -396,7 +409,9 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
       const cw = container.clientWidth - legendW - 40;
       const ch = container.clientHeight - 40;
       return Math.max(0.8, Math.min(cw / vp.width, ch / vp.height, SCALE_MAX));
-    } catch { return 1.5; }
+    } catch {
+      return 1.5;
+    }
   }, [pdfDoc, currentPage, showLegend]);
 
   // ─── Pipeline de rendu unique ───
@@ -405,7 +420,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
     let cancelled = false;
 
     (async () => {
-      const effectiveScale = scale ?? await computeAutoScale();
+      const effectiveScale = scale ?? (await computeAutoScale());
       if (cancelled) return;
 
       // Annuler le rendu précédent
@@ -441,7 +456,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
 
         // 3. Extraire le texte et regrouper en lignes
         const textContent = await page.getTextContent();
-        const textItems = textContent.items.filter(i => i.str.trim());
+        const textItems = textContent.items.filter((i) => i.str.trim());
         const lines = groupTextIntoLines(textItems, viewport);
 
         // 4. Dessiner les annotations
@@ -466,42 +481,55 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdfDoc, currentPage, scale, showInfo, showLegend, data, computeAutoScale, infoLines, affaire]);
+  }, [
+    pdfDoc,
+    currentPage,
+    scale,
+    showInfo,
+    showLegend,
+    data,
+    computeAutoScale,
+    infoLines,
+    affaire,
+  ]);
 
   // ─── Rendre une page donnée avec annotations sur un canvas temporaire ───
-  const renderPageToCanvas = useCallback(async (pageNum, targetScale) => {
-    if (!pdfDoc) return null;
-    const page = await pdfDoc.getPage(pageNum);
-    const rotation = page.rotate || 0;
-    const viewport = page.getViewport({ scale: targetScale, rotation });
+  const renderPageToCanvas = useCallback(
+    async (pageNum, targetScale) => {
+      if (!pdfDoc) return null;
+      const page = await pdfDoc.getPage(pageNum);
+      const rotation = page.rotate || 0;
+      const viewport = page.getViewport({ scale: targetScale, rotation });
 
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext('2d');
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
 
-    // Rendre le PDF
-    await page.render({ canvasContext: ctx, viewport }).promise;
+      // Rendre le PDF
+      await page.render({ canvasContext: ctx, viewport }).promise;
 
-    // Dessiner les annotations
-    const textContent = await page.getTextContent();
-    const textItems = textContent.items.filter(i => i.str.trim());
-    const lines = groupTextIntoLines(textItems, viewport);
-    drawAnnotations(ctx, lines, viewport, data);
+      // Dessiner les annotations
+      const textContent = await page.getTextContent();
+      const textItems = textContent.items.filter((i) => i.str.trim());
+      const lines = groupTextIntoLines(textItems, viewport);
+      drawAnnotations(ctx, lines, viewport, data);
 
-    // Bloc info sur la première page
-    if (pageNum === 1 && showInfo && infoLines.length > 0) {
-      drawInfoBlock(ctx, viewport.width, infoLines, affaire, targetScale);
-    }
+      // Bloc info sur la première page
+      if (pageNum === 1 && showInfo && infoLines.length > 0) {
+        drawInfoBlock(ctx, viewport.width, infoLines, affaire, targetScale);
+      }
 
-    return canvas;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pdfDoc, data, showInfo, infoLines, affaire]);
+      return canvas;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [pdfDoc, data, showInfo, infoLines, affaire],
+  );
 
   // ─── Impression multi-pages ───
   const handlePrint = useCallback(async () => {
     if (!pdfDoc) return;
-    const printScale = scale ?? await computeAutoScale();
+    const printScale = scale ?? (await computeAutoScale());
     const images = [];
 
     for (let p = 1; p <= numPages; p++) {
@@ -513,15 +541,26 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
 
     const win = window.open('', '_blank');
     if (win) {
-      const imgsHtml = images.map((src, i) =>
-        '<img src="' + src + '" alt="BP annoté page ' + (i + 1) + '" style="width:100%;height:auto;display:block;' +
-        (i < images.length - 1 ? 'page-break-after:always;' : '') + '" />'
-      ).join('');
+      const imgsHtml = images
+        .map(
+          (src, i) =>
+            '<img src="' +
+            src +
+            '" alt="BP annoté page ' +
+            (i + 1) +
+            '" style="width:100%;height:auto;display:block;' +
+            (i < images.length - 1 ? 'page-break-after:always;' : '') +
+            '" />',
+        )
+        .join('');
 
       win.document.write(
         '<html><head><title>BP Annoté</title>' +
-        '<style>@media print { body { margin: 0; } } body { margin: 0; }</style>' +
-        '</head><body>' + imgsHtml + '<script>window.onload=function(){window.print();window.close();}</scr' + 'ipt></body></html>'
+          '<style>@media print { body { margin: 0; } } body { margin: 0; }</style>' +
+          '</head><body>' +
+          imgsHtml +
+          '<script>window.onload=function(){window.print();window.close();}</scr' +
+          'ipt></body></html>',
       );
       win.document.close();
     }
@@ -530,11 +569,11 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
   // ─── Téléchargement (page courante avec annotations) ───
   const handleDownload = useCallback(async () => {
     if (!pdfDoc) return;
-    const dlScale = scale ?? await computeAutoScale();
+    const dlScale = scale ?? (await computeAutoScale());
     const canvas = await renderPageToCanvas(currentPage, dlScale);
     if (!canvas) return;
 
-    canvas.toBlob(blob => {
+    canvas.toBlob((blob) => {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -546,16 +585,16 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
   }, [pdfDoc, affaire, currentPage, scale, computeAutoScale, renderPageToCanvas]);
 
   // ─── Zoom ───
-  const zoomIn = () => setScale(s => Math.min(SCALE_MAX, (s ?? 1.5) + SCALE_STEP));
-  const zoomOut = () => setScale(s => Math.max(SCALE_MIN, (s ?? 1.5) - SCALE_STEP));
+  const zoomIn = () => setScale((s) => Math.min(SCALE_MAX, (s ?? 1.5) + SCALE_STEP));
+  const zoomOut = () => setScale((s) => Math.max(SCALE_MIN, (s ?? 1.5) - SCALE_STEP));
   const zoomFit = () => setScale(null);
 
   // ─── Raccourcis clavier ───
   useEffect(() => {
     const handle = (e) => {
       if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft') setCurrentPage(p => Math.max(1, p - 1));
-      if (e.key === 'ArrowRight') setCurrentPage(p => Math.min(numPages, p + 1));
+      if (e.key === 'ArrowLeft') setCurrentPage((p) => Math.max(1, p - 1));
+      if (e.key === 'ArrowRight') setCurrentPage((p) => Math.min(numPages, p + 1));
       if (e.key === '+' || e.key === '=') zoomIn();
       if (e.key === '-') zoomOut();
     };
@@ -567,7 +606,10 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
 
   // ─── Rendu ───
   return (
-    <div className="bp-annotation-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}>
+    <div
+      className="bp-annotation-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="bp-annotation-modal">
         {/* Header */}
         <div className="bp-annotation-header">
@@ -576,34 +618,79 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
             {blImport?.filename && <span className="bp-filename">{blImport.filename}</span>}
           </div>
           <div className="bp-annotation-toolbar">
-            <Tooltip content="Zoom -"><Button variant="ghost" onClick={zoomOut} aria-label="Zoom arrière"><ZoomOut size={16} /></Button></Tooltip>
+            <Tooltip content="Zoom -">
+              <Button variant="ghost" onClick={zoomOut} aria-label="Zoom arrière">
+                <ZoomOut size={16} />
+              </Button>
+            </Tooltip>
             <span className="bp-zoom-label">{Math.round(displayScale * 100)}%</span>
-            <Tooltip content="Zoom +"><Button variant="ghost" onClick={zoomIn} aria-label="Zoom avant"><ZoomIn size={16} /></Button></Tooltip>
-            <Tooltip content="Ajuster"><Button variant="ghost" onClick={zoomFit}>🔍</Button></Tooltip>
+            <Tooltip content="Zoom +">
+              <Button variant="ghost" onClick={zoomIn} aria-label="Zoom avant">
+                <ZoomIn size={16} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Ajuster">
+              <Button variant="ghost" onClick={zoomFit}>
+                🔍
+              </Button>
+            </Tooltip>
             <div className="bp-toolbar-sep" />
-            <Button variant="ghost" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+            >
               <ChevronLeft size={16} />
             </Button>
-            <span className="bp-page-label">{currentPage} / {numPages}</span>
-            <Button variant="ghost" onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} disabled={currentPage >= numPages}>
+            <span className="bp-page-label">
+              {currentPage} / {numPages}
+            </span>
+            <Button
+              variant="ghost"
+              onClick={() => setCurrentPage((p) => Math.min(numPages, p + 1))}
+              disabled={currentPage >= numPages}
+            >
               <ChevronRight size={16} />
             </Button>
             <div className="bp-toolbar-sep" />
             <Tooltip content="Légende">
-              <Button variant="ghost" className={showLegend ? 'active' : ''} onClick={() => setShowLegend(v => !v)}>
+              <Button
+                variant="ghost"
+                className={showLegend ? 'active' : ''}
+                onClick={() => setShowLegend((v) => !v)}
+              >
                 <Layers size={16} />
               </Button>
             </Tooltip>
             <Tooltip content="Infos affaire">
-              <Button variant="ghost" className={showInfo ? 'active' : ''} onClick={() => setShowInfo(v => !v)}>
+              <Button
+                variant="ghost"
+                className={showInfo ? 'active' : ''}
+                onClick={() => setShowInfo((v) => !v)}
+              >
                 <Info size={16} />
               </Button>
             </Tooltip>
             <div className="bp-toolbar-sep" />
-            <Tooltip content="Imprimer"><Button variant="ghost" onClick={handlePrint} aria-label="Imprimer"><Printer size={16} /></Button></Tooltip>
-            <Tooltip content="Télécharger"><Button variant="ghost" onClick={handleDownload} aria-label="Télécharger"><Download size={16} /></Button></Tooltip>
+            <Tooltip content="Imprimer">
+              <Button variant="ghost" onClick={handlePrint} aria-label="Imprimer">
+                <Printer size={16} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Télécharger">
+              <Button variant="ghost" onClick={handleDownload} aria-label="Télécharger">
+                <Download size={16} />
+              </Button>
+            </Tooltip>
           </div>
-          <Button variant="ghost" className="bp-annotation-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
+          <Button
+            variant="ghost"
+            className="bp-annotation-close"
+            onClick={onClose}
+            aria-label="Fermer"
+          >
+            <X size={18} />
+          </Button>
         </div>
 
         {/* Body */}
@@ -612,16 +699,20 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
           {showLegend && (
             <div className="bp-legend">
               <div className="bp-legend-title">Familles</div>
-              {sections.filter(s => s.color && s.items.length > 0).map(sec => (
-                <div key={sec.name} className="bp-legend-item">
-                  <span
-                    className="bp-legend-swatch"
-                    style={{ background: sec.color.bg, borderColor: sec.color.border }}
-                  />
-                  <span>{sec.color.emoji} {sec.color.label || sec.name}</span>
-                  <span className="bp-legend-count">{sec.items.length}</span>
-                </div>
-              ))}
+              {sections
+                .filter((s) => s.color && s.items.length > 0)
+                .map((sec) => (
+                  <div key={sec.name} className="bp-legend-item">
+                    <span
+                      className="bp-legend-swatch"
+                      style={{ background: sec.color.bg, borderColor: sec.color.border }}
+                    />
+                    <span>
+                      {sec.color.emoji} {sec.color.label || sec.name}
+                    </span>
+                    <span className="bp-legend-count">{sec.items.length}</span>
+                  </div>
+                ))}
               {stats.kitsCount > 0 && (
                 <div className="bp-legend-item">
                   <span className="bp-legend-swatch bp-legend-kit" />

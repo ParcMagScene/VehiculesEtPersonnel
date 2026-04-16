@@ -21,7 +21,9 @@
   cursor: pointer;
   font-size: var(--font-base);
   color: var(--theme-text-primary);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   text-align: left;
   gap: 8px;
 }

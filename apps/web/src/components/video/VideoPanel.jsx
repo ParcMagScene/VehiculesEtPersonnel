@@ -9,7 +9,23 @@ import CameraGrid from './CameraGrid';
 import CameraPTZControls from './CameraPTZControls';
 import PlaybackPanel from './PlaybackPanel';
 import PresetPanel from './PresetPanel';
-import { Plus, Settings, RefreshCw, Video, List, Grid, Activity, Shield, LayoutGrid, Maximize2, Repeat, ChevronLeft, ChevronRight, Film, Monitor } from 'lucide-react';
+import {
+  Plus,
+  Settings,
+  RefreshCw,
+  Video,
+  List,
+  Grid,
+  Activity,
+  Shield,
+  LayoutGrid,
+  Maximize2,
+  Repeat,
+  ChevronLeft,
+  ChevronRight,
+  Film,
+  Monitor,
+} from 'lucide-react';
 import api from '../../utils/api';
 import './VideoPanel.css';
 import { Button, Table, InlineAlert, Tooltip, Divider, LoadingOverlay } from '@/design-system';
@@ -27,7 +43,17 @@ const GRID_LAYOUTS = [
 const CameraSettingsModal = lazy(() => import('./CameraSettingsModal'));
 
 const VideoPanel = ({ currentUser }) => {
-  const { cameras, loading, error, refresh, createCamera, updateCamera, deleteCamera, testCamera, testAll } = useCameraList();
+  const {
+    cameras,
+    loading,
+    error,
+    refresh,
+    createCamera,
+    updateCamera,
+    deleteCamera,
+    testCamera,
+    testAll,
+  } = useCameraList();
   const [viewMode, setViewMode] = useState('grid'); // grid | list | admin
   const [selectedCamera, setSelectedCamera] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -49,13 +75,14 @@ const VideoPanel = ({ currentUser }) => {
 
   // Vérifier si MediaMTX est disponible au chargement
   useEffect(() => {
-    api.getVideoProxyStatus()
-      .then(status => setProxyAvailable(status?.running === true))
+    api
+      .getVideoProxyStatus()
+      .then((status) => setProxyAvailable(status?.running === true))
       .catch(() => setProxyAvailable(false));
   }, []);
 
   const isAdmin = currentUser?.role === ROLES.ADMIN;
-  const enabledCameras = cameras.filter(c => c.enabled);
+  const enabledCameras = cameras.filter((c) => c.enabled);
   const totalPages = Math.ceil(enabledCameras.length / gridSize);
 
   // Reset page si hors limites
@@ -67,7 +94,7 @@ const VideoPanel = ({ currentUser }) => {
   useEffect(() => {
     if (isRotating && totalPages > 1) {
       rotateTimer.current = setInterval(() => {
-        setGridPage(prev => (prev + 1) % totalPages);
+        setGridPage((prev) => (prev + 1) % totalPages);
       }, 15000);
     }
     return () => clearInterval(rotateTimer.current);
@@ -77,15 +104,23 @@ const VideoPanel = ({ currentUser }) => {
   useEffect(() => {
     if (!selectedCamera?.ptzSupported) return;
     const KEY_MAP = {
-      ArrowUp: 'up', ArrowDown: 'down',
-      ArrowLeft: 'left', ArrowRight: 'right',
-      '+': 'zoomin', '=': 'zoomin',
+      ArrowUp: 'up',
+      ArrowDown: 'down',
+      ArrowLeft: 'left',
+      ArrowRight: 'right',
+      '+': 'zoomin',
+      '=': 'zoomin',
       '-': 'zoomout',
     };
     const onKeyDown = (e) => {
       const cmd = KEY_MAP[e.key];
       if (!cmd || activeKeys.current.has(e.key)) return;
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+      if (
+        e.target.tagName === 'INPUT' ||
+        e.target.tagName === 'TEXTAREA' ||
+        e.target.tagName === 'SELECT'
+      )
+        return;
       e.preventDefault();
       activeKeys.current.add(e.key);
       startMove(cmd);
@@ -107,7 +142,7 @@ const VideoPanel = ({ currentUser }) => {
   }, [selectedCamera, startMove, stopMove]);
 
   const handleSelectCamera = useCallback((cam) => {
-    setSelectedCamera(prev => prev?.id === cam.id ? null : cam);
+    setSelectedCamera((prev) => (prev?.id === cam.id ? null : cam));
   }, []);
 
   const handlePlayback = useCallback((cam) => {
@@ -115,38 +150,52 @@ const VideoPanel = ({ currentUser }) => {
     setViewMode('playback');
   }, []);
 
-  const handleSaveCamera = useCallback(async (formData) => {
-    if (editingCamera?.id) {
-      await updateCamera(editingCamera.id, formData);
-    } else {
-      await createCamera(formData);
-    }
-    setEditingCamera(null);
-    setShowSettings(false);
-  }, [editingCamera, updateCamera, createCamera]);
+  const handleSaveCamera = useCallback(
+    async (formData) => {
+      if (editingCamera?.id) {
+        await updateCamera(editingCamera.id, formData);
+      } else {
+        await createCamera(formData);
+      }
+      setEditingCamera(null);
+      setShowSettings(false);
+    },
+    [editingCamera, updateCamera, createCamera],
+  );
 
-  const handleDeleteCamera = useCallback((id) => {
-    confirm({
-      title: 'Supprimer',
-      message: 'Supprimer cette caméra ?',
-      variant: 'danger',
-      confirmLabel: 'Supprimer',
-      onConfirm: async () => {
-        await deleteCamera(id);
-        setEditingCamera(null);
-        setShowSettings(false);
-      },
-    });
-  }, [deleteCamera, confirm]);
+  const handleDeleteCamera = useCallback(
+    (id) => {
+      confirm({
+        title: 'Supprimer',
+        message: 'Supprimer cette caméra ?',
+        variant: 'danger',
+        confirmLabel: 'Supprimer',
+        onConfirm: async () => {
+          await deleteCamera(id);
+          setEditingCamera(null);
+          setShowSettings(false);
+        },
+      });
+    },
+    [deleteCamera, confirm],
+  );
 
   const handleTestAll = useCallback(async () => {
     setTestingAll(true);
-    try { await testAll(); } finally { setTestingAll(false); }
+    try {
+      await testAll();
+    } finally {
+      setTestingAll(false);
+    }
   }, [testAll]);
 
   const handleDetachPreset = useCallback((presetId) => {
     const url = `${window.location.origin}?detached-preset=${presetId}`;
-    window.open(url, `preset-${presetId}`, 'width=960,height=720,menubar=no,toolbar=no,location=no,status=no');
+    window.open(
+      url,
+      `preset-${presetId}`,
+      'width=960,height=720,menubar=no,toolbar=no,location=no,status=no',
+    );
   }, []);
 
   if (loading) {
@@ -164,27 +213,64 @@ const VideoPanel = ({ currentUser }) => {
         <div className="video-panel__title">
           <Video size={20} />
           <h2>Surveillance Vidéo</h2>
-          <span className="video-panel__count">{enabledCameras.length} caméra{enabledCameras.length !== 1 ? 's' : ''}</span>
+          <span className="video-panel__count">
+            {enabledCameras.length} caméra{enabledCameras.length !== 1 ? 's' : ''}
+          </span>
         </div>
         <div className="video-panel__actions">
           {/* Vues */}
           <div className="video-panel__view-toggle">
-            <Tooltip content="Vue grille" position="bottom"><Button variant="ghost" className={viewMode === 'grid' ? 'active' : ''} onClick={() => setViewMode('grid')} aria-label="Vue grille">
-              <Grid size={18} />
-            </Button></Tooltip>
-            <Tooltip content="Vue liste" position="bottom"><Button variant="ghost" className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} aria-label="Vue liste">
-              <List size={18} />
-            </Button></Tooltip>
-            <Tooltip content="Enregistrements" position="bottom"><Button variant="ghost" className={viewMode === 'playback' ? 'active' : ''} onClick={() => setViewMode('playback')} aria-label="Enregistrements">
-              <Film size={18} />
-            </Button></Tooltip>
-            <Tooltip content="Presets multi-caméras" position="bottom"><Button variant="ghost" className={viewMode === 'preset' ? 'active' : ''} onClick={() => setViewMode('preset')} aria-label="Presets multi-caméras">
-              <Monitor size={18} />
-            </Button></Tooltip>
+            <Tooltip content="Vue grille" position="bottom">
+              <Button
+                variant="ghost"
+                className={viewMode === 'grid' ? 'active' : ''}
+                onClick={() => setViewMode('grid')}
+                aria-label="Vue grille"
+              >
+                <Grid size={18} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Vue liste" position="bottom">
+              <Button
+                variant="ghost"
+                className={viewMode === 'list' ? 'active' : ''}
+                onClick={() => setViewMode('list')}
+                aria-label="Vue liste"
+              >
+                <List size={18} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Enregistrements" position="bottom">
+              <Button
+                variant="ghost"
+                className={viewMode === 'playback' ? 'active' : ''}
+                onClick={() => setViewMode('playback')}
+                aria-label="Enregistrements"
+              >
+                <Film size={18} />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Presets multi-caméras" position="bottom">
+              <Button
+                variant="ghost"
+                className={viewMode === 'preset' ? 'active' : ''}
+                onClick={() => setViewMode('preset')}
+                aria-label="Presets multi-caméras"
+              >
+                <Monitor size={18} />
+              </Button>
+            </Tooltip>
             {isAdmin && (
-              <Tooltip content="Administration" position="bottom"><Button variant="ghost" className={viewMode === ROLES.ADMIN ? 'active' : ''} onClick={() => setViewMode('admin')} aria-label="Administration">
-                <Settings size={18} />
-              </Button></Tooltip>
+              <Tooltip content="Administration" position="bottom">
+                <Button
+                  variant="ghost"
+                  className={viewMode === ROLES.ADMIN ? 'active' : ''}
+                  onClick={() => setViewMode('admin')}
+                  aria-label="Administration"
+                >
+                  <Settings size={18} />
+                </Button>
+              </Tooltip>
             )}
           </div>
 
@@ -193,15 +279,19 @@ const VideoPanel = ({ currentUser }) => {
             <>
               <Divider orientation="vertical" />
               <div className="video-panel__layout-btns">
-                {GRID_LAYOUTS.map(l => (
+                {GRID_LAYOUTS.map((l) => (
                   <Tooltip key={l.id} content={`Grille ${l.label} caméras`} position="bottom">
-                  <Button variant="ghost"
-                    className={`video-panel__layout-btn ${gridSize === l.id ? 'active' : ''}`}
-                    onClick={() => { setGridSize(l.id); setGridPage(0); }}
-                  >
-                    {l.label === '1' ? <Maximize2 size={14} /> : <LayoutGrid size={14} />}
-                    <span>{l.label}</span>
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      className={`video-panel__layout-btn ${gridSize === l.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setGridSize(l.id);
+                        setGridPage(0);
+                      }}
+                    >
+                      {l.label === '1' ? <Maximize2 size={14} /> : <LayoutGrid size={14} />}
+                      <span>{l.label}</span>
+                    </Button>
                   </Tooltip>
                 ))}
               </div>
@@ -209,24 +299,41 @@ const VideoPanel = ({ currentUser }) => {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="video-panel__page-controls">
-                  <Tooltip content="Page précédente" position="bottom"><Button variant="ghost" onClick={() => setGridPage(p => Math.max(0, p - 1))} disabled={gridPage === 0}>
-                    <ChevronLeft size={16} />
-                  </Button></Tooltip>
-                  <span className="video-panel__page-info">{gridPage + 1}/{totalPages}</span>
-                  <Tooltip content="Page suivante" position="bottom"><Button variant="ghost" onClick={() => setGridPage(p => Math.min(totalPages - 1, p + 1))} disabled={gridPage >= totalPages - 1}>
-                    <ChevronRight size={16} />
-                  </Button></Tooltip>
+                  <Tooltip content="Page précédente" position="bottom">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setGridPage((p) => Math.max(0, p - 1))}
+                      disabled={gridPage === 0}
+                    >
+                      <ChevronLeft size={16} />
+                    </Button>
+                  </Tooltip>
+                  <span className="video-panel__page-info">
+                    {gridPage + 1}/{totalPages}
+                  </span>
+                  <Tooltip content="Page suivante" position="bottom">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setGridPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={gridPage >= totalPages - 1}
+                    >
+                      <ChevronRight size={16} />
+                    </Button>
+                  </Tooltip>
                 </div>
               )}
 
               {/* Rotation auto */}
               {totalPages > 1 && (
-                <Tooltip content={isRotating ? 'Arrêter la rotation' : 'Rotation automatique'} position="bottom">
+                <Tooltip
+                  content={isRotating ? 'Arrêter la rotation' : 'Rotation automatique'}
+                  position="bottom"
+                >
                   <Button
                     variant="secondary"
                     size="sm"
                     className={isRotating ? 'active' : ''}
-                    onClick={() => setIsRotating(v => !v)}
+                    onClick={() => setIsRotating((v) => !v)}
                   >
                     <Repeat size={16} />
                   </Button>
@@ -243,7 +350,14 @@ const VideoPanel = ({ currentUser }) => {
             </Button>
           </Tooltip>
           {isAdmin && (
-            <Button variant="primary" size="sm" onClick={() => { setEditingCamera({}); setShowSettings(true); }}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setEditingCamera({});
+                setShowSettings(true);
+              }}
+            >
               <Plus size={16} /> Ajouter
             </Button>
           )}
@@ -267,7 +381,17 @@ const VideoPanel = ({ currentUser }) => {
             <div className="video-panel__empty">
               <Video size={48} style={{ opacity: 0.3 }} />
               <p>Aucune caméra configurée</p>
-              {isAdmin && <Button variant="primary" onClick={() => { setEditingCamera({}); setShowSettings(true); }}>Ajouter une caméra</Button>}
+              {isAdmin && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setEditingCamera({});
+                    setShowSettings(true);
+                  }}
+                >
+                  Ajouter une caméra
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -320,24 +444,34 @@ const VideoPanel = ({ currentUser }) => {
               </tr>
             </thead>
             <tbody>
-              {cameras.map(cam => (
+              {cameras.map((cam) => (
                 <tr key={cam.id} className={cam.enabled ? '' : 'disabled-row'}>
                   <td>
                     <span className={`status-dot status-dot--${cam.status || 'offline'}`} />
                   </td>
                   <td>{cam.name}</td>
                   <td>{cam.brand}</td>
-                  <td><code>{cam.ip}</code></td>
+                  <td>
+                    <code>{cam.ip}</code>
+                  </td>
                   <td>{cam.location || '—'}</td>
                   <td>{cam.ptzSupported ? '✓' : '—'}</td>
                   <td>{cam.lastSeen ? new Date(cam.lastSeen).toLocaleString('fr-FR') : '—'}</td>
                   {isAdmin && (
                     <td>
- <Tooltip content="Configurer la caméra" position="bottom">
-   <Button variant="ghost" size="xs" iconOnly onClick={() => { setEditingCamera(cam); setShowSettings(true); }}>
-                        <Settings size={14} />
-                      </Button>
- </Tooltip>
+                      <Tooltip content="Configurer la caméra" position="bottom">
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          iconOnly
+                          onClick={() => {
+                            setEditingCamera(cam);
+                            setShowSettings(true);
+                          }}
+                        >
+                          <Settings size={14} />
+                        </Button>
+                      </Tooltip>
                     </td>
                   )}
                 </tr>
@@ -350,12 +484,21 @@ const VideoPanel = ({ currentUser }) => {
       {viewMode === ROLES.ADMIN && isAdmin && (
         <div className="video-panel__admin">
           <div className="video-panel__admin-section">
-            <h3><Shield size={18} /> Administration des caméras</h3>
+            <h3>
+              <Shield size={18} /> Administration des caméras
+            </h3>
             <div className="video-panel__admin-actions">
               <Button variant="secondary" onClick={handleTestAll} disabled={testingAll}>
-                <Activity size={16} /> {testingAll ? 'Test en cours...' : 'Tester toutes les caméras'}
+                <Activity size={16} />{' '}
+                {testingAll ? 'Test en cours...' : 'Tester toutes les caméras'}
               </Button>
-              <Button variant="primary" onClick={() => { setEditingCamera({}); setShowSettings(true); }}>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setEditingCamera({});
+                  setShowSettings(true);
+                }}
+              >
                 <Plus size={16} /> Ajouter une caméra
               </Button>
             </div>
@@ -377,12 +520,19 @@ const VideoPanel = ({ currentUser }) => {
               </tr>
             </thead>
             <tbody>
-              {cameras.map(cam => (
+              {cameras.map((cam) => (
                 <tr key={cam.id}>
-                  <td><span className={`status-dot status-dot--${cam.status || 'offline'}`} /></td>
+                  <td>
+                    <span className={`status-dot status-dot--${cam.status || 'offline'}`} />
+                  </td>
                   <td>{cam.name}</td>
-                  <td>{cam.brand}{cam.model ? ` / ${cam.model}` : ''}</td>
-                  <td><code>{cam.ip}</code></td>
+                  <td>
+                    {cam.brand}
+                    {cam.model ? ` / ${cam.model}` : ''}
+                  </td>
+                  <td>
+                    <code>{cam.ip}</code>
+                  </td>
                   <td>{cam.rtspPort || 554}</td>
                   <td>{cam.location || '—'}</td>
                   <td>{cam.zone || '—'}</td>
@@ -391,7 +541,15 @@ const VideoPanel = ({ currentUser }) => {
                   <td>{cam.enabled ? '✅' : '❌'}</td>
                   <td>
                     <Tooltip content="Modifier">
-                      <Button variant="ghost" size="xs" iconOnly onClick={() => { setEditingCamera(cam); setShowSettings(true); }}>
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        iconOnly
+                        onClick={() => {
+                          setEditingCamera(cam);
+                          setShowSettings(true);
+                        }}
+                      >
                         <Settings size={14} />
                       </Button>
                     </Tooltip>
@@ -399,7 +557,11 @@ const VideoPanel = ({ currentUser }) => {
                 </tr>
               ))}
               {cameras.length === 0 && (
-                <tr><td colSpan={11} style={{ textAlign: 'center', opacity: 0.5 }}>Aucune caméra</td></tr>
+                <tr>
+                  <td colSpan={11} style={{ textAlign: 'center', opacity: 0.5 }}>
+                    Aucune caméra
+                  </td>
+                </tr>
               )}
             </tbody>
           </Table>
@@ -414,7 +576,10 @@ const VideoPanel = ({ currentUser }) => {
             onSave={handleSaveCamera}
             onDelete={isAdmin ? handleDeleteCamera : null}
             onTest={isAdmin ? testCamera : null}
-            onClose={() => { setShowSettings(false); setEditingCamera(null); }}
+            onClose={() => {
+              setShowSettings(false);
+              setEditingCamera(null);
+            }}
           />
         </Suspense>
       )}

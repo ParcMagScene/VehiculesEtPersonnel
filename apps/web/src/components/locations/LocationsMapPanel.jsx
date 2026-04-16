@@ -79,22 +79,11 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
         </div>
 
         {/* Contenu carte — no-drag empêche useDraggableModals.onDragStart */}
-        <div
-          className="locations-map-body no-drag"
-          ref={mapContainerRef}
-        >
+        <div className="locations-map-body no-drag" ref={mapContainerRef}>
           {activeView === 'general' ? (
-            <MapGeneral
-              locations={locations}
-              darkMode={darkMode}
-              onEditLocation={onEditLocation}
-            />
+            <MapGeneral locations={locations} darkMode={darkMode} onEditLocation={onEditLocation} />
           ) : (
-            <MapLocal
-              locations={locations}
-              darkMode={darkMode}
-              onEditLocation={onEditLocation}
-            />
+            <MapLocal locations={locations} darkMode={darkMode} onEditLocation={onEditLocation} />
           )}
         </div>
 
@@ -103,10 +92,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
           <span className="locations-map-legend-title">Légende :</span>
           {Object.entries(LOCATION_TYPES).map(([type, config]) => (
             <span key={type} className="locations-map-legend-item">
-              <span
-                className="locations-map-legend-dot"
-                style={{ background: config.color }}
-              />
+              <span className="locations-map-legend-dot" style={{ background: config.color }} />
               {config.label}
             </span>
           ))}
@@ -121,10 +107,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
       </div>
 
       {showDualPrint && (
-        <MapDualPrintModal
-          locations={locations}
-          onClose={() => setShowDualPrint(false)}
-        />
+        <MapDualPrintModal locations={locations} onClose={() => setShowDualPrint(false)} />
       )}
     </div>
   );

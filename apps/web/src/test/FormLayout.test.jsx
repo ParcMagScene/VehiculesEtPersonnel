@@ -21,7 +21,7 @@ describe('FormLayout', () => {
     render(
       <FormLayout onSubmit={onSubmit}>
         <button type="submit">Go</button>
-      </FormLayout>
+      </FormLayout>,
     );
     await user.click(screen.getByRole('button', { name: 'Go' }));
     expect(onSubmit).toHaveBeenCalledOnce();
@@ -46,14 +46,23 @@ describe('FormSection', () => {
   });
 
   it('affiche la description', () => {
-    render(<FormSection title="T" description="desc">x</FormSection>);
+    render(
+      <FormSection title="T" description="desc">
+        x
+      </FormSection>,
+    );
     expect(screen.getByText('desc')).toHaveClass('ui-form-section-desc');
   });
 });
 
 describe('FormRow', () => {
   it('rend les enfants dans une rangée', () => {
-    render(<FormRow><span>A</span><span>B</span></FormRow>);
+    render(
+      <FormRow>
+        <span>A</span>
+        <span>B</span>
+      </FormRow>,
+    );
     expect(screen.getByText('A')).toBeInTheDocument();
     expect(screen.getByText('B')).toBeInTheDocument();
   });
@@ -66,7 +75,11 @@ describe('FormRow', () => {
 
 describe('FormActions', () => {
   it('rend les boutons', () => {
-    render(<FormActions><button>OK</button></FormActions>);
+    render(
+      <FormActions>
+        <button>OK</button>
+      </FormActions>,
+    );
     expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument();
   });
 

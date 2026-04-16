@@ -22,7 +22,10 @@ export function useWebRTCStream(camera) {
       return;
     }
     reconnectAttempts.current++;
-    if (pcRef.current) { pcRef.current.close(); pcRef.current = null; }
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
     if (sessionTokenRef.current) {
       api.closeVideoSession(sessionTokenRef.current).catch(() => {});
       sessionTokenRef.current = null;
@@ -100,7 +103,9 @@ export function useWebRTCStream(camera) {
   }, [camera?.id, camera?.enabled, doReconnect]);
 
   // Garder connect à jour dans la ref
-  useEffect(() => { connectRef.current = connect; }, [connect]);
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const disconnect = useCallback(async () => {
     clearTimeout(reconnectTimer.current);
@@ -122,7 +127,9 @@ export function useWebRTCStream(camera) {
 
   // Cleanup au démontage
   useEffect(() => {
-    return () => { disconnect(); };
+    return () => {
+      disconnect();
+    };
   }, [disconnect]);
 
   return { videoRef, status, error, connect, disconnect };

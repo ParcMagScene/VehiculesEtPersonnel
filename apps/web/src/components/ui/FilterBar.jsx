@@ -12,16 +12,10 @@
  *     ]}
  *   />
  */
-export default function FilterBar({
-  value,
-  onChange,
-  options = [],
-  size = 'md',
-  className = '',
-}) {
+export default function FilterBar({ value, onChange, options = [], size = 'md', className = '' }) {
   return (
     <div className={`ui-filter-bar ui-filter-bar--${size} ${className}`} role="radiogroup">
-      {options.map(opt => (
+      {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
@@ -33,9 +27,7 @@ export default function FilterBar({
         >
           {opt.icon && <span className="ui-filter-btn__icon">{opt.icon}</span>}
           <span>{opt.label}</span>
-          {opt.count != null && (
-            <span className="ui-filter-btn__count">{opt.count}</span>
-          )}
+          {opt.count != null && <span className="ui-filter-btn__count">{opt.count}</span>}
         </button>
       ))}
     </div>

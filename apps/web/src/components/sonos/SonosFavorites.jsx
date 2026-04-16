@@ -5,10 +5,7 @@
 import { useState, useEffect, memo } from 'react';
 import { Star, Search, Music } from 'lucide-react';
 
-function SonosFavorites({
-  favorites, favoritesLoading, loadFavorites, playFavorite,
-  nowPlaying,
-}) {
+function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavorite, nowPlaying }) {
   const [search, setSearch] = useState('');
 
   // Auto-load favorites on mount
@@ -17,7 +14,7 @@ function SonosFavorites({
   }, [favorites.length, favoritesLoading, loadFavorites]);
 
   const filtered = search
-    ? favorites.filter(f => f.title?.toLowerCase().includes(search.toLowerCase()))
+    ? favorites.filter((f) => f.title?.toLowerCase().includes(search.toLowerCase()))
     : favorites;
 
   const currentTitle = nowPlaying?.title;
@@ -38,7 +35,7 @@ function SonosFavorites({
             type="text"
             placeholder="Rechercher…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       )}
@@ -68,9 +65,7 @@ function SonosFavorites({
               )}
               <div className="sonos-favs-meta">
                 <span className="sonos-favs-name">{fav.title}</span>
-                {fav.description && (
-                  <span className="sonos-favs-desc">{fav.description}</span>
-                )}
+                {fav.description && <span className="sonos-favs-desc">{fav.description}</span>}
               </div>
             </button>
           ))

@@ -29,13 +29,16 @@ function MessageFormModal({ message, onSave, onClose }) {
         dateEnd: message.date_end || '',
       });
     }
-    api.getDisplayTemplates().then(data => {
-      setTemplates(Array.isArray(data) ? data : []);
-    }).catch(() => {});
+    api
+      .getDisplayTemplates()
+      .then((data) => {
+        setTemplates(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {});
   }, [message]);
 
   const handleChange = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = useCallback(async () => {
@@ -73,64 +76,73 @@ function MessageFormModal({ message, onSave, onClose }) {
       title={message ? 'Modifier le message' : 'Nouveau message'}
       icon={<MessageSquare size={18} />}
       size="md"
-      footer={<>
-        <Button variant="ghost" onClick={onClose}>Annuler</Button>
-        <Button variant="primary" onClick={handleSave} disabled={saving}>
-          <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
-        </Button>
-      </>}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
+            <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </Button>
+        </>
+      }
     >
-          <FormField className="form-group" label="Titre" required>
-            <Input
-              type="text"
-              value={form.title}
-              onChange={e => handleChange('title', e.target.value)}
-              placeholder="Ex: Bienvenue au spectacle"
-              autoFocus
-            />
-          </FormField>
-          <FormField className="form-group" label="Contenu">
-            <Textarea
-              value={form.body}
-              onChange={e => handleChange('body', e.target.value)}
-              rows={4}
-              placeholder="Texte du message…"
-            />
-          </FormField>
-          <div className="form-row">
-            <FormField className="form-group" label="Priorité">
-              <Select value={form.priority} onChange={e => handleChange('priority', e.target.value)}>
-                <option value="low">Basse</option>
-                <option value="normal">Normale</option>
-                <option value="high">Haute</option>
-                <option value="urgent">Urgente</option>
-              </Select>
-            </FormField>
-            <FormField className="form-group" label="Template">
-              <Select value={form.templateId} onChange={e => handleChange('templateId', e.target.value)}>
-                <option value="">— Par défaut —</option>
-                {templates.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </Select>
-            </FormField>
-          </div>
-          <div className="form-row">
-            <FormField className="form-group" label="Date début">
-              <input
-                type="date"
-                value={form.dateStart}
-                onChange={e => handleChange('dateStart', e.target.value)}
-              />
-            </FormField>
-            <FormField className="form-group" label="Date fin">
-              <input
-                type="date"
-                value={form.dateEnd}
-                onChange={e => handleChange('dateEnd', e.target.value)}
-              />
-            </FormField>
-          </div>
+      <FormField className="form-group" label="Titre" required>
+        <Input
+          type="text"
+          value={form.title}
+          onChange={(e) => handleChange('title', e.target.value)}
+          placeholder="Ex: Bienvenue au spectacle"
+          autoFocus
+        />
+      </FormField>
+      <FormField className="form-group" label="Contenu">
+        <Textarea
+          value={form.body}
+          onChange={(e) => handleChange('body', e.target.value)}
+          rows={4}
+          placeholder="Texte du message…"
+        />
+      </FormField>
+      <div className="form-row">
+        <FormField className="form-group" label="Priorité">
+          <Select value={form.priority} onChange={(e) => handleChange('priority', e.target.value)}>
+            <option value="low">Basse</option>
+            <option value="normal">Normale</option>
+            <option value="high">Haute</option>
+            <option value="urgent">Urgente</option>
+          </Select>
+        </FormField>
+        <FormField className="form-group" label="Template">
+          <Select
+            value={form.templateId}
+            onChange={(e) => handleChange('templateId', e.target.value)}
+          >
+            <option value="">— Par défaut —</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+      </div>
+      <div className="form-row">
+        <FormField className="form-group" label="Date début">
+          <input
+            type="date"
+            value={form.dateStart}
+            onChange={(e) => handleChange('dateStart', e.target.value)}
+          />
+        </FormField>
+        <FormField className="form-group" label="Date fin">
+          <input
+            type="date"
+            value={form.dateEnd}
+            onChange={(e) => handleChange('dateEnd', e.target.value)}
+          />
+        </FormField>
+      </div>
     </ModalLayout>
   );
 }

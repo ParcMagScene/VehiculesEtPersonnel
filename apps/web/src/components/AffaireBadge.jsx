@@ -11,15 +11,18 @@ let _fetchPromise = null;
 
 function ensureTypeCache() {
   if (!_fetchPromise) {
-    _fetchPromise = api.getAffaires()
-      .then(data => {
+    _fetchPromise = api
+      .getAffaires()
+      .then((data) => {
         const affaires = data.affaires || data || [];
         for (const a of affaires) {
           const num = a.numeroAffaire || a.numero_affaire;
           if (num && a.type) _typeCache.set(num, a.type);
         }
       })
-      .catch(() => { _fetchPromise = null; }); // retry on error
+      .catch(() => {
+        _fetchPromise = null;
+      }); // retry on error
   }
   return _fetchPromise;
 }
@@ -38,14 +41,21 @@ function ensureTypeCache() {
  * @param {boolean} [showIcon] - Afficher l'icône Briefcase (défaut: false)
  * @param {string} [className] - Classes CSS additionnelles
  */
-const AffaireBadge = ({ numero, type: typeProp, onNavigate, size = 'md', showIcon = false, className = '' }) => {
+const AffaireBadge = ({
+  numero,
+  type: typeProp,
+  onNavigate,
+  size = 'md',
+  showIcon = false,
+  className = '',
+}) => {
   const navigationContext = useNavigation();
   const [, forceUpdate] = useState(0);
 
   // Auto-résolution du type si non fourni en prop
   useEffect(() => {
     if (typeProp || !numero || _typeCache.has(numero)) return;
-    ensureTypeCache().then(() => forceUpdate(v => v + 1));
+    ensureTypeCache().then(() => forceUpdate((v) => v + 1));
   }, [numero, typeProp]);
 
   if (!numero) return null;
@@ -55,9 +65,9 @@ const AffaireBadge = ({ numero, type: typeProp, onNavigate, size = 'md', showIco
   const color = typeInfo.color;
 
   // Résoudre le handler : prop explicite > context automatique
-  const resolvedNavigate = onNavigate || (navigationContext
-    ? (num) => navigationContext('affaire', { numero: num })
-    : null);
+  const resolvedNavigate =
+    onNavigate ||
+    (navigationContext ? (num) => navigationContext('affaire', { numero: num }) : null);
 
   const handleClick = (e) => {
     e.stopPropagation();

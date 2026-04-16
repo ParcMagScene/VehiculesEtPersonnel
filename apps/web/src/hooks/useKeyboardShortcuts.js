@@ -3,7 +3,9 @@ import { useEffect, useCallback, useRef } from 'react';
 /**
  * Détection de l'OS pour l'affichage des raccourcis
  */
-export const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+export const isMac =
+  typeof navigator !== 'undefined' &&
+  /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
 
 /**
  * Symboles de touches selon l'OS
@@ -25,7 +27,12 @@ export const SHORTCUTS = [
   { id: 'open_messaging', label: 'Messagerie', keys: [MOD_KEY, 'M'], category: 'navigation' },
   { id: 'open_help', label: 'Aide', keys: ['F1'], category: 'general' },
   { id: 'open_preferences', label: 'Préférences', keys: [MOD_KEY, ','], category: 'general' },
-  { id: 'new_reservation', label: 'Nouvelle réservation', keys: [MOD_KEY, 'N'], category: 'actions' },
+  {
+    id: 'new_reservation',
+    label: 'Nouvelle réservation',
+    keys: [MOD_KEY, 'N'],
+    category: 'actions',
+  },
   { id: 'close_modal', label: 'Fermer la fenêtre active', keys: ['Échap'], category: 'general' },
   { id: 'nav_prev', label: 'Période précédente', keys: ['←'], category: 'calendrier' },
   { id: 'nav_next', label: 'Période suivante', keys: ['→'], category: 'calendrier' },
@@ -46,50 +53,104 @@ export const SHORTCUT_CATEGORIES = {
  */
 export function useKeyboardShortcuts(handlers, enabled = true) {
   const handlersRef = useRef(handlers);
-  useEffect(() => { handlersRef.current = handlers; });
+  useEffect(() => {
+    handlersRef.current = handlers;
+  });
 
-  const handleKeyDown = useCallback((e) => {
-    if (!enabled) return;
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (!enabled) return;
 
-    // Ne pas intercepter si on est dans un champ de saisie
-    const tag = e.target.tagName;
-    const editable = e.target.isContentEditable;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || editable) {
-      // Seul Escape est permis dans les champs
-      if (e.key !== 'Escape') return;
-    }
+      // Ne pas intercepter si on est dans un champ de saisie
+      const tag = e.target.tagName;
+      const editable = e.target.isContentEditable;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || editable) {
+        // Seul Escape est permis dans les champs
+        if (e.key !== 'Escape') return;
+      }
 
-    const mod = isMac ? e.metaKey : e.ctrlKey;
+      const mod = isMac ? e.metaKey : e.ctrlKey;
 
-    // Mod + chiffre : navigation modules
-    if (mod && e.key === '1') { e.preventDefault(); handlersRef.current.mod_vehicles?.(); return; }
-    if (mod && e.key === '2') { e.preventDefault(); handlersRef.current.mod_personnel?.(); return; }
-    if (mod && e.key === '3') { e.preventDefault(); handlersRef.current.mod_affaires?.(); return; }
-    if (mod && e.key === '4') { e.preventDefault(); handlersRef.current.mod_equipment?.(); return; }
-    if (mod && e.key === '5') { e.preventDefault(); handlersRef.current.mod_orders?.(); return; }
+      // Mod + chiffre : navigation modules
+      if (mod && e.key === '1') {
+        e.preventDefault();
+        handlersRef.current.mod_vehicles?.();
+        return;
+      }
+      if (mod && e.key === '2') {
+        e.preventDefault();
+        handlersRef.current.mod_personnel?.();
+        return;
+      }
+      if (mod && e.key === '3') {
+        e.preventDefault();
+        handlersRef.current.mod_affaires?.();
+        return;
+      }
+      if (mod && e.key === '4') {
+        e.preventDefault();
+        handlersRef.current.mod_equipment?.();
+        return;
+      }
+      if (mod && e.key === '5') {
+        e.preventDefault();
+        handlersRef.current.mod_orders?.();
+        return;
+      }
 
-    // Mod + M : messagerie
-    if (mod && (e.key === 'm' || e.key === 'M')) { e.preventDefault(); handlersRef.current.open_messaging?.(); return; }
+      // Mod + M : messagerie
+      if (mod && (e.key === 'm' || e.key === 'M')) {
+        e.preventDefault();
+        handlersRef.current.open_messaging?.();
+        return;
+      }
 
-    // Mod + N : nouvelle réservation
-    if (mod && (e.key === 'n' || e.key === 'N')) { e.preventDefault(); handlersRef.current.new_reservation?.(); return; }
+      // Mod + N : nouvelle réservation
+      if (mod && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        handlersRef.current.new_reservation?.();
+        return;
+      }
 
-    // Mod + , : préférences
-    if (mod && e.key === ',') { e.preventDefault(); handlersRef.current.open_preferences?.(); return; }
+      // Mod + , : préférences
+      if (mod && e.key === ',') {
+        e.preventDefault();
+        handlersRef.current.open_preferences?.();
+        return;
+      }
 
-    // Mod + T : aujourd'hui
-    if (mod && (e.key === 't' || e.key === 'T')) { e.preventDefault(); handlersRef.current.nav_today?.(); return; }
+      // Mod + T : aujourd'hui
+      if (mod && (e.key === 't' || e.key === 'T')) {
+        e.preventDefault();
+        handlersRef.current.nav_today?.();
+        return;
+      }
 
-    // F1 : aide
-    if (e.key === 'F1') { e.preventDefault(); handlersRef.current.open_help?.(); return; }
+      // F1 : aide
+      if (e.key === 'F1') {
+        e.preventDefault();
+        handlersRef.current.open_help?.();
+        return;
+      }
 
-    // Escape : fermer
-    if (e.key === 'Escape') { handlersRef.current.close_modal?.(); return; }
+      // Escape : fermer
+      if (e.key === 'Escape') {
+        handlersRef.current.close_modal?.();
+        return;
+      }
 
-    // Arrow left/right : navigation calendrier (seulement hors champ de saisie)
-    if (e.key === 'ArrowLeft' && !mod && !e.shiftKey && !e.altKey) { handlersRef.current.nav_prev?.(); return; }
-    if (e.key === 'ArrowRight' && !mod && !e.shiftKey && !e.altKey) { handlersRef.current.nav_next?.(); return; }
-  }, [enabled]);
+      // Arrow left/right : navigation calendrier (seulement hors champ de saisie)
+      if (e.key === 'ArrowLeft' && !mod && !e.shiftKey && !e.altKey) {
+        handlersRef.current.nav_prev?.();
+        return;
+      }
+      if (e.key === 'ArrowRight' && !mod && !e.shiftKey && !e.altKey) {
+        handlersRef.current.nav_next?.();
+        return;
+      }
+    },
+    [enabled],
+  );
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);

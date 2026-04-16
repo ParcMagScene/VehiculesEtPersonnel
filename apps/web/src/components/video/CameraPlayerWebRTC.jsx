@@ -9,7 +9,16 @@ import api from '../../utils/api';
 import { Button, Spinner, Tooltip } from '@/design-system';
 import { STATUS_COLORS } from '../../constants/colors';
 
-const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFullscreen, isFullscreen = false, onSelect, isSelected = false, onPlayback }) => {
+const CameraPlayerWebRTC = ({
+  camera,
+  autoConnect = true,
+  connectDelay = 0,
+  onFullscreen,
+  isFullscreen = false,
+  onSelect,
+  isSelected = false,
+  onPlayback,
+}) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
   const [_snapshotUrl, setSnapshotUrl] = useState(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
@@ -18,11 +27,16 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
     if (autoConnect && camera?.enabled) {
       if (connectDelay > 0) {
         const timer = setTimeout(() => connect(), connectDelay);
-        return () => { clearTimeout(timer); disconnect(); };
+        return () => {
+          clearTimeout(timer);
+          disconnect();
+        };
       }
       connect();
     }
-    return () => { disconnect(); };
+    return () => {
+      disconnect();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera?.id, autoConnect]);
 
@@ -41,7 +55,7 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
         canvas.width = videoRef.current.videoWidth;
         canvas.height = videoRef.current.videoHeight;
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-        canvas.toBlob(blob => {
+        canvas.toBlob((blob) => {
           if (blob && blob.size > 0) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -85,22 +99,46 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
         </div>
         <div className="camera-player__actions">
           {camera?.supportsPlayback && onPlayback && (
-            <Tooltip content="Enregistrements"><Button variant="ghost" onClick={(e) => { e.stopPropagation(); onPlayback(camera); }} className="camera-player__btn">
-              <Film size={16} />
-            </Button></Tooltip>
+            <Tooltip content="Enregistrements">
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlayback(camera);
+                }}
+                className="camera-player__btn"
+              >
+                <Film size={16} />
+              </Button>
+            </Tooltip>
           )}
-          <Tooltip content="Snapshot"><Button variant="ghost" onClick={handleSnapshot} disabled={status !== 'streaming' || snapshotLoading} className="camera-player__btn">
-            <Camera size={16} />
-          </Button></Tooltip>
+          <Tooltip content="Snapshot">
+            <Button
+              variant="ghost"
+              onClick={handleSnapshot}
+              disabled={status !== 'streaming' || snapshotLoading}
+              className="camera-player__btn"
+            >
+              <Camera size={16} />
+            </Button>
+          </Tooltip>
           {status === 'error' || status === 'idle' ? (
-            <Tooltip content="Reconnecter"><Button variant="ghost" onClick={connect} className="camera-player__btn">
-              <RefreshCw size={16} />
-            </Button></Tooltip>
+            <Tooltip content="Reconnecter">
+              <Button variant="ghost" onClick={connect} className="camera-player__btn">
+                <RefreshCw size={16} />
+              </Button>
+            </Tooltip>
           ) : null}
           {onFullscreen && (
-            <Tooltip content={isFullscreen ? 'Réduire' : 'Plein écran'}><Button variant="ghost" onClick={() => onFullscreen(camera)} className="camera-player__btn">
-              {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-            </Button></Tooltip>
+            <Tooltip content={isFullscreen ? 'Réduire' : 'Plein écran'}>
+              <Button
+                variant="ghost"
+                onClick={() => onFullscreen(camera)}
+                className="camera-player__btn"
+              >
+                {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+              </Button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -115,7 +153,9 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
           <div className="camera-player__overlay camera-player__overlay--error">
             <WifiOff size={32} />
             <span>{error || 'Flux indisponible'}</span>
-            <Button variant="ghost" onClick={connect} className="camera-player__retry-btn">Réessayer</Button>
+            <Button variant="ghost" onClick={connect} className="camera-player__retry-btn">
+              Réessayer
+            </Button>
           </div>
         )}
         {status === 'idle' && !autoConnect && (
@@ -124,13 +164,7 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
             <span style={{ opacity: 0.6, fontSize: '0.85em' }}>Proxy vidéo hors-ligne</span>
           </div>
         )}
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="camera-player__video"
-        />
+        <video ref={videoRef} autoPlay playsInline muted className="camera-player__video" />
       </div>
     </div>
   );

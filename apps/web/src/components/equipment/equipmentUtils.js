@@ -3,14 +3,22 @@ import { GENERIC_IMAGES } from '../../utils/genericImages';
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1", "A3" → "A1")
 export const findZone = (zoneList, zid) => {
   if (!zoneList || !zid) return null;
-  const exact = zoneList.find(z => z.id === zid || z.codes?.includes(zid));
+  const exact = zoneList.find((z) => z.id === zid || z.codes?.includes(zid));
   if (exact) return exact;
   const upper = zid.toUpperCase();
-  return zoneList.find(z => z.id.toUpperCase().startsWith(upper) || upper.startsWith(z.id.toUpperCase())) || null;
+  return (
+    zoneList.find(
+      (z) => z.id.toUpperCase().startsWith(upper) || upper.startsWith(z.id.toUpperCase()),
+    ) || null
+  );
 };
 
 export const normalizeStr = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-export const tokenize = (s) => (s || '').toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2);
+export const tokenize = (s) =>
+  (s || '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 2);
 
 export const matchPhotoToEquipment = (photos, eq) => {
   // Priorité 0 : image générique manuellement choisie (format "generic:group/key")
@@ -28,14 +36,18 @@ export const matchPhotoToEquipment = (photos, eq) => {
   const refTokens = tokenize(eq.reference);
   const nameTokens = tokenize(eq.name);
   // Pré-calculer les noms de fichiers normalisés
-  const photoEntries = photos.map(p => ({ file: p, norm: normalizeStr(p.replace(/\.[^.]+$/, '')) }));
+  const photoEntries = photos.map((p) => ({
+    file: p,
+    norm: normalizeStr(p.replace(/\.[^.]+$/, '')),
+  }));
   // 1) Match exact sur référence
   for (const { file, norm } of photoEntries) {
     if (ref && norm === ref) return `/Photos/Matériel/${file}`;
   }
   // 2) La référence est contenue dans le nom du fichier ou inversement
   for (const { file, norm } of photoEntries) {
-    if (ref && ref.length > 2 && (norm.includes(ref) || ref.includes(norm))) return `/Photos/Matériel/${file}`;
+    if (ref && ref.length > 2 && (norm.includes(ref) || ref.includes(norm)))
+      return `/Photos/Matériel/${file}`;
   }
   // 3) Match par tokens de la référence (ex: "8XT" dans "8XT-L-ACOUSTICS.jpg")
   for (const { file, norm } of photoEntries) {
@@ -45,7 +57,8 @@ export const matchPhotoToEquipment = (photos, eq) => {
   }
   // 4) Match sur le nom de l'équipement
   for (const { file, norm } of photoEntries) {
-    if (name && norm.length > 3 && (norm.includes(name) || name.includes(norm))) return `/Photos/Matériel/${file}`;
+    if (name && norm.length > 3 && (norm.includes(name) || name.includes(norm)))
+      return `/Photos/Matériel/${file}`;
   }
   // 5) Match par tokens significatifs du nom (longueur >= 4 pour éviter faux positifs)
   for (const { file, norm } of photoEntries) {
@@ -71,20 +84,20 @@ export const getCategoryHierarchy = (eq, categories) => {
   if (!eq || !categories || categories.length === 0) return null;
   const catId = eq.categoryId || eq.category_id;
   if (!catId) return null;
-  const cat = categories.find(c => c.id === catId);
+  const cat = categories.find((c) => c.id === catId);
   if (!cat) return null;
   const result = { family: null, subfamily: null, category: null };
   if (cat.level === 'family') {
     result.family = cat;
   } else if (cat.level === 'subfamily') {
     result.subfamily = cat;
-    result.family = categories.find(c => c.id === (cat.parentId || cat.parent_id));
+    result.family = categories.find((c) => c.id === (cat.parentId || cat.parent_id));
   } else if (cat.level === 'category') {
     result.category = cat;
-    const sub = categories.find(c => c.id === (cat.parentId || cat.parent_id));
+    const sub = categories.find((c) => c.id === (cat.parentId || cat.parent_id));
     if (sub) {
       result.subfamily = sub;
-      result.family = categories.find(c => c.id === (sub.parentId || sub.parent_id));
+      result.family = categories.find((c) => c.id === (sub.parentId || sub.parent_id));
     }
   }
   return result;

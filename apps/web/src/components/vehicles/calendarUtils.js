@@ -4,15 +4,25 @@ import { STATUS } from '../../constants';
 // Fonction pour obtenir les initiales d'un utilisateur
 export const getUserInitials = (userId, currentUser, users = []) => {
   if (currentUser && userId === currentUser.id && currentUser.name) {
-    return currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    return currentUser.name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
   }
-  
+
   // Chercher dans la liste des utilisateurs
-  const user = users.find(u => u.id === userId);
+  const user = users.find((u) => u.id === userId);
   if (user && user.name) {
-    return user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    return user.name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
   }
-  
+
   return `U${userId.toString().slice(-1)}`;
 };
 
@@ -25,7 +35,9 @@ export const getDriveLinksCount = (block) => {
   try {
     const parsed = JSON.parse(link);
     if (Array.isArray(parsed)) return parsed.length;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return link.trim() ? 1 : 0;
 };
 
@@ -48,7 +60,10 @@ export const linkTripsDirectly = async (reservationId, eventId1, eventId2, btn, 
     if (!reservationId) return;
     if (btn) btn.classList.add('linking');
     await api.linkTrips({ reservationId, eventId1, eventId2 });
-    if (btn) { btn.classList.remove('linking'); btn.classList.add('linked'); }
+    if (btn) {
+      btn.classList.remove('linking');
+      btn.classList.add('linked');
+    }
     if (onLinked) onLinked();
   } catch (err) {
     if (btn) btn.classList.remove('linking');
@@ -78,7 +93,7 @@ export const transformTripSnake = (detail) => {
     junctionLocation: detail.junction_location || detail.junctionLocation,
     outboundDuration: detail.outbound_duration || detail.outboundDuration,
     returnDuration: detail.return_duration || detail.returnDuration,
-    tripGroupId: detail.trip_group_id || detail.tripGroupId
+    tripGroupId: detail.trip_group_id || detail.tripGroupId,
   };
 };
 
@@ -86,17 +101,51 @@ export const transformTripSnake = (detail) => {
 export const getMaintenanceStatusStyle = (status, hasConflict) => {
   // Les interventions terminées ou annulées ne montrent pas les conflits
   if (hasConflict && status !== STATUS.COMPLETED && status !== STATUS.CANCELLED) {
-    return { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger-dark)', icon: '⚠️' };
+    return {
+      bg: 'var(--theme-danger-bg)',
+      border: '2px solid var(--theme-danger-dark)',
+      icon: '⚠️',
+    };
   }
   const styles = {
-    scheduled:   { bg: 'var(--theme-info-bg)', border: '2px dashed var(--theme-info)', icon: '📅' },
-    completed:   { bg: 'var(--theme-success-bg)', border: '2px solid var(--theme-success-alt)', icon: '✅' },
-    reported:    { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger)', icon: '⚠️' },
-    pending:     { bg: 'var(--theme-purple-bg)', border: '2px dashed var(--theme-primary-light)', icon: '📝' },
-    in_progress: { bg: 'var(--theme-warning-bg)', border: '2px solid var(--theme-warning)', icon: '🔧' },
-    IN_PROGRESS: { bg: 'var(--theme-warning-bg)', border: '2px solid var(--theme-warning)', icon: '🔧' },
-    cancelled:   { bg: 'var(--theme-bg-tertiary)', border: '2px dashed var(--theme-text-gray)', icon: '❌' },
-    rescheduled: { bg: 'var(--theme-orange-bg, #ffedd5)', border: '2px dashed var(--theme-warning, #f97316)', icon: '🔄' },
+    scheduled: { bg: 'var(--theme-info-bg)', border: '2px dashed var(--theme-info)', icon: '📅' },
+    completed: {
+      bg: 'var(--theme-success-bg)',
+      border: '2px solid var(--theme-success-alt)',
+      icon: '✅',
+    },
+    reported: { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger)', icon: '⚠️' },
+    pending: {
+      bg: 'var(--theme-purple-bg)',
+      border: '2px dashed var(--theme-primary-light)',
+      icon: '📝',
+    },
+    in_progress: {
+      bg: 'var(--theme-warning-bg)',
+      border: '2px solid var(--theme-warning)',
+      icon: '🔧',
+    },
+    IN_PROGRESS: {
+      bg: 'var(--theme-warning-bg)',
+      border: '2px solid var(--theme-warning)',
+      icon: '🔧',
+    },
+    cancelled: {
+      bg: 'var(--theme-bg-tertiary)',
+      border: '2px dashed var(--theme-text-gray)',
+      icon: '❌',
+    },
+    rescheduled: {
+      bg: 'var(--theme-orange-bg, #ffedd5)',
+      border: '2px dashed var(--theme-warning, #f97316)',
+      icon: '🔄',
+    },
   };
-  return styles[status] || { bg: 'var(--theme-bg-tertiary)', border: '2px dashed var(--theme-text-gray)', icon: '🔧' };
+  return (
+    styles[status] || {
+      bg: 'var(--theme-bg-tertiary)',
+      border: '2px dashed var(--theme-text-gray)',
+      icon: '🔧',
+    }
+  );
 };

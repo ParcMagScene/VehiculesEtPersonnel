@@ -599,8 +599,14 @@
 
 .event-block-span.linked {
   border-left-width: 4px !important;
-  background: linear-gradient(135deg, var(--success-tint-accent) 0%, rgba(5, 150, 105, 0.1) 100%) !important;
-  box-shadow: 0 0 0 2px var(--success-tint-medium), 0 2px 4px var(--shadow-sm);
+  background: linear-gradient(
+    135deg,
+    var(--success-tint-accent) 0%,
+    rgba(5, 150, 105, 0.1) 100%
+  ) !important;
+  box-shadow:
+    0 0 0 2px var(--success-tint-medium),
+    0 2px 4px var(--shadow-sm);
   position: relative;
 }
 
@@ -733,14 +739,14 @@
 }
 
 /* ═══ DARK MODE — Banner Google Calendar ═══ */
-[data-theme="dark"] .google-calendar-banner-grid {
+[data-theme='dark'] .google-calendar-banner-grid {
   background: var(--theme-bg-card);
 }
 
-[data-theme="dark"] .calendar-banner {
+[data-theme='dark'] .calendar-banner {
   background: var(--theme-bg-card);
 }
 
-[data-theme="dark"] .banner-vehicle-column {
+[data-theme='dark'] .banner-vehicle-column {
   background: var(--theme-gradient);
 }

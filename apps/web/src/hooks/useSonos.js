@@ -83,7 +83,9 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
     try {
       const data = await api.getSonosZones();
       setZones(data.zones || []);
-    } catch { /* zones indisponibles */ }
+    } catch {
+      /* zones indisponibles */
+    }
   }, []);
 
   const loadZoneState = useCallback(async (zoneIP) => {
@@ -112,21 +114,26 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
     try {
       const data = await api.getSonosMusicServices();
       setMusicServices(data.sources || []);
-    } catch { /* silencieux */ }
+    } catch {
+      /* silencieux */
+    }
   }, []);
 
-  const browseSource = useCallback(async (objectId, title) => {
-    setBrowseLoading(true);
-    try {
-      const data = await api.browseSonos(objectId);
-      setBrowseData(data);
-      setBrowseStack(prev => [...prev, { id: objectId, title: title || objectId }]);
-    } catch {
-      toast.error('Erreur navigation sources');
-    } finally {
-      setBrowseLoading(false);
-    }
-  }, [toast]);
+  const browseSource = useCallback(
+    async (objectId, title) => {
+      setBrowseLoading(true);
+      try {
+        const data = await api.browseSonos(objectId);
+        setBrowseData(data);
+        setBrowseStack((prev) => [...prev, { id: objectId, title: title || objectId }]);
+      } catch {
+        toast.error('Erreur navigation sources');
+      } finally {
+        setBrowseLoading(false);
+      }
+    },
+    [toast],
+  );
 
   const browseBack = useCallback(async () => {
     if (browseStack.length <= 1) {
@@ -159,12 +166,17 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
     try {
       const data = await api.getSonosQueue();
       setQueue(data.items || []);
-    } catch { /* silencieux */ }
-    finally { setQueueLoading(false); }
+    } catch {
+      /* silencieux */
+    } finally {
+      setQueueLoading(false);
+    }
   }, []);
 
   // ── Init ──
-  useEffect(() => { loadConfig(); }, [loadConfig]);
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
 
   useEffect(() => {
     if (sonosIP) {
@@ -187,7 +199,9 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
         if (activeZone) loadZoneState(activeZone);
       }, pollInterval);
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [polling, pollInterval, loadNowPlaying, loadQueue, activeZone, loadZoneState]);
 
   // ── Config save ──
@@ -202,10 +216,13 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
   }, [sonosIP, toast, loadZones]);
 
   // ── Zone select ──
-  const handleZoneSelect = useCallback((zoneIP) => {
-    setActiveZone(zoneIP);
-    loadZoneState(zoneIP);
-  }, [loadZoneState]);
+  const handleZoneSelect = useCallback(
+    (zoneIP) => {
+      setActiveZone(zoneIP);
+      loadZoneState(zoneIP);
+    },
+    [loadZoneState],
+  );
 
   // ── Refresh ──
   const refresh = useCallback(() => {
@@ -214,64 +231,127 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
   }, [loadNowPlaying, activeZone, loadZoneState]);
 
   // ── Command executor (with busy lock + auto-refresh) ──
-  const exec = useCallback(async (fn, label) => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await fn();
-      setTimeout(refresh, 400);
-    } catch {
-      toast.error(`Erreur ${label}`);
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, refresh, toast]);
+  const exec = useCallback(
+    async (fn, label) => {
+      if (busy) return;
+      setBusy(true);
+      try {
+        await fn();
+        setTimeout(refresh, 400);
+      } catch {
+        toast.error(`Erreur ${label}`);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, refresh, toast],
+  );
 
   // ── Contrôles ──
-  const play = useCallback(() => exec(() => api.sonosPlay(controlZone), 'play'), [exec, controlZone]);
-  const pause = useCallback(() => exec(() => api.sonosPause(controlZone), 'pause'), [exec, controlZone]);
-  const next = useCallback(() => exec(() => api.sonosNext(controlZone), 'next'), [exec, controlZone]);
-  const previous = useCallback(() => exec(() => api.sonosPrevious(controlZone), 'previous'), [exec, controlZone]);
-  const setVolume = useCallback((val) => exec(() => api.sonosSetVolume(controlZone, val), 'volume'), [exec, controlZone]);
-  const mute = useCallback(() => exec(() => api.sonosMute(controlZone), 'mute'), [exec, controlZone]);
-  const unmute = useCallback(() => exec(() => api.sonosUnmute(controlZone), 'unmute'), [exec, controlZone]);
-  const seek = useCallback((pos) => exec(() => api.sonosSeek(controlZone, pos), 'seek'), [exec, controlZone]);
-  const setShuffle = useCallback((enabled) => exec(() => api.sonosShuffle(controlZone, enabled), 'shuffle'), [exec, controlZone]);
-  const setRepeat = useCallback((mode) => exec(() => api.sonosRepeat(controlZone, mode), 'repeat'), [exec, controlZone]);
+  const play = useCallback(
+    () => exec(() => api.sonosPlay(controlZone), 'play'),
+    [exec, controlZone],
+  );
+  const pause = useCallback(
+    () => exec(() => api.sonosPause(controlZone), 'pause'),
+    [exec, controlZone],
+  );
+  const next = useCallback(
+    () => exec(() => api.sonosNext(controlZone), 'next'),
+    [exec, controlZone],
+  );
+  const previous = useCallback(
+    () => exec(() => api.sonosPrevious(controlZone), 'previous'),
+    [exec, controlZone],
+  );
+  const setVolume = useCallback(
+    (val) => exec(() => api.sonosSetVolume(controlZone, val), 'volume'),
+    [exec, controlZone],
+  );
+  const mute = useCallback(
+    () => exec(() => api.sonosMute(controlZone), 'mute'),
+    [exec, controlZone],
+  );
+  const unmute = useCallback(
+    () => exec(() => api.sonosUnmute(controlZone), 'unmute'),
+    [exec, controlZone],
+  );
+  const seek = useCallback(
+    (pos) => exec(() => api.sonosSeek(controlZone, pos), 'seek'),
+    [exec, controlZone],
+  );
+  const setShuffle = useCallback(
+    (enabled) => exec(() => api.sonosShuffle(controlZone, enabled), 'shuffle'),
+    [exec, controlZone],
+  );
+  const setRepeat = useCallback(
+    (mode) => exec(() => api.sonosRepeat(controlZone, mode), 'repeat'),
+    [exec, controlZone],
+  );
 
   // ── Play favorite ──
-  const playFavorite = useCallback(async (fav) => {
-    try {
-      await api.sonosPlayFavorite(controlZone, fav.uri, fav.title);
-      toast.success(`Lecture : ${fav.title}`);
-    } catch {
-      toast.error('Erreur lecture favori');
-    }
-  }, [controlZone, toast]);
+  const playFavorite = useCallback(
+    async (fav) => {
+      try {
+        await api.sonosPlayFavorite(controlZone, fav.uri, fav.title);
+        toast.success(`Lecture : ${fav.title}`);
+      } catch {
+        toast.error('Erreur lecture favori');
+      }
+    },
+    [controlZone, toast],
+  );
 
   return {
     // Config
-    sonosIP, setSonosIP, saveConfig, configLoading,
+    sonosIP,
+    setSonosIP,
+    saveConfig,
+    configLoading,
     // Zones
-    zones, activeZone, setActiveZone: handleZoneSelect, zoneState,
-    zonesOpen, setZonesOpen,
+    zones,
+    activeZone,
+    setActiveZone: handleZoneSelect,
+    zoneState,
+    zonesOpen,
+    setZonesOpen,
     // Now Playing
-    nowPlaying, displayState,
+    nowPlaying,
+    displayState,
     // Polling
-    polling, setPolling, refresh,
+    polling,
+    setPolling,
+    refresh,
     // Contrôles
-    play, pause, next, previous,
-    setVolume, mute, unmute,
-    seek, setShuffle, setRepeat,
+    play,
+    pause,
+    next,
+    previous,
+    setVolume,
+    mute,
+    unmute,
+    seek,
+    setShuffle,
+    setRepeat,
     busy,
     // Favoris
-    favorites, loadFavorites, playFavorite, favoritesLoading,
+    favorites,
+    loadFavorites,
+    playFavorite,
+    favoritesLoading,
     // Sources / Browse
-    musicServices, loadMusicServices,
-    browseSource, browseBack, browseReset,
-    browseStack, browseData, browseLoading,
+    musicServices,
+    loadMusicServices,
+    browseSource,
+    browseBack,
+    browseReset,
+    browseStack,
+    browseData,
+    browseLoading,
     // Queue
-    queue, queueLoading, loadQueue,
+    queue,
+    queueLoading,
+    loadQueue,
     // Derived
     controlZone,
   };

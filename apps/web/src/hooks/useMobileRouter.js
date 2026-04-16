@@ -2,37 +2,35 @@ import { useState, useEffect, useCallback } from 'react';
 
 // ═══ Mapping écran ↔ chemin hash ═══
 const ROUTES = {
-  'home':           '/mobile',
+  home: '/mobile',
   'parc-dashboard': '/mobile/parc',
-  'planning':       '/mobile/planning',
-  'reservations':   '/mobile/reservations',
-  'maintenances':   '/mobile/maintenances',
-  'availability':   '/mobile/availability',
-  'affaires':       '/mobile/affaires',
-  'tasks':          '/mobile/tasks',
-  'personnel':      '/mobile/personnel',
-  'messaging':      '/mobile/messaging',
-  'equipment':      '/mobile/equipment',
-  'sav':            '/mobile/sav',
-  'equipment-qr':   '/mobile/equipment-qr',
-  'orders':         '/mobile/orders',
-  'leaves':         '/mobile/leaves',
-  'inventory':      '/mobile/inventory',
-  'location':       '/mobile/location',
-  'sonos':          '/mobile/sonos',
+  planning: '/mobile/planning',
+  reservations: '/mobile/reservations',
+  maintenances: '/mobile/maintenances',
+  availability: '/mobile/availability',
+  affaires: '/mobile/affaires',
+  tasks: '/mobile/tasks',
+  personnel: '/mobile/personnel',
+  messaging: '/mobile/messaging',
+  equipment: '/mobile/equipment',
+  sav: '/mobile/sav',
+  'equipment-qr': '/mobile/equipment-qr',
+  orders: '/mobile/orders',
+  leaves: '/mobile/leaves',
+  inventory: '/mobile/inventory',
+  location: '/mobile/location',
+  sonos: '/mobile/sonos',
 };
 
-const REVERSE = Object.fromEntries(
-  Object.entries(ROUTES).map(([s, p]) => [p, s])
-);
+const REVERSE = Object.fromEntries(Object.entries(ROUTES).map(([s, p]) => [p, s]));
 
 // Hiérarchie parentale pour goBack (ce qui n'est pas listé → home)
 const BACK_TARGET = {
-  'planning':       'parc-dashboard',
-  'reservations':   'parc-dashboard',
-  'maintenances':   'parc-dashboard',
-  'availability':   'parc-dashboard',
-  'equipment-qr':   'equipment',
+  planning: 'parc-dashboard',
+  reservations: 'parc-dashboard',
+  maintenances: 'parc-dashboard',
+  availability: 'parc-dashboard',
+  'equipment-qr': 'equipment',
 };
 
 /**

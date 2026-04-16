@@ -36,7 +36,11 @@
 }
 
 .environment-info {
-  background: linear-gradient(135deg, var(--theme-success-bg) 0%, var(--theme-success-bg-strong) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-success-bg) 0%,
+    var(--theme-success-bg-strong) 100%
+  );
   border: 2px solid var(--theme-success-border);
   border-radius: var(--radius-lg);
   padding: 20px;

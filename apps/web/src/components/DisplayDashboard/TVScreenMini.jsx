@@ -10,11 +10,53 @@ import { STATUS } from '../../constants';
 import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
 
 const SAMPLE_TASKS = [
-  { time: '07:00', period: 'AM', title: 'Prépa sono festival Dupont', section: 'prep_locations', sectionLabel: 'Prépa Location', status: STATUS.PENDING, affaireNum: 'AF32887', affaireType: 'Location' },
-  { time: '08:30', period: 'AM', title: 'Chargement camion 3T', section: 'chargement', sectionLabel: 'Chargement', status: STATUS.PENDING, affaireNum: '' },
-  { time: '09:00', period: 'AM', title: 'Départ livraison Mairie', section: 'depart', sectionLabel: 'Départ', status: STATUS.DONE, affaireNum: 'AF32899', affaireType: 'Prestation' },
-  { time: '', period: 'PM', title: 'Récup du barnum Legrand', section: 'recuperation', sectionLabel: 'Récupération', status: STATUS.PENDING, affaireNum: '' },
-  { time: '15:30', period: 'PM', title: 'Courses visserie + câbles', section: 'courses', sectionLabel: 'Courses', status: STATUS.PENDING, affaireNum: '' },
+  {
+    time: '07:00',
+    period: 'AM',
+    title: 'Prépa sono festival Dupont',
+    section: 'prep_locations',
+    sectionLabel: 'Prépa Location',
+    status: STATUS.PENDING,
+    affaireNum: 'AF32887',
+    affaireType: 'Location',
+  },
+  {
+    time: '08:30',
+    period: 'AM',
+    title: 'Chargement camion 3T',
+    section: 'chargement',
+    sectionLabel: 'Chargement',
+    status: STATUS.PENDING,
+    affaireNum: '',
+  },
+  {
+    time: '09:00',
+    period: 'AM',
+    title: 'Départ livraison Mairie',
+    section: 'depart',
+    sectionLabel: 'Départ',
+    status: STATUS.DONE,
+    affaireNum: 'AF32899',
+    affaireType: 'Prestation',
+  },
+  {
+    time: '',
+    period: 'PM',
+    title: 'Récup du barnum Legrand',
+    section: 'recuperation',
+    sectionLabel: 'Récupération',
+    status: STATUS.PENDING,
+    affaireNum: '',
+  },
+  {
+    time: '15:30',
+    period: 'PM',
+    title: 'Courses visserie + câbles',
+    section: 'courses',
+    sectionLabel: 'Courses',
+    status: STATUS.PENDING,
+    affaireNum: '',
+  },
 ];
 
 function TVScreenMini({ state = {} }) {
@@ -41,7 +83,14 @@ function TVScreenMini({ state = {} }) {
       if (pos >= max) {
         pos = max;
         paused = true;
-        setTimeout(() => { pos = 0; el.scrollTop = 0; paused = true; setTimeout(() => { paused = false; }, 1500); }, 2000);
+        setTimeout(() => {
+          pos = 0;
+          el.scrollTop = 0;
+          paused = true;
+          setTimeout(() => {
+            paused = false;
+          }, 1500);
+        }, 2000);
       }
       el.scrollTop = pos;
     }, 16);
@@ -63,13 +112,18 @@ function TVScreenMini({ state = {} }) {
   // Événements = tâches du jour (format enrichi depuis tv-state)
   const tasks = state.events && state.events.length > 0 ? state.events : SAMPLE_TASKS;
 
-  const dateStr = clock.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const dateStr = clock.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
   const timeStr = clock.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
   // Couleur par recherche substring (aligné sur le vrai client TV main.js)
   // Cherche le keyword dans title + sectionLabel + location (pas juste section)
   const getTaskColor = (task) => {
-    const searchText = `${task.title || ''} ${task.section || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
+    const searchText =
+      `${task.title || ''} ${task.section || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
     for (const rule of colorRules) {
       if (rule.keyword && searchText.includes(rule.keyword.toLowerCase())) {
         return rule.color;
@@ -80,7 +134,8 @@ function TVScreenMini({ state = {} }) {
 
   // Icône animée par recherche substring (aligné sur le vrai client TV main.js)
   const getTaskIcon = (task) => {
-    const searchText = `${task.title || ''} ${task.section || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
+    const searchText =
+      `${task.title || ''} ${task.section || ''} ${task.sectionLabel || ''} ${task.location || ''}`.toLowerCase();
     for (const rule of iconRules) {
       if (rule.keyword && searchText.includes(rule.keyword.toLowerCase())) {
         return rule.gifFilename || rule.gif_filename;
@@ -91,8 +146,11 @@ function TVScreenMini({ state = {} }) {
 
   // Couleurs par type d'affaire (aligné sur AffaireBadge / affaireConstants)
   const AFFAIRE_TYPE_COLORS = {
-    Prestation: STATUS_COLORS.info, Location: STATUS_COLORS.warning, Installation: STATUS_COLORS.success,
-    Vente: ACCENT_COLORS.violet, 'Tournée': ACCENT_COLORS.pink,
+    Prestation: STATUS_COLORS.info,
+    Location: STATUS_COLORS.warning,
+    Installation: STATUS_COLORS.success,
+    Vente: ACCENT_COLORS.violet,
+    Tournée: ACCENT_COLORS.pink,
   };
 
   const completed = state.completedEvents || [];
@@ -105,8 +163,14 @@ function TVScreenMini({ state = {} }) {
     // Plage horaire : "07:00 → 08:30" comme le vrai TV
     const endTime = task.end_time || task.endTime || '';
     const timeDisplay = task.time
-      ? (endTime ? `${task.time} → ${endTime}` : task.time)
-      : (task.period === 'AM' ? 'Matin' : task.period === 'PM' ? 'Après-midi' : '');
+      ? endTime
+        ? `${task.time} → ${endTime}`
+        : task.time
+      : task.period === 'AM'
+        ? 'Matin'
+        : task.period === 'PM'
+          ? 'Après-midi'
+          : '';
     const affNum = task.affaireNum || task.affaire_num || '';
     const affType = task.affaireType || task.affaire_type || '';
     const badgeColor = AFFAIRE_TYPE_COLORS[affType] || STATUS_COLORS.info;
@@ -117,7 +181,10 @@ function TVScreenMini({ state = {} }) {
         style={{ color: isDone ? undefined : color, background: eventBgColor }}
       >
         <span className="tv-mini-evt-time">{timeDisplay}</span>
-        <span className="tv-mini-evt-title">{isDone ? '✅ ' : ''}{task.title}</span>
+        <span className="tv-mini-evt-title">
+          {isDone ? '✅ ' : ''}
+          {task.title}
+        </span>
         <span className="tv-mini-evt-loc">
           {iconFile ? (
             <img src={`/api/display/gifs/${iconFile}`} alt="" className="tv-mini-evt-icon" />
@@ -126,15 +193,21 @@ function TVScreenMini({ state = {} }) {
           )}
         </span>
         <span className="tv-mini-evt-affaire">
-          {affNum ? <span className="tv-mini-affaire-badge" style={{ '--badge-color': badgeColor }}>{affNum}</span> : ''}
+          {affNum ? (
+            <span className="tv-mini-affaire-badge" style={{ '--badge-color': badgeColor }}>
+              {affNum}
+            </span>
+          ) : (
+            ''
+          )}
         </span>
       </div>
     );
   };
 
   // Séparer régulières / récurrentes (comme le vrai TV)
-  const regularTasks = tasks.filter(t => !t.is_recurrent);
-  const recurrentTasks = tasks.filter(t => t.is_recurrent);
+  const regularTasks = tasks.filter((t) => !t.is_recurrent);
+  const recurrentTasks = tasks.filter((t) => t.is_recurrent);
 
   // Sonos : artiste/titre fournis directement par le backend
   const sonosTitle = state.sonos?.title || '';
@@ -148,17 +221,25 @@ function TVScreenMini({ state = {} }) {
           {logoUrl ? (
             <img src={logoUrl} alt="Logo" className="tv-mini-logo" />
           ) : (
-            <div className="tv-mini-logo-placeholder" style={{ color: primaryColor }}>LOGO</div>
+            <div className="tv-mini-logo-placeholder" style={{ color: primaryColor }}>
+              LOGO
+            </div>
           )}
         </div>
 
         <div className="tv-mini-marquee-zone">
           {/* Edge-fade like calendar-dashboard #welcome::before/::after */}
-          <div className="tv-mini-marquee-fade left" style={{ background: `linear-gradient(to right, ${secondaryColor}, transparent)` }} />
+          <div
+            className="tv-mini-marquee-fade left"
+            style={{ background: `linear-gradient(to right, ${secondaryColor}, transparent)` }}
+          />
           <div className="tv-mini-marquee" style={{ color: primaryColor }}>
             <span>{welcomeMessage}</span>
           </div>
-          <div className="tv-mini-marquee-fade right" style={{ background: `linear-gradient(to left, ${secondaryColor}, transparent)` }} />
+          <div
+            className="tv-mini-marquee-fade right"
+            style={{ background: `linear-gradient(to left, ${secondaryColor}, transparent)` }}
+          />
         </div>
 
         <div className="tv-mini-datetime-zone" style={{ color: primaryColor }}>
@@ -177,15 +258,14 @@ function TVScreenMini({ state = {} }) {
       {/* ─── Main (tâches du jour, réplique calendar-dashboard) ─── */}
       <div className="tv-mini-main" ref={eventsRef}>
         <div className="tv-mini-events">
-          {regularTasks.length > 0
-            ? regularTasks.map(renderTask)
-            : <div className="tv-mini-no-events">Aucune tâche planifiée aujourd'hui</div>
-          }
+          {regularTasks.length > 0 ? (
+            regularTasks.map(renderTask)
+          ) : (
+            <div className="tv-mini-no-events">Aucune tâche planifiée aujourd'hui</div>
+          )}
         </div>
         {recurrentTasks.length > 0 && (
-          <div className="tv-mini-events tv-mini-recurrent">
-            {recurrentTasks.map(renderTask)}
-          </div>
+          <div className="tv-mini-events tv-mini-recurrent">{recurrentTasks.map(renderTask)}</div>
         )}
       </div>
 
@@ -198,7 +278,10 @@ function TVScreenMini({ state = {} }) {
 
       {/* ─── Sonos widget (visible uniquement si en lecture, comme le vrai TV) ─── */}
       {state.sonos && state.sonos.playing && state.sonos.title && (
-        <div className="tv-mini-sonos playing" style={{ borderColor: primaryColor, color: primaryColor }}>
+        <div
+          className="tv-mini-sonos playing"
+          style={{ borderColor: primaryColor, color: primaryColor }}
+        >
           {state.sonos.albumArtURI && (
             <img src={state.sonos.albumArtURI} alt="" className="tv-mini-sonos-art" />
           )}

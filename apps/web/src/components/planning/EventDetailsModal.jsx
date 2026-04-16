@@ -1,22 +1,37 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Calendar, MapPin, FileText, Folder, ExternalLink, Edit, Trash2, Plus, Link as LinkIcon, X, Check, HardDrive, Pencil, Briefcase } from 'lucide-react';
+import {
+  Calendar,
+  MapPin,
+  FileText,
+  Folder,
+  ExternalLink,
+  Edit,
+  Trash2,
+  Plus,
+  Link as LinkIcon,
+  X,
+  Check,
+  HardDrive,
+  Pencil,
+  Briefcase,
+} from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import './EventDetailsModal.css';
 import { useToast } from '../../hooks/useToast';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { Button, ModalLayout, Input, SectionHeader , Tooltip} from '@/design-system';
+import { Button, ModalLayout, Input, SectionHeader, Tooltip } from '@/design-system';
 
 const BLImportModal = lazy(() => import('../affaires/BLImportModal'));
 const DynamicDisplayDialog = lazy(() => import('../DynamicDisplayDialog'));
 
-function EventDetailsModal({ 
-  isOpen, 
-  onClose, 
-  event, 
-  reservations = [], 
+function EventDetailsModal({
+  isOpen,
+  onClose,
+  event,
+  reservations = [],
   onRequestEditReservation,
   onRequestCreateReservation,
   onRequestCreateAssignment,
@@ -26,7 +41,7 @@ function EventDetailsModal({
   onRequestDeleteEvent,
   onReservationsRefresh,
   currentUser,
-  activeModule
+  activeModule,
 }) {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
@@ -51,14 +66,16 @@ function EventDetailsModal({
     try {
       const parsed = JSON.parse(link);
       if (Array.isArray(parsed)) return parsed;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return link.trim() ? [{ url: link.trim(), label: '' }] : [];
   };
 
   // Collecter tous les liens Drive de toutes les réservations liées
   const getAllDriveLinks = () => {
     const links = [];
-    linkedReservations.forEach(r => {
+    linkedReservations.forEach((r) => {
       parseDriveLinks(r).forEach((link, idx) => {
         links.push({ ...link, reservationId: r.id, index: idx });
       });
@@ -69,24 +86,31 @@ function EventDetailsModal({
   useEffect(() => {
     if (event && reservations) {
       // Trouver toutes les réservations liées à cet événement
-      const linked = reservations.filter(r => r.googleEventId === event.id);
+      const linked = reservations.filter((r) => r.googleEventId === event.id);
       setLinkedReservations(linked);
     }
   }, [event, reservations]);
 
   // Charger les affaires liées à cet événement (par numéro d'affaire ou google_event_id)
   useEffect(() => {
-    if (!event) { setLinkedAffaires([]); return; }
+    if (!event) {
+      setLinkedAffaires([]);
+      return;
+    }
     const loadLinkedAffaires = async () => {
       try {
         const allAffaires = await api.getAffaires();
         const affaires = Array.isArray(allAffaires) ? allAffaires : [];
-        const linked = affaires.filter(a => {
+        const linked = affaires.filter((a) => {
           // Lien par google_event_id
           if (a.googleEventId && a.googleEventId === event.id) return true;
           // Lien par numéro d'affaire détecté dans le titre
-          if (event.affaire && a.numeroAffaire &&
-              a.numeroAffaire.toUpperCase() === event.affaire.toUpperCase()) return true;
+          if (
+            event.affaire &&
+            a.numeroAffaire &&
+            a.numeroAffaire.toUpperCase() === event.affaire.toUpperCase()
+          )
+            return true;
           return false;
         });
         setLinkedAffaires(linked);
@@ -129,18 +153,18 @@ function EventDetailsModal({
     if (!files.length || !event.affaire) return;
 
     setUploading(true);
-    
+
     try {
       for (const file of files) {
         await api.uploadAttachment(file, event.affaire);
       }
-      
+
       // Recharger la liste des fichiers
       await scanAttachmentFolder(event.affaire);
       toast.info(`${files.length} fichier(s) uploadé(s) avec succès`);
     } catch (error) {
       console.error('Erreur upload:', error);
-      toast.error('Erreur lors de l\'upload des fichiers');
+      toast.error("Erreur lors de l'upload des fichiers");
     } finally {
       setUploading(false);
       e.target.value = ''; // Reset input
@@ -206,7 +230,7 @@ function EventDetailsModal({
       reservationId,
       index, // -1 = nouveau lien
       url: currentLink?.url || '',
-      label: currentLink?.label || ''
+      label: currentLink?.label || '',
     });
   };
 
@@ -218,7 +242,7 @@ function EventDetailsModal({
       reservationId: targetReservation.id,
       index: -1,
       url: '',
-      label: ''
+      label: '',
     });
   };
 
@@ -236,9 +260,9 @@ function EventDetailsModal({
     setSavingDriveLink(true);
     try {
       // Récupérer les liens actuels de cette réservation
-      const reservation = linkedReservations.find(r => r.id === reservationId);
+      const reservation = linkedReservations.find((r) => r.id === reservationId);
       const currentLinks = reservation ? [...parseDriveLinks(reservation)] : [];
-      
+
       if (index === -1) {
         // Ajout d'un nouveau lien
         currentLinks.push({ url: url.trim(), label: label.trim() });
@@ -246,11 +270,19 @@ function EventDetailsModal({
         // Modification d'un lien existant
         currentLinks[index] = { url: url.trim(), label: label.trim() };
       }
-      
+
       const data = await api.patchReservation(reservationId, { google_drive_links: currentLinks });
-      setLinkedReservations(prev => prev.map(r => 
-        r.id === reservationId ? { ...r, googleDriveLinks: data.googleDriveLinks, googleDriveLink: data.googleDriveLink } : r
-      ));
+      setLinkedReservations((prev) =>
+        prev.map((r) =>
+          r.id === reservationId
+            ? {
+                ...r,
+                googleDriveLinks: data.googleDriveLinks,
+                googleDriveLink: data.googleDriveLink,
+              }
+            : r,
+        ),
+      );
       setEditingDriveLink(null);
       // Rafraîchir les réservations du parent pour que les liens soient à jour partout
       if (onReservationsRefresh) onReservationsRefresh();
@@ -271,14 +303,24 @@ function EventDetailsModal({
       onConfirm: async () => {
         setSavingDriveLink(true);
         try {
-          const reservation = linkedReservations.find(r => r.id === reservationId);
+          const reservation = linkedReservations.find((r) => r.id === reservationId);
           const currentLinks = reservation ? [...parseDriveLinks(reservation)] : [];
           currentLinks.splice(linkIndex, 1);
-          
-          const data = await api.patchReservation(reservationId, { google_drive_links: currentLinks });
-          setLinkedReservations(prev => prev.map(r => 
-            r.id === reservationId ? { ...r, googleDriveLinks: data.googleDriveLinks, googleDriveLink: data.googleDriveLink } : r
-          ));
+
+          const data = await api.patchReservation(reservationId, {
+            google_drive_links: currentLinks,
+          });
+          setLinkedReservations((prev) =>
+            prev.map((r) =>
+              r.id === reservationId
+                ? {
+                    ...r,
+                    googleDriveLinks: data.googleDriveLinks,
+                    googleDriveLink: data.googleDriveLink,
+                  }
+                : r,
+            ),
+          );
           // Rafraîchir les réservations du parent
           if (onReservationsRefresh) onReservationsRefresh();
         } catch (error) {
@@ -305,7 +347,7 @@ function EventDetailsModal({
     if (!dateString) return '';
     try {
       const date = parseISO(dateString);
-      return format(date, "dd MMMM yyyy", { locale: fr });
+      return format(date, 'dd MMMM yyyy', { locale: fr });
     } catch {
       return dateString;
     }
@@ -313,50 +355,56 @@ function EventDetailsModal({
 
   if (!isOpen || !event) return null;
 
-  const startDate = event.start?.dateTime 
-    ? formatDateTime(event.start.dateTime) 
-    : event.start?.date ? formatDate(event.start.date) : '';
-  
-  const endDate = event.end?.dateTime 
-    ? formatDateTime(event.end.dateTime) 
-    : event.end?.date ? formatDate(event.end.date) : '';
+  const startDate = event.start?.dateTime
+    ? formatDateTime(event.start.dateTime)
+    : event.start?.date
+      ? formatDate(event.start.date)
+      : '';
+
+  const endDate = event.end?.dateTime
+    ? formatDateTime(event.end.dateTime)
+    : event.end?.date
+      ? formatDate(event.end.date)
+      : '';
 
   return (
     <>
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={
-        <div className="event-title-section">
-          <div>
-            {event.summary || '(Sans titre)'}
-            {event.affaire && <AffaireBadge numero={event.affaire} className="inverted" />}
+      <ModalLayout
+        open
+        onClose={onClose}
+        title={
+          <div className="event-title-section">
+            <div>
+              {event.summary || '(Sans titre)'}
+              {event.affaire && <AffaireBadge numero={event.affaire} className="inverted" />}
+            </div>
           </div>
-        </div>
-      }
-      icon={<Calendar size={24} />}
-      size="lg"
-      className="event-details-modal"
-      footer={
-        event.htmlLink ? (
-          <a 
-            href={event.htmlLink} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="btn-link"
-            title="Ouvrir dans Google Calendar"
-          >
-            <ExternalLink size={16} />
-            Voir dans Google Calendar
-          </a>
-        ) : null
-      }
-    >
+        }
+        icon={<Calendar size={24} />}
+        size="lg"
+        className="event-details-modal"
+        footer={
+          event.htmlLink ? (
+            <a
+              href={event.htmlLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-link"
+              title="Ouvrir dans Google Calendar"
+            >
+              <ExternalLink size={16} />
+              Voir dans Google Calendar
+            </a>
+          ) : null
+        }
+      >
         {/* Body */}
         <div className="event-details-body">
           {/* Informations de l'événement */}
           <section className="event-info-section">
-            <h3><FileText size={18} /> Informations</h3>
+            <h3>
+              <FileText size={18} /> Informations
+            </h3>
             <div className="event-info-grid">
               <div className="info-item">
                 <label>Début</label>
@@ -368,7 +416,9 @@ function EventDetailsModal({
               </div>
               {event.location && (
                 <div className="info-item full-width">
-                  <label><MapPin size={14} /> Lieu</label>
+                  <label>
+                    <MapPin size={14} /> Lieu
+                  </label>
                   <span>{event.location}</span>
                 </div>
               )}
@@ -384,28 +434,42 @@ function EventDetailsModal({
           {/* Affaires liées */}
           {linkedAffaires.length > 0 && (
             <section className="linked-affaires-section">
-              <SectionHeader icon={<Briefcase size={18} />} title="Affaires liées" count={linkedAffaires.length} />
+              <SectionHeader
+                icon={<Briefcase size={18} />}
+                title="Affaires liées"
+                count={linkedAffaires.length}
+              />
               <div className="affaires-list">
                 {linkedAffaires.map((affaire) => (
                   <div key={affaire.id || affaire.numeroAffaire} className="affaire-card">
                     <div className="affaire-info">
-                      <AffaireBadge numero={affaire.numeroAffaire} type={affaire.type} size="md" showIcon />
+                      <AffaireBadge
+                        numero={affaire.numeroAffaire}
+                        type={affaire.type}
+                        size="md"
+                        showIcon
+                      />
                       <div className="affaire-details">
                         {affaire.client && <span className="affaire-client">{affaire.client}</span>}
                         {affaire.titre && <span className="affaire-titre">{affaire.titre}</span>}
                         {affaire.dateDebut && (
                           <span className="affaire-dates">
-                            {affaire.dateDebut}{affaire.dateFin ? ` → ${affaire.dateFin}` : ''}
+                            {affaire.dateDebut}
+                            {affaire.dateFin ? ` → ${affaire.dateFin}` : ''}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="affaire-stats">
                       {affaire.reservationCount > 0 && (
-                        <Tooltip content="Réservations" position="bottom"><span className="affaire-stat">🚛 {affaire.reservationCount}</span></Tooltip>
+                        <Tooltip content="Réservations" position="bottom">
+                          <span className="affaire-stat">🚛 {affaire.reservationCount}</span>
+                        </Tooltip>
                       )}
                       {affaire.personnelCount > 0 && (
-                        <Tooltip content="Personnel affecté" position="bottom"><span className="affaire-stat">👷 {affaire.personnelCount}</span></Tooltip>
+                        <Tooltip content="Personnel affecté" position="bottom">
+                          <span className="affaire-stat">👷 {affaire.personnelCount}</span>
+                        </Tooltip>
                       )}
                     </div>
                   </div>
@@ -420,19 +484,22 @@ function EventDetailsModal({
               icon={<LinkIcon size={18} />}
               title="Réservations liées"
               count={linkedReservations.length}
-              actions={currentUser?.isAdmin && (
-                <Button 
-                  variant="primary" size="sm"
-                  className="btn-add-reservation" 
-                  onClick={actionHandler}
-                  title={actionLabel}
-                >
-                  <Plus size={16} />
-                  {actionLabel}
-                </Button>
-              )}
+              actions={
+                currentUser?.isAdmin && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="btn-add-reservation"
+                    onClick={actionHandler}
+                    title={actionLabel}
+                  >
+                    <Plus size={16} />
+                    {actionLabel}
+                  </Button>
+                )
+              }
             />
-            
+
             {linkedReservations.length === 0 ? (
               <div className="empty-state">
                 <p>Aucune réservation liée à cet événement</p>
@@ -442,20 +509,27 @@ function EventDetailsModal({
                 {linkedReservations.map((reservation) => (
                   <div key={reservation.id} className="reservation-card">
                     <div className="reservation-info">
-                      <div className="reservation-vehicle">{reservation.vehicleName || reservation.prestationName || reservation.clientName || reservation.vehicleId}</div>
+                      <div className="reservation-vehicle">
+                        {reservation.vehicleName ||
+                          reservation.prestationName ||
+                          reservation.clientName ||
+                          reservation.vehicleId}
+                      </div>
                       <div className="reservation-details">
                         <span>{reservation.clientName}</span>
                         {reservation.driverName && <span> • {reservation.driverName}</span>}
                         {reservation.locationName && <span> • {reservation.locationName}</span>}
                       </div>
                       <div className="reservation-dates">
-                        {reservation.startDate} ({reservation.startPeriod}) → {reservation.endDate} ({reservation.endPeriod})
+                        {reservation.startDate} ({reservation.startPeriod}) → {reservation.endDate}{' '}
+                        ({reservation.endPeriod})
                       </div>
                     </div>
-                    <Button variant="ghost" 
-                      className="btn-edit-reservation" 
+                    <Button
+                      variant="ghost"
+                      className="btn-edit-reservation"
                       onClick={() => handleEditReservation(reservation)}
-                      title={currentUser?.isAdmin ? "Modifier" : "Voir"}
+                      title={currentUser?.isAdmin ? 'Modifier' : 'Voir'}
                     >
                       <Edit size={16} />
                     </Button>
@@ -471,19 +545,22 @@ function EventDetailsModal({
               <SectionHeader
                 icon={<HardDrive size={18} />}
                 title="Liens Google Drive"
-                actions={currentUser?.isAdmin && !editingDriveLink && (
-                  <Tooltip content="Ajouter un lien Google Drive" position="bottom">
-                    <Button
-                    variant="primary" size="sm"
-                    className="btn-add-drive-link"
-                    onClick={handleStartAddDriveLink}
- 
-                  >
-                    <Plus size={16} />
-                    Ajouter un lien
-                  </Button>
-                  </Tooltip>
-                )}
+                actions={
+                  currentUser?.isAdmin &&
+                  !editingDriveLink && (
+                    <Tooltip content="Ajouter un lien Google Drive" position="bottom">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="btn-add-drive-link"
+                        onClick={handleStartAddDriveLink}
+                      >
+                        <Plus size={16} />
+                        Ajouter un lien
+                      </Button>
+                    </Tooltip>
+                  )
+                }
               />
 
               {/* Formulaire d'ajout / édition */}
@@ -494,7 +571,9 @@ function EventDetailsModal({
                       type="url"
                       className="drive-link-input"
                       value={editingDriveLink.url}
-                      onChange={(e) => setEditingDriveLink({ ...editingDriveLink, url: e.target.value })}
+                      onChange={(e) =>
+                        setEditingDriveLink({ ...editingDriveLink, url: e.target.value })
+                      }
                       placeholder="https://drive.google.com/..."
                       autoFocus
                       onKeyDown={(e) => {
@@ -508,7 +587,9 @@ function EventDetailsModal({
                       type="text"
                       className="drive-link-input drive-link-label-input"
                       value={editingDriveLink.label}
-                      onChange={(e) => setEditingDriveLink({ ...editingDriveLink, label: e.target.value })}
+                      onChange={(e) =>
+                        setEditingDriveLink({ ...editingDriveLink, label: e.target.value })
+                      }
                       placeholder="Libellé (optionnel, ex: Photos, Devis...)"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleSaveDriveLink();
@@ -517,21 +598,23 @@ function EventDetailsModal({
                     />
                     <div className="drive-link-edit-actions">
                       <Tooltip content="Enregistrer" position="bottom">
-                        <Button variant="ghost"                         className="drive-link-btn drive-link-save"
-                        onClick={handleSaveDriveLink}
-                        disabled={savingDriveLink}
- 
-                      >
-                        <Check size={14} />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          className="drive-link-btn drive-link-save"
+                          onClick={handleSaveDriveLink}
+                          disabled={savingDriveLink}
+                        >
+                          <Check size={14} />
+                        </Button>
                       </Tooltip>
                       <Tooltip content="Annuler" position="bottom">
-                        <Button variant="ghost"                         className="drive-link-btn drive-link-cancel"
-                        onClick={handleCancelEditDriveLink}
- 
-                      >
-                        <X size={14} />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          className="drive-link-btn drive-link-cancel"
+                          onClick={handleCancelEditDriveLink}
+                        >
+                          <X size={14} />
+                        </Button>
                       </Tooltip>
                     </div>
                   </div>
@@ -561,27 +644,36 @@ function EventDetailsModal({
                         >
                           <ExternalLink size={14} />
                           <span className="drive-link-text">
-                            {link.label || link.url.replace(/^https?:\/\/(drive\.google\.com\/)?/, '').substring(0, 50) + (link.url.length > 60 ? '...' : '')}
+                            {link.label ||
+                              link.url
+                                .replace(/^https?:\/\/(drive\.google\.com\/)?/, '')
+                                .substring(0, 50) + (link.url.length > 60 ? '...' : '')}
                           </span>
                         </a>
                         {currentUser?.isAdmin && (
                           <div className="drive-link-item-actions">
                             <Tooltip content="Modifier" position="bottom">
-                              <Button variant="ghost"                               className="drive-link-item-btn drive-link-item-edit"
-                              onClick={() => handleStartEditDriveLink(link.reservationId, link.index, link)}
- 
-                            >
-                              <Edit size={13} />
-                            </Button>
+                              <Button
+                                variant="ghost"
+                                className="drive-link-item-btn drive-link-item-edit"
+                                onClick={() =>
+                                  handleStartEditDriveLink(link.reservationId, link.index, link)
+                                }
+                              >
+                                <Edit size={13} />
+                              </Button>
                             </Tooltip>
                             <Tooltip content="Supprimer" position="bottom">
-                              <Button variant="ghost"                               className="drive-link-item-btn drive-link-item-delete"
-                              onClick={() => handleDeleteDriveLink(link.reservationId, link.index)}
- 
-                              disabled={savingDriveLink}
-                            >
-                              <Trash2 size={13} />
-                            </Button>
+                              <Button
+                                variant="ghost"
+                                className="drive-link-item-btn drive-link-item-delete"
+                                onClick={() =>
+                                  handleDeleteDriveLink(link.reservationId, link.index)
+                                }
+                                disabled={savingDriveLink}
+                              >
+                                <Trash2 size={13} />
+                              </Button>
                             </Tooltip>
                           </div>
                         )}
@@ -598,67 +690,68 @@ function EventDetailsModal({
             <SectionHeader
               icon={<Folder size={18} />}
               title={<>Pièces jointes {event.affaire && `(${event.affaire})`}</>}
-              actions={<div className="section-actions">
-                {currentUser?.isAdmin && (
-                  <>
-                    <Tooltip content="Importer un BL" position="bottom">
-                      <Button variant="ghost" 
-                      className="btn-import-bl" 
-                      onClick={handleImportBL}
- 
+              actions={
+                <div className="section-actions">
+                  {currentUser?.isAdmin && (
+                    <>
+                      <Tooltip content="Importer un BL" position="bottom">
+                        <Button
+                          variant="ghost"
+                          className="btn-import-bl"
+                          onClick={handleImportBL}
+                          disabled={!event.affaire}
+                        >
+                          <FileText size={16} />
+                          Importer BL
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content="Joindre des fichiers" position="bottom">
+                        <label
+                          className={`btn-open-folder ${!event.affaire || uploading ? 'disabled' : ''}`}
+                          style={{
+                            cursor: !event.affaire || uploading ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          <Plus size={16} />
+                          {uploading ? 'Upload...' : 'Joindre fichiers'}
+                          <input
+                            type="file"
+                            multiple
+                            onChange={handleFileUpload}
+                            disabled={!event.affaire || uploading}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                      </Tooltip>
+                    </>
+                  )}
+                  <Tooltip content="Ouvrir le dossier" position="bottom">
+                    <Button
+                      variant="ghost"
+                      className="btn-open-folder"
+                      onClick={handleOpenFolder}
                       disabled={!event.affaire}
                     >
-                      <FileText size={16} />
-                      Importer BL
+                      <Folder size={16} />
+                      Ouvrir dossier
                     </Button>
-                    </Tooltip>
-                    <Tooltip content="Joindre des fichiers" position="bottom">
-                      <label 
-                      className={`btn-open-folder ${!event.affaire || uploading ? 'disabled' : ''}`}
- 
-                      style={{ cursor: !event.affaire || uploading ? 'not-allowed' : 'pointer' }}
-                    >
-                      <Plus size={16} />
-                      {uploading ? 'Upload...' : 'Joindre fichiers'}
-                      <input 
-                        type="file" 
-                        multiple 
-                        onChange={handleFileUpload}
-                        disabled={!event.affaire || uploading}
-                        style={{ display: 'none' }}
-                      />
-                    </label>
-                    </Tooltip>
-                  </>
-                )}
-                <Tooltip content="Ouvrir le dossier" position="bottom">
-                  <Button variant="ghost" 
-                  className="btn-open-folder" 
-                  onClick={handleOpenFolder}
- 
-                  disabled={!event.affaire}
-                >
-                  <Folder size={16} />
-                  Ouvrir dossier
-                </Button>
-                </Tooltip>
-              </div>}
+                  </Tooltip>
+                </div>
+              }
             />
-            
+
             {attachmentFiles.length === 0 ? (
               <div className="empty-state">
                 <p>Aucune pièce jointe trouvée</p>
                 {event.affaire && (
-                  <p className="hint">
-                    Cliquez sur "Joindre fichiers" pour ajouter des documents
-                  </p>
+                  <p className="hint">Cliquez sur "Joindre fichiers" pour ajouter des documents</p>
                 )}
               </div>
             ) : (
               <div className="attachments-list">
                 {attachmentFiles.map((file, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="attachment-item clickable"
                     onClick={() => handleFileClick(file)}
                     title="Cliquer pour prévisualiser"
@@ -668,12 +761,16 @@ function EventDetailsModal({
                     <span className="file-size">{file.size}</span>
                     {currentUser?.isAdmin && (
                       <Tooltip content="Supprimer cette pièce jointe" position="bottom">
-                        <Button variant="ghost"                         className="btn-delete-attachment"
-                        onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(file); }}
- 
-                      >
-                        <Trash2 size={14} />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          className="btn-delete-attachment"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAttachment(file);
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
                       </Tooltip>
                     )}
                   </div>
@@ -690,28 +787,30 @@ function EventDetailsModal({
           </Button>
           <div className="footer-actions">
             <Tooltip content="Ajouter à l'affichage dynamique" position="bottom">
-              <Button variant="ghost"               className="btn-display-event"
-              onClick={() => setShowDisplayDialog(true)}
- 
-            >
-              📺 Affichage
-            </Button>
+              <Button
+                variant="ghost"
+                className="btn-display-event"
+                onClick={() => setShowDisplayDialog(true)}
+              >
+                📺 Affichage
+              </Button>
             </Tooltip>
             <Tooltip content="Importer un BL pour cet événement" position="bottom">
-              <Button variant="ghost"               className="btn-bl-import"
-              onClick={() => setShowBLImport(true)}
- 
-            >
-              <FileText size={16} />
-              Import BL
-            </Button>
+              <Button
+                variant="ghost"
+                className="btn-bl-import"
+                onClick={() => setShowBLImport(true)}
+              >
+                <FileText size={16} />
+                Import BL
+              </Button>
             </Tooltip>
             {currentUser?.isAdmin && onRequestDeleteEvent && (
               <Button
                 variant="danger"
                 onClick={() => {
                   confirm({
-                    title: 'Supprimer l\'événement',
+                    title: "Supprimer l'événement",
                     message: 'Supprimer cet événement du Google Calendar ?',
                     variant: 'danger',
                     confirmLabel: 'Supprimer',
@@ -728,18 +827,19 @@ function EventDetailsModal({
             )}
             {currentUser?.isAdmin && onRequestEditEvent && (
               <Tooltip content="Modifier l'événement" position="bottom">
-                <Button variant="ghost"                 className="btn-edit-event"
-                onClick={() => onRequestEditEvent(event)}
- 
-              >
-                <Pencil size={16} />
-                Modifier
-              </Button>
+                <Button
+                  variant="ghost"
+                  className="btn-edit-event"
+                  onClick={() => onRequestEditEvent(event)}
+                >
+                  <Pencil size={16} />
+                  Modifier
+                </Button>
               </Tooltip>
             )}
           </div>
         </div>
-    </ModalLayout>
+      </ModalLayout>
 
       {/* BL Import Modal */}
       {showBLImport && (
@@ -747,10 +847,14 @@ function EventDetailsModal({
           <BLImportModal
             onClose={() => setShowBLImport(false)}
             onImported={() => setShowBLImport(false)}
-            defaultAffaireId={event?.summary ? (() => {
-              const m = event.summary.match(/\bAF\s*\d{4,}/i);
-              return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
-            })() : ''}
+            defaultAffaireId={
+              event?.summary
+                ? (() => {
+                    const m = event.summary.match(/\bAF\s*\d{4,}/i);
+                    return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
+                  })()
+                : ''
+            }
           />
         </Suspense>
       )}
@@ -760,10 +864,14 @@ function EventDetailsModal({
         <Suspense fallback={null}>
           <DynamicDisplayDialog
             defaultDate={event?.start?.date || event?.start?.dateTime?.slice(0, 10) || null}
-            defaultAffaireId={event?.summary ? (() => {
-              const m = event.summary.match(/\bAF\s*\d{4,}/i);
-              return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
-            })() : ''}
+            defaultAffaireId={
+              event?.summary
+                ? (() => {
+                    const m = event.summary.match(/\bAF\s*\d{4,}/i);
+                    return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
+                  })()
+                : ''
+            }
             onSave={() => setShowDisplayDialog(false)}
             onClose={() => setShowDisplayDialog(false)}
           />
@@ -787,30 +895,30 @@ function EventDetailsModal({
             </>
           }
         >
-            <div className="preview-body">
-              {previewFile.name.toLowerCase().endsWith('.pdf') ? (
-                <iframe 
-                  src={previewFile.url} 
-                  title={previewFile.name}
-                  style={{ width: '100%', height: '100%', border: 'none' }}
-                />
-              ) : previewFile.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                <img 
-                  src={previewFile.url} 
-                  alt={previewFile.name}
-                  loading="lazy"
-                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                />
-              ) : (
-                <div className="unsupported-preview">
-                  <FileText size={48} />
-                  <p>Aperçu non disponible pour ce type de fichier</p>
-                  <a href={previewFile.url} download className="btn-primary">
-                    Télécharger
-                  </a>
-                </div>
-              )}
-            </div>
+          <div className="preview-body">
+            {previewFile.name.toLowerCase().endsWith('.pdf') ? (
+              <iframe
+                src={previewFile.url}
+                title={previewFile.name}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+              />
+            ) : previewFile.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+              <img
+                src={previewFile.url}
+                alt={previewFile.name}
+                loading="lazy"
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              />
+            ) : (
+              <div className="unsupported-preview">
+                <FileText size={48} />
+                <p>Aperçu non disponible pour ce type de fichier</p>
+                <a href={previewFile.url} download className="btn-primary">
+                  Télécharger
+                </a>
+              </div>
+            )}
+          </div>
         </ModalLayout>
       )}
 
@@ -819,7 +927,11 @@ function EventDetailsModal({
         <ModalLayout
           open
           onClose={() => setShowFolderView(false)}
-          title={<><Folder size={20} /> Dossier : {event.affaire}</>}
+          title={
+            <>
+              <Folder size={20} /> Dossier : {event.affaire}
+            </>
+          }
           size="lg"
           className="folder-view-modal"
           footer={
@@ -828,9 +940,9 @@ function EventDetailsModal({
               <label className="btn-primary">
                 <Plus size={16} />
                 Ajouter fichiers
-                <input 
-                  type="file" 
-                  multiple 
+                <input
+                  type="file"
+                  multiple
                   onChange={handleFileUpload}
                   disabled={uploading}
                   style={{ display: 'none' }}
@@ -839,50 +951,59 @@ function EventDetailsModal({
             </>
           }
         >
-            <div className="folder-body">
-              {attachmentFiles.length === 0 ? (
-                <div className="empty-folder">
-                  <Folder size={48} />
-                  <p>Aucun fichier dans ce dossier</p>
-                </div>
-              ) : (
-                <div className="folder-files-grid">
-                  {attachmentFiles.map((file, index) => (
-                    <div 
-                      key={index} 
-                      className="folder-file-card"
-                      onClick={() => {
-                        setShowFolderView(false);
-                        handleFileClick(file);
+          <div className="folder-body">
+            {attachmentFiles.length === 0 ? (
+              <div className="empty-folder">
+                <Folder size={48} />
+                <p>Aucun fichier dans ce dossier</p>
+              </div>
+            ) : (
+              <div className="folder-files-grid">
+                {attachmentFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="folder-file-card"
+                    onClick={() => {
+                      setShowFolderView(false);
+                      handleFileClick(file);
+                    }}
+                  >
+                    <Button
+                      variant="ghost"
+                      className="folder-file-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteAttachment(file);
                       }}
+                      title={`Supprimer ${file.name}`}
                     >
-                      <Button variant="ghost"                         className="folder-file-delete"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteAttachment(file);
-                        }}
-                        title={`Supprimer ${file.name}`}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                      <div className="file-icon">
-                        {file.name.toLowerCase().endsWith('.pdf') ? (
-                          <FileText size={32} />
-                        ) : file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                          <img src={file.url} alt={file.name} loading="lazy" className="file-thumbnail" />
-                        ) : (
-                          <FileText size={32} />
-                        )}
-                      </div>
-                      <div className="file-info">
-                        <p className="file-name" title={file.name}>{file.name}</p>
-                        <p className="file-size">{file.size}</p>
-                      </div>
+                      <Trash2 size={14} />
+                    </Button>
+                    <div className="file-icon">
+                      {file.name.toLowerCase().endsWith('.pdf') ? (
+                        <FileText size={32} />
+                      ) : file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        <img
+                          src={file.url}
+                          alt={file.name}
+                          loading="lazy"
+                          className="file-thumbnail"
+                        />
+                      ) : (
+                        <FileText size={32} />
+                      )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <div className="file-info">
+                      <p className="file-name" title={file.name}>
+                        {file.name}
+                      </p>
+                      <p className="file-size">{file.size}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </ModalLayout>
       )}
 

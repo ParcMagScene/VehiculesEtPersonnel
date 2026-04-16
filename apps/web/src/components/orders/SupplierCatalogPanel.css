@@ -51,7 +51,7 @@
   flex-shrink: 0;
 }
 
-.catalog-toolbar input[type="text"],
+.catalog-toolbar input[type='text'],
 .catalog-toolbar select {
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--theme-border);
@@ -67,7 +67,7 @@
   max-width: 260px;
 }
 
-.catalog-toolbar input[type="text"]:focus,
+.catalog-toolbar input[type='text']:focus,
 .catalog-toolbar select:focus {
   outline: none;
   border-color: var(--theme-primary);
@@ -180,8 +180,12 @@
 }
 
 @keyframes catalogFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .catalog-modal {
@@ -198,8 +202,14 @@
 }
 
 @keyframes catalogSlideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .catalog-modal-header {
@@ -456,7 +466,7 @@
     flex-direction: column;
   }
 
-  .catalog-toolbar input[type="text"],
+  .catalog-toolbar input[type='text'],
   .catalog-toolbar select {
     width: 100%;
     min-width: auto;
@@ -724,7 +734,9 @@
 
 /* ─── Spin animation ─── */
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spin {
@@ -732,13 +744,23 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ─── Utility classes (CatalogSettingsPanel) ─── */
-.text-right { text-align: right; }
-.text-center { text-align: center; }
+.text-right {
+  text-align: right;
+}
+.text-center {
+  text-align: center;
+}
 
 .catalog-checkbox-label {
   display: flex;
@@ -766,5 +788,9 @@
   gap: 8px;
 }
 
-.icon-success { color: var(--theme-success); }
-.icon-warning { color: var(--theme-warning); }
+.icon-success {
+  color: var(--theme-success);
+}
+.icon-warning {
+  color: var(--theme-warning);
+}

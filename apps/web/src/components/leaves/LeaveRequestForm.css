@@ -150,7 +150,9 @@
   font-size: var(--font-base);
   color: var(--theme-text-primary);
   background: var(--theme-bg-card);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .lrf-select:focus,
@@ -168,7 +170,9 @@
   color: var(--theme-text-primary);
   resize: vertical;
   font-family: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .lrf-textarea:focus {

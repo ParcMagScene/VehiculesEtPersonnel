@@ -65,16 +65,28 @@ export const useEquipment = ({ currentUser, initialTab }) => {
       }
     }
     if (findZone(depotZones?.zones, zoneId)) return depotZones;
-    return depotZones || (allDepotZones?.depots?.[0]) || null;
+    return depotZones || allDepotZones?.depots?.[0] || null;
   }, [depotMapModalZone, depotZones, allDepotZones]);
 
   const isAdmin = currentUser?.isAdmin === true;
-  const canManageEquipmentMaintenance = isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance === true;
+  const canManageEquipmentMaintenance =
+    isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance === true;
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [eqData, catData, ticketData, persData, photosData, listsData, zonesData, locStatsData, allZonesData, brandsData] = await Promise.all([
+      const [
+        eqData,
+        catData,
+        ticketData,
+        persData,
+        photosData,
+        listsData,
+        zonesData,
+        locStatsData,
+        allZonesData,
+        brandsData,
+      ] = await Promise.all([
         api.getEquipment(),
         api.getEquipmentCategories(),
         api.getSavTickets(),
@@ -106,11 +118,19 @@ export const useEquipment = ({ currentUser, initialTab }) => {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-  const families = useMemo(() => categories.filter(c => c.level === 'family'), [categories]);
-  const subfamilies = useMemo(() => categories.filter(c => c.level === 'subfamily'), [categories]);
-  const leafCategories = useMemo(() => categories.filter(c => c.level === 'category'), [categories]);
+  const families = useMemo(() => categories.filter((c) => c.level === 'family'), [categories]);
+  const subfamilies = useMemo(
+    () => categories.filter((c) => c.level === 'subfamily'),
+    [categories],
+  );
+  const leafCategories = useMemo(
+    () => categories.filter((c) => c.level === 'category'),
+    [categories],
+  );
 
   const parsedCatFilter = useMemo(() => {
     if (!filterCatTree) return { type: null, id: null };
@@ -118,11 +138,18 @@ export const useEquipment = ({ currentUser, initialTab }) => {
     return { type, id: parseInt(idStr) };
   }, [filterCatTree]);
 
-  const favoriteIds = useMemo(() => new Set(equipmentLists.filter(l => l.list_type === 'favorite').map(l => l.equipment_id)), [equipmentLists]);
-  const watchIds = useMemo(() => new Set(equipmentLists.filter(l => l.list_type === 'watch').map(l => l.equipment_id)), [equipmentLists]);
+  const favoriteIds = useMemo(
+    () =>
+      new Set(equipmentLists.filter((l) => l.list_type === 'favorite').map((l) => l.equipment_id)),
+    [equipmentLists],
+  );
+  const watchIds = useMemo(
+    () => new Set(equipmentLists.filter((l) => l.list_type === 'watch').map((l) => l.equipment_id)),
+    [equipmentLists],
+  );
 
   const filteredEquipment = useMemo(() => {
-    return equipment.filter(eq => {
+    return equipment.filter((eq) => {
       if (filterStatus && eq.status !== filterStatus) return false;
       if (filterSerialized && !(eq.serialNumber || eq.serial_number)) return false;
       if (filterZone) {
@@ -137,46 +164,88 @@ export const useEquipment = ({ currentUser, initialTab }) => {
       const eqCatId = eq.categoryId || eq.category_id;
       if (parsedCatFilter.type === 'family') {
         const familyId = parsedCatFilter.id;
-        const sfIds = subfamilies.filter(sf => sf.parentId === familyId || sf.parent_id === familyId).map(sf => sf.id);
-        const catIds = leafCategories.filter(c => sfIds.includes(c.parentId || c.parent_id)).map(c => c.id);
+        const sfIds = subfamilies
+          .filter((sf) => sf.parentId === familyId || sf.parent_id === familyId)
+          .map((sf) => sf.id);
+        const catIds = leafCategories
+          .filter((c) => sfIds.includes(c.parentId || c.parent_id))
+          .map((c) => c.id);
         const allValidIds = [familyId, ...sfIds, ...catIds];
         if (!allValidIds.includes(eqCatId)) return false;
       }
       if (parsedCatFilter.type === 'subfamily') {
         const sfId = parsedCatFilter.id;
-        const catIds = leafCategories.filter(c => (c.parentId || c.parent_id) === sfId).map(c => c.id);
+        const catIds = leafCategories
+          .filter((c) => (c.parentId || c.parent_id) === sfId)
+          .map((c) => c.id);
         const allValidIds = [sfId, ...catIds];
         if (!allValidIds.includes(eqCatId)) return false;
       }
       if (parsedCatFilter.type === 'category' && eqCatId !== parsedCatFilter.id) return false;
       if (search) {
         const s = search.toLowerCase();
-        if (!eq.name?.toLowerCase().includes(s) && !eq.reference?.toLowerCase().includes(s) && !(eq.serialNumber || eq.serial_number || '').toLowerCase().includes(s) && !eq.location?.toLowerCase().includes(s) && !eq.brand?.toLowerCase().includes(s) && !(eq.uid || '').toLowerCase().includes(s)) return false;
+        if (
+          !eq.name?.toLowerCase().includes(s) &&
+          !eq.reference?.toLowerCase().includes(s) &&
+          !(eq.serialNumber || eq.serial_number || '').toLowerCase().includes(s) &&
+          !eq.location?.toLowerCase().includes(s) &&
+          !eq.brand?.toLowerCase().includes(s) &&
+          !(eq.uid || '').toLowerCase().includes(s)
+        )
+          return false;
       }
       return true;
     });
-  }, [equipment, filterStatus, filterSerialized, filterZone, parsedCatFilter, search, subfamilies, leafCategories, listFilter, favoriteIds, watchIds]);
+  }, [
+    equipment,
+    filterStatus,
+    filterSerialized,
+    filterZone,
+    parsedCatFilter,
+    search,
+    subfamilies,
+    leafCategories,
+    listFilter,
+    favoriteIds,
+    watchIds,
+  ]);
 
   const filteredTickets = useMemo(() => {
-    return savTickets.filter(t => {
-      if (savFilterStatus === '_active' && (t.status === 'resolved' || t.status === 'closed')) return false;
-      if (savFilterStatus && savFilterStatus !== '_active' && t.status !== savFilterStatus) return false;
+    return savTickets.filter((t) => {
+      if (savFilterStatus === '_active' && (t.status === 'resolved' || t.status === 'closed'))
+        return false;
+      if (savFilterStatus && savFilterStatus !== '_active' && t.status !== savFilterStatus)
+        return false;
       if (savSearch) {
         const s = savSearch.toLowerCase();
-        const fields = [t.title, t.equipmentName, t.importName, t.equipmentReference, t.importCode, t.equipmentSerialNumber, t.importSerial, t.equipmentUid, t.description];
-        if (!fields.some(f => f && String(f).toLowerCase().includes(s))) return false;
+        const fields = [
+          t.title,
+          t.equipmentName,
+          t.importName,
+          t.equipmentReference,
+          t.importCode,
+          t.equipmentSerialNumber,
+          t.importSerial,
+          t.equipmentUid,
+          t.description,
+        ];
+        if (!fields.some((f) => f && String(f).toLowerCase().includes(s))) return false;
       }
       return true;
     });
   }, [savTickets, savFilterStatus, savSearch]);
 
-  const stats = useMemo(() => ({
-    total: equipment.length,
-    available: equipment.filter(e => e.status === 'available').length,
-    in_use: equipment.filter(e => e.status === 'in_use').length,
-    maintenance: equipment.filter(e => e.status === STATUS.MAINTENANCE).length,
-    openTickets: savTickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').length,
-  }), [equipment, savTickets]);
+  const stats = useMemo(
+    () => ({
+      total: equipment.length,
+      available: equipment.filter((e) => e.status === 'available').length,
+      in_use: equipment.filter((e) => e.status === 'in_use').length,
+      maintenance: equipment.filter((e) => e.status === STATUS.MAINTENANCE).length,
+      openTickets: savTickets.filter((t) => t.status !== 'resolved' && t.status !== 'closed')
+        .length,
+    }),
+    [equipment, savTickets],
+  );
 
   const handleSaveEquipment = async (data) => {
     try {
@@ -215,9 +284,10 @@ export const useEquipment = ({ currentUser, initialTab }) => {
   const handleSerializeEquipment = (eq) => {
     const qty = eq.stockQuantity || eq.stock_quantity || 1;
     if (eq.uid && qty <= 1) return toast.warning('Cet équipement possède déjà un UID.');
-    const msg = qty > 1
-      ? `Sérialiser "${eq.name}" en ${qty} entités individuelles ?\n\nChaque exemplaire recevra son propre UID (EMAG-XXXXX).\nL'article original sera remplacé par ${qty} fiches individuelles.`
-      : `Attribuer un UID unique (EMAG-XXXXX) à "${eq.name}" ?`;
+    const msg =
+      qty > 1
+        ? `Sérialiser "${eq.name}" en ${qty} entités individuelles ?\n\nChaque exemplaire recevra son propre UID (EMAG-XXXXX).\nL'article original sera remplacé par ${qty} fiches individuelles.`
+        : `Attribuer un UID unique (EMAG-XXXXX) à "${eq.name}" ?`;
     confirm({
       title: 'Sérialisation',
       message: msg,
@@ -225,7 +295,7 @@ export const useEquipment = ({ currentUser, initialTab }) => {
       onConfirm: async () => {
         try {
           const result = await api.serializeEquipment(eq.id);
-          toast.success(`${result.message} — UID : ${result.created.map(c => c.uid).join(', ')}`);
+          toast.success(`${result.message} — UID : ${result.created.map((c) => c.uid).join(', ')}`);
           setSelectedEquipment(null);
           setDialogEquipment(null);
           loadData();
@@ -287,43 +357,103 @@ export const useEquipment = ({ currentUser, initialTab }) => {
 
   return {
     // Data
-    equipment, categories, savTickets, persons, brandsList, loading,
-    photosList, logosList, equipmentLists, depotZones, allDepotZones, locationStats,
+    equipment,
+    categories,
+    savTickets,
+    persons,
+    brandsList,
+    loading,
+    photosList,
+    logosList,
+    equipmentLists,
+    depotZones,
+    allDepotZones,
+    locationStats,
     // Category hierarchy
-    families, subfamilies, leafCategories,
+    families,
+    subfamilies,
+    leafCategories,
     // Filtered
-    filteredEquipment, filteredTickets, stats,
-    favoriteIds, watchIds,
+    filteredEquipment,
+    filteredTickets,
+    stats,
+    favoriteIds,
+    watchIds,
     // Tabs
-    subTab, setSubTab,
+    subTab,
+    setSubTab,
     // Filters
-    search, setSearch, filterStatus, setFilterStatus, filterCatTree, setFilterCatTree,
-    savFilterStatus, setSavFilterStatus, savSearch, setSavSearch,
-    filterZone, setFilterZone, filterSerialized, setFilterSerialized,
-    listFilter, setListFilter,
+    search,
+    setSearch,
+    filterStatus,
+    setFilterStatus,
+    filterCatTree,
+    setFilterCatTree,
+    savFilterStatus,
+    setSavFilterStatus,
+    savSearch,
+    setSavSearch,
+    filterZone,
+    setFilterZone,
+    filterSerialized,
+    setFilterSerialized,
+    listFilter,
+    setListFilter,
     // Equipment modals
-    showEquipmentModal, setShowEquipmentModal, editingEquipment, setEditingEquipment,
-    selectedEquipment, setSelectedEquipment, dialogEquipment, setDialogEquipment,
+    showEquipmentModal,
+    setShowEquipmentModal,
+    editingEquipment,
+    setEditingEquipment,
+    selectedEquipment,
+    setSelectedEquipment,
+    dialogEquipment,
+    setDialogEquipment,
     clickTimerRef,
     // SAV modals
-    showSavModal, setShowSavModal, editingSavTicket, setEditingSavTicket,
-    savTicketEquipment, setSavTicketEquipment,
-    selectedTicket, setSelectedTicket, dialogTicket, setDialogTicket,
+    showSavModal,
+    setShowSavModal,
+    editingSavTicket,
+    setEditingSavTicket,
+    savTicketEquipment,
+    setSavTicketEquipment,
+    selectedTicket,
+    setSelectedTicket,
+    dialogTicket,
+    setDialogTicket,
     ticketClickTimerRef,
     // Other modals
-    showImportModal, setShowImportModal, showSavImportModal, setShowSavImportModal,
-    showReportModal, setShowReportModal, exportingSavPdf,
-    showMobileSavRequest, setShowMobileSavRequest,
-    labelPrintEquipment, setLabelPrintEquipment,
-    mgmtTab, setMgmtTab,
+    showImportModal,
+    setShowImportModal,
+    showSavImportModal,
+    setShowSavImportModal,
+    showReportModal,
+    setShowReportModal,
+    exportingSavPdf,
+    showMobileSavRequest,
+    setShowMobileSavRequest,
+    labelPrintEquipment,
+    setLabelPrintEquipment,
+    mgmtTab,
+    setMgmtTab,
     // Depot map
-    showDepotMap, setShowDepotMap, depotMapModalZone, setDepotMapModalZone, modalDepotData,
+    showDepotMap,
+    setShowDepotMap,
+    depotMapModalZone,
+    setDepotMapModalZone,
+    modalDepotData,
     // Permissions
-    isAdmin, canManageEquipmentMaintenance,
+    isAdmin,
+    canManageEquipmentMaintenance,
     // Handlers
-    loadData, handleSaveEquipment, handleDeleteEquipment, handleSerializeEquipment,
-    handleSaveSavTicket, toggleList, handleExportSavPdf,
+    loadData,
+    handleSaveEquipment,
+    handleDeleteEquipment,
+    handleSerializeEquipment,
+    handleSaveSavTicket,
+    toggleList,
+    handleExportSavPdf,
     // Confirm dialog
-    confirm, ConfirmDialogRenderer,
+    confirm,
+    ConfirmDialogRenderer,
   };
 };

@@ -5,8 +5,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  X, Calendar, Clock, CheckCircle, Download, Trash2, ChevronDown,
-  Send, RefreshCw,
+  X,
+  Calendar,
+  Clock,
+  CheckCircle,
+  Download,
+  Trash2,
+  ChevronDown,
+  Send,
+  RefreshCw,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -82,7 +89,7 @@ const LeaveRequestsPanel = ({
       loadBalance();
       if (onRefresh) onRefresh();
     } catch (err) {
-      setError(err.error || err.message || 'Erreur lors de l\'annulation');
+      setError(err.error || err.message || "Erreur lors de l'annulation");
     }
   };
 
@@ -92,7 +99,10 @@ const LeaveRequestsPanel = ({
       const data = await api.getLeavePdf(id);
       if (data.html) {
         const win = openSanitizedPrintWindow(data.html);
-        if (!win) { setError('Popup bloquée'); return; }
+        if (!win) {
+          setError('Popup bloquée');
+          return;
+        }
         setTimeout(() => win.print(), 500);
       }
     } catch (err) {
@@ -105,25 +115,35 @@ const LeaveRequestsPanel = ({
     if (!d) return '—';
     try {
       return format(parseISO(d), 'd MMM yyyy', { locale: fr });
-    } catch { return d; }
+    } catch {
+      return d;
+    }
   };
 
   // Filtrer les demandes
-  const filteredRequests = filter === 'all'
-    ? requests
-    : requests.filter(r => r.status === filter || r.leave_type === filter);
+  const filteredRequests =
+    filter === 'all'
+      ? requests
+      : requests.filter((r) => r.status === filter || r.leave_type === filter);
 
   // Stats rapides
   const stats = {
     total: requests.length,
-    pending: requests.filter(r => r.status === STATUS.PENDING).length,
-    accepted: requests.filter(r => r.status === STATUS.ACCEPTED || r.status === 'modified').length,
-    refused: requests.filter(r => r.status === STATUS.REFUSED).length,
+    pending: requests.filter((r) => r.status === STATUS.PENDING).length,
+    accepted: requests.filter((r) => r.status === STATUS.ACCEPTED || r.status === 'modified')
+      .length,
+    refused: requests.filter((r) => r.status === STATUS.REFUSED).length,
   };
 
   return (
     <div className="lrp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="lrp-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Mes demandes de congés">
+      <div
+        className="lrp-panel"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mes demandes de congés"
+      >
         {/* En-tête */}
         <div className="lrp-header">
           <div className="lrp-header-title">
@@ -131,9 +151,11 @@ const LeaveRequestsPanel = ({
             <h2>Mes demandes de congés</h2>
           </div>
           <div className="lrp-header-actions">
-            <Tooltip content="Rafraîchir"><Button variant="ghost" className="lrp-btn-refresh" onClick={loadRequests}>
-              <RefreshCw size={16} />
-            </Button></Tooltip>
+            <Tooltip content="Rafraîchir">
+              <Button variant="ghost" className="lrp-btn-refresh" onClick={loadRequests}>
+                <RefreshCw size={16} />
+              </Button>
+            </Tooltip>
             {onNewRequest && (
               <Button variant="ghost" className="lrp-btn-new" onClick={onNewRequest}>
                 <Send size={14} /> Nouvelle demande
@@ -149,16 +171,22 @@ const LeaveRequestsPanel = ({
         {balance && (
           <div className="lrp-balance-bar">
             <div className="lrp-balance-item">
-              <span className="lrp-balance-num">{balance.daysEntitled ?? balance.days_entitled ?? 30}</span>
+              <span className="lrp-balance-num">
+                {balance.daysEntitled ?? balance.days_entitled ?? 30}
+              </span>
               <span>acquis</span>
             </div>
             <div className="lrp-balance-item">
-              <span className="lrp-balance-num">{balance.daysTaken ?? balance.days_taken ?? 0}</span>
+              <span className="lrp-balance-num">
+                {balance.daysTaken ?? balance.days_taken ?? 0}
+              </span>
               <span>pris</span>
             </div>
             <div className="lrp-balance-item highlight">
               <span className="lrp-balance-num">
-                {balance.remaining ?? ((balance.daysEntitled || balance.days_entitled || 30) - (balance.daysTaken || balance.days_taken || 0))}
+                {balance.remaining ??
+                  (balance.daysEntitled || balance.days_entitled || 30) -
+                    (balance.daysTaken || balance.days_taken || 0)}
               </span>
               <span>restant</span>
             </div>
@@ -173,23 +201,49 @@ const LeaveRequestsPanel = ({
 
         {/* Stats rapides */}
         <div className="lrp-stats">
-          <span className="lrp-stat" data-active={filter === 'all'} role="tab" tabIndex={0} onClick={() => setFilter('all')}>
+          <span
+            className="lrp-stat"
+            data-active={filter === 'all'}
+            role="tab"
+            tabIndex={0}
+            onClick={() => setFilter('all')}
+          >
             Toutes ({stats.total})
           </span>
-          <span className="lrp-stat pending" data-active={filter === STATUS.PENDING} role="tab" tabIndex={0} onClick={() => setFilter('pending')}>
+          <span
+            className="lrp-stat pending"
+            data-active={filter === STATUS.PENDING}
+            role="tab"
+            tabIndex={0}
+            onClick={() => setFilter('pending')}
+          >
             En attente ({stats.pending})
           </span>
-          <span className="lrp-stat accepted" data-active={filter === STATUS.ACCEPTED} role="tab" tabIndex={0} onClick={() => setFilter('accepted')}>
+          <span
+            className="lrp-stat accepted"
+            data-active={filter === STATUS.ACCEPTED}
+            role="tab"
+            tabIndex={0}
+            onClick={() => setFilter('accepted')}
+          >
             Acceptées ({stats.accepted})
           </span>
-          <span className="lrp-stat refused" data-active={filter === STATUS.REFUSED} role="tab" tabIndex={0} onClick={() => setFilter('refused')}>
+          <span
+            className="lrp-stat refused"
+            data-active={filter === STATUS.REFUSED}
+            role="tab"
+            tabIndex={0}
+            onClick={() => setFilter('refused')}
+          >
             Refusées ({stats.refused})
           </span>
         </div>
 
         {/* Erreur */}
         {error && (
-          <InlineAlert dismissible onDismiss={() => setError('')}>{error}</InlineAlert>
+          <InlineAlert dismissible onDismiss={() => setError('')}>
+            {error}
+          </InlineAlert>
         )}
 
         {/* Liste */}
@@ -202,17 +256,20 @@ const LeaveRequestsPanel = ({
             <EmptyState
               icon={<Calendar size={32} />}
               title="Aucune demande de congé"
-              action={onNewRequest && (
-                <Button variant="ghost" className="lrp-btn-new-empty" onClick={onNewRequest}>
-                  <Send size={14} /> Faire une demande
-                </Button>
-              )}
+              action={
+                onNewRequest && (
+                  <Button variant="ghost" className="lrp-btn-new-empty" onClick={onNewRequest}>
+                    <Send size={14} /> Faire une demande
+                  </Button>
+                )
+              }
             />
           ) : (
-            filteredRequests.map(req => {
+            filteredRequests.map((req) => {
               const statusCfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
               const StatusIcon = statusCfg.icon;
-              const typeCfg = LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] || LEAVE_TYPE_LABELS.conge_paye;
+              const typeCfg =
+                LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] || LEAVE_TYPE_LABELS.conge_paye;
               const isExpanded = expandedId === req.id;
 
               return (
@@ -243,10 +300,12 @@ const LeaveRequestsPanel = ({
                   <div className="lrp-card-dates">
                     <Calendar size={12} />
                     <span>
-                      {fmtDate(req.start_date || req.startDate)} → {fmtDate(req.end_date || req.endDate)}
+                      {fmtDate(req.start_date || req.startDate)} →{' '}
+                      {fmtDate(req.end_date || req.endDate)}
                     </span>
                     <span className="lrp-card-days">
-                      {req.working_days || req.workingDays} jour{(req.working_days || req.workingDays) > 1 ? 's' : ''}
+                      {req.working_days || req.workingDays} jour
+                      {(req.working_days || req.workingDays) > 1 ? 's' : ''}
                     </span>
                   </div>
 
@@ -258,69 +317,107 @@ const LeaveRequestsPanel = ({
 
                   {/* Détails expansés */}
                   {isExpanded && (
-                    <div className="lrp-card-details" onClick={e => e.stopPropagation()}>
+                    <div className="lrp-card-details" onClick={(e) => e.stopPropagation()}>
                       {req.employee_comment && (
-                        <DetailRow className="lrp-detail-row" label="Commentaire :" value={req.employee_comment || req.employeeComment} />
+                        <DetailRow
+                          className="lrp-detail-row"
+                          label="Commentaire :"
+                          value={req.employee_comment || req.employeeComment}
+                        />
                       )}
                       {req.admin_comment && (
-                        <DetailRow className="lrp-detail-row" label="Réponse :" value={req.admin_comment || req.adminComment} />
+                        <DetailRow
+                          className="lrp-detail-row"
+                          label="Réponse :"
+                          value={req.admin_comment || req.adminComment}
+                        />
                       )}
                       {req.decision_date && (
-                        <DetailRow className="lrp-detail-row" label="Décision le :" value={fmtDate(req.decision_date || req.decisionDate)} />
+                        <DetailRow
+                          className="lrp-detail-row"
+                          label="Décision le :"
+                          value={fmtDate(req.decision_date || req.decisionDate)}
+                        />
                       )}
                       {req.decision_by_name && (
-                        <DetailRow className="lrp-detail-row" label="Par :" value={req.decision_by_name || req.decisionByName} />
+                        <DetailRow
+                          className="lrp-detail-row"
+                          label="Par :"
+                          value={req.decision_by_name || req.decisionByName}
+                        />
                       )}
                       {(req.modified_start_date || req.modifiedStartDate) && (
                         <DetailRow className="lrp-detail-row modified" label="Période modifiée :">
-                          {fmtDate(req.modified_start_date || req.modifiedStartDate)} → {fmtDate(req.modified_end_date || req.modifiedEndDate)}
-                          {' '}({req.modified_working_days || req.modifiedWorkingDays} jours)
+                          {fmtDate(req.modified_start_date || req.modifiedStartDate)} →{' '}
+                          {fmtDate(req.modified_end_date || req.modifiedEndDate)} (
+                          {req.modified_working_days || req.modifiedWorkingDays} jours)
                         </DetailRow>
                       )}
                       {req.signature_employee && (
                         <DetailRow className="lrp-detail-row" label="Signature salarié :">
-                          <span className="lrp-signature-ok"><CheckCircle size={12} /> Signé</span>
+                          <span className="lrp-signature-ok">
+                            <CheckCircle size={12} /> Signé
+                          </span>
                         </DetailRow>
                       )}
                       {req.signature_admin && (
                         <DetailRow className="lrp-detail-row" label="Signature employeur :">
-                          <span className="lrp-signature-ok"><CheckCircle size={12} /> Signé</span>
+                          <span className="lrp-signature-ok">
+                            <CheckCircle size={12} /> Signé
+                          </span>
                         </DetailRow>
                       )}
 
                       <div className="lrp-card-actions">
-                        <Button variant="ghost"                           className="lrp-action-btn pdf"
+                        <Button
+                          variant="ghost"
+                          className="lrp-action-btn pdf"
                           onClick={() => handleDownloadPdf(req.id)}
                           title="Télécharger le PDF"
                         >
                           <Download size={14} /> PDF
                         </Button>
-                        {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) && (
-                          cancellingId === req.id ? (
+                        {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) &&
+                          (cancellingId === req.id ? (
                             <div className="lrp-cancel-confirm">
                               <span>Confirmer l'annulation ?</span>
-                              <Button variant="ghost" className="lrp-action-btn cancel-yes" onClick={() => handleCancel(req.id)}>
+                              <Button
+                                variant="ghost"
+                                className="lrp-action-btn cancel-yes"
+                                onClick={() => handleCancel(req.id)}
+                              >
                                 Oui
                               </Button>
-                              <Button variant="ghost" className="lrp-action-btn cancel-no" onClick={() => setCancellingId(null)}>
+                              <Button
+                                variant="ghost"
+                                className="lrp-action-btn cancel-no"
+                                onClick={() => setCancellingId(null)}
+                              >
                                 Non
                               </Button>
                             </div>
                           ) : (
-                            <Button variant="ghost"                               className="lrp-action-btn cancel"
+                            <Button
+                              variant="ghost"
+                              className="lrp-action-btn cancel"
                               onClick={() => setCancellingId(req.id)}
                               title="Annuler"
                             >
                               <Trash2 size={14} /> Annuler
                             </Button>
-                          )
-                        )}
+                          ))}
                       </div>
                     </div>
                   )}
 
                   <div className="lrp-card-expand">
-                    <ChevronDown size={14} style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                    <ChevronDown
+                      size={14}
+                      style={{
+                        transform: isExpanded ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.2s',
+                      }}
+                    />
                   </div>
                 </div>
               );

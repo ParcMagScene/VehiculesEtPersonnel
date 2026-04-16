@@ -32,7 +32,9 @@ export default function Skeleton({
     variant !== 'rect' && `ui-skeleton--${variant}`,
     size && `ui-skeleton--${size}`,
     className,
-  ].filter(Boolean).join(' ');
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const baseStyle = {
     ...(width != null && { width: typeof width === 'number' ? `${width}px` : width }),

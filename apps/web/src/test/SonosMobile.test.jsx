@@ -76,14 +76,18 @@ import MobileSonosFavorites from '../components/mobile/MobileSonosFavorites';
 describe('MobileSonosNowPlaying', () => {
   it('renders nothing when displayState is null', () => {
     const { container } = render(
-      <MobileSonosNowPlaying displayState={null} onNext={vi.fn()} onPrevious={vi.fn()} />
+      <MobileSonosNowPlaying displayState={null} onNext={vi.fn()} onPrevious={vi.fn()} />,
     );
     expect(container.innerHTML).toBe('');
   });
 
   it('shows error alert', () => {
     render(
-      <MobileSonosNowPlaying displayState={{ error: 'Nope' }} onNext={vi.fn()} onPrevious={vi.fn()} />
+      <MobileSonosNowPlaying
+        displayState={{ error: 'Nope' }}
+        onNext={vi.fn()}
+        onPrevious={vi.fn()}
+      />,
     );
     expect(screen.getByRole('alert')).toHaveTextContent('Nope');
   });
@@ -92,8 +96,9 @@ describe('MobileSonosNowPlaying', () => {
     render(
       <MobileSonosNowPlaying
         displayState={{ playing: false, state: 'stopped' }}
-        onNext={vi.fn()} onPrevious={vi.fn()}
-      />
+        onNext={vi.fn()}
+        onPrevious={vi.fn()}
+      />,
     );
     expect(screen.getByText(/Aucune lecture en cours/)).toBeInTheDocument();
   });
@@ -102,11 +107,16 @@ describe('MobileSonosNowPlaying', () => {
     render(
       <MobileSonosNowPlaying
         displayState={{
-          playing: true, title: 'Mobile Song', artist: 'Art',
-          position: 10, duration: 60, albumArtURI: 'http://img.jpg',
+          playing: true,
+          title: 'Mobile Song',
+          artist: 'Art',
+          position: 10,
+          duration: 60,
+          albumArtURI: 'http://img.jpg',
         }}
-        onNext={vi.fn()} onPrevious={vi.fn()}
-      />
+        onNext={vi.fn()}
+        onPrevious={vi.fn()}
+      />,
     );
     expect(screen.getByText('Mobile Song')).toBeInTheDocument();
     expect(screen.getByText('Art')).toBeInTheDocument();
@@ -115,11 +125,20 @@ describe('MobileSonosNowPlaying', () => {
 
 describe('MobileSonosControls', () => {
   const baseProps = {
-    state: 'playing', position: 0, duration: 120,
-    shuffleActive: false, repeatMode: 'none',
-    onPlay: vi.fn(), onPause: vi.fn(), onNext: vi.fn(), onPrevious: vi.fn(),
-    onSeek: vi.fn(), onShuffle: vi.fn(), onRepeat: vi.fn(),
-    busy: false, isAdmin: true,
+    state: 'playing',
+    position: 0,
+    duration: 120,
+    shuffleActive: false,
+    repeatMode: 'none',
+    onPlay: vi.fn(),
+    onPause: vi.fn(),
+    onNext: vi.fn(),
+    onPrevious: vi.fn(),
+    onSeek: vi.fn(),
+    onShuffle: vi.fn(),
+    onRepeat: vi.fn(),
+    busy: false,
+    isAdmin: true,
   };
 
   it('returns null for non-admin', () => {
@@ -135,9 +154,13 @@ describe('MobileSonosControls', () => {
 
 describe('MobileSonosVolume', () => {
   const baseProps = {
-    volume: 50, muted: false,
-    onSetVolume: vi.fn(), onMute: vi.fn(), onUnmute: vi.fn(),
-    busy: false, isAdmin: true,
+    volume: 50,
+    muted: false,
+    onSetVolume: vi.fn(),
+    onMute: vi.fn(),
+    onUnmute: vi.fn(),
+    busy: false,
+    isAdmin: true,
   };
 
   it('returns null for non-admin', () => {
@@ -173,7 +196,9 @@ describe('MobileSonosFavorites', () => {
 });
 
 describe('MobileSonos', () => {
-  beforeEach(() => { mockSonos = { ...defaultSonos }; });
+  beforeEach(() => {
+    mockSonos = { ...defaultSonos };
+  });
 
   it('renders header with title', () => {
     render(<MobileSonos currentUser={{ isAdmin: true }} onBack={vi.fn()} />);

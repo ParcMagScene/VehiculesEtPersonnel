@@ -54,22 +54,23 @@ function Drawer({
     if (!open || !overlay) return;
     const orig = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = orig; };
+    return () => {
+      document.body.style.overflow = orig;
+    };
   }, [open, overlay]);
 
   const handleOverlayClick = useCallback(
-    (e) => { if (e.target === e.currentTarget) onClose?.(); },
+    (e) => {
+      if (e.target === e.currentTarget) onClose?.();
+    },
     [onClose],
   );
 
   if (!visible) return null;
 
-  const cls = [
-    'ui-drawer',
-    `ui-drawer--${side}`,
-    animating && 'ui-drawer--open',
-    className,
-  ].filter(Boolean).join(' ');
+  const cls = ['ui-drawer', `ui-drawer--${side}`, animating && 'ui-drawer--open', className]
+    .filter(Boolean)
+    .join(' ');
 
   const style = { width: typeof width === 'number' ? `${width}px` : width };
 
@@ -88,7 +89,12 @@ function Drawer({
             <div className="ui-drawer-header-actions">
               {headerActions}
               {onClose && (
-                <button className="ui-drawer-close" onClick={onClose} aria-label="Fermer" type="button">
+                <button
+                  className="ui-drawer-close"
+                  onClick={onClose}
+                  aria-label="Fermer"
+                  type="button"
+                >
                   <X size={18} />
                 </button>
               )}

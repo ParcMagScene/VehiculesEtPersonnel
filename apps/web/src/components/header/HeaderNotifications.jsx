@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { Bell, CalendarCheck, ClipboardList, AlertTriangle, XCircle, Clock, Users, Calendar, Check, X, Wrench } from 'lucide-react';
+import {
+  Bell,
+  CalendarCheck,
+  ClipboardList,
+  AlertTriangle,
+  XCircle,
+  Clock,
+  Users,
+  Calendar,
+  Check,
+  X,
+  Wrench,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
@@ -11,14 +23,24 @@ import { STATUS } from '../../constants';
 
 // ─── Shared internal card for reservation requests (used in both popups) ───
 const ReservationRequestCard = ({
-  request, conflicts, isRejecting, rejectionReason, setRejectionReason,
-  onApprove, onReject, onCancelReject, onConfirmReject, keyPrefix,
-  approveLabel = 'Approuver', confirmRejectIcon = false, cancelRejectClassName = 'cancel-reject',
+  request,
+  conflicts,
+  isRejecting,
+  rejectionReason,
+  setRejectionReason,
+  onApprove,
+  onReject,
+  onCancelReject,
+  onConfirmReject,
+  keyPrefix,
+  approveLabel = 'Approuver',
+  confirmRejectIcon = false,
+  cancelRejectClassName = 'cancel-reject',
 }) => {
-  const periodLabel = (p) => p === 'AM' ? 'Matin' : 'Après-midi';
+  const periodLabel = (p) => (p === 'AM' ? 'Matin' : 'Après-midi');
 
   return (
-    <div 
+    <div
       className={`notification-item reservation-request ${conflicts.length > 0 ? 'has-conflict' : ''}`}
     >
       <div className="notification-item-header">
@@ -26,7 +48,9 @@ const ReservationRequestCard = ({
           {request.vehicleName || 'Véhicule inconnu'}
         </span>
         <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
-          {conflicts.length > 0 ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}` : 'En attente'}
+          {conflicts.length > 0
+            ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}`
+            : 'En attente'}
         </span>
       </div>
       {/* Demandeur */}
@@ -40,22 +64,29 @@ const ReservationRequestCard = ({
         <div className="request-period-info">
           <Calendar size={13} className="request-period-icon" />
           <span className="request-period-dates">
-            {request.startDate === request.endDate 
-              ? (
-                <>
-                  <strong>{format(new Date(request.startDate), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
-                  <span className="request-period-tag">{periodLabel(request.startPeriod)}{request.startPeriod !== request.endPeriod ? ` → ${periodLabel(request.endPeriod)}` : ''}</span>
-                </>
-              ) : (
-                <>
-                  <strong>{format(new Date(request.startDate), 'EEE d MMM', { locale: fr })}</strong>
-                  <span className="request-period-tag">{periodLabel(request.startPeriod)}</span>
-                  <span className="request-period-arrow">→</span>
-                  <strong>{format(new Date(request.endDate), 'EEE d MMM yyyy', { locale: fr })}</strong>
-                  <span className="request-period-tag">{periodLabel(request.endPeriod)}</span>
-                </>
-              )
-            }
+            {request.startDate === request.endDate ? (
+              <>
+                <strong>
+                  {format(new Date(request.startDate), 'EEEE d MMMM yyyy', { locale: fr })}
+                </strong>
+                <span className="request-period-tag">
+                  {periodLabel(request.startPeriod)}
+                  {request.startPeriod !== request.endPeriod
+                    ? ` → ${periodLabel(request.endPeriod)}`
+                    : ''}
+                </span>
+              </>
+            ) : (
+              <>
+                <strong>{format(new Date(request.startDate), 'EEE d MMM', { locale: fr })}</strong>
+                <span className="request-period-tag">{periodLabel(request.startPeriod)}</span>
+                <span className="request-period-arrow">→</span>
+                <strong>
+                  {format(new Date(request.endDate), 'EEE d MMM yyyy', { locale: fr })}
+                </strong>
+                <span className="request-period-tag">{periodLabel(request.endPeriod)}</span>
+              </>
+            )}
           </span>
         </div>
       )}
@@ -67,10 +98,14 @@ const ReservationRequestCard = ({
           </div>
           {conflicts.slice(0, 3).map((c, ci) => (
             <div key={ci} className="request-conflict-item">
-              <span className="conflict-client">{c.clientName || c.prestationName || 'Réservation'}</span>
+              <span className="conflict-client">
+                {c.clientName || c.prestationName || 'Réservation'}
+              </span>
               <span className="conflict-dates">
                 {format(new Date(c.startDate), 'dd/MM')} {c.startPeriod}
-                {(c.endDate && c.endDate !== c.startDate) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
+                {c.endDate && c.endDate !== c.startDate
+                  ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}`
+                  : ''}
               </span>
             </div>
           ))}
@@ -98,14 +133,16 @@ const ReservationRequestCard = ({
             autoFocus
           />
           <div className="reject-form-buttons">
-            <Button variant="ghost"
+            <Button
+              variant="ghost"
               className="notif-action-btn confirm-reject"
               disabled={!rejectionReason.trim()}
               onClick={onConfirmReject}
             >
               {confirmRejectIcon && <X size={14} />} Confirmer le refus
             </Button>
-            <Button variant="ghost"
+            <Button
+              variant="ghost"
               className={`notif-action-btn ${cancelRejectClassName}`}
               onClick={onCancelReject}
             >
@@ -115,17 +152,11 @@ const ReservationRequestCard = ({
         </div>
       ) : (
         <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost"
-            className="notif-action-btn approve"
-            onClick={onApprove}
-          >
+          <Button variant="ghost" className="notif-action-btn approve" onClick={onApprove}>
             <Check size={14} />
             {approveLabel}
           </Button>
-          <Button variant="ghost"
-            className="notif-action-btn reject"
-            onClick={onReject}
-          >
+          <Button variant="ghost" className="notif-action-btn reject" onClick={onReject}>
             <X size={14} />
             Refuser
           </Button>
@@ -137,16 +168,25 @@ const ReservationRequestCard = ({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const HeaderNotifications = ({
-  showNotificationsPopup, setShowNotificationsPopup,
-  showRequestsPopup, setShowRequestsPopup,
+  showNotificationsPopup,
+  setShowNotificationsPopup,
+  showRequestsPopup,
+  setShowRequestsPopup,
   notificationFilter,
-  overdueInterventions, scheduledMaintenances, inProgressMaintenances,
-  pendingMaintenances, reportedMaintenances, activeInterventions, immobilizedVehicles,
+  overdueInterventions,
+  scheduledMaintenances,
+  inProgressMaintenances,
+  pendingMaintenances,
+  reportedMaintenances,
+  activeInterventions,
+  immobilizedVehicles,
   vehicles,
   onOpenMaintenance,
   currentUser,
-  pendingReservationRequests, setPendingReservationRequests,
-  pendingRequestsCounts, setPendingRequestsCounts,
+  pendingReservationRequests,
+  setPendingReservationRequests,
+  pendingRequestsCounts,
+  setPendingRequestsCounts,
   reservations,
   onReservationUpdate,
   setSelectedOverdueIntervention,
@@ -163,7 +203,7 @@ const HeaderNotifications = ({
     if (!request.startDate || !request.endDate) return [];
     const reqStart = getPeriodTimestamp(request.startDate, request.startPeriod || 'AM');
     const reqEnd = getPeriodTimestamp(request.endDate, request.endPeriod || 'PM');
-    
+
     const conflicts = [];
     for (const r of reservations) {
       if (String(r.vehicleId) !== String(request.vehicleId)) continue;
@@ -183,309 +223,401 @@ const HeaderNotifications = ({
     <>
       {/* Popup des notifications */}
       {showNotificationsPopup && (
-        <div className="notifications-popup-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowNotificationsPopup(false)}>
+        <div
+          className="notifications-popup-overlay"
+          onMouseDown={(e) => e.target === e.currentTarget && setShowNotificationsPopup(false)}
+        >
           <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
             <div className="notifications-popup-header">
-              <h3><Bell size={20} strokeWidth={2.5} className="popup-icon" /> {
-                notificationFilter === 'reported' ? 'Pannes signalées' :
-                notificationFilter === STATUS.PENDING ? "Demandes d'intervention / CT" :
-                notificationFilter === STATUS.ACTIVE ? 'Interventions actives' :
-                notificationFilter === 'reservations' ? 'Demandes de réservation' :
-                'Notifications'
-              }</h3>
-              <Button variant="ghost" className="close-popup-button" onClick={() => setShowNotificationsPopup(false)} aria-label="Fermer les notifications">✕</Button>
+              <h3>
+                <Bell size={20} strokeWidth={2.5} className="popup-icon" />{' '}
+                {notificationFilter === 'reported'
+                  ? 'Pannes signalées'
+                  : notificationFilter === STATUS.PENDING
+                    ? "Demandes d'intervention / CT"
+                    : notificationFilter === STATUS.ACTIVE
+                      ? 'Interventions actives'
+                      : notificationFilter === 'reservations'
+                        ? 'Demandes de réservation'
+                        : 'Notifications'}
+              </h3>
+              <Button
+                variant="ghost"
+                className="close-popup-button"
+                onClick={() => setShowNotificationsPopup(false)}
+                aria-label="Fermer les notifications"
+              >
+                ✕
+              </Button>
             </div>
             <div className="notifications-popup-content">
-              {((notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
-                (notificationFilter === STATUS.PENDING && pendingMaintenances.length === 0) ||
-                (notificationFilter === STATUS.ACTIVE && activeInterventions.length === 0)) ? (
+              {(notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
+              (notificationFilter === STATUS.PENDING && pendingMaintenances.length === 0) ||
+              (notificationFilter === STATUS.ACTIVE && activeInterventions.length === 0) ? (
                 <p className="no-notifications">Aucune notification</p>
               ) : (
                 <>
                   {/* Section Interventions en retard */}
-                  {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === 'overdue') && overdueInterventions.length > 0 && (
-                    <div className="notification-section">
-                      <h4 className="notification-section-title"><Clock size={18} strokeWidth={2.5} /> Interventions en retard</h4>
-                      <div className="notifications-list">
-                        {overdueInterventions.map(maintenance => {
-                          const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
-                          const daysOverdue = Math.floor((today - new Date(maintenance.endDate)) / (1000 * 60 * 60 * 24));
-                          
-                          return (
-                            <div 
-                              key={maintenance.id} 
-                              className="notification-item overdue"
-                              onClick={() => {
-                                setShowNotificationsPopup(false);
-                                setSelectedOverdueIntervention({ intervention: maintenance, vehicle });
-                              }}
-                            >
-                              <div className="notification-item-header">
-                                <span className="notification-vehicle-name">
-                                  {vehicle?.name || 'Véhicule inconnu'}
+                  {(notificationFilter === 'all' ||
+                    notificationFilter === STATUS.ACTIVE ||
+                    notificationFilter === 'overdue') &&
+                    overdueInterventions.length > 0 && (
+                      <div className="notification-section">
+                        <h4 className="notification-section-title">
+                          <Clock size={18} strokeWidth={2.5} /> Interventions en retard
+                        </h4>
+                        <div className="notifications-list">
+                          {overdueInterventions.map((maintenance) => {
+                            const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId);
+                            const daysOverdue = Math.floor(
+                              (today - new Date(maintenance.endDate)) / (1000 * 60 * 60 * 24),
+                            );
+
+                            return (
+                              <div
+                                key={maintenance.id}
+                                className="notification-item overdue"
+                                onClick={() => {
+                                  setShowNotificationsPopup(false);
+                                  setSelectedOverdueIntervention({
+                                    intervention: maintenance,
+                                    vehicle,
+                                  });
+                                }}
+                              >
+                                <div className="notification-item-header">
+                                  <span className="notification-vehicle-name">
+                                    {vehicle?.name || 'Véhicule inconnu'}
+                                  </span>
+                                  <span className="notification-status overdue">En retard</span>
+                                </div>
+                                <p className="notification-description">
+                                  {maintenance.description}
+                                </p>
+                                <span className="notification-date overdue-date">
+                                  Fin prévue: {format(new Date(maintenance.endDate), 'dd/MM/yyyy')}
+                                  {daysOverdue > 0 &&
+                                    ` • ${daysOverdue} jour${daysOverdue > 1 ? 's' : ''} de retard`}
                                 </span>
-                                <span className="notification-status overdue">
-                                  En retard
-                                </span>
+                                {vehicle?.registration && (
+                                  <span className="notification-registration">
+                                    {vehicle.registration}
+                                  </span>
+                                )}
                               </div>
-                              <p className="notification-description">{maintenance.description}</p>
-                              <span className="notification-date overdue-date">
-                                Fin prévue: {format(new Date(maintenance.endDate), 'dd/MM/yyyy')}
-                                {daysOverdue > 0 && ` • ${daysOverdue} jour${daysOverdue > 1 ? 's' : ''} de retard`}
-                              </span>
-                              {vehicle?.registration && (
-                                <span className="notification-registration">{vehicle.registration}</span>
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Section Interventions programmées */}
-                  {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === STATUS.SCHEDULED) && scheduledMaintenances.length > 0 && (
-                    <div className="notification-section">
-                      <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions programmées</h4>
-                      <div className="notifications-list">
-                        {scheduledMaintenances.map(maintenance => {
-                          const vehicle = vehicles.find(v => v.id === maintenance.vehicleId)
-                            || { id: maintenance.vehicleId, name: maintenance.vehicleName || 'Véhicule inconnu' };
-                          
-                          return (
-                            <div 
-                              key={maintenance.id} 
-                              className="notification-item"
-                              onClick={() => {
-                                setShowNotificationsPopup(false);
-                                if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
-                                }
-                              }}
-                            >
-                              <div className="notification-item-header">
-                                <span className="notification-vehicle-name">
-                                  {vehicle?.name || 'Véhicule inconnu'}
-                                </span>
-                                <span className="notification-status scheduled">
-                                  Programmée
-                                </span>
-                              </div>
-                              <p className="notification-description">{maintenance.description}</p>
-                              {maintenance.startDate && (
-                                <span className="notification-date">
-                                  {maintenance.startDate === maintenance.endDate 
-                                    ? format(new Date(maintenance.startDate), 'dd/MM/yyyy')
-                                    : `${format(new Date(maintenance.startDate), 'dd/MM')} - ${format(new Date(maintenance.endDate), 'dd/MM/yyyy')}`
+                  {(notificationFilter === 'all' ||
+                    notificationFilter === STATUS.ACTIVE ||
+                    notificationFilter === STATUS.SCHEDULED) &&
+                    scheduledMaintenances.length > 0 && (
+                      <div className="notification-section">
+                        <h4 className="notification-section-title">
+                          <CalendarCheck size={18} strokeWidth={2.5} /> Interventions programmées
+                        </h4>
+                        <div className="notifications-list">
+                          {scheduledMaintenances.map((maintenance) => {
+                            const vehicle = vehicles.find(
+                              (v) => v.id === maintenance.vehicleId,
+                            ) || {
+                              id: maintenance.vehicleId,
+                              name: maintenance.vehicleName || 'Véhicule inconnu',
+                            };
+
+                            return (
+                              <div
+                                key={maintenance.id}
+                                className="notification-item"
+                                onClick={() => {
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenance.id);
                                   }
-                                </span>
-                              )}
-                              {vehicle?.registration && (
-                                <span className="notification-registration">{vehicle.registration}</span>
-                              )}
-                            </div>
-                          );
-                        })}
+                                }}
+                              >
+                                <div className="notification-item-header">
+                                  <span className="notification-vehicle-name">
+                                    {vehicle?.name || 'Véhicule inconnu'}
+                                  </span>
+                                  <span className="notification-status scheduled">Programmée</span>
+                                </div>
+                                <p className="notification-description">
+                                  {maintenance.description}
+                                </p>
+                                {maintenance.startDate && (
+                                  <span className="notification-date">
+                                    {maintenance.startDate === maintenance.endDate
+                                      ? format(new Date(maintenance.startDate), 'dd/MM/yyyy')
+                                      : `${format(new Date(maintenance.startDate), 'dd/MM')} - ${format(new Date(maintenance.endDate), 'dd/MM/yyyy')}`}
+                                  </span>
+                                )}
+                                {vehicle?.registration && (
+                                  <span className="notification-registration">
+                                    {vehicle.registration}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Section Interventions en cours */}
-                  {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === 'in_progress') && inProgressMaintenances.length > 0 && (
-                    <div className="notification-section">
-                      <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions en cours</h4>
-                      <div className="notifications-list">
-                        {inProgressMaintenances.map(maintenance => {
-                          const vehicle = vehicles.find(v => v.id === maintenance.vehicleId)
-                            || { id: maintenance.vehicleId, name: maintenance.vehicleName || 'Véhicule inconnu' };
-                          
-                          return (
-                            <div 
-                              key={maintenance.id} 
-                              className="notification-item"
-                              onClick={() => {
-                                setShowNotificationsPopup(false);
-                                if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
-                                }
-                              }}
-                            >
-                              <div className="notification-item-header">
-                                <span className="notification-vehicle-name">
-                                  {vehicle?.name || 'Véhicule inconnu'}
-                                </span>
-                                <span className="notification-status in-progress">
-                                  En cours
-                                </span>
-                              </div>
-                              <p className="notification-description">{maintenance.description}</p>
-                              {maintenance.startDate && (
-                                <span className="notification-date">
-                                  {maintenance.startDate === maintenance.endDate 
-                                    ? format(new Date(maintenance.startDate), 'dd/MM/yyyy')
-                                    : `${format(new Date(maintenance.startDate), 'dd/MM')} - ${format(new Date(maintenance.endDate), 'dd/MM/yyyy')}`
+                  {(notificationFilter === 'all' ||
+                    notificationFilter === STATUS.ACTIVE ||
+                    notificationFilter === 'in_progress') &&
+                    inProgressMaintenances.length > 0 && (
+                      <div className="notification-section">
+                        <h4 className="notification-section-title">
+                          <CalendarCheck size={18} strokeWidth={2.5} /> Interventions en cours
+                        </h4>
+                        <div className="notifications-list">
+                          {inProgressMaintenances.map((maintenance) => {
+                            const vehicle = vehicles.find(
+                              (v) => v.id === maintenance.vehicleId,
+                            ) || {
+                              id: maintenance.vehicleId,
+                              name: maintenance.vehicleName || 'Véhicule inconnu',
+                            };
+
+                            return (
+                              <div
+                                key={maintenance.id}
+                                className="notification-item"
+                                onClick={() => {
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenance.id);
                                   }
-                                </span>
-                              )}
-                              {vehicle?.registration && (
-                                <span className="notification-registration">{vehicle.registration}</span>
-                              )}
-                            </div>
-                          );
-                        })}
+                                }}
+                              >
+                                <div className="notification-item-header">
+                                  <span className="notification-vehicle-name">
+                                    {vehicle?.name || 'Véhicule inconnu'}
+                                  </span>
+                                  <span className="notification-status in-progress">En cours</span>
+                                </div>
+                                <p className="notification-description">
+                                  {maintenance.description}
+                                </p>
+                                {maintenance.startDate && (
+                                  <span className="notification-date">
+                                    {maintenance.startDate === maintenance.endDate
+                                      ? format(new Date(maintenance.startDate), 'dd/MM/yyyy')
+                                      : `${format(new Date(maintenance.startDate), 'dd/MM')} - ${format(new Date(maintenance.endDate), 'dd/MM/yyyy')}`}
+                                  </span>
+                                )}
+                                {vehicle?.registration && (
+                                  <span className="notification-registration">
+                                    {vehicle.registration}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Section Demandes d'intervention */}
-                  {(notificationFilter === 'all' || notificationFilter === STATUS.PENDING) && pendingMaintenances.length > 0 && (
-                    <div className="notification-section">
-                      <h4 className="notification-section-title"><ClipboardList size={18} strokeWidth={2.5} /> Demandes d'intervention</h4>
-                      <div className="notifications-list">
-                        {pendingMaintenances.map(maintenance => {
-                          const vehicle = vehicles.find(v => v.id === maintenance.vehicleId)
-                            || { id: maintenance.vehicleId, name: maintenance.vehicleName || 'Véhicule inconnu' };
-                          
-                          return (
-                            <div 
-                              key={maintenance.id} 
-                              className="notification-item"
-                              onClick={() => {
-                                setShowNotificationsPopup(false);
-                                if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
-                                }
-                              }}
-                            >
-                              <div className="notification-item-header">
-                                <span className="notification-vehicle-name">
-                                  {vehicle?.name || 'Véhicule inconnu'}
-                                </span>
-                                <span className="notification-status pending">
-                                  En attente
-                                </span>
+                  {(notificationFilter === 'all' || notificationFilter === STATUS.PENDING) &&
+                    pendingMaintenances.length > 0 && (
+                      <div className="notification-section">
+                        <h4 className="notification-section-title">
+                          <ClipboardList size={18} strokeWidth={2.5} /> Demandes d'intervention
+                        </h4>
+                        <div className="notifications-list">
+                          {pendingMaintenances.map((maintenance) => {
+                            const vehicle = vehicles.find(
+                              (v) => v.id === maintenance.vehicleId,
+                            ) || {
+                              id: maintenance.vehicleId,
+                              name: maintenance.vehicleName || 'Véhicule inconnu',
+                            };
+
+                            return (
+                              <div
+                                key={maintenance.id}
+                                className="notification-item"
+                                onClick={() => {
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenance.id);
+                                  }
+                                }}
+                              >
+                                <div className="notification-item-header">
+                                  <span className="notification-vehicle-name">
+                                    {vehicle?.name || 'Véhicule inconnu'}
+                                  </span>
+                                  <span className="notification-status pending">En attente</span>
+                                </div>
+                                <p className="notification-description">
+                                  {maintenance.description}
+                                </p>
+                                {vehicle?.registration && (
+                                  <span className="notification-registration">
+                                    {vehicle.registration}
+                                  </span>
+                                )}
                               </div>
-                              <p className="notification-description">{maintenance.description}</p>
-                              {vehicle?.registration && (
-                                <span className="notification-registration">{vehicle.registration}</span>
-                              )}
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Section Pannes signalées */}
-                  {(notificationFilter === 'all' || notificationFilter === 'reported') && reportedMaintenances.length > 0 && (
-                    <div className="notification-section">
-                      <h4 className="notification-section-title"><AlertTriangle size={18} strokeWidth={2.5} /> Pannes signalées</h4>
-                      <div className="notifications-list">
-                        {reportedMaintenances.map(maintenance => {
-                          const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
-                          const isExpanded = expandedReportedId === maintenance.id;
-                          
-                          return (
-                            <div 
-                              key={maintenance.id} 
-                              className={`notification-item ${isExpanded ? 'expanded' : ''}`}
-                              onClick={() => setExpandedReportedId(isExpanded ? null : maintenance.id)}
-                            >
-                              <div className="notification-item-header">
-                                <span className="notification-vehicle-name">
-                                  {maintenance.isImmobilized && <XCircle size={16} strokeWidth={2.5} className="inline-icon" />}
-                                  {vehicle?.name || 'Véhicule inconnu'}
-                                </span>
-                                <span className="notification-status reported">
-                                  {maintenance.isImmobilized ? 'Immobilisé' : 'Signalée'}
-                                </span>
-                              </div>
-                              <p className="notification-description">{maintenance.description}</p>
-                              {maintenance.reportedBy && (
-                                <span className="notification-requester">
-                                  <Users size={12} /> Signalée par {maintenance.reportedBy}
-                                </span>
-                              )}
-                              {vehicle?.registration && (
-                                <span className="notification-registration">{vehicle.registration}</span>
-                              )}
-                              <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost"
-                                  className="notif-action-btn create-intervention"
-                                  onClick={() => {
-                                    setShowNotificationsPopup(false);
-                                    setExpandedReportedId(null);
-                                    if (onOpenMaintenance && vehicle) {
-                                      onOpenMaintenance(vehicle, maintenance.id);
-                                    }
-                                  }}
+                  {(notificationFilter === 'all' || notificationFilter === 'reported') &&
+                    reportedMaintenances.length > 0 && (
+                      <div className="notification-section">
+                        <h4 className="notification-section-title">
+                          <AlertTriangle size={18} strokeWidth={2.5} /> Pannes signalées
+                        </h4>
+                        <div className="notifications-list">
+                          {reportedMaintenances.map((maintenance) => {
+                            const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId);
+                            const isExpanded = expandedReportedId === maintenance.id;
+
+                            return (
+                              <div
+                                key={maintenance.id}
+                                className={`notification-item ${isExpanded ? 'expanded' : ''}`}
+                                onClick={() =>
+                                  setExpandedReportedId(isExpanded ? null : maintenance.id)
+                                }
+                              >
+                                <div className="notification-item-header">
+                                  <span className="notification-vehicle-name">
+                                    {maintenance.isImmobilized && (
+                                      <XCircle
+                                        size={16}
+                                        strokeWidth={2.5}
+                                        className="inline-icon"
+                                      />
+                                    )}
+                                    {vehicle?.name || 'Véhicule inconnu'}
+                                  </span>
+                                  <span className="notification-status reported">
+                                    {maintenance.isImmobilized ? 'Immobilisé' : 'Signalée'}
+                                  </span>
+                                </div>
+                                <p className="notification-description">
+                                  {maintenance.description}
+                                </p>
+                                {maintenance.reportedBy && (
+                                  <span className="notification-requester">
+                                    <Users size={12} /> Signalée par {maintenance.reportedBy}
+                                  </span>
+                                )}
+                                {vehicle?.registration && (
+                                  <span className="notification-registration">
+                                    {vehicle.registration}
+                                  </span>
+                                )}
+                                <div
+                                  className="notification-actions"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Wrench size={14} />
-                                  Créer une intervention
-                                </Button>
+                                  <Button
+                                    variant="ghost"
+                                    className="notif-action-btn create-intervention"
+                                    onClick={() => {
+                                      setShowNotificationsPopup(false);
+                                      setExpandedReportedId(null);
+                                      if (onOpenMaintenance && vehicle) {
+                                        onOpenMaintenance(vehicle, maintenance.id);
+                                      }
+                                    }}
+                                  >
+                                    <Wrench size={14} />
+                                    Créer une intervention
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Section Demandes de réservation - uniquement via badge réservation */}
-                  {notificationFilter === 'reservations' && currentUser?.isAdmin && pendingReservationRequests.length === 0 && (
-                    <p className="no-notifications">Aucune demande de réservation en attente</p>
-                  )}
-                  {notificationFilter === 'reservations' && currentUser?.isAdmin && pendingReservationRequests.length > 0 && (
-                    <div className="notification-section">
-                      <h4 className="notification-section-title">
-                        <CalendarCheck size={18} strokeWidth={2.5} /> 
-                        Demandes de réservation 
-                        <span className="section-count">{pendingReservationRequests.length}</span>
-                      </h4>
-                      <div className="notifications-list">
-                        {pendingReservationRequests.map(request => {
-                          const conflicts = getRequestConflicts(request);
-                          return (
-                            <ReservationRequestCard
-                              key={`notif-resreq-${request.id}`}
-                              keyPrefix="notif-resreq"
-                              request={request}
-                              conflicts={conflicts}
-                              isRejecting={rejectingRequestId === request.id}
-                              rejectionReason={rejectionReason}
-                              setRejectionReason={setRejectionReason}
-                              approveLabel="Approuver"
-                              confirmRejectIcon={false}
-                              cancelRejectClassName="cancel-reject"
-                              onApprove={() => {
-                                setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                if (onReservationUpdate) onReservationUpdate();
-                                api.approveReservationRequest(request.id).catch(() => {
-                                  toast.error('Erreur lors de l\'approbation');
-                                });
-                              }}
-                              onReject={() => setRejectingRequestId(request.id)}
-                              onCancelReject={() => {
-                                setRejectingRequestId(null);
-                                setRejectionReason('');
-                              }}
-                              onConfirmReject={() => {
-                                const reason = rejectionReason;
-                                setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                setRejectingRequestId(null);
-                                setRejectionReason('');
-                                api.rejectReservationRequest(request.id, reason).catch(() => {
-                                  toast.error('Erreur lors du refus de la demande');
-                                });
-                              }}
-                            />
-                          );
-                        })}
+                  {notificationFilter === 'reservations' &&
+                    currentUser?.isAdmin &&
+                    pendingReservationRequests.length === 0 && (
+                      <p className="no-notifications">Aucune demande de réservation en attente</p>
+                    )}
+                  {notificationFilter === 'reservations' &&
+                    currentUser?.isAdmin &&
+                    pendingReservationRequests.length > 0 && (
+                      <div className="notification-section">
+                        <h4 className="notification-section-title">
+                          <CalendarCheck size={18} strokeWidth={2.5} />
+                          Demandes de réservation
+                          <span className="section-count">{pendingReservationRequests.length}</span>
+                        </h4>
+                        <div className="notifications-list">
+                          {pendingReservationRequests.map((request) => {
+                            const conflicts = getRequestConflicts(request);
+                            return (
+                              <ReservationRequestCard
+                                key={`notif-resreq-${request.id}`}
+                                keyPrefix="notif-resreq"
+                                request={request}
+                                conflicts={conflicts}
+                                isRejecting={rejectingRequestId === request.id}
+                                rejectionReason={rejectionReason}
+                                setRejectionReason={setRejectionReason}
+                                approveLabel="Approuver"
+                                confirmRejectIcon={false}
+                                cancelRejectClassName="cancel-reject"
+                                onApprove={() => {
+                                  setPendingReservationRequests((prev) =>
+                                    prev.filter((r) => r.id !== request.id),
+                                  );
+                                  setPendingRequestsCounts((prev) => ({
+                                    ...prev,
+                                    reservationRequests: prev.reservationRequests - 1,
+                                    total: prev.total - 1,
+                                  }));
+                                  if (onReservationUpdate) onReservationUpdate();
+                                  api.approveReservationRequest(request.id).catch(() => {
+                                    toast.error("Erreur lors de l'approbation");
+                                  });
+                                }}
+                                onReject={() => setRejectingRequestId(request.id)}
+                                onCancelReject={() => {
+                                  setRejectingRequestId(null);
+                                  setRejectionReason('');
+                                }}
+                                onConfirmReject={() => {
+                                  const reason = rejectionReason;
+                                  setPendingReservationRequests((prev) =>
+                                    prev.filter((r) => r.id !== request.id),
+                                  );
+                                  setPendingRequestsCounts((prev) => ({
+                                    ...prev,
+                                    reservationRequests: prev.reservationRequests - 1,
+                                    total: prev.total - 1,
+                                  }));
+                                  setRejectingRequestId(null);
+                                  setRejectionReason('');
+                                  api.rejectReservationRequest(request.id, reason).catch(() => {
+                                    toast.error('Erreur lors du refus de la demande');
+                                  });
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </>
               )}
             </div>
@@ -495,11 +627,24 @@ const HeaderNotifications = ({
 
       {/* Popup des demandes de réservation */}
       {showRequestsPopup && (
-        <div className="notifications-popup-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowRequestsPopup(false)}>
+        <div
+          className="notifications-popup-overlay"
+          onMouseDown={(e) => e.target === e.currentTarget && setShowRequestsPopup(false)}
+        >
           <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
             <div className="notifications-popup-header">
-              <h3><CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" /> Demandes de réservation</h3>
-              <Button variant="ghost" className="close-popup-button" onClick={() => setShowRequestsPopup(false)} aria-label="Fermer les demandes">✕</Button>
+              <h3>
+                <CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" /> Demandes de
+                réservation
+              </h3>
+              <Button
+                variant="ghost"
+                className="close-popup-button"
+                onClick={() => setShowRequestsPopup(false)}
+                aria-label="Fermer les demandes"
+              >
+                ✕
+              </Button>
             </div>
             <div className="notifications-popup-content">
               {pendingReservationRequests.length === 0 ? (
@@ -510,12 +655,12 @@ const HeaderNotifications = ({
                   {pendingReservationRequests.length > 0 && (
                     <div className="notification-section">
                       <h4 className="notification-section-title">
-                        <CalendarCheck size={18} strokeWidth={2.5} /> 
-                        Demandes de réservation 
+                        <CalendarCheck size={18} strokeWidth={2.5} />
+                        Demandes de réservation
                         <span className="section-count">{pendingReservationRequests.length}</span>
                       </h4>
                       <div className="notifications-list">
-                        {pendingReservationRequests.map(request => {
+                        {pendingReservationRequests.map((request) => {
                           const conflicts = getRequestConflicts(request);
                           return (
                             <ReservationRequestCard
@@ -536,21 +681,41 @@ const HeaderNotifications = ({
                                   variant: 'confirm',
                                   confirmLabel: 'Approuver',
                                   onConfirm: () => {
-                                    setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                    setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                    toast.success('Demande approuvée ! La réservation a été créée.');
+                                    setPendingReservationRequests((prev) =>
+                                      prev.filter((r) => r.id !== request.id),
+                                    );
+                                    setPendingRequestsCounts((prev) => ({
+                                      ...prev,
+                                      reservationRequests: prev.reservationRequests - 1,
+                                      total: prev.total - 1,
+                                    }));
+                                    toast.success(
+                                      'Demande approuvée ! La réservation a été créée.',
+                                    );
                                     api.approveReservationRequest(request.id).catch(() => {
                                       toast.error('Erreur lors de la validation');
                                     });
                                   },
                                 });
                               }}
-                              onReject={() => { setRejectingRequestId(request.id); setRejectionReason(''); }}
-                              onCancelReject={() => { setRejectingRequestId(null); setRejectionReason(''); }}
+                              onReject={() => {
+                                setRejectingRequestId(request.id);
+                                setRejectionReason('');
+                              }}
+                              onCancelReject={() => {
+                                setRejectingRequestId(null);
+                                setRejectionReason('');
+                              }}
                               onConfirmReject={() => {
                                 const reason = rejectionReason;
-                                setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
+                                setPendingReservationRequests((prev) =>
+                                  prev.filter((r) => r.id !== request.id),
+                                );
+                                setPendingRequestsCounts((prev) => ({
+                                  ...prev,
+                                  reservationRequests: prev.reservationRequests - 1,
+                                  total: prev.total - 1,
+                                }));
                                 setRejectingRequestId(null);
                                 setRejectionReason('');
                                 api.rejectReservationRequest(request.id, reason).catch(() => {

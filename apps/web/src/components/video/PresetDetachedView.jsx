@@ -20,8 +20,11 @@ const PresetDetachedView = ({ presetId }) => {
         api.getVideoCameras(),
         api.getVideoProxyStatus().catch(() => ({ running: false })),
       ]);
-      const found = allPresets.find(p => p.id === Number(presetId));
-      if (!found) { setError('Preset introuvable'); return; }
+      const found = allPresets.find((p) => p.id === Number(presetId));
+      if (!found) {
+        setError('Preset introuvable');
+        return;
+      }
       setPreset(found);
       setCameras(allCameras);
       setProxyAvailable(proxyStatus?.running === true);
@@ -32,7 +35,9 @@ const PresetDetachedView = ({ presetId }) => {
   }, [presetId]);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   if (error) {
     return (
@@ -51,7 +56,7 @@ const PresetDetachedView = ({ presetId }) => {
   }
 
   const presetCameras = preset.cameraIds
-    .map(id => cameras.find(c => c.id === id))
+    .map((id) => cameras.find((c) => c.id === id))
     .filter(Boolean);
   const cols = presetCameras.length <= 1 ? 1 : 2;
 
@@ -59,9 +64,14 @@ const PresetDetachedView = ({ presetId }) => {
     <div className="preset-detached">
       <div className="preset-detached__header">
         <span className="preset-detached__title">{preset.name}</span>
-        <span className="preset-detached__count">{presetCameras.length} caméra{presetCameras.length !== 1 ? 's' : ''}</span>
+        <span className="preset-detached__count">
+          {presetCameras.length} caméra{presetCameras.length !== 1 ? 's' : ''}
+        </span>
       </div>
-      <div className="preset-detached__grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+      <div
+        className="preset-detached__grid"
+        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+      >
         {presetCameras.map((cam, idx) => (
           <CameraPlayerWebRTC
             key={cam.id}

@@ -11,7 +11,10 @@
  * @param {'portrait'|'landscape'} orientation - Orientation
  * @param {string} title - Titre affiché sur l'impression
  */
-export async function printMap(mapContainer, { format = 'A4', orientation = 'landscape', title = 'Carte eM@g' } = {}) {
+export async function printMap(
+  mapContainer,
+  { format = 'A4', orientation = 'landscape', title = 'Carte eM@g' } = {},
+) {
   if (!mapContainer) return;
 
   // Dimensions en mm selon format
@@ -21,7 +24,8 @@ export async function printMap(mapContainer, { format = 'A4', orientation = 'lan
   };
 
   const size = sizes[format] || sizes.A4;
-  const [w, h] = orientation === 'landscape' ? [size.height, size.width] : [size.width, size.height];
+  const [w, h] =
+    orientation === 'landscape' ? [size.height, size.width] : [size.width, size.height];
 
   // Trouver le canvas Leaflet dans le conteneur
   const canvas = mapContainer.querySelector('canvas');
@@ -39,7 +43,11 @@ export async function printMap(mapContainer, { format = 'A4', orientation = 'lan
   if (!printWindow) return;
 
   const now = new Date().toLocaleDateString('fr-FR', {
-    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
   printWindow.document.write(`<!DOCTYPE html>
@@ -92,7 +100,7 @@ export async function printMap(mapContainer, { format = 'A4', orientation = 'lan
     <h1>eM@g — ${title}</h1>
     <span class="date">${now}</span>
   </div>
-  ${imageUrl ? `<img class="print-map" src="${imageUrl}" alt="Carte" />` : '<p>Carte non disponible pour l\'impression</p>'}
+  ${imageUrl ? `<img class="print-map" src="${imageUrl}" alt="Carte" />` : "<p>Carte non disponible pour l'impression</p>"}
   <div class="print-footer">
     eM@g — Cartographie des lieux &bull; &copy; OpenStreetMap contributors
   </div>
@@ -117,11 +125,13 @@ async function captureLeafletTiles(container) {
     const images = container.querySelectorAll('img');
     await Promise.all(
       Array.from(images).map((img) =>
-        img.complete ? Promise.resolve() : new Promise((res) => {
-          img.onload = res;
-          img.onerror = res;
-        })
-      )
+        img.complete
+          ? Promise.resolve()
+          : new Promise((res) => {
+              img.onload = res;
+              img.onerror = res;
+            }),
+      ),
     );
     await new Promise((r) => setTimeout(r, 300));
 

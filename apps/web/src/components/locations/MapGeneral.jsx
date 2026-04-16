@@ -43,7 +43,12 @@ export default function MapGeneral({ locations, darkMode = false, onEditLocation
   const sortedLocs = useMemo(() => [...geoLocations].sort((a, b) => b.lat - a.lat), [geoLocations]);
 
   return (
-    <div className="map-wrapper" ref={(el) => { if (el && !ready) setReady(true); }}>
+    <div
+      className="map-wrapper"
+      ref={(el) => {
+        if (el && !ready) setReady(true);
+      }}
+    >
       {geoLocations.length === 0 ? (
         <div className="map-empty-state">
           <p>Aucun lieu géolocalisé à afficher.</p>
@@ -73,7 +78,12 @@ export default function MapGeneral({ locations, darkMode = false, onEditLocation
                 position={[loc.lat, loc.lng]}
                 icon={loc.isCompanyLocation ? createHQIcon() : createLocationIcon(loc.type)}
               >
-                <Tooltip permanent direction={dir} offset={DIR_OFFSETS[dir]} className="map-name-tooltip">
+                <Tooltip
+                  permanent
+                  direction={dir}
+                  offset={DIR_OFFSETS[dir]}
+                  className="map-name-tooltip"
+                >
                   {loc.name}
                 </Tooltip>
                 <MapPopup location={loc} onEdit={onEditLocation} />

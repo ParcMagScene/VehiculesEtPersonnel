@@ -8,21 +8,27 @@ export default { title: 'Atomes/Indicateurs' };
 /* ── Tag ── */
 export const TagColors = () => (
   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-    {['primary', 'success', 'danger', 'warning', 'info', 'cyan', 'amber', 'neutral'].map(c => (
-      <Tag key={c} color={c}>{c}</Tag>
+    {['primary', 'success', 'danger', 'warning', 'info', 'cyan', 'amber', 'neutral'].map((c) => (
+      <Tag key={c} color={c}>
+        {c}
+      </Tag>
     ))}
   </div>
 );
 
 export const TagCloseable = () => (
-  <Tag color="primary" closeable onClose={() => alert('Fermé !')}>Closeable</Tag>
+  <Tag color="primary" closeable onClose={() => alert('Fermé !')}>
+    Closeable
+  </Tag>
 );
 
 /* ── Badge ── */
 export const BadgeCount = () => (
   <div style={{ display: 'flex', gap: 16 }}>
     <Badge count={5}>📧</Badge>
-    <Badge count={150} max={99}>🔔</Badge>
+    <Badge count={150} max={99}>
+      🔔
+    </Badge>
     <Badge dot>💬</Badge>
   </div>
 );
@@ -40,7 +46,7 @@ export const StatusBadgeExamples = () => (
 /* ── Avatar ── */
 export const AvatarSizes = () => (
   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-    {['xs', 'sm', 'md', 'lg', 'xl'].map(s => (
+    {['xs', 'sm', 'md', 'lg', 'xl'].map((s) => (
       <Avatar key={s} name="Jean Dupont" size={s} />
     ))}
   </div>
@@ -49,7 +55,7 @@ export const AvatarSizes = () => (
 /* ── Tooltip ── */
 export const TooltipPositions = () => (
   <div style={{ display: 'flex', gap: 32, padding: 48, justifyContent: 'center' }}>
-    {['top', 'bottom', 'left', 'right'].map(p => (
+    {['top', 'bottom', 'left', 'right'].map((p) => (
       <Tooltip key={p} content={`Position ${p}`} position={p}>
         <span style={{ cursor: 'help', textDecoration: 'underline' }}>{p}</span>
       </Tooltip>

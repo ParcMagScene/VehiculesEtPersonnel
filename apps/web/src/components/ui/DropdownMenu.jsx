@@ -11,12 +11,7 @@ import { createPortal } from 'react-dom';
  *     <DropdownItem icon={<Trash size={14}/>} danger onClick={del}>Supprimer</DropdownItem>
  *   </DropdownMenu>
  */
-export function DropdownMenu({
-  trigger,
-  align = 'end',
-  children,
-  className = '',
-}) {
+export function DropdownMenu({ trigger, align = 'end', children, className = '' }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const triggerRef = useRef(null);
@@ -32,7 +27,7 @@ export function DropdownMenu({
 
   const toggle = useCallback(() => {
     if (!open) updatePosition();
-    setOpen(o => !o);
+    setOpen((o) => !o);
   }, [open, updatePosition]);
 
   const close = useCallback(() => setOpen(false), []);
@@ -41,8 +36,12 @@ export function DropdownMenu({
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target) &&
-          triggerRef.current && !triggerRef.current.contains(e.target)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target)
+      ) {
         close();
       }
     };
@@ -53,34 +52,51 @@ export function DropdownMenu({
   // Close on Escape
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (e.key === 'Escape') close(); };
+    const handler = (e) => {
+      if (e.key === 'Escape') close();
+    };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [open, close]);
 
   return (
     <>
-      <span ref={triggerRef} className="ui-dropdown-trigger" onClick={toggle} role="button" tabIndex={0} aria-haspopup="true" aria-expanded={open} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } }}>
+      <span
+        ref={triggerRef}
+        className="ui-dropdown-trigger"
+        onClick={toggle}
+        role="button"
+        tabIndex={0}
+        aria-haspopup="true"
+        aria-expanded={open}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggle();
+          }
+        }}
+      >
         {trigger}
       </span>
-      {open && createPortal(
-        <div
-          ref={menuRef}
-          className={`ui-dropdown-menu ${className}`}
-          role="menu"
-          style={{
-            position: 'fixed',
-            top: `${pos.top}px`,
-            ...(align === 'end'
-              ? { right: `${window.innerWidth - pos.left}px` }
-              : { left: `${pos.left}px` }),
-          }}
-          onClick={close}
-        >
-          {children}
-        </div>,
-        document.body
-      )}
+      {open &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className={`ui-dropdown-menu ${className}`}
+            role="menu"
+            style={{
+              position: 'fixed',
+              top: `${pos.top}px`,
+              ...(align === 'end'
+                ? { right: `${window.innerWidth - pos.left}px` }
+                : { left: `${pos.left}px` }),
+            }}
+            onClick={close}
+          >
+            {children}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

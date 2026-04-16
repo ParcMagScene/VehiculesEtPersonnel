@@ -54,13 +54,14 @@ export default function MapSearchControl({ locations }) {
       const q = debouncedQuery.toLowerCase();
       const geoLocs = filterGeoLocations(locations);
       const localResults = geoLocs
-        .filter(loc =>
-          loc.name?.toLowerCase().includes(q) ||
-          loc.address?.toLowerCase().includes(q) ||
-          loc.type?.toLowerCase().includes(q)
+        .filter(
+          (loc) =>
+            loc.name?.toLowerCase().includes(q) ||
+            loc.address?.toLowerCase().includes(q) ||
+            loc.type?.toLowerCase().includes(q),
         )
         .slice(0, 5)
-        .map(loc => ({
+        .map((loc) => ({
           type: 'local',
           id: loc.id,
           name: loc.name,
@@ -83,7 +84,7 @@ export default function MapSearchControl({ locations }) {
         });
         const data = await resp.json();
 
-        nominatimResults = data.map(item => ({
+        nominatimResults = data.map((item) => ({
           type: 'nominatim',
           id: `nom-${item.place_id}`,
           name: item.display_name.split(',')[0],
@@ -103,11 +104,14 @@ export default function MapSearchControl({ locations }) {
     search();
   }, [debouncedQuery, locations]);
 
-  const handleSelect = useCallback((result) => {
-    map.flyTo([result.lat, result.lng], 15, { duration: 0.8 });
-    setQuery(result.name);
-    setOpen(false);
-  }, [map]);
+  const handleSelect = useCallback(
+    (result) => {
+      map.flyTo([result.lat, result.lng], 15, { duration: 0.8 });
+      setQuery(result.name);
+      setOpen(false);
+    },
+    [map],
+  );
 
   const handleClear = () => {
     setQuery('');

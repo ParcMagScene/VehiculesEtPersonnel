@@ -60,9 +60,9 @@ export const PERMANENT_TYPES = ['permanent', 'stagiaire', 'apprenti'];
 export const NON_PERMANENT_TYPES = ['salarié', 'contractuel'];
 
 export const getCategoryColor = (category) => {
-  return SKILL_CATEGORIES.find(c => c.value === category)?.color || 'var(--theme-text-gray)';
+  return SKILL_CATEGORIES.find((c) => c.value === category)?.color || 'var(--theme-text-gray)';
 };
 
 export const getPositionCategoryColor = (category) => {
-  return POSITION_CATEGORIES.find(c => c.value === category)?.color || 'var(--theme-text-gray)';
+  return POSITION_CATEGORIES.find((c) => c.value === category)?.color || 'var(--theme-text-gray)';
 };

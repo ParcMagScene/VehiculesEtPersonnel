@@ -53,31 +53,31 @@ export const loadGoogleMapsAPI = (apiKey) => {
           if (window.google?.maps?.Map && window.google?.maps?.places) {
             isLoaded = true;
             isLoading = false;
-            
+
             // Résoudre toutes les promesses en attente
             loadPromises.forEach(({ resolve: res }) => res());
             loadPromises.length = 0;
-            
+
             resolve();
           } else {
             // Réessayer après un court délai
             setTimeout(checkApiReady, 50);
           }
         };
-        
+
         checkApiReady();
       };
 
       script.onerror = (error) => {
         isLoading = false;
-        
+
         // Supprimer le script échoué du DOM pour permettre un retry propre
         script.remove();
-        
+
         // Rejeter toutes les promesses en attente
         loadPromises.forEach(({ reject: rej }) => rej(error));
         loadPromises.length = 0;
-        
+
         reject(error);
       };
 
@@ -94,9 +94,9 @@ export const loadGoogleMapsAPI = (apiKey) => {
  * @returns {boolean}
  */
 export const isGoogleMapsLoaded = () => {
-  return isLoaded && 
-         window.google?.maps?.Map !== undefined &&
-         window.google?.maps?.places !== undefined;
+  return (
+    isLoaded && window.google?.maps?.Map !== undefined && window.google?.maps?.places !== undefined
+  );
 };
 
 /**
@@ -111,7 +111,7 @@ export const waitForGoogleMaps = (timeout = 10000) => {
 
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
-    
+
     const checkInterval = setInterval(() => {
       if (isGoogleMapsLoaded()) {
         clearInterval(checkInterval);

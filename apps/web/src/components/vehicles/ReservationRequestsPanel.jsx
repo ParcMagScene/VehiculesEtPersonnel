@@ -50,8 +50,10 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
             onRequestProcessed();
           }
         } catch (error) {
-          console.error('Erreur lors de l\'approbation:', error);
-          toast.error('Erreur lors de l\'approbation de la demande: ' + (error.message || 'Erreur inconnue'));
+          console.error("Erreur lors de l'approbation:", error);
+          toast.error(
+            "Erreur lors de l'approbation de la demande: " + (error.message || 'Erreur inconnue'),
+          );
         } finally {
           setLoading(false);
         }
@@ -90,7 +92,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
     }
   };
 
-  const filteredRequests = requests.filter(req => {
+  const filteredRequests = requests.filter((req) => {
     if (filter === 'all') return true;
     return req.status === filter;
   });
@@ -99,7 +101,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
     const periods = {
       morning: 'Matin',
       afternoon: 'Après-midi',
-      fullday: 'Journée complète'
+      fullday: 'Journée complète',
     };
     return periods[period] || period;
   };
@@ -108,7 +110,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
     const labels = {
       pending: 'En attente',
       approved: 'Approuvée',
-      rejected: 'Rejetée'
+      rejected: 'Rejetée',
     };
     return labels[status] || status;
   };
@@ -121,25 +123,29 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       </h2>
 
       <div className="requests-filters">
-        <Button variant="ghost" 
+        <Button
+          variant="ghost"
           className={filter === STATUS.PENDING ? 'active' : ''}
           onClick={() => setFilter('pending')}
         >
-          En attente ({requests.filter(r => r.status === STATUS.PENDING).length})
+          En attente ({requests.filter((r) => r.status === STATUS.PENDING).length})
         </Button>
-        <Button variant="ghost" 
+        <Button
+          variant="ghost"
           className={filter === STATUS.APPROVED ? 'active' : ''}
           onClick={() => setFilter('approved')}
         >
-          Approuvées ({requests.filter(r => r.status === STATUS.APPROVED).length})
+          Approuvées ({requests.filter((r) => r.status === STATUS.APPROVED).length})
         </Button>
-        <Button variant="ghost" 
+        <Button
+          variant="ghost"
           className={filter === STATUS.REJECTED ? 'active' : ''}
           onClick={() => setFilter('rejected')}
         >
-          Rejetées ({requests.filter(r => r.status === STATUS.REJECTED).length})
+          Rejetées ({requests.filter((r) => r.status === STATUS.REJECTED).length})
         </Button>
-        <Button variant="ghost" 
+        <Button
+          variant="ghost"
           className={filter === 'all' ? 'active' : ''}
           onClick={() => setFilter('all')}
         >
@@ -156,7 +162,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
             {filter === 'all' && 'Aucune demande'}
           </div>
         ) : (
-          filteredRequests.map(request => (
+          filteredRequests.map((request) => (
             <div key={request.id} className={`request-card ${request.status}`}>
               <div className="request-header">
                 <div className="request-title">
@@ -176,16 +182,32 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
                   {formatDateFr(request.endDate, 'N/A')} - {formatPeriod(request.endPeriod)}
                 </DetailRow>
                 {request.clientName && (
-                  <DetailRow className="request-detail-item" label="Client" value={request.clientName} />
+                  <DetailRow
+                    className="request-detail-item"
+                    label="Client"
+                    value={request.clientName}
+                  />
                 )}
                 {request.driverName && (
-                  <DetailRow className="request-detail-item" label="Conducteur" value={request.driverName} />
+                  <DetailRow
+                    className="request-detail-item"
+                    label="Conducteur"
+                    value={request.driverName}
+                  />
                 )}
                 {request.locationName && (
-                  <DetailRow className="request-detail-item" label="Lieu" value={request.locationName} />
+                  <DetailRow
+                    className="request-detail-item"
+                    label="Lieu"
+                    value={request.locationName}
+                  />
                 )}
                 {request.prestationName && (
-                  <DetailRow className="request-detail-item" label="Prestation" value={request.prestationName} />
+                  <DetailRow
+                    className="request-detail-item"
+                    label="Prestation"
+                    value={request.prestationName}
+                  />
                 )}
               </div>
 
@@ -204,7 +226,8 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
               {request.status === STATUS.PENDING && (
                 <div className="request-actions">
-                  <Button variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="approve-button"
                     onClick={() => handleApprove(request.id)}
                     disabled={loading}
@@ -212,7 +235,8 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
                     <Check size={18} />
                     Approuver
                   </Button>
-                  <Button variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="reject-button"
                     onClick={() => handleRejectClick(request)}
                     disabled={loading}
@@ -225,11 +249,11 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
               <div className="request-meta">
                 <span>
-                  <User size={12} style={{display: 'inline', marginRight: '4px'}} />
+                  <User size={12} style={{ display: 'inline', marginRight: '4px' }} />
                   Demandé par: {request.requesterName || `Utilisateur #${request.requestedBy}`}
                 </span>
                 <span>
-                  <Clock size={12} style={{display: 'inline', marginRight: '4px'}} />
+                  <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} />
                   {new Date(request.requestedAt).toLocaleString('fr-FR')}
                 </span>
               </div>
@@ -239,8 +263,16 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       </div>
 
       {rejectDialogOpen && (
-        <div className="reject-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && setRejectDialogOpen(false)}>
-          <div className="reject-dialog" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+        <div
+          className="reject-dialog-overlay"
+          onMouseDown={(e) => e.target === e.currentTarget && setRejectDialogOpen(false)}
+        >
+          <div
+            className="reject-dialog"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
             <h3>Rejeter la demande</h3>
             <Textarea
               placeholder="Indiquez le motif du rejet..."
@@ -248,13 +280,11 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
               onChange={(e) => setRejectionReason(e.target.value)}
             />
             <div className="reject-dialog-actions">
-              <Button variant="ghost" 
-                className="cancel"
-                onClick={() => setRejectDialogOpen(false)}
-              >
+              <Button variant="ghost" className="cancel" onClick={() => setRejectDialogOpen(false)}>
                 Annuler
               </Button>
-              <Button variant="ghost" 
+              <Button
+                variant="ghost"
                 className="confirm"
                 onClick={handleRejectConfirm}
                 disabled={loading}

@@ -2,7 +2,6 @@
 
 export function registerEquipmentMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Catégories
     async getEquipmentCategories() {
       return this.request('/equipment-categories');
@@ -11,7 +10,10 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request('/equipment-categories', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateEquipmentCategory(id, data) {
-      return this.request(`/equipment-categories/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      return this.request(`/equipment-categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
     },
     async deleteEquipmentCategory(id) {
       return this.request(`/equipment-categories/${id}`, { method: 'DELETE' });
@@ -38,10 +40,16 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request(`/equipment/${id}/serialize`, { method: 'POST' });
     },
     async linkEquipmentPhoto(id, photo) {
-      return this.request(`/equipment/${id}/photo`, { method: 'PATCH', body: JSON.stringify({ photo }) });
+      return this.request(`/equipment/${id}/photo`, {
+        method: 'PATCH',
+        body: JSON.stringify({ photo }),
+      });
     },
     async importEquipmentCsv(data, mode = 'import') {
-      return this.request('/equipment/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
+      return this.request('/equipment/import-csv', {
+        method: 'POST',
+        body: JSON.stringify({ data, mode }),
+      });
     },
     async getEquipmentCategoriesTree() {
       return this.request('/equipment-categories/tree');
@@ -86,8 +94,17 @@ export function registerEquipmentMethods(ApiClient) {
     async deleteSavTicket(id) {
       return this.request(`/sav-tickets/${id}`, { method: 'DELETE' });
     },
-    async importSavTicketsCsv(data, mode = 'import', manualLinks = null, skipDuplicates = false, updateDuplicates = false) {
-      return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks, skipDuplicates, updateDuplicates }) });
+    async importSavTicketsCsv(
+      data,
+      mode = 'import',
+      manualLinks = null,
+      skipDuplicates = false,
+      updateDuplicates = false,
+    ) {
+      return this.request('/sav-tickets/import-csv', {
+        method: 'POST',
+        body: JSON.stringify({ data, mode, manualLinks, skipDuplicates, updateDuplicates }),
+      });
     },
     async removeSavDuplicates() {
       return this.request('/sav-tickets/duplicates', { method: 'DELETE' });
@@ -96,7 +113,10 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request('/sav-tickets/unlinked');
     },
     async linkSavTicket(ticketId, equipmentId) {
-      return this.request(`/sav-tickets/${ticketId}/link`, { method: 'PUT', body: JSON.stringify({ equipment_id: equipmentId }) });
+      return this.request(`/sav-tickets/${ticketId}/link`, {
+        method: 'PUT',
+        body: JSON.stringify({ equipment_id: equipmentId }),
+      });
     },
 
     // PDF SAV
@@ -113,10 +133,16 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request('/equipment-lists');
     },
     async addToEquipmentList(equipment_id, list_type) {
-      return this.request('/equipment-lists', { method: 'POST', body: JSON.stringify({ equipment_id, list_type }) });
+      return this.request('/equipment-lists', {
+        method: 'POST',
+        body: JSON.stringify({ equipment_id, list_type }),
+      });
     },
     async removeFromEquipmentList(equipment_id, list_type) {
-      return this.request('/equipment-lists', { method: 'DELETE', body: JSON.stringify({ equipment_id, list_type }) });
+      return this.request('/equipment-lists', {
+        method: 'DELETE',
+        body: JSON.stringify({ equipment_id, list_type }),
+      });
     },
 
     // Photos
@@ -131,10 +157,15 @@ export function registerEquipmentMethods(ApiClient) {
       return this.requestFormData('/equipment-photos/upload', formData);
     },
     async deleteEquipmentPhoto(filename) {
-      return this.request(`/equipment-photos/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      return this.request(`/equipment-photos/${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+      });
     },
     async renameEquipmentPhoto(oldName, newName) {
-      return this.request('/equipment-photos/rename', { method: 'PUT', body: JSON.stringify({ oldName, newName }) });
+      return this.request('/equipment-photos/rename', {
+        method: 'PUT',
+        body: JSON.stringify({ oldName, newName }),
+      });
     },
 
     // Zones de dépôt
@@ -143,7 +174,10 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request(`/equipment-depot-zones${qs}`);
     },
     async updateEquipmentDepotZones(zones, depotId) {
-      return this.request('/equipment-depot-zones', { method: 'PUT', body: JSON.stringify({ zones, depot: depotId }) });
+      return this.request('/equipment-depot-zones', {
+        method: 'PUT',
+        body: JSON.stringify({ zones, depot: depotId }),
+      });
     },
     async getAllDepotZones() {
       return this.request('/equipment-all-depot-zones');

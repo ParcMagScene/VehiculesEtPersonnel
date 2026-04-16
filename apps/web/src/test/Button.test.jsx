@@ -42,7 +42,11 @@ describe('Button', () => {
   it('does not call onClick when disabled', async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
-    render(<Button disabled onClick={onClick}>Cliquer</Button>);
+    render(
+      <Button disabled onClick={onClick}>
+        Cliquer
+      </Button>,
+    );
     await user.click(screen.getByRole('button'));
     expect(onClick).not.toHaveBeenCalled();
   });
@@ -53,7 +57,11 @@ describe('Button', () => {
   });
 
   it('applies icon-only class', () => {
-    render(<Button iconOnly aria-label="Fermer">X</Button>);
+    render(
+      <Button iconOnly aria-label="Fermer">
+        X
+      </Button>,
+    );
     expect(screen.getByRole('button')).toHaveClass('ui-btn--icon-only');
   });
 

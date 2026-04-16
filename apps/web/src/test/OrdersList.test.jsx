@@ -16,7 +16,7 @@ const makeOrder = (overrides = {}) => ({
   order_date: '2026-04-10',
   status: 'draft',
   item_count: 3,
-  total_ht: 1500.50,
+  total_ht: 1500.5,
   ...overrides,
 });
 

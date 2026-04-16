@@ -15,7 +15,9 @@
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
   padding: var(--card-padding);
-  transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+  transition:
+    box-shadow var(--transition-normal),
+    border-color var(--transition-normal);
 }
 
 .ui-card:hover {
@@ -274,7 +276,9 @@
   font-size: var(--font-base);
   color: var(--theme-text-primary);
   background: var(--theme-bg-card);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   outline: none;
   width: 100%;
 }
@@ -316,7 +320,9 @@
   font-size: var(--font-base);
   color: var(--theme-text-primary);
   background: var(--theme-bg-card);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   outline: none;
   width: 100%;
   cursor: pointer;
@@ -335,7 +341,9 @@
   font-size: var(--font-base);
   color: var(--theme-text-primary);
   background: var(--theme-bg-card);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   outline: none;
   width: 100%;
   resize: vertical;

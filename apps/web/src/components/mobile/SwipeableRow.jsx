@@ -5,7 +5,15 @@ import './SwipeableRow.css';
  * @param {{ swipeState, itemId, leftAction, rightAction, children, onReset }} props
  * leftAction / rightAction : { label, icon, color, onClick }
  */
-export default function SwipeableRow({ swipeState, itemId, leftAction, rightAction, children, getSwipeProps, onReset }) {
+export default function SwipeableRow({
+  swipeState,
+  itemId,
+  leftAction,
+  rightAction,
+  children,
+  getSwipeProps,
+  onReset,
+}) {
   const isActive = swipeState.id === itemId;
   const offset = isActive ? swipeState.offset : 0;
   const direction = isActive ? swipeState.direction : null;
@@ -23,7 +31,11 @@ export default function SwipeableRow({ swipeState, itemId, leftAction, rightActi
       {leftAction && (
         <div
           className="swipeable-action swipeable-action-left"
-          style={{ backgroundColor: leftAction.color || 'var(--accent)', width: offset, opacity: direction === 'right' ? 1 : 0 }}
+          style={{
+            backgroundColor: leftAction.color || 'var(--accent)',
+            width: offset,
+            opacity: direction === 'right' ? 1 : 0,
+          }}
           onClick={() => handleAction(leftAction)}
         >
           {leftAction.icon && <span className="swipeable-action-icon">{leftAction.icon}</span>}
@@ -34,7 +46,10 @@ export default function SwipeableRow({ swipeState, itemId, leftAction, rightActi
       {/* Contenu principal */}
       <div
         className="swipeable-row-content"
-        style={{ transform: `translateX(${translateX}px)`, transition: isActive && offset > 0 ? 'none' : 'transform 0.25s ease' }}
+        style={{
+          transform: `translateX(${translateX}px)`,
+          transition: isActive && offset > 0 ? 'none' : 'transform 0.25s ease',
+        }}
       >
         {children}
       </div>
@@ -43,7 +58,11 @@ export default function SwipeableRow({ swipeState, itemId, leftAction, rightActi
       {rightAction && (
         <div
           className="swipeable-action swipeable-action-right"
-          style={{ backgroundColor: rightAction.color || '#e74c3c', width: offset, opacity: direction === 'left' ? 1 : 0 }}
+          style={{
+            backgroundColor: rightAction.color || '#e74c3c',
+            width: offset,
+            opacity: direction === 'left' ? 1 : 0,
+          }}
           onClick={() => handleAction(rightAction)}
         >
           {rightAction.icon && <span className="swipeable-action-icon">{rightAction.icon}</span>}

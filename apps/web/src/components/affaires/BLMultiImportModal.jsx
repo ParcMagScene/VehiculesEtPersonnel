@@ -5,9 +5,23 @@
  */
 import { useState, useCallback, useRef } from 'react';
 import {
-  FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase,
-  Trash2, Loader, Tag, ChevronDown, ChevronRight, PackagePlus,
-  Eye, EyeOff, Layers, Package
+  FileText,
+  X,
+  Upload,
+  File,
+  CheckCircle,
+  AlertTriangle,
+  Briefcase,
+  Trash2,
+  Loader,
+  Tag,
+  ChevronDown,
+  ChevronRight,
+  PackagePlus,
+  Eye,
+  EyeOff,
+  Layers,
+  Package,
 } from 'lucide-react';
 import api from '../../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
@@ -47,30 +61,150 @@ const FIELD_DEFS = [
 const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
 
 const SECTION_COLORS = {
-  SONORISATION: { bg: 'rgba(99, 102, 241, 0.10)', border: 'rgba(99, 102, 241, 0.3)', text: '#818cf8', icon: '🔊' },
-  LUMIERE: { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '💡' },
-  LUMIÈRE: { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '💡' },
-  'ÉCLAIRAGE': { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '💡' },
-  'REGIE/PLATEAU': { bg: 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399', icon: '🎬' },
-  RÉGIE: { bg: 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399', icon: '🎬' },
-  STRUCTURE: { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '🏗️' },
-  VIDEO: { bg: 'rgba(139, 92, 246, 0.10)', border: 'rgba(139, 92, 246, 0.3)', text: '#a78bfa', icon: '📹' },
-  VIDÉO: { bg: 'rgba(139, 92, 246, 0.10)', border: 'rgba(139, 92, 246, 0.3)', text: '#a78bfa', icon: '📹' },
-  AUDIOVISUEL: { bg: 'rgba(139, 92, 246, 0.10)', border: 'rgba(139, 92, 246, 0.3)', text: '#a78bfa', icon: '🎥' },
-  ELECTRICITE: { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '⚡' },
-  'ÉLECTRICITÉ': { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '⚡' },
-  CÂBLAGE: { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '⚡' },
-  BACKLINE: { bg: 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399', icon: '🎸' },
-  'RIDEAU-MACHINERIE': { bg: 'rgba(236, 72, 153, 0.10)', border: 'rgba(236, 72, 153, 0.3)', text: '#f472b6', icon: '🎭' },
-  RIDEAU: { bg: 'rgba(236, 72, 153, 0.10)', border: 'rgba(236, 72, 153, 0.3)', text: '#f472b6', icon: '🎭' },
-  INFORMATIQUE: { bg: 'rgba(6, 182, 212, 0.10)', border: 'rgba(6, 182, 212, 0.3)', text: '#22d3ee', icon: '💻' },
-  ACCROCHE: { bg: 'rgba(20, 184, 166, 0.10)', border: 'rgba(20, 184, 166, 0.3)', text: '#2dd4bf', icon: '🔗' },
-  MOTORISATION: { bg: 'rgba(249, 115, 22, 0.10)', border: 'rgba(249, 115, 22, 0.3)', text: '#fb923c', icon: '⚙️' },
-  MOBILIER: { bg: 'rgba(107, 114, 128, 0.10)', border: 'rgba(107, 114, 128, 0.3)', text: '#9ca3af', icon: '🪑' },
-  OUTILLAGE: { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '🔧' },
-  VENTE: { bg: 'rgba(251, 191, 36, 0.10)', border: 'rgba(251, 191, 36, 0.3)', text: '#fbbf24', icon: '🛒' },
-  DIFFUSION: { bg: 'rgba(99, 102, 241, 0.10)', border: 'rgba(99, 102, 241, 0.3)', text: '#818cf8', icon: '🔊' },
-  DIVERS: { bg: 'rgba(148, 163, 184, 0.10)', border: 'rgba(148, 163, 184, 0.3)', text: 'var(--theme-text-muted)', icon: '📦' },
+  SONORISATION: {
+    bg: 'rgba(99, 102, 241, 0.10)',
+    border: 'rgba(99, 102, 241, 0.3)',
+    text: '#818cf8',
+    icon: '🔊',
+  },
+  LUMIERE: {
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    text: '#fbbf24',
+    icon: '💡',
+  },
+  LUMIÈRE: {
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    text: '#fbbf24',
+    icon: '💡',
+  },
+  ÉCLAIRAGE: {
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    text: '#fbbf24',
+    icon: '💡',
+  },
+  'REGIE/PLATEAU': {
+    bg: 'rgba(16, 185, 129, 0.10)',
+    border: 'rgba(16, 185, 129, 0.3)',
+    text: '#34d399',
+    icon: '🎬',
+  },
+  RÉGIE: {
+    bg: 'rgba(16, 185, 129, 0.10)',
+    border: 'rgba(16, 185, 129, 0.3)',
+    text: '#34d399',
+    icon: '🎬',
+  },
+  STRUCTURE: {
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    text: '#f87171',
+    icon: '🏗️',
+  },
+  VIDEO: {
+    bg: 'rgba(139, 92, 246, 0.10)',
+    border: 'rgba(139, 92, 246, 0.3)',
+    text: '#a78bfa',
+    icon: '📹',
+  },
+  VIDÉO: {
+    bg: 'rgba(139, 92, 246, 0.10)',
+    border: 'rgba(139, 92, 246, 0.3)',
+    text: '#a78bfa',
+    icon: '📹',
+  },
+  AUDIOVISUEL: {
+    bg: 'rgba(139, 92, 246, 0.10)',
+    border: 'rgba(139, 92, 246, 0.3)',
+    text: '#a78bfa',
+    icon: '🎥',
+  },
+  ELECTRICITE: {
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    text: '#f87171',
+    icon: '⚡',
+  },
+  ÉLECTRICITÉ: {
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    text: '#f87171',
+    icon: '⚡',
+  },
+  CÂBLAGE: {
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    text: '#f87171',
+    icon: '⚡',
+  },
+  BACKLINE: {
+    bg: 'rgba(16, 185, 129, 0.10)',
+    border: 'rgba(16, 185, 129, 0.3)',
+    text: '#34d399',
+    icon: '🎸',
+  },
+  'RIDEAU-MACHINERIE': {
+    bg: 'rgba(236, 72, 153, 0.10)',
+    border: 'rgba(236, 72, 153, 0.3)',
+    text: '#f472b6',
+    icon: '🎭',
+  },
+  RIDEAU: {
+    bg: 'rgba(236, 72, 153, 0.10)',
+    border: 'rgba(236, 72, 153, 0.3)',
+    text: '#f472b6',
+    icon: '🎭',
+  },
+  INFORMATIQUE: {
+    bg: 'rgba(6, 182, 212, 0.10)',
+    border: 'rgba(6, 182, 212, 0.3)',
+    text: '#22d3ee',
+    icon: '💻',
+  },
+  ACCROCHE: {
+    bg: 'rgba(20, 184, 166, 0.10)',
+    border: 'rgba(20, 184, 166, 0.3)',
+    text: '#2dd4bf',
+    icon: '🔗',
+  },
+  MOTORISATION: {
+    bg: 'rgba(249, 115, 22, 0.10)',
+    border: 'rgba(249, 115, 22, 0.3)',
+    text: '#fb923c',
+    icon: '⚙️',
+  },
+  MOBILIER: {
+    bg: 'rgba(107, 114, 128, 0.10)',
+    border: 'rgba(107, 114, 128, 0.3)',
+    text: '#9ca3af',
+    icon: '🪑',
+  },
+  OUTILLAGE: {
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    text: '#fbbf24',
+    icon: '🔧',
+  },
+  VENTE: {
+    bg: 'rgba(251, 191, 36, 0.10)',
+    border: 'rgba(251, 191, 36, 0.3)',
+    text: '#fbbf24',
+    icon: '🛒',
+  },
+  DIFFUSION: {
+    bg: 'rgba(99, 102, 241, 0.10)',
+    border: 'rgba(99, 102, 241, 0.3)',
+    text: '#818cf8',
+    icon: '🔊',
+  },
+  DIVERS: {
+    bg: 'rgba(148, 163, 184, 0.10)',
+    border: 'rgba(148, 163, 184, 0.3)',
+    text: 'var(--theme-text-muted)',
+    icon: '📦',
+  },
 };
 const getSecColor = (name) => SECTION_COLORS[name] || SECTION_COLORS.DIVERS;
 
@@ -89,26 +223,31 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
   const [globalType, setGlobalType] = useState(defaultAffaireType || '');
 
   // Drag & Drop handlers
-  const handleDragOver = useCallback((e) => { e.preventDefault(); setDragOver(true); }, []);
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setDragOver(true);
+  }, []);
   const handleDragLeave = useCallback(() => setDragOver(false), []);
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setDragOver(false);
-    const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+    const files = Array.from(e.dataTransfer.files).filter(
+      (f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'),
+    );
     if (files.length === 0) return;
     addFiles(files);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addFiles = async (newFiles) => {
-    const existingNames = new Set(items.map(it => it.file.name));
-    const filesToAdd = newFiles.filter(f => !existingNames.has(f.name));
+    const existingNames = new Set(items.map((it) => it.file.name));
+    const filesToAdd = newFiles.filter((f) => !existingNames.has(f.name));
     if (filesToAdd.length === 0) {
       toast.warning('Fichiers déjà ajoutés');
       return;
     }
 
-    const newItems = filesToAdd.map(f => ({
+    const newItems = filesToAdd.map((f) => ({
       file: f,
       status: STATUS.PENDING,
       parsedData: null,
@@ -155,32 +294,41 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
   };
 
   const removeItem = (idx) => {
-    setItems(prev => prev.filter((_, i) => i !== idx));
+    setItems((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const updateItem = (idx, updates) => {
-    setItems(prev => prev.map((item, i) => i === idx ? { ...item, ...updates } : item));
+    setItems((prev) => prev.map((item, i) => (i === idx ? { ...item, ...updates } : item)));
   };
 
   const updateField = (idx, key, value) => {
-    setItems(prev => prev.map((item, i) => {
-      if (i !== idx) return item;
-      const ef = { ...item.editedFields, [key]: value };
-      const updates = { editedFields: ef };
-      if (key === 'numero') updates.affaireId = value;
-      return { ...item, ...updates };
-    }));
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== idx) return item;
+        const ef = { ...item.editedFields, [key]: value };
+        const updates = { editedFields: ef };
+        if (key === 'numero') updates.affaireId = value;
+        return { ...item, ...updates };
+      }),
+    );
   };
 
   const toggleExpand = (idx) => {
-    setItems(prev => prev.map((item, i) => i === idx ? { ...item, expanded: !item.expanded } : item));
+    setItems((prev) =>
+      prev.map((item, i) => (i === idx ? { ...item, expanded: !item.expanded } : item)),
+    );
   };
 
   const toggleSection = (idx, secIdx) => {
-    setItems(prev => prev.map((item, i) => {
-      if (i !== idx) return item;
-      return { ...item, expandedSections: { ...item.expandedSections, [secIdx]: !item.expandedSections[secIdx] } };
-    }));
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== idx) return item;
+        return {
+          ...item,
+          expandedSections: { ...item.expandedSections, [secIdx]: !item.expandedSections[secIdx] },
+        };
+      }),
+    );
   };
 
   const getVal = (item, key) => {
@@ -196,7 +344,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
 
   // Batch import
   const handleBatchImport = async () => {
-    const validItems = items.filter(it => it.status === 'parsed');
+    const validItems = items.filter((it) => it.status === 'parsed');
     if (validItems.length === 0) {
       toast.warning('Aucun fichier à importer');
       return;
@@ -245,18 +393,30 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
     }
   };
 
-  const parsedCount = items.filter(it => it.status === 'parsed').length;
-  const errorCount = items.filter(it => it.status === 'error').length;
-  const uniqueAffaires = new Set(items.filter(it => it.affaireId).map(it => it.affaireId)).size;
+  const parsedCount = items.filter((it) => it.status === 'parsed').length;
+  const errorCount = items.filter((it) => it.status === 'error').length;
+  const uniqueAffaires = new Set(items.filter((it) => it.affaireId).map((it) => it.affaireId)).size;
   const totalArticles = items.reduce((sum, it) => sum + (it.parsedData?.items?.length || 0), 0);
 
   return (
-    <div className="bl-import-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bl-multi-import-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+    <div
+      className="bl-import-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="bl-multi-import-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         {/* Header */}
         <div className="modal-header">
-          <h3><PackagePlus size={20} /> Import BL / BP</h3>
-          <Button variant="ghost" className="modal-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
+          <h3>
+            <PackagePlus size={20} /> Import BL / BP
+          </h3>
+          <Button variant="ghost" className="modal-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </Button>
         </div>
 
         {/* Body */}
@@ -271,20 +431,29 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
           >
             <Upload size={items.length > 0 ? 20 : 36} />
             <p className="drop-text">
-              {items.length > 0
-                ? <span>Ajouter d'autres PDFs</span>
-                : <span>Glissez un ou plusieurs PDF ici ou <strong>cliquez pour sélectionner</strong></span>
-              }
+              {items.length > 0 ? (
+                <span>Ajouter d'autres PDFs</span>
+              ) : (
+                <span>
+                  Glissez un ou plusieurs PDF ici ou <strong>cliquez pour sélectionner</strong>
+                </span>
+              )}
             </p>
-            {items.length === 0 && <p className="drop-hint">BL Vente, Bons de Préparation, BL Location… — PDF uniquement — 20 Mo max</p>}
+            {items.length === 0 && (
+              <p className="drop-hint">
+                BL Vente, Bons de Préparation, BL Location… — PDF uniquement — 20 Mo max
+              </p>
+            )}
             <input
               ref={fileInputRef}
               type="file"
               accept=".pdf,application/pdf"
               multiple
               className="u-hidden"
-              onChange={e => {
-                const files = Array.from(e.target.files).filter(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+              onChange={(e) => {
+                const files = Array.from(e.target.files).filter(
+                  (f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'),
+                );
                 if (files.length > 0) addFiles(files);
                 e.target.value = '';
               }}
@@ -294,7 +463,11 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
           {/* Progress bar */}
           {parsing && (
             <div className="batch-progress">
-              <ProgressBar value={progress.current} max={progress.total || 1} label={`Analyse ${progress.current}/${progress.total}...`} />
+              <ProgressBar
+                value={progress.current}
+                max={progress.total || 1}
+                label={`Analyse ${progress.current}/${progress.total}...`}
+              />
             </div>
           )}
 
@@ -304,16 +477,24 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
               <div className="batch-global-type-label">
                 <Tag size={14} />
                 <span>Type d'affaire pour l'import</span>
-                <span className="batch-global-type-hint">(appliqué à tous les fichiers sans type individuel)</span>
+                <span className="batch-global-type-hint">
+                  (appliqué à tous les fichiers sans type individuel)
+                </span>
               </div>
               <div className="type-pills global">
-                {AFFAIRE_TYPE_OPTIONS.map(opt => (
-                  <Button variant="ghost"                     key={opt.value}
+                {AFFAIRE_TYPE_OPTIONS.map((opt) => (
+                  <Button
+                    variant="ghost"
+                    key={opt.value}
                     type="button"
                     className={globalType === opt.value ? 'active' : ''}
-                    style={globalType === opt.value ? { borderColor: opt.color, background: `${opt.color}18`, color: opt.color } : {}}
+                    style={
+                      globalType === opt.value
+                        ? { borderColor: opt.color, background: `${opt.color}18`, color: opt.color }
+                        : {}
+                    }
                     onClick={() => {
-                      setGlobalType(prev => prev === opt.value ? '' : opt.value);
+                      setGlobalType((prev) => (prev === opt.value ? '' : opt.value));
                     }}
                   >
                     {opt.icon} {opt.label}
@@ -326,24 +507,56 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
           {/* Summary */}
           {items.length > 0 && !importResults && (
             <div className="batch-summary">
-              <span><FileText size={14} /> {items.length} fichier{items.length > 1 ? 's' : ''}</span>
-              {parsedCount > 0 && <span className="badge success"><CheckCircle size={12} /> {parsedCount} analysé{parsedCount > 1 ? 's' : ''}</span>}
-              {errorCount > 0 && <span className="badge error"><AlertTriangle size={12} /> {errorCount} erreur{errorCount > 1 ? 's' : ''}</span>}
-              {uniqueAffaires > 0 && <span className="badge info"><Briefcase size={12} /> {uniqueAffaires} affaire{uniqueAffaires > 1 ? 's' : ''}</span>}
-              {totalArticles > 0 && <span className="badge info"><Package size={12} /> {totalArticles} article{totalArticles > 1 ? 's' : ''}</span>}
+              <span>
+                <FileText size={14} /> {items.length} fichier{items.length > 1 ? 's' : ''}
+              </span>
+              {parsedCount > 0 && (
+                <span className="badge success">
+                  <CheckCircle size={12} /> {parsedCount} analysé{parsedCount > 1 ? 's' : ''}
+                </span>
+              )}
+              {errorCount > 0 && (
+                <span className="badge error">
+                  <AlertTriangle size={12} /> {errorCount} erreur{errorCount > 1 ? 's' : ''}
+                </span>
+              )}
+              {uniqueAffaires > 0 && (
+                <span className="badge info">
+                  <Briefcase size={12} /> {uniqueAffaires} affaire{uniqueAffaires > 1 ? 's' : ''}
+                </span>
+              )}
+              {totalArticles > 0 && (
+                <span className="badge info">
+                  <Package size={12} /> {totalArticles} article{totalArticles > 1 ? 's' : ''}
+                </span>
+              )}
             </div>
           )}
 
           {/* Import results summary */}
           {importResults && (
             <div className="batch-results-summary">
-              <h4><CheckCircle size={16} /> Import terminé</h4>
+              <h4>
+                <CheckCircle size={16} /> Import terminé
+              </h4>
               <div className="results-grid">
-                <div className="result-stat"><span className="result-num">{importResults.summary.imported}</span><span>Importé(s)</span></div>
-                <div className="result-stat created"><span className="result-num">{importResults.summary.created}</span><span>Affaire(s) créée(s)</span></div>
-                <div className="result-stat updated"><span className="result-num">{importResults.summary.updated}</span><span>Affaire(s) maj</span></div>
+                <div className="result-stat">
+                  <span className="result-num">{importResults.summary.imported}</span>
+                  <span>Importé(s)</span>
+                </div>
+                <div className="result-stat created">
+                  <span className="result-num">{importResults.summary.created}</span>
+                  <span>Affaire(s) créée(s)</span>
+                </div>
+                <div className="result-stat updated">
+                  <span className="result-num">{importResults.summary.updated}</span>
+                  <span>Affaire(s) maj</span>
+                </div>
                 {importResults.summary.failed > 0 && (
-                  <div className="result-stat failed"><span className="result-num">{importResults.summary.failed}</span><span>Erreur(s)</span></div>
+                  <div className="result-stat failed">
+                    <span className="result-num">{importResults.summary.failed}</span>
+                    <span>Erreur(s)</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -354,18 +567,27 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
             <div className="batch-file-list">
               {items.map((item, idx) => (
                 <div key={idx} className={`batch-file-item ${item.status}`}>
-                  <div className="batch-file-header" role="button" tabIndex={0} onClick={() => toggleExpand(idx)}>
+                  <div
+                    className="batch-file-header"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleExpand(idx)}
+                  >
                     <span className="batch-file-expand">
                       {item.expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </span>
                     {STATUS_ICONS[item.status]}
-                    <div className="batch-file-icon"><File size={16} /></div>
+                    <div className="batch-file-icon">
+                      <File size={16} />
+                    </div>
                     <div className="batch-file-info">
                       <span className="batch-file-name">{item.file.name}</span>
                       <span className="batch-file-size">{formatFileSize(item.file.size)}</span>
                     </div>
                     {item.docType && (
-                      <span className={`doc-type-badge ${[DOC_TYPES.BON_LIVRAISON, DOC_TYPES.BL_VENTE, DOC_TYPES.BON_PREPARATION].includes(item.docType) ? 'success' : 'warning'}`}>
+                      <span
+                        className={`doc-type-badge ${[DOC_TYPES.BON_LIVRAISON, DOC_TYPES.BL_VENTE, DOC_TYPES.BON_PREPARATION].includes(item.docType) ? 'success' : 'warning'}`}
+                      >
                         {getDocTypeLabel(item.docType)}
                       </span>
                     )}
@@ -375,17 +597,35 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                       </span>
                     )}
                     {(item.affaireType || globalType) && (
-                      <span className="type-badge-mini" style={{ color: AFFAIRE_TYPE_OPTIONS.find(o => o.value === (item.affaireType || globalType))?.color }}>
-                        {AFFAIRE_TYPE_OPTIONS.find(o => o.value === (item.affaireType || globalType))?.icon}
+                      <span
+                        className="type-badge-mini"
+                        style={{
+                          color: AFFAIRE_TYPE_OPTIONS.find(
+                            (o) => o.value === (item.affaireType || globalType),
+                          )?.color,
+                        }}
+                      >
+                        {
+                          AFFAIRE_TYPE_OPTIONS.find(
+                            (o) => o.value === (item.affaireType || globalType),
+                          )?.icon
+                        }
                       </span>
                     )}
                     {item.parsedData?.confidence != null && (
-                      <span className={`confidence-badge ${item.parsedData.confidence >= 70 ? 'high' : item.parsedData.confidence >= 40 ? 'medium' : 'low'}`}>
+                      <span
+                        className={`confidence-badge ${item.parsedData.confidence >= 70 ? 'high' : item.parsedData.confidence >= 40 ? 'medium' : 'low'}`}
+                      >
                         {item.parsedData.confidence}%
                       </span>
                     )}
-                    <Button variant="ghost"                       className="batch-file-remove"
-                      onClick={(e) => { e.stopPropagation(); removeItem(idx); }}
+                    <Button
+                      variant="ghost"
+                      className="batch-file-remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeItem(idx);
+                      }}
                       title="Retirer"
                     >
                       <Trash2 size={14} />
@@ -397,24 +637,46 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                     <div className="batch-file-details">
                       {/* Affaire ID + Type */}
                       <div className="detail-row">
-                        <label><Briefcase size={13} /> Affaire</label>
+                        <label>
+                          <Briefcase size={13} /> Affaire
+                        </label>
                         <Input
                           type="text"
                           value={item.affaireId}
-                          onChange={e => updateItem(idx, { affaireId: e.target.value, editedFields: { ...item.editedFields, numero: e.target.value } })}
+                          onChange={(e) =>
+                            updateItem(idx, {
+                              affaireId: e.target.value,
+                              editedFields: { ...item.editedFields, numero: e.target.value },
+                            })
+                          }
                           placeholder="AF32844..."
-                          onClick={e => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
                         />
                       </div>
                       <div className="detail-row">
-                        <label><Tag size={13} /> Type</label>
+                        <label>
+                          <Tag size={13} /> Type
+                        </label>
                         <div className="type-pills">
-                          {AFFAIRE_TYPE_OPTIONS.map(opt => (
-                            <Button variant="ghost"                               key={opt.value}
+                          {AFFAIRE_TYPE_OPTIONS.map((opt) => (
+                            <Button
+                              variant="ghost"
+                              key={opt.value}
                               type="button"
                               className={item.affaireType === opt.value ? 'active' : ''}
-                              style={item.affaireType === opt.value ? { borderColor: opt.color, background: `${opt.color}18`, color: opt.color } : {}}
-                              onClick={(e) => { e.stopPropagation(); updateItem(idx, { affaireType: opt.value }); }}
+                              style={
+                                item.affaireType === opt.value
+                                  ? {
+                                      borderColor: opt.color,
+                                      background: `${opt.color}18`,
+                                      color: opt.color,
+                                    }
+                                  : {}
+                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateItem(idx, { affaireType: opt.value });
+                              }}
                             >
                               {opt.icon} {opt.label}
                             </Button>
@@ -428,10 +690,11 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                           <CheckCircle size={13} className="u-text-success" />
                           <span>Données extraites</span>
                           <span className="detail-fields-meta">
-                            {item.parsedData.fieldsFound}/{item.parsedData.fieldsTotal} champs • {item.parsedData.confidence}%
+                            {item.parsedData.fieldsFound}/{item.parsedData.fieldsTotal} champs •{' '}
+                            {item.parsedData.confidence}%
                           </span>
                         </div>
-                        {FIELD_DEFS.map(field => {
+                        {FIELD_DEFS.map((field) => {
                           const val = getVal(item, field.key);
                           const fc = item.parsedData._fieldConfidence || {};
                           const conf = fc[field.key];
@@ -441,14 +704,18 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                               <span
                                 className="conf-dot"
                                 title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
-                                style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)' }}
-                              >●</span>
+                                style={{
+                                  color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)',
+                                }}
+                              >
+                                ●
+                              </span>
                               <span className="field-label">{field.label}</span>
                               <Input
                                 type="text"
                                 value={val}
-                                onChange={e => updateField(idx, field.key, e.target.value)}
-                                onClick={e => e.stopPropagation()}
+                                onChange={(e) => updateField(idx, field.key, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
                                 placeholder={`${field.label} non détecté`}
                                 className={`field-input ${isEdited ? 'edited' : ''} ${!val ? 'empty' : ''}`}
                               />
@@ -463,19 +730,47 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                           <div className="detail-sections-title">
                             <Layers size={13} />
                             Sections ({item.parsedData.sections.length})
-                            <span className="detail-sections-total">{item.parsedData.items?.length || 0} article(s)</span>
+                            <span className="detail-sections-total">
+                              {item.parsedData.items?.length || 0} article(s)
+                            </span>
                           </div>
                           {item.parsedData.sections.map((sec, sIdx) => {
                             const sc = getSecColor(sec.name);
                             const isOpen = item.expandedSections[sIdx];
                             return (
-                              <div key={sIdx} className="detail-section" style={{ '--sec-bg': sc.bg, '--sec-border': sc.border, '--sec-text': sc.text }}>
-                                <div className="detail-section-header" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); toggleSection(idx, sIdx); }}>
+                              <div
+                                key={sIdx}
+                                className="detail-section"
+                                style={{
+                                  '--sec-bg': sc.bg,
+                                  '--sec-border': sc.border,
+                                  '--sec-text': sc.text,
+                                }}
+                              >
+                                <div
+                                  className="detail-section-header"
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSection(idx, sIdx);
+                                  }}
+                                >
                                   <span>{sc.icon}</span>
                                   <span className="detail-section-name">{sec.name}</span>
-                                  <span className="detail-section-count">{sec.items?.length || 0} art.</span>
-                                  {sec.dateDebut && <span className="detail-section-dates">{sec.dateDebut} → {sec.dateFin}</span>}
-                                  <span className={`detail-section-chevron ${isOpen ? 'open' : ''}`}>▸</span>
+                                  <span className="detail-section-count">
+                                    {sec.items?.length || 0} art.
+                                  </span>
+                                  {sec.dateDebut && (
+                                    <span className="detail-section-dates">
+                                      {sec.dateDebut} → {sec.dateFin}
+                                    </span>
+                                  )}
+                                  <span
+                                    className={`detail-section-chevron ${isOpen ? 'open' : ''}`}
+                                  >
+                                    ▸
+                                  </span>
                                 </div>
                                 {isOpen && sec.items && sec.items.length > 0 && (
                                   <div className="detail-section-items">
@@ -487,7 +782,9 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                                       </div>
                                     ))}
                                     {sec.items.length > 25 && (
-                                      <div className="detail-section-more">... +{sec.items.length - 25} autre(s)</div>
+                                      <div className="detail-section-more">
+                                        ... +{sec.items.length - 25} autre(s)
+                                      </div>
                                     )}
                                   </div>
                                 )}
@@ -498,58 +795,84 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
                       )}
 
                       {/* ─── Articles (flat, for non-section docs) ─── */}
-                      {(!item.parsedData.sections || item.parsedData.sections.length === 0) && item.parsedData.items && item.parsedData.items.length > 0 && (
-                        <div className="detail-articles">
-                          <Button variant="ghost"                             type="button"
-                            className="detail-articles-toggle"
-                            onClick={(e) => { e.stopPropagation(); updateItem(idx, { showArticles: !item.showArticles }); }}
-                          >
-                            <Package size={13} />
-                            Articles ({item.parsedData.items.length})
-                            {item.showArticles ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                          </Button>
-                          {item.showArticles && (
-                            <div className="detail-articles-list">
-                              {item.parsedData.items.slice(0, 30).map((art, aIdx) => (
-                                <div key={aIdx} className="detail-article-row">
-                                  <span className="item-qty">{art.quantity || art.qte || '1'}</span>
-                                  <span className="item-desc">
-                                    {art.description || art.designation || art.label || '—'}
-                                    {art.code && <span className="item-code">({art.code})</span>}
-                                  </span>
-                                  {(art.reference || art.section) && <span className="item-ref-small">{art.reference || art.section}</span>}
-                                  {art.fournisseur && <span className="item-supplier">{art.fournisseur}</span>}
-                                </div>
-                              ))}
-                              {item.parsedData.items.length > 30 && (
-                                <div className="detail-section-more">... +{item.parsedData.items.length - 30} autre(s)</div>
+                      {(!item.parsedData.sections || item.parsedData.sections.length === 0) &&
+                        item.parsedData.items &&
+                        item.parsedData.items.length > 0 && (
+                          <div className="detail-articles">
+                            <Button
+                              variant="ghost"
+                              type="button"
+                              className="detail-articles-toggle"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateItem(idx, { showArticles: !item.showArticles });
+                              }}
+                            >
+                              <Package size={13} />
+                              Articles ({item.parsedData.items.length})
+                              {item.showArticles ? (
+                                <ChevronDown size={13} />
+                              ) : (
+                                <ChevronRight size={13} />
                               )}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                            </Button>
+                            {item.showArticles && (
+                              <div className="detail-articles-list">
+                                {item.parsedData.items.slice(0, 30).map((art, aIdx) => (
+                                  <div key={aIdx} className="detail-article-row">
+                                    <span className="item-qty">
+                                      {art.quantity || art.qte || '1'}
+                                    </span>
+                                    <span className="item-desc">
+                                      {art.description || art.designation || art.label || '—'}
+                                      {art.code && <span className="item-code">({art.code})</span>}
+                                    </span>
+                                    {(art.reference || art.section) && (
+                                      <span className="item-ref-small">
+                                        {art.reference || art.section}
+                                      </span>
+                                    )}
+                                    {art.fournisseur && (
+                                      <span className="item-supplier">{art.fournisseur}</span>
+                                    )}
+                                  </div>
+                                ))}
+                                {item.parsedData.items.length > 30 && (
+                                  <div className="detail-section-more">
+                                    ... +{item.parsedData.items.length - 30} autre(s)
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                       {/* ─── Fournisseurs ─── */}
                       {item.parsedData.fournisseurs && item.parsedData.fournisseurs.length > 0 && (
                         <div className="detail-fournisseurs">
                           <span className="detail-fourn-label">🏭 Fournisseurs :</span>
                           {item.parsedData.fournisseurs.map((f, fi) => (
-                            <span key={fi} className="detail-fourn-tag">{f}</span>
+                            <span key={fi} className="detail-fourn-tag">
+                              {f}
+                            </span>
                           ))}
                         </div>
                       )}
 
                       {/* ─── Raw text toggle ─── */}
-                      <Button variant="ghost"                         type="button"
+                      <Button
+                        variant="ghost"
+                        type="button"
                         className="detail-raw-toggle"
-                        onClick={(e) => { e.stopPropagation(); updateItem(idx, { showRaw: !item.showRaw }); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateItem(idx, { showRaw: !item.showRaw });
+                        }}
                       >
                         {item.showRaw ? <EyeOff size={13} /> : <Eye size={13} />}
                         {item.showRaw ? 'Masquer texte brut' : 'Voir texte brut'}
                       </Button>
-                      {item.showRaw && (
-                        <div className="detail-raw-text">{item.rawText}</div>
-                      )}
+                      {item.showRaw && <div className="detail-raw-text">{item.rawText}</div>}
                     </div>
                   )}
 

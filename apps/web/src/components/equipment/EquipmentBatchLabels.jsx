@@ -1,5 +1,13 @@
 import { useState, useMemo } from 'react';
-import { Tag, CheckSquare, Square, Printer, Download, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  Tag,
+  CheckSquare,
+  Square,
+  Printer,
+  Download,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import './EquipmentBatchLabels.css';
 import { Button, SearchBar } from '@/design-system';
@@ -22,7 +30,7 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   // Grouper par référence
   const groupedByRef = useMemo(() => {
     const groups = {};
-    equipment.forEach(eq => {
+    equipment.forEach((eq) => {
       const ref = eq.reference || '(Sans référence)';
       if (!groups[ref]) groups[ref] = [];
       groups[ref].push(eq);
@@ -38,10 +46,11 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
     return groupedByRef
       .map(([ref, items]) => {
         if (ref.toLowerCase().includes(q)) return [ref, items];
-        const filtered = items.filter(eq =>
-          (eq.name || '').toLowerCase().includes(q) ||
-          (eq.uid || '').toLowerCase().includes(q) ||
-          (eq.serialNumber || eq.serial_number || '').toLowerCase().includes(q)
+        const filtered = items.filter(
+          (eq) =>
+            (eq.name || '').toLowerCase().includes(q) ||
+            (eq.uid || '').toLowerCase().includes(q) ||
+            (eq.serialNumber || eq.serial_number || '').toLowerCase().includes(q),
         );
         if (filtered.length > 0) return [ref, filtered];
         return null;
@@ -53,10 +62,10 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   const totalEquipment = equipment.length;
 
   const toggleRef = (ref, items) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      const allSelected = items.every(eq => next.has(eq.id));
-      items.forEach(eq => {
+      const allSelected = items.every((eq) => next.has(eq.id));
+      items.forEach((eq) => {
         if (allSelected) next.delete(eq.id);
         else next.add(eq.id);
       });
@@ -65,7 +74,7 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   };
 
   const toggleSingle = (id) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -77,12 +86,12 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
     if (selectedIds.size === totalEquipment) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(equipment.map(e => e.id)));
+      setSelectedIds(new Set(equipment.map((e) => e.id)));
     }
   };
 
   const toggleCollapse = (ref) => {
-    setCollapsedRefs(prev => {
+    setCollapsedRefs((prev) => {
       const next = new Set(prev);
       if (next.has(ref)) next.delete(ref);
       else next.add(ref);
@@ -101,7 +110,7 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   };
 
   const handlePrintBatch = () => {
-    const selected = equipment.filter(eq => selectedIds.has(eq.id));
+    const selected = equipment.filter((eq) => selectedIds.has(eq.id));
     if (selected.length === 0) return;
 
     const layout = calcLayout();
@@ -110,48 +119,74 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
 
     for (let i = 0; i < selected.length; i += layout.perPage) {
       const pageItems = selected.slice(i, i + layout.perPage);
-      const labels = pageItems.map(eq => {
-        const qrUrl = eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : null;
-        return (
-          '<div class="batch-label" style="width:' + layout.labelW + 'mm; height:' + layout.labelH + 'mm;">' +
+      const labels = pageItems
+        .map((eq) => {
+          const qrUrl = eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : null;
+          return (
+            '<div class="batch-label" style="width:' +
+            layout.labelW +
+            'mm; height:' +
+            layout.labelH +
+            'mm;">' +
             '<div class="batch-label-inner">' +
-              (showLogo ? '<div class="batch-logo"><img src="/Logos/logo_Noir_Transp.png" alt="" /></div>' : '') +
-              '<div class="batch-info">' +
-                '<div class="batch-ref">' + escHtml(eq.reference || '') + '</div>' +
-                (eq.uid ? '<div class="batch-uid"><b>UID: ' + escHtml(eq.uid) + '</b></div>' : '') +
-                ((eq.serialNumber || eq.serial_number) ? '<div class="batch-sn"><b>S/N: ' + escHtml(eq.serialNumber || eq.serial_number) + '</b></div>' : '') +
-              '</div>' +
-              (qrUrl ? '<div class="batch-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl) + '" alt="QR" /></div>' : '') +
+            (showLogo
+              ? '<div class="batch-logo"><img src="/Logos/logo_Noir_Transp.png" alt="" /></div>'
+              : '') +
+            '<div class="batch-info">' +
+            '<div class="batch-ref">' +
+            escHtml(eq.reference || '') +
             '</div>' +
-          '</div>'
-        );
-      }).join('');
+            (eq.uid ? '<div class="batch-uid"><b>UID: ' + escHtml(eq.uid) + '</b></div>' : '') +
+            (eq.serialNumber || eq.serial_number
+              ? '<div class="batch-sn"><b>S/N: ' +
+                escHtml(eq.serialNumber || eq.serial_number) +
+                '</b></div>'
+              : '') +
+            '</div>' +
+            (qrUrl
+              ? '<div class="batch-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' +
+                encodeURIComponent(qrUrl) +
+                '" alt="QR" /></div>'
+              : '') +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
 
       pages.push(
-        '<div class="batch-page">' +
-          '<div class="batch-grid">' + labels + '</div>' +
-        '</div>'
+        '<div class="batch-page">' + '<div class="batch-grid">' + labels + '</div>' + '</div>',
       );
     }
 
     const htmlContent =
-      '<!DOCTYPE html><html><head><title>Étiquettes lot - ' + selected.length + ' matériels</title>' +
+      '<!DOCTYPE html><html><head><title>Étiquettes lot - ' +
+      selected.length +
+      ' matériels</title>' +
       '<style>' +
-        '@page { size: A4; margin: 5mm; }' +
-        '* { margin: 0; padding: 0; box-sizing: border-box; }' +
-        'body { font-family: -apple-system, BlinkMacSystemFont, monospace; }' +
-        '.batch-page { width: 210mm; min-height: 297mm; padding: 5mm; page-break-after: always; }' +
-        '.batch-page:last-child { page-break-after: auto; }' +
-        '.batch-grid { display: flex; flex-wrap: wrap; gap: ' + LABEL_GAP_MM + 'mm; align-content: flex-start; }' +
-        '.batch-label { border: 0.3px dashed #999; border-radius: 1px; overflow: hidden; }' +
-        '.batch-label-inner { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
-        '.batch-logo { flex-shrink: 0; display: flex; align-items: center; }' +
-        '.batch-logo img { height: ' + qrSize + 'mm; width: auto; }' +
-        '.batch-qr { flex-shrink: 0; }' +
-        '.batch-qr img { width: ' + qrSize + 'mm; height: ' + qrSize + 'mm; }' +
-        '.batch-info { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
-        '.batch-ref { font-weight: 800; font-size: 10pt; line-height: 1.1; white-space: nowrap; }' +
-        '.batch-uid, .batch-sn { font-size: 7.5pt; font-weight: 700; line-height: 1.1; white-space: nowrap; font-family: monospace; }' +
+      '@page { size: A4; margin: 5mm; }' +
+      '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+      'body { font-family: -apple-system, BlinkMacSystemFont, monospace; }' +
+      '.batch-page { width: 210mm; min-height: 297mm; padding: 5mm; page-break-after: always; }' +
+      '.batch-page:last-child { page-break-after: auto; }' +
+      '.batch-grid { display: flex; flex-wrap: wrap; gap: ' +
+      LABEL_GAP_MM +
+      'mm; align-content: flex-start; }' +
+      '.batch-label { border: 0.3px dashed #999; border-radius: 1px; overflow: hidden; }' +
+      '.batch-label-inner { display: flex; flex-direction: row; align-items: center; width: 100%; height: 100%; padding: 1.5mm; gap: 2mm; }' +
+      '.batch-logo { flex-shrink: 0; display: flex; align-items: center; }' +
+      '.batch-logo img { height: ' +
+      qrSize +
+      'mm; width: auto; }' +
+      '.batch-qr { flex-shrink: 0; }' +
+      '.batch-qr img { width: ' +
+      qrSize +
+      'mm; height: ' +
+      qrSize +
+      'mm; }' +
+      '.batch-info { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.5mm; }' +
+      '.batch-ref { font-weight: 800; font-size: 10pt; line-height: 1.1; white-space: nowrap; }' +
+      '.batch-uid, .batch-sn { font-size: 7.5pt; font-weight: 700; line-height: 1.1; white-space: nowrap; font-family: monospace; }' +
       '</style></head><body>' +
       pages.join('') +
       '</body></html>';
@@ -181,9 +216,9 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   };
 
   const handleExportBatchSVG = () => {
-    const selected = equipment.filter(eq => selectedIds.has(eq.id));
+    const selected = equipment.filter((eq) => selectedIds.has(eq.id));
     if (selected.length === 0) return;
-    
+
     const layout = calcLayout();
     const sc = 10; // 1mm = 10 units in SVG
     const pageW = PAGE_SIZE_MM * sc;
@@ -194,52 +229,102 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
     const qrSz = (layout.labelH - 4) * sc;
 
     let svgContent = '';
-    let col = 0, row = 0;
+    let col = 0,
+      row = 0;
 
     selected.forEach((eq) => {
       const x = 20 + col * (lw + gap);
       const y = 20 + row * (lh + gap);
-      
+
       let labelSvg = '<g transform="translate(' + x + ',' + y + ')">';
-      labelSvg += '<rect width="' + lw + '" height="' + lh + '" fill="none" stroke="#ccc" stroke-width="0.5" stroke-dasharray="2,2" />';
-      
+      labelSvg +=
+        '<rect width="' +
+        lw +
+        '" height="' +
+        lh +
+        '" fill="none" stroke="#ccc" stroke-width="0.5" stroke-dasharray="2,2" />';
+
       let _textX = 10;
       let textY = showLogo ? 30 : 15;
-      
+
       if (showLogo) {
-        labelSvg += '<text x="' + (lw/2) + '" y="12" text-anchor="middle" font-size="8" fill="#333">' + (window.__COMPANY_LABEL || 'eM@g') + '</text>';
+        labelSvg +=
+          '<text x="' +
+          lw / 2 +
+          '" y="12" text-anchor="middle" font-size="8" fill="#333">' +
+          (window.__COMPANY_LABEL || 'eM@g') +
+          '</text>';
       }
-      
+
       // Reference
-      labelSvg += '<text x="' + (qrSz + 20) + '" y="' + textY + '" font-size="14" font-weight="800" fill="#1e293b">' + escHtml(eq.reference || '') + '</text>';
+      labelSvg +=
+        '<text x="' +
+        (qrSz + 20) +
+        '" y="' +
+        textY +
+        '" font-size="14" font-weight="800" fill="#1e293b">' +
+        escHtml(eq.reference || '') +
+        '</text>';
       textY += 16;
-      
+
       if (eq.uid) {
-        labelSvg += '<text x="' + (qrSz + 20) + '" y="' + textY + '" font-size="9" font-weight="700" fill="#444" font-family="monospace">UID: ' + escHtml(eq.uid) + '</text>';
+        labelSvg +=
+          '<text x="' +
+          (qrSz + 20) +
+          '" y="' +
+          textY +
+          '" font-size="9" font-weight="700" fill="#444" font-family="monospace">UID: ' +
+          escHtml(eq.uid) +
+          '</text>';
         textY += 12;
       }
-      
+
       if (eq.serialNumber || eq.serial_number) {
-        labelSvg += '<text x="' + (qrSz + 20) + '" y="' + textY + '" font-size="9" font-weight="700" fill="#444" font-family="monospace">S/N: ' + escHtml(eq.serialNumber || eq.serial_number) + '</text>';
+        labelSvg +=
+          '<text x="' +
+          (qrSz + 20) +
+          '" y="' +
+          textY +
+          '" font-size="9" font-weight="700" fill="#444" font-family="monospace">S/N: ' +
+          escHtml(eq.serialNumber || eq.serial_number) +
+          '</text>';
       }
-      
+
       labelSvg += '</g>';
       svgContent += labelSvg;
-      
+
       col++;
-      if (col >= layout.cols) { col = 0; row++; }
+      if (col >= layout.cols) {
+        col = 0;
+        row++;
+      }
     });
 
-    const svg = '<?xml version="1.0" encoding="UTF-8"?>' +
-      '<svg xmlns="http://www.w3.org/2000/svg" width="' + pageW + '" height="' + pageH + '" viewBox="0 0 ' + pageW + ' ' + pageH + '">' +
-      '<rect width="' + pageW + '" height="' + pageH + '" fill="white" />' +
+    const svg =
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="' +
+      pageW +
+      '" height="' +
+      pageH +
+      '" viewBox="0 0 ' +
+      pageW +
+      ' ' +
+      pageH +
+      '">' +
+      '<rect width="' +
+      pageW +
+      '" height="' +
+      pageH +
+      '" fill="white" />' +
       svgContent +
       '</svg>';
 
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'etiquettes-lot-' + selected.length + '.svg'; a.click();
+    a.href = url;
+    a.download = 'etiquettes-lot-' + selected.length + '.svg';
+    a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -247,7 +332,12 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
     <div className="ebl-container">
       {/* Barre de sélection */}
       <div className="ebl-toolbar">
-        <SearchBar value={search} onChange={setSearch} placeholder="Rechercher par référence, nom, UID..." size="sm" />
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Rechercher par référence, nom, UID..."
+          size="sm"
+        />
 
         <Button variant="ghost" className="ebl-select-all" onClick={selectAll}>
           {selectedIds.size === totalEquipment ? <CheckSquare size={14} /> : <Square size={14} />}
@@ -256,18 +346,41 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
 
         <div className="ebl-logo-toggle">
           <span>Logo entreprise :</span>
-          <Button variant="ghost" className={`ebl-toggle-btn ${showLogo ? 'active' : ''}`} onClick={() => setShowLogo(true)}>Avec</Button>
-          <Button variant="ghost" className={`ebl-toggle-btn ${!showLogo ? 'active' : ''}`} onClick={() => setShowLogo(false)}>Sans</Button>
+          <Button
+            variant="ghost"
+            className={`ebl-toggle-btn ${showLogo ? 'active' : ''}`}
+            onClick={() => setShowLogo(true)}
+          >
+            Avec
+          </Button>
+          <Button
+            variant="ghost"
+            className={`ebl-toggle-btn ${!showLogo ? 'active' : ''}`}
+            onClick={() => setShowLogo(false)}
+          >
+            Sans
+          </Button>
         </div>
 
         <div className="ebl-toolbar-actions">
-          <Button variant="ghost" className="ebl-btn-export" onClick={handleExportBatchSVG} disabled={totalSelected === 0}>
+          <Button
+            variant="ghost"
+            className="ebl-btn-export"
+            onClick={handleExportBatchSVG}
+            disabled={totalSelected === 0}
+          >
             <Download size={16} />
             Exporter (200 × 200 mm) {totalSelected > 0 ? `— ${totalSelected}` : ''}
           </Button>
-          <Button variant="ghost" className="ebl-btn-print" onClick={handlePrintBatch} disabled={totalSelected === 0}>
+          <Button
+            variant="ghost"
+            className="ebl-btn-print"
+            onClick={handlePrintBatch}
+            disabled={totalSelected === 0}
+          >
             <Printer size={16} />
-            Imprimer (A4) {totalSelected > 0 ? `— ${totalSelected} étiquette${totalSelected > 1 ? 's' : ''}` : ''}
+            Imprimer (A4){' '}
+            {totalSelected > 0 ? `— ${totalSelected} étiquette${totalSelected > 1 ? 's' : ''}` : ''}
           </Button>
         </div>
       </div>
@@ -275,56 +388,93 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
       {/* Info sélection */}
       <div className="ebl-selection-info">
         <Tag size={14} />
-        <span>{totalSelected} matériel{totalSelected > 1 ? 's' : ''} sélectionné{totalSelected > 1 ? 's' : ''}</span>
+        <span>
+          {totalSelected} matériel{totalSelected > 1 ? 's' : ''} sélectionné
+          {totalSelected > 1 ? 's' : ''}
+        </span>
         <span className="ebl-page-info">
-          ({Math.ceil(totalSelected / calcLayout().perPage) || 0} page{Math.ceil(totalSelected / calcLayout().perPage) > 1 ? 's' : ''} A4)
+          ({Math.ceil(totalSelected / calcLayout().perPage) || 0} page
+          {Math.ceil(totalSelected / calcLayout().perPage) > 1 ? 's' : ''} A4)
         </span>
       </div>
 
       {/* Liste par référence */}
       <div className="ebl-list">
         {filteredGroups.map(([ref, items]) => {
-          const allChecked = items.every(eq => selectedIds.has(eq.id));
-          const someChecked = items.some(eq => selectedIds.has(eq.id));
+          const allChecked = items.every((eq) => selectedIds.has(eq.id));
+          const someChecked = items.some((eq) => selectedIds.has(eq.id));
           const collapsed = collapsedRefs.has(ref);
 
           return (
             <div key={ref} className="ebl-group">
-              <div className="ebl-group-header" role="button" tabIndex={0} onClick={() => toggleCollapse(ref)}>
+              <div
+                className="ebl-group-header"
+                role="button"
+                tabIndex={0}
+                onClick={() => toggleCollapse(ref)}
+              >
                 <Button variant="ghost" className="ebl-collapse-btn">
                   {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                 </Button>
-                <Button variant="ghost"                   className={`ebl-checkbox ${allChecked ? 'checked' : someChecked ? 'partial' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); toggleRef(ref, items); }}
+                <Button
+                  variant="ghost"
+                  className={`ebl-checkbox ${allChecked ? 'checked' : someChecked ? 'partial' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleRef(ref, items);
+                  }}
                 >
                   {allChecked ? <CheckSquare size={16} /> : <Square size={16} />}
                 </Button>
                 <span className="ebl-group-ref">{ref}</span>
-                <span className="ebl-group-count">{items.length} unité{items.length > 1 ? 's' : ''}</span>
+                <span className="ebl-group-count">
+                  {items.length} unité{items.length > 1 ? 's' : ''}
+                </span>
               </div>
               {!collapsed && (
                 <div className="ebl-group-items">
-                  {items.map(eq => (
-                    <div key={eq.id} className={`ebl-item ${selectedIds.has(eq.id) ? 'selected' : ''}`}>
-                      <Button variant="ghost"                         className={`ebl-checkbox ${selectedIds.has(eq.id) ? 'checked' : ''}`}
+                  {items.map((eq) => (
+                    <div
+                      key={eq.id}
+                      className={`ebl-item ${selectedIds.has(eq.id) ? 'selected' : ''}`}
+                    >
+                      <Button
+                        variant="ghost"
+                        className={`ebl-checkbox ${selectedIds.has(eq.id) ? 'checked' : ''}`}
                         onClick={() => toggleSingle(eq.id)}
                       >
                         {selectedIds.has(eq.id) ? <CheckSquare size={14} /> : <Square size={14} />}
                       </Button>
                       <div className="ebl-item-info">
                         {eq.uid && <span className="ebl-uid">UID: {eq.uid}</span>}
-                        {(eq.serialNumber || eq.serial_number) && <span className="ebl-sn">S/N: {eq.serialNumber || eq.serial_number}</span>}
+                        {(eq.serialNumber || eq.serial_number) && (
+                          <span className="ebl-sn">S/N: {eq.serialNumber || eq.serial_number}</span>
+                        )}
                         {eq.name && <span className="ebl-name">{cleanName(eq.name)}</span>}
                       </div>
                       {/* Mini-aperçu */}
                       <div className="ebl-mini-preview">
                         <div className="ebl-mini-label">
-                          {showLogo && <img src="/Logos/logo_Noir_Transp.png" alt="" className="ebl-mini-logo" />}
+                          {showLogo && (
+                            <img
+                              src="/Logos/logo_Noir_Transp.png"
+                              alt=""
+                              className="ebl-mini-logo"
+                            />
+                          )}
                           <div>
                             <div className="ebl-mini-ref">{eq.reference}</div>
-                            {eq.uid && <div className="ebl-mini-uid"><b>{eq.uid}</b></div>}
+                            {eq.uid && (
+                              <div className="ebl-mini-uid">
+                                <b>{eq.uid}</b>
+                              </div>
+                            )}
                           </div>
-                          <QRCodeSVG value={eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : '#'} size={24} level="L" />
+                          <QRCodeSVG
+                            value={eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : '#'}
+                            size={24}
+                            level="L"
+                          />
                         </div>
                       </div>
                     </div>
@@ -335,7 +485,6 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
           );
         })}
       </div>
-
     </div>
   );
 };

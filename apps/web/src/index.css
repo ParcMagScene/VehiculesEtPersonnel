@@ -9,32 +9,32 @@ button,
 a,
 select,
 label[for],
-input[type="checkbox"],
-input[type="radio"],
-input[type="submit"],
-input[type="button"],
-input[type="reset"],
-input[type="file"],
-input[type="date"],
-[role="button"],
-[role="tab"],
-[role="link"],
-[tabindex]:not([tabindex="-1"]),
+input[type='checkbox'],
+input[type='radio'],
+input[type='submit'],
+input[type='button'],
+input[type='reset'],
+input[type='file'],
+input[type='date'],
+[role='button'],
+[role='tab'],
+[role='link'],
+[tabindex]:not([tabindex='-1']),
 .clickable,
 .sortable {
   cursor: pointer;
 }
 
 /* Curseur texte uniquement sur les champs modifiables */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="search"],
-input[type="url"],
-input[type="tel"],
-input[type="number"],
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+input[type='url'],
+input[type='tel'],
+input[type='number'],
 textarea,
-[contenteditable="true"] {
+[contenteditable='true'] {
   cursor: text;
 }
 
@@ -47,15 +47,26 @@ button[disabled] {
   cursor: default;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   height: 100dvh;
   overflow: hidden;
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -65,8 +76,7 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 #root {
@@ -99,16 +109,16 @@ code {
 /* Scrollbar améliorée pour les dialogs/modals */
 .modal-content::-webkit-scrollbar,
 .dialog-content::-webkit-scrollbar,
-[class*="modal"]::-webkit-scrollbar,
-[class*="dialog"]::-webkit-scrollbar {
+[class*='modal']::-webkit-scrollbar,
+[class*='dialog']::-webkit-scrollbar {
   width: var(--scrollbar-width);
   height: var(--scrollbar-width);
 }
 
 .modal-content::-webkit-scrollbar-track,
 .dialog-content::-webkit-scrollbar-track,
-[class*="modal"]::-webkit-scrollbar-track,
-[class*="dialog"]::-webkit-scrollbar-track {
+[class*='modal']::-webkit-scrollbar-track,
+[class*='dialog']::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
   border-radius: var(--scrollbar-radius);
   margin: 4px 0;
@@ -116,8 +126,8 @@ code {
 
 .modal-content::-webkit-scrollbar-thumb,
 .dialog-content::-webkit-scrollbar-thumb,
-[class*="modal"]::-webkit-scrollbar-thumb,
-[class*="dialog"]::-webkit-scrollbar-thumb {
+[class*='modal']::-webkit-scrollbar-thumb,
+[class*='dialog']::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
   border-radius: var(--scrollbar-radius);
   border: 2px solid var(--scrollbar-track);
@@ -126,8 +136,8 @@ code {
 
 .modal-content::-webkit-scrollbar-thumb:hover,
 .dialog-content::-webkit-scrollbar-thumb:hover,
-[class*="modal"]::-webkit-scrollbar-thumb:hover,
-[class*="dialog"]::-webkit-scrollbar-thumb:hover {
+[class*='modal']::-webkit-scrollbar-thumb:hover,
+[class*='dialog']::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
   border: 2px solid var(--scrollbar-track);
   background-clip: padding-box;
@@ -136,8 +146,8 @@ code {
 /* Padding pour éviter que le contenu touche les bords avec scrollbar */
 .modal-form,
 .dialog-content,
-[class*="modal-body"],
-[class*="dialog-body"] {
+[class*='modal-body'],
+[class*='dialog-body'] {
   padding-right: 4px !important;
   scroll-padding: 8px;
   overflow-y: auto;

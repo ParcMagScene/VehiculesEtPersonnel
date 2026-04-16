@@ -37,7 +37,11 @@ describe('Tag', () => {
   it('calls onClose when close button clicked', async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<Tag closeable onClose={onClose}>X</Tag>);
+    render(
+      <Tag closeable onClose={onClose}>
+        X
+      </Tag>,
+    );
     await user.click(screen.getByLabelText('Supprimer'));
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -65,7 +69,11 @@ describe('Badge', () => {
   });
 
   it('caps count at custom max', () => {
-    render(<Badge count={15} max={10}>X</Badge>);
+    render(
+      <Badge count={15} max={10}>
+        X
+      </Badge>,
+    );
     expect(screen.getByText('10+')).toBeInTheDocument();
   });
 
@@ -85,7 +93,11 @@ describe('Badge', () => {
   });
 
   it('applies color class', () => {
-    const { container } = render(<Badge count={1} color="success">X</Badge>);
+    const { container } = render(
+      <Badge count={1} color="success">
+        X
+      </Badge>,
+    );
     expect(container.querySelector('.ui-badge--success')).toBeInTheDocument();
   });
 

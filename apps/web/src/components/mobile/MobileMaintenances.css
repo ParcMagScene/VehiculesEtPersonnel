@@ -18,7 +18,9 @@
   text-align: center;
   cursor: pointer;
   box-shadow: 0 2px 8px var(--shadow-inner);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .mobile-maintenances .type-card:active {
@@ -41,7 +43,11 @@
 }
 
 .type-icon.request {
-  background: linear-gradient(135deg, var(--theme-primary-light) 0%, var(--theme-purple-accent) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-primary-light) 0%,
+    var(--theme-purple-accent) 100%
+  );
 }
 
 .type-icon.breakdown {

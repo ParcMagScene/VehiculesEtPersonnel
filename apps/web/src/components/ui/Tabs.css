@@ -36,7 +36,9 @@
   white-space: nowrap;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: color var(--duration-fast), border-color var(--duration-fast);
+  transition:
+    color var(--duration-fast),
+    border-color var(--duration-fast);
 }
 .ui-tab:hover:not(:disabled) {
   color: var(--theme-text-primary);

@@ -569,8 +569,14 @@
   text-transform: capitalize;
 }
 
-.maff-resa-status.confirmed { background: var(--theme-success-bg-strong); color: var(--theme-success-dark); }
-.maff-resa-status.pending   { background: #fef9c3; color: #a16207; }
+.maff-resa-status.confirmed {
+  background: var(--theme-success-bg-strong);
+  color: var(--theme-success-dark);
+}
+.maff-resa-status.pending {
+  background: #fef9c3;
+  color: #a16207;
+}
 
 /* ═══════════════════════════════════
    Détail — Tâches / Planification
@@ -596,8 +602,12 @@
   margin-top: 1px;
 }
 
-.maff-task-status-icon.done     { color: var(--theme-success-dark); }
-.maff-task-status-icon.progress { color: var(--theme-info-dark); }
+.maff-task-status-icon.done {
+  color: var(--theme-success-dark);
+}
+.maff-task-status-icon.progress {
+  color: var(--theme-info-dark);
+}
 
 .maff-task-info {
   flex: 1;

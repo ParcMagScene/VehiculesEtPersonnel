@@ -27,7 +27,7 @@ function PlaylistFormModal({ playlist, onSave, onClose }) {
   }, [playlist]);
 
   const handleChange = (field, value) => {
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = useCallback(async () => {
@@ -63,48 +63,55 @@ function PlaylistFormModal({ playlist, onSave, onClose }) {
       title={playlist ? 'Modifier la playlist' : 'Nouvelle playlist'}
       icon={<List size={18} />}
       size="md"
-      footer={<>
-        <Button variant="ghost" onClick={onClose}>Annuler</Button>
-        <Button variant="primary" onClick={handleSave} disabled={saving}>
-          <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
-        </Button>
-      </>}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
+            <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </Button>
+        </>
+      }
     >
-          <FormField className="form-group" label="Nom" required>
-            <Input
-              type="text"
-              value={form.name}
-              onChange={e => handleChange('name', e.target.value)}
-              placeholder="Ex: Accueil – vidéos corporate"
-              autoFocus
-            />
-          </FormField>
-          <FormField className="form-group" label="Description">
-            <Textarea
-              value={form.description}
-              onChange={e => handleChange('description', e.target.value)}
-              rows={3}
-              placeholder="Description optionnelle…"
-            />
-          </FormField>
-          <div className="form-row">
-            <FormField className="form-group" label="Transition">
-              <Select value={form.transition} onChange={e => handleChange('transition', e.target.value)}>
-                <option value="fade">Fondu</option>
-                <option value="slide">Glissement</option>
-                <option value="none">Aucune</option>
-              </Select>
-            </FormField>
-            <FormField className="form-group" label="Durée par défaut (sec)">
-              <Input
-                type="number"
-                min="1"
-                max="300"
-                value={form.defaultDuration}
-                onChange={e => handleChange('defaultDuration', e.target.value)}
-              />
-            </FormField>
-          </div>
+      <FormField className="form-group" label="Nom" required>
+        <Input
+          type="text"
+          value={form.name}
+          onChange={(e) => handleChange('name', e.target.value)}
+          placeholder="Ex: Accueil – vidéos corporate"
+          autoFocus
+        />
+      </FormField>
+      <FormField className="form-group" label="Description">
+        <Textarea
+          value={form.description}
+          onChange={(e) => handleChange('description', e.target.value)}
+          rows={3}
+          placeholder="Description optionnelle…"
+        />
+      </FormField>
+      <div className="form-row">
+        <FormField className="form-group" label="Transition">
+          <Select
+            value={form.transition}
+            onChange={(e) => handleChange('transition', e.target.value)}
+          >
+            <option value="fade">Fondu</option>
+            <option value="slide">Glissement</option>
+            <option value="none">Aucune</option>
+          </Select>
+        </FormField>
+        <FormField className="form-group" label="Durée par défaut (sec)">
+          <Input
+            type="number"
+            min="1"
+            max="300"
+            value={form.defaultDuration}
+            onChange={(e) => handleChange('defaultDuration', e.target.value)}
+          />
+        </FormField>
+      </div>
     </ModalLayout>
   );
 }

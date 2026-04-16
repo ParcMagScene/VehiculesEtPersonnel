@@ -28,23 +28,26 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
     loadTemplates();
   }, [loadTemplates, refreshKey]);
 
-  const handleDelete = useCallback((tpl) => {
-    confirm({
-      title: 'Supprimer',
-      message: `Supprimer le template \xAB ${tpl.name} \xBB ?`,
-      variant: 'danger',
-      confirmLabel: 'Supprimer',
-      onConfirm: async () => {
-        try {
-          await api.deleteDisplayTemplate(tpl.id);
-          toast.success('Template supprim\xE9');
-          onRefresh();
-        } catch {
-          toast.error('Erreur suppression');
-        }
-      },
-    });
-  }, [confirm, toast, onRefresh]);
+  const handleDelete = useCallback(
+    (tpl) => {
+      confirm({
+        title: 'Supprimer',
+        message: `Supprimer le template \xAB ${tpl.name} \xBB ?`,
+        variant: 'danger',
+        confirmLabel: 'Supprimer',
+        onConfirm: async () => {
+          try {
+            await api.deleteDisplayTemplate(tpl.id);
+            toast.success('Template supprim\xE9');
+            onRefresh();
+          } catch {
+            toast.error('Erreur suppression');
+          }
+        },
+      });
+    },
+    [confirm, toast, onRefresh],
+  );
 
   const isAdmin = currentUser?.isAdmin;
 
@@ -52,15 +55,23 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
 
   if (templates.length === 0) {
     return (
-      <EmptyState icon={<Layout size={48} strokeWidth={1} />} title="Aucun template" description="Les templates définissent la mise en page du contenu affiché sur les écrans." />
+      <EmptyState
+        icon={<Layout size={48} strokeWidth={1} />}
+        title="Aucun template"
+        description="Les templates définissent la mise en page du contenu affiché sur les écrans."
+      />
     );
   }
 
   return (
     <div className="display-templates-grid">
-      {templates.map(tpl => {
+      {templates.map((tpl) => {
         let layoutInfo = {};
-        try { layoutInfo = JSON.parse(tpl.layout || '{}'); } catch { /* ignore */ }
+        try {
+          layoutInfo = JSON.parse(tpl.layout || '{}');
+        } catch {
+          /* ignore */
+        }
 
         return (
           <div key={tpl.id} className={`template-card ${!tpl.is_active ? 'inactive' : ''}`}>
@@ -78,12 +89,24 @@ function TemplatesTab({ currentUser, refreshKey, onEdit, onRefresh }) {
             {isAdmin && (
               <div className="template-actions">
                 <Tooltip content="Modifier">
-                  <Button variant="ghost" size="sm" iconOnly aria-label="Modifier" onClick={() => onEdit(tpl)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    aria-label="Modifier"
+                    onClick={() => onEdit(tpl)}
+                  >
                     <Settings size={14} />
                   </Button>
                 </Tooltip>
                 <Tooltip content="Supprimer">
-                  <Button variant="danger" size="sm" iconOnly aria-label="Supprimer" onClick={() => handleDelete(tpl)}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    iconOnly
+                    aria-label="Supprimer"
+                    onClick={() => handleDelete(tpl)}
+                  >
                     <Trash2 size={14} />
                   </Button>
                 </Tooltip>

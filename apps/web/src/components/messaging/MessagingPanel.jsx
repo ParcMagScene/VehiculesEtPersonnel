@@ -1,5 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, MessageSquare, Send, Paperclip, ArrowLeft, Plus, File, Image, Download, Users, Smile } from 'lucide-react';
+import {
+  X,
+  MessageSquare,
+  Send,
+  Paperclip,
+  ArrowLeft,
+  Plus,
+  File,
+  Image,
+  Download,
+  Users,
+  Smile,
+} from 'lucide-react';
 import api, { getApiUrl } from '../../utils/api';
 import { useToast } from '../../hooks/useToast';
 import { Button, Textarea, EmptyState, Tooltip } from '@/design-system';
@@ -11,9 +23,81 @@ const API_BASE_URL = getApiUrl();
 
 // Emojis par catégorie pour le picker rapide
 const EMOJI_CATEGORIES = [
-  { name: '🎵 Musique & Rock', emojis: ['🎸', '🎵', '🎶', '🎤', '🥁', '🎹', '🎷', '🎺', '🤘', '🔊', '🎼', '🎧', '🎻', '🪗', '🎙️', '🔉', '📻', '🪘', '🎚️', '🪇'] },
-  { name: '😊 Smileys', emojis: ['😀', '😂', '🤣', '😊', '😎', '🤩', '😍', '🥳', '😅', '🤔', '😉', '👍', '👏', '🙌', '💪', '🤝', '❤️', '🔥', '✨', '⭐'] },
-  { name: '🏗️ Travail', emojis: ['🚛', '🚜', '🏗️', '🔧', '🔨', '⚙️', '🛠️', '📋', '📦', '📐', '🪛', '🔩', '💡', '✅', '❌', '⚠️', '📌', '🗓️', '📞', '💼'] },
+  {
+    name: '🎵 Musique & Rock',
+    emojis: [
+      '🎸',
+      '🎵',
+      '🎶',
+      '🎤',
+      '🥁',
+      '🎹',
+      '🎷',
+      '🎺',
+      '🤘',
+      '🔊',
+      '🎼',
+      '🎧',
+      '🎻',
+      '🪗',
+      '🎙️',
+      '🔉',
+      '📻',
+      '🪘',
+      '🎚️',
+      '🪇',
+    ],
+  },
+  {
+    name: '😊 Smileys',
+    emojis: [
+      '😀',
+      '😂',
+      '🤣',
+      '😊',
+      '😎',
+      '🤩',
+      '😍',
+      '🥳',
+      '😅',
+      '🤔',
+      '😉',
+      '👍',
+      '👏',
+      '🙌',
+      '💪',
+      '🤝',
+      '❤️',
+      '🔥',
+      '✨',
+      '⭐',
+    ],
+  },
+  {
+    name: '🏗️ Travail',
+    emojis: [
+      '🚛',
+      '🚜',
+      '🏗️',
+      '🔧',
+      '🔨',
+      '⚙️',
+      '🛠️',
+      '📋',
+      '📦',
+      '📐',
+      '🪛',
+      '🔩',
+      '💡',
+      '✅',
+      '❌',
+      '⚠️',
+      '📌',
+      '🗓️',
+      '📞',
+      '💼',
+    ],
+  },
 ];
 
 const formatMsgTime = (dateStr) => {
@@ -44,7 +128,12 @@ const formatDateSeparator = (dateStr) => {
 
 const getInitials = (name) => {
   if (!name) return '?';
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 };
 
 const formatFileSize = (bytes) => {
@@ -85,21 +174,24 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   }, [toast]);
 
   // Charger les messages d'une conversation
-  const loadMessages = useCallback(async (convId) => {
-    try {
-      const data = await api.getMessages(convId);
-      setMessages(data);
-      // Marquer comme lu
-      await api.markConversationRead(convId);
-      // Mettre à jour le compteur de la conversation
-      setConversations(prev => prev.map(c =>
-        c.id === convId ? { ...c, unread_count: 0 } : c
-      ));
-    } catch (err) {
-      console.error('Erreur chargement messages:', err);
-      toast.error('Erreur chargement des messages');
-    }
-  }, [toast]);
+  const loadMessages = useCallback(
+    async (convId) => {
+      try {
+        const data = await api.getMessages(convId);
+        setMessages(data);
+        // Marquer comme lu
+        await api.markConversationRead(convId);
+        // Mettre à jour le compteur de la conversation
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c)),
+        );
+      } catch (err) {
+        console.error('Erreur chargement messages:', err);
+        toast.error('Erreur chargement des messages');
+      }
+    },
+    [toast],
+  );
 
   // Ouvrir quand isOpen change
   useEffect(() => {
@@ -132,10 +224,10 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   const getConversationName = (conv) => {
     if (conv.title) return conv.title;
     if (conv.type === 'direct' && conv.participants) {
-      const other = conv.participants.find(p => p.id !== currentUser?.id);
+      const other = conv.participants.find((p) => p.id !== currentUser?.id);
       return other?.name || 'Conversation';
     }
-    return conv.participants?.map(p => p.name).join(', ') || 'Conversation';
+    return conv.participants?.map((p) => p.name).join(', ') || 'Conversation';
   };
 
   // Envoyer un message
@@ -146,13 +238,20 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
 
     try {
       const msg = await api.sendMessage(activeConversation.id, text);
-      setMessages(prev => [...prev, msg]);
+      setMessages((prev) => [...prev, msg]);
       // Mettre à jour le last_message dans la liste
-      setConversations(prev => prev.map(c =>
-        c.id === activeConversation.id
-          ? { ...c, last_message: text, last_message_at: msg.created_at, last_message_sender: currentUser?.name }
-          : c
-      ));
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === activeConversation.id
+            ? {
+                ...c,
+                last_message: text,
+                last_message_at: msg.created_at,
+                last_message_sender: currentUser?.name,
+              }
+            : c,
+        ),
+      );
     } catch (err) {
       console.error('Erreur envoi message:', err);
       toast.error('Erreur envoi du message');
@@ -170,13 +269,8 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result.split(',')[1];
-        const msg = await api.sendFileMessage(
-          activeConversation.id,
-          file.name,
-          base64,
-          file.type
-        );
-        setMessages(prev => [...prev, msg]);
+        const msg = await api.sendFileMessage(activeConversation.id, file.name, base64, file.type);
+        setMessages((prev) => [...prev, msg]);
       };
       reader.readAsDataURL(file);
     } catch (err) {
@@ -194,7 +288,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       setSelectedUserId(null);
       await loadConversations();
       // Ouvrir la conversation créée
-      const conv = (await api.getConversations()).find(c => c.id === result.id);
+      const conv = (await api.getConversations()).find((c) => c.id === result.id);
       if (conv) {
         setActiveConversation(conv);
         await loadMessages(conv.id);
@@ -209,7 +303,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   const openNewConvModal = async () => {
     try {
       const users = await api.request('/users/names');
-      setAllUsers(users.filter(u => u.id !== currentUser?.id));
+      setAllUsers(users.filter((u) => u.id !== currentUser?.id));
       setShowNewConv(true);
     } catch (err) {
       console.error('Erreur chargement utilisateurs:', err);
@@ -245,9 +339,16 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   return (
     <>
       <div className="messaging-backdrop" onClick={onClose} />
-      <div className={`messaging-panel ${isOpen ? 'open' : ''}`} role="dialog" aria-modal="true" aria-label="Messages">
+      <div
+        className={`messaging-panel ${isOpen ? 'open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Messages"
+      >
         <div className="msg-header">
-          <h3><MessageSquare size={18} /> Messages</h3>
+          <h3>
+            <MessageSquare size={18} /> Messages
+          </h3>
           <div className="msg-header-actions">
             <Tooltip content="Nouveau message">
               <Button variant="ghost" className="msg-header-btn" onClick={openNewConvModal}>
@@ -272,7 +373,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 description="Cliquez sur + pour démarrer"
               />
             ) : (
-              conversations.map(conv => (
+              conversations.map((conv) => (
                 <div
                   key={conv.id}
                   className="msg-conv-item"
@@ -282,15 +383,26 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                     setActiveConversation(conv);
                     loadMessages(conv.id);
                   }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveConversation(conv); loadMessages(conv.id); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setActiveConversation(conv);
+                      loadMessages(conv.id);
+                    }
+                  }}
                 >
                   <div className="msg-conv-avatar">
-                    {conv.type === 'group' ? <Users size={16} /> : getInitials(getConversationName(conv))}
+                    {conv.type === 'group' ? (
+                      <Users size={16} />
+                    ) : (
+                      getInitials(getConversationName(conv))
+                    )}
                   </div>
                   <div className="msg-conv-info">
                     <div className="msg-conv-name">{getConversationName(conv)}</div>
                     <div className="msg-conv-last">
-                      {conv.last_message_sender && conv.last_message_sender !== getConversationName(conv)
+                      {conv.last_message_sender &&
+                      conv.last_message_sender !== getConversationName(conv)
                         ? `${conv.last_message_sender.split(' ')[0]}: `
                         : ''}
                       {conv.last_message || 'Nouvelle conversation'}
@@ -299,7 +411,9 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                   <div className="msg-conv-meta">
                     <span className="msg-conv-time">{formatConvTime(conv.last_message_at)}</span>
                     {conv.unread_count > 0 && (
-                      <span className="msg-unread-badge">{conv.unread_count > 9 ? '9+' : conv.unread_count}</span>
+                      <span className="msg-unread-badge">
+                        {conv.unread_count > 9 ? '9+' : conv.unread_count}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -310,7 +424,14 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
           /* ═══ Vue chat ═══ */
           <div className="msg-chat-view">
             <div className="msg-chat-header">
-              <Button variant="ghost" className="msg-back-btn" onClick={() => { setActiveConversation(null); setMessages([]); }}>
+              <Button
+                variant="ghost"
+                className="msg-back-btn"
+                onClick={() => {
+                  setActiveConversation(null);
+                  setMessages([]);
+                }}
+              >
                 <ArrowLeft size={18} />
               </Button>
               <span className="msg-chat-title">{getConversationName(activeConversation)}</span>
@@ -329,7 +450,10 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 const isSent = item.sender_id === currentUser?.id;
 
                 return (
-                  <div key={item.id} className={`msg-bubble-wrapper ${isSent ? 'sent' : 'received'}`}>
+                  <div
+                    key={item.id}
+                    className={`msg-bubble-wrapper ${isSent ? 'sent' : 'received'}`}
+                  >
                     {!isSent && <span className="msg-sender-name">{item.sender_name}</span>}
                     <div className="msg-bubble">
                       {item.type === 'text' && item.content}
@@ -340,7 +464,12 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                             alt={item.attachments[0].original_name}
                             loading="lazy"
                             className="msg-image-preview"
-                            onClick={() => window.open(`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`, '_blank')}
+                            onClick={() =>
+                              window.open(
+                                `${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`,
+                                '_blank',
+                              )
+                            }
                           />
                         </>
                       )}
@@ -352,8 +481,12 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                           className="msg-attachment"
                         >
                           {item.type === 'video' ? <Image size={14} /> : <File size={14} />}
-                          <span className="msg-attachment-name">{item.attachments[0].original_name}</span>
-                          <span className="msg-attachment-size">{formatFileSize(item.attachments[0].size)}</span>
+                          <span className="msg-attachment-name">
+                            {item.attachments[0].original_name}
+                          </span>
+                          <span className="msg-attachment-size">
+                            {formatFileSize(item.attachments[0].size)}
+                          </span>
                           <Download size={12} />
                         </a>
                       )}
@@ -367,13 +500,27 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
 
             <div className="msg-input-area">
               <Tooltip content="Joindre un fichier">
-                <Button variant="ghost" className="msg-attach-btn" onClick={() => fileInputRef.current?.click()}>
+                <Button
+                  variant="ghost"
+                  className="msg-attach-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <Paperclip size={18} />
                 </Button>
               </Tooltip>
-              <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                onChange={handleFileSelect}
+                accept="*/*"
+              />
               <Tooltip content="Emojis">
-                <Button variant="ghost" className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`} onClick={() => setShowEmojiPicker(v => !v)}>
+                <Button
+                  variant="ghost"
+                  className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`}
+                  onClick={() => setShowEmojiPicker((v) => !v)}
+                >
                   <Smile size={18} />
                 </Button>
               </Tooltip>
@@ -381,7 +528,9 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 <div className="msg-emoji-picker">
                   <div className="msg-emoji-tabs">
                     {EMOJI_CATEGORIES.map((cat, i) => (
-                      <Button variant="ghost"                         key={i}
+                      <Button
+                        variant="ghost"
+                        key={i}
                         className={`msg-emoji-tab${emojiCategory === i ? ' active' : ''}`}
                         onClick={() => setEmojiCategory(i)}
                       >
@@ -391,10 +540,12 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                   </div>
                   <div className="msg-emoji-grid">
                     {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, i) => (
-                      <Button variant="ghost"                         key={i}
+                      <Button
+                        variant="ghost"
+                        key={i}
                         className="msg-emoji-item"
                         onClick={() => {
-                          setInputText(prev => prev + emoji);
+                          setInputText((prev) => prev + emoji);
                           textareaRef.current?.focus();
                         }}
                       >
@@ -414,7 +565,12 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 rows={1}
               />
               <Tooltip content="Envoyer">
-                <Button variant="ghost" className="msg-send-btn" onClick={handleSend} disabled={!inputText.trim()}>
+                <Button
+                  variant="ghost"
+                  className="msg-send-btn"
+                  onClick={handleSend}
+                  disabled={!inputText.trim()}
+                >
                   <Send size={16} />
                 </Button>
               </Tooltip>
@@ -425,11 +581,16 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
 
       {/* Modal nouvelle conversation */}
       {showNewConv && (
-        <div className="msg-new-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowNewConv(false); }}>
+        <div
+          className="msg-new-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowNewConv(false);
+          }}
+        >
           <div className="msg-new-modal">
             <h4>Nouveau message</h4>
             <div className="msg-user-list">
-              {allUsers.map(user => (
+              {allUsers.map((user) => (
                 <div
                   key={user.id}
                   className={`msg-user-option ${selectedUserId === user.id ? 'selected' : ''}`}
@@ -442,8 +603,18 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
               {allUsers.length === 0 && <p className="msg-empty">Aucun autre utilisateur</p>}
             </div>
             <div className="msg-new-actions">
-              <Button variant="ghost" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</Button>
-              <Button variant="primary" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowNewConv(false);
+                  setSelectedUserId(null);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button variant="primary" onClick={handleNewConversation} disabled={!selectedUserId}>
+                Démarrer
+              </Button>
             </div>
           </div>
         </div>

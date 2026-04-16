@@ -32,7 +32,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
       const endpoint = isAdminMode ? `/users/${editedUser.id}/profile` : '/users/me';
       const result = await api.request(endpoint, {
         method: 'PATCH',
-        body: JSON.stringify({ name: name.trim() })
+        body: JSON.stringify({ name: name.trim() }),
       });
       onUserUpdate(result.user);
     } catch (err) {
@@ -52,7 +52,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('L\'image ne doit pas dépasser 5 Mo');
+      setError("L'image ne doit pas dépasser 5 Mo");
       return;
     }
 
@@ -69,7 +69,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
       onUserUpdate(data.user);
       setPreviewUrl(null);
     } catch (err) {
-      setError(err.message || 'Erreur lors de l\'upload');
+      setError(err.message || "Erreur lors de l'upload");
       setPreviewUrl(null);
     } finally {
       setUploading(false);
@@ -118,12 +118,19 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
           <div className="profile-edit-avatar-section">
             <div className="profile-edit-avatar-wrapper">
               {previewUrl ? (
-                <img src={previewUrl} alt="Preview" loading="lazy" className="profile-edit-avatar-preview" />
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  loading="lazy"
+                  className="profile-edit-avatar-preview"
+                />
               ) : (
                 <Avatar name={editedUser.name} avatar={editedUser.avatar} size={100} />
               )}
-              
-              <Button variant="ghost"                 onClick={() => fileInputRef.current?.click()}
+
+              <Button
+                variant="ghost"
+                onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 className="profile-edit-avatar-btn"
               >
@@ -139,12 +146,14 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
               style={{ display: 'none' }}
             />
 
-            {uploading && (
-              <div className="profile-edit-upload-status">Upload en cours...</div>
-            )}
+            {uploading && <div className="profile-edit-upload-status">Upload en cours...</div>}
 
             {editedUser.avatar && !uploading && (
-              <Button variant="ghost" onClick={handleDeleteAvatar} className="profile-edit-delete-avatar">
+              <Button
+                variant="ghost"
+                onClick={handleDeleteAvatar}
+                className="profile-edit-delete-avatar"
+              >
                 <Trash2 size={14} /> Supprimer la photo
               </Button>
             )}
@@ -152,9 +161,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
 
           {/* Name field */}
           <div className="profile-edit-field">
-            <label className="profile-edit-label">
-              Nom
-            </label>
+            <label className="profile-edit-label">Nom</label>
             <Input
               type="text"
               value={name}
@@ -166,25 +173,16 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
 
           {/* Email (read-only) */}
           <div className="profile-edit-field">
-            <label className="profile-edit-label">
-              Email
-            </label>
-            <div className="profile-edit-readonly">
-              {editedUser.email}
-            </div>
+            <label className="profile-edit-label">Email</label>
+            <div className="profile-edit-readonly">{editedUser.email}</div>
           </div>
 
-          {error && (
-            <InlineAlert style={{ marginBottom: '16px' }}>{error}</InlineAlert>
-          )}
+          {error && <InlineAlert style={{ marginBottom: '16px' }}>{error}</InlineAlert>}
         </div>
 
         {/* Footer */}
         <div className="profile-edit-footer">
-          <Button
-            variant="ghost"
-            onClick={onClose}
-          >
+          <Button variant="ghost" onClick={onClose}>
             Fermer
           </Button>
           <Button

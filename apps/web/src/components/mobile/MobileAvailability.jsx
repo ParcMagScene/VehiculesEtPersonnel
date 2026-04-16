@@ -8,11 +8,17 @@ import { STATUS } from '../../constants';
 import { Button } from '@/design-system';
 import './MobileAvailability.css';
 
-function MobileAvailability({ vehicles, reservations, maintenances, onClose, onCreateReservation }) {
+function MobileAvailability({
+  vehicles,
+  reservations,
+  maintenances,
+  onClose,
+  onCreateReservation,
+}) {
   const [currentDay, setCurrentDay] = useState(startOfDay(new Date()));
 
   // Filtrer les véhicules (pas de location)
-  const ownVehicles = vehicles.filter(v => v.type !== 'location');
+  const ownVehicles = vehicles.filter((v) => v.type !== 'location');
 
   // Vérifier si un véhicule est disponible pour un jour donné
   const isVehicleAvailable = (vehicleId, day) => {
@@ -21,7 +27,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
     dayEnd.setHours(23, 59, 59, 999);
 
     // Vérifier réservations
-    const hasReservation = reservations.some(r => {
+    const hasReservation = reservations.some((r) => {
       if (r.vehicleId !== vehicleId) return false;
       const resStart = parseISO(r.date);
       const resEnd = r.endDate ? parseISO(r.endDate) : resStart;
@@ -31,7 +37,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
     if (hasReservation) return false;
 
     // Vérifier interventions
-    const hasMaintenance = maintenances.some(m => {
+    const hasMaintenance = maintenances.some((m) => {
       if (m.vehicleId !== vehicleId) return false;
       if (!m.startDate || m.status === STATUS.COMPLETED) return false;
       const maintStart = parseISO(m.startDate);
@@ -43,7 +49,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
   };
 
   // Obtenir les véhicules disponibles pour le jour actuel
-  const availableVehicles = ownVehicles.filter(v => isVehicleAvailable(v.id, currentDay));
+  const availableVehicles = ownVehicles.filter((v) => isVehicleAvailable(v.id, currentDay));
 
   const goToPreviousDay = () => {
     setCurrentDay(addDays(currentDay, -1));
@@ -70,20 +76,26 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
 
       {/* Navigation par jour */}
       <div className="day-navigation">
-        <Button variant="ghost" className="nav-button" onClick={goToPreviousDay} aria-label="Jour précédent">
+        <Button
+          variant="ghost"
+          className="nav-button"
+          onClick={goToPreviousDay}
+          aria-label="Jour précédent"
+        >
           <ChevronLeft size={20} />
         </Button>
-        
+
         <div className="current-day">
-          <div className="day-name">
-            {format(currentDay, 'EEEE', { locale: fr })}
-          </div>
-          <div className="day-date">
-            {format(currentDay, 'd MMMM yyyy', { locale: fr })}
-          </div>
+          <div className="day-name">{format(currentDay, 'EEEE', { locale: fr })}</div>
+          <div className="day-date">{format(currentDay, 'd MMMM yyyy', { locale: fr })}</div>
         </div>
 
-        <Button variant="ghost" className="nav-button" onClick={goToNextDay} aria-label="Jour suivant">
+        <Button
+          variant="ghost"
+          className="nav-button"
+          onClick={goToNextDay}
+          aria-label="Jour suivant"
+        >
           <ChevronRight size={20} />
         </Button>
       </div>
@@ -114,7 +126,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
             <p>Aucun véhicule disponible ce jour</p>
           </div>
         ) : (
-          availableVehicles.map(vehicle => (
+          availableVehicles.map((vehicle) => (
             <div key={vehicle.id} className="vehicle-card">
               <div className="vehicle-photo-thumb">
                 {vehicle.photo ? (
@@ -122,10 +134,18 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
                     src={`/Photos/${vehicle.photo}`}
                     alt={vehicle.name}
                     loading="lazy"
-                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
                 ) : (
-                  <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vehicle-avatar" />
+                  <img
+                    src={getVehicleAvatar(vehicle.type)}
+                    alt={vehicle.name}
+                    loading="lazy"
+                    className="vehicle-avatar"
+                  />
                 )}
               </div>
               <div className="vehicle-info">
@@ -136,9 +156,10 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
                 </div>
                 <div className="vehicle-registration">{vehicle.registration}</div>
               </div>
-              
+
               {onCreateReservation && (
-                <Button variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="reserve-button"
                   onClick={() => onCreateReservation(vehicle.id, currentDay)}
                 >
@@ -157,10 +178,10 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
           <h3>Véhicules occupés ({ownVehicles.length - availableVehicles.length})</h3>
           <div className="unavailable-list">
             {ownVehicles
-              .filter(v => !isVehicleAvailable(v.id, currentDay))
-              .map(vehicle => {
+              .filter((v) => !isVehicleAvailable(v.id, currentDay))
+              .map((vehicle) => {
                 // Trouver la raison
-                const reservation = reservations.find(r => {
+                const reservation = reservations.find((r) => {
                   if (r.vehicleId !== vehicle.id) return false;
                   const dayStart = startOfDay(currentDay);
                   const dayEnd = new Date(dayStart);
@@ -170,7 +191,7 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
                   return dayStart <= resEnd && dayEnd >= resStart;
                 });
 
-                const maintenance = maintenances.find(m => {
+                const maintenance = maintenances.find((m) => {
                   if (m.vehicleId !== vehicle.id) return false;
                   if (!m.startDate || m.status === STATUS.COMPLETED) return false;
                   const dayStart = startOfDay(currentDay);
@@ -181,11 +202,11 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
                   return dayStart <= maintEnd && dayEnd >= maintStart;
                 });
 
-                const reason = maintenance 
+                const reason = maintenance
                   ? `Intervention: ${maintenance.description}`
                   : reservation
-                  ? 'Réservé'
-                  : 'Occupé';
+                    ? 'Réservé'
+                    : 'Occupé';
 
                 return (
                   <div key={vehicle.id} className="unavailable-item">
@@ -195,10 +216,18 @@ function MobileAvailability({ vehicles, reservations, maintenances, onClose, onC
                           src={`/Photos/${vehicle.photo}`}
                           alt={vehicle.name}
                           loading="lazy"
-                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
                         />
                       ) : (
-                        <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vehicle-avatar" />
+                        <img
+                          src={getVehicleAvatar(vehicle.type)}
+                          alt={vehicle.name}
+                          loading="lazy"
+                          className="vehicle-avatar"
+                        />
                       )}
                     </div>
                     <div className="vehicle-info">

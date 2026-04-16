@@ -1,11 +1,31 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, format, addMonths, subMonths,
-  isSameMonth, isSameDay, isWeekend, isBefore, isAfter
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  format,
+  addMonths,
+  subMonths,
+  isSameMonth,
+  isSameDay,
+  isWeekend,
+  isBefore,
+  isAfter,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, X, AlertTriangle, Check, Clock, CalendarPlus, Briefcase, User } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
+  AlertTriangle,
+  Check,
+  Clock,
+  CalendarPlus,
+  Briefcase,
+  User,
+} from 'lucide-react';
 import api from '../../utils/api';
 import { Button, Input, Checkbox, InlineAlert } from '@/design-system';
 import { PERIOD_MENU_ITEMS } from '../personnel/PersonnelContextMenu';
@@ -16,10 +36,17 @@ import './PeriodCalendarModal.css';
 // Jours ouvrés entre deux dates
 const countBusinessDays = (start, end) => {
   const days = eachDayOfInterval({ start, end });
-  return days.filter(d => !isWeekend(d)).length;
+  return days.filter((d) => !isWeekend(d)).length;
 };
 
-const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin = false, initialDate }) => {
+const PeriodCalendarModal = ({
+  person,
+  periodType,
+  onClose,
+  onCreated,
+  isAdmin = false,
+  initialDate,
+}) => {
   const [currentMonth, setCurrentMonth] = useState(initialDate || new Date());
   const [startDate, setStartDate] = useState(initialDate || null);
   const [endDate, setEndDate] = useState(initialDate || null);
@@ -43,10 +70,14 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   const [hasGoogleToken, setHasGoogleToken] = useState(true);
 
   useEffect(() => {
-    if (isRdv) api.getGoogleOAuthStatus().then(s => setHasGoogleToken(!!s?.connected)).catch(() => setHasGoogleToken(false));
+    if (isRdv)
+      api
+        .getGoogleOAuthStatus()
+        .then((s) => setHasGoogleToken(!!s?.connected))
+        .catch(() => setHasGoogleToken(false));
   }, [isRdv]);
 
-  const periodInfo = PERIOD_MENU_ITEMS.find(p => p.type === periodType) || PERIOD_MENU_ITEMS[0];
+  const periodInfo = PERIOD_MENU_ITEMS.find((p) => p.type === periodType) || PERIOD_MENU_ITEMS[0];
 
   // Calcul des jours du calendrier (grille 6 semaines)
   const calendarDays = useMemo(() => {
@@ -58,29 +89,40 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   }, [currentMonth]);
 
   // Range sélectionnée (pour highlight)
-  const isInRange = useCallback((day) => {
-    if (!startDate) return false;
-    const end = endDate || hoverDate;
-    if (!end) return isSameDay(day, startDate);
-    const rangeStart = isBefore(startDate, end) ? startDate : end;
-    const rangeEnd = isAfter(startDate, end) ? startDate : end;
-    return (isSameDay(day, rangeStart) || isAfter(day, rangeStart)) &&
-           (isSameDay(day, rangeEnd) || isBefore(day, rangeEnd));
-  }, [startDate, endDate, hoverDate]);
+  const isInRange = useCallback(
+    (day) => {
+      if (!startDate) return false;
+      const end = endDate || hoverDate;
+      if (!end) return isSameDay(day, startDate);
+      const rangeStart = isBefore(startDate, end) ? startDate : end;
+      const rangeEnd = isAfter(startDate, end) ? startDate : end;
+      return (
+        (isSameDay(day, rangeStart) || isAfter(day, rangeStart)) &&
+        (isSameDay(day, rangeEnd) || isBefore(day, rangeEnd))
+      );
+    },
+    [startDate, endDate, hoverDate],
+  );
 
-  const isRangeStart = useCallback((day) => {
-    if (!startDate) return false;
-    const end = endDate || hoverDate;
-    if (!end) return isSameDay(day, startDate);
-    return isSameDay(day, isBefore(startDate, end) ? startDate : end);
-  }, [startDate, endDate, hoverDate]);
+  const isRangeStart = useCallback(
+    (day) => {
+      if (!startDate) return false;
+      const end = endDate || hoverDate;
+      if (!end) return isSameDay(day, startDate);
+      return isSameDay(day, isBefore(startDate, end) ? startDate : end);
+    },
+    [startDate, endDate, hoverDate],
+  );
 
-  const isRangeEnd = useCallback((day) => {
-    if (!startDate) return false;
-    const end = endDate || hoverDate;
-    if (!end) return isSameDay(day, startDate);
-    return isSameDay(day, isAfter(startDate, end) ? startDate : end);
-  }, [startDate, endDate, hoverDate]);
+  const isRangeEnd = useCallback(
+    (day) => {
+      if (!startDate) return false;
+      const end = endDate || hoverDate;
+      if (!end) return isSameDay(day, startDate);
+      return isSameDay(day, isAfter(startDate, end) ? startDate : end);
+    },
+    [startDate, endDate, hoverDate],
+  );
 
   // Gestion du clic sur un jour
   const handleDayClick = (day) => {
@@ -105,10 +147,14 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
     try {
       const startStr = format(start, 'yyyy-MM-dd');
       const endStr = format(end, 'yyyy-MM-dd');
-      const data = await api.getAvailabilities({ personId: person.id, startDate: startStr, endDate: endStr });
-      const existing = Array.isArray(data) ? data : (data.availabilities || []);
+      const data = await api.getAvailabilities({
+        personId: person.id,
+        startDate: startStr,
+        endDate: endStr,
+      });
+      const existing = Array.isArray(data) ? data : data.availabilities || [];
       // Filtrer les conflits (pas les rejetés)
-      const activeConflicts = existing.filter(a => a.status !== STATUS.REJECTED);
+      const activeConflicts = existing.filter((a) => a.status !== STATUS.REJECTED);
       setConflicts(activeConflicts);
     } catch {
       // Pas bloquant
@@ -185,18 +231,20 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
         reason: reason.trim() || undefined,
         source,
         // RDV-specific fields
-        ...(isRdv ? {
-          start_time: startTime,
-          end_time: endTime,
-          rdv_category: rdvCategory,
-          google_event_id: googleEventId || undefined,
-        } : {}),
+        ...(isRdv
+          ? {
+              start_time: startTime,
+              end_time: endTime,
+              rdv_category: rdvCategory,
+              google_event_id: googleEventId || undefined,
+            }
+          : {}),
       });
 
       if (onCreated) onCreated();
-      setSuccessCount(c => c + 1);
+      setSuccessCount((c) => c + 1);
       // Sauvegarder la plage pour la garder surlignée
-      setSavedRanges(prev => [...prev, { start: new Date(startDate), end: new Date(end) }]);
+      setSavedRanges((prev) => [...prev, { start: new Date(startDate), end: new Date(end) }]);
       // Reset pour permettre un nouvel ajout
       setStartDate(null);
       setEndDate(null);
@@ -216,7 +264,12 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
   const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   return (
-    <div className="pcm-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div
+      className="pcm-overlay"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="pcm-modal">
         {/* Header */}
         <div className="pcm-header" style={{ background: periodInfo.color }}>
@@ -224,7 +277,9 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
             <span className="pcm-header-emoji">{periodInfo.emoji}</span>
             <div>
               <div className="pcm-header-title">{periodInfo.label}</div>
-              <div className="pcm-header-person">{person.firstName} {person.lastName || ''}</div>
+              <div className="pcm-header-person">
+                {person.firstName} {person.lastName || ''}
+              </div>
             </div>
           </div>
           <Button variant="ghost" className="pcm-close" onClick={onClose} aria-label="Fermer">
@@ -236,20 +291,30 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
         <div className="pcm-body">
           <div className="pcm-calendar">
             <div className="pcm-cal-nav">
-              <Button variant="ghost" onClick={() => setCurrentMonth(m => subMonths(m, 1))} className="pcm-nav-btn">
+              <Button
+                variant="ghost"
+                onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
+                className="pcm-nav-btn"
+              >
                 <ChevronLeft size={18} />
               </Button>
               <span className="pcm-cal-month">
                 {format(currentMonth, 'MMMM yyyy', { locale: fr })}
               </span>
-              <Button variant="ghost" onClick={() => setCurrentMonth(m => addMonths(m, 1))} className="pcm-nav-btn">
+              <Button
+                variant="ghost"
+                onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
+                className="pcm-nav-btn"
+              >
                 <ChevronRight size={18} />
               </Button>
             </div>
 
             <div className="pcm-cal-grid">
-              {dayNames.map(d => (
-                <div key={d} className="pcm-cal-dayname">{d}</div>
+              {dayNames.map((d) => (
+                <div key={d} className="pcm-cal-dayname">
+                  {d}
+                </div>
               ))}
               {calendarDays.map((day, i) => {
                 const inMonth = isSameMonth(day, currentMonth);
@@ -258,13 +323,16 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                 const rangeStart = isRangeStart(day);
                 const rangeEnd = isRangeEnd(day);
                 const today = isSameDay(day, new Date());
-                const isSaved = savedRanges.some(r =>
-                  (isSameDay(day, r.start) || isAfter(day, r.start)) &&
-                  (isSameDay(day, r.end) || isBefore(day, r.end))
+                const isSaved = savedRanges.some(
+                  (r) =>
+                    (isSameDay(day, r.start) || isAfter(day, r.start)) &&
+                    (isSameDay(day, r.end) || isBefore(day, r.end)),
                 );
 
                 return (
-                  <Button variant="ghost"                     key={i}
+                  <Button
+                    variant="ghost"
+                    key={i}
                     className={[
                       'pcm-cal-day',
                       !inMonth && 'other-month',
@@ -274,8 +342,10 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                       rangeEnd && 'range-end',
                       isSaved && 'saved',
                       today && 'today',
-                    ].filter(Boolean).join(' ')}
-                    style={(inRange || isSaved) ? { '--range-color': periodInfo.color } : undefined}
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    style={inRange || isSaved ? { '--range-color': periodInfo.color } : undefined}
                     onClick={() => handleDayClick(day)}
                     onMouseEnter={() => {
                       if (startDate && !endDate) setHoverDate(day);
@@ -296,7 +366,9 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
               {isRdv ? (
                 <>
                   <div className="pcm-option-row pcm-rdv-times">
-                    <label><Clock size={14} /> Horaires :</label>
+                    <label>
+                      <Clock size={14} /> Horaires :
+                    </label>
                     <div className="pcm-time-inputs">
                       <input
                         type="time"
@@ -312,19 +384,25 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                         className="pcm-time-input"
                       />
                     </div>
-                    <span className="pcm-date-display">{format(startDate, 'dd MMM yyyy', { locale: fr })}</span>
+                    <span className="pcm-date-display">
+                      {format(startDate, 'dd MMM yyyy', { locale: fr })}
+                    </span>
                   </div>
 
                   {/* Pro / Perso toggle */}
                   <div className="pcm-option-row pcm-rdv-category">
                     <label>Type :</label>
                     <div className="pcm-category-toggle">
-                      <Button variant="ghost"                         className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
+                      <Button
+                        variant="ghost"
+                        className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
                         onClick={() => setRdvCategory('pro')}
                       >
                         <Briefcase size={14} /> Pro
                       </Button>
-                      <Button variant="ghost"                         className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
+                      <Button
+                        variant="ghost"
+                        className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
                         onClick={() => setRdvCategory('perso')}
                       >
                         <User size={14} /> Perso
@@ -352,27 +430,47 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                   <div className="pcm-option-row">
                     <label>Début :</label>
                     <div className="pcm-period-toggle">
-                      <Button variant="ghost" className={startPeriod === 'AM' ? 'active' : ''} onClick={() => setStartPeriod('AM')}>
+                      <Button
+                        variant="ghost"
+                        className={startPeriod === 'AM' ? 'active' : ''}
+                        onClick={() => setStartPeriod('AM')}
+                      >
                         Matin
                       </Button>
-                      <Button variant="ghost" className={startPeriod === 'PM' ? 'active' : ''} onClick={() => setStartPeriod('PM')}>
+                      <Button
+                        variant="ghost"
+                        className={startPeriod === 'PM' ? 'active' : ''}
+                        onClick={() => setStartPeriod('PM')}
+                      >
                         Après-midi
                       </Button>
                     </div>
-                    <span className="pcm-date-display">{format(startDate, 'dd MMM yyyy', { locale: fr })}</span>
+                    <span className="pcm-date-display">
+                      {format(startDate, 'dd MMM yyyy', { locale: fr })}
+                    </span>
                   </div>
                   <div className="pcm-option-row">
                     <label>Fin :</label>
                     <div className="pcm-period-toggle">
-                      <Button variant="ghost" className={endPeriod === 'AM' ? 'active' : ''} onClick={() => setEndPeriod('AM')}>
+                      <Button
+                        variant="ghost"
+                        className={endPeriod === 'AM' ? 'active' : ''}
+                        onClick={() => setEndPeriod('AM')}
+                      >
                         Matin
                       </Button>
-                      <Button variant="ghost" className={endPeriod === 'PM' ? 'active' : ''} onClick={() => setEndPeriod('PM')}>
+                      <Button
+                        variant="ghost"
+                        className={endPeriod === 'PM' ? 'active' : ''}
+                        onClick={() => setEndPeriod('PM')}
+                      >
                         Journée entière
                       </Button>
                     </div>
                     <span className="pcm-date-display">
-                      {endDate ? format(endDate, 'dd MMM yyyy', { locale: fr }) : format(startDate, 'dd MMM yyyy', { locale: fr })}
+                      {endDate
+                        ? format(endDate, 'dd MMM yyyy', { locale: fr })
+                        : format(startDate, 'dd MMM yyyy', { locale: fr })}
                     </span>
                   </div>
                 </>
@@ -380,9 +478,14 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
 
               <div className="pcm-days-count" style={{ color: periodInfo.color }}>
                 {isRdv ? (
-                  <>{startTime} — {endTime}</>
+                  <>
+                    {startTime} — {endTime}
+                  </>
                 ) : (
-                  <>{selectedDays} jour{selectedDays > 1 ? 's' : ''} ouvré{selectedDays > 1 ? 's' : ''}</>
+                  <>
+                    {selectedDays} jour{selectedDays > 1 ? 's' : ''} ouvré
+                    {selectedDays > 1 ? 's' : ''}
+                  </>
                 )}
               </div>
 
@@ -402,7 +505,8 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                 <div className="pcm-conflicts">
                   <AlertTriangle size={14} />
                   <span>
-                    {conflicts.length} période{conflicts.length > 1 ? 's' : ''} existante{conflicts.length > 1 ? 's' : ''} sur cette plage
+                    {conflicts.length} période{conflicts.length > 1 ? 's' : ''} existante
+                    {conflicts.length > 1 ? 's' : ''} sur cette plage
                   </span>
                 </div>
               )}
@@ -414,9 +518,7 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
                 </InlineAlert>
               )}
 
-              {error && (
-                <InlineAlert>{error}</InlineAlert>
-              )}
+              {error && <InlineAlert>{error}</InlineAlert>}
             </div>
           )}
 
@@ -425,7 +527,8 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
             <div className="pcm-success-banner" style={{ borderColor: periodInfo.color }}>
               <Check size={16} style={{ color: periodInfo.color }} />
               <span>
-                {successCount} période{successCount > 1 ? 's' : ''} enregistrée{successCount > 1 ? 's' : ''}
+                {successCount} période{successCount > 1 ? 's' : ''} enregistrée
+                {successCount > 1 ? 's' : ''}
                 {googleSynced && ' — synchronisé avec Google Agenda ✓'}
                 {' — sélectionnez de nouvelles dates ou fermez'}
               </span>
@@ -445,11 +548,13 @@ const PeriodCalendarModal = ({ person, periodType, onClose, onCreated, isAdmin =
             onClick={handleSubmit}
           >
             <Check size={16} />
-            {submitting ? 'Enregistrement…' : (
-              periodInfo.requiresApproval && !isAdmin ? 'Soumettre la demande' : (
-                successCount > 0 ? 'Ajouter cette période' : 'Enregistrer'
-              )
-            )}
+            {submitting
+              ? 'Enregistrement…'
+              : periodInfo.requiresApproval && !isAdmin
+                ? 'Soumettre la demande'
+                : successCount > 0
+                  ? 'Ajouter cette période'
+                  : 'Enregistrer'}
           </Button>
         </div>
       </div>

@@ -8,7 +8,7 @@ describe('Modal', () => {
     const { container } = render(
       <Modal open={false} onClose={() => {}}>
         <ModalBody>Contenu</ModalBody>
-      </Modal>
+      </Modal>,
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -17,7 +17,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={() => {}}>
         <ModalBody>Contenu visible</ModalBody>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByText('Contenu visible')).toBeInTheDocument();
   });
@@ -26,7 +26,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={() => {}}>
         <ModalBody>Test</ModalBody>
-      </Modal>
+      </Modal>,
     );
     const dialog = screen.getByRole('dialog');
     expect(dialog).toHaveAttribute('aria-modal', 'true');
@@ -36,7 +36,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={() => {}} size="lg">
         <ModalBody>Large</ModalBody>
-      </Modal>
+      </Modal>,
     );
     expect(screen.getByRole('dialog')).toHaveClass('ui-modal--lg');
   });
@@ -47,7 +47,7 @@ describe('Modal', () => {
     render(
       <Modal open={true} onClose={onClose}>
         <ModalBody>Escape test</ModalBody>
-      </Modal>
+      </Modal>,
     );
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalledOnce();
@@ -93,7 +93,11 @@ describe('ModalBody', () => {
 
 describe('ModalFooter', () => {
   it('renders children', () => {
-    render(<ModalFooter><button>OK</button></ModalFooter>);
+    render(
+      <ModalFooter>
+        <button>OK</button>
+      </ModalFooter>,
+    );
     expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument();
   });
 

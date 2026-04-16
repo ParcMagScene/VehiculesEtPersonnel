@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, MapPin, Clock, User, ArrowDown } from 'lucide-react';
 import './TripDetailsModal.css';
-import { loadGoogleMapsAPI, isGoogleMapsLoaded as checkGoogleMapsLoaded } from '../../utils/googleMapsLoader';
+import {
+  loadGoogleMapsAPI,
+  isGoogleMapsLoaded as checkGoogleMapsLoaded,
+} from '../../utils/googleMapsLoader';
 import LocationDialog from './LocationDialog';
 import { Button, Dialog, Input, FormField } from '@/design-system';
 import DriverSelect from './DriverSelect';
@@ -24,12 +27,12 @@ const TripDetailsModal = ({
   googleMapsApiKey,
   companyAddress = '',
   initialLocations = [],
-  combinedEvents = null // [{event, tripDetail}, ...] pour le mode combiné
+  combinedEvents = null, // [{event, tripDetail}, ...] pour le mode combiné
 }) => {
   const isCombinedMode = combinedEvents && combinedEvents.length > 1;
   const toast = useToast();
   const [activeTab, setActiveTab] = useState(0); // Onglet actif en mode combiné
-  
+
   // En mode combiné, utiliser l'événement/trip du tab actif
   const currentEvent = isCombinedMode ? combinedEvents[activeTab].event : event;
   const currentTripDetail = isCombinedMode ? combinedEvents[activeTab].tripDetail : tripDetail;
@@ -41,25 +44,26 @@ const TripDetailsModal = ({
     arrivalLocation: currentTripDetail?.arrivalLocation || currentEvent?.location || '',
     arrivalDate: currentTripDetail?.arrivalDate || currentEvent?.start?.date || '',
     arrivalTime: currentTripDetail?.arrivalTime || '10:00',
-    
+
     // RETOUR
-    returnDepartureLocation: currentTripDetail?.returnDepartureLocation || currentEvent?.location || '',
+    returnDepartureLocation:
+      currentTripDetail?.returnDepartureLocation || currentEvent?.location || '',
     returnDepartureDate: currentTripDetail?.returnDepartureDate || currentEvent?.end?.date || '',
     returnDepartureTime: currentTripDetail?.returnDepartureTime || '18:00',
     returnArrivalLocation: currentTripDetail?.returnArrivalLocation || '',
     returnArrivalDate: currentTripDetail?.returnArrivalDate || currentEvent?.end?.date || '',
     returnArrivalTime: currentTripDetail?.returnArrivalTime || '20:00',
-    
+
     // Conducteur
     driverName: currentTripDetail?.driverName || '',
-    
+
     // Jonction
     hasJunctionWithNext: currentTripDetail?.hasJunctionWithNext || false,
     junctionLocation: currentTripDetail?.junctionLocation || '',
-    
+
     // Temps calculés
     outboundDuration: currentTripDetail?.outboundDuration || null,
-    returnDuration: currentTripDetail?.returnDuration || null
+    returnDuration: currentTripDetail?.returnDuration || null,
   });
 
   const [pauses, setPauses] = useState([]);
@@ -105,19 +109,19 @@ const TripDetailsModal = ({
         hasJunctionWithNext: td?.hasJunctionWithNext || false,
         junctionLocation: td?.junctionLocation || '',
         outboundDuration: td?.outboundDuration || null,
-        returnDuration: td?.returnDuration || null
+        returnDuration: td?.returnDuration || null,
       });
       setIsSaved(!!td);
-      
+
       // Charger les pauses de l'onglet actif
       if (td?.pauses && Array.isArray(td.pauses)) {
-        const loadedPauses = td.pauses.map(p => ({
+        const loadedPauses = td.pauses.map((p) => ({
           id: p.id || Date.now() + Math.random(),
           pauseType: p.pause_type || p.pauseType,
           location: p.location || '',
           startTime: p.start_time || p.startTime || '',
           duration: p.duration || '',
-          notes: p.notes || ''
+          notes: p.notes || '',
         }));
         setPauses(loadedPauses);
       } else {
@@ -159,32 +163,30 @@ const TripDetailsModal = ({
         (position) => {
           setUserLocation({
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           });
         },
-        (_error) => {
-        }
+        (_error) => {},
       );
     }
   }, []);
 
   // Charger les lieux et l'adresse du siège
   useEffect(() => {
-    
     // Si on a déjà les lieux depuis le parent, les utiliser directement
     if (initialLocations.length > 0) {
       setAllLocations(initialLocations);
-      setLocations(initialLocations.filter(loc => !loc.isCompanyLocation));
+      setLocations(initialLocations.filter((loc) => !loc.isCompanyLocation));
       return;
     }
-    
+
     // Sinon charger depuis l'API
     const loadLocationsAndCompanyAddress = async () => {
       try {
         // Charger les lieux
         const locationsData = await api.getLocations();
         setLocations(locationsData);
-        
+
         // Utiliser companyAddress si fourni, sinon charger depuis l'API
         let address = companyAddress;
         if (!address) {
@@ -195,15 +197,14 @@ const TripDetailsModal = ({
             // ignore
           }
         }
-        
-        
+
         // Créer un lieu virtuel pour le siège si une adresse existe
         if (address) {
           const companyLocation = {
             id: 'company-hq',
             name: 'Siège',
             address: address,
-            type: 'Dépôt'
+            type: 'Dépôt',
           };
           setAllLocations([companyLocation, ...locationsData]);
         } else {
@@ -220,19 +221,19 @@ const TripDetailsModal = ({
   // Charger les pauses depuis currentTripDetail au montage
   useEffect(() => {
     if (currentTripDetail?.pauses && Array.isArray(currentTripDetail.pauses)) {
-      const loadedPauses = currentTripDetail.pauses.map(p => ({
+      const loadedPauses = currentTripDetail.pauses.map((p) => ({
         id: p.id || Date.now() + Math.random(),
         pauseType: p.pause_type || p.pauseType,
         location: p.location || '',
         startTime: p.start_time || p.startTime || '',
         duration: p.duration || '',
-        notes: p.notes || ''
+        notes: p.notes || '',
       }));
       setPauses(loadedPauses);
-      
+
       // Marquer les pauses avec location comme validées
       const validatedIds = new Set();
-      loadedPauses.forEach(pause => {
+      loadedPauses.forEach((pause) => {
         if (pause.location) {
           validatedIds.add(pause.id);
         }
@@ -267,7 +268,7 @@ const TripDetailsModal = ({
   useEffect(() => {
     if (!isGoogleMapsLoaded || !window.google?.maps?.places?.Autocomplete) return;
 
-    pauses.forEach(pause => {
+    pauses.forEach((pause) => {
       const inputElement = document.getElementById(`pause-location-${pause.id}`);
       if (!inputElement) return;
 
@@ -277,25 +278,28 @@ const TripDetailsModal = ({
       // Options de configuration pour prioriser les lieux proches
       const autocompleteOptions = {
         componentRestrictions: { country: 'fr' },
-        fields: ['formatted_address', 'geometry', 'name']
+        fields: ['formatted_address', 'geometry', 'name'],
       };
 
       // Si on a la position de l'utilisateur, prioriser les résultats autour
       if (userLocation) {
         autocompleteOptions.locationBias = {
           center: userLocation,
-          radius: 50000 // 50km autour
+          radius: 50000, // 50km autour
         };
       }
 
-      const autocomplete = new window.google.maps.places.Autocomplete(inputElement, autocompleteOptions);
+      const autocomplete = new window.google.maps.places.Autocomplete(
+        inputElement,
+        autocompleteOptions,
+      );
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
         if (place.formatted_address) {
           updatePause(pause.id, 'location', place.formatted_address);
           // Marquer cette pause comme ayant une location validée
-          setPausesWithValidatedLocation(prev => new Set(prev).add(pause.id));
+          setPausesWithValidatedLocation((prev) => new Set(prev).add(pause.id));
           // Sauvegarder dans l'historique
           saveLocationToHistory(place.formatted_address);
         }
@@ -307,19 +311,45 @@ const TripDetailsModal = ({
 
   // Calculer automatiquement la durée ALLER quand les conditions changent
   useEffect(() => {
-    if (formData.departureLocation && formData.arrivalLocation && isGoogleMapsLoaded && googleMapsApiKey) {
+    if (
+      formData.departureLocation &&
+      formData.arrivalLocation &&
+      isGoogleMapsLoaded &&
+      googleMapsApiKey
+    ) {
       calculateDuration(formData.departureLocation, formData.arrivalLocation, 'outbound');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.departureLocation, formData.arrivalLocation, isGoogleMapsLoaded, googleMapsApiKey, vehicle?.type, pauses, pausesWithValidatedLocation]);
+  }, [
+    formData.departureLocation,
+    formData.arrivalLocation,
+    isGoogleMapsLoaded,
+    googleMapsApiKey,
+    vehicle?.type,
+    pauses,
+    pausesWithValidatedLocation,
+  ]);
 
   // Calculer automatiquement la durée RETOUR quand les conditions changent
   useEffect(() => {
-    if (formData.returnDepartureLocation && formData.returnArrivalLocation && isGoogleMapsLoaded && googleMapsApiKey) {
+    if (
+      formData.returnDepartureLocation &&
+      formData.returnArrivalLocation &&
+      isGoogleMapsLoaded &&
+      googleMapsApiKey
+    ) {
       calculateDuration(formData.returnDepartureLocation, formData.returnArrivalLocation, 'return');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.returnDepartureLocation, formData.returnArrivalLocation, isGoogleMapsLoaded, googleMapsApiKey, vehicle?.type, pauses, pausesWithValidatedLocation]);
+  }, [
+    formData.returnDepartureLocation,
+    formData.returnArrivalLocation,
+    isGoogleMapsLoaded,
+    googleMapsApiKey,
+    vehicle?.type,
+    pauses,
+    pausesWithValidatedLocation,
+  ]);
 
   // Initialiser l'autocomplétion Google Maps sur les champs principaux
   useEffect(() => {
@@ -329,33 +359,36 @@ const TripDetailsModal = ({
       'departureLocation',
       'arrivalLocation',
       'returnDepartureLocation',
-      'returnArrivalLocation'
+      'returnArrivalLocation',
     ];
 
-    fieldsToAutocomplete.forEach(fieldName => {
+    fieldsToAutocomplete.forEach((fieldName) => {
       const inputElement = document.querySelector(`input[name="${fieldName}"]`);
       if (!inputElement || inputElement.hasAttribute('data-autocomplete-initialized')) return;
 
       const autocompleteOptions = {
         componentRestrictions: { country: 'fr' },
-        fields: ['formatted_address', 'geometry', 'name']
+        fields: ['formatted_address', 'geometry', 'name'],
       };
 
       if (userLocation) {
         autocompleteOptions.locationBias = {
           center: userLocation,
-          radius: 50000
+          radius: 50000,
         };
       }
 
-      const autocomplete = new window.google.maps.places.Autocomplete(inputElement, autocompleteOptions);
+      const autocomplete = new window.google.maps.places.Autocomplete(
+        inputElement,
+        autocompleteOptions,
+      );
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
         if (place.formatted_address) {
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            [fieldName]: place.formatted_address
+            [fieldName]: place.formatted_address,
           }));
           saveLocationToHistory(place.formatted_address);
         }
@@ -367,9 +400,9 @@ const TripDetailsModal = ({
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -383,16 +416,16 @@ const TripDetailsModal = ({
       // LocationDialog gère maintenant la sauvegarde en interne
       // On reçoit juste l'objet sauvegardé pour mettre à jour la liste locale
       const savedLocation = locationData;
-      setLocations(prev => [...prev, savedLocation]);
-      
+      setLocations((prev) => [...prev, savedLocation]);
+
       // Mettre à jour le champ avec le nouveau lieu
       if (editingLocationField) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
-          [editingLocationField]: savedLocation.name
+          [editingLocationField]: savedLocation.name,
         }));
       }
-      
+
       // Ne PAS fermer le dialog - LocationDialog le gère lui-même
     } catch (error) {
       console.error('Erreur mise à jour locale lieu:', error);
@@ -409,23 +442,26 @@ const TripDetailsModal = ({
       if (!googleMapsApiKey) {
         toast.info('Clé API Google Maps non configurée');
       } else if (!isGoogleMapsLoaded) {
-        toast.warning('Google Maps est en cours de chargement, veuillez réessayer dans quelques instants');
+        toast.warning(
+          'Google Maps est en cours de chargement, veuillez réessayer dans quelques instants',
+        );
       }
       return;
     }
-    
+
     setIsCalculating(true);
     try {
       // Déterminer si c'est un Poids Lourd (PL) ou Véhicule Léger (VL)
-      const isPL = vehicle?.type?.toUpperCase().includes('PL') || 
-                   vehicle?.type?.toUpperCase().includes('PORTEUR') ||
-                   vehicle?.type?.toUpperCase().includes('SEMI');
-      
+      const isPL =
+        vehicle?.type?.toUpperCase().includes('PL') ||
+        vehicle?.type?.toUpperCase().includes('PORTEUR') ||
+        vehicle?.type?.toUpperCase().includes('SEMI');
+
       // Récupérer les pauses avec location pour ce type de trajet
       const relevantPauses = pauses
-        .filter(p => p.pauseType === type && p.location && pausesWithValidatedLocation.has(p.id))
-        .map(p => ({ location: p.location }));
-      
+        .filter((p) => p.pauseType === type && p.location && pausesWithValidatedLocation.has(p.id))
+        .map((p) => ({ location: p.location }));
+
       const service = new window.google.maps.DirectionsService();
       const request = {
         origin: origin,
@@ -435,32 +471,32 @@ const TripDetailsModal = ({
         // Ajouter les pauses comme waypoints si présentes
         ...(relevantPauses.length > 0 && {
           waypoints: relevantPauses,
-          optimizeWaypoints: false // Garder l'ordre des pauses
+          optimizeWaypoints: false, // Garder l'ordre des pauses
         }),
         // Pour les PL, éviter les péages et autoroutes (restrictions possibles)
         ...(isPL && {
           avoidTolls: false,
-          avoidHighways: false
-        })
+          avoidHighways: false,
+        }),
       };
 
       service.route(request, (response, status) => {
         if (status === 'OK') {
           // Calculer la durée totale en additionnant toutes les étapes
           let totalDurationSeconds = 0;
-          response.routes[0].legs.forEach(leg => {
+          response.routes[0].legs.forEach((leg) => {
             totalDurationSeconds += leg.duration.value;
           });
-          
+
           // Appliquer un coefficient pour les PL (vitesse réduite, limitations, pauses réglementaires)
           // PL: vitesse max 90 km/h vs VL 130 km/h + temps de manœuvre supplémentaires
           const plCoefficient = isPL ? 1.25 : 1.0; // +25% pour les PL
-          
+
           const durationMinutes = Math.round((totalDurationSeconds / 60) * plCoefficient);
-          
-          setFormData(prev => ({
+
+          setFormData((prev) => ({
             ...prev,
-            [type === 'outbound' ? 'outboundDuration' : 'returnDuration']: durationMinutes
+            [type === 'outbound' ? 'outboundDuration' : 'returnDuration']: durationMinutes,
           }));
         } else {
           toast.info('Impossible de calculer la durée du trajet. Vérifiez les adresses.');
@@ -474,63 +510,66 @@ const TripDetailsModal = ({
   };
 
   const handleCalculateOutbound = () => {
-    calculateDuration(
-      formData.departureLocation,
-      formData.arrivalLocation,
-      'outbound'
-    );
+    calculateDuration(formData.departureLocation, formData.arrivalLocation, 'outbound');
   };
 
   const handleCalculateReturn = () => {
-    calculateDuration(
-      formData.returnDepartureLocation,
-      formData.returnArrivalLocation,
-      'return'
-    );
+    calculateDuration(formData.returnDepartureLocation, formData.returnArrivalLocation, 'return');
   };
 
   const addPause = (type) => {
-    setPauses(prev => [...prev, {
-      id: Date.now(),
-      pauseType: type,
-      location: '',
-      startTime: '',
-      duration: 30,
-      notes: ''
-    }]);
+    setPauses((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        pauseType: type,
+        location: '',
+        startTime: '',
+        duration: 30,
+        notes: '',
+      },
+    ]);
   };
 
   const removePause = (id) => {
-    setPauses(prev => prev.filter(p => p.id !== id));
+    setPauses((prev) => prev.filter((p) => p.id !== id));
   };
 
   const updatePause = (id, field, value) => {
-    setPauses(prev => prev.map(p => 
-      p.id === id ? { ...p, [field]: value } : p
-    ));
+    setPauses((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Calculer automatiquement les durées si elles ne sont pas définies
     let updatedFormData = { ...formData };
-    
+
     // Calculer la durée aller si pas déjà fait
-    if (!formData.outboundDuration && formData.departureLocation && formData.arrivalLocation && googleMapsApiKey && isGoogleMapsLoaded) {
+    if (
+      !formData.outboundDuration &&
+      formData.departureLocation &&
+      formData.arrivalLocation &&
+      googleMapsApiKey &&
+      isGoogleMapsLoaded
+    ) {
       try {
         setIsCalculating(true);
-        
+
         // Récupérer les pauses aller avec location validée
         const outboundPauses = pauses
-          .filter(p => p.pauseType === 'outbound' && p.location && pausesWithValidatedLocation.has(p.id))
-          .map(p => ({ location: p.location }));
-        
+          .filter(
+            (p) =>
+              p.pauseType === 'outbound' && p.location && pausesWithValidatedLocation.has(p.id),
+          )
+          .map((p) => ({ location: p.location }));
+
         const service = new window.google.maps.DirectionsService();
-        const isPL = vehicle?.type?.toUpperCase().includes('PL') || 
-                     vehicle?.type?.toUpperCase().includes('PORTEUR') ||
-                     vehicle?.type?.toUpperCase().includes('SEMI');
-        
+        const isPL =
+          vehicle?.type?.toUpperCase().includes('PL') ||
+          vehicle?.type?.toUpperCase().includes('PORTEUR') ||
+          vehicle?.type?.toUpperCase().includes('SEMI');
+
         const request = {
           origin: formData.departureLocation,
           destination: formData.arrivalLocation,
@@ -538,19 +577,19 @@ const TripDetailsModal = ({
           unitSystem: window.google.maps.UnitSystem.METRIC,
           ...(outboundPauses.length > 0 && {
             waypoints: outboundPauses,
-            optimizeWaypoints: false
+            optimizeWaypoints: false,
           }),
           ...(isPL && {
             avoidTolls: false,
-            avoidHighways: false
-          })
+            avoidHighways: false,
+          }),
         };
-        
+
         const outboundResult = await new Promise((resolve, _reject) => {
           service.route(request, (response, status) => {
             if (status === 'OK') {
               let totalDurationSeconds = 0;
-              response.routes[0].legs.forEach(leg => {
+              response.routes[0].legs.forEach((leg) => {
                 totalDurationSeconds += leg.duration.value;
               });
               // Appliquer coefficient PL (+25%)
@@ -561,7 +600,7 @@ const TripDetailsModal = ({
             }
           });
         });
-        
+
         if (outboundResult) {
           updatedFormData.outboundDuration = outboundResult;
         }
@@ -569,20 +608,29 @@ const TripDetailsModal = ({
         console.error('Erreur calcul durée aller:', error);
       }
     }
-    
+
     // Calculer la durée retour si pas déjà fait
-    if (!formData.returnDuration && formData.returnDepartureLocation && formData.returnArrivalLocation && googleMapsApiKey && isGoogleMapsLoaded) {
+    if (
+      !formData.returnDuration &&
+      formData.returnDepartureLocation &&
+      formData.returnArrivalLocation &&
+      googleMapsApiKey &&
+      isGoogleMapsLoaded
+    ) {
       try {
         // Récupérer les pauses retour avec location validée
         const returnPauses = pauses
-          .filter(p => p.pauseType === 'return' && p.location && pausesWithValidatedLocation.has(p.id))
-          .map(p => ({ location: p.location }));
-        
+          .filter(
+            (p) => p.pauseType === 'return' && p.location && pausesWithValidatedLocation.has(p.id),
+          )
+          .map((p) => ({ location: p.location }));
+
         const service = new window.google.maps.DirectionsService();
-        const isPL = vehicle?.type?.toUpperCase().includes('PL') || 
-                     vehicle?.type?.toUpperCase().includes('PORTEUR') ||
-                     vehicle?.type?.toUpperCase().includes('SEMI');
-        
+        const isPL =
+          vehicle?.type?.toUpperCase().includes('PL') ||
+          vehicle?.type?.toUpperCase().includes('PORTEUR') ||
+          vehicle?.type?.toUpperCase().includes('SEMI');
+
         const request = {
           origin: formData.returnDepartureLocation,
           destination: formData.returnArrivalLocation,
@@ -590,19 +638,19 @@ const TripDetailsModal = ({
           unitSystem: window.google.maps.UnitSystem.METRIC,
           ...(returnPauses.length > 0 && {
             waypoints: returnPauses,
-            optimizeWaypoints: false
+            optimizeWaypoints: false,
           }),
           ...(isPL && {
             avoidTolls: false,
-            avoidHighways: false
-          })
+            avoidHighways: false,
+          }),
         };
-        
+
         const returnResult = await new Promise((resolve, _reject) => {
           service.route(request, (response, status) => {
             if (status === 'OK') {
               let totalDurationSeconds = 0;
-              response.routes[0].legs.forEach(leg => {
+              response.routes[0].legs.forEach((leg) => {
                 totalDurationSeconds += leg.duration.value;
               });
               // Appliquer coefficient PL (+25%)
@@ -613,7 +661,7 @@ const TripDetailsModal = ({
             }
           });
         });
-        
+
         if (returnResult) {
           updatedFormData.returnDuration = returnResult;
         }
@@ -623,13 +671,13 @@ const TripDetailsModal = ({
     }
 
     setIsCalculating(false);
-    
+
     // Enregistrer avec les durées calculées
     const savedData = await onSave({
       ...updatedFormData,
-      pauses
+      pauses,
     });
-    
+
     // Si les données ont été sauvegardées avec succès, mettre à jour le formulaire
     if (savedData) {
       setFormData({
@@ -649,50 +697,60 @@ const TripDetailsModal = ({
         hasJunctionWithNext: !!savedData.has_junction_with_next,
         junctionLocation: savedData.junction_location || '',
         outboundDuration: savedData.outbound_duration || null,
-        returnDuration: savedData.return_duration || null
+        returnDuration: savedData.return_duration || null,
       });
-      
+
       if (savedData.pauses) {
-        setPauses(savedData.pauses.map(p => ({
-          id: p.id || Date.now(),
-          pauseType: p.pause_type,
-          location: p.location,
-          startTime: p.start_time,
-          duration: p.duration,
-          notes: p.notes
-        })));
+        setPauses(
+          savedData.pauses.map((p) => ({
+            id: p.id || Date.now(),
+            pauseType: p.pause_type,
+            location: p.location,
+            startTime: p.start_time,
+            duration: p.duration,
+            notes: p.notes,
+          })),
+        );
       }
-      
+
       // Marquer comme sauvegardé
       setIsSaved(true);
     }
   };
 
   // Style pour les champs sauvegardés
-  const savedFieldStyle = isSaved ? {
-    background: 'var(--theme-success-bg)',
-    borderColor: STATUS_COLORS.success,
-    borderWidth: '2px'
-  } : {};
+  const savedFieldStyle = isSaved
+    ? {
+        background: 'var(--theme-success-bg)',
+        borderColor: STATUS_COLORS.success,
+        borderWidth: '2px',
+      }
+    : {};
 
   // Générer la timeline chronologique pour le mode combiné
   const renderCombinedTimeline = () => {
     if (!isCombinedMode) return null;
-    
+
     const events = combinedEvents;
     const totalEvents = events.length;
     const steps = [];
-    
+
     events.forEach((ce, idx) => {
       const td = ce.tripDetail;
       const ev = ce.event;
       const isFirst = idx === 0;
       const isLast = idx === totalEvents - 1;
-      const evTitle = ev.summary?.replace(/\baf\s*\d+\b/gi, '').trim().replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim() || '(Sans titre)';
+      const evTitle =
+        ev.summary
+          ?.replace(/\baf\s*\d+\b/gi, '')
+          .trim()
+          .replace(/\s+/g, ' ')
+          .replace(/^\s*-\s*|\s*-\s*$/g, '')
+          .trim() || '(Sans titre)';
       const evPauses = td?.pauses || [];
-      const outboundPauses = evPauses.filter(p => (p.pause_type || p.pauseType) === 'outbound');
-      const returnPauses = evPauses.filter(p => (p.pause_type || p.pauseType) === 'return');
-      
+      const outboundPauses = evPauses.filter((p) => (p.pause_type || p.pauseType) === 'outbound');
+      const returnPauses = evPauses.filter((p) => (p.pause_type || p.pauseType) === 'return');
+
       if (isFirst) {
         // === PREMIER ÉVÉNEMENT : DÉPART ALLER ===
         steps.push({
@@ -705,11 +763,11 @@ const TripDetailsModal = ({
           duration: td?.outboundDuration,
           eventTitle: evTitle,
           eventAffaire: ev.affaire,
-          eventIdx: idx
+          eventIdx: idx,
         });
-        
+
         // Pauses aller
-        outboundPauses.forEach(p => {
+        outboundPauses.forEach((p) => {
           steps.push({
             type: 'pause',
             icon: '☕',
@@ -717,10 +775,10 @@ const TripDetailsModal = ({
             location: p.location || '',
             time: p.start_time || p.startTime || '',
             duration: p.duration,
-            eventIdx: idx
+            eventIdx: idx,
           });
         });
-        
+
         // Arrivée sur le premier événement
         steps.push({
           type: 'arrival',
@@ -729,33 +787,40 @@ const TripDetailsModal = ({
           location: td?.arrivalLocation || ev.location || '—',
           date: td?.arrivalDate || '',
           time: td?.arrivalTime || '',
-          eventIdx: idx
+          eventIdx: idx,
         });
       }
-      
+
       if (!isFirst) {
         // === TRANSFERT depuis l'événement précédent ===
         const prevCe = events[idx - 1];
         const prevTd = prevCe.tripDetail;
         const prevEv = prevCe.event;
-        const prevTitle = prevEv.summary?.replace(/\baf\s*\d+\b/gi, '').trim().replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim() || '(Sans titre)';
-        
+        const prevTitle =
+          prevEv.summary
+            ?.replace(/\baf\s*\d+\b/gi, '')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .replace(/^\s*-\s*|\s*-\s*$/g, '')
+            .trim() || '(Sans titre)';
+
         // Départ transfert = retour du précédent ou arrivée du précédent
         steps.push({
           type: 'transfer',
           icon: '🔄',
           label: `Transfert : ${prevTitle} → ${evTitle}`,
-          fromLocation: prevTd?.returnDepartureLocation || prevTd?.arrivalLocation || prevEv.location || '—',
+          fromLocation:
+            prevTd?.returnDepartureLocation || prevTd?.arrivalLocation || prevEv.location || '—',
           toLocation: td?.departureLocation || td?.arrivalLocation || ev.location || '—',
           fromTime: prevTd?.returnDepartureTime || '',
           toTime: td?.arrivalTime || td?.departureTime || '',
           fromDate: prevTd?.returnDepartureDate || '',
           toDate: td?.arrivalDate || td?.departureDate || '',
-          eventIdx: idx
+          eventIdx: idx,
         });
-        
+
         // Pauses aller (transfert) de cet événement
-        outboundPauses.forEach(p => {
+        outboundPauses.forEach((p) => {
           steps.push({
             type: 'pause',
             icon: '☕',
@@ -763,10 +828,10 @@ const TripDetailsModal = ({
             location: p.location || '',
             time: p.start_time || p.startTime || '',
             duration: p.duration,
-            eventIdx: idx
+            eventIdx: idx,
           });
         });
-        
+
         // Arrivée sur cet événement
         steps.push({
           type: 'arrival',
@@ -775,10 +840,10 @@ const TripDetailsModal = ({
           location: td?.arrivalLocation || ev.location || '—',
           date: td?.arrivalDate || '',
           time: td?.arrivalTime || '',
-          eventIdx: idx
+          eventIdx: idx,
         });
       }
-      
+
       if (isLast) {
         // === DERNIER ÉVÉNEMENT : DÉPART RETOUR ===
         steps.push({
@@ -789,11 +854,11 @@ const TripDetailsModal = ({
           date: td?.returnDepartureDate || '',
           time: td?.returnDepartureTime || '',
           duration: td?.returnDuration,
-          eventIdx: idx
+          eventIdx: idx,
         });
-        
+
         // Pauses retour
-        returnPauses.forEach(p => {
+        returnPauses.forEach((p) => {
           steps.push({
             type: 'pause',
             icon: '☕',
@@ -801,10 +866,10 @@ const TripDetailsModal = ({
             location: p.location || '',
             time: p.start_time || p.startTime || '',
             duration: p.duration,
-            eventIdx: idx
+            eventIdx: idx,
           });
         });
-        
+
         // Arrivée retour
         steps.push({
           type: 'final-arrival',
@@ -813,33 +878,35 @@ const TripDetailsModal = ({
           location: td?.returnArrivalLocation || '—',
           date: td?.returnArrivalDate || '',
           time: td?.returnArrivalTime || '',
-          eventIdx: idx
+          eventIdx: idx,
         });
       }
     });
-    
+
     const formatDate = (dateStr) => {
       if (!dateStr) return '';
       try {
         const d = new Date(dateStr);
         return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-      } catch { return dateStr; }
+      } catch {
+        return dateStr;
+      }
     };
-    
+
     const formatDuration = (min) => {
       if (!min) return '';
       const h = Math.floor(min / 60);
       const m = min % 60;
       return h > 0 ? `${h}h${m > 0 ? m.toString().padStart(2, '0') : ''}` : `${m} min`;
     };
-    
+
     return (
       <div className="combined-timeline">
         <h3 className="timeline-title">📋 Itinéraire complet</h3>
         <div className="timeline-steps">
           {steps.map((step, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className={`timeline-step timeline-step--${step.type}`}
               onClick={() => setActiveTab(step.eventIdx)}
             >
@@ -886,7 +953,9 @@ const TripDetailsModal = ({
                         </span>
                       )}
                       {step.duration && (
-                        <span className="timeline-duration">⏱️ {formatDuration(step.duration)}</span>
+                        <span className="timeline-duration">
+                          ⏱️ {formatDuration(step.duration)}
+                        </span>
                       )}
                     </div>
                   </>
@@ -901,39 +970,56 @@ const TripDetailsModal = ({
   };
 
   return (
-    <div className="td-overlay" onMouseDown={(e) => {
-      // Fermer uniquement si on clique sur l'overlay (arrière-plan)
-      if (e.target.className === 'td-overlay') {
-        handleSafeClose();
-      }
-    }}>
-      <div className="trip-details-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+    <div
+      className="td-overlay"
+      onMouseDown={(e) => {
+        // Fermer uniquement si on clique sur l'overlay (arrière-plan)
+        if (e.target.className === 'td-overlay') {
+          handleSafeClose();
+        }
+      }}
+    >
+      <div
+        className="trip-details-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="modal-header">
           <div className="u-flex-1">
             <h2>📍 {isCombinedMode ? 'Trajets liés' : 'Détails du trajet'}</h2>
             {/* Événement info (mode simple) */}
             {!isCombinedMode && (
-              <div className="event-info" style={{ margin: '0.5rem 0 0 0', background: 'transparent', padding: 0 }}>
+              <div
+                className="event-info"
+                style={{ margin: '0.5rem 0 0 0', background: 'transparent', padding: 0 }}
+              >
                 <h3 style={{ margin: 0, fontSize: '1rem' }}>{currentEvent.summary}</h3>
                 <div className="u-flex-center u-flex-wrap u-gap-2 u-mt-1">
-                  {currentEvent.affaire && <span className="u-font-sm">{currentEvent.affaire}</span>}
+                  {currentEvent.affaire && (
+                    <span className="u-font-sm">{currentEvent.affaire}</span>
+                  )}
                   {vehicle && (
-                    <span style={{
-                      padding: '0.25rem 0.5rem',
-                      background: vehicle.type?.toUpperCase().includes('PL') || 
-                                 vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                                 vehicle.type?.toUpperCase().includes('SEMI') 
-                        ? 'var(--btn-warning-bg)' 
-                        : 'var(--theme-info-bg-strong)',
-                      color: vehicle.type?.toUpperCase().includes('PL') || 
-                             vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                             vehicle.type?.toUpperCase().includes('SEMI')
-                        ? 'var(--theme-warning-text)'
-                        : 'var(--theme-info-text)',
-                      borderRadius: '0.25rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '600'
-                    }}>
+                    <span
+                      style={{
+                        padding: '0.25rem 0.5rem',
+                        background:
+                          vehicle.type?.toUpperCase().includes('PL') ||
+                          vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                          vehicle.type?.toUpperCase().includes('SEMI')
+                            ? 'var(--btn-warning-bg)'
+                            : 'var(--theme-info-bg-strong)',
+                        color:
+                          vehicle.type?.toUpperCase().includes('PL') ||
+                          vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                          vehicle.type?.toUpperCase().includes('SEMI')
+                            ? 'var(--theme-warning-text)'
+                            : 'var(--theme-info-text)',
+                        borderRadius: '0.25rem',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                      }}
+                    >
                       🚛 {vehicle.name} ({vehicle.type})
                     </span>
                   )}
@@ -942,45 +1028,51 @@ const TripDetailsModal = ({
             )}
             {/* Véhicule info (mode combiné) */}
             {isCombinedMode && vehicle && (
-              <span style={{
-                display: 'inline-flex',
-                padding: '0.25rem 0.5rem',
-                background: vehicle.type?.toUpperCase().includes('PL') || 
-                           vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                           vehicle.type?.toUpperCase().includes('SEMI') 
-                  ? 'var(--btn-warning-bg)' 
-                  : 'var(--theme-info-bg-strong)',
-                color: vehicle.type?.toUpperCase().includes('PL') || 
-                       vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                       vehicle.type?.toUpperCase().includes('SEMI')
-                  ? 'var(--theme-warning-text)'
-                  : 'var(--theme-info-text)',
-                borderRadius: '0.25rem',
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                marginTop: '0.375rem'
-              }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  padding: '0.25rem 0.5rem',
+                  background:
+                    vehicle.type?.toUpperCase().includes('PL') ||
+                    vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                    vehicle.type?.toUpperCase().includes('SEMI')
+                      ? 'var(--btn-warning-bg)'
+                      : 'var(--theme-info-bg-strong)',
+                  color:
+                    vehicle.type?.toUpperCase().includes('PL') ||
+                    vehicle.type?.toUpperCase().includes('PORTEUR') ||
+                    vehicle.type?.toUpperCase().includes('SEMI')
+                      ? 'var(--theme-warning-text)'
+                      : 'var(--theme-info-text)',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem',
+                  fontWeight: '600',
+                  marginTop: '0.375rem',
+                }}
+              >
                 🚛 {vehicle.name} ({vehicle.type})
               </span>
             )}
           </div>
           {/* Bandeau de confirmation si sauvegardé */}
           {isSaved && (
-            <div style={{
-              padding: '0.5rem 0.75rem',
-              background: 'var(--theme-success-bg)',
-              border: `2px solid ${STATUS_COLORS.success}`,
-              borderRadius: '0.375rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: 'var(--theme-success-text)',
-              fontWeight: '600',
-              fontSize: '0.75rem',
-              whiteSpace: 'nowrap',
-              marginLeft: '1rem',
-              alignSelf: 'flex-start'
-            }}>
+            <div
+              style={{
+                padding: '0.5rem 0.75rem',
+                background: 'var(--theme-success-bg)',
+                border: `2px solid ${STATUS_COLORS.success}`,
+                borderRadius: '0.375rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                color: 'var(--theme-success-text)',
+                fontWeight: '600',
+                fontSize: '0.75rem',
+                whiteSpace: 'nowrap',
+                marginLeft: '1rem',
+                alignSelf: 'flex-start',
+              }}
+            >
               ✅ Détails du trajet enregistrés
             </div>
           )}
@@ -999,15 +1091,22 @@ const TripDetailsModal = ({
             {combinedEvents.map((ce, idx) => {
               let tabTitle = ce.event.summary || '(Sans titre)';
               if (ce.event.affaire) {
-                tabTitle = tabTitle.replace(/\baf\s*\d+\b/gi, '').trim().replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
+                tabTitle = tabTitle
+                  .replace(/\baf\s*\d+\b/gi, '')
+                  .trim()
+                  .replace(/\s+/g, ' ')
+                  .replace(/^\s*-\s*|\s*-\s*$/g, '')
+                  .trim();
               }
               if (!tabTitle) tabTitle = '(Sans titre)';
               const hasData = !!ce.tripDetail;
               const isFirst = idx === 0;
               const isLast = idx === combinedEvents.length - 1;
-              
+
               return (
-                <Button variant="ghost"                   key={ce.event.id}
+                <Button
+                  variant="ghost"
+                  key={ce.event.id}
                   type="button"
                   className={`combined-edit-tab ${activeTab === idx ? 'active' : ''} ${hasData ? 'has-data' : ''}`}
                   onClick={() => setActiveTab(idx)}
@@ -1032,34 +1131,71 @@ const TripDetailsModal = ({
               Événement {activeTab + 1}/{combinedEvents.length}
             </span>
             <strong>{currentEvent.summary}</strong>
-            {currentEvent.affaire && <span className="editing-affaire">{currentEvent.affaire}</span>}
+            {currentEvent.affaire && (
+              <span className="editing-affaire">{currentEvent.affaire}</span>
+            )}
             {activeTab === 0 && <span className="editing-role-tag editing-role-aller">Aller</span>}
-            {activeTab === combinedEvents.length - 1 && activeTab > 0 && <span className="editing-role-tag editing-role-retour">Retour</span>}
-            {activeTab > 0 && activeTab < combinedEvents.length - 1 && <span className="editing-role-tag editing-role-transfert">Transfert</span>}
+            {activeTab === combinedEvents.length - 1 && activeTab > 0 && (
+              <span className="editing-role-tag editing-role-retour">Retour</span>
+            )}
+            {activeTab > 0 && activeTab < combinedEvents.length - 1 && (
+              <span className="editing-role-tag editing-role-transfert">Transfert</span>
+            )}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="trip-details-form">
-
           {/* Conducteur */}
           <div className="trip-row">
-            <FormField className="form-group" label={<><User size={18} style={{marginRight: '0.25rem'}} /> Conducteur pour ce trajet</>}>
+            <FormField
+              className="form-group"
+              label={
+                <>
+                  <User size={18} style={{ marginRight: '0.25rem' }} /> Conducteur pour ce trajet
+                </>
+              }
+            >
               {(() => {
                 const vehicleType = vehicle?.type?.toUpperCase() || '';
                 let requiredSkill = 'Conduite VL';
-                if (['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite PL';
-                else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some(t => vehicleType.includes(t))) requiredSkill = 'Conduite SPL';
+                if (
+                  ['PL', 'CAMION', 'PORTEUR', 'PORTEUR MOYEN', 'TRACTEUR'].some((t) =>
+                    vehicleType.includes(t),
+                  )
+                )
+                  requiredSkill = 'Conduite PL';
+                else if (['SPL', 'SEMI', 'SEMI-REMORQUE'].some((t) => vehicleType.includes(t)))
+                  requiredSkill = 'Conduite SPL';
                 const hierarchy = ['Conduite VL', 'Conduite PL', 'Conduite SPL'];
                 const reqLevel = hierarchy.indexOf(requiredSkill);
-                const qualified = (persons || []).filter(p => p.status === STATUS.ACTIVE && p.skills?.some(s => {
-                  const sL = hierarchy.indexOf(s.name);
-                  return sL >= 0 && sL >= reqLevel;
-                })).map(p => ({ id: p.id, name: `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() || `Personnel #${p.id}`, photo: p.photo || null, skills: p.skills?.filter(s => s.category === 'conduite').map(s => s.name) || [] }));
-                const otherDriverNames = drivers?.filter(d => !qualified.some(q => q.name === d.name)).map(d => d.name) || [];
+                const qualified = (persons || [])
+                  .filter(
+                    (p) =>
+                      p.status === STATUS.ACTIVE &&
+                      p.skills?.some((s) => {
+                        const sL = hierarchy.indexOf(s.name);
+                        return sL >= 0 && sL >= reqLevel;
+                      }),
+                  )
+                  .map((p) => ({
+                    id: p.id,
+                    name:
+                      `${p.firstName || p.first_name || ''} ${p.lastName || p.last_name || ''}`.trim() ||
+                      `Personnel #${p.id}`,
+                    photo: p.photo || null,
+                    skills:
+                      p.skills?.filter((s) => s.category === 'conduite').map((s) => s.name) || [],
+                  }));
+                const otherDriverNames =
+                  drivers
+                    ?.filter((d) => !qualified.some((q) => q.name === d.name))
+                    .map((d) => d.name) || [];
                 return (
                   <DriverSelect
                     value={formData.driverName}
-                    onChange={(name) => handleChange({ target: { name: 'driverName', value: name } })}
+                    onChange={(name) =>
+                      handleChange({ target: { name: 'driverName', value: name } })
+                    }
                     qualifiedDrivers={qualified}
                     historySuggestions={otherDriverNames}
                   />
@@ -1071,7 +1207,7 @@ const TripDetailsModal = ({
           {/* TRAJET ALLER */}
           <div className="trip-section outbound">
             <h3>🚗 ALLER</h3>
-            
+
             {/* Départ ALLER */}
             <div className="trip-row">
               <FormField className="form-group" label="Départ">
@@ -1079,12 +1215,14 @@ const TripDetailsModal = ({
                   <AddressAutocomplete
                     name="departureLocation"
                     value={formData.departureLocation}
-                    onChange={(val) => setFormData(prev => ({ ...prev, departureLocation: val }))}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, departureLocation: val }))}
                     list="locations-list"
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <Button variant="ghost"                     type="button"
+                  <Button
+                    variant="ghost"
+                    type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('departureLocation')}
                     title="Enregistrer comme lieu"
@@ -1093,7 +1231,9 @@ const TripDetailsModal = ({
                     Nouveau lieu
                   </Button>
                 </div>
-                <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
+                <small className="help-text">
+                  Saisissez librement ou choisissez un lieu enregistré
+                </small>
               </FormField>
               <FormField className="form-group" label="Date">
                 <input
@@ -1118,59 +1258,73 @@ const TripDetailsModal = ({
             </div>
 
             {/* Pauses ALLER */}
-            {pauses.filter(p => p.pauseType === 'outbound').map(pause => {
-              const pauseStyle = pausesWithValidatedLocation.has(pause.id) ? {
-                background: 'var(--theme-info-bg)',
-                borderColor: 'var(--theme-primary)',
-                borderWidth: '2px'
-              } : {};
-              
-              return (
-                <div key={pause.id} className="trip-row" style={{gridTemplateColumns: '2fr 1fr 1fr auto'}}>
-                  <FormField className="form-group" label="Pause">
-                    <Input
-                      id={`pause-location-${pause.id}`}
-                      type="text"
-                      placeholder="Lieu de la pause"
-                      value={pause.location}
-                      onChange={(e) => updatePause(pause.id, 'location', e.target.value)}
-                      list="locations-list"
-                      style={pauseStyle}
-                    />
-                  </FormField>
-                  <FormField className="form-group" label="Heure">
-                    <input
-                      type="time"
-                      value={pause.startTime}
-                      onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
-                      style={pauseStyle}
-                    />
-                  </FormField>
-                  <FormField className="form-group" label="Durée (min)">
-                    <Input
-                      type="number"
-                      placeholder="30"
-                      value={pause.duration}
-                      onChange={(e) => updatePause(pause.id, 'duration', parseInt(e.target.value))}
-                      min="5"
-                      step="5"
-                      style={pauseStyle}
-                    />
-                  </FormField>
-                  <FormField className="form-group" label="-">
-                    <Button variant="ghost"                       type="button"
-                      onClick={() => removePause(pause.id)}
-                      className="remove-pause-btn"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </FormField>
-                </div>
-              );
-            })}
+            {pauses
+              .filter((p) => p.pauseType === 'outbound')
+              .map((pause) => {
+                const pauseStyle = pausesWithValidatedLocation.has(pause.id)
+                  ? {
+                      background: 'var(--theme-info-bg)',
+                      borderColor: 'var(--theme-primary)',
+                      borderWidth: '2px',
+                    }
+                  : {};
+
+                return (
+                  <div
+                    key={pause.id}
+                    className="trip-row"
+                    style={{ gridTemplateColumns: '2fr 1fr 1fr auto' }}
+                  >
+                    <FormField className="form-group" label="Pause">
+                      <Input
+                        id={`pause-location-${pause.id}`}
+                        type="text"
+                        placeholder="Lieu de la pause"
+                        value={pause.location}
+                        onChange={(e) => updatePause(pause.id, 'location', e.target.value)}
+                        list="locations-list"
+                        style={pauseStyle}
+                      />
+                    </FormField>
+                    <FormField className="form-group" label="Heure">
+                      <input
+                        type="time"
+                        value={pause.startTime}
+                        onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
+                        style={pauseStyle}
+                      />
+                    </FormField>
+                    <FormField className="form-group" label="Durée (min)">
+                      <Input
+                        type="number"
+                        placeholder="30"
+                        value={pause.duration}
+                        onChange={(e) =>
+                          updatePause(pause.id, 'duration', parseInt(e.target.value))
+                        }
+                        min="5"
+                        step="5"
+                        style={pauseStyle}
+                      />
+                    </FormField>
+                    <FormField className="form-group" label="-">
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        onClick={() => removePause(pause.id)}
+                        className="remove-pause-btn"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </FormField>
+                  </div>
+                );
+              })}
             <div className="trip-row">
               <div className="form-group">
-                <Button variant="ghost"                   type="button"
+                <Button
+                  variant="ghost"
+                  type="button"
                   onClick={() => addPause('outbound')}
                   className="add-pause-btn"
                 >
@@ -1187,12 +1341,14 @@ const TripDetailsModal = ({
                   <AddressAutocomplete
                     name="arrivalLocation"
                     value={formData.arrivalLocation}
-                    onChange={(val) => setFormData(prev => ({ ...prev, arrivalLocation: val }))}
+                    onChange={(val) => setFormData((prev) => ({ ...prev, arrivalLocation: val }))}
                     list="locations-list"
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <Button variant="ghost"                     type="button"
+                  <Button
+                    variant="ghost"
+                    type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('arrivalLocation')}
                     title="Enregistrer comme lieu"
@@ -1201,7 +1357,9 @@ const TripDetailsModal = ({
                     Nouveau lieu
                   </Button>
                 </div>
-                <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
+                <small className="help-text">
+                  Saisissez librement ou choisissez un lieu enregistré
+                </small>
               </FormField>
               <FormField className="form-group" label="Date">
                 <input
@@ -1226,7 +1384,9 @@ const TripDetailsModal = ({
             </div>
 
             <div className="duration-section">
-              <Button variant="ghost"                 type="button"
+              <Button
+                variant="ghost"
+                type="button"
                 onClick={handleCalculateOutbound}
                 disabled={isCalculating}
                 className="calculate-btn"
@@ -1234,25 +1394,34 @@ const TripDetailsModal = ({
                 <Clock size={18} />
                 {isCalculating ? 'Calcul...' : 'Calculer le temps de trajet'}
               </Button>
-              {formData.outboundDuration && (() => {
-                const pauseDurations = pauses
-                  .filter(p => p.pauseType === 'outbound' && p.duration)
-                  .reduce((sum, p) => sum + parseInt(p.duration || 0), 0);
-                const pausesWithLocation = pauses.filter(p => p.pauseType === 'outbound' && p.location && pausesWithValidatedLocation.has(p.id)).length;
-                return (
-                  <span className="duration-result">
-                    ⏱️ Trajet: {formData.outboundDuration} min{pausesWithLocation > 0 && ` (via ${pausesWithLocation} pause${pausesWithLocation > 1 ? 's' : ''})`}
-                    {pauseDurations > 0 && ` + Arrêts: ${pauseDurations} min = Total: ${formData.outboundDuration + pauseDurations} min`}
-                  </span>
-                );
-              })()}
+              {formData.outboundDuration &&
+                (() => {
+                  const pauseDurations = pauses
+                    .filter((p) => p.pauseType === 'outbound' && p.duration)
+                    .reduce((sum, p) => sum + parseInt(p.duration || 0), 0);
+                  const pausesWithLocation = pauses.filter(
+                    (p) =>
+                      p.pauseType === 'outbound' &&
+                      p.location &&
+                      pausesWithValidatedLocation.has(p.id),
+                  ).length;
+                  return (
+                    <span className="duration-result">
+                      ⏱️ Trajet: {formData.outboundDuration} min
+                      {pausesWithLocation > 0 &&
+                        ` (via ${pausesWithLocation} pause${pausesWithLocation > 1 ? 's' : ''})`}
+                      {pauseDurations > 0 &&
+                        ` + Arrêts: ${pauseDurations} min = Total: ${formData.outboundDuration + pauseDurations} min`}
+                    </span>
+                  );
+                })()}
             </div>
           </div>
 
           {/* TRAJET RETOUR */}
           <div className="trip-section return">
             <h3>🏠 RETOUR</h3>
-            
+
             {/* Départ RETOUR */}
             <div className="trip-row">
               <FormField className="form-group" label="Départ">
@@ -1260,12 +1429,16 @@ const TripDetailsModal = ({
                   <AddressAutocomplete
                     name="returnDepartureLocation"
                     value={formData.returnDepartureLocation}
-                    onChange={(val) => setFormData(prev => ({ ...prev, returnDepartureLocation: val }))}
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, returnDepartureLocation: val }))
+                    }
                     list="locations-list"
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <Button variant="ghost"                     type="button"
+                  <Button
+                    variant="ghost"
+                    type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('returnDepartureLocation')}
                     title="Enregistrer comme lieu"
@@ -1274,7 +1447,9 @@ const TripDetailsModal = ({
                     Nouveau lieu
                   </Button>
                 </div>
-                <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
+                <small className="help-text">
+                  Saisissez librement ou choisissez un lieu enregistré
+                </small>
               </FormField>
               <FormField className="form-group" label="Date">
                 <input
@@ -1299,59 +1474,73 @@ const TripDetailsModal = ({
             </div>
 
             {/* Pauses RETOUR */}
-            {pauses.filter(p => p.pauseType === 'return').map(pause => {
-              const pauseStyle = pausesWithValidatedLocation.has(pause.id) ? {
-                background: 'var(--theme-info-bg)',
-                borderColor: 'var(--theme-primary)',
-                borderWidth: '2px'
-              } : {};
-              
-              return (
-                <div key={pause.id} className="trip-row" style={{gridTemplateColumns: '2fr 1fr 1fr auto'}}>
-                  <FormField className="form-group" label="Pause">
-                    <Input
-                      id={`pause-location-${pause.id}`}
-                      type="text"
-                      placeholder="Lieu de la pause"
-                      value={pause.location}
-                      onChange={(e) => updatePause(pause.id, 'location', e.target.value)}
-                      list="locations-list"
-                      style={pauseStyle}
-                    />
-                  </FormField>
-                  <FormField className="form-group" label="Heure">
-                    <input
-                      type="time"
-                      value={pause.startTime}
-                      onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
-                      style={pauseStyle}
-                    />
-                  </FormField>
-                  <FormField className="form-group" label="Durée (min)">
-                    <Input
-                      type="number"
-                      placeholder="30"
-                      value={pause.duration}
-                      onChange={(e) => updatePause(pause.id, 'duration', parseInt(e.target.value))}
-                      min="5"
-                      step="5"
-                      style={pauseStyle}
-                    />
-                  </FormField>
-                  <FormField className="form-group" label="-">
-                    <Button variant="ghost"                       type="button"
-                      onClick={() => removePause(pause.id)}
-                      className="remove-pause-btn"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </FormField>
-                </div>
-              );
-            })}
+            {pauses
+              .filter((p) => p.pauseType === 'return')
+              .map((pause) => {
+                const pauseStyle = pausesWithValidatedLocation.has(pause.id)
+                  ? {
+                      background: 'var(--theme-info-bg)',
+                      borderColor: 'var(--theme-primary)',
+                      borderWidth: '2px',
+                    }
+                  : {};
+
+                return (
+                  <div
+                    key={pause.id}
+                    className="trip-row"
+                    style={{ gridTemplateColumns: '2fr 1fr 1fr auto' }}
+                  >
+                    <FormField className="form-group" label="Pause">
+                      <Input
+                        id={`pause-location-${pause.id}`}
+                        type="text"
+                        placeholder="Lieu de la pause"
+                        value={pause.location}
+                        onChange={(e) => updatePause(pause.id, 'location', e.target.value)}
+                        list="locations-list"
+                        style={pauseStyle}
+                      />
+                    </FormField>
+                    <FormField className="form-group" label="Heure">
+                      <input
+                        type="time"
+                        value={pause.startTime}
+                        onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
+                        style={pauseStyle}
+                      />
+                    </FormField>
+                    <FormField className="form-group" label="Durée (min)">
+                      <Input
+                        type="number"
+                        placeholder="30"
+                        value={pause.duration}
+                        onChange={(e) =>
+                          updatePause(pause.id, 'duration', parseInt(e.target.value))
+                        }
+                        min="5"
+                        step="5"
+                        style={pauseStyle}
+                      />
+                    </FormField>
+                    <FormField className="form-group" label="-">
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        onClick={() => removePause(pause.id)}
+                        className="remove-pause-btn"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </FormField>
+                  </div>
+                );
+              })}
             <div className="trip-row">
               <div className="form-group">
-                <Button variant="ghost"                   type="button"
+                <Button
+                  variant="ghost"
+                  type="button"
                   onClick={() => addPause('return')}
                   className="add-pause-btn"
                 >
@@ -1368,12 +1557,16 @@ const TripDetailsModal = ({
                   <AddressAutocomplete
                     name="returnArrivalLocation"
                     value={formData.returnArrivalLocation}
-                    onChange={(val) => setFormData(prev => ({ ...prev, returnArrivalLocation: val }))}
+                    onChange={(val) =>
+                      setFormData((prev) => ({ ...prev, returnArrivalLocation: val }))
+                    }
                     list="locations-list"
                     placeholder="Tapez une adresse..."
                     required
                   />
-                  <Button variant="ghost"                     type="button"
+                  <Button
+                    variant="ghost"
+                    type="button"
                     className="new-location-btn"
                     onClick={() => handleOpenLocationDialog('returnArrivalLocation')}
                     title="Enregistrer comme lieu"
@@ -1382,7 +1575,9 @@ const TripDetailsModal = ({
                     Nouveau lieu
                   </Button>
                 </div>
-                <small className="help-text">Saisissez librement ou choisissez un lieu enregistré</small>
+                <small className="help-text">
+                  Saisissez librement ou choisissez un lieu enregistré
+                </small>
               </FormField>
               <FormField className="form-group" label="Date">
                 <input
@@ -1407,7 +1602,9 @@ const TripDetailsModal = ({
             </div>
 
             <div className="duration-section">
-              <Button variant="ghost"                 type="button"
+              <Button
+                variant="ghost"
+                type="button"
                 onClick={handleCalculateReturn}
                 disabled={isCalculating}
                 className="calculate-btn"
@@ -1415,18 +1612,27 @@ const TripDetailsModal = ({
                 <Clock size={18} />
                 {isCalculating ? 'Calcul...' : 'Calculer le temps de trajet'}
               </Button>
-              {formData.returnDuration && (() => {
-                const pauseDurations = pauses
-                  .filter(p => p.pauseType === 'return' && p.duration)
-                  .reduce((sum, p) => sum + parseInt(p.duration || 0), 0);
-                const pausesWithLocation = pauses.filter(p => p.pauseType === 'return' && p.location && pausesWithValidatedLocation.has(p.id)).length;
-                return (
-                  <span className="duration-result">
-                    ⏱️ Trajet: {formData.returnDuration} min{pausesWithLocation > 0 && ` (via ${pausesWithLocation} pause${pausesWithLocation > 1 ? 's' : ''})`}
-                    {pauseDurations > 0 && ` + Arrêts: ${pauseDurations} min = Total: ${formData.returnDuration + pauseDurations} min`}
-                  </span>
-                );
-              })()}
+              {formData.returnDuration &&
+                (() => {
+                  const pauseDurations = pauses
+                    .filter((p) => p.pauseType === 'return' && p.duration)
+                    .reduce((sum, p) => sum + parseInt(p.duration || 0), 0);
+                  const pausesWithLocation = pauses.filter(
+                    (p) =>
+                      p.pauseType === 'return' &&
+                      p.location &&
+                      pausesWithValidatedLocation.has(p.id),
+                  ).length;
+                  return (
+                    <span className="duration-result">
+                      ⏱️ Trajet: {formData.returnDuration} min
+                      {pausesWithLocation > 0 &&
+                        ` (via ${pausesWithLocation} pause${pausesWithLocation > 1 ? 's' : ''})`}
+                      {pauseDurations > 0 &&
+                        ` + Arrêts: ${pauseDurations} min = Total: ${formData.returnDuration + pauseDurations} min`}
+                    </span>
+                  );
+                })()}
             </div>
           </div>
 
@@ -1462,7 +1668,10 @@ const TripDetailsModal = ({
       <Dialog
         open={showUnsavedWarning}
         onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        onConfirm={() => {
+          setShowUnsavedWarning(false);
+          onClose();
+        }}
         title="Modifications non enregistrées"
         variant="warning"
         confirmLabel="Ne pas enregistrer"

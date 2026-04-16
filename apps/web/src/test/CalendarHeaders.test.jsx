@@ -68,7 +68,14 @@ describe('CalendarHeaders', () => {
     const user = userEvent.setup();
     const handleMonthClick = vi.fn();
     const months = Array.from({ length: 12 }, (_, i) => new Date(2026, i, 1));
-    render(<CalendarHeaders {...defaultProps} view="year" days={months} handleMonthClick={handleMonthClick} />);
+    render(
+      <CalendarHeaders
+        {...defaultProps}
+        view="year"
+        days={months}
+        handleMonthClick={handleMonthClick}
+      />,
+    );
     await user.click(screen.getByText('janvier'));
     expect(handleMonthClick).toHaveBeenCalledWith(0);
   });

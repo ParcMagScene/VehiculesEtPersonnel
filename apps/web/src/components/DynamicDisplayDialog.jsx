@@ -1,5 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Monitor, X, Save, Briefcase, MapPin, User, Clock, MessageSquare, Calendar, ExternalLink } from 'lucide-react';
+import {
+  Monitor,
+  X,
+  Save,
+  Briefcase,
+  MapPin,
+  User,
+  Clock,
+  MessageSquare,
+  Calendar,
+  ExternalLink,
+} from 'lucide-react';
 import api from '../utils/api';
 import { useToast } from '../hooks/useToast';
 import AddressAutocomplete from './AddressAutocomplete';
@@ -9,18 +20,18 @@ import { STATUS_COLORS, ACCENT_COLORS } from '../constants/colors';
 
 // ═══ Constantes ═══
 const EVENT_TYPES = {
-  preparation:  { label: 'Préparation',  color: ACCENT_COLORS.indigo, emoji: '🔧' },
-  enlevement:   { label: 'Enlèvement',   color: STATUS_COLORS.warning, emoji: '📦' },
-  livraison:    { label: 'Livraison',     color: STATUS_COLORS.success, emoji: '🚚' },
-  depart:       { label: 'Départ',        color: STATUS_COLORS.info, emoji: '🚀' },
-  retour:       { label: 'Retour',        color: ACCENT_COLORS.violet, emoji: '↩️' },
-  recuperation: { label: 'Récupération',  color: STATUS_COLORS.danger, emoji: '📥' },
+  preparation: { label: 'Préparation', color: ACCENT_COLORS.indigo, emoji: '🔧' },
+  enlevement: { label: 'Enlèvement', color: STATUS_COLORS.warning, emoji: '📦' },
+  livraison: { label: 'Livraison', color: STATUS_COLORS.success, emoji: '🚚' },
+  depart: { label: 'Départ', color: STATUS_COLORS.info, emoji: '🚀' },
+  retour: { label: 'Retour', color: ACCENT_COLORS.violet, emoji: '↩️' },
+  recuperation: { label: 'Récupération', color: STATUS_COLORS.danger, emoji: '📥' },
 };
 
 const EVENT_CATEGORIES = {
-  vente:        { label: 'Vente',        color: ACCENT_COLORS.violet },
-  location:     { label: 'Location',     color: STATUS_COLORS.warning },
-  prestation:   { label: 'Prestation',   color: STATUS_COLORS.info },
+  vente: { label: 'Vente', color: ACCENT_COLORS.violet },
+  location: { label: 'Location', color: STATUS_COLORS.warning },
+  prestation: { label: 'Prestation', color: STATUS_COLORS.info },
   installation: { label: 'Installation', color: STATUS_COLORS.success },
 };
 
@@ -95,14 +106,14 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
 
   const handleAffaireInput = (value) => {
     setAffaireSearch(value);
-    setForm(f => ({ ...f, affaireId: value }));
+    setForm((f) => ({ ...f, affaireId: value }));
     searchAffaires(value);
   };
 
   const handleSelectAffaire = (aff) => {
     const id = aff.affaireNumber || aff.id || '';
     setAffaireSearch(id);
-    setForm(f => ({
+    setForm((f) => ({
       ...f,
       affaireId: id,
       client: aff.client || aff.clientName || f.client,
@@ -112,13 +123,13 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
   };
 
   const updateField = (field, value) => {
-    setForm(f => ({ ...f, [field]: value }));
+    setForm((f) => ({ ...f, [field]: value }));
   };
 
   const handleSave = async () => {
     // Validation
     if (!form.type) {
-      toast.warning('Veuillez sélectionner un type d\'événement');
+      toast.warning("Veuillez sélectionner un type d'événement");
       return;
     }
     if (!form.date) {
@@ -163,27 +174,40 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
   };
 
   return (
-    <div className="display-dialog-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()} onKeyDown={handleKeyDown}>
-      <div className="display-dialog" onClick={e => e.stopPropagation()}>
+    <div
+      className="display-dialog-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      onKeyDown={handleKeyDown}
+    >
+      <div className="display-dialog" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="dialog-header">
           <h3>
             <Monitor size={20} />
-            {isEdit ? 'Modifier l\'événement' : 'Nouvel événement d\'affichage'}
+            {isEdit ? "Modifier l'événement" : "Nouvel événement d'affichage"}
           </h3>
-          <Button variant="ghost" className="dialog-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
+          <Button variant="ghost" className="dialog-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </Button>
         </div>
 
         {/* Body */}
         <div className="dialog-body">
           {/* Type */}
-          <FormField className="form-group" label="Type d'événement" required style={{ marginBottom: 16 }}>
+          <FormField
+            className="form-group"
+            label="Type d'événement"
+            required
+            style={{ marginBottom: 16 }}
+          >
             <div className="type-selector">
               {Object.entries(EVENT_TYPES).map(([key, info]) => (
                 <span
                   key={key}
                   className={`type-chip ${form.type === key ? 'selected' : ''}`}
-                  style={form.type === key ? { background: info.color, borderColor: info.color } : {}}
+                  style={
+                    form.type === key ? { background: info.color, borderColor: info.color } : {}
+                  }
                   onClick={() => updateField('type', key)}
                 >
                   {info.emoji} {info.label}
@@ -199,7 +223,9 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
                 <span
                   key={key}
                   className={`cat-pill ${form.category === key ? 'selected' : ''}`}
-                  style={form.category === key ? { background: info.color, borderColor: info.color } : {}}
+                  style={
+                    form.category === key ? { background: info.color, borderColor: info.color } : {}
+                  }
                   onClick={() => updateField('category', key)}
                 >
                   {info.label}
@@ -211,37 +237,51 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
           {/* Affaire + Client */}
           <div className="form-row">
             <div ref={suggRef} className="form-group affaire-autocomplete">
-            <FormField label={<><Briefcase size={12} /> Affaire</>}>
-              <Input
-                type="text"
-                value={affaireSearch}
-                onChange={e => handleAffaireInput(e.target.value)}
-                placeholder="AF32844..."
-                onFocus={() => affaireSuggestions.length > 0 && setShowSuggestions(true)}
-              />
-              {showSuggestions && affaireSuggestions.length > 0 && (
-                <div className="affaire-suggestions">
-                  {affaireSuggestions.map(aff => (
-                    <div
-                      key={aff.id || aff.affaireNumber}
-                      className="affaire-suggestion"
-                      onClick={() => handleSelectAffaire(aff)}
-                    >
-                      <span className="affaire-id">{aff.affaireNumber || aff.id}</span>
-                      <span className="affaire-name">
-                        {aff.client || aff.clientName || ''} {aff.lieu || aff.location ? `— ${aff.lieu || aff.location}` : ''}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </FormField>
+              <FormField
+                label={
+                  <>
+                    <Briefcase size={12} /> Affaire
+                  </>
+                }
+              >
+                <Input
+                  type="text"
+                  value={affaireSearch}
+                  onChange={(e) => handleAffaireInput(e.target.value)}
+                  placeholder="AF32844..."
+                  onFocus={() => affaireSuggestions.length > 0 && setShowSuggestions(true)}
+                />
+                {showSuggestions && affaireSuggestions.length > 0 && (
+                  <div className="affaire-suggestions">
+                    {affaireSuggestions.map((aff) => (
+                      <div
+                        key={aff.id || aff.affaireNumber}
+                        className="affaire-suggestion"
+                        onClick={() => handleSelectAffaire(aff)}
+                      >
+                        <span className="affaire-id">{aff.affaireNumber || aff.id}</span>
+                        <span className="affaire-name">
+                          {aff.client || aff.clientName || ''}{' '}
+                          {aff.lieu || aff.location ? `— ${aff.lieu || aff.location}` : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </FormField>
             </div>
-            <FormField className="form-group" label={<><User size={12} /> Client</>}>
+            <FormField
+              className="form-group"
+              label={
+                <>
+                  <User size={12} /> Client
+                </>
+              }
+            >
               <Input
                 type="text"
                 value={form.client}
-                onChange={e => updateField('client', e.target.value)}
+                onChange={(e) => updateField('client', e.target.value)}
                 placeholder="Nom du client"
               />
             </FormField>
@@ -249,18 +289,33 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
 
           {/* Date + Période */}
           <div className="form-row">
-            <FormField className="form-group" label={<><Calendar size={12} /> Date</>} required>
+            <FormField
+              className="form-group"
+              label={
+                <>
+                  <Calendar size={12} /> Date
+                </>
+              }
+              required
+            >
               <input
                 type="date"
                 value={form.date}
-                onChange={e => updateField('date', e.target.value)}
+                onChange={(e) => updateField('date', e.target.value)}
               />
             </FormField>
-            <FormField className="form-group" label={<><Clock size={12} /> Heure (optionnel)</>}>
+            <FormField
+              className="form-group"
+              label={
+                <>
+                  <Clock size={12} /> Heure (optionnel)
+                </>
+              }
+            >
               <input
                 type="time"
                 value={form.time}
-                onChange={e => updateField('time', e.target.value)}
+                onChange={(e) => updateField('time', e.target.value)}
               />
             </FormField>
           </div>
@@ -268,13 +323,17 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
           {/* Période Matin/Après-midi */}
           <FormField className="form-group" label="Période" style={{ marginBottom: 16 }}>
             <div className="period-toggle">
-              <Button variant="ghost"                 type="button"
+              <Button
+                variant="ghost"
+                type="button"
                 className={`period-btn ${form.period === 'AM' ? 'selected' : ''}`}
                 onClick={() => updateField('period', 'AM')}
               >
                 🌅 Matin
               </Button>
-              <Button variant="ghost"                 type="button"
+              <Button
+                variant="ghost"
+                type="button"
                 className={`period-btn ${form.period === 'PM' ? 'selected' : ''}`}
                 onClick={() => updateField('period', 'PM')}
               >
@@ -284,11 +343,19 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
           </FormField>
 
           {/* Lieu */}
-          <FormField className="form-group" label={<><MapPin size={12} /> Lieu</>} style={{ marginBottom: 16 }}>
+          <FormField
+            className="form-group"
+            label={
+              <>
+                <MapPin size={12} /> Lieu
+              </>
+            }
+            style={{ marginBottom: 16 }}
+          >
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <AddressAutocomplete
                 value={form.location}
-                onChange={v => updateField('location', v)}
+                onChange={(v) => updateField('location', v)}
                 placeholder="Dépôt Locmat, salle des fêtes..."
                 onPlaceSelect={(place) => {
                   if (place?.geometry?.location) {
@@ -301,9 +368,10 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
               />
               {(locationCoords || form.location) && (
                 <a
-                  href={locationCoords
-                    ? `https://www.google.com/maps/search/?api=1&query=${locationCoords.lat},${locationCoords.lng}`
-                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.location)}`
+                  href={
+                    locationCoords
+                      ? `https://www.google.com/maps/search/?api=1&query=${locationCoords.lat},${locationCoords.lng}`
+                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.location)}`
                   }
                   target="_blank"
                   rel="noopener noreferrer"
@@ -317,10 +385,17 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
           </FormField>
 
           {/* Commentaire */}
-          <FormField className="form-group" label={<><MessageSquare size={12} /> Commentaire</>}>
+          <FormField
+            className="form-group"
+            label={
+              <>
+                <MessageSquare size={12} /> Commentaire
+              </>
+            }
+          >
             <Textarea
               value={form.comment}
-              onChange={e => updateField('comment', e.target.value)}
+              onChange={(e) => updateField('comment', e.target.value)}
               placeholder="Détails supplémentaires..."
               rows={3}
             />
@@ -329,10 +404,12 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
 
         {/* Footer */}
         <div className="dialog-footer">
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
           <Button variant="primary" onClick={handleSave} disabled={saving}>
             <Save size={15} />
-            {saving ? 'Enregistrement...' : (isEdit ? 'Modifier' : 'Créer')}
+            {saving ? 'Enregistrement...' : isEdit ? 'Modifier' : 'Créer'}
           </Button>
         </div>
       </div>

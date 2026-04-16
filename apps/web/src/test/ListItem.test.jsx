@@ -44,7 +44,7 @@ describe('ListItem', () => {
     expect(container.firstChild).toHaveClass('ui-list-item--clickable');
   });
 
-  it('affiche l\'icône', () => {
+  it("affiche l'icône", () => {
     render(<ListItem title="A" icon={<span data-testid="ico">★</span>} />);
     expect(screen.getByTestId('ico')).toBeInTheDocument();
   });

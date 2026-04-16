@@ -13,12 +13,11 @@
      - textLink.foreground (#3794ff)
    ═══════════════════════════════════════════════════════════════════════ */
 
-
 /* ═══════════════════════════════════════════════════════
    VS CODE DARK+ — Light Mode (oui, c'est la palette Light+)
    Fond blanc éditeur, barre latérale gris clair
    ═══════════════════════════════════════════════════════ */
-[data-palette="vscode-light"] {
+[data-palette='vscode-light'] {
   /* ─── Couleurs principales ─── */
   --theme-primary: #0078d4;
   --theme-secondary: #005a9e;
@@ -35,19 +34,19 @@
   --theme-gradient-alt: linear-gradient(135deg, #0078d4, #e8ab53);
 
   /* ─── Fonds (VS Code Light+ exact) ─── */
-  --theme-bg-page: #f3f3f3;           /* sideBar.background */
-  --theme-bg-card: #ffffff;            /* editor.background */
+  --theme-bg-page: #f3f3f3; /* sideBar.background */
+  --theme-bg-card: #ffffff; /* editor.background */
   --theme-bg-card-translucent: rgba(255, 255, 255, 0.97);
-  --theme-bg-secondary: #f3f3f3;      /* panel.background */
-  --theme-bg-tertiary: #e8e8e8;       /* list.hoverBackground */
-  --theme-bg-hover: #e8e8e8;          /* list.hoverBackground */
+  --theme-bg-secondary: #f3f3f3; /* panel.background */
+  --theme-bg-tertiary: #e8e8e8; /* list.hoverBackground */
+  --theme-bg-hover: #e8e8e8; /* list.hoverBackground */
   --theme-bg-muted: #c5c5c5;
   --theme-bg-indigo-light: #dceaff;
   --theme-bg-indigo-lighter: #c8e1ff;
 
   /* ─── Texte ─── */
-  --theme-text-primary: #1e1e1e;      /* editor.foreground */
-  --theme-text-secondary: #616161;    /* descriptionForeground */
+  --theme-text-primary: #1e1e1e; /* editor.foreground */
+  --theme-text-secondary: #616161; /* descriptionForeground */
   --theme-text-muted: #858585;
   --theme-text-heading: #1e1e1e;
   --theme-text-dark: #333333;
@@ -60,13 +59,13 @@
   --theme-border-light: #f0f0f0;
   --theme-border-medium: #d4d4d4;
   --theme-border-muted: #cccccc;
-  --theme-border-focus: #0078d4;       /* focusBorder */
+  --theme-border-focus: #0078d4; /* focusBorder */
 
   /* ─── Purple/Accent → VS Code Blue ─── */
   --theme-purple-bg: #dceaff;
   --theme-purple-bg-strong: #b4d6ff;
   --theme-purple-border: #80b8ff;
-  --theme-purple-accent: #3794ff;      /* textLink.foreground */
+  --theme-purple-accent: #3794ff; /* textLink.foreground */
   --theme-purple-text: #005a9e;
 
   /* ─── Orange (warnings) ─── */
@@ -93,13 +92,13 @@
   --focus-ring: 0 0 0 2px rgba(0, 120, 212, 0.25);
 
   /* ─── Couleurs syntaxiques VS Code (utilitaires) ─── */
-  --vscode-keyword: #0000ff;          /* if, return, const */
-  --vscode-string: #a31515;           /* "hello" */
-  --vscode-number: #098658;           /* 42, 3.14 */
-  --vscode-function: #795e26;         /* myFunction() */
-  --vscode-type: #267f99;             /* MyClass */
-  --vscode-comment: #008000;          /* // comment */
-  --vscode-variable: #001080;         /* myVar */
+  --vscode-keyword: #0000ff; /* if, return, const */
+  --vscode-string: #a31515; /* "hello" */
+  --vscode-number: #098658; /* 42, 3.14 */
+  --vscode-function: #795e26; /* myFunction() */
+  --vscode-type: #267f99; /* MyClass */
+  --vscode-comment: #008000; /* // comment */
+  --vscode-variable: #001080; /* myVar */
   --vscode-property: #001080;
   --vscode-operator: #000000;
 
@@ -141,12 +140,11 @@
   --vscode-scrollbar-hover: rgba(100, 100, 100, 0.4);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    VS CODE DARK+ — Le thème sombre iconique
    ═══════════════════════════════════════════════════════ */
-[data-palette="vscode-dark"][data-theme="dark"],
-[data-palette="vscode-dark"] {
+[data-palette='vscode-dark'][data-theme='dark'],
+[data-palette='vscode-dark'] {
   /* ─── Couleurs principales ─── */
   --theme-primary: #0078d4;
   --theme-secondary: #3794ff;
@@ -163,19 +161,19 @@
   --theme-gradient-alt: linear-gradient(135deg, #264f78, #4ec9b0);
 
   /* ─── Fonds (VS Code Dark+ exact) ─── */
-  --theme-bg-page: #1e1e1e;           /* editor.background */
-  --theme-bg-card: #252526;            /* sideBar.background */
+  --theme-bg-page: #1e1e1e; /* editor.background */
+  --theme-bg-card: #252526; /* sideBar.background */
   --theme-bg-card-translucent: rgba(37, 37, 38, 0.97);
-  --theme-bg-secondary: #252526;       /* panel.background */
-  --theme-bg-tertiary: #2d2d30;        /* editorGroupHeader */
-  --theme-bg-hover: #2a2d2e;           /* list.hoverBackground */
-  --theme-bg-muted: #3c3c3c;           /* editorWidget */
+  --theme-bg-secondary: #252526; /* panel.background */
+  --theme-bg-tertiary: #2d2d30; /* editorGroupHeader */
+  --theme-bg-hover: #2a2d2e; /* list.hoverBackground */
+  --theme-bg-muted: #3c3c3c; /* editorWidget */
   --theme-bg-indigo-light: #1b2838;
   --theme-bg-indigo-lighter: #264f78;
 
   /* ─── Texte ─── */
-  --theme-text-primary: #d4d4d4;       /* editor.foreground */
-  --theme-text-secondary: #cccccc;     /* descriptionForeground */
+  --theme-text-primary: #d4d4d4; /* editor.foreground */
+  --theme-text-secondary: #cccccc; /* descriptionForeground */
   --theme-text-muted: #9a9a9a; /* WCAG AA 5.92:1 on #1e1e1e */
   --theme-text-heading: #e2e2e2;
   --theme-text-dark: #d4d4d4;
@@ -184,11 +182,11 @@
   --theme-text-gray: #9a9a9a;
 
   /* ─── Bordures ─── */
-  --theme-border: #3c3c3c;            /* panel.border */
+  --theme-border: #3c3c3c; /* panel.border */
   --theme-border-light: #2d2d30;
   --theme-border-medium: #474747;
   --theme-border-muted: #404040;
-  --theme-border-focus: #007fd4;       /* focusBorder */
+  --theme-border-focus: #007fd4; /* focusBorder */
 
   /* ─── Purple/Accent → VS Code Bleu ─── */
   --theme-purple-bg: #1b2838;
@@ -221,13 +219,13 @@
   --focus-ring: 0 0 0 2px rgba(0, 127, 212, 0.3);
 
   /* ─── Couleurs syntaxiques VS Code Dark+ ─── */
-  --vscode-keyword: #569cd6;          /* if, return, const */
-  --vscode-string: #ce9178;           /* "hello" */
-  --vscode-number: #b5cea8;           /* 42, 3.14 */
-  --vscode-function: #dcdcaa;         /* myFunction() */
-  --vscode-type: #4ec9b0;             /* MyClass */
-  --vscode-comment: #6a9955;          /* // comment */
-  --vscode-variable: #9cdcfe;         /* myVar */
+  --vscode-keyword: #569cd6; /* if, return, const */
+  --vscode-string: #ce9178; /* "hello" */
+  --vscode-number: #b5cea8; /* 42, 3.14 */
+  --vscode-function: #dcdcaa; /* myFunction() */
+  --vscode-type: #4ec9b0; /* MyClass */
+  --vscode-comment: #6a9955; /* // comment */
+  --vscode-variable: #9cdcfe; /* myVar */
   --vscode-property: #9cdcfe;
   --vscode-operator: #d4d4d4;
 
@@ -269,28 +267,25 @@
   --vscode-scrollbar-hover: rgba(121, 121, 121, 0.5);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    VS CODE LIGHT+ en mode light (override explicite)
    ═══════════════════════════════════════════════════════ */
-[data-palette="vscode-light"][data-theme="light"] {
+[data-palette='vscode-light'][data-theme='light'] {
   /* Toutes les variables sont déjà définies dans [data-palette="vscode-light"] */
 }
-
 
 /* ═══════════════════════════════════════════════════════
    VS CODE DARK+ en mode dark (explicite)
    ═══════════════════════════════════════════════════════ */
-[data-palette="vscode-dark"][data-theme="dark"] {
+[data-palette='vscode-dark'][data-theme='dark'] {
   /* Toutes les variables sont déjà définies dans le sélecteur principal */
 }
-
 
 /* ═══════════════════════════════════════════════════════
    VS CODE DARK palette quand mode = light
    → On applique quand même le dark (c'est le choix de l'utilisateur)
    ═══════════════════════════════════════════════════════ */
-[data-palette="vscode-dark"][data-theme="light"] {
+[data-palette='vscode-dark'][data-theme='light'] {
   /* On force le look dark même en mode light pour cohérence */
   --theme-bg-page: #1e1e1e;
   --theme-bg-card: #252526;
@@ -325,7 +320,7 @@
    VS CODE LIGHT palette quand mode = dark
    → On force le look light
    ═══════════════════════════════════════════════════════ */
-[data-palette="vscode-light"][data-theme="dark"] {
+[data-palette='vscode-light'][data-theme='dark'] {
   --theme-bg-page: #f3f3f3;
   --theme-bg-card: #ffffff;
   --theme-bg-card-translucent: rgba(255, 255, 255, 0.97);
@@ -355,14 +350,13 @@
   --btn-secondary-hover-bg: #d4d4d4;
 }
 
-
 /* ═══════════════════════════════════════════════════════
    UTILITAIRES VS CODE — Classes CSS supplémentaires
    Pour les composants Inventaire et Dashboard
    ═══════════════════════════════════════════════════════ */
 
 /* Barre de statut VS Code */
-[data-palette^="vscode"] .vsc-statusbar {
+[data-palette^='vscode'] .vsc-statusbar {
   background: var(--vscode-statusbar-bg);
   color: var(--vscode-statusbar-fg);
   font-size: var(--font-sm);
@@ -373,7 +367,7 @@
 }
 
 /* Activity bar latérale */
-[data-palette^="vscode"] .vsc-activitybar {
+[data-palette^='vscode'] .vsc-activitybar {
   background: var(--vscode-activitybar-bg);
   color: var(--vscode-activitybar-fg);
   width: 48px;
@@ -384,7 +378,7 @@
   gap: 4px;
 }
 
-[data-palette^="vscode"] .vsc-activitybar-item {
+[data-palette^='vscode'] .vsc-activitybar-item {
   width: 48px;
   height: 48px;
   display: flex;
@@ -394,16 +388,16 @@
   cursor: pointer;
   transition: opacity 0.15s;
 }
-[data-palette^="vscode"] .vsc-activitybar-item:hover,
-[data-palette^="vscode"] .vsc-activitybar-item.active {
+[data-palette^='vscode'] .vsc-activitybar-item:hover,
+[data-palette^='vscode'] .vsc-activitybar-item.active {
   opacity: 1;
 }
-[data-palette^="vscode"] .vsc-activitybar-item.active {
+[data-palette^='vscode'] .vsc-activitybar-item.active {
   border-left: 2px solid var(--vscode-statusbar-bg);
 }
 
 /* Badge compteur */
-[data-palette^="vscode"] .vsc-badge {
+[data-palette^='vscode'] .vsc-badge {
   background: var(--vscode-badge-bg);
   color: var(--vscode-badge-fg);
   font-size: var(--font-xs);
@@ -418,12 +412,12 @@
 }
 
 /* Panel avec onglets */
-[data-palette^="vscode"] .vsc-tabs {
+[data-palette^='vscode'] .vsc-tabs {
   display: flex;
   background: var(--vscode-tab-inactive-bg);
   border-bottom: 1px solid var(--vscode-panel-border);
 }
-[data-palette^="vscode"] .vsc-tab {
+[data-palette^='vscode'] .vsc-tab {
   padding: 8px 16px;
   font-size: var(--font-sm);
   cursor: pointer;
@@ -433,17 +427,17 @@
   border-bottom: 2px solid transparent;
   transition: all 0.15s;
 }
-[data-palette^="vscode"] .vsc-tab:hover {
+[data-palette^='vscode'] .vsc-tab:hover {
   color: var(--theme-text-primary);
 }
-[data-palette^="vscode"] .vsc-tab.active {
+[data-palette^='vscode'] .vsc-tab.active {
   background: var(--vscode-tab-active-bg);
   color: var(--theme-text-primary);
   border-bottom-color: var(--vscode-statusbar-bg);
 }
 
 /* Input VS Code style */
-[data-palette^="vscode"] .vsc-input {
+[data-palette^='vscode'] .vsc-input {
   background: var(--vscode-input-bg);
   color: var(--vscode-input-fg);
   border: 1px solid var(--vscode-input-border);
@@ -453,22 +447,22 @@
   outline: none;
   transition: border-color 0.15s;
 }
-[data-palette^="vscode"] .vsc-input:focus {
+[data-palette^='vscode'] .vsc-input:focus {
   border-color: var(--vscode-input-focus-border);
 }
 
 /* Minimap indicator */
-[data-palette^="vscode"] .vsc-minimap-bar {
+[data-palette^='vscode'] .vsc-minimap-bar {
   width: 4px;
   border-radius: 2px;
   background: var(--vscode-scrollbar);
 }
-[data-palette^="vscode"] .vsc-minimap-bar:hover {
+[data-palette^='vscode'] .vsc-minimap-bar:hover {
   background: var(--vscode-scrollbar-hover);
 }
 
 /* Breadcrumb */
-[data-palette^="vscode"] .vsc-breadcrumb {
+[data-palette^='vscode'] .vsc-breadcrumb {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -478,41 +472,48 @@
   background: var(--vscode-tab-active-bg);
   border-bottom: 1px solid var(--vscode-panel-border);
 }
-[data-palette^="vscode"] .vsc-breadcrumb-sep::after {
+[data-palette^='vscode'] .vsc-breadcrumb-sep::after {
   content: '›';
   color: var(--theme-text-gray);
   margin: 0 2px;
 }
-[data-palette^="vscode"] .vsc-breadcrumb-item {
+[data-palette^='vscode'] .vsc-breadcrumb-item {
   cursor: pointer;
   transition: color 0.15s;
 }
-[data-palette^="vscode"] .vsc-breadcrumb-item:hover {
+[data-palette^='vscode'] .vsc-breadcrumb-item:hover {
   color: var(--theme-text-primary);
 }
 
 /* Status indicators */
-[data-palette^="vscode"] .vsc-status-error   { color: var(--vscode-error); }
-[data-palette^="vscode"] .vsc-status-warning { color: var(--vscode-warning); }
-[data-palette^="vscode"] .vsc-status-info    { color: var(--vscode-info); }
-[data-palette^="vscode"] .vsc-status-success { color: var(--vscode-success); }
+[data-palette^='vscode'] .vsc-status-error {
+  color: var(--vscode-error);
+}
+[data-palette^='vscode'] .vsc-status-warning {
+  color: var(--vscode-warning);
+}
+[data-palette^='vscode'] .vsc-status-info {
+  color: var(--vscode-info);
+}
+[data-palette^='vscode'] .vsc-status-success {
+  color: var(--vscode-success);
+}
 
 /* Scrollbar customized */
-[data-palette^="vscode"] ::-webkit-scrollbar {
+[data-palette^='vscode'] ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-[data-palette^="vscode"] ::-webkit-scrollbar-track {
+[data-palette^='vscode'] ::-webkit-scrollbar-track {
   background: transparent;
 }
-[data-palette^="vscode"] ::-webkit-scrollbar-thumb {
+[data-palette^='vscode'] ::-webkit-scrollbar-thumb {
   background: var(--vscode-scrollbar);
   border-radius: var(--radius-sm);
 }
-[data-palette^="vscode"] ::-webkit-scrollbar-thumb:hover {
+[data-palette^='vscode'] ::-webkit-scrollbar-thumb:hover {
   background: var(--vscode-scrollbar-hover);
 }
-
 
 /* ═══════════════════════════════════════════════════════════════════════
    VS CODE MODE — OVERRIDES STRUCTURELS
@@ -529,11 +530,10 @@
    Activé automatiquement quand data-palette="vscode-dark" ou "vscode-light"
    ═══════════════════════════════════════════════════════════════════════ */
 
-
 /* ─────────────────────────────────────────
    1. DESIGN TOKENS — Override variables
    ───────────────────────────────────────── */
-[data-palette^="vscode"] {
+[data-palette^='vscode'] {
   /* Zéro ombre partout */
   --shadow-xs: none;
   --shadow-sm: none;
@@ -563,7 +563,7 @@
   --modal-header-border-radius: 0;
 
   /* Typographie monospace compacte */
-  font-family: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
   font-size: var(--font-sm);
   --font-2xs: 10px;
   --font-xs: 11px;
@@ -620,30 +620,28 @@
   --scrollbar-bg: transparent;
 }
 
-
 /* ─────────────────────────────────────────
    2. GLOBAL RESETS — body/html quand VS Code actif
    ───────────────────────────────────────── */
-[data-palette^="vscode"] body {
-  font-family: "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+[data-palette^='vscode'] body {
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
   font-size: var(--font-sm);
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Nuke tous les box-shadow et border-radius */
-[data-palette^="vscode"] *:not(.codicon) {
+[data-palette^='vscode'] *:not(.codicon) {
   border-radius: 0 !important;
 }
-[data-palette^="vscode"] .app *:not(.loading-spinner) {
+[data-palette^='vscode'] .app *:not(.loading-spinner) {
   box-shadow: none !important;
 }
-
 
 /* ─────────────────────────────────────────
    3. HEADER — Ultra compact, plat, style titlebar VS Code
    ───────────────────────────────────────── */
-[data-palette^="vscode"] .header {
+[data-palette^='vscode'] .header {
   background: var(--vscode-titlebar-bg);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -652,30 +650,30 @@
   min-height: 0;
 }
 
-[data-palette^="vscode"] .header-content {
+[data-palette^='vscode'] .header-content {
   min-height: 35px;
   gap: 8px;
 }
 
-[data-palette^="vscode"] .header-logo-area {
+[data-palette^='vscode'] .header-logo-area {
   width: auto;
   margin-left: 0;
   padding-right: 8px;
 }
 
-[data-palette^="vscode"] .header-logo {
+[data-palette^='vscode'] .header-logo {
   max-height: 22px;
 }
 
 /* Module tabs → style onglets VS Code */
-[data-palette^="vscode"] .header-title-container .module-tabs {
+[data-palette^='vscode'] .header-title-container .module-tabs {
   background: transparent;
   padding: 0;
   gap: 0;
   border-bottom: 1px solid var(--theme-border);
 }
 
-[data-palette^="vscode"] .header-title-container .module-tab {
+[data-palette^='vscode'] .header-title-container .module-tab {
   padding: 6px 14px;
   font-size: var(--font-sm);
   font-weight: 400;
@@ -685,13 +683,13 @@
   transition: color 0.1s;
 }
 
-[data-palette^="vscode"] .header-title-container .module-tab:hover {
+[data-palette^='vscode'] .header-title-container .module-tab:hover {
   color: var(--theme-text-primary);
   background: transparent;
   transform: none;
 }
 
-[data-palette^="vscode"] .header-title-container .module-tab.active {
+[data-palette^='vscode'] .header-title-container .module-tab.active {
   color: var(--theme-text-primary);
   background: transparent;
   border-bottom-color: var(--theme-primary);
@@ -700,8 +698,8 @@
 }
 
 /* Boutons header (aide, thème toggle) */
-[data-palette^="vscode"] .help-trigger-btn,
-[data-palette^="vscode"] .theme-toggle-btn {
+[data-palette^='vscode'] .help-trigger-btn,
+[data-palette^='vscode'] .theme-toggle-btn {
   background: transparent;
   border: none;
   padding: 4px 6px;
@@ -709,18 +707,17 @@
   color: var(--theme-text-muted);
   transition: color 0.1s;
 }
-[data-palette^="vscode"] .help-trigger-btn:hover,
-[data-palette^="vscode"] .theme-toggle-btn:hover {
+[data-palette^='vscode'] .help-trigger-btn:hover,
+[data-palette^='vscode'] .theme-toggle-btn:hover {
   background: var(--theme-bg-hover);
   color: var(--theme-text-primary);
   transform: none;
 }
 
-
 /* ─────────────────────────────────────────
    4. NOTIFICATIONS — Compactes et plates
    ───────────────────────────────────────── */
-[data-palette^="vscode"] .notification-badge {
+[data-palette^='vscode'] .notification-badge {
   padding: 3px 8px;
   font-size: var(--font-sm);
   font-weight: 400;
@@ -729,12 +726,12 @@
   background: var(--theme-bg-secondary);
   color: var(--theme-text-secondary);
 }
-[data-palette^="vscode"] .notification-badge:hover {
+[data-palette^='vscode'] .notification-badge:hover {
   transform: none;
   background: var(--theme-bg-hover);
 }
 
-[data-palette^="vscode"] .notification-count {
+[data-palette^='vscode'] .notification-count {
   font-size: var(--font-xs);
   min-width: 16px;
   height: 16px;
@@ -744,42 +741,41 @@
 }
 
 /* Popup notifications */
-[data-palette^="vscode"] .notifications-popup {
+[data-palette^='vscode'] .notifications-popup {
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
 }
 
-[data-palette^="vscode"] .notifications-popup-header {
+[data-palette^='vscode'] .notifications-popup-header {
   padding: 6px 12px;
   border-bottom: 1px solid var(--theme-border);
 }
 
-[data-palette^="vscode"] .notification-item {
+[data-palette^='vscode'] .notification-item {
   padding: 4px 12px;
   border-bottom: 1px solid var(--theme-border-light);
   font-size: var(--font-sm);
 }
-[data-palette^="vscode"] .notification-item:hover {
+[data-palette^='vscode'] .notification-item:hover {
   background: var(--theme-bg-hover);
 }
-
 
 /* ─────────────────────────────────────────
    5. MODALS / DIALOGS — Style VS Code
    ───────────────────────────────────────── */
-[data-palette^="vscode"] .theme-modal,
-[data-palette^="vscode"] [class*="modal"],
-[data-palette^="vscode"] [class*="dialog"],
-[data-palette^="vscode"] [class*="Dialog"],
-[data-palette^="vscode"] [class*="Modal"] {
+[data-palette^='vscode'] .theme-modal,
+[data-palette^='vscode'] [class*='modal'],
+[data-palette^='vscode'] [class*='dialog'],
+[data-palette^='vscode'] [class*='Dialog'],
+[data-palette^='vscode'] [class*='Modal'] {
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
 }
 
-[data-palette^="vscode"] .theme-modal-header,
-[data-palette^="vscode"] [class*="modal-header"],
-[data-palette^="vscode"] [class*="dialog-header"],
-[data-palette^="vscode"] [class*="panel-header"] {
+[data-palette^='vscode'] .theme-modal-header,
+[data-palette^='vscode'] [class*='modal-header'],
+[data-palette^='vscode'] [class*='dialog-header'],
+[data-palette^='vscode'] [class*='panel-header'] {
   background: var(--vscode-titlebar-bg);
   color: var(--theme-text-primary);
   padding: 6px 12px;
@@ -787,43 +783,42 @@
   border-bottom: 1px solid var(--theme-border);
 }
 
-[data-palette^="vscode"] .theme-modal-header h2,
-[data-palette^="vscode"] .theme-modal-header h3,
-[data-palette^="vscode"] [class*="modal-header"] h2,
-[data-palette^="vscode"] [class*="modal-header"] h3,
-[data-palette^="vscode"] [class*="dialog-header"] h2,
-[data-palette^="vscode"] [class*="dialog-header"] h3 {
+[data-palette^='vscode'] .theme-modal-header h2,
+[data-palette^='vscode'] .theme-modal-header h3,
+[data-palette^='vscode'] [class*='modal-header'] h2,
+[data-palette^='vscode'] [class*='modal-header'] h3,
+[data-palette^='vscode'] [class*='dialog-header'] h2,
+[data-palette^='vscode'] [class*='dialog-header'] h3 {
   font-size: var(--font-sm);
   font-weight: 400;
   color: var(--theme-text-primary);
 }
 
 /* Modal body & footer */
-[data-palette^="vscode"] [class*="modal-body"],
-[data-palette^="vscode"] [class*="dialog-body"],
-[data-palette^="vscode"] [class*="modal-content"],
-[data-palette^="vscode"] [class*="dialog-content"] {
+[data-palette^='vscode'] [class*='modal-body'],
+[data-palette^='vscode'] [class*='dialog-body'],
+[data-palette^='vscode'] [class*='modal-content'],
+[data-palette^='vscode'] [class*='dialog-content'] {
   padding: 8px 12px;
 }
 
-[data-palette^="vscode"] [class*="modal-footer"],
-[data-palette^="vscode"] [class*="dialog-footer"],
-[data-palette^="vscode"] [class*="modal-actions"],
-[data-palette^="vscode"] [class*="dialog-actions"] {
+[data-palette^='vscode'] [class*='modal-footer'],
+[data-palette^='vscode'] [class*='dialog-footer'],
+[data-palette^='vscode'] [class*='modal-actions'],
+[data-palette^='vscode'] [class*='dialog-actions'] {
   padding: 6px 12px;
   border-top: 1px solid var(--theme-border);
   gap: 6px;
 }
 
-
 /* ─────────────────────────────────────────
    6. BOUTONS — Plats, compacts, style VS Code
    ───────────────────────────────────────── */
-[data-palette^="vscode"] button,
-[data-palette^="vscode"] .theme-btn-primary,
-[data-palette^="vscode"] .theme-btn-secondary,
-[data-palette^="vscode"] .theme-btn-danger,
-[data-palette^="vscode"] .theme-btn-success {
+[data-palette^='vscode'] button,
+[data-palette^='vscode'] .theme-btn-primary,
+[data-palette^='vscode'] .theme-btn-secondary,
+[data-palette^='vscode'] .theme-btn-danger,
+[data-palette^='vscode'] .theme-btn-success {
   font-family: inherit;
   font-size: var(--font-sm);
   font-weight: 400;
@@ -834,50 +829,49 @@
   transition: background 0.1s;
 }
 
-[data-palette^="vscode"] .theme-btn-primary {
+[data-palette^='vscode'] .theme-btn-primary {
   background: var(--theme-primary);
   color: #ffffff;
   border-color: var(--theme-primary);
 }
-[data-palette^="vscode"] .theme-btn-primary:hover {
+[data-palette^='vscode'] .theme-btn-primary:hover {
   filter: brightness(1.1);
   transform: none;
 }
 
-[data-palette^="vscode"] .theme-btn-secondary {
+[data-palette^='vscode'] .theme-btn-secondary {
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-color);
   border: var(--btn-secondary-border);
 }
-[data-palette^="vscode"] .theme-btn-secondary:hover {
+[data-palette^='vscode'] .theme-btn-secondary:hover {
   background: var(--btn-secondary-hover-bg);
   transform: none;
 }
 
-[data-palette^="vscode"] .theme-btn-danger {
+[data-palette^='vscode'] .theme-btn-danger {
   background: transparent;
   color: var(--vscode-error, #f14c4c);
   border-color: var(--vscode-error, #f14c4c);
 }
-[data-palette^="vscode"] .theme-btn-danger:hover {
+[data-palette^='vscode'] .theme-btn-danger:hover {
   background: var(--vscode-error, #f14c4c);
   color: #ffffff;
   transform: none;
 }
 
 /* Disable hover lift/scale sur TOUS les boutons */
-[data-palette^="vscode"] button:hover,
-[data-palette^="vscode"] [class*="btn"]:hover {
+[data-palette^='vscode'] button:hover,
+[data-palette^='vscode'] [class*='btn']:hover {
   transform: none !important;
 }
-
 
 /* ─────────────────────────────────────────
    7. INPUTS / SELECT / TEXTAREA — Style VS Code
    ───────────────────────────────────────── */
-[data-palette^="vscode"] input,
-[data-palette^="vscode"] select,
-[data-palette^="vscode"] textarea {
+[data-palette^='vscode'] input,
+[data-palette^='vscode'] select,
+[data-palette^='vscode'] textarea {
   background: var(--vscode-input-bg);
   color: var(--vscode-input-fg, var(--theme-text-primary));
   border: 1px solid var(--vscode-input-border, var(--theme-border));
@@ -887,13 +881,13 @@
   outline: none;
   transition: border-color 0.1s;
 }
-[data-palette^="vscode"] input:focus,
-[data-palette^="vscode"] select:focus,
-[data-palette^="vscode"] textarea:focus {
+[data-palette^='vscode'] input:focus,
+[data-palette^='vscode'] select:focus,
+[data-palette^='vscode'] textarea:focus {
   border-color: var(--vscode-input-focus-border, var(--theme-primary));
 }
 
-[data-palette^="vscode"] select {
+[data-palette^='vscode'] select {
   -webkit-appearance: none;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23808080' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
@@ -902,18 +896,17 @@
   padding-right: 22px;
 }
 
-
 /* ─────────────────────────────────────────
    8. TABLES — Compactes, bordures fines, pas de zebra
    ───────────────────────────────────────── */
-[data-palette^="vscode"] table {
+[data-palette^='vscode'] table {
   border-collapse: collapse;
   width: 100%;
   font-size: var(--font-sm);
 }
 
-[data-palette^="vscode"] thead th,
-[data-palette^="vscode"] thead td {
+[data-palette^='vscode'] thead th,
+[data-palette^='vscode'] thead td {
   background: var(--theme-bg-secondary);
   color: var(--theme-text-secondary);
   font-weight: 600;
@@ -925,86 +918,83 @@
   text-align: left;
 }
 
-[data-palette^="vscode"] tbody td {
+[data-palette^='vscode'] tbody td {
   padding: 3px 8px;
   border-bottom: 1px solid var(--theme-border-light);
   color: var(--theme-text-primary);
   font-size: var(--font-sm);
 }
 
-[data-palette^="vscode"] tbody tr:hover {
+[data-palette^='vscode'] tbody tr:hover {
   background: var(--theme-bg-hover);
 }
 
 /* Pas de zebra stripes */
-[data-palette^="vscode"] tbody tr:nth-child(even) {
+[data-palette^='vscode'] tbody tr:nth-child(even) {
   background: transparent;
 }
-[data-palette^="vscode"] tbody tr:nth-child(even):hover {
+[data-palette^='vscode'] tbody tr:nth-child(even):hover {
   background: var(--theme-bg-hover);
 }
-
 
 /* ─────────────────────────────────────────
    9. CARDS / PANELS — Collés, bordures fines
    ───────────────────────────────────────── */
-[data-palette^="vscode"] [class*="panel"],
-[data-palette^="vscode"] [class*="Panel"] {
+[data-palette^='vscode'] [class*='panel'],
+[data-palette^='vscode'] [class*='Panel'] {
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
   margin: 0;
 }
 
 /* Supprimer les marges entre sections */
-[data-palette^="vscode"] #main-content {
+[data-palette^='vscode'] #main-content {
   gap: 0;
 }
 
-[data-palette^="vscode"] #main-content > * {
+[data-palette^='vscode'] #main-content > * {
   margin: 0;
 }
 
 /* Cards */
-[data-palette^="vscode"] [class*="card"],
-[data-palette^="vscode"] [class*="Card"] {
+[data-palette^='vscode'] [class*='card'],
+[data-palette^='vscode'] [class*='Card'] {
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
   padding: 8px;
 }
 
-
 /* ─────────────────────────────────────────
    10. SCROLLBARS — Fines, sombres
    ───────────────────────────────────────── */
-[data-palette^="vscode"] * {
+[data-palette^='vscode'] * {
   scrollbar-width: thin;
   scrollbar-color: var(--vscode-scrollbar) transparent;
 }
 
-[data-palette^="vscode"] ::-webkit-scrollbar {
+[data-palette^='vscode'] ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-[data-palette^="vscode"] ::-webkit-scrollbar-track {
+[data-palette^='vscode'] ::-webkit-scrollbar-track {
   background: transparent;
 }
-[data-palette^="vscode"] ::-webkit-scrollbar-thumb {
+[data-palette^='vscode'] ::-webkit-scrollbar-thumb {
   background: var(--vscode-scrollbar);
 }
-[data-palette^="vscode"] ::-webkit-scrollbar-thumb:hover {
+[data-palette^='vscode'] ::-webkit-scrollbar-thumb:hover {
   background: var(--vscode-scrollbar-hover);
 }
-[data-palette^="vscode"] ::-webkit-scrollbar-corner {
+[data-palette^='vscode'] ::-webkit-scrollbar-corner {
   background: transparent;
 }
-
 
 /* ─────────────────────────────────────────
    11. SUPPRESSION EFFETS — Gradients, transitions, animations
    ───────────────────────────────────────── */
 
 /* Skip link */
-[data-palette^="vscode"] .skip-link {
+[data-palette^='vscode'] .skip-link {
   background: var(--theme-primary);
   color: #fff;
   padding: 4px 12px;
@@ -1012,13 +1002,13 @@
 }
 
 /* Disable pulse/bounce animations sur les badges */
-[data-palette^="vscode"] .notification-badge,
-[data-palette^="vscode"] .notification-badge.unified,
-[data-palette^="vscode"] .notification-badge.immobilized,
-[data-palette^="vscode"] .notification-badge.reported,
-[data-palette^="vscode"] .notification-badge.scheduled,
-[data-palette^="vscode"] .notification-badge.pending,
-[data-palette^="vscode"] .notification-badge.conflict {
+[data-palette^='vscode'] .notification-badge,
+[data-palette^='vscode'] .notification-badge.unified,
+[data-palette^='vscode'] .notification-badge.immobilized,
+[data-palette^='vscode'] .notification-badge.reported,
+[data-palette^='vscode'] .notification-badge.scheduled,
+[data-palette^='vscode'] .notification-badge.pending,
+[data-palette^='vscode'] .notification-badge.conflict {
   animation: none;
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border);
@@ -1026,109 +1016,103 @@
 }
 
 /* Loading overlay minimaliste */
-[data-palette^="vscode"] .loading-overlay {
+[data-palette^='vscode'] .loading-overlay {
   background: var(--theme-overlay);
   backdrop-filter: none;
 }
 
-
 /* ─────────────────────────────────────────
    12. CALENDAR / PLANNING — Dense view
    ───────────────────────────────────────── */
-[data-palette^="vscode"] .calendar-with-vehicle-panel {
+[data-palette^='vscode'] .calendar-with-vehicle-panel {
   gap: 0;
 }
 
-[data-palette^="vscode"] [class*="calendar"] th,
-[data-palette^="vscode"] [class*="Calendar"] th {
+[data-palette^='vscode'] [class*='calendar'] th,
+[data-palette^='vscode'] [class*='Calendar'] th {
   padding: 2px 4px;
   font-size: var(--font-xs);
   font-weight: 600;
 }
 
-[data-palette^="vscode"] [class*="calendar"] td,
-[data-palette^="vscode"] [class*="Calendar"] td {
+[data-palette^='vscode'] [class*='calendar'] td,
+[data-palette^='vscode'] [class*='Calendar'] td {
   padding: 1px 2px;
   font-size: var(--font-sm);
 }
 
-
 /* ─────────────────────────────────────────
    13. MANAGEMENT PANEL OVERRIDES
    ───────────────────────────────────────── */
-[data-palette^="vscode"] [class*="management"],
-[data-palette^="vscode"] [class*="Management"] {
+[data-palette^='vscode'] [class*='management'],
+[data-palette^='vscode'] [class*='Management'] {
   border: 1px solid var(--theme-border);
 }
-
 
 /* ─────────────────────────────────────────
    14. TOOLTIP & DROPDOWN — Style Command Palette
    ───────────────────────────────────────── */
-[data-palette^="vscode"] [class*="dropdown"],
-[data-palette^="vscode"] [class*="Dropdown"],
-[data-palette^="vscode"] [class*="popover"],
-[data-palette^="vscode"] [class*="Popover"],
-[data-palette^="vscode"] [class*="tooltip"],
-[data-palette^="vscode"] [class*="menu"],
-[data-palette^="vscode"] [class*="Menu"] {
+[data-palette^='vscode'] [class*='dropdown'],
+[data-palette^='vscode'] [class*='Dropdown'],
+[data-palette^='vscode'] [class*='popover'],
+[data-palette^='vscode'] [class*='Popover'],
+[data-palette^='vscode'] [class*='tooltip'],
+[data-palette^='vscode'] [class*='menu'],
+[data-palette^='vscode'] [class*='Menu'] {
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
   font-size: var(--font-sm);
 }
 
-[data-palette^="vscode"] [class*="dropdown"] [class*="item"],
-[data-palette^="vscode"] [class*="menu"] [class*="item"],
-[data-palette^="vscode"] [class*="Menu"] [class*="item"] {
+[data-palette^='vscode'] [class*='dropdown'] [class*='item'],
+[data-palette^='vscode'] [class*='menu'] [class*='item'],
+[data-palette^='vscode'] [class*='Menu'] [class*='item'] {
   padding: 4px 12px;
   font-size: var(--font-sm);
   cursor: pointer;
 }
-[data-palette^="vscode"] [class*="dropdown"] [class*="item"]:hover,
-[data-palette^="vscode"] [class*="menu"] [class*="item"]:hover,
-[data-palette^="vscode"] [class*="Menu"] [class*="item"]:hover {
+[data-palette^='vscode'] [class*='dropdown'] [class*='item']:hover,
+[data-palette^='vscode'] [class*='menu'] [class*='item']:hover,
+[data-palette^='vscode'] [class*='Menu'] [class*='item']:hover {
   background: var(--theme-bg-hover);
 }
-
 
 /* ─────────────────────────────────────────
    15. USER MENU / AVATAR — Compact
    ───────────────────────────────────────── */
-[data-palette^="vscode"] [class*="avatar"],
-[data-palette^="vscode"] [class*="Avatar"] {
+[data-palette^='vscode'] [class*='avatar'],
+[data-palette^='vscode'] [class*='Avatar'] {
   border: 1px solid var(--theme-border);
 }
 
-[data-palette^="vscode"] [class*="user-menu"],
-[data-palette^="vscode"] [class*="UserMenu"] {
+[data-palette^='vscode'] [class*='user-menu'],
+[data-palette^='vscode'] [class*='UserMenu'] {
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
 }
 
-
 /* ─────────────────────────────────────────
    16. TAGS / BADGES — Plats
    ───────────────────────────────────────── */
-[data-palette^="vscode"] [class*="tag"],
-[data-palette^="vscode"] [class*="Tag"],
-[data-palette^="vscode"] [class*="badge"],
-[data-palette^="vscode"] [class*="Badge"],
-[data-palette^="vscode"] [class*="chip"],
-[data-palette^="vscode"] [class*="Chip"] {
+[data-palette^='vscode'] [class*='tag'],
+[data-palette^='vscode'] [class*='Tag'],
+[data-palette^='vscode'] [class*='badge'],
+[data-palette^='vscode'] [class*='Badge'],
+[data-palette^='vscode'] [class*='chip'],
+[data-palette^='vscode'] [class*='Chip'] {
   font-size: var(--font-xs);
   padding: 1px 6px;
   border: 1px solid var(--theme-border);
   font-weight: 400;
 }
 
-
 /* ─────────────────────────────────────────
    17. SEARCH BAR — VS Code style
    ───────────────────────────────────────── */
-[data-palette^="vscode"] [class*="search"] input,
-[data-palette^="vscode"] [class*="Search"] input,
-[data-palette^="vscode"] [class*="filter"] input,
-[data-palette^="vscode"] [class*="Filter"] input {
+[data-palette^='vscode'] [class*='search'] input,
+[data-palette^='vscode'] [class*='Search'] input,
+[data-palette^='vscode'] [class*='filter'] input,
+[data-palette^='vscode'] [class*='Filter'] input {
   background: var(--vscode-input-bg);
   border: 1px solid var(--vscode-input-border, var(--theme-border));
   color: var(--theme-text-primary);
@@ -1136,11 +1120,10 @@
   padding: 3px 8px;
 }
 
-
 /* ─────────────────────────────────────────
    18. STATUS BAR — Barre de statut en bas
    ───────────────────────────────────────── */
-[data-palette^="vscode"] .vsc-statusbar {
+[data-palette^='vscode'] .vsc-statusbar {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -1157,26 +1140,25 @@
   border-top: none;
 }
 
-
 /* ─────────────────────────────────────────
    19. RESPONSIVE — Mobile dense
    ───────────────────────────────────────── */
 @media (max-width: 768px) {
-  [data-palette^="vscode"] .header {
+  [data-palette^='vscode'] .header {
     padding: 0 8px;
   }
 
-  [data-palette^="vscode"] .header-content {
+  [data-palette^='vscode'] .header-content {
     min-height: 30px;
     gap: 4px;
   }
 
-  [data-palette^="vscode"] .header-title-container .module-tab {
+  [data-palette^='vscode'] .header-title-container .module-tab {
     padding: 4px 8px;
     font-size: var(--font-sm);
   }
 
-  [data-palette^="vscode"] .header-logo {
+  [data-palette^='vscode'] .header-logo {
     max-height: 18px;
   }
 }

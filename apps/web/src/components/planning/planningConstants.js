@@ -8,7 +8,9 @@ export const SECTIONS = {
 };
 
 export const EVENT_SECTION_KEYS = ['rdv', 'evenements'];
-export const OPS_SECTION_KEYS = Object.keys(SECTIONS).filter(k => !EVENT_SECTION_KEYS.includes(k));
+export const OPS_SECTION_KEYS = Object.keys(SECTIONS).filter(
+  (k) => !EVENT_SECTION_KEYS.includes(k),
+);
 export const EVENT_TYPES = EVENT_TYPE_COLORS;
 
 // ═══ Mapping helpers ═══
@@ -70,7 +72,11 @@ export const getWeekDays = (dateStr) => {
 };
 
 // ═══ Normalisation des sections ═══
-export const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation: 'courses' };
+export const SECTION_ALIASES = {
+  enlevement: 'courses',
+  retour: 'courses',
+  recuperation: 'courses',
+};
 export const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
 
 // ═══ Extraction numéro d'affaire ═══

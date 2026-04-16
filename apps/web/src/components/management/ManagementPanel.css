@@ -295,8 +295,13 @@
 }
 
 @keyframes badge-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .management-content {
@@ -599,7 +604,9 @@
   justify-content: center;
   font-size: var(--font-sm);
   z-index: var(--z-dropdown);
-  box-shadow: 0 0 0 2px var(--theme-bg-card), 0 2px 6px var(--danger-tint-dark);
+  box-shadow:
+    0 0 0 2px var(--theme-bg-card),
+    0 2px 6px var(--danger-tint-dark);
   animation: pulse-danger 1.5s ease-in-out infinite;
   cursor: help;
 }
@@ -1140,15 +1147,20 @@
 }
 
 @keyframes pulse-danger {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 0 2px var(--theme-bg-card), 0 2px 6px var(--danger-tint-dark);
+    box-shadow:
+      0 0 0 2px var(--theme-bg-card),
+      0 2px 6px var(--danger-tint-dark);
   }
   50% {
     opacity: 0.7;
     transform: scale(1.1);
-    box-shadow: 0 0 0 2px var(--theme-bg-card), 0 3px 10px rgba(220, 38, 38, 0.6);
+    box-shadow:
+      0 0 0 2px var(--theme-bg-card),
+      0 3px 10px rgba(220, 38, 38, 0.6);
   }
 }
 
@@ -1318,58 +1330,57 @@
    DARK THEME OVERRIDES — ManagementPanel.css
    ═══════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .management-tabs {
+[data-theme='dark'] .management-tabs {
   background: linear-gradient(to bottom, var(--theme-bg-card), var(--theme-bg-secondary));
 }
 
-[data-theme="dark"] .drag-handle {
+[data-theme='dark'] .drag-handle {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .item-registration {
+[data-theme='dark'] .item-registration {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .item-brand {
+[data-theme='dark'] .item-brand {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .item-detail {
+[data-theme='dark'] .item-detail {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .sync-info p {
+[data-theme='dark'] .sync-info p {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .sync-status.success {
+[data-theme='dark'] .sync-status.success {
   background: rgba(34, 197, 94, 0.15);
   color: var(--theme-success);
 }
 
-[data-theme="dark"] .sync-status.info {
+[data-theme='dark'] .sync-status.info {
   background: var(--primary-tint-medium);
   color: var(--theme-info);
 }
 
-[data-theme="dark"] .sync-status.error {
+[data-theme='dark'] .sync-status.error {
   background: var(--theme-danger-border);
   color: var(--theme-danger);
 }
 
-[data-theme="dark"] .sync-instructions {
+[data-theme='dark'] .sync-instructions {
   border-color: var(--theme-warning);
 }
 
-[data-theme="dark"] .sync-instructions h4 {
+[data-theme='dark'] .sync-instructions h4 {
   color: var(--theme-warning);
 }
 
-[data-theme="dark"] .sync-instructions ol {
+[data-theme='dark'] .sync-instructions ol {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .sync-tips ul {
+[data-theme='dark'] .sync-tips ul {
   color: var(--theme-text-secondary);
 }
-

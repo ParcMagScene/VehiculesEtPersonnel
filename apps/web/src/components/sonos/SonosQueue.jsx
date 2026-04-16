@@ -13,9 +13,7 @@ function SonosQueue({ queue, queueLoading, nowPlaying }) {
       <div className="sonos-queue-head">
         <ListMusic size={15} />
         <span className="sonos-queue-title">File de lecture</span>
-        {queue.length > 0 && (
-          <span className="sonos-queue-count">{queue.length}</span>
-        )}
+        {queue.length > 0 && <span className="sonos-queue-count">{queue.length}</span>}
       </div>
 
       <div className="sonos-queue-list">

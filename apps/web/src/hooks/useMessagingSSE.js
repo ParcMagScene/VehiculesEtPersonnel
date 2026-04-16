@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../utils/api';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../utils/notificationSound';
+import {
+  playNotificationSound,
+  requestNotificationPermission,
+  showBrowserNotification,
+} from '../utils/notificationSound';
 
 /**
  * Hook SSE pour la messagerie temps réel — remplace le polling 10s.
@@ -13,23 +17,26 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
   const fallbackIntervalRef = useRef(null);
   const retriesRef = useRef(0);
 
-  const handleUnreadUpdate = useCallback((newCount) => {
-    const prevCount = prevUnreadRef.current;
-    if (newCount > prevCount && prevCount !== -1) {
-      const diff = newCount - prevCount;
+  const handleUnreadUpdate = useCallback(
+    (newCount) => {
+      const prevCount = prevUnreadRef.current;
+      if (newCount > prevCount && prevCount !== -1) {
+        const diff = newCount - prevCount;
 
-      playNotificationSound();
+        playNotificationSound();
 
-      if (!isMessagingOpen) {
-        showBrowserNotification(
-          `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
-          { body: 'Cliquez pour ouvrir la messagerie eM@g' }
-        );
+        if (!isMessagingOpen) {
+          showBrowserNotification(
+            `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
+            { body: 'Cliquez pour ouvrir la messagerie eM@g' },
+          );
+        }
       }
-    }
-    prevUnreadRef.current = newCount;
-    setUnreadMsgCount(newCount);
-  }, [isMessagingOpen]);
+      prevUnreadRef.current = newCount;
+      setUnreadMsgCount(newCount);
+    },
+    [isMessagingOpen],
+  );
 
   // Fallback polling
   const startPolling = useCallback(() => {
@@ -38,7 +45,9 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
       try {
         const data = await api.getUnreadCount();
         handleUnreadUpdate(data.unread || 0);
-      } catch { /* silencieux */ }
+      } catch {
+        /* silencieux */
+      }
     };
     poll();
     fallbackIntervalRef.current = setInterval(poll, 10000);
@@ -70,14 +79,18 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
         try {
           const data = JSON.parse(e.data);
           handleUnreadUpdate(data.unread || 0);
-        } catch { /* parse error */ }
+        } catch {
+          /* parse error */
+        }
       });
 
       es.addEventListener('new_message', (e) => {
         try {
           const data = JSON.parse(e.data);
           if (onNewMessage) onNewMessage(data);
-        } catch { /* parse error */ }
+        } catch {
+          /* parse error */
+        }
       });
 
       es.onopen = () => {

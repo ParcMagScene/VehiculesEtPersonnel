@@ -5,7 +5,9 @@
   right: 0;
   bottom: 0;
   background: var(--theme-overlay);
-  backdrop-filter: blur(4px);  isolation: isolate;  display: flex;
+  backdrop-filter: blur(4px);
+  isolation: isolate;
+  display: flex;
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
@@ -738,28 +740,28 @@ section h3 {
   .event-details-modal .event-info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .event-details-modal {
     max-width: 100%;
     max-height: 100dvh;
     border-radius: 0;
   }
-  
+
   .event-details-modal .event-details-header {
     border-radius: 0;
   }
-  
+
   .event-details-modal .event-details-footer {
     border-radius: 0;
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .event-details-modal .footer-actions {
     width: 100%;
     flex-direction: column;
   }
-  
+
   .event-details-modal .btn-secondary,
   .event-details-modal .btn-link {
     width: 100%;

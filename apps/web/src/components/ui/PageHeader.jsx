@@ -18,7 +18,11 @@ function PageHeader({
 
   return (
     <header className={cls}>
-      {breadcrumb && <nav className="ui-page-header-breadcrumb" aria-label="Breadcrumb">{breadcrumb}</nav>}
+      {breadcrumb && (
+        <nav className="ui-page-header-breadcrumb" aria-label="Breadcrumb">
+          {breadcrumb}
+        </nav>
+      )}
       <div className="ui-page-header-row">
         <div className="ui-page-header-title-group">
           {icon && <span className="ui-page-header-icon">{icon}</span>}

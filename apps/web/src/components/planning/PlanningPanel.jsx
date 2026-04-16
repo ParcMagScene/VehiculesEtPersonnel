@@ -11,11 +11,19 @@ const DisplayDashboardPanel = lazy(() => import('../DisplayDashboard/DisplayDash
 
 // ═══ Composant Principal ═══
 function PlanningPanel({
-  currentUser, googleEvents = [], onNavigateToEntity,
+  currentUser,
+  googleEvents = [],
+  onNavigateToEntity,
   // Props Personnel (passées au sous-onglet Personnel)
-  personnelRefreshKey, view, setView, currentDate, setCurrentDate,
-  navigateToPersonId, onNavigateToPersonHandled,
-  quickAssignmentSlot, onQuickAssignmentHandled,
+  personnelRefreshKey,
+  view,
+  setView,
+  currentDate,
+  setCurrentDate,
+  navigateToPersonId,
+  onNavigateToPersonHandled,
+  quickAssignmentSlot,
+  onQuickAssignmentHandled,
 }) {
   const _toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('personnel');
@@ -32,7 +40,10 @@ function PlanningPanel({
   }, [navigateToPersonId, quickAssignmentSlot]);
 
   useEffect(() => {
-    api.getPlanningStats().then(setStats).catch(() => null);
+    api
+      .getPlanningStats()
+      .then(setStats)
+      .catch(() => null);
   }, [activeSubTab]);
 
   const subTabs = [
@@ -45,10 +56,12 @@ function PlanningPanel({
     <div className="planning-panel">
       {/* Sub-tabs (fusionnés avec stats) */}
       <div className="sub-tabs">
-        {subTabs.map(tab => {
+        {subTabs.map((tab) => {
           const Icon = tab.icon;
           return (
-            <Button variant="ghost"               key={tab.id}
+            <Button
+              variant="ghost"
+              key={tab.id}
               className={`sub-tab ${activeSubTab === tab.id ? 'active' : ''}`}
               onClick={() => startTransition(() => setActiveSubTab(tab.id))}
             >
@@ -92,7 +105,12 @@ function PlanningPanel({
         )}
         {activeSubTab === 'tasks' && (
           <Suspense fallback={null}>
-            <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} googleEvents={googleEvents} onNavigateToEntity={onNavigateToEntity} />
+            <TaskPlanningPanel
+              currentUser={currentUser}
+              refreshKey={displayRefreshKey}
+              googleEvents={googleEvents}
+              onNavigateToEntity={onNavigateToEntity}
+            />
           </Suspense>
         )}
         {activeSubTab === 'dashboard' && (

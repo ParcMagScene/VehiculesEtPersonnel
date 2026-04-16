@@ -4,12 +4,7 @@
 
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Tooltip, useMap } from 'react-leaflet';
-import {
-  TILE_LIGHT,
-  TILE_DARK,
-  MAG_SCENE,
-  filterNearby,
-} from './map-utils';
+import { TILE_LIGHT, TILE_DARK, MAG_SCENE, filterNearby } from './map-utils';
 import { createLocationIcon, createHQIcon } from './MapMarkers';
 import MapPopup from './MapPopup';
 import MapSearchControl from './MapSearchControl';
@@ -26,8 +21,8 @@ function FitToRadius({ radius }) {
     const metersPerDeg = earthCircumference / 360;
     const latDelta = (radius / metersPerDeg) * 1.3;
     const bounds = [
-      [center[0] - latDelta, center[1] - latDelta / Math.cos(center[0] * Math.PI / 180)],
-      [center[0] + latDelta, center[1] + latDelta / Math.cos(center[0] * Math.PI / 180)],
+      [center[0] - latDelta, center[1] - latDelta / Math.cos((center[0] * Math.PI) / 180)],
+      [center[0] + latDelta, center[1] + latDelta / Math.cos((center[0] * Math.PI) / 180)],
     ];
     map.fitBounds(bounds, { padding: [20, 20], animate: true });
   }, [radius, map]);
@@ -41,7 +36,7 @@ export default function MapLocal({ locations, darkMode = false, onEditLocation }
 
   const nearbyLocations = useMemo(
     () => filterNearby(locations, MAG_SCENE, radius),
-    [locations, radius]
+    [locations, radius],
   );
 
   // Directions alternées pour éviter le chevauchement des bulles
@@ -49,16 +44,18 @@ export default function MapLocal({ locations, darkMode = false, onEditLocation }
   const DIR_OFFSETS = { top: [0, -24], right: [14, -4], bottom: [0, 16], left: [-14, -4] };
   const sortedNearby = useMemo(
     () => [...nearbyLocations].sort((a, b) => b.lat - a.lat),
-    [nearbyLocations]
+    [nearbyLocations],
   );
 
-  const formatRadius = (r) => r >= 1000 ? `${r / 1000} km` : `${r} m`;
+  const formatRadius = (r) => (r >= 1000 ? `${r / 1000} km` : `${r} m`);
 
   return (
     <div className="map-wrapper">
       {/* Contrôle du rayon */}
       <div className="map-radius-control">
-        <label className="map-radius-label">Rayon : <strong>{formatRadius(radius)}</strong></label>
+        <label className="map-radius-label">
+          Rayon : <strong>{formatRadius(radius)}</strong>
+        </label>
         <input
           type="range"
           className="map-radius-slider"
@@ -132,7 +129,12 @@ export default function MapLocal({ locations, darkMode = false, onEditLocation }
               position={[loc.lat, loc.lng]}
               icon={loc.isCompanyLocation ? createHQIcon() : createLocationIcon(loc.type)}
             >
-              <Tooltip permanent direction={dir} offset={DIR_OFFSETS[dir]} className="map-name-tooltip">
+              <Tooltip
+                permanent
+                direction={dir}
+                offset={DIR_OFFSETS[dir]}
+                className="map-name-tooltip"
+              >
                 {loc.name}
               </Tooltip>
               <MapPopup location={loc} onEdit={onEditLocation} />
@@ -142,7 +144,8 @@ export default function MapLocal({ locations, darkMode = false, onEditLocation }
       </MapContainer>
 
       <div className="map-local-info">
-        {nearbyLocations.length} lieu{nearbyLocations.length !== 1 ? 'x' : ''} dans un rayon de {formatRadius(radius)}
+        {nearbyLocations.length} lieu{nearbyLocations.length !== 1 ? 'x' : ''} dans un rayon de{' '}
+        {formatRadius(radius)}
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ describe('Select', () => {
     const { container } = render(
       <Select>
         <option value="x">X</option>
-      </Select>
+      </Select>,
     );
     expect(container.querySelector('.ui-select')).toBeInTheDocument();
     expect(container.querySelector('.ui-select-wrapper')).toBeNull();
@@ -27,7 +27,7 @@ describe('Select', () => {
     render(
       <Select ref={ref}>
         <option value="1">Un</option>
-      </Select>
+      </Select>,
     );
     expect(ref.current).toBeInstanceOf(HTMLSelectElement);
   });
@@ -36,7 +36,7 @@ describe('Select', () => {
     const { container } = render(
       <Select size="lg">
         <option value="1">Un</option>
-      </Select>
+      </Select>,
     );
     expect(container.querySelector('.ui-select--lg')).toBeInTheDocument();
   });
@@ -45,7 +45,7 @@ describe('Select', () => {
     const { container } = render(
       <Select error>
         <option value="1">Un</option>
-      </Select>
+      </Select>,
     );
     expect(container.querySelector('.ui-select--error')).toBeInTheDocument();
     expect(container.querySelector('.ui-select')).toHaveAttribute('aria-invalid', 'true');
@@ -55,7 +55,7 @@ describe('Select', () => {
     const { container } = render(
       <Select fullWidth>
         <option value="1">Un</option>
-      </Select>
+      </Select>,
     );
     expect(container.querySelector('.ui-select--full')).toBeInTheDocument();
   });
@@ -64,7 +64,7 @@ describe('Select', () => {
     const { container } = render(
       <Select disabled>
         <option value="1">Un</option>
-      </Select>
+      </Select>,
     );
     expect(container.querySelector('.ui-select--disabled')).toBeInTheDocument();
     expect(container.querySelector('.ui-select')).toBeDisabled();
@@ -146,7 +146,7 @@ describe('Select', () => {
     const { container } = render(
       <Select className="my-class">
         <option value="1">Un</option>
-      </Select>
+      </Select>,
     );
     expect(container.querySelector('.ui-select.my-class')).toBeInTheDocument();
   });

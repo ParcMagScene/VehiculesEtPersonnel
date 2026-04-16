@@ -165,12 +165,30 @@
   color: var(--theme-warning-text);
 }
 
-.pdp-type-badge.type-intermittent { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
-.pdp-type-badge.type-CDD { background: var(--theme-bg-indigo-light); color: var(--theme-info-text-alt); }
-.pdp-type-badge.type-freelance { background: var(--theme-success-bg); color: var(--theme-success-text-alt); }
-.pdp-type-badge.type-prestataire { background: var(--theme-danger-bg); color: var(--theme-danger-text); }
-.pdp-type-badge.type-auto-entrepreneur { background: var(--theme-warning-bg); color: var(--theme-orange-text); }
-.pdp-type-badge.type-entreprise { background: var(--theme-purple-bg); color: var(--theme-primary-dark); }
+.pdp-type-badge.type-intermittent {
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
+}
+.pdp-type-badge.type-CDD {
+  background: var(--theme-bg-indigo-light);
+  color: var(--theme-info-text-alt);
+}
+.pdp-type-badge.type-freelance {
+  background: var(--theme-success-bg);
+  color: var(--theme-success-text-alt);
+}
+.pdp-type-badge.type-prestataire {
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+}
+.pdp-type-badge.type-auto-entrepreneur {
+  background: var(--theme-warning-bg);
+  color: var(--theme-orange-text);
+}
+.pdp-type-badge.type-entreprise {
+  background: var(--theme-purple-bg);
+  color: var(--theme-primary-dark);
+}
 
 .pdp-inactive-badge {
   background: var(--theme-bg-tertiary) !important;
@@ -229,7 +247,11 @@
   border-radius: var(--radius-xl);
   font-size: var(--font-xs);
   font-weight: 600;
-  background: color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 12%, var(--theme-bg-card));
+  background: color-mix(
+    in srgb,
+    var(--chip-color, var(--theme-text-gray)) 12%,
+    var(--theme-bg-card)
+  );
   color: var(--chip-color, var(--theme-text-gray));
   border: 1px solid color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 25%, transparent);
 }

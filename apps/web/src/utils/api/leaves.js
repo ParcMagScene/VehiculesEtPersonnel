@@ -2,7 +2,6 @@
 
 export function registerLeavesMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     async getLeaveTypes() {
       return this.request('/leaves/types', { skipCamelCase: true });
     },
@@ -11,7 +10,10 @@ export function registerLeavesMethods(ApiClient) {
       return this.request(`/leaves/holidays${qs}`);
     },
     async addPublicHoliday(date, name) {
-      return this.request('/leaves/holidays', { method: 'POST', body: JSON.stringify({ date, name }) });
+      return this.request('/leaves/holidays', {
+        method: 'POST',
+        body: JSON.stringify({ date, name }),
+      });
     },
     async deletePublicHoliday(id) {
       return this.request(`/leaves/holidays/${id}`, { method: 'DELETE' });
@@ -48,13 +50,19 @@ export function registerLeavesMethods(ApiClient) {
       return this.request(`/leaves/${id}/decision`, { method: 'PUT', body: JSON.stringify(data) });
     },
     async signLeave(id, signature, role) {
-      return this.request(`/leaves/${id}/sign`, { method: 'PUT', body: JSON.stringify({ signature, role }) });
+      return this.request(`/leaves/${id}/sign`, {
+        method: 'PUT',
+        body: JSON.stringify({ signature, role }),
+      });
     },
     async cancelLeave(id) {
       return this.request(`/leaves/${id}/cancel`, { method: 'PUT' });
     },
     async uploadLeaveJustification(id, filename, data) {
-      return this.request(`/leaves/${id}/justification`, { method: 'POST', body: JSON.stringify({ filename, data }) });
+      return this.request(`/leaves/${id}/justification`, {
+        method: 'POST',
+        body: JSON.stringify({ filename, data }),
+      });
     },
     async getLeaveBalances(params = {}) {
       const query = new URLSearchParams();

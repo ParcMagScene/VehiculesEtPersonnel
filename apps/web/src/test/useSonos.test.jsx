@@ -103,7 +103,9 @@ describe('useSonos', () => {
 
   it('loads zones when sonosIP is set', async () => {
     mockApi.getSonosConfig.mockResolvedValue({ sonosIP: '192.168.1.50' });
-    mockApi.getSonosZones.mockResolvedValue({ zones: [{ name: 'Salon', coordinator: '192.168.1.50', members: ['a'] }] });
+    mockApi.getSonosZones.mockResolvedValue({
+      zones: [{ name: 'Salon', coordinator: '192.168.1.50', members: ['a'] }],
+    });
 
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
 
@@ -121,8 +123,12 @@ describe('useSonos', () => {
 
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    act(() => { result.current.setSonosIP('192.168.1.99'); });
-    await act(async () => { await result.current.saveConfig(); });
+    act(() => {
+      result.current.setSonosIP('192.168.1.99');
+    });
+    await act(async () => {
+      await result.current.saveConfig();
+    });
 
     expect(mockApi.saveSonosConfig).toHaveBeenCalledWith('192.168.1.99');
     expect(mockToast.success).toHaveBeenCalledWith('Configuration Sonos enregistrée');
@@ -135,7 +141,9 @@ describe('useSonos', () => {
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    await act(async () => { await result.current.saveConfig(); });
+    await act(async () => {
+      await result.current.saveConfig();
+    });
     expect(mockToast.error).toHaveBeenCalledWith('Erreur enregistrement');
   });
 
@@ -146,7 +154,9 @@ describe('useSonos', () => {
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    await act(async () => { await result.current.play(); });
+    await act(async () => {
+      await result.current.play();
+    });
     expect(mockApi.sonosPlay).toHaveBeenCalledWith('192.168.1.50');
   });
 
@@ -157,7 +167,9 @@ describe('useSonos', () => {
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    await act(async () => { await result.current.pause(); });
+    await act(async () => {
+      await result.current.pause();
+    });
     expect(mockApi.sonosPause).toHaveBeenCalledWith('192.168.1.50');
   });
 
@@ -169,10 +181,14 @@ describe('useSonos', () => {
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    await act(async () => { await result.current.next(); });
+    await act(async () => {
+      await result.current.next();
+    });
     expect(mockApi.sonosNext).toHaveBeenCalledWith('10.0.0.1');
 
-    await act(async () => { await result.current.previous(); });
+    await act(async () => {
+      await result.current.previous();
+    });
     expect(mockApi.sonosPrevious).toHaveBeenCalledWith('10.0.0.1');
   });
 
@@ -183,7 +199,9 @@ describe('useSonos', () => {
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    await act(async () => { await result.current.setVolume(75); });
+    await act(async () => {
+      await result.current.setVolume(75);
+    });
     expect(mockApi.sonosSetVolume).toHaveBeenCalledWith('10.0.0.1', 75);
   });
 
@@ -195,21 +213,29 @@ describe('useSonos', () => {
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    await act(async () => { await result.current.mute(); });
+    await act(async () => {
+      await result.current.mute();
+    });
     expect(mockApi.sonosMute).toHaveBeenCalledWith('10.0.0.1');
 
-    await act(async () => { await result.current.unmute(); });
+    await act(async () => {
+      await result.current.unmute();
+    });
     expect(mockApi.sonosUnmute).toHaveBeenCalledWith('10.0.0.1');
   });
 
   it('loadFavorites fetches and stores favorites', async () => {
     mockApi.getSonosConfig.mockResolvedValue({ sonosIP: '' });
-    mockApi.getSonosFavorites.mockResolvedValue({ favorites: [{ title: 'Radio 1', uri: 'x-rincon://1' }] });
+    mockApi.getSonosFavorites.mockResolvedValue({
+      favorites: [{ title: 'Radio 1', uri: 'x-rincon://1' }],
+    });
 
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    await act(async () => { await result.current.loadFavorites(); });
+    await act(async () => {
+      await result.current.loadFavorites();
+    });
     expect(result.current.favorites).toHaveLength(1);
     expect(result.current.favorites[0].title).toBe('Radio 1');
   });
@@ -222,8 +248,14 @@ describe('useSonos', () => {
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
     const fav = { title: 'Jazz FM', uri: 'x-rincon://jazz' };
-    await act(async () => { await result.current.playFavorite(fav); });
-    expect(mockApi.sonosPlayFavorite).toHaveBeenCalledWith('10.0.0.1', 'x-rincon://jazz', 'Jazz FM');
+    await act(async () => {
+      await result.current.playFavorite(fav);
+    });
+    expect(mockApi.sonosPlayFavorite).toHaveBeenCalledWith(
+      '10.0.0.1',
+      'x-rincon://jazz',
+      'Jazz FM',
+    );
     expect(mockToast.success).toHaveBeenCalledWith('Lecture : Jazz FM');
   });
 
@@ -256,7 +288,9 @@ describe('useSonos', () => {
     const { result } = renderHook(() => useSonos({ autoPolling: false }));
     await waitFor(() => expect(result.current.configLoading).toBe(false));
 
-    await act(async () => { result.current.setActiveZone('10.0.0.2'); });
+    await act(async () => {
+      result.current.setActiveZone('10.0.0.2');
+    });
     await waitFor(() => {
       expect(result.current.zoneState).toBeTruthy();
     });

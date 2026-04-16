@@ -4,11 +4,11 @@ import Button from './Button';
 import './Dialog.css';
 
 const VARIANT_CONFIG = {
-  confirm:  { icon: HelpCircle,    color: 'var(--theme-primary)' },
-  danger:   { icon: AlertTriangle,  color: 'var(--theme-danger)' },
-  info:     { icon: Info,           color: 'var(--theme-info, var(--theme-primary))' },
-  success:  { icon: CheckCircle,    color: 'var(--theme-success)' },
-  warning:  { icon: AlertTriangle,  color: 'var(--theme-warning)' },
+  confirm: { icon: HelpCircle, color: 'var(--theme-primary)' },
+  danger: { icon: AlertTriangle, color: 'var(--theme-danger)' },
+  info: { icon: Info, color: 'var(--theme-info, var(--theme-primary))' },
+  success: { icon: CheckCircle, color: 'var(--theme-success)' },
+  warning: { icon: AlertTriangle, color: 'var(--theme-warning)' },
 };
 
 /**
@@ -56,7 +56,11 @@ function Dialog({
           {confirmLabel}
         </Button>
         {extraAction && (
-          <Button variant={extraAction.variant || 'primary'} onClick={extraAction.onClick} disabled={loading}>
+          <Button
+            variant={extraAction.variant || 'primary'}
+            onClick={extraAction.onClick}
+            disabled={loading}
+          >
             {extraAction.label}
           </Button>
         )}

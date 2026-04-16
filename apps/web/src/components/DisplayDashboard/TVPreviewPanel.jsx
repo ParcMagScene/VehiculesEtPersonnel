@@ -49,18 +49,18 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
     return {
       ...liveState,
       config: { ...(liveState.config || {}), ...(previewOverrides.config || {}) },
-      welcomeMessage: previewOverrides.welcomeMessage !== undefined
-        ? previewOverrides.welcomeMessage
-        : liveState.welcomeMessage,
-      colorRules: previewOverrides.colorRules !== undefined
-        ? previewOverrides.colorRules
-        : liveState.colorRules,
-      iconRules: previewOverrides.iconRules !== undefined
-        ? previewOverrides.iconRules
-        : liveState.iconRules,
-      logoUrl: previewOverrides.logoUrl !== undefined
-        ? previewOverrides.logoUrl
-        : liveState.logoUrl,
+      welcomeMessage:
+        previewOverrides.welcomeMessage !== undefined
+          ? previewOverrides.welcomeMessage
+          : liveState.welcomeMessage,
+      colorRules:
+        previewOverrides.colorRules !== undefined
+          ? previewOverrides.colorRules
+          : liveState.colorRules,
+      iconRules:
+        previewOverrides.iconRules !== undefined ? previewOverrides.iconRules : liveState.iconRules,
+      logoUrl:
+        previewOverrides.logoUrl !== undefined ? previewOverrides.logoUrl : liveState.logoUrl,
     };
   }, [liveState, previewOverrides]);
 
@@ -79,13 +79,17 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
         <div className="tv-preview-label">
           <Radio size={12} />
           <span>Direct</span>
-          <Button variant="ghost"             className="tv-preview-refresh"
+          <Button
+            variant="ghost"
+            className="tv-preview-refresh"
             onClick={fetchLiveState}
             title="Rafraîchir"
           >
             <RefreshCw size={10} />
           </Button>
-          <Button variant="ghost"             className={`tv-preview-alarm-test${alarmSending ? ' sending' : ''}`}
+          <Button
+            variant="ghost"
+            className={`tv-preview-alarm-test${alarmSending ? ' sending' : ''}`}
             onClick={handleTestAlarm}
             title="Tester le signal sonore sur l'écran distant"
             disabled={alarmSending}

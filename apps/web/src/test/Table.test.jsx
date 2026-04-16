@@ -19,9 +19,17 @@ describe('Table', () => {
   it('renders bare table with children', () => {
     const { container } = render(
       <Table className="my-table">
-        <thead><tr><th>Col</th></tr></thead>
-        <tbody><tr><td>Val</td></tr></tbody>
-      </Table>
+        <thead>
+          <tr>
+            <th>Col</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Val</td>
+          </tr>
+        </tbody>
+      </Table>,
     );
     const table = container.querySelector('table');
     expect(table).toBeInTheDocument();
@@ -32,8 +40,12 @@ describe('Table', () => {
   it('passes style and rest props in bare mode', () => {
     render(
       <Table style={{ border: '1px solid red' }} data-testid="bare">
-        <tbody><tr><td>X</td></tr></tbody>
-      </Table>
+        <tbody>
+          <tr>
+            <td>X</td>
+          </tr>
+        </tbody>
+      </Table>,
     );
     expect(screen.getByTestId('bare')).toBeInTheDocument();
   });
@@ -138,9 +150,7 @@ describe('Table', () => {
 
   /* ─── Custom render ─── */
   it('uses column render function', () => {
-    const cols = [
-      { key: 'name', label: 'Nom', render: (val) => `**${val}**` },
-    ];
+    const cols = [{ key: 'name', label: 'Nom', render: (val) => `**${val}**` }];
     render(<Table columns={cols} data={[{ id: 1, name: 'Test' }]} />);
     expect(screen.getByText('**Test**')).toBeInTheDocument();
   });

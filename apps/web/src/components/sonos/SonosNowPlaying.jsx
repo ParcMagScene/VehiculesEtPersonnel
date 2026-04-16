@@ -31,7 +31,12 @@ function SonosNowPlaying({ displayState }) {
       {/* Grande pochette */}
       <div className="sonos-np-art-wrap">
         {displayState.albumArtURI ? (
-          <img src={displayState.albumArtURI} alt="Album art" loading="lazy" className="sonos-np-art" />
+          <img
+            src={displayState.albumArtURI}
+            alt="Album art"
+            loading="lazy"
+            className="sonos-np-art"
+          />
         ) : (
           <div className="sonos-np-art sonos-np-art-placeholder">
             <Music size={48} />
@@ -42,12 +47,8 @@ function SonosNowPlaying({ displayState }) {
       {/* Titre + artiste + album */}
       <div className="sonos-np-info">
         <div className="sonos-np-title">{displayState.title || 'Titre inconnu'}</div>
-        {displayState.artist && (
-          <div className="sonos-np-artist">{displayState.artist}</div>
-        )}
-        {displayState.album && (
-          <div className="sonos-np-album">{displayState.album}</div>
-        )}
+        {displayState.artist && <div className="sonos-np-artist">{displayState.artist}</div>}
+        {displayState.album && <div className="sonos-np-album">{displayState.album}</div>}
       </div>
     </div>
   );

@@ -5,7 +5,11 @@ import ScrollArea from '../components/ui/ScrollArea';
 
 describe('ScrollArea', () => {
   it('rend les enfants', () => {
-    const { container } = render(<ScrollArea><p>Contenu</p></ScrollArea>);
+    const { container } = render(
+      <ScrollArea>
+        <p>Contenu</p>
+      </ScrollArea>,
+    );
     expect(container.querySelector('p')).toHaveTextContent('Contenu');
   });
 

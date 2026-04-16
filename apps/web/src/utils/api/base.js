@@ -21,7 +21,7 @@ export const API_URL = getApiUrl();
 // Convertir snake_case en camelCase
 export function toCamelCase(obj) {
   if (Array.isArray(obj)) {
-    return obj.map(item => toCamelCase(item));
+    return obj.map((item) => toCamelCase(item));
   }
 
   if (obj === null || typeof obj !== 'object') {
@@ -39,10 +39,10 @@ export function toCamelCase(obj) {
 // Convertir camelCase en snake_case
 export function toSnakeCase(obj) {
   if (Array.isArray(obj)) {
-    if (obj.every(item => typeof item !== 'object' || item === null)) {
+    if (obj.every((item) => typeof item !== 'object' || item === null)) {
       return obj;
     }
-    return obj.map(item => toSnakeCase(item));
+    return obj.map((item) => toSnakeCase(item));
   }
 
   if (obj === null || typeof obj !== 'object') {
@@ -51,7 +51,7 @@ export function toSnakeCase(obj) {
 
   const snakeObj = {};
   for (const key in obj) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
     snakeObj[snakeKey] = toSnakeCase(obj[key]);
   }
   return snakeObj;
@@ -85,7 +85,9 @@ export class ApiClient {
         console.warn('[Auth] Récupération depuis IndexedDB OK');
         return;
       }
-    } catch { /* silencieux */ }
+    } catch {
+      /* silencieux */
+    }
 
     // 2. Si toujours pas d'user, tenter un refresh silencieux (le cookie httpOnly peut encore être valide)
     try {
@@ -142,7 +144,9 @@ export class ApiClient {
             credentials: 'include',
           });
           if (!response.ok) {
-            console.warn(`[Auth] Refresh échoué: HTTP ${response.status} (tentative ${attempt + 1})`);
+            console.warn(
+              `[Auth] Refresh échoué: HTTP ${response.status} (tentative ${attempt + 1})`,
+            );
             return false;
           }
           const data = await response.json();
@@ -157,7 +161,7 @@ export class ApiClient {
           // Erreur réseau : retry 1 fois après 2s (le serveur redémarre peut-être)
           console.warn(`[Auth] Refresh erreur réseau (tentative ${attempt + 1}):`, err.message);
           if (attempt === 0) {
-            await new Promise(r => setTimeout(r, 2000));
+            await new Promise((r) => setTimeout(r, 2000));
             continue;
           }
           return false;
@@ -166,7 +170,9 @@ export class ApiClient {
       return false;
     })();
 
-    return this._refreshPromise.finally(() => { this._refreshPromise = null; });
+    return this._refreshPromise.finally(() => {
+      this._refreshPromise = null;
+    });
   }
 
   /**
@@ -174,8 +180,11 @@ export class ApiClient {
    * @returns {boolean} true si la requête peut être rejouée (refresh OK)
    */
   async _handle401(endpoint) {
-    const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register'
-      || endpoint === '/auth/force-login' || endpoint === '/auth/refresh';
+    const isAuthEndpoint =
+      endpoint === '/auth/login' ||
+      endpoint === '/auth/register' ||
+      endpoint === '/auth/force-login' ||
+      endpoint === '/auth/refresh';
     if (isAuthEndpoint) return false;
 
     console.warn(`[Auth] 401 reçu sur ${endpoint} — tentative de refresh silencieux`);
@@ -223,7 +232,11 @@ export class ApiClient {
     }
     clearTimeout(timeoutId);
 
-    const isAuthEndpoint = endpoint === '/auth/login' || endpoint === '/auth/register' || endpoint === '/auth/force-login' || endpoint === '/auth/refresh';
+    const isAuthEndpoint =
+      endpoint === '/auth/login' ||
+      endpoint === '/auth/register' ||
+      endpoint === '/auth/force-login' ||
+      endpoint === '/auth/refresh';
 
     // 401 : tenter refresh silencieux puis retry (une seule fois)
     if (response.status === 401 && !isAuthEndpoint && !_isRetry) {
@@ -262,7 +275,7 @@ export class ApiClient {
         status: response.status,
         statusText: response.statusText,
         url: response.url,
-        parseError
+        parseError,
       });
 
       if (!response.ok) {

@@ -29,7 +29,9 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
     if (uid) load();
   }, [uid]);
 
-  const status = equipment ? EQUIPMENT_STATUS[equipment.status] || EQUIPMENT_STATUS.available : null;
+  const status = equipment
+    ? EQUIPMENT_STATUS[equipment.status] || EQUIPMENT_STATUS.available
+    : null;
 
   return (
     <div className="qr-landing">
@@ -57,7 +59,10 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
               <div className="qr-landing-uid">{uid}</div>
               <div className="qr-landing-name">{equipment.name}</div>
               {equipment.brand && (
-                <div className="qr-landing-detail">{equipment.brand}{equipment.model ? ` — ${equipment.model}` : ''}</div>
+                <div className="qr-landing-detail">
+                  {equipment.brand}
+                  {equipment.model ? ` — ${equipment.model}` : ''}
+                </div>
               )}
               {status && (
                 <div className="qr-landing-status" style={{ color: status.color }}>
@@ -70,7 +75,9 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
 
         {/* Action buttons */}
         <div className="qr-landing-actions">
-          <Button variant="ghost"             className="qr-landing-btn qr-landing-btn-equipment"
+          <Button
+            variant="ghost"
+            className="qr-landing-btn qr-landing-btn-equipment"
             onClick={onGoToEquipment}
             disabled={loading || !!error}
           >
@@ -79,9 +86,7 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
             <ArrowRight size={18} />
           </Button>
 
-          <Button variant="ghost"             className="qr-landing-btn qr-landing-btn-home"
-            onClick={onGoHome}
-          >
+          <Button variant="ghost" className="qr-landing-btn qr-landing-btn-home" onClick={onGoHome}>
             <Home size={22} />
             <span>Accueil eM@g</span>
             <ArrowRight size={18} />

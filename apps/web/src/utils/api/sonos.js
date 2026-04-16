@@ -2,7 +2,6 @@
 
 export function registerSonosMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // ── Config ──
     async getSonosConfig() {
       return this.request('/sonos/config');
@@ -42,7 +41,10 @@ export function registerSonosMethods(ApiClient) {
 
     // ── Volume ──
     async sonosSetVolume(zone, value) {
-      return this.request(`/sonos/volume/${zone}`, { method: 'POST', body: JSON.stringify({ value }) });
+      return this.request(`/sonos/volume/${zone}`, {
+        method: 'POST',
+        body: JSON.stringify({ value }),
+      });
     },
     async sonosMute(zone) {
       return this.request(`/sonos/mute/${zone}`, { method: 'POST' });
@@ -56,18 +58,30 @@ export function registerSonosMethods(ApiClient) {
       return this.request('/sonos/favorites');
     },
     async sonosPlayFavorite(zone, uri, title) {
-      return this.request(`/sonos/favorite/${zone}`, { method: 'POST', body: JSON.stringify({ uri, title }) });
+      return this.request(`/sonos/favorite/${zone}`, {
+        method: 'POST',
+        body: JSON.stringify({ uri, title }),
+      });
     },
 
     // ── Seek / Shuffle / Repeat ──
     async sonosSeek(zone, position) {
-      return this.request(`/sonos/seek/${zone}`, { method: 'POST', body: JSON.stringify({ position }) });
+      return this.request(`/sonos/seek/${zone}`, {
+        method: 'POST',
+        body: JSON.stringify({ position }),
+      });
     },
     async sonosShuffle(zone, enabled) {
-      return this.request(`/sonos/shuffle/${zone}`, { method: 'POST', body: JSON.stringify({ enabled }) });
+      return this.request(`/sonos/shuffle/${zone}`, {
+        method: 'POST',
+        body: JSON.stringify({ enabled }),
+      });
     },
     async sonosRepeat(zone, mode) {
-      return this.request(`/sonos/repeat/${zone}`, { method: 'POST', body: JSON.stringify({ mode }) });
+      return this.request(`/sonos/repeat/${zone}`, {
+        method: 'POST',
+        body: JSON.stringify({ mode }),
+      });
     },
 
     // ── Sources / Browse ──

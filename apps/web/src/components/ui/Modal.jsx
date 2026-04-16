@@ -27,20 +27,29 @@ function Modal({ open, onClose, size = 'md', className = '', children }) {
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (e.key === 'Escape') { onClose?.(); return; }
+      if (e.key === 'Escape') {
+        onClose?.();
+        return;
+      }
       if (e.key === 'Tab') {
         const modal = overlayRef.current?.querySelector('[role="dialog"]');
         if (!modal) return;
         const focusable = modal.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
         );
         if (focusable.length === 0) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
         } else {
-          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       }
     };
@@ -48,7 +57,7 @@ function Modal({ open, onClose, size = 'md', className = '', children }) {
     // Auto-focus first focusable element
     const modal = overlayRef.current?.querySelector('[role="dialog"]');
     const firstFocusable = modal?.querySelector(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     firstFocusable?.focus();
     return () => document.removeEventListener('keydown', handler);

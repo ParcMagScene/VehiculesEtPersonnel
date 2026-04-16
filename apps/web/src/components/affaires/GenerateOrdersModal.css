@@ -13,13 +13,19 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: var(--shadow-modal, 0 24px 48px rgba(0,0,0,.2));
-  animation: genOrdersFade .2s ease;
+  box-shadow: var(--shadow-modal, 0 24px 48px rgba(0, 0, 0, 0.2));
+  animation: genOrdersFade 0.2s ease;
 }
 
 @keyframes genOrdersFade {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Body ── */
@@ -56,15 +62,15 @@
 }
 .gen-orders-empty svg {
   margin-bottom: 12px;
-  opacity: .4;
+  opacity: 0.4;
 }
 .gen-orders-empty p {
   margin: 6px 0;
-  font-size: .95rem;
+  font-size: 0.95rem;
 }
 .gen-orders-empty-hint {
-  font-size: .85rem;
-  opacity: .7;
+  font-size: 0.85rem;
+  opacity: 0.7;
 }
 
 /* ── Résumé en-tête ── */
@@ -73,7 +79,7 @@
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 16px;
-  font-size: .88rem;
+  font-size: 0.88rem;
   color: var(--text-secondary, var(--theme-text-muted));
 }
 .gen-orders-summary span {
@@ -100,7 +106,7 @@
   border: 1px solid var(--border-color, var(--theme-border));
   border-radius: var(--radius-md-lg);
   overflow: hidden;
-  transition: border-color .15s;
+  transition: border-color 0.15s;
 }
 .supplier-block:hover {
   border-color: var(--theme-color, var(--theme-info));
@@ -114,7 +120,7 @@
   cursor: pointer;
   user-select: none;
   background: var(--bg-secondary, var(--theme-bg-secondary));
-  transition: background .15s;
+  transition: background 0.15s;
 }
 .supplier-header:hover {
   background: var(--bg-tertiary, #f3f3f3);
@@ -134,14 +140,14 @@
 }
 .supplier-name {
   font-weight: 600;
-  font-size: .92rem;
+  font-size: 0.92rem;
   color: var(--text-primary, var(--theme-text-body));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .supplier-count {
-  font-size: .8rem;
+  font-size: 0.8rem;
   color: var(--text-muted, var(--theme-text-muted));
   padding: 2px 8px;
   border-radius: var(--radius-lg);
@@ -156,7 +162,7 @@
   border: 1px solid var(--border-color, var(--theme-border));
   background: var(--bg-primary, var(--theme-bg-card));
   color: var(--text-primary, var(--theme-text-body));
-  font-size: .82rem;
+  font-size: 0.82rem;
   cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -175,7 +181,7 @@
   gap: 4px;
   padding: 4px 10px;
   border-radius: var(--radius-xl);
-  font-size: .8rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--theme-color, var(--theme-info));
   background: color-mix(in srgb, var(--theme-color, var(--theme-info)) 10%, transparent);
@@ -189,7 +195,7 @@
 .supplier-items-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: .82rem;
+  font-size: 0.82rem;
 }
 .supplier-items-table thead th {
   text-align: left;
@@ -206,7 +212,7 @@
 }
 .si-ref {
   font-family: monospace;
-  font-size: .8rem;
+  font-size: 0.8rem;
   max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -218,7 +224,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.si-qty, .si-price {
+.si-qty,
+.si-price {
   text-align: right;
   white-space: nowrap;
 }
@@ -235,7 +242,7 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 10px;
-  font-size: .92rem;
+  font-size: 0.92rem;
   color: var(--theme-success, var(--theme-success));
 }
 .result-row {
@@ -243,10 +250,14 @@
   align-items: flex-start;
   gap: 8px;
   padding: 6px 0;
-  font-size: .85rem;
+  font-size: 0.85rem;
 }
-.result-row.success { color: var(--theme-success, var(--theme-success)); }
-.result-row.error   { color: var(--theme-danger, var(--theme-danger)); }
+.result-row.success {
+  color: var(--theme-success, var(--theme-success));
+}
+.result-row.error {
+  color: var(--theme-danger, var(--theme-danger));
+}
 
 /* ── Footer ── */
 .gen-orders-footer {

@@ -29,7 +29,7 @@ const GoogleCalendarConfig = () => {
       const [clientIdData, calendarIdData, mapsApiKeyData] = await Promise.all([
         api.getGoogleClientId(),
         api.getGoogleCalendarId(),
-        api.getGoogleMapsApiKey()
+        api.getGoogleMapsApiKey(),
       ]);
       setClientId(clientIdData.value || '');
       setCalendarId(calendarIdData.value || '');
@@ -44,9 +44,9 @@ const GoogleCalendarConfig = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    
+
     if (!clientId || !calendarId) {
-      toast.warning('Veuillez remplir au moins le Client ID et l\'ID du calendrier');
+      toast.warning("Veuillez remplir au moins le Client ID et l'ID du calendrier");
       return;
     }
 
@@ -55,15 +55,17 @@ const GoogleCalendarConfig = () => {
       await Promise.all([
         api.saveGoogleClientId(clientId),
         api.saveGoogleCalendarId(calendarId),
-        mapsApiKey ? api.saveGoogleMapsApiKey(mapsApiKey) : Promise.resolve()
+        mapsApiKey ? api.saveGoogleMapsApiKey(mapsApiKey) : Promise.resolve(),
       ]);
-      
+
       // Sauvegarder aussi dans IndexedDB pour l'accès sans token
       const config = await loadFromIndexedDB('calendarConfig', {});
       config.googleMapsApiKey = mapsApiKey;
       await saveToIndexedDB('calendarConfig', config);
-      
-      toast.success('Configuration enregistrée avec succès Si vous avez changé le Client ID, cliquez sur "Déconnecter OAuth" puis reconnectez-vous.');
+
+      toast.success(
+        'Configuration enregistrée avec succès Si vous avez changé le Client ID, cliquez sur "Déconnecter OAuth" puis reconnectez-vous.',
+      );
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
     } finally {
@@ -85,9 +87,11 @@ const GoogleCalendarConfig = () => {
     } catch (err) {
       const msg = err?.message || 'Erreur inconnue';
       if (msg.includes('feature_disabled')) {
-        toast.warning('Sync bidirectionnelle désactivée (GOOGLE_BIDIRECTIONAL_SYNC=false côté serveur)');
+        toast.warning(
+          'Sync bidirectionnelle désactivée (GOOGLE_BIDIRECTIONAL_SYNC=false côté serveur)',
+        );
       } else if (msg.includes('google_not_connected')) {
-        toast.warning('Compte Google non connecté — connectez-vous d\'abord via Paramètres');
+        toast.warning("Compte Google non connecté — connectez-vous d'abord via Paramètres");
       } else {
         toast.error(`Erreur sync pull : ${msg}`);
       }
@@ -96,9 +100,11 @@ const GoogleCalendarConfig = () => {
     }
   };
 
-  const handleRevokeOAuth = () => {    confirm({
+  const handleRevokeOAuth = () => {
+    confirm({
       title: 'Déconnexion Google',
-      message: '⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nLe token sera révoqué côté Google et supprimé du serveur. Vous devrez autoriser à nouveau l\'accès après cette action.',
+      message:
+        "⚠️ Êtes-vous sûr de vouloir déconnecter Google Calendar ?\n\nLe token sera révoqué côté Google et supprimé du serveur. Vous devrez autoriser à nouveau l'accès après cette action.",
       variant: 'warning',
       confirmLabel: 'Déconnecter',
       onConfirm: async () => {
@@ -106,11 +112,15 @@ const GoogleCalendarConfig = () => {
           await api.disconnectGoogle();
           toast.success('Déconnexion effectuée. La page va se recharger.');
         } catch (err) {
-          toast.success('Déconnexion effectuée malgré l\'erreur. La page va se recharger.');
+          toast.success("Déconnexion effectuée malgré l'erreur. La page va se recharger.");
         }
         // Nettoyer le cache de session Google
-        try { localStorage.removeItem('emag_google_state'); } catch { /* */ }
-        
+        try {
+          localStorage.removeItem('emag_google_state');
+        } catch {
+          /* */
+        }
+
         setTimeout(() => {
           window.location.reload();
         }, 1500);
@@ -129,10 +139,12 @@ const GoogleCalendarConfig = () => {
   return (
     <div className="google-calendar-config">
       <div className="config-header">
-        <h3><Calendar size={20} /> Configuration Google Calendar</h3>
+        <h3>
+          <Calendar size={20} /> Configuration Google Calendar
+        </h3>
         <p className="config-description">
-          Ces paramètres sont partagés pour tous les utilisateurs. 
-          Chaque utilisateur devra cependant autoriser l'accès avec son compte Google.
+          Ces paramètres sont partagés pour tous les utilisateurs. Chaque utilisateur devra
+          cependant autoriser l'accès avec son compte Google.
         </p>
       </div>
 
@@ -153,7 +165,8 @@ const GoogleCalendarConfig = () => {
           </div>
           <div className="env-item">
             <strong>Recommandation:</strong>
-            {window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? (
+            {window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ? (
               <span className="env-local">
                 🔧 Utilisez le Client ID de <strong>Véhicules Local Dev</strong>
               </span>
@@ -169,7 +182,8 @@ const GoogleCalendarConfig = () => {
               <div className="uri-item">
                 <strong>Origines JavaScript autorisées :</strong>
                 <code className="selectable">{window.location.origin}</code>
-                <Button variant="ghost" 
+                <Button
+                  variant="ghost"
                   type="button"
                   className="btn-copy-small"
                   onClick={() => {
@@ -183,7 +197,8 @@ const GoogleCalendarConfig = () => {
               <div className="uri-item">
                 <strong>URI de redirection autorisés (backend callback) :</strong>
                 <code className="selectable">{`${window.location.protocol}//${window.location.hostname}:${window.location.hostname === 'localhost' ? '3003' : window.location.port || '443'}/api/google/callback`}</code>
-                <Button variant="ghost" 
+                <Button
+                  variant="ghost"
                   type="button"
                   className="btn-copy-small"
                   onClick={() => {
@@ -220,18 +235,23 @@ const GoogleCalendarConfig = () => {
           <details className="client-id-help">
             <summary>📝 J'ai deux Client IDs - Lequel utiliser ?</summary>
             <div className="help-content">
-              <p><strong>Véhicules Local Dev</strong> (localhost)</p>
+              <p>
+                <strong>Véhicules Local Dev</strong> (localhost)
+              </p>
               <ul>
                 <li>Pour développement local : http://localhost:4173</li>
                 <li>Origines autorisées : localhost uniquement</li>
               </ul>
-              <p><strong>Production</strong> (production)</p>
+              <p>
+                <strong>Production</strong> (production)
+              </p>
               <ul>
-              <li>Pour accès réseau/internet : votre domaine ou IP publique, port 4173</li>
-              <li>Origines autorisées : ajoutez votre domaine dans la console Google</li>
+                <li>Pour accès réseau/internet : votre domaine ou IP publique, port 4173</li>
+                <li>Origines autorisées : ajoutez votre domaine dans la console Google</li>
               </ul>
               <p className="warning-note">
-                ⚠️ Si vous changez de Client ID, utilisez le bouton "Déconnecter OAuth" ci-dessous puis reconnectez-vous.
+                ⚠️ Si vous changez de Client ID, utilisez le bouton "Déconnecter OAuth" ci-dessous
+                puis reconnectez-vous.
               </p>
             </div>
           </details>
@@ -271,11 +291,7 @@ const GoogleCalendarConfig = () => {
         </div>
 
         <div className="form-actions">
-          <Button 
-            variant="primary"
-            type="submit"
-            disabled={isSaving}
-          >
+          <Button variant="primary" type="submit" disabled={isSaving}>
             <Save size={18} />
             {isSaving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
@@ -286,7 +302,8 @@ const GoogleCalendarConfig = () => {
         <h4>� Synchronisation bidirectionnelle</h4>
         <p className="oauth-hint">
           <AlertCircle size={14} />
-          Réconcilie les réservations eM@g avec les événements Google (90 jours). Si des dates ont été modifiées côté Google, eM@g est mis à jour.
+          Réconcilie les réservations eM@g avec les événements Google (90 jours). Si des dates ont
+          été modifiées côté Google, eM@g est mis à jour.
         </p>
         <Button
           variant="secondary"
@@ -304,7 +321,9 @@ const GoogleCalendarConfig = () => {
             <span className="pull-stat pull-stat--warn">🔗 {pullResult.orphaned} déliés</span>
             <span className="pull-stat pull-stat--muted">⏭ {pullResult.skipped} inchangés</span>
             {pullResult.errors?.length > 0 && (
-              <span className="pull-stat pull-stat--error">⚠ {pullResult.errors.length} erreurs</span>
+              <span className="pull-stat pull-stat--error">
+                ⚠ {pullResult.errors.length} erreurs
+              </span>
             )}
           </div>
         )}
@@ -313,18 +332,11 @@ const GoogleCalendarConfig = () => {
       <div className="oauth-actions">
         <h4>�🔐 Gestion OAuth</h4>
         <div className="oauth-buttons">
-          <Button variant="ghost" 
-            type="button"
-            className="btn-revoke"
-            onClick={handleRevokeOAuth}
-          >
+          <Button variant="ghost" type="button" className="btn-revoke" onClick={handleRevokeOAuth}>
             <LogOut size={18} />
             Déconnecter OAuth
           </Button>
-          <Button 
-            variant="secondary"
-            onClick={handleOpenGooglePermissions}
-          >
+          <Button variant="secondary" onClick={handleOpenGooglePermissions}>
             <RefreshCw size={18} />
             Gérer les autorisations
           </Button>
@@ -338,11 +350,20 @@ const GoogleCalendarConfig = () => {
       <div className="config-info">
         <h4>📝 Instructions</h4>
         <ol>
-          <li>Créez un projet dans <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
-          <li>Activez les API : Google Calendar, Maps JavaScript API, Places API, Distance Matrix API</li>
+          <li>
+            Créez un projet dans{' '}
+            <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer">
+              Google Cloud Console
+            </a>
+          </li>
+          <li>
+            Activez les API : Google Calendar, Maps JavaScript API, Places API, Distance Matrix API
+          </li>
           <li>Créez des identifiants OAuth 2.0 (Client ID)</li>
           <li>Créez une clé API pour Google Maps</li>
-          <li>Ajoutez l'origine autorisée : <code>{window.location.origin}</code></li>
+          <li>
+            Ajoutez l'origine autorisée : <code>{window.location.origin}</code>
+          </li>
           <li>Copiez le Client ID et la clé API ici</li>
           <li>Récupérez l'ID de votre calendrier dans Google Calendar (Paramètres → Calendrier)</li>
         </ol>

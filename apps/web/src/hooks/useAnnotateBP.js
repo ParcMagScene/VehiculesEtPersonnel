@@ -12,44 +12,47 @@ export function useAnnotateBP({ toast }) {
   const [annotationResult, setAnnotationResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const annotate = useCallback(async (affaireId, blImportId) => {
-    setIsLoading(true);
-    setError(null);
-    setAnnotationResult(null);
-    try {
-      // 1. Récupérer les données agrégées depuis le backend
-      const data = await api.getAnnotationData(affaireId, blImportId);
+  const annotate = useCallback(
+    async (affaireId, blImportId) => {
+      setIsLoading(true);
+      setError(null);
+      setAnnotationResult(null);
+      try {
+        // 1. Récupérer les données agrégées depuis le backend
+        const data = await api.getAnnotationData(affaireId, blImportId);
 
-      // 2. Annoter les items BP (familles, couleurs, kits)
-      const { annotatedItems, kits, sections, stats } = annotateBPItems(data.bpItems || []);
+        // 2. Annoter les items BP (familles, couleurs, kits)
+        const { annotatedItems, kits, sections, stats } = annotateBPItems(data.bpItems || []);
 
-      // 3. Formater le bloc infos affaire
-      const infoLines = formatAffaireInfoBlock(data);
+        // 3. Formater le bloc infos affaire
+        const infoLines = formatAffaireInfoBlock(data);
 
-      const result = {
-        affaire: data.affaire,
-        blImport: data.blImport,
-        annotatedItems,
-        kits,
-        sections,
-        stats,
-        infoLines,
-        reservations: data.reservations || [],
-        personnel: data.personnel || [],
-        tasks: data.tasks || [],
-      };
+        const result = {
+          affaire: data.affaire,
+          blImport: data.blImport,
+          annotatedItems,
+          kits,
+          sections,
+          stats,
+          infoLines,
+          reservations: data.reservations || [],
+          personnel: data.personnel || [],
+          tasks: data.tasks || [],
+        };
 
-      setAnnotationResult(result);
-      return result;
-    } catch (err) {
-      const msg = err?.message || 'Erreur annotation BP';
-      setError(msg);
-      toast?.error?.(msg);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
+        setAnnotationResult(result);
+        return result;
+      } catch (err) {
+        const msg = err?.message || 'Erreur annotation BP';
+        setError(msg);
+        toast?.error?.(msg);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [toast],
+  );
 
   const reset = useCallback(() => {
     setAnnotationResult(null);

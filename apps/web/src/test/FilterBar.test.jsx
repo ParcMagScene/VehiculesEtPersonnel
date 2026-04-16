@@ -21,7 +21,7 @@ describe('FilterBar', () => {
     expect(screen.getByRole('radiogroup')).toBeInTheDocument();
   });
 
-  it('aria-checked sur l\'option active', () => {
+  it("aria-checked sur l'option active", () => {
     render(<FilterBar value="active" options={options} />);
     expect(screen.getByRole('radio', { name: /Actifs/ })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('radio', { name: /Tous/ })).toHaveAttribute('aria-checked', 'false');

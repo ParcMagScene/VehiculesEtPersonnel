@@ -9,7 +9,9 @@
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
-  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+  transition:
+    border-color var(--duration-fast),
+    box-shadow var(--duration-fast);
 }
 .ui-search-bar:focus-within {
   border-color: var(--theme-border-focus);
@@ -65,7 +67,9 @@
   cursor: pointer;
   padding: 2px;
   border-radius: var(--radius-sm);
-  transition: color var(--duration-fast), background var(--duration-fast);
+  transition:
+    color var(--duration-fast),
+    background var(--duration-fast);
 }
 .ui-search-bar__clear:hover {
   background: var(--theme-bg-hover);

@@ -15,7 +15,9 @@ const getAudioContext = () => {
 };
 
 /** Régler le volume global (0..1) */
-export const setVolume = (v) => { masterVolume = Math.max(0, Math.min(1, v)); };
+export const setVolume = (v) => {
+  masterVolume = Math.max(0, Math.min(1, v));
+};
 export const getVolume = () => masterVolume;
 
 // ── Helpers internes ──────────────────────────────────────────
@@ -42,15 +44,15 @@ const playNotification = (ctx, t) => {
 
 /** Accord majeur bref — confirmation positive */
 const playSuccess = (ctx, t) => {
-  note(ctx, 523, t, 0.12, 0.12);       // Do5
-  note(ctx, 659, t, 0.12, 0.10);       // Mi5
-  note(ctx, 784, t, 0.12, 0.10);       // Sol5
+  note(ctx, 523, t, 0.12, 0.12); // Do5
+  note(ctx, 659, t, 0.12, 0.1); // Mi5
+  note(ctx, 784, t, 0.12, 0.1); // Sol5
   note(ctx, 1047, t + 0.1, 0.2, 0.08); // Do6 résolution
 };
 
 /** Deux notes descendantes — erreur / échec */
 const playError = (ctx, t) => {
-  note(ctx, 440, t, 0.15, 0.18, 'square');       // La4
+  note(ctx, 440, t, 0.15, 0.18, 'square'); // La4
   note(ctx, 349, t + 0.15, 0.25, 0.14, 'square'); // Fa4
 };
 

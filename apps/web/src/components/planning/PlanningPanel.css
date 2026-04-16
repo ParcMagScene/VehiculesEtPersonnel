@@ -317,9 +317,15 @@
   font-size: var(--font-xs);
   flex-shrink: 0;
 }
-.dd-lt-status.done { color: var(--theme-success-alt); }
-.dd-lt-status.in_progress { color: var(--theme-warning); }
-.dd-lt-status.pending { color: var(--theme-text-muted, var(--theme-text-muted)); }
+.dd-lt-status.done {
+  color: var(--theme-success-alt);
+}
+.dd-lt-status.in_progress {
+  color: var(--theme-warning);
+}
+.dd-lt-status.pending {
+  color: var(--theme-text-muted, var(--theme-text-muted));
+}
 .dd-lt-label {
   flex: 1;
   overflow: hidden;
@@ -688,7 +694,7 @@
   font-size: 0.65rem;
   padding: 1px 6px;
   border-radius: var(--radius-xs);
-  background: var(--theme-text-muted)22;
+  background: var(--theme-text-muted) 22;
   color: var(--theme-text-secondary);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1069,7 +1075,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px; height: 18px;
+  width: 18px;
+  height: 18px;
   border-radius: var(--radius-full);
   background: var(--theme-info);
   color: var(--theme-bg-card);
@@ -1078,7 +1085,8 @@
   flex-shrink: 0;
 }
 .dd-google-badge-sm {
-  width: 14px; height: 14px;
+  width: 14px;
+  height: 14px;
   font-size: 0.55rem;
 }
 .task-status-chip {

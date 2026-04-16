@@ -14,12 +14,15 @@ export function useFeedback() {
     toastRef.current?.show({ type, message, ...opts });
   }, []);
 
-  const toast = useMemo(() => ({
-    success: (msg, opts) => show('success', msg, opts),
-    error: (msg, opts) => show('error', msg, opts),
-    warning: (msg, opts) => show('warning', msg, opts),
-    info: (msg, opts) => show('info', msg, opts),
-  }), [show]);
+  const toast = useMemo(
+    () => ({
+      success: (msg, opts) => show('success', msg, opts),
+      error: (msg, opts) => show('error', msg, opts),
+      warning: (msg, opts) => show('warning', msg, opts),
+      info: (msg, opts) => show('info', msg, opts),
+    }),
+    [show],
+  );
 
   return { toastRef, toast };
 }

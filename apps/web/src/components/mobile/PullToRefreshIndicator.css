@@ -4,7 +4,9 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: height 0.2s ease, opacity 0.2s ease;
+  transition:
+    height 0.2s ease,
+    opacity 0.2s ease;
   flex-shrink: 0;
 }
 
@@ -27,5 +29,7 @@
 }
 
 @keyframes ptr-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

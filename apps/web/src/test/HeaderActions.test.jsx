@@ -5,11 +5,27 @@ import HeaderActions from '../components/header/HeaderActions';
 
 // Mock ProfileEditModal
 vi.mock('../components/auth/ProfileEditModal', () => ({
-  default: ({ onClose }) => <div data-testid="profile-modal"><button onClick={onClose}>Fermer</button></div>,
+  default: ({ onClose }) => (
+    <div data-testid="profile-modal">
+      <button onClick={onClose}>Fermer</button>
+    </div>
+  ),
 }));
 
-const adminUser = { id: 1, name: 'Jean Admin', email: 'admin@test.fr', isAdmin: true, avatar: null };
-const normalUser = { id: 2, name: 'Marie User', email: 'user@test.fr', isAdmin: false, avatar: null };
+const adminUser = {
+  id: 1,
+  name: 'Jean Admin',
+  email: 'admin@test.fr',
+  isAdmin: true,
+  avatar: null,
+};
+const normalUser = {
+  id: 2,
+  name: 'Marie User',
+  email: 'user@test.fr',
+  isAdmin: false,
+  avatar: null,
+};
 
 const defaultProps = {
   currentUser: adminUser,
@@ -36,7 +52,7 @@ describe('HeaderActions', () => {
   // ═══ Badges admin ═══
   it('affiche le badge pannes signalees pour admin', () => {
     const { container } = render(
-      <HeaderActions {...defaultProps} reportedMaintenances={[{ id: 1 }, { id: 2 }]} />
+      <HeaderActions {...defaultProps} reportedMaintenances={[{ id: 1 }, { id: 2 }]} />,
     );
     expect(container.querySelector('.has-reported')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -44,7 +60,7 @@ describe('HeaderActions', () => {
 
   it('affiche le badge demandes intervention pour admin', () => {
     const { container } = render(
-      <HeaderActions {...defaultProps} pendingMaintenances={[{ id: 1 }]} />
+      <HeaderActions {...defaultProps} pendingMaintenances={[{ id: 1 }]} />,
     );
     expect(container.querySelector('.has-pending')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
@@ -52,14 +68,22 @@ describe('HeaderActions', () => {
 
   it('affiche le badge demandes reservation pour admin', () => {
     render(
-      <HeaderActions {...defaultProps} pendingRequestsCounts={{ interventionRequests: 0, reservationRequests: 3, total: 3 }} />
+      <HeaderActions
+        {...defaultProps}
+        pendingRequestsCounts={{ interventionRequests: 0, reservationRequests: 3, total: 3 }}
+      />,
     );
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
   it('masque les badges admin pour utilisateur normal', () => {
     const { container } = render(
-      <HeaderActions {...defaultProps} currentUser={normalUser} reportedMaintenances={[{ id: 1 }]} pendingMaintenances={[{ id: 1 }]} />
+      <HeaderActions
+        {...defaultProps}
+        currentUser={normalUser}
+        reportedMaintenances={[{ id: 1 }]}
+        pendingMaintenances={[{ id: 1 }]}
+      />,
     );
     expect(container.querySelector('.has-reported')).not.toBeInTheDocument();
     expect(container.querySelector('.has-pending')).not.toBeInTheDocument();

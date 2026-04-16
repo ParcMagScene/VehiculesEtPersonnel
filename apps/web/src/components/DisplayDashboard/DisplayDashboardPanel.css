@@ -47,10 +47,18 @@
   flex-shrink: 0;
 }
 
-.display-stat-icon.screens { background: var(--theme-gradient); }
-.display-stat-icon.playlists { background: linear-gradient(135deg, var(--theme-warning), var(--theme-warning-dark)); }
-.display-stat-icon.media { background: linear-gradient(135deg, var(--theme-success-alt), var(--theme-success-dark)); }
-.display-stat-icon.messages { background: linear-gradient(135deg, var(--theme-info), var(--theme-info-dark)); }
+.display-stat-icon.screens {
+  background: var(--theme-gradient);
+}
+.display-stat-icon.playlists {
+  background: linear-gradient(135deg, var(--theme-warning), var(--theme-warning-dark));
+}
+.display-stat-icon.media {
+  background: linear-gradient(135deg, var(--theme-success-alt), var(--theme-success-dark));
+}
+.display-stat-icon.messages {
+  background: linear-gradient(135deg, var(--theme-info), var(--theme-info-dark));
+}
 
 .display-stat-value {
   font-size: var(--font-xl);
@@ -114,7 +122,10 @@
   box-shadow: var(--btn-primary-shadow);
 }
 
-.display-subtab svg { width: 14px; height: 14px; }
+.display-subtab svg {
+  width: 14px;
+  height: 14px;
+}
 
 .display-actions {
   display: flex;
@@ -848,7 +859,9 @@
 }
 
 @keyframes display-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ─── Responsive ─── */
@@ -920,7 +933,6 @@
   }
 }
 
-
 /* ═══════════════════════════════════════════════════════
    Dashboard TV — Styles des onglets Apparence, Messages,
    Couleurs, Icônes lieu, Photo furtive, Sonos
@@ -951,8 +963,14 @@
   overflow: hidden;
 }
 
-.modal-container.modal-md { max-width: 500px; width: 90%; }
-.modal-container.modal-lg { max-width: 700px; width: 90%; }
+.modal-container.modal-md {
+  max-width: 500px;
+  width: 90%;
+}
+.modal-container.modal-lg {
+  max-width: 700px;
+  width: 90%;
+}
 
 .display-dashboard .modal-header {
   display: flex;
@@ -975,8 +993,12 @@
   gap: 8px;
 }
 
-.display-dashboard .modal-header h2 { font-size: var(--font-lg); }
-.display-dashboard .modal-header h3 { font-size: var(--font-md); }
+.display-dashboard .modal-header h2 {
+  font-size: var(--font-lg);
+}
+.display-dashboard .modal-header h3 {
+  font-size: var(--font-md);
+}
 
 .modal-close {
   display: flex;
@@ -1117,11 +1139,17 @@
 }
 
 /* ─── Flex helpers formulaires ─── */
-.form-group-flex1 { flex: 1; }
-.form-group-flex2 { flex: 2; }
+.form-group-flex1 {
+  flex: 1;
+}
+.form-group-flex2 {
+  flex: 2;
+}
 
 /* ─── Media upload drop zone ─── */
-.media-upload-tags { margin-top: 1rem; }
+.media-upload-tags {
+  margin-top: 1rem;
+}
 
 .media-drop-zone {
   border: 2px dashed var(--theme-border);
@@ -1324,9 +1352,9 @@
   font-weight: 600;
   color: var(--theme-text-secondary);
 }
-.dtv-form-group input[type="text"],
-.dtv-form-group input[type="url"],
-.dtv-form-group input[type="number"],
+.dtv-form-group input[type='text'],
+.dtv-form-group input[type='url'],
+.dtv-form-group input[type='number'],
 .dtv-form-group select,
 .dtv-form-group textarea {
   padding: 8px 12px;
@@ -1346,12 +1374,12 @@
 }
 
 /* ─── Input file stylé ─── */
-.dtv-form-group input[type="file"] {
+.dtv-form-group input[type='file'] {
   font-size: 0.82rem;
   color: var(--theme-text-dark);
 }
 
-.dtv-form-group input[type="file"]::file-selector-button {
+.dtv-form-group input[type='file']::file-selector-button {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1367,7 +1395,7 @@
   margin-right: 10px;
 }
 
-.dtv-form-group input[type="file"]::file-selector-button:hover {
+.dtv-form-group input[type='file']::file-selector-button:hover {
   background: var(--theme-bg-secondary);
   border-color: var(--theme-border-focus);
 }
@@ -1385,7 +1413,7 @@
   gap: 10px;
 }
 
-.dtv-color-input input[type="color"] {
+.dtv-color-input input[type='color'] {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -1398,25 +1426,25 @@
   background: transparent;
 }
 
-.dtv-color-input input[type="color"]::-webkit-color-swatch-wrapper {
+.dtv-color-input input[type='color']::-webkit-color-swatch-wrapper {
   padding: 0;
 }
 
-.dtv-color-input input[type="color"]::-webkit-color-swatch {
+.dtv-color-input input[type='color']::-webkit-color-swatch {
   border: none;
   border-radius: var(--radius-sm);
 }
 
-.dtv-color-input input[type="color"]::-moz-color-swatch {
+.dtv-color-input input[type='color']::-moz-color-swatch {
   border: none;
   border-radius: var(--radius-sm);
 }
 
-.dtv-color-input input[type="color"]:hover {
+.dtv-color-input input[type='color']:hover {
   border-color: var(--theme-border-focus);
 }
 
-.dtv-color-input input[type="color"]:focus {
+.dtv-color-input input[type='color']:focus {
   outline: none;
   border-color: var(--theme-border-focus);
   box-shadow: var(--focus-ring);
@@ -1443,7 +1471,7 @@
   color: var(--theme-text-dark);
   cursor: pointer;
 }
-.dtv-toggle-row input[type="checkbox"] {
+.dtv-toggle-row input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: var(--theme-primary);
@@ -1667,8 +1695,6 @@
   outline: none;
   border-color: var(--theme-border-focus);
 }
-
-
 
 /* ─── GIF gallery (icônes lieu) ─── */
 .dtv-gifs-gallery {
@@ -1928,8 +1954,12 @@
 }
 
 @keyframes dtv-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 .dtv-sonos-spinning {
   animation: dtv-spin 2s linear infinite;
@@ -1974,7 +2004,10 @@
   background: var(--theme-bg-secondary);
   color: var(--theme-text-dark);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
 .dtv-sonos-btn:hover:not(:disabled) {
   background: var(--theme-bg-hover);
@@ -2055,7 +2088,9 @@
   cursor: pointer;
   font-size: var(--font-sm);
   color: var(--theme-text-dark);
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 .dtv-sonos-zone:hover {
   border-color: var(--theme-primary);
@@ -2110,7 +2145,9 @@
   border-radius: var(--radius-md);
   background: var(--theme-bg-secondary);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 .dtv-sonos-fav-item:hover {
   border-color: var(--theme-primary);
@@ -2157,7 +2194,7 @@
 /* ─── Sonos : Shuffle / Repeat active state ─── */
 .dtv-sonos-active {
   color: var(--theme-primary) !important;
-  background: rgba(var(--theme-primary-rgb, 59,130,246), 0.15) !important;
+  background: rgba(var(--theme-primary-rgb, 59, 130, 246), 0.15) !important;
   border-color: var(--theme-primary) !important;
 }
 
@@ -2193,7 +2230,6 @@
     min-width: calc(33% - 4px);
   }
 }
-
 
 /* ═══════════════════════════════════════════════════════
    Dashboard Écrans — Layout restructuré + Aperçu TV
@@ -2272,7 +2308,9 @@
   background: var(--theme-bg-hover, var(--primary-tint-subtle));
   border-radius: var(--radius-sm);
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .display-tv-link:hover {
   background: var(--theme-accent, var(--theme-info));
@@ -2330,7 +2368,9 @@
   border-radius: 2px;
   background: var(--theme-text-muted);
   opacity: 0.35;
-  transition: opacity 0.15s, height 0.15s;
+  transition:
+    opacity 0.15s,
+    height 0.15s;
 }
 .display-split-divider:hover {
   background: var(--theme-primary);
@@ -2388,8 +2428,13 @@
   animation: pulse-live 2s ease-in-out infinite;
 }
 @keyframes pulse-live {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 .tv-preview-zone.live .tv-preview-frame {
   border-color: var(--success-tint-bold);
@@ -2560,8 +2605,12 @@
   pointer-events: none;
   z-index: var(--z-base);
 }
-.tv-mini-marquee-fade.left { left: 0; }
-.tv-mini-marquee-fade.right { right: 0; }
+.tv-mini-marquee-fade.left {
+  left: 0;
+}
+.tv-mini-marquee-fade.right {
+  right: 0;
+}
 
 .tv-mini-marquee {
   font-size: 3cqi;
@@ -2578,10 +2627,20 @@
 }
 
 @keyframes tv-mini-scroll {
-  0%   { transform: translateX(0); opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { transform: translateX(-100%); opacity: 0; }
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
 }
 
 /* ─── Datetime + Météo (droite) ─── */
@@ -2631,7 +2690,7 @@
   gap: 2cqi;
   align-items: center;
   padding: 0.6cqi 0;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 2cqi;
   border-radius: 0;
 }
@@ -2762,10 +2821,20 @@
 }
 
 @keyframes tv-mini-sneaky-slide {
-  0%   { left: -20%; opacity: 0; }
-  5%   { opacity: 1; }
-  95%  { opacity: 1; }
-  100% { left: 120%; opacity: 0; }
+  0% {
+    left: -20%;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    left: 120%;
+    opacity: 0;
+  }
 }
 
 /* ─── Sonos widget (bottom center, like calendar-dashboard) ─── */
@@ -2848,7 +2917,6 @@
     gap: 10px;
   }
 }
-
 
 /* ═══════════════════════════════════════════════════════
    DashboardTasksSidebar — Panneau latéral gauche
@@ -3141,7 +3209,9 @@
   margin-top: 2px;
   color: var(--theme-success, var(--theme-success-alt));
   opacity: 0.6;
-  transition: opacity 0.15s, color 0.15s;
+  transition:
+    opacity 0.15s,
+    color 0.15s;
   flex-shrink: 0;
 }
 
@@ -3376,8 +3446,12 @@
 }
 
 @keyframes dash-sonos-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Idle / no playback */

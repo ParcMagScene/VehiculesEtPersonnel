@@ -1,5 +1,19 @@
 import React, { useState, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
-import { format, parseISO, isToday, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, eachDayOfInterval, eachMonthOfInterval, startOfDay, endOfDay } from 'date-fns';
+import {
+  format,
+  parseISO,
+  isToday,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  eachDayOfInterval,
+  eachMonthOfInterval,
+  startOfDay,
+  endOfDay,
+} from 'date-fns';
 import { fr } from 'date-fns/locale';
 import './GoogleCalendarBanner.css';
 import EventDetailsModal from '../planning/EventDetailsModal';
@@ -25,18 +39,48 @@ function loadGoogleStateFromStorage() {
     const raw = localStorage.getItem(GOOGLE_STATE_KEY);
     if (!raw) return null;
     return JSON.parse(raw);
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function saveGoogleStateToStorage(state) {
-  try { localStorage.setItem(GOOGLE_STATE_KEY, JSON.stringify(state)); } catch { /* quota */ }
+  try {
+    localStorage.setItem(GOOGLE_STATE_KEY, JSON.stringify(state));
+  } catch {
+    /* quota */
+  }
 }
 
 function clearGoogleStateFromStorage() {
-  try { localStorage.removeItem(GOOGLE_STATE_KEY); } catch { /* */ }
+  try {
+    localStorage.removeItem(GOOGLE_STATE_KEY);
+  } catch {
+    /* */
+  }
 }
 
-function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser, activeModule, onScroll, onEventClick, onEventsChange, clients, locations, reservations = [], onEventHover, onRequestEditReservation, onRequestViewEvent, onReservationsRefresh, onNewReservation, onNewAssignment, onNewAffaire, onNavigateToAffaire }) {
+function GoogleCalendarBanner({
+  _calendarConfig,
+  view,
+  currentDate,
+  currentUser,
+  activeModule,
+  onScroll,
+  onEventClick,
+  onEventsChange,
+  clients,
+  locations,
+  reservations = [],
+  onEventHover,
+  onRequestEditReservation,
+  onRequestViewEvent,
+  onReservationsRefresh,
+  onNewReservation,
+  onNewAssignment,
+  onNewAffaire,
+  onNavigateToAffaire,
+}) {
   const toast = useToast();
   const cachedState = useMemo(() => loadGoogleStateFromStorage(), []);
   const [error, setError] = useState(null);
@@ -50,7 +94,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   const [_clickedCell, setClickedCell] = useState(null);
   const [googleCalendarId, setGoogleCalendarId] = useState(cachedState?.calendarId || null);
   const [googleEmail, setGoogleEmail] = useState(cachedState?.email || null);
-  
+
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
   const [attachmentCounts, setAttachmentCounts] = useState({});
   const [searchOpen, setSearchOpen] = useState(false);
@@ -61,7 +105,14 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   const searchInputRef = useRef(null);
 
   // ── Synchronisation intelligente via useGoogleSync ──
-  const { events: rawEvents, loading, fetchNow, lastSync: _lastSync, isLeader: _isLeader, fetchError } = useGoogleSync({
+  const {
+    events: rawEvents,
+    loading,
+    fetchNow,
+    lastSync: _lastSync,
+    isLeader: _isLeader,
+    fetchError,
+  } = useGoogleSync({
     isSignedIn,
     view,
     currentDate,
@@ -82,8 +133,8 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
 
     // Détecter un client existant (recherche insensible à la casse)
     if (clients && clients.length > 0) {
-      const foundClient = clients.find(client => 
-        title.toLowerCase().includes(client.name.toLowerCase())
+      const foundClient = clients.find((client) =>
+        title.toLowerCase().includes(client.name.toLowerCase()),
       );
       if (foundClient) {
         enrichedEvent.detectedClient = foundClient.name;
@@ -92,28 +143,36 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
 
     // Détecter un lieu existant (recherche insensible à la casse dans le titre ET dans le champ location de l'événement)
     if (locations && locations.length > 0) {
-      const foundLocation = locations.find(location => {
+      const foundLocation = locations.find((location) => {
         const titleMatch = title.toLowerCase().includes(location.name.toLowerCase());
-        const locationFieldMatch = eventLocation.toLowerCase().includes(location.name.toLowerCase());
-        
+        const locationFieldMatch = eventLocation
+          .toLowerCase()
+          .includes(location.name.toLowerCase());
+
         // Chercher aussi par adresse si elle existe
         let addressMatch = false;
         if (location.address && eventLocation) {
           // Recherche partielle dans l'adresse (POI)
-          const locationParts = eventLocation.toLowerCase().split(',').map(p => p.trim());
-          const addressParts = location.address.toLowerCase().split(',').map(p => p.trim());
-          
+          const locationParts = eventLocation
+            .toLowerCase()
+            .split(',')
+            .map((p) => p.trim());
+          const addressParts = location.address
+            .toLowerCase()
+            .split(',')
+            .map((p) => p.trim());
+
           // Vérifier si au moins une partie de l'adresse correspond
-          addressMatch = addressParts.some(addrPart => 
-            locationParts.some(locPart => 
-              locPart.includes(addrPart) || addrPart.includes(locPart)
-            )
+          addressMatch = addressParts.some((addrPart) =>
+            locationParts.some(
+              (locPart) => locPart.includes(addrPart) || addrPart.includes(locPart),
+            ),
           );
         }
-        
+
         return titleMatch || locationFieldMatch || addressMatch;
       });
-      
+
       if (foundLocation) {
         enrichedEvent.detectedLocation = foundLocation.name;
       }
@@ -124,9 +183,9 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
 
   // Événements enrichis avec détection client/lieu/affaire
   const events = useMemo(
-    () => rawEvents.map(e => analyzeEventTitle(e)),
+    () => rawEvents.map((e) => analyzeEventTitle(e)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rawEvents, clients, locations]
+    [rawEvents, clients, locations],
   );
 
   // Charger la configuration Google et le statut de connexion (v2 OAuth)
@@ -136,7 +195,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
         const [configuredData, calendarIdData, statusData] = await Promise.all([
           api.getGoogleOAuthConfigured(),
           api.getGoogleCalendarId(),
-          api.getGoogleOAuthStatus()
+          api.getGoogleOAuthStatus(),
         ]);
         setGoogleConfigured(configuredData?.configured || false);
         setGoogleCalendarId(calendarIdData?.value || null);
@@ -172,11 +231,11 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     } else if (params.get('google_error')) {
       const errorCode = params.get('google_error');
       const errorMessages = {
-        'access_denied': 'Accès refusé par l\'utilisateur',
-        'invalid_state': 'Session expirée — réessayez',
-        'no_refresh_token': 'Erreur de configuration OAuth — contactez l\'administrateur',
-        'exchange_failed': 'Échec de l\'échange de code — réessayez',
-        'missing_params': 'Paramètres manquants dans le callback',
+        access_denied: "Accès refusé par l'utilisateur",
+        invalid_state: 'Session expirée — réessayez',
+        no_refresh_token: "Erreur de configuration OAuth — contactez l'administrateur",
+        exchange_failed: "Échec de l'échange de code — réessayez",
+        missing_params: 'Paramètres manquants dans le callback',
       };
       setError(errorMessages[errorCode] || `Erreur Google: ${errorCode}`);
       const url = new URL(window.location.href);
@@ -220,15 +279,16 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   useEffect(() => {
     const syncWidths = () => {
       // Chercher la grille principale : Calendar (.calendar-grid) ou PersonnelPanel (.pp-grid)
-      const calendarGrid = document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+      const calendarGrid =
+        document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
       const bannerGrid = document.querySelector('.banner-grid');
       const bannerScrollArea = document.querySelector('.banner-scroll-area');
-      
+
       if (calendarGrid && bannerGrid && bannerScrollArea) {
         // Copier les colonnes calculées du calendrier pour toutes les vues
         const gridComputedStyle = window.getComputedStyle(calendarGrid);
         const gridColumns = gridComputedStyle.gridTemplateColumns;
-        const columnWidths = gridColumns.split(' ').map(width => width);
+        const columnWidths = gridColumns.split(' ').map((width) => width);
         bannerGrid.style.gridTemplateColumns = columnWidths.join(' ');
       }
     };
@@ -240,9 +300,10 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     const timer4 = setTimeout(syncWidths, TIMING.PRINT_DELAY);
 
     // Observer les changements de taille du calendrier ou du planning personnel
-    const calendarGrid = document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+    const calendarGrid =
+      document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
     let resizeObserver;
-    
+
     if (calendarGrid) {
       resizeObserver = new ResizeObserver(syncWidths);
       resizeObserver.observe(calendarGrid);
@@ -250,7 +311,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
 
     // Synchroniser lors du resize de la fenêtre
     window.addEventListener('resize', syncWidths);
-    
+
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
@@ -264,12 +325,14 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   // Synchroniser le scroll entre le calendrier et le banner
   useEffect(() => {
     let cleanupFn = null;
-    
+
     const attachScrollListeners = () => {
       // Chercher la zone de scroll principale : Calendar ou PersonnelPanel
-      const calendarScrollArea = document.querySelector('.calendar-scroll-area') || document.querySelector('.pp-scroll-area');
+      const calendarScrollArea =
+        document.querySelector('.calendar-scroll-area') ||
+        document.querySelector('.pp-scroll-area');
       const bannerScrollArea = document.querySelector('.banner-scroll-area');
-      
+
       if (!calendarScrollArea || !bannerScrollArea) {
         setTimeout(attachScrollListeners, 50);
         return;
@@ -318,11 +381,13 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   useEffect(() => {
     if (view === 'month' || view === 'year') {
       const timeouts = [];
-      
+
       const syncScroll = () => {
-        const calendarScrollArea = document.querySelector('.calendar-scroll-area') || document.querySelector('.pp-scroll-area');
+        const calendarScrollArea =
+          document.querySelector('.calendar-scroll-area') ||
+          document.querySelector('.pp-scroll-area');
         const bannerScrollArea = document.querySelector('.banner-scroll-area');
-        
+
         if (calendarScrollArea && bannerScrollArea) {
           bannerScrollArea.scrollLeft = calendarScrollArea.scrollLeft;
         }
@@ -335,7 +400,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
       timeouts.push(setTimeout(syncScroll, TIMING.PRINT_DELAY));
 
       return () => {
-        timeouts.forEach(timeout => clearTimeout(timeout));
+        timeouts.forEach((timeout) => clearTimeout(timeout));
       };
     }
   }, [view, currentDate]);
@@ -347,7 +412,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   };
 
   const cycleDisplayMode = () => {
-    setDisplayMode(prev => prev === 'closed' ? 'compact' : 'closed');
+    setDisplayMode((prev) => (prev === 'closed' ? 'compact' : 'closed'));
   };
 
   // Ouvrir le modal de détails d'événement
@@ -428,7 +493,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
       setSelectedEvent(null);
     } catch (error) {
       console.error('Erreur suppression événement:', error);
-      toast.error('Erreur lors de la suppression de l\'événement: ' + error.message);
+      toast.error("Erreur lors de la suppression de l'événement: " + error.message);
     }
   };
 
@@ -439,20 +504,20 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
       return createdEvent;
     } catch (error) {
       console.error('Erreur création événement:', error);
-      toast.error('Erreur lors de la création de l\'événement: ' + error.message);
+      toast.error("Erreur lors de la création de l'événement: " + error.message);
       throw error;
     }
   };
 
   const handleEventUpdated = async (eventId, updates) => {
     try {
-      const eventToUpdate = events.find(e => e.id === eventId);
+      const eventToUpdate = events.find((e) => e.id === eventId);
       if (!eventToUpdate) return;
       await api.updateGoogleEventV2(eventId, updates, googleCalendarId);
       fetchNow();
     } catch (error) {
       console.error('Erreur mise à jour événement:', error);
-      toast.error('Erreur lors de la mise à jour de l\'événement: ' + error.message);
+      toast.error("Erreur lors de la mise à jour de l'événement: " + error.message);
       throw error;
     }
   };
@@ -463,7 +528,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     e.stopPropagation();
     const startY = e.clientY;
     const startHeight = bannerHeight;
-    
+
     const handleMouseMove = (moveEvent) => {
       const deltaY = moveEvent.clientY - startY;
       const newHeight = Math.min(Math.max(startHeight + deltaY, 100), 600);
@@ -488,7 +553,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        setError('Impossible d\'obtenir l\'URL d\'autorisation Google');
+        setError("Impossible d'obtenir l'URL d'autorisation Google");
       }
     } catch (err) {
       setError('Erreur lors de la connexion: ' + err.message);
@@ -512,7 +577,8 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
       setError('Session Google expirée. Veuillez vous reconnecter.');
     } else if (msg.includes('404') && googleCalendarId && googleCalendarId !== 'primary') {
       // Tentative d'ajout automatique du calendrier
-      api.addGoogleCalendarV2({ id: googleCalendarId })
+      api
+        .addGoogleCalendarV2({ id: googleCalendarId })
         .then(() => fetchNow())
         .catch(() => {});
     } else {
@@ -525,16 +591,18 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     if (view === 'week') {
       return eachDayOfInterval({
         start: startOfWeek(currentDate, { weekStartsOn: 1 }),
-        end: endOfWeek(currentDate, { weekStartsOn: 1 }) });
+        end: endOfWeek(currentDate, { weekStartsOn: 1 }),
+      });
     } else if (view === 'month') {
       return eachDayOfInterval({
         start: startOfMonth(currentDate),
-        end: endOfMonth(currentDate) });
+        end: endOfMonth(currentDate),
+      });
     } else if (view === 'year') {
       // Utiliser eachMonthOfInterval comme Calendar pour synchroniser la grille
       const months = eachMonthOfInterval({
         start: startOfYear(currentDate),
-        end: endOfYear(currentDate)
+        end: endOfYear(currentDate),
       });
       // Diagnostic supprimé (Phase D cleanup)
       return months;
@@ -548,36 +616,48 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     const processedEvents = new Set();
 
     // Pour la vue année, filtrer les événements par année affichée
-    const _filteredEvents = view === 'year'
-      ? events.filter(event => {
-          const eventStart = event.start.dateTime ? parseISO(event.start.dateTime) : parseISO(event.start.date);
-          return eventStart.getFullYear() === currentDate.getFullYear();
-        })
-      : events;
+    const _filteredEvents =
+      view === 'year'
+        ? events.filter((event) => {
+            const eventStart = event.start.dateTime
+              ? parseISO(event.start.dateTime)
+              : parseISO(event.start.date);
+            return eventStart.getFullYear() === currentDate.getFullYear();
+          })
+        : events;
 
     // Mapping des colorId Google Calendar vers des couleurs hexadécimales
     const googleColorMap = {
-      '1': '#a4bdfc', // Lavande
-      '2': '#7ae7bf', // Sauge
-      '3': '#dbadff', // Raisin
-      '4': '#ff887c', // Flamant
-      '5': '#fbd75b', // Banane
-      '6': '#ffb878', // Mandarine
-      '7': '#46d6db', // Paon
-      '8': '#e1e1e1', // Graphite
-      '9': '#5484ed', // Bleuet
-      '10': '#51b749', // Basilic
-      '11': '#dc2127', // Tomate
+      1: '#a4bdfc', // Lavande
+      2: '#7ae7bf', // Sauge
+      3: '#dbadff', // Raisin
+      4: '#ff887c', // Flamant
+      5: '#fbd75b', // Banane
+      6: '#ffb878', // Mandarine
+      7: '#46d6db', // Paon
+      8: '#e1e1e1', // Graphite
+      9: '#5484ed', // Bleuet
+      10: '#51b749', // Basilic
+      11: '#dc2127', // Tomate
     };
 
     // Couleurs de repli si pas de colorId
-    const fallbackColors = [STATUS_COLORS.info, STATUS_COLORS.success, STATUS_COLORS.warning, STATUS_COLORS.danger, ACCENT_COLORS.violet, ACCENT_COLORS.pink, '#14b8a6', ACCENT_COLORS.orange];
+    const fallbackColors = [
+      STATUS_COLORS.info,
+      STATUS_COLORS.success,
+      STATUS_COLORS.warning,
+      STATUS_COLORS.danger,
+      ACCENT_COLORS.violet,
+      ACCENT_COLORS.pink,
+      '#14b8a6',
+      ACCENT_COLORS.orange,
+    ];
     let colorIndex = 0;
 
     // Filtrer par recherche (nom ou numéro d'affaire)
     const searchLower = searchFilter.trim().toLowerCase();
 
-    events.forEach(event => {
+    events.forEach((event) => {
       if (processedEvents.has(event.id)) return;
       processedEvents.add(event.id);
 
@@ -586,18 +666,25 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
         const summary = (event.summary || '').toLowerCase();
         const affaire = (event.affaire || '').toLowerCase();
         const location = (event.location || '').toLowerCase();
-        if (!summary.includes(searchLower) && !affaire.includes(searchLower) && !location.includes(searchLower)) {
+        if (
+          !summary.includes(searchLower) &&
+          !affaire.includes(searchLower) &&
+          !location.includes(searchLower)
+        ) {
           return; // skip cet événement
         }
       }
 
-      const eventStart = event.start.dateTime ? parseISO(event.start.dateTime) : parseISO(event.start.date);
+      const eventStart = event.start.dateTime
+        ? parseISO(event.start.dateTime)
+        : parseISO(event.start.date);
       const eventEnd = event.end.dateTime ? parseISO(event.end.dateTime) : parseISO(event.end.date);
-      
+
       // Utiliser la couleur Google si disponible, sinon couleur de repli
-      const eventColor = event.colorId && googleColorMap[event.colorId] 
-        ? googleColorMap[event.colorId]
-        : fallbackColors[colorIndex++ % fallbackColors.length];
+      const eventColor =
+        event.colorId && googleColorMap[event.colorId]
+          ? googleColorMap[event.colorId]
+          : fallbackColors[colorIndex++ % fallbackColors.length];
 
       if (view === 'year') {
         // Vue année : calculer la span en mois
@@ -619,12 +706,11 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
         });
 
         if (startMonthIndex !== -1) {
-          
           // Nettoyer le titre en supprimant le numéro d'affaire
           let cleanTitle = event.summary || '(Sans titre)';
           cleanTitle = cleanTitle.replace(/\baf\s*\d+\b/gi, '').trim();
           cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
-          
+
           eventBlocks.push({
             eventId: event.id,
             summary: cleanTitle,
@@ -634,7 +720,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
             affaire: event.affaire,
             startIndex: startMonthIndex,
             span,
-            event: event // Données complètes pour la création de réservation
+            event: event, // Données complètes pour la création de réservation
           });
         }
       } else {
@@ -655,12 +741,12 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
           const startIndex = Math.min(...slots);
           const endIndex = Math.max(...slots);
           const span = endIndex - startIndex + 1;
-          
+
           // Nettoyer le titre en supprimant le numéro d'affaire
           let cleanTitle = event.summary || '(Sans titre)';
           cleanTitle = cleanTitle.replace(/\baf\s*\d+\b/gi, '').trim();
           cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
-          
+
           eventBlocks.push({
             eventId: event.id,
             summary: cleanTitle,
@@ -670,7 +756,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
             affaire: event.affaire,
             startIndex: isPersonnelMode ? startIndex : startIndex * 2,
             span: isPersonnelMode ? span : span * 2,
-            event: event // Données complètes pour la création de réservation
+            event: event, // Données complètes pour la création de réservation
           });
         }
       }
@@ -684,7 +770,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
       // Si même index de début, trier par durée (plus long d'abord)
       return b.span - a.span;
     });
-    
+
     return eventBlocks;
   }, [view, currentDate, events, days, searchFilter, activeModule]);
 
@@ -696,7 +782,10 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
           <div className="auth-prompt">
             <h3>📅 Synchronisation Google Calendar</h3>
             <p>⚠️ Configuration manquante</p>
-            <p>Le module Google OAuth n'est pas configuré sur le serveur (variables GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET manquantes)</p>
+            <p>
+              Le module Google OAuth n'est pas configuré sur le serveur (variables GOOGLE_CLIENT_ID
+              / GOOGLE_CLIENT_SECRET manquantes)
+            </p>
           </div>
         </div>
       </div>
@@ -710,16 +799,15 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
           <div className="auth-prompt">
             <h3>📅 Synchronisation Google Calendar</h3>
             <p>Connectez-vous pour afficher vos événements personnels</p>
-            <Button variant="ghost" 
-              onClick={handleSignIn} 
+            <Button
+              variant="ghost"
+              onClick={handleSignIn}
               className="signin-button"
               disabled={googleConfigured === null}
             >
               {googleConfigured === null ? 'Chargement...' : 'Se connecter avec Google'}
             </Button>
-            {error && (
-              <InlineAlert>{error}</InlineAlert>
-            )}
+            {error && <InlineAlert>{error}</InlineAlert>}
           </div>
         </div>
       </div>
@@ -727,11 +815,7 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
   }
 
   if (loading) {
-    return (
-      <div className="google-calendar-banner loading">
-        Chargement des événements...
-      </div>
-    );
+    return <div className="google-calendar-banner loading">Chargement des événements...</div>;
   }
 
   // Ne pas masquer le banner si aucun événement, garder la structure pour la cohérence visuelle
@@ -751,251 +835,359 @@ function GoogleCalendarBanner({ _calendarConfig, view, currentDate, currentUser,
     <>
       <div className={`google-calendar-banner-grid ${displayMode}`}>
         <div className="calendar-banner">
-        {/* Colonne véhicules fixe à gauche */}
-        <div className="banner-vehicle-column">
-          <div className="banner-vehicle-header">
-            <div className="banner-header-top">
-              {displayMode === 'closed' ? (
-                <span>Évènements</span>
-              ) : (
-                <div className="banner-title-stack">
-                  <span>Locations</span>
-                  <span>Prestations</span>
-                  <span>Installations</span>
+          {/* Colonne véhicules fixe à gauche */}
+          <div className="banner-vehicle-column">
+            <div className="banner-vehicle-header">
+              <div className="banner-header-top">
+                {displayMode === 'closed' ? (
+                  <span>Évènements</span>
+                ) : (
+                  <div className="banner-title-stack">
+                    <span>Locations</span>
+                    <span>Prestations</span>
+                    <span>Installations</span>
+                  </div>
+                )}
+                <div className="banner-header-actions">
+                  {displayMode !== 'closed' && (
+                    <Button
+                      variant="ghost"
+                      className={`banner-search-toggle ${searchOpen ? 'active' : ''}`}
+                      onClick={() => {
+                        setSearchOpen((prev) => !prev);
+                        if (searchOpen) setSearchFilter('');
+                        else setTimeout(() => searchInputRef.current?.focus(), 100);
+                      }}
+                      title="Rechercher un événement"
+                    >
+                      <Search size={14} />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    className="toggle-banner-button"
+                    onClick={cycleDisplayMode}
+                    title={getModeLabel()}
+                  >
+                    {getModeIcon()}
+                  </Button>
+                </div>
+              </div>
+              {searchOpen && displayMode !== 'closed' && (
+                <div className="banner-search-bar">
+                  <SearchBar
+                    ref={searchInputRef}
+                    value={searchFilter}
+                    onChange={setSearchFilter}
+                    placeholder="Nom, n° affaire…"
+                    size="sm"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setSearchFilter('');
+                        setSearchOpen(false);
+                      }
+                    }}
+                  />
+                  <span className="banner-search-count">{eventBlocks.length}</span>
                 </div>
               )}
-              <div className="banner-header-actions">
-                {displayMode !== 'closed' && (
-                  <Button variant="ghost"                     className={`banner-search-toggle ${searchOpen ? 'active' : ''}`}
-                    onClick={() => {
-                      setSearchOpen(prev => !prev);
-                      if (searchOpen) setSearchFilter('');
-                      else setTimeout(() => searchInputRef.current?.focus(), 100);
-                    }}
-                    title="Rechercher un événement"
-                  >
-                    <Search size={14} />
-                  </Button>
-                )}
-                <Button variant="ghost" 
-                  className="toggle-banner-button" 
-                  onClick={cycleDisplayMode} 
-                  title={getModeLabel()}
-                >
-                  {getModeIcon()}
-                </Button>
-              </div>
-            </div>
-            {searchOpen && displayMode !== 'closed' && (
-              <div className="banner-search-bar">
-                <SearchBar
-                  ref={searchInputRef}
-                  value={searchFilter}
-                  onChange={setSearchFilter}
-                  placeholder="Nom, n° affaire…"
-                  size="sm"
-                  onKeyDown={e => { if (e.key === 'Escape') { setSearchFilter(''); setSearchOpen(false); } }}
-                />
-                <span className="banner-search-count">{eventBlocks.length}</span>
-              </div>
-            )}
-            {/* Bouton contextuel : Nouvelle réservation / Nouvelle affectation / Nouvelle affaire */}
-            <Button variant="ghost"               className="banner-new-action-btn"
-              onClick={activeModule === 'affaires' ? onNewAffaire : activeModule === 'personnel' ? onNewAssignment : onNewReservation}
-              title={activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}
-            >
-              <Plus size={14} />
-              <span>{activeModule === 'affaires' ? 'Nouvelle affaire' : activeModule === 'personnel' ? 'Nouvelle affectation' : 'Nouvelle réservation'}</span>
-            </Button>
-            {/* Bouton Nouvel événement Google Calendar */}
-            {isSignedIn && currentUser?.isAdmin && (
-              <Button variant="ghost"                 className="banner-new-action-btn banner-new-event-btn"
-                onClick={handleOpenNewEvent}
-                title="Créer un événement Google Calendar"
+              {/* Bouton contextuel : Nouvelle réservation / Nouvelle affectation / Nouvelle affaire */}
+              <Button
+                variant="ghost"
+                className="banner-new-action-btn"
+                onClick={
+                  activeModule === 'affaires'
+                    ? onNewAffaire
+                    : activeModule === 'personnel'
+                      ? onNewAssignment
+                      : onNewReservation
+                }
+                title={
+                  activeModule === 'affaires'
+                    ? 'Nouvelle affaire'
+                    : activeModule === 'personnel'
+                      ? 'Nouvelle affectation'
+                      : 'Nouvelle réservation'
+                }
               >
-                <CalendarPlus size={14} />
-                <span>Nouvel événement</span>
+                <Plus size={14} />
+                <span>
+                  {activeModule === 'affaires'
+                    ? 'Nouvelle affaire'
+                    : activeModule === 'personnel'
+                      ? 'Nouvelle affectation'
+                      : 'Nouvelle réservation'}
+                </span>
               </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Grille scrollable à droite */}
-        <div 
-          className="banner-scroll-area" 
-          onScroll={handleScroll}
-          style={displayMode === 'compact' ? { height: `${bannerHeight}px` } : undefined}
-        >
-          <div className={`banner-grid ${view}-view`}>
-            {/* Lignes de séparation alignées sur les colonnes */}
-            <div className="banner-grid-lines">
-              {view === 'week' && days.flatMap((day, dayIndex) => {
-                const dayIsToday = isToday(day);
-                if (activeModule === 'personnel') {
-                  return [
-                    <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />
-                  ];
-                }
-                return [
-                  <div key={`${dayIndex}-am`} className={`grid-line ${dayIsToday ? 'today today-left' : ''}`} />,
-                  <div key={`${dayIndex}-pm`} className={`grid-line ${dayIsToday ? 'today today-right' : ''}`} />
-                ];
-              })}
-              {view === 'month' && days.flatMap((day, dayIndex) => {
-                const dayIsToday = isToday(day);
-                if (activeModule === 'personnel') {
-                  return [
-                    <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />
-                  ];
-                }
-                return [
-                  <div key={`${dayIndex}-am`} className={`grid-line ${dayIsToday ? 'today today-left' : ''}`} />,
-                  <div key={`${dayIndex}-pm`} className={`grid-line ${dayIsToday ? 'today today-right' : ''}`} />
-                ];
-              })}
-              {view === 'year' && days.map((month, index) => (
-                <div key={index} className="grid-line" />
-              ))}
+              {/* Bouton Nouvel événement Google Calendar */}
+              {isSignedIn && currentUser?.isAdmin && (
+                <Button
+                  variant="ghost"
+                  className="banner-new-action-btn banner-new-event-btn"
+                  onClick={handleOpenNewEvent}
+                  title="Créer un événement Google Calendar"
+                >
+                  <CalendarPlus size={14} />
+                  <span>Nouvel événement</span>
+                </Button>
+              )}
             </div>
-            {/* Ligne des événements */}
-            <div className="banner-events-row">
-              {eventBlocks.map((eventBlock, idx) => {
-                // Trouver les réservations liées à cet événement
-                const linkedReservations = reservations.filter(r => r.googleEventId === eventBlock.eventId);
-                const hasLinkedReservations = linkedReservations.length > 0;
-                // Détecter si le titre contient "RDV" (insensible à la casse)
-                const isRdv = /\brdv\b/i.test(eventBlock.summary);
+          </div>
 
-                return (
-                  <div 
-                    key={`${eventBlock.eventId}-${idx}`}
-                    className={`event-block-span clickable ${hasLinkedReservations ? 'linked' : ''} ${isRdv ? 'rdv-highlight' : ''}`}
-                    style={{ 
-                      gridColumn: `${eventBlock.startIndex + 1} / span ${eventBlock.span}`,
-                      backgroundColor: eventBlock.color + '40',
-                      borderLeft: `3px solid ${eventBlock.color}`
-                    }}
-                    title={hasLinkedReservations 
-                      ? `${eventBlock.summary}${eventBlock.affaire ? ' - ' + eventBlock.affaire : ''}${eventBlock.location ? ' - ' + eventBlock.location : ''}${eventBlock.time ? ' - ' + eventBlock.time : ''}${eventBlock.affaire && attachmentCounts[eventBlock.affaire] ? '\n📎 ' + attachmentCounts[eventBlock.affaire] + ' pièce(s) jointe(s)' : ''}\n\n${linkedReservations.length} réservation(s) liée(s)\nCliquer pour modifier`
-                      : `${eventBlock.summary}${eventBlock.affaire ? ' - ' + eventBlock.affaire : ''}${eventBlock.location ? ' - ' + eventBlock.location : ''}${eventBlock.time ? ' - ' + eventBlock.time : ''}${eventBlock.affaire && attachmentCounts[eventBlock.affaire] ? '\n📎 ' + attachmentCounts[eventBlock.affaire] + ' pièce(s) jointe(s)' : ''}\n\nCliquer pour importer une affaire`
+          {/* Grille scrollable à droite */}
+          <div
+            className="banner-scroll-area"
+            onScroll={handleScroll}
+            style={displayMode === 'compact' ? { height: `${bannerHeight}px` } : undefined}
+          >
+            <div className={`banner-grid ${view}-view`}>
+              {/* Lignes de séparation alignées sur les colonnes */}
+              <div className="banner-grid-lines">
+                {view === 'week' &&
+                  days.flatMap((day, dayIndex) => {
+                    const dayIsToday = isToday(day);
+                    if (activeModule === 'personnel') {
+                      return [
+                        <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />,
+                      ];
                     }
-                    onMouseEnter={() => {
-                      if (onEventHover && hasLinkedReservations) {
-                        onEventHover(eventBlock.eventId);
+                    return [
+                      <div
+                        key={`${dayIndex}-am`}
+                        className={`grid-line ${dayIsToday ? 'today today-left' : ''}`}
+                      />,
+                      <div
+                        key={`${dayIndex}-pm`}
+                        className={`grid-line ${dayIsToday ? 'today today-right' : ''}`}
+                      />,
+                    ];
+                  })}
+                {view === 'month' &&
+                  days.flatMap((day, dayIndex) => {
+                    const dayIsToday = isToday(day);
+                    if (activeModule === 'personnel') {
+                      return [
+                        <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />,
+                      ];
+                    }
+                    return [
+                      <div
+                        key={`${dayIndex}-am`}
+                        className={`grid-line ${dayIsToday ? 'today today-left' : ''}`}
+                      />,
+                      <div
+                        key={`${dayIndex}-pm`}
+                        className={`grid-line ${dayIsToday ? 'today today-right' : ''}`}
+                      />,
+                    ];
+                  })}
+                {view === 'year' &&
+                  days.map((month, index) => <div key={index} className="grid-line" />)}
+              </div>
+              {/* Ligne des événements */}
+              <div className="banner-events-row">
+                {eventBlocks.map((eventBlock, idx) => {
+                  // Trouver les réservations liées à cet événement
+                  const linkedReservations = reservations.filter(
+                    (r) => r.googleEventId === eventBlock.eventId,
+                  );
+                  const hasLinkedReservations = linkedReservations.length > 0;
+                  // Détecter si le titre contient "RDV" (insensible à la casse)
+                  const isRdv = /\brdv\b/i.test(eventBlock.summary);
+
+                  return (
+                    <div
+                      key={`${eventBlock.eventId}-${idx}`}
+                      className={`event-block-span clickable ${hasLinkedReservations ? 'linked' : ''} ${isRdv ? 'rdv-highlight' : ''}`}
+                      style={{
+                        gridColumn: `${eventBlock.startIndex + 1} / span ${eventBlock.span}`,
+                        backgroundColor: eventBlock.color + '40',
+                        borderLeft: `3px solid ${eventBlock.color}`,
+                      }}
+                      title={
+                        hasLinkedReservations
+                          ? `${eventBlock.summary}${eventBlock.affaire ? ' - ' + eventBlock.affaire : ''}${eventBlock.location ? ' - ' + eventBlock.location : ''}${eventBlock.time ? ' - ' + eventBlock.time : ''}${eventBlock.affaire && attachmentCounts[eventBlock.affaire] ? '\n📎 ' + attachmentCounts[eventBlock.affaire] + ' pièce(s) jointe(s)' : ''}\n\n${linkedReservations.length} réservation(s) liée(s)\nCliquer pour modifier`
+                          : `${eventBlock.summary}${eventBlock.affaire ? ' - ' + eventBlock.affaire : ''}${eventBlock.location ? ' - ' + eventBlock.location : ''}${eventBlock.time ? ' - ' + eventBlock.time : ''}${eventBlock.affaire && attachmentCounts[eventBlock.affaire] ? '\n📎 ' + attachmentCounts[eventBlock.affaire] + ' pièce(s) jointe(s)' : ''}\n\nCliquer pour importer une affaire`
                       }
-                    }}
-                    onMouseLeave={() => {
-                      if (onEventHover) {
-                        onEventHover(null);
-                      }
-                    }}
-                    onClick={() => {
-                      handleCellClick(eventBlock.event);
-                    }}
-                  >
-                    <div className="event-content">
-                      <span className="event-summary">{capitalizeText(eventBlock.summary)}</span>
-                      {hasLinkedReservations && (
-                        <span className="event-linked-indicator" title={`${linkedReservations.length} réservation(s) liée(s)`}>
-                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M13 8C13 5.79086 11.2091 4 9 4H7C4.79086 4 3 5.79086 3 8C3 10.2091 4.79086 12 7 12H9C11.2091 12 13 10.2091 13 8Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                            <path d="M6 8H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                          </svg>
-                        </span>
-                      )}
-                      {eventBlock.affaire && affairesWithAttachments.includes(eventBlock.affaire) && (
-                        <span className="event-attachment-indicator" title={`${attachmentCounts[eventBlock.affaire] || ''} pièce(s) jointe(s)`}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                          </svg>
-                          <span className="attachment-count">{attachmentCounts[eventBlock.affaire]}</span>
-                        </span>
-                      )}
-                      {eventBlock.affaire && <span className="event-affaire" style={{ cursor: onNavigateToAffaire ? 'pointer' : 'default', textDecoration: 'underline' }} onClick={(e) => { if (onNavigateToAffaire) { e.stopPropagation(); onNavigateToAffaire(eventBlock.affaire); } }}>{eventBlock.affaire}</span>}
-                      {eventBlock.time && <span className="event-time">{eventBlock.time}</span>}
+                      onMouseEnter={() => {
+                        if (onEventHover && hasLinkedReservations) {
+                          onEventHover(eventBlock.eventId);
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        if (onEventHover) {
+                          onEventHover(null);
+                        }
+                      }}
+                      onClick={() => {
+                        handleCellClick(eventBlock.event);
+                      }}
+                    >
+                      <div className="event-content">
+                        <span className="event-summary">{capitalizeText(eventBlock.summary)}</span>
+                        {hasLinkedReservations && (
+                          <span
+                            className="event-linked-indicator"
+                            title={`${linkedReservations.length} réservation(s) liée(s)`}
+                          >
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M13 8C13 5.79086 11.2091 4 9 4H7C4.79086 4 3 5.79086 3 8C3 10.2091 4.79086 12 7 12H9C11.2091 12 13 10.2091 13 8Z"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                              />
+                              <path
+                                d="M6 8H10"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                          </span>
+                        )}
+                        {eventBlock.affaire &&
+                          affairesWithAttachments.includes(eventBlock.affaire) && (
+                            <span
+                              className="event-attachment-indicator"
+                              title={`${attachmentCounts[eventBlock.affaire] || ''} pièce(s) jointe(s)`}
+                            >
+                              <svg
+                                width="11"
+                                height="11"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                              </svg>
+                              <span className="attachment-count">
+                                {attachmentCounts[eventBlock.affaire]}
+                              </span>
+                            </span>
+                          )}
+                        {eventBlock.affaire && (
+                          <span
+                            className="event-affaire"
+                            style={{
+                              cursor: onNavigateToAffaire ? 'pointer' : 'default',
+                              textDecoration: 'underline',
+                            }}
+                            onClick={(e) => {
+                              if (onNavigateToAffaire) {
+                                e.stopPropagation();
+                                onNavigateToAffaire(eventBlock.affaire);
+                              }
+                            }}
+                          >
+                            {eventBlock.affaire}
+                          </span>
+                        )}
+                        {eventBlock.time && <span className="event-time">{eventBlock.time}</span>}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Poignée de redimensionnement */}
+        <div
+          onMouseDown={handleMouseDown}
+          style={{
+            width: '100%',
+            height: '12px',
+            background: 'var(--theme-gradient)',
+            cursor: 'ns-resize',
+            display: displayMode === 'compact' ? 'flex' : 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            borderTop: '1px solid var(--theme-border)',
+            borderBottom: '2px solid var(--theme-info)',
+            transition: 'background 0.2s',
+            userSelect: 'none',
+            position: 'relative',
+            zIndex: 200,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.filter = 'brightness(1.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.filter = '';
+          }}
+        >
+          <div
+            style={{
+              color: 'var(--theme-text-inverse)',
+              fontSize: '12px',
+              lineHeight: 1,
+              letterSpacing: '-2px',
+              fontWeight: 'bold',
+              pointerEvents: 'none',
+            }}
+          >
+            ⋮⋮⋮
           </div>
         </div>
       </div>
 
-      {/* Poignée de redimensionnement */}
-      <div 
-        onMouseDown={handleMouseDown}
-        style={{
-          width: '100%',
-          height: '12px',
-          background: 'var(--theme-gradient)',
-          cursor: 'ns-resize',
-          display: displayMode === 'compact' ? 'flex' : 'none',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          borderTop: '1px solid var(--theme-border)',
-          borderBottom: '2px solid var(--theme-info)',
-          transition: 'background 0.2s',
-          userSelect: 'none',
-          position: 'relative',
-          zIndex: 200 }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.filter = 'brightness(1.15)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.filter = '';
-        }}
-      >
-        <div style={{ color: 'var(--theme-text-inverse)', fontSize: '12px', lineHeight: 1, letterSpacing: '-2px', fontWeight: 'bold', pointerEvents: 'none' }}>⋮⋮⋮</div>
-      </div>
-    </div>
-    
-    {/* Modal de détails d'événement */}
-    <EventDetailsModal
-      isOpen={eventDetailsOpen}
-      onClose={handleCloseEventDetails}
-      event={selectedEvent}
-      reservations={reservations}
-      onRequestEditReservation={onRequestEditReservation}
-      onRequestCreateReservation={handleCreateReservationFromEvent}
-      onRequestCreateAssignment={handleCreateAssignmentFromEvent}
-      onEventCreated={handleOpenAffaireImport}
-      onEventUpdated={handleEventUpdated}
-      onRequestEditEvent={isSignedIn ? handleRequestEditEvent : undefined}
-      onRequestDeleteEvent={isSignedIn ? handleDeleteEvent : undefined}
-      onReservationsRefresh={onReservationsRefresh}
-      currentUser={currentUser}
-      activeModule={activeModule}
-    />
+      {/* Modal de détails d'événement */}
+      <EventDetailsModal
+        isOpen={eventDetailsOpen}
+        onClose={handleCloseEventDetails}
+        event={selectedEvent}
+        reservations={reservations}
+        onRequestEditReservation={onRequestEditReservation}
+        onRequestCreateReservation={handleCreateReservationFromEvent}
+        onRequestCreateAssignment={handleCreateAssignmentFromEvent}
+        onEventCreated={handleOpenAffaireImport}
+        onEventUpdated={handleEventUpdated}
+        onRequestEditEvent={isSignedIn ? handleRequestEditEvent : undefined}
+        onRequestDeleteEvent={isSignedIn ? handleDeleteEvent : undefined}
+        onReservationsRefresh={onReservationsRefresh}
+        currentUser={currentUser}
+        activeModule={activeModule}
+      />
 
-    {/* Modal de création / édition d'événement Google */}
-    {eventFormOpen && (
-      <Suspense fallback={<LoadingOverlay />}>
-        <GoogleEventFormModal
-          isOpen={eventFormOpen}
-          onClose={handleCloseEventForm}
-          mode={eventFormMode}
-          event={eventFormEvent}
-          onSave={handleSaveEventForm}
-          currentDate={currentDate}
-        />
-      </Suspense>
-    )}
-    
-    {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}
-    {modalOpen && (
-      <Suspense fallback={<LoadingOverlay />}>
-        <AffaireImportModal
-          isOpen={modalOpen}
-          onClose={handleCloseModal}
-          event={selectedEvent}
-          onEventCreated={handleEventCreated}
-          onEventUpdated={handleEventUpdated}
-          onRequestEditReservation={onRequestEditReservation}
-        />
-      </Suspense>
-    )}
+      {/* Modal de création / édition d'événement Google */}
+      {eventFormOpen && (
+        <Suspense fallback={<LoadingOverlay />}>
+          <GoogleEventFormModal
+            isOpen={eventFormOpen}
+            onClose={handleCloseEventForm}
+            mode={eventFormMode}
+            event={eventFormEvent}
+            onSave={handleSaveEventForm}
+            currentDate={currentDate}
+          />
+        </Suspense>
+      )}
+
+      {/* Modal d'import d'affaires (ouvert depuis le modal de détails) */}
+      {modalOpen && (
+        <Suspense fallback={<LoadingOverlay />}>
+          <AffaireImportModal
+            isOpen={modalOpen}
+            onClose={handleCloseModal}
+            event={selectedEvent}
+            onEventCreated={handleEventCreated}
+            onEventUpdated={handleEventUpdated}
+            onRequestEditReservation={onRequestEditReservation}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

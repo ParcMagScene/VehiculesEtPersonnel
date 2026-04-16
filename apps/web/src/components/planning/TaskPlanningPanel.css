@@ -394,7 +394,7 @@
   border-color: var(--theme-primary);
 }
 
-.task-planning-panel .task-form-inline input[type="text"] {
+.task-planning-panel .task-form-inline input[type='text'] {
   flex: 1;
   min-width: 150px;
 }
@@ -492,7 +492,7 @@
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   margin-top: 2px;
 }
 .task-planning-panel .affaire-autocomplete-option {
@@ -509,7 +509,7 @@
   text-align: left;
 }
 .task-planning-panel .affaire-autocomplete-option:hover {
-  background: var(--theme-primary-alpha, rgba(99,102,241,0.10));
+  background: var(--theme-primary-alpha, rgba(99, 102, 241, 0.1));
 }
 .task-planning-panel .affaire-opt-num {
   font-weight: 600;
@@ -567,7 +567,7 @@
 }
 .task-planning-panel .affaire-autocomplete-clear:hover {
   color: var(--theme-danger);
-  background: rgba(239,68,68,0.08);
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .task-planning-panel .task-form-enriched .form-field-google {
@@ -1222,7 +1222,7 @@
 
 /* Selected person in multi-assign dropdown */
 .task-planning-panel .assign-option.selected {
-  background: rgba(99, 102, 241, 0.10);
+  background: rgba(99, 102, 241, 0.1);
   font-weight: 600;
   color: var(--theme-primary);
 }
@@ -1251,7 +1251,6 @@
   font-size: var(--font-xs);
   gap: 2px;
 }
-
 
 /* ═══ Google status badge (vue jour, dans les rdv rows) ═══ */
 
@@ -1349,11 +1348,11 @@
   background: var(--theme-success-alt, var(--theme-success-alt));
 }
 .wk-col-header.today .wk-day-count.ev {
-  background: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.85);
   color: var(--theme-info);
 }
 .wk-col-header.today .wk-day-count.task {
-  background: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.85);
   color: var(--theme-success-alt, var(--theme-success-alt));
 }
 
@@ -1433,7 +1432,9 @@
   border-radius: var(--radius-md);
   background: var(--theme-card-bg, var(--theme-bg-card));
   overflow: hidden;
-  transition: flex 0.3s ease, min-width 0.3s ease;
+  transition:
+    flex 0.3s ease,
+    min-width 0.3s ease;
 }
 
 .wk-day-col.today {
@@ -1477,7 +1478,11 @@
   border-color: var(--theme-primary, var(--theme-info));
 }
 .wk-col-header.today:hover {
-  background: color-mix(in srgb, var(--theme-primary, var(--theme-info)) 85%, var(--theme-text-heading));
+  background: color-mix(
+    in srgb,
+    var(--theme-primary, var(--theme-info)) 85%,
+    var(--theme-text-heading)
+  );
 }
 
 .wk-expand-chevron {
@@ -1907,11 +1912,11 @@
   outline: none;
   border-color: var(--theme-primary);
 }
-.task-planning-panel .recurring-form-row input[type="text"] {
+.task-planning-panel .recurring-form-row input[type='text'] {
   flex: 1;
   min-width: 150px;
 }
-.task-planning-panel .recurring-form-row input[type="time"] {
+.task-planning-panel .recurring-form-row input[type='time'] {
   width: 100px;
 }
 
@@ -2024,11 +2029,20 @@
   color: var(--theme-text-secondary);
   transition: color 0.15s;
 }
-.task-planning-panel .ical-refresh-btn:hover { color: var(--theme-accent); }
+.task-planning-panel .ical-refresh-btn:hover {
+  color: var(--theme-accent);
+}
 .task-planning-panel .ical-refresh-btn .spinning {
   animation: spin-icon 1s linear infinite;
 }
-@keyframes spin-icon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes spin-icon {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .task-planning-panel .ical-manager-panel {
   background: var(--theme-bg-secondary);
@@ -2063,7 +2077,9 @@
   font-size: 0.78rem;
   cursor: pointer;
 }
-.task-planning-panel .btn-add-ical:hover { opacity: 0.85; }
+.task-planning-panel .btn-add-ical:hover {
+  opacity: 0.85;
+}
 
 .task-planning-panel .ical-form {
   display: flex;
@@ -2075,8 +2091,8 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border);
 }
-.task-planning-panel .ical-form input[type="text"],
-.task-planning-panel .ical-form input[type="url"] {
+.task-planning-panel .ical-form input[type='text'],
+.task-planning-panel .ical-form input[type='url'] {
   width: 100%;
   padding: 5px 8px;
   border: 1px solid var(--theme-border);
@@ -2090,7 +2106,7 @@
   align-items: center;
   gap: 8px;
 }
-.task-planning-panel .ical-form input[type="color"] {
+.task-planning-panel .ical-form input[type='color'] {
   width: 28px;
   height: 28px;
   border: none;
@@ -2146,8 +2162,12 @@
   padding: 2px;
   border-radius: var(--radius-xs);
 }
-.task-planning-panel .ical-cal-actions button:hover { background: var(--theme-bg-tertiary); }
-.task-planning-panel .ical-cal-actions button.delete:hover { color: var(--theme-danger); }
+.task-planning-panel .ical-cal-actions button:hover {
+  background: var(--theme-bg-tertiary);
+}
+.task-planning-panel .ical-cal-actions button.delete:hover {
+  color: var(--theme-danger);
+}
 
 .task-planning-panel .ical-cal-info {
   flex: 1;
@@ -2225,7 +2245,7 @@
   overflow: hidden;
 }
 .task-planning-panel .events-today-group::before {
-  content: '● Aujourd\'hui';
+  content: "● Aujourd'hui";
   display: block;
   padding: 3px 12px 2px;
   font-size: 0.65rem;
@@ -2233,7 +2253,8 @@
   color: var(--theme-primary, var(--theme-info));
   letter-spacing: 0.02em;
   background: color-mix(in srgb, var(--theme-primary, var(--theme-info)) 8%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--theme-primary, var(--theme-info)) 15%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--theme-primary, var(--theme-info)) 15%, transparent);
 }
 .task-planning-panel .events-today-group > .task-row {
   border-left: none;
@@ -2346,13 +2367,13 @@
   font-size: var(--font-xs);
   padding: 1px 7px;
   border-radius: var(--radius-md-lg);
-  background: rgba(99, 102, 241, 0.10);
+  background: rgba(99, 102, 241, 0.1);
   color: var(--theme-text-secondary);
   white-space: nowrap;
   line-height: 1.5;
 }
 .task-planning-panel .linked-task-chip.done {
-  background: rgba(16, 185, 129, 0.10);
+  background: rgba(16, 185, 129, 0.1);
   color: var(--theme-success-alt);
   text-decoration: line-through;
   opacity: 0.7;
@@ -2374,8 +2395,14 @@
   animation: popFadeIn 0.15s ease;
 }
 @keyframes popFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .task-planning-panel .link-popover-header {
   display: flex;
@@ -2464,7 +2491,7 @@
   flex-wrap: wrap;
 }
 
-.task-planning-panel .ev-col-nom[role="button"] {
+.task-planning-panel .ev-col-nom[role='button'] {
   cursor: pointer;
 }
 

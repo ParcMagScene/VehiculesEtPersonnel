@@ -31,11 +31,7 @@ const MODAL_SELECTORS = [
 ].join(',');
 
 // Sélecteurs pour le header (drag handle)
-const HEADER_SELECTORS = [
-  '[class*="-header"]',
-  '.modal-header',
-  '.dialog-header',
-].join(',');
+const HEADER_SELECTORS = ['[class*="-header"]', '.modal-header', '.dialog-header'].join(',');
 
 // Classes à NE PAS traiter (ex: notification toasts, tooltips, etc.)
 const IGNORE_CLASSES = ['toast', 'tooltip', 'popover', 'dropdown', 'snackbar'];
@@ -88,7 +84,9 @@ function onDragStart(e) {
     const directModal = e.target.closest(MODAL_SELECTORS);
     if (directModal && directModal.dataset.draggableEnhanced) {
       // Seulement si le click n'est pas dans le body/content du modal
-      const body = directModal.querySelector('[class*="body"], [class*="content"], [class*="actions"], [class*="footer"], form, table, ul, ol');
+      const body = directModal.querySelector(
+        '[class*="body"], [class*="content"], [class*="actions"], [class*="footer"], form, table, ul, ol',
+      );
       if (body && body.contains(e.target)) return;
       modal = directModal;
     }
@@ -101,8 +99,10 @@ function onDragStart(e) {
   if (!overlay) return;
 
   // Ignorer les éléments à ne pas traiter
-  const classes = (typeof modal.className === 'string' ? modal.className : modal.className?.baseVal || '').toLowerCase();
-  if (IGNORE_CLASSES.some(c => classes.includes(c))) return;
+  const classes = (
+    typeof modal.className === 'string' ? modal.className : modal.className?.baseVal || ''
+  ).toLowerCase();
+  if (IGNORE_CLASSES.some((c) => classes.includes(c))) return;
 
   e.preventDefault();
 
@@ -212,7 +212,7 @@ function createResizeHandles(modal) {
   if (modal.querySelector('.modal-resize-handle')) return; // Déjà ajouté
 
   const handles = ['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w'];
-  handles.forEach(dir => {
+  handles.forEach((dir) => {
     const handle = document.createElement('div');
     handle.className = `modal-resize-handle modal-resize-${dir}`;
     handle.dataset.resizeDir = dir;
@@ -337,8 +337,10 @@ function enhanceModal(modal) {
   if (modal.matches(HEADER_SELECTORS)) return;
 
   // Vérifier qu'il ne faut pas ignorer
-  const classes = (typeof modal.className === 'string' ? modal.className : modal.className?.baseVal || '').toLowerCase();
-  if (IGNORE_CLASSES.some(c => classes.includes(c))) return;
+  const classes = (
+    typeof modal.className === 'string' ? modal.className : modal.className?.baseVal || ''
+  ).toLowerCase();
+  if (IGNORE_CLASSES.some((c) => classes.includes(c))) return;
 
   // Exclure les sous-parties (body, footer, close, actions, title, name)
   if (/-(body|footer|close|actions|title|name|cat|content)\b/.test(classes)) return;
@@ -372,10 +374,10 @@ function enhanceModal(modal) {
 function scanAndEnhance(root = document.body) {
   // Scanner les overlays et chercher les containers modals (enfants directs uniquement)
   const overlays = root.querySelectorAll(OVERLAY_SELECTORS);
-  overlays.forEach(overlay => {
+  overlays.forEach((overlay) => {
     // Ne prendre que les enfants directs de l'overlay qui matchent
     let found = false;
-    Array.from(overlay.children).forEach(child => {
+    Array.from(overlay.children).forEach((child) => {
       if (child.matches(MODAL_SELECTORS)) {
         enhanceModal(child);
         found = true;
@@ -392,15 +394,16 @@ function scanAndEnhance(root = document.body) {
 
   // Scanner aussi les portals (modals hors overlay)
   const directModals = root.querySelectorAll(MODAL_SELECTORS);
-  directModals.forEach(modal => {
+  directModals.forEach((modal) => {
     // Vérifier que le parent est bien un overlay ou un portal root
     const parent = modal.parentElement;
-    if (parent && (
-      parent.matches(OVERLAY_SELECTORS) ||
-      parent === document.body ||
-      parent.id === 'portal-root' ||
-      parent.id === 'modal-root'
-    )) {
+    if (
+      parent &&
+      (parent.matches(OVERLAY_SELECTORS) ||
+        parent === document.body ||
+        parent.id === 'portal-root' ||
+        parent.id === 'modal-root')
+    ) {
       enhanceModal(modal);
     }
   });
@@ -464,8 +467,12 @@ export function useDraggableModals() {
           for (const node of mutation.addedNodes) {
             if (node.nodeType === Node.ELEMENT_NODE) {
               // Check si le node ajouté est un overlay ou contient des modals
-              if (node.matches?.(OVERLAY_SELECTORS) || node.matches?.(MODAL_SELECTORS) ||
-                  node.querySelector?.(OVERLAY_SELECTORS) || node.querySelector?.(MODAL_SELECTORS)) {
+              if (
+                node.matches?.(OVERLAY_SELECTORS) ||
+                node.matches?.(MODAL_SELECTORS) ||
+                node.querySelector?.(OVERLAY_SELECTORS) ||
+                node.querySelector?.(MODAL_SELECTORS)
+              ) {
                 needsScan = true;
                 break;
               }

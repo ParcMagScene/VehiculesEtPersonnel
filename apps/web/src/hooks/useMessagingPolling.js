@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../utils/api';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../utils/notificationSound';
+import {
+  playNotificationSound,
+  requestNotificationPermission,
+  showBrowserNotification,
+} from '../utils/notificationSound';
 
 /**
  * Hook SSE pour les messages non lus + notifications sonores/navigateur.
@@ -14,30 +18,33 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
   const fallbackIntervalRef = useRef(null);
   const retriesRef = useRef(0);
 
-  const handleUnreadUpdate = useCallback((newCount) => {
-    const prevCount = prevUnreadRef.current;
-    if (newCount > prevCount && prevCount !== -1) {
-      const prefs = userPrefsRef.current;
-      const diff = newCount - prevCount;
+  const handleUnreadUpdate = useCallback(
+    (newCount) => {
+      const prevCount = prevUnreadRef.current;
+      if (newCount > prevCount && prevCount !== -1) {
+        const prefs = userPrefsRef.current;
+        const diff = newCount - prevCount;
 
-      if (prefs.notificationsEnabled !== false && !showMessagingRef.current) {
-        toast.info(`💬 ${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`, {
-          sound: prefs.soundEnabled !== false,
-        });
-      } else if (prefs.soundEnabled) {
-        playNotificationSound();
-      }
+        if (prefs.notificationsEnabled !== false && !showMessagingRef.current) {
+          toast.info(`💬 ${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`, {
+            sound: prefs.soundEnabled !== false,
+          });
+        } else if (prefs.soundEnabled) {
+          playNotificationSound();
+        }
 
-      if (prefs.notificationsEnabled && !showMessagingRef.current) {
-        showBrowserNotification(
-          `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
-          { body: 'Cliquez pour ouvrir la messagerie eM@g' }
-        );
+        if (prefs.notificationsEnabled && !showMessagingRef.current) {
+          showBrowserNotification(
+            `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
+            { body: 'Cliquez pour ouvrir la messagerie eM@g' },
+          );
+        }
       }
-    }
-    prevUnreadRef.current = newCount;
-    setUnreadMsgCount(newCount);
-  }, [userPrefsRef, showMessagingRef, toast]);
+      prevUnreadRef.current = newCount;
+      setUnreadMsgCount(newCount);
+    },
+    [userPrefsRef, showMessagingRef, toast],
+  );
 
   const startPolling = useCallback(() => {
     if (fallbackIntervalRef.current) return;
@@ -45,7 +52,9 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
       try {
         const data = await api.getUnreadCount();
         handleUnreadUpdate(data.unread || 0);
-      } catch { /* silencieux */ }
+      } catch {
+        /* silencieux */
+      }
     };
     poll();
     fallbackIntervalRef.current = setInterval(poll, 10000);
@@ -76,7 +85,9 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
         try {
           const data = JSON.parse(e.data);
           handleUnreadUpdate(data.unread || 0);
-        } catch { /* parse error */ }
+        } catch {
+          /* parse error */
+        }
       });
 
       es.onopen = () => {

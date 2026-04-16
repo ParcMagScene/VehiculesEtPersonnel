@@ -1,5 +1,15 @@
 import { useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameWeek, getWeek, isSameDay } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  startOfWeek,
+  endOfWeek,
+  isSameWeek,
+  getWeek,
+  isSameDay,
+} from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { X } from 'lucide-react';
 import { Button } from '@/design-system';
@@ -21,17 +31,17 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
 
   // Obtenir les réservations pour un jour donné
   const getDayReservations = (day) => {
-    return reservations.filter(r => {
+    return reservations.filter((r) => {
       const rStartDate = new Date(r.date);
       const rEndDate = r.endDate ? new Date(r.endDate) : rStartDate;
-      
+
       // Vérifier si le jour est dans la plage de la réservation
       const dayStart = new Date(day);
       dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(day);
       dayEnd.setHours(23, 59, 59, 999);
-      
-      return (rStartDate <= dayEnd && rEndDate >= dayStart);
+
+      return rStartDate <= dayEnd && rEndDate >= dayStart;
     });
   };
 
@@ -44,20 +54,23 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
   // Générer les semaines uniques du mois
   const weeks = useMemo(() => {
     const weeksSet = new Set();
-    monthDays.forEach(day => {
+    monthDays.forEach((day) => {
       const weekStart = startOfWeek(day, { weekStartsOn: 1 });
       const weekKey = format(weekStart, 'yyyy-MM-dd');
       if (!weeksSet.has(weekKey)) {
         weeksSet.add(weekKey);
       }
     });
-    return Array.from(weeksSet).map(key => new Date(key));
+    return Array.from(weeksSet).map((key) => new Date(key));
   }, [monthDays]);
 
   const _currentWeekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
 
   return (
-    <div className="week-selector-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="week-selector-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="week-selector-modal" onClick={(e) => e.stopPropagation()}>
         <div className="week-selector-header">
           <h3>Sélectionner une semaine - {format(currentDate, 'MMMM yyyy', { locale: fr })}</h3>
@@ -65,12 +78,14 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
             <X size={20} />
           </Button>
         </div>
-        
+
         <div className="week-selector-calendar">
           {/* En-tête des jours */}
           <div className="week-selector-weekdays">
-            {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(day => (
-              <div key={day} className="weekday-name">{day}</div>
+            {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
+              <div key={day} className="weekday-name">
+                {day}
+              </div>
             ))}
           </div>
 
@@ -80,7 +95,7 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
             {Array.from({ length: startOffset }).map((_, i) => (
               <div key={`empty-${i}`} className="week-selector-day empty" />
             ))}
-            
+
             {/* Jours du mois */}
             {monthDays.map((day, index) => {
               const dayReservations = getDayReservations(day);
@@ -88,11 +103,11 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
               const isCurrentWeek = isSameWeek(day, currentDate, { weekStartsOn: 1 });
               const isToday = isSameDay(day, new Date());
               const weekNum = getWeek(day, { weekStartsOn: 1 });
-              
+
               // Récupérer les couleurs des véhicules réservés ce jour
               const colors = new Set();
-              dayReservations.forEach(r => {
-                const vehicle = vehicles.find(v => v.id === r.vehicleId);
+              dayReservations.forEach((r) => {
+                const vehicle = vehicles.find((v) => v.id === r.vehicleId);
                 if (vehicle) {
                   colors.add(vehicle.displayColor || vehicle.color || STATUS_COLORS.info);
                 }
@@ -108,19 +123,15 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
                   onClick={() => handleWeekClick(weekStart)}
                   title={`Semaine ${weekNum}`}
                 >
-                  {isMonday && (
-                    <div className="week-number-badge">S{weekNum}</div>
-                  )}
+                  {isMonday && <div className="week-number-badge">S{weekNum}</div>}
                   <div className="day-number">{format(day, 'd')}</div>
                   {colors.size > 0 && (
                     <div className="day-dots">
-                      {Array.from(colors).slice(0, 3).map((color, idx) => (
-                        <div
-                          key={idx}
-                          className="day-dot"
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
+                      {Array.from(colors)
+                        .slice(0, 3)
+                        .map((color, idx) => (
+                          <div key={idx} className="day-dot" style={{ backgroundColor: color }} />
+                        ))}
                     </div>
                   )}
                 </div>
@@ -136,15 +147,18 @@ function WeekSelector({ currentDate, onSelectWeek, onClose, reservations = [], v
                 const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
                 const weekNum = getWeek(weekStart, { weekStartsOn: 1 });
                 const isCurrentWeek = isSameWeek(weekStart, currentDate, { weekStartsOn: 1 });
-                
+
                 return (
-                  <Button variant="ghost"                     key={index}
+                  <Button
+                    variant="ghost"
+                    key={index}
                     className={`week-item ${isCurrentWeek ? 'current' : ''}`}
                     onClick={() => handleWeekClick(weekStart)}
                   >
                     <span className="week-number">Semaine {weekNum}</span>
                     <span className="week-dates">
-                      {format(weekStart, 'd MMM', { locale: fr })} - {format(weekEnd, 'd MMM', { locale: fr })}
+                      {format(weekStart, 'd MMM', { locale: fr })} -{' '}
+                      {format(weekEnd, 'd MMM', { locale: fr })}
                     </span>
                   </Button>
                 );

@@ -74,7 +74,9 @@
   -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--theme-border);
   padding: 0.75rem 2rem;
-  box-shadow: 0 4px 6px -1px var(--shadow-xs), 0 2px 4px -1px var(--overlay-subtle);
+  box-shadow:
+    0 4px 6px -1px var(--shadow-xs),
+    0 2px 4px -1px var(--overlay-subtle);
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
@@ -166,7 +168,7 @@
   box-shadow: 0 2px 8px var(--shadow-sm);
 }
 
-[data-theme="dark"] .theme-toggle-btn:hover {
+[data-theme='dark'] .theme-toggle-btn:hover {
   color: var(--theme-warning);
 }
 
@@ -223,7 +225,9 @@
   align-items: center;
   gap: 0.5rem;
   animation: pulse 2s infinite;
-  box-shadow: 0 4px 6px -1px var(--shadow-sm), 0 2px 4px -1px var(--shadow-xs);
+  box-shadow:
+    0 4px 6px -1px var(--shadow-sm),
+    0 2px 4px -1px var(--shadow-xs);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -234,7 +238,9 @@
 
 .notification-badge:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 10px 15px -3px var(--shadow-sm), 0 4px 6px -2px var(--shadow-xs);
+  box-shadow:
+    0 10px 15px -3px var(--shadow-sm),
+    0 4px 6px -2px var(--shadow-xs);
 }
 
 .notification-badge.immobilized {
@@ -316,7 +322,8 @@
 }
 
 @keyframes pulse-overdue {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 2px 8px var(--danger-tint-dark);
     transform: scale(1);
   }
@@ -346,7 +353,8 @@
 }
 
 @keyframes pulse-reported {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
     transform: scale(1);
   }
@@ -423,7 +431,8 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -633,7 +642,8 @@
 }
 
 @keyframes pulse-status {
-  0%, 100% {
+  0%,
+  100% {
     background: var(--btn-danger-bg);
   }
   50% {
@@ -1070,7 +1080,11 @@
 }
 
 .date-navigation .nav-button.today-highlight:hover {
-  background: linear-gradient(135deg, var(--theme-info-dark) 0%, var(--theme-info-text) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-info-dark) 0%,
+    var(--theme-info-text) 100%
+  ) !important;
   border-color: var(--theme-info-dark) !important;
 }
 
@@ -1179,8 +1193,13 @@
 }
 
 @keyframes badge-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
 }
 
 /* Toast notification messages */
@@ -1202,7 +1221,9 @@
   font-size: var(--font-base);
   font-weight: 500;
   max-width: 340px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .msg-toast:hover {
@@ -1447,7 +1468,9 @@
   z-index: var(--z-dropdown);
   pointer-events: all;
   opacity: 0;
-  transition: opacity 0.15s, background 0.15s;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
 }
 
 .reservation:hover .reservation-delete-btn {
@@ -1534,7 +1557,6 @@
   .date-navigation {
     max-width: none;
   }
-
 }
 
 /* Petits écrans et mobiles */
@@ -1743,59 +1765,59 @@
    hardcodées par les variables du thème sombre.
    ═══════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .module-tab.active {
+[data-theme='dark'] .module-tab.active {
   background: var(--theme-bg-card);
   color: var(--theme-primary);
   box-shadow: 0 1px 4px var(--shadow-modal);
 }
 
-[data-theme="dark"] .notification-count {
+[data-theme='dark'] .notification-count {
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
 }
 
-[data-theme="dark"] .notifications-popup {
+[data-theme='dark'] .notifications-popup {
   background: var(--theme-bg-card);
   box-shadow: 0 20px 60px var(--theme-overlay);
 }
 
-[data-theme="dark"] .nav-button {
+[data-theme='dark'] .nav-button {
   background: var(--theme-bg-card);
   border-color: var(--theme-border);
   color: var(--theme-text-primary);
 }
 
-[data-theme="dark"] .nav-button:hover {
+[data-theme='dark'] .nav-button:hover {
   background: var(--theme-bg-tertiary);
 }
 
-[data-theme="dark"] .current-date.clickable {
+[data-theme='dark'] .current-date.clickable {
   background: var(--theme-bg-card);
   border-color: var(--theme-border);
   color: var(--theme-primary);
 }
 
-[data-theme="dark"] .current-date.clickable:hover {
+[data-theme='dark'] .current-date.clickable:hover {
   background: var(--theme-bg-tertiary);
   border-color: var(--theme-border-muted);
 }
 
-[data-theme="dark"] .notification-item.reservation-request.has-conflict {
+[data-theme='dark'] .notification-item.reservation-request.has-conflict {
   background: var(--theme-danger-bg);
   border-left-color: var(--theme-danger);
 }
 
-[data-theme="dark"] .notification-status.conflict {
+[data-theme='dark'] .notification-status.conflict {
   background: var(--theme-danger-bg) !important;
   color: var(--theme-danger) !important;
 }
 
-[data-theme="dark"] .calendar {
+[data-theme='dark'] .calendar {
   background: var(--theme-bg-card);
   box-shadow: 0 1px 3px var(--shadow-modal);
 }
 
-[data-theme="dark"] .vehicle-cell {
+[data-theme='dark'] .vehicle-cell {
   background: var(--theme-bg-card);
   border-bottom-color: var(--theme-border);
   border-right-color: var(--theme-border);

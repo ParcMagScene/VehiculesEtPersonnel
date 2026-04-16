@@ -1,14 +1,14 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import './theme.css'
-import './design/tokens.css'
-import './design/utilities.css'
-import './theme-palettes.css'
-import './theme-vscode.css'
-import './theme-density.css'
-import './theme-tv.css'
-import './index.css'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.jsx';
+import './theme.css';
+import './design/tokens.css';
+import './design/utilities.css';
+import './theme-palettes.css';
+import './theme-vscode.css';
+import './theme-density.css';
+import './theme-tv.css';
+import './index.css';
 
 // A11y: Allow keyboard activation (Enter/Space) on elements with role="button"
 document.addEventListener('keydown', (e) => {
@@ -27,4 +27,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-)
+);

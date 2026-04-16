@@ -4,14 +4,19 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useState, useEffect, memo } from 'react';
-import {
-  Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Square,
-} from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Square } from 'lucide-react';
 import { formatTime } from '../../hooks/useSonos';
 
 function SonosControls({
-  state, onPlay, onPause, onNext, onPrevious,
-  shuffleActive, repeatMode, onShuffle, onRepeat,
+  state,
+  onPlay,
+  onPause,
+  onNext,
+  onPrevious,
+  shuffleActive,
+  repeatMode,
+  onShuffle,
+  onRepeat,
   busy,
 }) {
   const nextRepeatMode = () => {
@@ -25,7 +30,8 @@ function SonosControls({
       <button
         className={`sonos-tbtn sonos-tbtn-sm${shuffleActive ? ' sonos-tbtn-active' : ''}`}
         onClick={() => onShuffle(!shuffleActive)}
-        disabled={busy} title="Aléatoire"
+        disabled={busy}
+        title="Aléatoire"
       >
         <Shuffle size={14} />
       </button>
@@ -33,11 +39,21 @@ function SonosControls({
         <SkipBack size={18} />
       </button>
       {state === 'playing' ? (
-        <button className="sonos-tbtn sonos-tbtn-main" onClick={onPause} disabled={busy} title="Pause">
+        <button
+          className="sonos-tbtn sonos-tbtn-main"
+          onClick={onPause}
+          disabled={busy}
+          title="Pause"
+        >
           <Pause size={22} />
         </button>
       ) : (
-        <button className="sonos-tbtn sonos-tbtn-main" onClick={onPlay} disabled={busy} title="Lecture">
+        <button
+          className="sonos-tbtn sonos-tbtn-main"
+          onClick={onPlay}
+          disabled={busy}
+          title="Lecture"
+        >
           <Play size={22} />
         </button>
       )}
@@ -47,7 +63,8 @@ function SonosControls({
       <button
         className={`sonos-tbtn sonos-tbtn-sm${repeatMode && repeatMode !== 'none' ? ' sonos-tbtn-active' : ''}`}
         onClick={() => onRepeat(nextRepeatMode())}
-        disabled={busy} title={`Répétition : ${repeatMode || 'off'}`}
+        disabled={busy}
+        title={`Répétition : ${repeatMode || 'off'}`}
       >
         {repeatMode === 'one' ? <Repeat1 size={14} /> : <Repeat size={14} />}
       </button>
@@ -60,7 +77,9 @@ function ProgressBar({ position, duration, onSeek }) {
   const [seekPos, setSeekPos] = useState(position ?? 0);
   const [isSeeking, setIsSeeking] = useState(false);
 
-  useEffect(() => { if (!isSeeking && position != null) setSeekPos(position); }, [position, isSeeking]);
+  useEffect(() => {
+    if (!isSeeking && position != null) setSeekPos(position);
+  }, [position, isSeeking]);
 
   const pct = duration > 0 ? (seekPos / duration) * 100 : 0;
 
@@ -70,11 +89,23 @@ function ProgressBar({ position, duration, onSeek }) {
       <div className="sonos-ptrack">
         <div className="sonos-pfill" style={{ width: `${pct}%` }} />
         <input
-          type="range" min={0} max={duration} value={seekPos}
+          type="range"
+          min={0}
+          max={duration}
+          value={seekPos}
           className="sonos-pinput"
-          onChange={e => { setIsSeeking(true); setSeekPos(Number(e.target.value)); }}
-          onMouseUp={() => { setIsSeeking(false); onSeek(seekPos); }}
-          onTouchEnd={() => { setIsSeeking(false); onSeek(seekPos); }}
+          onChange={(e) => {
+            setIsSeeking(true);
+            setSeekPos(Number(e.target.value));
+          }}
+          onMouseUp={() => {
+            setIsSeeking(false);
+            onSeek(seekPos);
+          }}
+          onTouchEnd={() => {
+            setIsSeeking(false);
+            onSeek(seekPos);
+          }}
         />
       </div>
       <span className="sonos-ptime">{formatTime(duration)}</span>

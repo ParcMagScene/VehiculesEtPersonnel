@@ -37,8 +37,8 @@ function FitToRadius({ radius }) {
     const metersPerDeg = 40075016.686 / 360;
     const latDelta = (radius / metersPerDeg) * 1.3;
     const bounds = [
-      [center[0] - latDelta, center[1] - latDelta / Math.cos(center[0] * Math.PI / 180)],
-      [center[0] + latDelta, center[1] + latDelta / Math.cos(center[0] * Math.PI / 180)],
+      [center[0] - latDelta, center[1] - latDelta / Math.cos((center[0] * Math.PI) / 180)],
+      [center[0] + latDelta, center[1] + latDelta / Math.cos((center[0] * Math.PI) / 180)],
     ];
     map.fitBounds(bounds, { padding: [20, 20], animate: false });
   }, [radius, map]);
@@ -55,11 +55,13 @@ async function captureElement(element) {
     const images = element.querySelectorAll('img');
     await Promise.all(
       Array.from(images).map((img) =>
-        img.complete ? Promise.resolve() : new Promise((res) => {
-          img.onload = res;
-          img.onerror = res;
-        })
-      )
+        img.complete
+          ? Promise.resolve()
+          : new Promise((res) => {
+              img.onload = res;
+              img.onerror = res;
+            }),
+      ),
     );
     await new Promise((r) => setTimeout(r, 300));
 
@@ -111,16 +113,15 @@ export default function MapDualPrintModal({ locations, onClose }) {
   const [printing, setPrinting] = useState(false);
 
   const geoLocations = useMemo(() => filterGeoLocations(locations), [locations]);
-  const nearbyLocations = useMemo(
-    () => filterNearby(locations, MAG_SCENE, 10000),
-    [locations]
-  );
+  const nearbyLocations = useMemo(() => filterNearby(locations, MAG_SCENE, 10000), [locations]);
 
   const tile = TILE_LIGHT;
 
   // ── Fermeture par Escape ──
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    const handler = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
@@ -135,13 +136,18 @@ export default function MapDualPrintModal({ locations, onClose }) {
       ]);
 
       if (!generalImg) {
-        alert('Impossible de capturer la carte. Vérifiez que les tuiles sont bien chargées et réessayez.');
+        alert(
+          'Impossible de capturer la carte. Vérifiez que les tuiles sont bien chargées et réessayez.',
+        );
         return;
       }
 
       const now = new Date().toLocaleDateString('fr-FR', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
 
       const printWindow = window.open('', '_blank');
@@ -177,11 +183,15 @@ export default function MapDualPrintModal({ locations, onClose }) {
   </div>
   <div class="map-container">
     <img class="map-main" src="${generalImg}" alt="Carte générale" />
-    ${localImg ? `
+    ${
+      localImg
+        ? `
     <div class="map-inset">
       <div class="map-inset-label">Autour du dépôt (10 km)</div>
       <img src="${localImg}" alt="Carte locale" />
-    </div>` : ''}
+    </div>`
+        : ''
+    }
   </div>
   <div class="legend">
     <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#667eea,#764ba2)"></div>Siège</div>
@@ -219,7 +229,10 @@ export default function MapDualPrintModal({ locations, onClose }) {
       // Composer sur un canvas
       const mainImg = new Image();
       mainImg.crossOrigin = 'anonymous';
-      await new Promise((res) => { mainImg.onload = res; mainImg.src = generalImg; });
+      await new Promise((res) => {
+        mainImg.onload = res;
+        mainImg.src = generalImg;
+      });
 
       const canvas = document.createElement('canvas');
       canvas.width = mainImg.width;
@@ -230,7 +243,10 @@ export default function MapDualPrintModal({ locations, onClose }) {
       if (localImg) {
         const insetImg = new Image();
         insetImg.crossOrigin = 'anonymous';
-        await new Promise((res) => { insetImg.onload = res; insetImg.src = localImg; });
+        await new Promise((res) => {
+          insetImg.onload = res;
+          insetImg.src = localImg;
+        });
 
         const inW = Math.round(canvas.width * 0.3);
         const inH = Math.round(insetImg.height * (inW / insetImg.width));
@@ -258,10 +274,10 @@ export default function MapDualPrintModal({ locations, onClose }) {
   // ── Marqueurs communs avec tooltip permanent (anti-chevauchement) ──
   const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
   const DIR_OFFSETS = {
-    top:    [0, -24],
-    right:  [14, -4],
+    top: [0, -24],
+    right: [14, -4],
     bottom: [0, 16],
-    left:   [-14, -4],
+    left: [-14, -4],
   };
 
   const renderMarkers = (locs, showHQ = false) => {
@@ -285,9 +301,18 @@ export default function MapDualPrintModal({ locations, onClose }) {
             <Marker
               key={loc.id}
               position={[loc.lat, loc.lng]}
-              icon={loc.isCompanyLocation ? createHQIcon(32) : createLocationIcon(loc.type, { size: 30 })}
+              icon={
+                loc.isCompanyLocation
+                  ? createHQIcon(32)
+                  : createLocationIcon(loc.type, { size: 30 })
+              }
             >
-              <Tooltip permanent direction={dir} offset={DIR_OFFSETS[dir]} className="map-name-tooltip">
+              <Tooltip
+                permanent
+                direction={dir}
+                offset={DIR_OFFSETS[dir]}
+                className="map-name-tooltip"
+              >
                 {loc.name}
               </Tooltip>
             </Marker>
@@ -298,7 +323,12 @@ export default function MapDualPrintModal({ locations, onClose }) {
   };
 
   return (
-    <div className="dual-print-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div
+      className="dual-print-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       {/* data-draggable-enhanced="skip" + no-drag : empêcher useDraggableModals */}
       <div className="dual-print-modal no-drag" data-draggable-enhanced="skip">
         {/* En-tête */}
@@ -308,10 +338,20 @@ export default function MapDualPrintModal({ locations, onClose }) {
             Positionnez et zoomez les deux cartes avant d'imprimer
           </p>
           <div className="dual-print-header-actions">
-            <button className="dual-print-btn-action" onClick={handleExportPNG} disabled={printing} title="Exporter en PNG">
+            <button
+              className="dual-print-btn-action"
+              onClick={handleExportPNG}
+              disabled={printing}
+              title="Exporter en PNG"
+            >
               <Download size={16} /> PNG
             </button>
-            <button className="dual-print-btn-print" onClick={handlePrint} disabled={printing} title="Imprimer">
+            <button
+              className="dual-print-btn-print"
+              onClick={handlePrint}
+              disabled={printing}
+              title="Imprimer"
+            >
               <Printer size={16} /> {printing ? 'Capture…' : 'Imprimer'}
             </button>
             <button className="dual-print-close" onClick={onClose} aria-label="Fermer">
@@ -376,11 +416,28 @@ export default function MapDualPrintModal({ locations, onClose }) {
 
         {/* Légende */}
         <div className="dual-print-legend">
-          <span className="dual-print-legend-dot" style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }} /> Siège
-          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.successSoft }} /> Dépôt
-          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.info }} /> Salle de spectacle
-          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.warning }} /> Prestataire
-          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.danger }} /> Garage
+          <span
+            className="dual-print-legend-dot"
+            style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
+          />{' '}
+          Siège
+          <span
+            className="dual-print-legend-dot"
+            style={{ background: STATUS_COLORS.successSoft }}
+          />{' '}
+          Dépôt
+          <span className="dual-print-legend-dot" style={{ background: STATUS_COLORS.info }} />{' '}
+          Salle de spectacle
+          <span
+            className="dual-print-legend-dot"
+            style={{ background: STATUS_COLORS.warning }}
+          />{' '}
+          Prestataire
+          <span
+            className="dual-print-legend-dot"
+            style={{ background: STATUS_COLORS.danger }}
+          />{' '}
+          Garage
           <span className="dual-print-legend-dot" style={{ background: '#94a3b8' }} /> Autre
         </div>
       </div>

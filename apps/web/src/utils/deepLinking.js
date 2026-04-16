@@ -46,9 +46,11 @@ export function openInChargement(url) {
       // Fallback: proposer le téléchargement ou afficher un message
       console.warn('Application Chargement 3D non détectée');
       alert(
-        'L\'application Chargement 3D ne semble pas installée.\n\n' +
-        'URL générée :\n' + url + '\n\n' +
-        'Copiez cette URL et ouvrez-la dans l\'application Chargement.'
+        "L'application Chargement 3D ne semble pas installée.\n\n" +
+          'URL générée :\n' +
+          url +
+          '\n\n' +
+          "Copiez cette URL et ouvrez-la dans l'application Chargement.",
       );
     }
     document.body.removeChild(link);

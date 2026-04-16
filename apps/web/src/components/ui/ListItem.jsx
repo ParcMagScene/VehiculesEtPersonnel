@@ -32,18 +32,14 @@ export default function ListItem({
       onClick={onClick}
       {...props}
     >
-      {(icon || avatar) && (
-        <span className="ui-list-item__visual">
-          {icon || avatar}
-        </span>
-      )}
+      {(icon || avatar) && <span className="ui-list-item__visual">{icon || avatar}</span>}
       <div className="ui-list-item__content">
         {title && <span className="ui-list-item__title">{title}</span>}
         {description && <span className="ui-list-item__desc">{description}</span>}
         {meta && <span className="ui-list-item__meta">{meta}</span>}
       </div>
       {actions && (
-        <div className="ui-list-item__actions" onClick={e => e.stopPropagation()}>
+        <div className="ui-list-item__actions" onClick={(e) => e.stopPropagation()}>
           {actions}
         </div>
       )}

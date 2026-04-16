@@ -116,17 +116,19 @@ const LoginForm = ({ onLogin }) => {
         setConflictUser({ email, password });
         setShowSessionConflict(true);
         setError('');
-      } 
+      }
       // Vérifier si c'est une demande de réinitialisation de mot de passe
-      else if (err.response?.status === 403 && err.response?.data?.error === 'PASSWORD_RESET_REQUIRED') {
+      else if (
+        err.response?.status === 403 &&
+        err.response?.data?.error === 'PASSWORD_RESET_REQUIRED'
+      ) {
         setResetFormEmail(email);
         setNewPassword('');
         setNewPasswordConfirm('');
         setShowResetPassword(true);
         setResetError('Votre compte nécessite une réinitialisation du mot de passe.');
         setError('');
-      } 
-      else {
+      } else {
         setError(err.message);
       }
     } finally {
@@ -137,13 +139,13 @@ const LoginForm = ({ onLogin }) => {
   const handleForceLogin = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       const _data = await api.forceLogin(conflictUser.email, conflictUser.password);
-      
+
       // Fermer le modal et se connecter proprement via le callback parent
       setShowSessionConflict(false);
-      await onLogin(conflictUser.email, conflictUser.password)
+      await onLogin(conflictUser.email, conflictUser.password);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -187,14 +189,19 @@ const LoginForm = ({ onLogin }) => {
         <form onSubmit={handleSubmit} className="login-form">
           {users.length > 0 && (
             <FormField className="form-group" label="Sélectionner un utilisateur">
-              <div 
+              <div
                 ref={userSelectorRef}
                 className="user-selector login-user-selector"
                 onClick={() => setShowUserList(!showUserList)}
               >
                 {selectedUser ? (
                   <div className="login-user-selected">
-                    <Avatar name={selectedUser.name} avatar={selectedUser.avatar} size="md" gradient={false} />
+                    <Avatar
+                      name={selectedUser.name}
+                      avatar={selectedUser.avatar}
+                      size="md"
+                      gradient={false}
+                    />
                     <div>
                       <div className="login-user-name">{selectedUser.name}</div>
                     </div>
@@ -208,11 +215,8 @@ const LoginForm = ({ onLogin }) => {
                 <ChevronDown size={20} className="login-chevron" />
 
                 {showUserList && (
-                  <div 
-                    className="user-list login-user-list"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {users.map(user => (
+                  <div className="user-list login-user-list" onClick={(e) => e.stopPropagation()}>
+                    {users.map((user) => (
                       <div
                         key={user.id}
                         onClick={() => handleUserSelect(user)}
@@ -234,7 +238,10 @@ const LoginForm = ({ onLogin }) => {
             <Input
               type="email"
               value={email}
-              onChange={(e) => { setEmail(e.target.value); setError(''); }}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError('');
+              }}
               required
               placeholder="email@exemple.com"
               autoComplete="username"
@@ -288,7 +295,10 @@ const LoginForm = ({ onLogin }) => {
                 <Input
                   type="password"
                   value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
                   required
                   placeholder="••••••••"
                   autoComplete="current-password"
@@ -302,7 +312,9 @@ const LoginForm = ({ onLogin }) => {
                 {loading ? 'Connexion...' : 'Se connecter'}
               </Button>
 
-              <Button variant="ghost" type="button"
+              <Button
+                variant="ghost"
+                type="button"
                 className="forgot-password-link"
                 onClick={() => {
                   setShowResetPassword(true);
@@ -335,32 +347,40 @@ const LoginForm = ({ onLogin }) => {
 
         {showAccessRequest && (
           <AccessRequestModal
-            onClose={() => { setShowAccessRequest(false); setSetupEmail(null); }}
+            onClose={() => {
+              setShowAccessRequest(false);
+              setSetupEmail(null);
+            }}
             onSuccess={() => {}}
             prefillEmail={setupEmail}
           />
         )}
 
         {showSessionConflict && (
-          <div className="login-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowSessionConflict(false)}>
-            <div className="login-modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="login-overlay"
+            onMouseDown={(e) => e.target === e.currentTarget && setShowSessionConflict(false)}
+          >
+            <div
+              className="login-modal-content session-conflict-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header">
                 <h3>⚠️ Session déjà active</h3>
               </div>
               <div className="modal-body">
                 <p className="login-modal-text">
-                  Une session est déjà ouverte avec ces identifiants sur un autre appareil ou navigateur.
+                  Une session est déjà ouverte avec ces identifiants sur un autre appareil ou
+                  navigateur.
                 </p>
                 <p className="login-modal-text-secondary">
-                  Vous pouvez :<br/>
-                  • <strong>Fermer les autres sessions</strong> et vous connecter ici (recommandé)<br/>
-                  • Annuler et vous déconnecter de l'autre appareil d'abord
+                  Vous pouvez :<br />• <strong>Fermer les autres sessions</strong> et vous connecter
+                  ici (recommandé)
+                  <br />• Annuler et vous déconnecter de l'autre appareil d'abord
                 </p>
-                
-                {error && (
-                  <InlineAlert className="login-modal-alert">{error}</InlineAlert>
-                )}
-                
+
+                {error && <InlineAlert className="login-modal-alert">{error}</InlineAlert>}
+
                 <div className="modal-actions login-modal-actions">
                   <Button
                     variant="ghost"
@@ -372,11 +392,7 @@ const LoginForm = ({ onLogin }) => {
                   >
                     Annuler
                   </Button>
-                  <Button
-                    variant="danger"
-                    onClick={handleForceLogin}
-                    disabled={loading}
-                  >
+                  <Button variant="danger" onClick={handleForceLogin} disabled={loading}>
                     {loading ? 'Connexion...' : 'Fermer les autres sessions et se connecter'}
                   </Button>
                 </div>
@@ -395,17 +411,25 @@ const LoginForm = ({ onLogin }) => {
               }
             }}
           >
-            <div className="login-modal-content session-conflict-modal" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="login-modal-content session-conflict-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="modal-header login-reset-header">
                 <h3>🔑 Réinitialiser le mot de passe</h3>
               </div>
               <div className="modal-body">
                 <p className="login-modal-text">
-                  Entrez votre adresse email, votre nom complet, puis choisissez un nouveau mot de passe.
+                  Entrez votre adresse email, votre nom complet, puis choisissez un nouveau mot de
+                  passe.
                 </p>
-                
+
                 <form onSubmit={handleSelfResetPassword}>
-                  <FormField className="form-group login-form-field-spacing" label="Adresse email" htmlFor="reset-email">
+                  <FormField
+                    className="form-group login-form-field-spacing"
+                    label="Adresse email"
+                    htmlFor="reset-email"
+                  >
                     <Input
                       id="reset-email"
                       type="email"
@@ -418,7 +442,11 @@ const LoginForm = ({ onLogin }) => {
                     />
                   </FormField>
 
-                  <FormField className="form-group login-form-field-spacing" label="Nom complet" htmlFor="reset-name">
+                  <FormField
+                    className="form-group login-form-field-spacing"
+                    label="Nom complet"
+                    htmlFor="reset-name"
+                  >
                     <Input
                       id="reset-name"
                       type="text"
@@ -430,7 +458,11 @@ const LoginForm = ({ onLogin }) => {
                     />
                   </FormField>
 
-                  <FormField className="form-group login-form-field-spacing" label="Nouveau mot de passe" htmlFor="new-password">
+                  <FormField
+                    className="form-group login-form-field-spacing"
+                    label="Nouveau mot de passe"
+                    htmlFor="new-password"
+                  >
                     <Input
                       id="new-password"
                       type="password"
@@ -444,7 +476,11 @@ const LoginForm = ({ onLogin }) => {
                     />
                   </FormField>
 
-                  <FormField className="form-group login-form-field-spacing-last" label="Confirmer le mot de passe" htmlFor="confirm-password">
+                  <FormField
+                    className="form-group login-form-field-spacing-last"
+                    label="Confirmer le mot de passe"
+                    htmlFor="confirm-password"
+                  >
                     <Input
                       id="confirm-password"
                       type="password"
@@ -461,7 +497,7 @@ const LoginForm = ({ onLogin }) => {
                   {resetError && (
                     <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>
                   )}
-                  
+
                   <div className="modal-actions login-modal-actions">
                     <Button
                       variant="ghost"

@@ -374,7 +374,11 @@
 }
 
 .mobile-maintenance-in_progress {
-  background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-info-bg-strong) 0%,
+    var(--theme-info-border) 100%
+  );
 }
 
 .mobile-maintenance-in_progress .mobile-item-icon {
@@ -386,7 +390,11 @@
 }
 
 .mobile-maintenance-pending {
-  background: linear-gradient(135deg, var(--theme-purple-bg) 0%, var(--theme-purple-bg-strong) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-purple-bg) 0%,
+    var(--theme-purple-bg-strong) 100%
+  );
 }
 
 .mobile-maintenance-pending .mobile-item-icon {

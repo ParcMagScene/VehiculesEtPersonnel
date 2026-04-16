@@ -60,7 +60,9 @@ describe('Toggle', () => {
   });
 
   it('applies size class', () => {
-    const { container } = render(<Toggle label="Petit" size="sm" checked={false} onChange={() => {}} />);
+    const { container } = render(
+      <Toggle label="Petit" size="sm" checked={false} onChange={() => {}} />,
+    );
     expect(container.querySelector('.ui-toggle--sm')).toBeInTheDocument();
   });
 

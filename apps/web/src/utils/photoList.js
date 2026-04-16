@@ -9,7 +9,7 @@ export async function getAvailablePhotos() {
     if (!response.ok) {
       throw new Error('Impossible de charger la liste des photos');
     }
-    
+
     const photos = await response.json();
     return photos;
   } catch (error) {
@@ -38,6 +38,6 @@ export function getPhotosSync() {
     'GG-043-YZ.jpg',
     'MOV160.jpg',
     'MOV60.jpg',
-    'MOV80.jpg'
+    'MOV80.jpg',
   ];
 }

@@ -9,7 +9,9 @@ export default { title: 'Atomes/Feedback' };
 /* ── Spinner ── */
 export const SpinnerSizes = () => (
   <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-    {['sm', 'md', 'lg', 'xl'].map(s => <Spinner key={s} size={s} />)}
+    {['sm', 'md', 'lg', 'xl'].map((s) => (
+      <Spinner key={s} size={s} />
+    ))}
   </div>
 );
 
@@ -43,17 +45,16 @@ export const SkeletonVariants = () => (
 
 /* ── EmptyState ── */
 export const EmptyStateDefault = () => (
-  <EmptyState
-    title="Aucun résultat"
-    description="Essayez de modifier vos filtres de recherche."
-  />
+  <EmptyState title="Aucun résultat" description="Essayez de modifier vos filtres de recherche." />
 );
 
 /* ── InlineAlert ── */
 export const InlineAlertVariants = () => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 500 }}>
-    {['info', 'success', 'warning', 'error'].map(v => (
-      <InlineAlert key={v} variant={v}>Message de type {v}</InlineAlert>
+    {['info', 'success', 'warning', 'error'].map((v) => (
+      <InlineAlert key={v} variant={v}>
+        Message de type {v}
+      </InlineAlert>
     ))}
   </div>
 );

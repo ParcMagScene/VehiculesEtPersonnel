@@ -1,5 +1,19 @@
 import { useState, useCallback, useRef } from 'react';
-import { FileText, X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save, Tag, ShieldAlert } from 'lucide-react';
+import {
+  FileText,
+  X,
+  Upload,
+  File,
+  CheckCircle,
+  AlertTriangle,
+  Briefcase,
+  Eye,
+  EyeOff,
+  Monitor,
+  Save,
+  Tag,
+  ShieldAlert,
+} from 'lucide-react';
 import api from '../../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel } from '../../utils/pdfParser';
 import { useToast } from '../../hooks/useToast';
@@ -42,7 +56,8 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
   const [editedFields, setEditedFields] = useState({});
 
   // Vérification incompatibilité BL Vente ↔ type d'affaire
-  const isBLVenteIncompat = docType === 'bl_vente' && BL_VENTE_FORBIDDEN_TYPES.includes(affaireType);
+  const isBLVenteIncompat =
+    docType === 'bl_vente' && BL_VENTE_FORBIDDEN_TYPES.includes(affaireType);
 
   // Gestion du drag & drop
   const handleDragOver = useCallback((e) => {
@@ -127,7 +142,9 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       return;
     }
     if (isBLVenteIncompat) {
-      toast.error('Un Bon de Livraison Vente ne peut pas être importé dans une affaire ' + affaireType);
+      toast.error(
+        'Un Bon de Livraison Vente ne peut pas être importé dans une affaire ' + affaireType,
+      );
       return;
     }
 
@@ -167,7 +184,9 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       return;
     }
     if (isBLVenteIncompat) {
-      toast.error('Un Bon de Livraison Vente ne peut pas être importé dans une affaire ' + affaireType);
+      toast.error(
+        'Un Bon de Livraison Vente ne peut pas être importé dans une affaire ' + affaireType,
+      );
       return;
     }
 
@@ -266,12 +285,24 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
   };
 
   return (
-    <div className="bl-import-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bl-import-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+    <div
+      className="bl-import-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="bl-import-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         {/* Header */}
         <div className="modal-header">
-          <h3><FileText size={20} /> Import Bon de Livraison</h3>
-          <Button variant="ghost" className="modal-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
+          <h3>
+            <FileText size={20} /> Import Bon de Livraison
+          </h3>
+          <Button variant="ghost" className="modal-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </Button>
         </div>
 
         {/* Body */}
@@ -295,58 +326,76 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                 type="file"
                 accept=".pdf,application/pdf"
                 className="bl-hidden-input"
-                onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
+                onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])}
               />
             </div>
           ) : (
             <>
               {/* File preview */}
               <div className="file-preview">
-                <div className="file-icon"><File size={20} /></div>
+                <div className="file-icon">
+                  <File size={20} />
+                </div>
                 <div className="file-info">
                   <div className="file-name">{file.name}</div>
                   <div className="file-size">{formatFileSize(file.size)}</div>
                 </div>
                 {docType && (
-                  <span className={`status-badge ${['bon_livraison','bl_vente','bon_preparation'].includes(docType) ? 'success' : 'warning'}`}>
+                  <span
+                    className={`status-badge ${['bon_livraison', 'bl_vente', 'bon_preparation'].includes(docType) ? 'success' : 'warning'}`}
+                  >
                     {getDocTypeLabel(docType)}
                   </span>
                 )}
-                <Tooltip content="Retirer"><Button variant="ghost" className="file-remove" onClick={handleRemoveFile}>
-                  <X size={16} />
-                </Button></Tooltip>
+                <Tooltip content="Retirer">
+                  <Button variant="ghost" className="file-remove" onClick={handleRemoveFile}>
+                    <X size={16} />
+                  </Button>
+                </Tooltip>
               </div>
 
               {/* Parsing progress */}
-              {parsing && (
-                <ProgressBar indeterminate />
-              )}
+              {parsing && <ProgressBar indeterminate />}
 
               {/* Association affaire */}
               <div className="affaire-section">
-                <label><Briefcase size={14} /> Associer à une affaire</label>
+                <label>
+                  <Briefcase size={14} /> Associer à une affaire
+                </label>
                 <Input
                   type="text"
                   value={affaireId}
-                  onChange={e => setAffaireId(e.target.value)}
+                  onChange={(e) => setAffaireId(e.target.value)}
                   placeholder="AF32844, AF33001..."
                 />
               </div>
 
               {/* Type d'affaire */}
               <div className="affaire-section">
-                <label><Tag size={14} /> Type d'affaire</label>
+                <label>
+                  <Tag size={14} /> Type d'affaire
+                </label>
                 <div className="bl-type-buttons">
-                  {AFFAIRE_TYPE_OPTIONS.map(opt => (
-                    <Button variant="ghost"                       key={opt.value}
+                  {AFFAIRE_TYPE_OPTIONS.map((opt) => (
+                    <Button
+                      variant="ghost"
+                      key={opt.value}
                       type="button"
                       onClick={() => setAffaireType(opt.value)}
                       style={{
-                        flex: 1, padding: '6px 8px', borderRadius: 6, fontSize: '0.8rem',
-                        border: affaireType === opt.value ? `2px solid ${opt.color}` : '1px solid var(--theme-border)',
+                        flex: 1,
+                        padding: '6px 8px',
+                        borderRadius: 6,
+                        fontSize: '0.8rem',
+                        border:
+                          affaireType === opt.value
+                            ? `2px solid ${opt.color}`
+                            : '1px solid var(--theme-border)',
                         background: affaireType === opt.value ? `${opt.color}18` : 'transparent',
-                        color: affaireType === opt.value ? opt.color : 'var(--theme-text-secondary)',
-                        cursor: 'pointer', fontWeight: affaireType === opt.value ? 600 : 400,
+                        color:
+                          affaireType === opt.value ? opt.color : 'var(--theme-text-secondary)',
+                        cursor: 'pointer',
+                        fontWeight: affaireType === opt.value ? 600 : 400,
                         transition: 'all 0.15s',
                       }}
                     >
@@ -358,154 +407,183 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                   <div className="bl-incompat-alert">
                     <ShieldAlert size={16} />
                     <span>
-                      Un <strong>Bon de Livraison Vente</strong> ne peut pas être importé dans une affaire <strong>{affaireType}</strong>.
-                      Sélectionnez <em>Vente</em> ou <em>Installation</em>.
+                      Un <strong>Bon de Livraison Vente</strong> ne peut pas être importé dans une
+                      affaire <strong>{affaireType}</strong>. Sélectionnez <em>Vente</em> ou{' '}
+                      <em>Installation</em>.
                     </span>
                   </div>
                 )}
               </div>
 
               {/* Résultats du parsing */}
-              {parsedData && (() => {
-                const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
-                const FIELD_DEFS = [
-                  { key: 'numero', label: 'N° Affaire' },
-                  { key: 'client', label: 'Client' },
-                  { key: 'date', label: 'Date' },
-                  { key: 'nomAffaire', label: 'Nom / Objet' },
-                  { key: 'interlocuteur', label: 'Interlocuteur' },
-                  { key: 'adresse', label: 'Adresse' },
-                  { key: 'devis', label: 'Devis' },
-                  { key: 'tel', label: 'Téléphone' },
-                  { key: 'fax', label: 'Fax' },
-                ];
-                const fc = parsedData._fieldConfidence || {};
-                const getVal = (key) => editedFields[key] !== undefined ? editedFields[key] : (parsedData[key] || '');
-                return (
-                  <div className="parse-results">
-                    <h4>
-                      <CheckCircle size={16} className="bl-success-icon" />
-                      Données extraites
-                      <span className="bl-field-count">
-                        {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs • {parsedData.confidence}% confiance
-                      </span>
-                    </h4>
+              {parsedData &&
+                (() => {
+                  const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
+                  const FIELD_DEFS = [
+                    { key: 'numero', label: 'N° Affaire' },
+                    { key: 'client', label: 'Client' },
+                    { key: 'date', label: 'Date' },
+                    { key: 'nomAffaire', label: 'Nom / Objet' },
+                    { key: 'interlocuteur', label: 'Interlocuteur' },
+                    { key: 'adresse', label: 'Adresse' },
+                    { key: 'devis', label: 'Devis' },
+                    { key: 'tel', label: 'Téléphone' },
+                    { key: 'fax', label: 'Fax' },
+                  ];
+                  const fc = parsedData._fieldConfidence || {};
+                  const getVal = (key) =>
+                    editedFields[key] !== undefined ? editedFields[key] : parsedData[key] || '';
+                  return (
+                    <div className="parse-results">
+                      <h4>
+                        <CheckCircle size={16} className="bl-success-icon" />
+                        Données extraites
+                        <span className="bl-field-count">
+                          {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs •{' '}
+                          {parsedData.confidence}% confiance
+                        </span>
+                      </h4>
 
-                    {FIELD_DEFS.map(field => {
-                      const val = getVal(field.key);
-                      const conf = fc[field.key];
-                      const isEdited = editedFields[field.key] !== undefined;
-                      const inputStyle = {
-                        flex: 1, padding: '3px 8px', borderRadius: 5, fontSize: '0.82rem',
-                        border: `1px solid ${!val ? '#ef444440' : isEdited ? '#3b82f680' : 'var(--theme-border)'}`,
-                        background: isEdited ? '#3b82f608' : 'var(--theme-bg-secondary)',
-                        color: 'var(--theme-text-primary)',
-                      };
-                      return (
-                        <div key={field.key} className="parsed-field">
-                          <span
-                            className="conf-dot bl-conf-dot"
-                            title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
-                            style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)' }}
-                          >●</span>
-                          <span className="field-label">{field.label}</span>
-                          {field.key === 'adresse' ? (
-                            <AddressAutocomplete
-                              value={val}
-                              onChange={(v) => setEditedFields(p => ({ ...p, adresse: v }))}
-                              placeholder="Adresse non détectée"
-                              className="bl-address-input"
-                              style={inputStyle}
-                            />
-                          ) : (
-                            <Input
-                              type="text"
-                              value={val}
-                              onChange={e => {
-                                const v = e.target.value;
-                                setEditedFields(p => ({ ...p, [field.key]: v }));
-                                if (field.key === 'numero') setAffaireId(v);
+                      {FIELD_DEFS.map((field) => {
+                        const val = getVal(field.key);
+                        const conf = fc[field.key];
+                        const isEdited = editedFields[field.key] !== undefined;
+                        const inputStyle = {
+                          flex: 1,
+                          padding: '3px 8px',
+                          borderRadius: 5,
+                          fontSize: '0.82rem',
+                          border: `1px solid ${!val ? '#ef444440' : isEdited ? '#3b82f680' : 'var(--theme-border)'}`,
+                          background: isEdited ? '#3b82f608' : 'var(--theme-bg-secondary)',
+                          color: 'var(--theme-text-primary)',
+                        };
+                        return (
+                          <div key={field.key} className="parsed-field">
+                            <span
+                              className="conf-dot bl-conf-dot"
+                              title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
+                              style={{
+                                color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)',
                               }}
-                              placeholder={`${field.label} non détecté`}
-                              style={inputStyle}
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {/* Sections (Format B) */}
-                    {parsedData.sections && parsedData.sections.length > 0 && (
-                      <div className="bl-sections-wrap">
-                        <h5 className="bl-sections-title">📂 Sections ({parsedData.sections.length})</h5>
-                        {parsedData.sections.map((sec, idx) => (
-                          <div key={idx} className="bl-section-item">
-                            <strong>{sec.name}</strong> — {sec.items?.length || 0} article(s)
-                            {sec.dateDebut && <span> • {sec.dateDebut} → {sec.dateFin}</span>}
+                            >
+                              ●
+                            </span>
+                            <span className="field-label">{field.label}</span>
+                            {field.key === 'adresse' ? (
+                              <AddressAutocomplete
+                                value={val}
+                                onChange={(v) => setEditedFields((p) => ({ ...p, adresse: v }))}
+                                placeholder="Adresse non détectée"
+                                className="bl-address-input"
+                                style={inputStyle}
+                              />
+                            ) : (
+                              <Input
+                                type="text"
+                                value={val}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  setEditedFields((p) => ({ ...p, [field.key]: v }));
+                                  if (field.key === 'numero') setAffaireId(v);
+                                }}
+                                placeholder={`${field.label} non détecté`}
+                                style={inputStyle}
+                              />
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        );
+                      })}
 
-                    {/* Fournisseurs */}
-                    {parsedData.fournisseurs && parsedData.fournisseurs.length > 0 && (
-                      <div className="bl-suppliers-wrap">
-                        <h5 className="bl-suppliers-title">🏭 Fournisseurs ({parsedData.fournisseurs.length})</h5>
-                        <div className="bl-supplier-tags">
-                          {parsedData.fournisseurs.map((f, idx) => (
-                            <span key={idx} className="bl-supplier-tag">{f}</span>
+                      {/* Sections (Format B) */}
+                      {parsedData.sections && parsedData.sections.length > 0 && (
+                        <div className="bl-sections-wrap">
+                          <h5 className="bl-sections-title">
+                            📂 Sections ({parsedData.sections.length})
+                          </h5>
+                          {parsedData.sections.map((sec, idx) => (
+                            <div key={idx} className="bl-section-item">
+                              <strong>{sec.name}</strong> — {sec.items?.length || 0} article(s)
+                              {sec.dateDebut && (
+                                <span>
+                                  {' '}
+                                  • {sec.dateDebut} → {sec.dateFin}
+                                </span>
+                              )}
+                            </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Articles */}
-                    {parsedData.items && parsedData.items.length > 0 && (
-                      <div className="parsed-items">
-                        <h5>Articles ({parsedData.items.length})</h5>
-                        {parsedData.items.slice(0, 30).map((item, idx) => (
-                          <div key={idx} className="parsed-item">
-                            <span className="item-qty">{item.quantity || item.qte || '1'}</span>
-                            <span className="item-desc">
-                              {item.description || item.designation || item.label || JSON.stringify(item)}
-                              {item.code && <span className="bl-item-code">({item.code})</span>}
-                            </span>
-                            {(item.reference || item.section) && (
-                              <span className="bl-item-ref">({item.reference || item.section})</span>
-                            )}
-                            {item.fournisseur && (
-                              <span className="bl-item-supplier">{item.fournisseur}</span>
-                            )}
+                      {/* Fournisseurs */}
+                      {parsedData.fournisseurs && parsedData.fournisseurs.length > 0 && (
+                        <div className="bl-suppliers-wrap">
+                          <h5 className="bl-suppliers-title">
+                            🏭 Fournisseurs ({parsedData.fournisseurs.length})
+                          </h5>
+                          <div className="bl-supplier-tags">
+                            {parsedData.fournisseurs.map((f, idx) => (
+                              <span key={idx} className="bl-supplier-tag">
+                                {f}
+                              </span>
+                            ))}
                           </div>
-                        ))}
-                        {parsedData.items.length > 30 && (
-                          <p className="bl-items-more">
-                            ... et {parsedData.items.length - 30} autre(s)
-                          </p>
-                        )}
-                      </div>
-                    )}
+                        </div>
+                      )}
 
-                    {/* Texte brut toggle */}
-                    <Button variant="ghost"                       className="raw-text-toggle"
-                      onClick={() => setShowRawText(!showRawText)}
-                    >
-                      {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
-                      {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
-                    </Button>
-                    {showRawText && (
-                      <div className="raw-text-block">{rawText}</div>
-                    )}
-                  </div>
-                );
-              })()}
+                      {/* Articles */}
+                      {parsedData.items && parsedData.items.length > 0 && (
+                        <div className="parsed-items">
+                          <h5>Articles ({parsedData.items.length})</h5>
+                          {parsedData.items.slice(0, 30).map((item, idx) => (
+                            <div key={idx} className="parsed-item">
+                              <span className="item-qty">{item.quantity || item.qte || '1'}</span>
+                              <span className="item-desc">
+                                {item.description ||
+                                  item.designation ||
+                                  item.label ||
+                                  JSON.stringify(item)}
+                                {item.code && <span className="bl-item-code">({item.code})</span>}
+                              </span>
+                              {(item.reference || item.section) && (
+                                <span className="bl-item-ref">
+                                  ({item.reference || item.section})
+                                </span>
+                              )}
+                              {item.fournisseur && (
+                                <span className="bl-item-supplier">{item.fournisseur}</span>
+                              )}
+                            </div>
+                          ))}
+                          {parsedData.items.length > 30 && (
+                            <p className="bl-items-more">
+                              ... et {parsedData.items.length - 30} autre(s)
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Texte brut toggle */}
+                      <Button
+                        variant="ghost"
+                        className="raw-text-toggle"
+                        onClick={() => setShowRawText(!showRawText)}
+                      >
+                        {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
+                        {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
+                      </Button>
+                      {showRawText && <div className="raw-text-block">{rawText}</div>}
+                    </div>
+                  );
+                })()}
 
               {/* Pas de données */}
               {!parsing && !parsedData && rawText && (
                 <div className="bl-no-data-alert">
                   <AlertTriangle size={16} />
                   Aucune donnée structurée détectée dans ce PDF.
-                  <Button variant="ghost"                     className="raw-text-toggle bl-no-data-btn"
+                  <Button
+                    variant="ghost"
+                    className="raw-text-toggle bl-no-data-btn"
                     onClick={() => setShowRawText(!showRawText)}
                   >
                     {showRawText ? 'Masquer' : 'Voir texte brut'}
@@ -534,12 +612,20 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
             )}
           </div>
           <div className="footer-right">
-            <Button variant="ghost" onClick={onClose}>Annuler</Button>
+            <Button variant="ghost" onClick={onClose}>
+              Annuler
+            </Button>
             {parsedData && (
-              <Button variant="ghost"                 className="btn-generate"
+              <Button
+                variant="ghost"
+                className="btn-generate"
                 onClick={handleGenerateEvents}
                 disabled={generating || saving || isBLVenteIncompat}
-                title={isBLVenteIncompat ? 'Type d\'affaire incompatible avec un BL Vente' : 'Importer le BL et créer les événements d\'affichage dynamique'}
+                title={
+                  isBLVenteIncompat
+                    ? "Type d'affaire incompatible avec un BL Vente"
+                    : "Importer le BL et créer les événements d'affichage dynamique"
+                }
               >
                 <Monitor size={15} />
                 {generating ? 'Génération...' : 'Importer + Créer événements'}

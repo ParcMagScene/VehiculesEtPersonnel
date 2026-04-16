@@ -8,12 +8,9 @@ import './Divider.css';
  * @param {string} className
  */
 export default function Divider({ orientation = 'horizontal', label, className, ...rest }) {
-  const cls = [
-    'ui-divider',
-    `ui-divider--${orientation}`,
-    label && 'ui-divider--label',
-    className,
-  ].filter(Boolean).join(' ');
+  const cls = ['ui-divider', `ui-divider--${orientation}`, label && 'ui-divider--label', className]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className={cls} role="separator" aria-orientation={orientation} {...rest}>

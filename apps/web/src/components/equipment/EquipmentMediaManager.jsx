@@ -24,13 +24,13 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
   const filteredPhotos = useMemo(() => {
     if (!mediaSearch.trim()) return photosList;
     const q = mediaSearch.toLowerCase();
-    return photosList.filter(p => p.toLowerCase().includes(q));
+    return photosList.filter((p) => p.toLowerCase().includes(q));
   }, [photosList, mediaSearch]);
 
   const photoEquipmentMap = useMemo(() => {
     const map = {};
     for (const photo of photosList) {
-      const match = equipment.find(eq => matchPhotoToEquipment([photo], eq));
+      const match = equipment.find((eq) => matchPhotoToEquipment([photo], eq));
       if (match) map[photo] = match;
     }
     return map;
@@ -72,8 +72,13 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
   const handleRename = async () => {
     if (!renamingPhoto || !renameValue.trim()) return;
     const ext = renamingPhoto.split('.').pop();
-    const newName = renameValue.trim().endsWith(`.${ext}`) ? renameValue.trim() : `${renameValue.trim()}.${ext}`;
-    if (newName === renamingPhoto) { setRenamingPhoto(null); return; }
+    const newName = renameValue.trim().endsWith(`.${ext}`)
+      ? renameValue.trim()
+      : `${renameValue.trim()}.${ext}`;
+    if (newName === renamingPhoto) {
+      setRenamingPhoto(null);
+      return;
+    }
     try {
       await api.renameEquipmentPhoto(renamingPhoto, newName);
       toast.success(`Renommé : ${newName}`);
@@ -100,13 +105,19 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
   const linkFilteredEquipment = useMemo(() => {
     if (!linkSearch.trim()) return equipment.slice(0, 20);
     const q = linkSearch.toLowerCase();
-    return equipment.filter(eq =>
-      (eq.name || '').toLowerCase().includes(q) ||
-      (eq.reference || '').toLowerCase().includes(q)
-    ).slice(0, 20);
+    return equipment
+      .filter(
+        (eq) =>
+          (eq.name || '').toLowerCase().includes(q) ||
+          (eq.reference || '').toLowerCase().includes(q),
+      )
+      .slice(0, 20);
   }, [equipment, linkSearch]);
 
-  const handleDragOver = (e) => { e.preventDefault(); setDragOver(true); };
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
   const handleDragLeave = () => setDragOver(false);
   const handleDrop = (e) => {
     e.preventDefault();
@@ -118,7 +129,9 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
   return (
     <div className="eq-management-section eq-media-manager">
       <div className="eq-media-header">
-        <h3><ImageIcon size={18} /> Gestion des Médias</h3>
+        <h3>
+          <ImageIcon size={18} /> Gestion des Médias
+        </h3>
         <div className="eq-media-counts">
           <span className="eq-media-count-badge">📸 {photosList.length} photos</span>
           <span className="eq-media-count-badge">🏷️ {logosList.length} logos</span>
@@ -126,8 +139,17 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
       </div>
 
       <div className="eq-media-toolbar">
-        <SearchBar value={mediaSearch} onChange={setMediaSearch} placeholder="Rechercher une photo..." size="sm" />
-        <Button variant="primary" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+        <SearchBar
+          value={mediaSearch}
+          onChange={setMediaSearch}
+          placeholder="Rechercher une photo..."
+          size="sm"
+        />
+        <Button
+          variant="primary"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
           <Upload size={16} /> {uploading ? 'Upload...' : 'Ajouter des photos'}
         </Button>
         <input
@@ -153,18 +175,30 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
       </div>
 
       <div className="eq-media-section">
-        <h4>📸 Photos matériel ({filteredPhotos.length}{mediaSearch ? ` / ${photosList.length}` : ''})</h4>
+        <h4>
+          📸 Photos matériel ({filteredPhotos.length}
+          {mediaSearch ? ` / ${photosList.length}` : ''})
+        </h4>
         {filteredPhotos.length === 0 ? (
-          <p className="eq-detail-empty">{mediaSearch ? 'Aucune photo correspondante' : 'Aucune photo dans Photos/Matériel/'}</p>
+          <p className="eq-detail-empty">
+            {mediaSearch ? 'Aucune photo correspondante' : 'Aucune photo dans Photos/Matériel/'}
+          </p>
         ) : (
           <div className="eq-media-photo-grid">
-            {filteredPhotos.map(p => {
+            {filteredPhotos.map((p) => {
               const linkedEq = photoEquipmentMap[p];
               return (
                 <div key={p} className={`eq-media-card ${linkedEq ? 'linked' : ''}`}>
-                  <div className="eq-media-card-img" role="button" tabIndex={0} onClick={() => setPreviewPhoto(p)}>
+                  <div
+                    className="eq-media-card-img"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setPreviewPhoto(p)}
+                  >
                     <img src={`/Photos/Matériel/${p}`} alt={p} loading="lazy" />
-                    <div className="eq-media-card-zoom"><ZoomIn size={16} /></div>
+                    <div className="eq-media-card-zoom">
+                      <ZoomIn size={16} />
+                    </div>
                   </div>
                   <div className="eq-media-card-info">
                     {renamingPhoto === p ? (
@@ -172,18 +206,32 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                         <Input
                           type="text"
                           value={renameValue}
-                          onChange={e => setRenameValue(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setRenamingPhoto(null); }}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleRename();
+                            if (e.key === 'Escape') setRenamingPhoto(null);
+                          }}
                           className="eq-media-rename-input"
                           autoFocus
                         />
-                        <Button variant="ghost" onClick={handleRename} className="eq-media-rename-ok">OK</Button>
+                        <Button
+                          variant="ghost"
+                          onClick={handleRename}
+                          className="eq-media-rename-ok"
+                        >
+                          OK
+                        </Button>
                       </div>
                     ) : (
-                      <span className="eq-media-card-name" title={p}>{p.length > 20 ? p.slice(0, 17) + '...' : p}</span>
+                      <span className="eq-media-card-name" title={p}>
+                        {p.length > 20 ? p.slice(0, 17) + '...' : p}
+                      </span>
                     )}
                     {linkedEq ? (
-                      <span className="eq-media-card-link" title={`Associé à : ${cleanName(linkedEq.name)}`}>
+                      <span
+                        className="eq-media-card-link"
+                        title={`Associé à : ${cleanName(linkedEq.name)}`}
+                      >
                         <Link2 size={10} /> {cleanName(linkedEq.name).slice(0, 18)}
                       </span>
                     ) : linkingPhoto === p ? (
@@ -192,27 +240,44 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                           type="text"
                           placeholder="Rechercher équipement..."
                           value={linkSearch}
-                          onChange={e => setLinkSearch(e.target.value)}
+                          onChange={(e) => setLinkSearch(e.target.value)}
                           className="eq-media-link-search"
                           autoFocus
                         />
                         <div className="eq-media-link-results">
-                          {linkFilteredEquipment.map(eq => (
+                          {linkFilteredEquipment.map((eq) => (
                             <div
                               key={eq.id}
                               onClick={() => handleManualLink(p, eq)}
                               className="eq-media-link-item"
                             >
-                              {eq.reference ? `${eq.reference} — ` : ''}{cleanName(eq.name)}
+                              {eq.reference ? `${eq.reference} — ` : ''}
+                              {cleanName(eq.name)}
                             </div>
                           ))}
-                          {linkFilteredEquipment.length === 0 && <div className="eq-media-link-empty">Aucun résultat</div>}
+                          {linkFilteredEquipment.length === 0 && (
+                            <div className="eq-media-link-empty">Aucun résultat</div>
+                          )}
                         </div>
-                        <Button variant="ghost" onClick={() => { setLinkingPhoto(null); setLinkSearch(''); }} className="eq-media-link-cancel">Annuler</Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setLinkingPhoto(null);
+                            setLinkSearch('');
+                          }}
+                          className="eq-media-link-cancel"
+                        >
+                          Annuler
+                        </Button>
                       </div>
                     ) : (
                       <Tooltip content="Cliquer pour associer manuellement" position="bottom">
-                        <span className="eq-media-card-nolink" role="button" tabIndex={0} onClick={() => setLinkingPhoto(p)}>
+                        <span
+                          className="eq-media-card-nolink"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setLinkingPhoto(p)}
+                        >
                           Non associé
                         </span>
                       </Tooltip>
@@ -220,17 +285,32 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                   </div>
                   <div className="eq-media-card-actions">
                     <Tooltip content="Renommer">
-                      <Button variant="ghost" className="eq-media-card-action-btn" onClick={() => { setRenamingPhoto(p); setRenameValue(p.replace(/\.[^.]+$/, '')); }}>
+                      <Button
+                        variant="ghost"
+                        className="eq-media-card-action-btn"
+                        onClick={() => {
+                          setRenamingPhoto(p);
+                          setRenameValue(p.replace(/\.[^.]+$/, ''));
+                        }}
+                      >
                         <Edit2 size={12} />
                       </Button>
                     </Tooltip>
                     <Tooltip content="Associer manuellement">
-                      <Button variant="ghost" className="eq-media-card-action-btn" onClick={() => setLinkingPhoto(linkingPhoto === p ? null : p)}>
+                      <Button
+                        variant="ghost"
+                        className="eq-media-card-action-btn"
+                        onClick={() => setLinkingPhoto(linkingPhoto === p ? null : p)}
+                      >
                         <Link2 size={12} />
                       </Button>
                     </Tooltip>
                     <Tooltip content="Supprimer cette photo">
-                      <Button variant="ghost" className="eq-media-card-delete" onClick={() => handleDelete(p)}>
+                      <Button
+                        variant="ghost"
+                        className="eq-media-card-delete"
+                        onClick={() => handleDelete(p)}
+                      >
                         <Trash2 size={13} />
                       </Button>
                     </Tooltip>
@@ -248,14 +328,23 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
           <p className="eq-detail-empty">Aucun logo dans Logos/</p>
         ) : (
           <div className="eq-media-photo-grid">
-            {logosList.map(l => (
+            {logosList.map((l) => (
               <div key={l} className="eq-media-card logo-card">
-                <div className="eq-media-card-img" role="button" tabIndex={0} onClick={() => setPreviewPhoto({ src: `/Logos/${l}`, name: l })}>
+                <div
+                  className="eq-media-card-img"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setPreviewPhoto({ src: `/Logos/${l}`, name: l })}
+                >
                   <img src={`/Logos/${l}`} alt={l} loading="lazy" />
-                  <div className="eq-media-card-zoom"><ZoomIn size={16} /></div>
+                  <div className="eq-media-card-zoom">
+                    <ZoomIn size={16} />
+                  </div>
                 </div>
                 <div className="eq-media-card-info">
-                  <span className="eq-media-card-name" title={l}>{l.length > 20 ? l.slice(0, 17) + '...' : l}</span>
+                  <span className="eq-media-card-name" title={l}>
+                    {l.length > 20 ? l.slice(0, 17) + '...' : l}
+                  </span>
                 </div>
               </div>
             ))}
@@ -264,10 +353,20 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
       </div>
 
       <div className="eq-mgmt-media-legend">
-        <h4><QrCode size={16} /> UID & QR Codes</h4>
-        <p>Chaque équipement possède un UID unique (EMAG-XXXXX) et un QR Code qui renvoie vers l'interface mobile.</p>
+        <h4>
+          <QrCode size={16} /> UID & QR Codes
+        </h4>
+        <p>
+          Chaque équipement possède un UID unique (EMAG-XXXXX) et un QR Code qui renvoie vers
+          l'interface mobile.
+        </p>
         <div className="eq-mgmt-uid-example">
-          <QRCodeSVG value={`${APP_BASE_URL}/#/mobile/equipment/EMAG-00001`} size={80} level="M" includeMargin />
+          <QRCodeSVG
+            value={`${APP_BASE_URL}/#/mobile/equipment/EMAG-00001`}
+            size={80}
+            level="M"
+            includeMargin
+          />
           <div>
             <code>EMAG-00001</code>
             <span>→ Menu mobile : Fiche, Défaut, SAV, Intervention</span>
@@ -276,15 +375,30 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
       </div>
 
       {previewPhoto && (
-        <div className="eq-media-preview-overlay" onMouseDown={(e) => e.target === e.currentTarget && setPreviewPhoto(null)}>
+        <div
+          className="eq-media-preview-overlay"
+          onMouseDown={(e) => e.target === e.currentTarget && setPreviewPhoto(null)}
+        >
           <div className="eq-media-preview-content" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" className="eq-media-preview-close" onClick={() => setPreviewPhoto(null)}><X size={22} /></Button>
+            <Button
+              variant="ghost"
+              className="eq-media-preview-close"
+              onClick={() => setPreviewPhoto(null)}
+            >
+              <X size={22} />
+            </Button>
             <img
-              src={typeof previewPhoto === 'string' ? `/Photos/Matériel/${previewPhoto}` : previewPhoto.src}
+              src={
+                typeof previewPhoto === 'string'
+                  ? `/Photos/Matériel/${previewPhoto}`
+                  : previewPhoto.src
+              }
               alt={typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}
               loading="lazy"
             />
-            <span className="eq-media-preview-name">{typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}</span>
+            <span className="eq-media-preview-name">
+              {typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}
+            </span>
           </div>
         </div>
       )}

@@ -43,14 +43,8 @@ function ModalLayout({
           {title}
         </ModalHeader>
       )}
-      <ModalBody className={bodyClassName}>
-        {children}
-      </ModalBody>
-      {footer && (
-        <ModalFooter align={footerAlign}>
-          {footer}
-        </ModalFooter>
-      )}
+      <ModalBody className={bodyClassName}>{children}</ModalBody>
+      {footer && <ModalFooter align={footerAlign}>{footer}</ModalFooter>}
     </Modal>
   );
 }

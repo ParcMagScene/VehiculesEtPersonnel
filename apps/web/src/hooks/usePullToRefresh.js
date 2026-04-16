@@ -10,37 +10,46 @@ import { useState, useRef, useCallback } from 'react';
  * @param {number}   opts.maxPull     - Distance max en px (défaut 120)
  * @param {boolean}  opts.disabled    - Désactiver le pull-to-refresh
  */
-export default function usePullToRefresh(onRefresh, { threshold = 80, maxPull = 120, disabled = false } = {}) {
+export default function usePullToRefresh(
+  onRefresh,
+  { threshold = 80, maxPull = 120, disabled = false } = {},
+) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const startYRef = useRef(0);
   const pullingRef = useRef(false);
   const containerRef = useRef(null);
 
-  const onTouchStart = useCallback((e) => {
-    if (disabled || isRefreshing) return;
-    // Seulement si le scroll est en haut
-    const el = containerRef.current;
-    if (el && el.scrollTop > 0) return;
-    startYRef.current = e.touches[0].clientY;
-    pullingRef.current = false;
-  }, [disabled, isRefreshing]);
+  const onTouchStart = useCallback(
+    (e) => {
+      if (disabled || isRefreshing) return;
+      // Seulement si le scroll est en haut
+      const el = containerRef.current;
+      if (el && el.scrollTop > 0) return;
+      startYRef.current = e.touches[0].clientY;
+      pullingRef.current = false;
+    },
+    [disabled, isRefreshing],
+  );
 
-  const onTouchMove = useCallback((e) => {
-    if (disabled || isRefreshing) return;
-    const el = containerRef.current;
-    if (el && el.scrollTop > 0) return;
+  const onTouchMove = useCallback(
+    (e) => {
+      if (disabled || isRefreshing) return;
+      const el = containerRef.current;
+      if (el && el.scrollTop > 0) return;
 
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - startYRef.current;
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startYRef.current;
 
-    if (diff > 10) {
-      pullingRef.current = true;
-      // Résistance : diminue progressivement
-      const distance = Math.min(diff * 0.5, maxPull);
-      setPullDistance(distance);
-    }
-  }, [disabled, isRefreshing, maxPull]);
+      if (diff > 10) {
+        pullingRef.current = true;
+        // Résistance : diminue progressivement
+        const distance = Math.min(diff * 0.5, maxPull);
+        setPullDistance(distance);
+      }
+    },
+    [disabled, isRefreshing, maxPull],
+  );
 
   const onTouchEnd = useCallback(async () => {
     if (disabled || !pullingRef.current) return;
@@ -74,16 +83,18 @@ export default function usePullToRefresh(onRefresh, { threshold = 80, maxPull = 
 
   // Nœud indicateur à placer en haut du container
   const showIndicator = effectivePull > 0 || isRefreshing;
-  const indicatorNode = showIndicator ? {
-    style: {
-      height: isRefreshing ? 40 : effectivePull,
-      opacity: isRefreshing ? 1 : progress,
-    },
-    className: `ptr-indicator${isRefreshing ? ' ptr-refreshing' : ''}${triggered ? ' ptr-triggered' : ''}`,
-    isRefreshing,
-    progress,
-    triggered,
-  } : null;
+  const indicatorNode = showIndicator
+    ? {
+        style: {
+          height: isRefreshing ? 40 : effectivePull,
+          opacity: isRefreshing ? 1 : progress,
+        },
+        className: `ptr-indicator${isRefreshing ? ' ptr-refreshing' : ''}${triggered ? ' ptr-triggered' : ''}`,
+        isRefreshing,
+        progress,
+        triggered,
+      }
+    : null;
 
   return { containerProps, indicatorNode, isRefreshing };
 }

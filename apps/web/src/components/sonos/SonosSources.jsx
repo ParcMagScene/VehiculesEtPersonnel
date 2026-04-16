@@ -4,7 +4,20 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useState, memo } from 'react';
-import { Radio, ListMusic, Music, Star, ChevronLeft, ChevronRight, Folder, Loader, Book, Server, Info, Podcast } from 'lucide-react';
+import {
+  Radio,
+  ListMusic,
+  Music,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Folder,
+  Loader,
+  Book,
+  Server,
+  Info,
+  Podcast,
+} from 'lucide-react';
 
 const SERVICE_ICONS = {
   star: <Star size={16} />,
@@ -17,11 +30,20 @@ const SERVICE_ICONS = {
 };
 
 function SonosSources({
-  musicServices, loadMusicServices,
-  browseSource, browseBack, browseReset,
-  browseStack, browseData, browseLoading,
-  favorites, favoritesLoading, loadFavorites,
-  playFavorite, nowPlaying, isAdmin,
+  musicServices,
+  loadMusicServices,
+  browseSource,
+  browseBack,
+  browseReset,
+  browseStack,
+  browseData,
+  browseLoading,
+  favorites,
+  favoritesLoading,
+  loadFavorites,
+  playFavorite,
+  nowPlaying,
+  isAdmin,
   search,
 }) {
   const [tab, setTab] = useState('favorites'); // 'favorites' | 'sources'
@@ -41,7 +63,7 @@ function SonosSources({
 
   // Filtrage favoris par recherche
   const filteredFavorites = searchLower
-    ? favorites.filter(f => f.title?.toLowerCase().includes(searchLower))
+    ? favorites.filter((f) => f.title?.toLowerCase().includes(searchLower))
     : favorites;
 
   return (
@@ -50,7 +72,10 @@ function SonosSources({
       <div className="sonos-sources-tabs">
         <button
           className={`sonos-sources-tab${tab === 'favorites' ? ' sonos-sources-tab-active' : ''}`}
-          onClick={() => { setTab('favorites'); browseReset(); }}
+          onClick={() => {
+            setTab('favorites');
+            browseReset();
+          }}
         >
           <Star size={13} />
           Favoris
@@ -71,7 +96,9 @@ function SonosSources({
       {tab === 'favorites' && (
         <div className="sonos-sources-list">
           {favoritesLoading ? (
-            <div className="sonos-sources-loading"><Loader size={18} className="sonos-spin" /> Chargement…</div>
+            <div className="sonos-sources-loading">
+              <Loader size={18} className="sonos-spin" /> Chargement…
+            </div>
           ) : filteredFavorites.length === 0 ? (
             <div className="sonos-sources-empty">
               {searchLower ? 'Aucun résultat' : 'Aucun favori configuré'}
@@ -87,11 +114,15 @@ function SonosSources({
                 {fav.albumArtURI ? (
                   <img src={fav.albumArtURI} alt="" className="sonos-sources-art" loading="lazy" />
                 ) : (
-                  <span className="sonos-sources-icon"><Music size={16} /></span>
+                  <span className="sonos-sources-icon">
+                    <Music size={16} />
+                  </span>
                 )}
                 <div className="sonos-sources-item-meta">
                   <span className="sonos-sources-item-title">{fav.title}</span>
-                  {fav.description && <span className="sonos-sources-item-artist">{fav.description}</span>}
+                  {fav.description && (
+                    <span className="sonos-sources-item-artist">{fav.description}</span>
+                  )}
                 </div>
               </button>
             ))
@@ -113,9 +144,16 @@ function SonosSources({
           )}
 
           {browseLoading ? (
-            <div className="sonos-sources-loading"><Loader size={18} className="sonos-spin" /> Chargement…</div>
+            <div className="sonos-sources-loading">
+              <Loader size={18} className="sonos-spin" /> Chargement…
+            </div>
           ) : isBrowsing ? (
-            <BrowseContent data={browseData} onBrowse={browseSource} onPlay={playFavorite} search={searchLower} />
+            <BrowseContent
+              data={browseData}
+              onBrowse={browseSource}
+              onPlay={playFavorite}
+              search={searchLower}
+            />
           ) : (
             <ServiceList services={musicServices} onBrowse={browseSource} search={searchLower} />
           )}
@@ -128,11 +166,15 @@ function SonosSources({
 /** Liste des services musicaux (vue racine) */
 function ServiceList({ services, onBrowse, search }) {
   const filtered = search
-    ? services.filter(s => s.title?.toLowerCase().includes(search))
+    ? services.filter((s) => s.title?.toLowerCase().includes(search))
     : services;
 
   if (filtered.length === 0) {
-    return <div className="sonos-sources-empty">{search ? 'Aucun résultat' : 'Aucune source disponible'}</div>;
+    return (
+      <div className="sonos-sources-empty">
+        {search ? 'Aucun résultat' : 'Aucune source disponible'}
+      </div>
+    );
   }
   return (
     <div className="sonos-sources-list">
@@ -146,9 +188,7 @@ function ServiceList({ services, onBrowse, search }) {
             {SERVICE_ICONS[svc.icon] || <Folder size={16} />}
           </span>
           <span className="sonos-sources-item-title">{svc.title}</span>
-          {svc.childCount > 0 && (
-            <span className="sonos-sources-count">{svc.childCount}</span>
-          )}
+          {svc.childCount > 0 && <span className="sonos-sources-count">{svc.childCount}</span>}
           <ChevronRight size={14} className="sonos-sources-chevron" />
         </button>
       ))}
@@ -173,8 +213,10 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
   let { containers = [], items = [] } = data;
 
   if (search) {
-    containers = containers.filter(c => c.title?.toLowerCase().includes(search));
-    items = items.filter(it => it.title?.toLowerCase().includes(search) || it.artist?.toLowerCase().includes(search));
+    containers = containers.filter((c) => c.title?.toLowerCase().includes(search));
+    items = items.filter(
+      (it) => it.title?.toLowerCase().includes(search) || it.artist?.toLowerCase().includes(search),
+    );
   }
 
   if (containers.length === 0 && items.length === 0) {
@@ -184,20 +226,16 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
   return (
     <div className="sonos-sources-list">
       {containers.map((c) => (
-        <button
-          key={c.id}
-          className="sonos-sources-item"
-          onClick={() => onBrowse(c.id, c.title)}
-        >
+        <button key={c.id} className="sonos-sources-item" onClick={() => onBrowse(c.id, c.title)}>
           {c.albumArtURI ? (
             <img src={c.albumArtURI} alt="" className="sonos-sources-art" loading="lazy" />
           ) : (
-            <span className="sonos-sources-icon"><Folder size={16} /></span>
+            <span className="sonos-sources-icon">
+              <Folder size={16} />
+            </span>
           )}
           <span className="sonos-sources-item-title">{c.title}</span>
-          {c.childCount > 0 && (
-            <span className="sonos-sources-count">{c.childCount}</span>
-          )}
+          {c.childCount > 0 && <span className="sonos-sources-count">{c.childCount}</span>}
           <ChevronRight size={14} className="sonos-sources-chevron" />
         </button>
       ))}
@@ -212,7 +250,9 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
           {item.albumArtURI ? (
             <img src={item.albumArtURI} alt="" className="sonos-sources-art" loading="lazy" />
           ) : (
-            <span className="sonos-sources-icon"><Music size={16} /></span>
+            <span className="sonos-sources-icon">
+              <Music size={16} />
+            </span>
           )}
           <div className="sonos-sources-item-meta">
             <span className="sonos-sources-item-title">{item.title}</span>

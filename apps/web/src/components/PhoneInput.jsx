@@ -30,7 +30,7 @@ export function normalizePhone(raw) {
 
 export function formatPhoneDisplay(raw) {
   if (!raw) return '';
-  
+
   // Si format stocké +XXX|06XXXXXXXX, extraire le numéro local
   let local = raw;
   let prefix = '';
@@ -39,11 +39,11 @@ export function formatPhoneDisplay(raw) {
     prefix = parts[0];
     local = parts[1] || '';
   }
-  
+
   // Retirer tout sauf chiffres
   let digits = local.replace(/[^\d]/g, '');
   if (!digits) return raw;
-  
+
   // Format français : 0X XX XX XX XX
   if (digits.length === 10 && digits.startsWith('0')) {
     const formatted = digits.replace(/(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4 $5');
@@ -61,7 +61,7 @@ export function formatPhoneDisplay(raw) {
 }
 
 /**
- * Parse une valeur stockée pour extraire le préfixe et le numéro local  
+ * Parse une valeur stockée pour extraire le préfixe et le numéro local
  * Format stocké : "+33|0612345678" ou juste "0612345678"
  */
 function parseStoredValue(value) {
@@ -107,7 +107,7 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showDropdown]);
 
-  const selectedCountry = COUNTRY_CODES.find(c => c.code === selectedPrefix) || COUNTRY_CODES[0];
+  const selectedCountry = COUNTRY_CODES.find((c) => c.code === selectedPrefix) || COUNTRY_CODES[0];
 
   const handlePrefixChange = (code) => {
     setSelectedPrefix(code);
@@ -144,16 +144,17 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
   })();
 
   const filteredCountries = search
-    ? COUNTRY_CODES.filter(c =>
-        c.label.toLowerCase().includes(search.toLowerCase()) ||
-        c.code.includes(search)
+    ? COUNTRY_CODES.filter(
+        (c) => c.label.toLowerCase().includes(search.toLowerCase()) || c.code.includes(search),
       )
     : COUNTRY_CODES;
 
   return (
     <div className={`phone-input-container ${className || ''}`}>
       <div className="phone-input-wrapper" ref={dropdownRef}>
-        <Button variant="ghost"           type="button"
+        <Button
+          variant="ghost"
+          type="button"
           className="phone-prefix-btn"
           onClick={() => !disabled && setShowDropdown(!showDropdown)}
           disabled={disabled}
@@ -175,8 +176,10 @@ export default function PhoneInput({ value, onChange, placeholder, id, className
               autoFocus
             />
             <div className="phone-dropdown-list">
-              {filteredCountries.map(c => (
-                <Button variant="ghost"                   key={c.code}
+              {filteredCountries.map((c) => (
+                <Button
+                  variant="ghost"
+                  key={c.code}
                   type="button"
                   className={`phone-dropdown-item ${c.code === selectedPrefix ? 'active' : ''}`}
                   onClick={() => handlePrefixChange(c.code)}

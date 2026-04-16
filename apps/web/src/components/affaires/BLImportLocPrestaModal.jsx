@@ -1,5 +1,22 @@
 import { useState, useCallback, useRef } from 'react';
-import { X, Upload, File, CheckCircle, AlertTriangle, Briefcase, Eye, EyeOff, Monitor, Save, Tag, Layers, Calendar, Package, ShieldAlert, Link2 } from 'lucide-react';
+import {
+  X,
+  Upload,
+  File,
+  CheckCircle,
+  AlertTriangle,
+  Briefcase,
+  Eye,
+  EyeOff,
+  Monitor,
+  Save,
+  Tag,
+  Layers,
+  Calendar,
+  Package,
+  ShieldAlert,
+  Link2,
+} from 'lucide-react';
 import api from '../../utils/api';
 import { extractTextFromPDF, smartParse, getDocTypeLabel, DOC_TYPES } from '../../utils/pdfParser';
 import { useToast } from '../../hooks/useToast';
@@ -19,30 +36,150 @@ const TYPE_OPTIONS = [
 
 // Couleurs de section
 const SECTION_COLORS = {
-  SONORISATION: { bg: 'rgba(99, 102, 241, 0.10)', border: 'rgba(99, 102, 241, 0.3)', text: '#818cf8', icon: '🔊' },
-  LUMIERE: { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '💡' },
-  LUMIÈRE: { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '💡' },
-  'ÉCLAIRAGE': { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '💡' },
-  'REGIE/PLATEAU': { bg: 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399', icon: '🎬' },
-  RÉGIE: { bg: 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399', icon: '🎬' },
-  STRUCTURE: { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '🏗️' },
-  VIDEO: { bg: 'rgba(139, 92, 246, 0.10)', border: 'rgba(139, 92, 246, 0.3)', text: '#a78bfa', icon: '📹' },
-  VIDÉO: { bg: 'rgba(139, 92, 246, 0.10)', border: 'rgba(139, 92, 246, 0.3)', text: '#a78bfa', icon: '📹' },
-  AUDIOVISUEL: { bg: 'rgba(139, 92, 246, 0.10)', border: 'rgba(139, 92, 246, 0.3)', text: '#a78bfa', icon: '🎥' },
-  ELECTRICITE: { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '⚡' },
-  'ÉLECTRICITÉ': { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '⚡' },
-  CÂBLAGE: { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.3)', text: '#f87171', icon: '⚡' },
-  BACKLINE: { bg: 'rgba(16, 185, 129, 0.10)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399', icon: '🎸' },
-  'RIDEAU-MACHINERIE': { bg: 'rgba(236, 72, 153, 0.10)', border: 'rgba(236, 72, 153, 0.3)', text: '#f472b6', icon: '🎭' },
-  RIDEAU: { bg: 'rgba(236, 72, 153, 0.10)', border: 'rgba(236, 72, 153, 0.3)', text: '#f472b6', icon: '🎭' },
-  INFORMATIQUE: { bg: 'rgba(6, 182, 212, 0.10)', border: 'rgba(6, 182, 212, 0.3)', text: '#22d3ee', icon: '💻' },
-  ACCROCHE: { bg: 'rgba(20, 184, 166, 0.10)', border: 'rgba(20, 184, 166, 0.3)', text: '#2dd4bf', icon: '🔗' },
-  MOTORISATION: { bg: 'rgba(249, 115, 22, 0.10)', border: 'rgba(249, 115, 22, 0.3)', text: '#fb923c', icon: '⚙️' },
-  MOBILIER: { bg: 'rgba(107, 114, 128, 0.10)', border: 'rgba(107, 114, 128, 0.3)', text: '#9ca3af', icon: '🪑' },
-  OUTILLAGE: { bg: 'rgba(245, 158, 11, 0.10)', border: 'rgba(245, 158, 11, 0.3)', text: '#fbbf24', icon: '🔧' },
-  VENTE: { bg: 'rgba(251, 191, 36, 0.10)', border: 'rgba(251, 191, 36, 0.3)', text: '#fbbf24', icon: '🛒' },
-  DIFFUSION: { bg: 'rgba(99, 102, 241, 0.10)', border: 'rgba(99, 102, 241, 0.3)', text: '#818cf8', icon: '🔊' },
-  DIVERS: { bg: 'rgba(148, 163, 184, 0.10)', border: 'rgba(148, 163, 184, 0.3)', text: 'var(--theme-text-muted)', icon: '📦' },
+  SONORISATION: {
+    bg: 'rgba(99, 102, 241, 0.10)',
+    border: 'rgba(99, 102, 241, 0.3)',
+    text: '#818cf8',
+    icon: '🔊',
+  },
+  LUMIERE: {
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    text: '#fbbf24',
+    icon: '💡',
+  },
+  LUMIÈRE: {
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    text: '#fbbf24',
+    icon: '💡',
+  },
+  ÉCLAIRAGE: {
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    text: '#fbbf24',
+    icon: '💡',
+  },
+  'REGIE/PLATEAU': {
+    bg: 'rgba(16, 185, 129, 0.10)',
+    border: 'rgba(16, 185, 129, 0.3)',
+    text: '#34d399',
+    icon: '🎬',
+  },
+  RÉGIE: {
+    bg: 'rgba(16, 185, 129, 0.10)',
+    border: 'rgba(16, 185, 129, 0.3)',
+    text: '#34d399',
+    icon: '🎬',
+  },
+  STRUCTURE: {
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    text: '#f87171',
+    icon: '🏗️',
+  },
+  VIDEO: {
+    bg: 'rgba(139, 92, 246, 0.10)',
+    border: 'rgba(139, 92, 246, 0.3)',
+    text: '#a78bfa',
+    icon: '📹',
+  },
+  VIDÉO: {
+    bg: 'rgba(139, 92, 246, 0.10)',
+    border: 'rgba(139, 92, 246, 0.3)',
+    text: '#a78bfa',
+    icon: '📹',
+  },
+  AUDIOVISUEL: {
+    bg: 'rgba(139, 92, 246, 0.10)',
+    border: 'rgba(139, 92, 246, 0.3)',
+    text: '#a78bfa',
+    icon: '🎥',
+  },
+  ELECTRICITE: {
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    text: '#f87171',
+    icon: '⚡',
+  },
+  ÉLECTRICITÉ: {
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    text: '#f87171',
+    icon: '⚡',
+  },
+  CÂBLAGE: {
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    text: '#f87171',
+    icon: '⚡',
+  },
+  BACKLINE: {
+    bg: 'rgba(16, 185, 129, 0.10)',
+    border: 'rgba(16, 185, 129, 0.3)',
+    text: '#34d399',
+    icon: '🎸',
+  },
+  'RIDEAU-MACHINERIE': {
+    bg: 'rgba(236, 72, 153, 0.10)',
+    border: 'rgba(236, 72, 153, 0.3)',
+    text: '#f472b6',
+    icon: '🎭',
+  },
+  RIDEAU: {
+    bg: 'rgba(236, 72, 153, 0.10)',
+    border: 'rgba(236, 72, 153, 0.3)',
+    text: '#f472b6',
+    icon: '🎭',
+  },
+  INFORMATIQUE: {
+    bg: 'rgba(6, 182, 212, 0.10)',
+    border: 'rgba(6, 182, 212, 0.3)',
+    text: '#22d3ee',
+    icon: '💻',
+  },
+  ACCROCHE: {
+    bg: 'rgba(20, 184, 166, 0.10)',
+    border: 'rgba(20, 184, 166, 0.3)',
+    text: '#2dd4bf',
+    icon: '🔗',
+  },
+  MOTORISATION: {
+    bg: 'rgba(249, 115, 22, 0.10)',
+    border: 'rgba(249, 115, 22, 0.3)',
+    text: '#fb923c',
+    icon: '⚙️',
+  },
+  MOBILIER: {
+    bg: 'rgba(107, 114, 128, 0.10)',
+    border: 'rgba(107, 114, 128, 0.3)',
+    text: '#9ca3af',
+    icon: '🪑',
+  },
+  OUTILLAGE: {
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.3)',
+    text: '#fbbf24',
+    icon: '🔧',
+  },
+  VENTE: {
+    bg: 'rgba(251, 191, 36, 0.10)',
+    border: 'rgba(251, 191, 36, 0.3)',
+    text: '#fbbf24',
+    icon: '🛒',
+  },
+  DIFFUSION: {
+    bg: 'rgba(99, 102, 241, 0.10)',
+    border: 'rgba(99, 102, 241, 0.3)',
+    text: '#818cf8',
+    icon: '🔊',
+  },
+  DIVERS: {
+    bg: 'rgba(148, 163, 184, 0.10)',
+    border: 'rgba(148, 163, 184, 0.3)',
+    text: 'var(--theme-text-muted)',
+    icon: '📦',
+  },
 };
 const getSecColor = (name) => SECTION_COLORS[name] || SECTION_COLORS.DIVERS;
 
@@ -68,7 +205,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
   const [docType, setDocType] = useState(null);
   const [affaireId, setAffaireId] = useState(defaultAffaireId || '');
   const [affaireType, setAffaireType] = useState(
-    ALLOWED_TYPES.includes(defaultAffaireType) ? defaultAffaireType : ''
+    ALLOWED_TYPES.includes(defaultAffaireType) ? defaultAffaireType : '',
   );
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -135,19 +272,25 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
       // Expand all sections by default
       if (parsed?.sections) {
         const expanded = {};
-        parsed.sections.forEach((_, idx) => { expanded[idx] = true; });
+        parsed.sections.forEach((_, idx) => {
+          expanded[idx] = true;
+        });
         setExpandedSections(expanded);
       }
 
       if (parsed.docType === DOC_TYPES.BON_PREPARATION) {
-        toast.success(`PDF analysé — Bon de Préparation • ${parsed.sections?.length || 0} section(s) • ${parsed.items?.length || 0} article(s)`);
+        toast.success(
+          `PDF analysé — Bon de Préparation • ${parsed.sections?.length || 0} section(s) • ${parsed.items?.length || 0} article(s)`,
+        );
       } else {
-        toast.warning(`PDF analysé — ${parsed.docTypeLabel || 'Document inconnu'} (attendu : Bon de Préparation)`);
+        toast.warning(
+          `PDF analysé — ${parsed.docTypeLabel || 'Document inconnu'} (attendu : Bon de Préparation)`,
+        );
       }
 
       // Matching automatique des références avec le catalogue
       if (parsed.items?.length > 0) {
-        const refs = parsed.items.map(i => i.reference).filter(Boolean);
+        const refs = parsed.items.map((i) => i.reference).filter(Boolean);
         if (refs.length > 0) {
           try {
             const result = await api.matchCatalogReferences(refs);
@@ -155,7 +298,9 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
               setCatalogMatches(result.matches);
               const matchCount = Object.keys(result.matches).length;
               if (matchCount > 0) {
-                toast.info(`${matchCount}/${refs.length} référence(s) trouvée(s) dans le catalogue`);
+                toast.info(
+                  `${matchCount}/${refs.length} référence(s) trouvée(s) dans le catalogue`,
+                );
               }
             }
           } catch {
@@ -185,7 +330,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
   };
 
   const toggleSection = (idx) => {
-    setExpandedSections(prev => ({ ...prev, [idx]: !prev[idx] }));
+    setExpandedSections((prev) => ({ ...prev, [idx]: !prev[idx] }));
   };
 
   // ─── Sauvegarder ───
@@ -195,7 +340,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
       return;
     }
     if (!affaireType) {
-      toast.warning('Veuillez sélectionner un type d\'affaire (Location ou Prestation)');
+      toast.warning("Veuillez sélectionner un type d'affaire (Location ou Prestation)");
       return;
     }
 
@@ -214,7 +359,9 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
       if (result.affaireCreated) {
         toast.success(`Bon de Préparation importé — Affaire ${affaireId} créée automatiquement`);
       } else {
-        toast.success(`Bon de Préparation importé et lié à l'affaire ${affaireId || '(non spécifiée)'}`);
+        toast.success(
+          `Bon de Préparation importé et lié à l'affaire ${affaireId || '(non spécifiée)'}`,
+        );
       }
       if (onImported) {
         onImported();
@@ -235,7 +382,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
       return;
     }
     if (!affaireType) {
-      toast.warning('Veuillez sélectionner un type d\'affaire');
+      toast.warning("Veuillez sélectionner un type d'affaire");
       return;
     }
 
@@ -260,7 +407,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
 
       // Si des sections ont des dates, créer un événement par plage de section
       if (merged.sections && merged.sections.length > 0) {
-        const sectionsWithDates = merged.sections.filter(s => s.dateDebut);
+        const sectionsWithDates = merged.sections.filter((s) => s.dateDebut);
         if (sectionsWithDates.length > 0) {
           // Trouver la première date de livraison (plus ancienne)
           let earliestDate = null;
@@ -283,7 +430,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
             }
           }
 
-          const sectionNames = merged.sections.map(s => s.name).join(', ');
+          const sectionNames = merged.sections.map((s) => s.name).join(', ');
           const totalItems = merged.items?.length || 0;
 
           // Événement de livraison
@@ -380,7 +527,8 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
   };
 
   // ─── Rendering helpers ───
-  const getVal = (key) => editedFields[key] !== undefined ? editedFields[key] : (parsedData?.[key] || '');
+  const getVal = (key) =>
+    editedFields[key] !== undefined ? editedFields[key] : parsedData?.[key] || '';
 
   const CONF_LABELS = { high: 'Sûr', medium: 'Incertain', low: 'Douteux' };
 
@@ -397,12 +545,21 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
 
   return (
     <div className="bl-loc-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bl-loc-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div
+        className="bl-loc-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         {/* Header */}
         <div className="bl-loc-header">
-          <h3><Layers size={20} /> Import Bon de Préparation</h3>
+          <h3>
+            <Layers size={20} /> Import Bon de Préparation
+          </h3>
           <span className="bl-loc-header-badge">Location / Prestation</span>
-          <Button variant="ghost" className="bl-loc-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
+          <Button variant="ghost" className="bl-loc-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </Button>
         </div>
 
         {/* Body */}
@@ -420,64 +577,76 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
               <p className="bl-loc-drop-text">
                 Glissez un <strong>Bon de Préparation</strong> PDF ici
               </p>
-              <p className="bl-loc-drop-hint">ou cliquez pour sélectionner — PDF uniquement, 20 Mo max</p>
+              <p className="bl-loc-drop-hint">
+                ou cliquez pour sélectionner — PDF uniquement, 20 Mo max
+              </p>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,application/pdf"
                 className="u-hidden"
-                onChange={e => e.target.files[0] && handleFileSelect(e.target.files[0])}
+                onChange={(e) => e.target.files[0] && handleFileSelect(e.target.files[0])}
               />
             </div>
           ) : (
             <>
               {/* File preview */}
               <div className="bl-loc-file-preview">
-                <div className="bl-loc-file-icon"><File size={20} /></div>
+                <div className="bl-loc-file-icon">
+                  <File size={20} />
+                </div>
                 <div className="bl-loc-file-info">
                   <div className="bl-loc-file-name">{file.name}</div>
                   <div className="bl-loc-file-size">{formatFileSize(file.size)}</div>
                 </div>
                 {docType && (
-                  <span className={`bl-loc-badge ${docType === DOC_TYPES.BON_PREPARATION ? 'success' : 'warning'}`}>
+                  <span
+                    className={`bl-loc-badge ${docType === DOC_TYPES.BON_PREPARATION ? 'success' : 'warning'}`}
+                  >
                     {getDocTypeLabel(docType)}
                   </span>
                 )}
-                <Tooltip content="Retirer"><Button variant="ghost" className="bl-loc-file-remove" onClick={handleRemoveFile}>
-                  <X size={16} />
-                </Button></Tooltip>
+                <Tooltip content="Retirer">
+                  <Button variant="ghost" className="bl-loc-file-remove" onClick={handleRemoveFile}>
+                    <X size={16} />
+                  </Button>
+                </Tooltip>
               </div>
 
               {/* Parsing progress */}
-              {parsing && (
-                <ProgressBar indeterminate color="warning" />
-              )}
+              {parsing && <ProgressBar indeterminate color="warning" />}
 
               {/* Warning si le doc n'est pas un BP */}
               {isWrongDocType && (
                 <InlineAlert variant="warning">
-                  Ce document est un <strong>{getDocTypeLabel(docType)}</strong>, pas un Bon de Préparation.
-                  Utilisez l'import BL Vente/Installation pour ce type de document.
+                  Ce document est un <strong>{getDocTypeLabel(docType)}</strong>, pas un Bon de
+                  Préparation. Utilisez l'import BL Vente/Installation pour ce type de document.
                 </InlineAlert>
               )}
 
               {/* Association affaire */}
               <div className="bl-loc-field-section">
-                <label><Briefcase size={14} /> Associer à une affaire</label>
+                <label>
+                  <Briefcase size={14} /> Associer à une affaire
+                </label>
                 <Input
                   type="text"
                   value={affaireId}
-                  onChange={e => setAffaireId(e.target.value)}
+                  onChange={(e) => setAffaireId(e.target.value)}
                   placeholder="AF32844, AF33001..."
                 />
               </div>
 
               {/* Type d'affaire (Location ou Prestation seulement) */}
               <div className="bl-loc-field-section">
-                <label><Tag size={14} /> Type d'affaire</label>
+                <label>
+                  <Tag size={14} /> Type d'affaire
+                </label>
                 <div className="bl-loc-type-buttons">
-                  {TYPE_OPTIONS.map(opt => (
-                    <Button variant="ghost"                       key={opt.value}
+                  {TYPE_OPTIONS.map((opt) => (
+                    <Button
+                      variant="ghost"
+                      key={opt.value}
                       type="button"
                       className={`bl-loc-type-btn ${affaireType === opt.value ? 'active' : ''}`}
                       onClick={() => setAffaireType(opt.value)}
@@ -495,171 +664,240 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
               </div>
 
               {/* Résultats du parsing */}
-              {parsedData && !isWrongDocType && (() => {
-                const fc = parsedData._fieldConfidence || {};
-                return (
-                  <div className="bl-loc-results">
-                    <h4>
-                      <CheckCircle size={16} style={{ color: STATUS_COLORS.success }} />
-                      Données extraites
-                      <span className="bl-loc-results-meta">
-                        {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs • {parsedData.confidence}% confiance
-                      </span>
-                    </h4>
+              {parsedData &&
+                !isWrongDocType &&
+                (() => {
+                  const fc = parsedData._fieldConfidence || {};
+                  return (
+                    <div className="bl-loc-results">
+                      <h4>
+                        <CheckCircle size={16} style={{ color: STATUS_COLORS.success }} />
+                        Données extraites
+                        <span className="bl-loc-results-meta">
+                          {parsedData.fieldsFound}/{parsedData.fieldsTotal} champs •{' '}
+                          {parsedData.confidence}% confiance
+                        </span>
+                      </h4>
 
-                    {/* Champs principaux */}
-                    <div className="bl-loc-fields">
-                      {FIELD_DEFS.map(field => {
-                        const val = getVal(field.key);
-                        const conf = fc[field.key];
-                        const isEdited = editedFields[field.key] !== undefined;
-                        return (
-                          <div key={field.key} className="bl-loc-parsed-field">
-                            <span
-                              className="bl-loc-conf-dot"
-                              title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
-                              style={{ color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)' }}
-                            >●</span>
-                            <span className="bl-loc-field-label">{field.label}</span>
-                            {field.key === 'adresse' ? (
-                              <AddressAutocomplete
-                                value={val}
-                                onChange={(v) => setEditedFields(p => ({ ...p, adresse: v }))}
-                                placeholder="Adresse non détectée"
-                                className="bl-loc-address-input"
-                              />
-                            ) : (
-                              <Input
-                                type="text"
-                                value={val}
-                                onChange={e => {
-                                  const v = e.target.value;
-                                  setEditedFields(p => ({ ...p, [field.key]: v }));
-                                  // Synchroniser le numéro d'affaire avec le champ d'association
-                                  if (field.key === 'numero') setAffaireId(v);
-                                }}
-                                placeholder={`${field.label} non détecté`}
-                                className={`bl-loc-field-input ${isEdited ? 'edited' : ''} ${!val ? 'empty' : ''}`}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* ─── Sections avec articles groupés ─── */}
-                    {parsedData.sections && parsedData.sections.length > 0 && (
-                      <div className="bl-loc-sections">
-                        <h5 className="bl-loc-sections-title">
-                          <Layers size={14} />
-                          Sections ({parsedData.sections.length})
-                          <span className="bl-loc-sections-total">
-                            {parsedData.items?.length || 0} article(s) au total
-                          </span>
-                        </h5>
-                        {parsedData.sections.map((sec, idx) => {
-                          const sc = getSecColor(sec.name);
-                          const isExpanded = expandedSections[idx];
+                      {/* Champs principaux */}
+                      <div className="bl-loc-fields">
+                        {FIELD_DEFS.map((field) => {
+                          const val = getVal(field.key);
+                          const conf = fc[field.key];
+                          const isEdited = editedFields[field.key] !== undefined;
                           return (
-                            <div
-                              key={idx}
-                              className={`bl-loc-section ${isExpanded ? 'expanded' : ''}`}
-                              style={{ '--sec-bg': sc.bg, '--sec-border': sc.border, '--sec-text': sc.text }}
-                            >
-                              <div className="bl-loc-section-header" role="button" tabIndex={0} onClick={() => toggleSection(idx)}>
-                                <span className="bl-loc-section-icon">{sc.icon}</span>
-                                <span className="bl-loc-section-name">{sec.name}</span>
-                                <span className="bl-loc-section-count">{sec.items?.length || 0} art.</span>
-                                {sec.dateDebut && (
-                                  <span className="bl-loc-section-dates">
-                                    <Calendar size={12} />
-                                    {sec.dateDebut} → {sec.dateFin}
-                                  </span>
-                                )}
-                                <span className={`bl-loc-section-chevron ${isExpanded ? 'open' : ''}`}>▸</span>
-                              </div>
-                              {isExpanded && sec.items && sec.items.length > 0 && (
-                                <div className="bl-loc-section-items">
-                                  <div className="bl-loc-items-header">
-                                    <Tooltip content="Catalogue" position="bottom"><span className="bl-loc-col-match">🔗</span></Tooltip>
-                                    <span className="bl-loc-col-ref">Référence</span>
-                                    <span className="bl-loc-col-desc">Désignation</span>
-                                    <span className="bl-loc-col-qty">Qté</span>
-                                    <span className="bl-loc-col-poids">Poids</span>
-                                    <span className="bl-loc-col-vol">Vol.</span>
-                                  </div>
-                                  {sec.items.map((item, iIdx) => {
-                                    const match = item.reference ? catalogMatches[item.reference] : null;
-                                    return (
-                                    <div key={iIdx} className={`bl-loc-item-row ${match ? 'matched' : ''}`}>
-                                      <span className="bl-loc-col-match">
-                                        {match ? (
-                                          <span title={`✅ ${match.name} (${match.family || ''})`} style={{ cursor: 'help' }}>
-                                            <Link2 size={13} style={{ color: STATUS_COLORS.success }} />
-                                          </span>
-                                        ) : item.reference ? (
-                                          <Tooltip content="Référence non trouvée dans le catalogue" position="bottom"><span className="u-opacity-30">—</span></Tooltip>
-                                        ) : null}
-                                      </span>
-                                      <span className="bl-loc-col-ref">{item.reference || '—'}</span>
-                                      <span className="bl-loc-col-desc">{item.description || '—'}</span>
-                                      <span className="bl-loc-col-qty">{item.quantity || 0}</span>
-                                      <span className="bl-loc-col-poids">{item.poids || '—'}</span>
-                                      <span className="bl-loc-col-vol">{item.volume || '—'}</span>
-                                    </div>
-                                    );
-                                  })}
-                                </div>
+                            <div key={field.key} className="bl-loc-parsed-field">
+                              <span
+                                className="bl-loc-conf-dot"
+                                title={conf ? `${CONF_LABELS[conf]} (${conf})` : 'Non détecté'}
+                                style={{
+                                  color: conf ? CONF_COLORS[conf] : 'var(--theme-text-muted)',
+                                }}
+                              >
+                                ●
+                              </span>
+                              <span className="bl-loc-field-label">{field.label}</span>
+                              {field.key === 'adresse' ? (
+                                <AddressAutocomplete
+                                  value={val}
+                                  onChange={(v) => setEditedFields((p) => ({ ...p, adresse: v }))}
+                                  placeholder="Adresse non détectée"
+                                  className="bl-loc-address-input"
+                                />
+                              ) : (
+                                <Input
+                                  type="text"
+                                  value={val}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setEditedFields((p) => ({ ...p, [field.key]: v }));
+                                    // Synchroniser le numéro d'affaire avec le champ d'association
+                                    if (field.key === 'numero') setAffaireId(v);
+                                  }}
+                                  placeholder={`${field.label} non détecté`}
+                                  className={`bl-loc-field-input ${isEdited ? 'edited' : ''} ${!val ? 'empty' : ''}`}
+                                />
                               )}
                             </div>
                           );
                         })}
                       </div>
-                    )}
 
-                    {/* Résumé global si articles sans sections */}
-                    {(!parsedData.sections || parsedData.sections.length === 0) && parsedData.items && parsedData.items.length > 0 && (
-                      <div className="bl-loc-flat-items">
-                        <h5><Package size={14} /> Articles ({parsedData.items.length})</h5>
-                        {parsedData.items.slice(0, 40).map((item, idx) => {
-                          const match = item.reference ? catalogMatches[item.reference] : null;
-                          return (
-                          <div key={idx} className={`bl-loc-item-row flat ${match ? 'matched' : ''}`}>
-                            <span className="bl-loc-col-match">
-                              {match ? <Link2 size={13} style={{ color: STATUS_COLORS.success }} title={`✅ ${match.name}`} /> : null}
+                      {/* ─── Sections avec articles groupés ─── */}
+                      {parsedData.sections && parsedData.sections.length > 0 && (
+                        <div className="bl-loc-sections">
+                          <h5 className="bl-loc-sections-title">
+                            <Layers size={14} />
+                            Sections ({parsedData.sections.length})
+                            <span className="bl-loc-sections-total">
+                              {parsedData.items?.length || 0} article(s) au total
                             </span>
-                            <span className="bl-loc-col-ref">{item.reference || '—'}</span>
-                            <span className="bl-loc-col-desc">{item.description || '—'}</span>
-                            <span className="bl-loc-col-qty">{item.quantity || 0}</span>
-                          </div>
-                          );
-                        })}
-                        {parsedData.items.length > 40 && (
-                          <p className="bl-loc-items-more">... et {parsedData.items.length - 40} autre(s)</p>
-                        )}
-                      </div>
-                    )}
+                          </h5>
+                          {parsedData.sections.map((sec, idx) => {
+                            const sc = getSecColor(sec.name);
+                            const isExpanded = expandedSections[idx];
+                            return (
+                              <div
+                                key={idx}
+                                className={`bl-loc-section ${isExpanded ? 'expanded' : ''}`}
+                                style={{
+                                  '--sec-bg': sc.bg,
+                                  '--sec-border': sc.border,
+                                  '--sec-text': sc.text,
+                                }}
+                              >
+                                <div
+                                  className="bl-loc-section-header"
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={() => toggleSection(idx)}
+                                >
+                                  <span className="bl-loc-section-icon">{sc.icon}</span>
+                                  <span className="bl-loc-section-name">{sec.name}</span>
+                                  <span className="bl-loc-section-count">
+                                    {sec.items?.length || 0} art.
+                                  </span>
+                                  {sec.dateDebut && (
+                                    <span className="bl-loc-section-dates">
+                                      <Calendar size={12} />
+                                      {sec.dateDebut} → {sec.dateFin}
+                                    </span>
+                                  )}
+                                  <span
+                                    className={`bl-loc-section-chevron ${isExpanded ? 'open' : ''}`}
+                                  >
+                                    ▸
+                                  </span>
+                                </div>
+                                {isExpanded && sec.items && sec.items.length > 0 && (
+                                  <div className="bl-loc-section-items">
+                                    <div className="bl-loc-items-header">
+                                      <Tooltip content="Catalogue" position="bottom">
+                                        <span className="bl-loc-col-match">🔗</span>
+                                      </Tooltip>
+                                      <span className="bl-loc-col-ref">Référence</span>
+                                      <span className="bl-loc-col-desc">Désignation</span>
+                                      <span className="bl-loc-col-qty">Qté</span>
+                                      <span className="bl-loc-col-poids">Poids</span>
+                                      <span className="bl-loc-col-vol">Vol.</span>
+                                    </div>
+                                    {sec.items.map((item, iIdx) => {
+                                      const match = item.reference
+                                        ? catalogMatches[item.reference]
+                                        : null;
+                                      return (
+                                        <div
+                                          key={iIdx}
+                                          className={`bl-loc-item-row ${match ? 'matched' : ''}`}
+                                        >
+                                          <span className="bl-loc-col-match">
+                                            {match ? (
+                                              <span
+                                                title={`✅ ${match.name} (${match.family || ''})`}
+                                                style={{ cursor: 'help' }}
+                                              >
+                                                <Link2
+                                                  size={13}
+                                                  style={{ color: STATUS_COLORS.success }}
+                                                />
+                                              </span>
+                                            ) : item.reference ? (
+                                              <Tooltip
+                                                content="Référence non trouvée dans le catalogue"
+                                                position="bottom"
+                                              >
+                                                <span className="u-opacity-30">—</span>
+                                              </Tooltip>
+                                            ) : null}
+                                          </span>
+                                          <span className="bl-loc-col-ref">
+                                            {item.reference || '—'}
+                                          </span>
+                                          <span className="bl-loc-col-desc">
+                                            {item.description || '—'}
+                                          </span>
+                                          <span className="bl-loc-col-qty">
+                                            {item.quantity || 0}
+                                          </span>
+                                          <span className="bl-loc-col-poids">
+                                            {item.poids || '—'}
+                                          </span>
+                                          <span className="bl-loc-col-vol">
+                                            {item.volume || '—'}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
-                    {/* Toggle texte brut */}
-                    <Button variant="ghost"                       className="bl-loc-raw-toggle"
-                      onClick={() => setShowRawText(!showRawText)}
-                    >
-                      {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
-                      {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
-                    </Button>
-                    {showRawText && (
-                      <div className="bl-loc-raw-text">{rawText}</div>
-                    )}
-                  </div>
-                );
-              })()}
+                      {/* Résumé global si articles sans sections */}
+                      {(!parsedData.sections || parsedData.sections.length === 0) &&
+                        parsedData.items &&
+                        parsedData.items.length > 0 && (
+                          <div className="bl-loc-flat-items">
+                            <h5>
+                              <Package size={14} /> Articles ({parsedData.items.length})
+                            </h5>
+                            {parsedData.items.slice(0, 40).map((item, idx) => {
+                              const match = item.reference ? catalogMatches[item.reference] : null;
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`bl-loc-item-row flat ${match ? 'matched' : ''}`}
+                                >
+                                  <span className="bl-loc-col-match">
+                                    {match ? (
+                                      <Link2
+                                        size={13}
+                                        style={{ color: STATUS_COLORS.success }}
+                                        title={`✅ ${match.name}`}
+                                      />
+                                    ) : null}
+                                  </span>
+                                  <span className="bl-loc-col-ref">{item.reference || '—'}</span>
+                                  <span className="bl-loc-col-desc">{item.description || '—'}</span>
+                                  <span className="bl-loc-col-qty">{item.quantity || 0}</span>
+                                </div>
+                              );
+                            })}
+                            {parsedData.items.length > 40 && (
+                              <p className="bl-loc-items-more">
+                                ... et {parsedData.items.length - 40} autre(s)
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                      {/* Toggle texte brut */}
+                      <Button
+                        variant="ghost"
+                        className="bl-loc-raw-toggle"
+                        onClick={() => setShowRawText(!showRawText)}
+                      >
+                        {showRawText ? <EyeOff size={14} /> : <Eye size={14} />}
+                        {showRawText ? 'Masquer le texte brut' : 'Voir le texte brut'}
+                      </Button>
+                      {showRawText && <div className="bl-loc-raw-text">{rawText}</div>}
+                    </div>
+                  );
+                })()}
 
               {/* Pas de données */}
               {!parsing && !parsedData && rawText && (
                 <div className="bl-loc-no-data">
                   <AlertTriangle size={16} />
                   Aucune donnée structurée détectée dans ce PDF.
-                  <Button variant="ghost" className="bl-loc-raw-toggle u-ml-auto" onClick={() => setShowRawText(!showRawText)}>
+                  <Button
+                    variant="ghost"
+                    className="bl-loc-raw-toggle u-ml-auto"
+                    onClick={() => setShowRawText(!showRawText)}
+                  >
                     {showRawText ? 'Masquer' : 'Voir texte brut'}
                   </Button>
                 </div>
@@ -680,23 +918,32 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
               </span>
             )}
             {isWrongDocType && (
-              <span className="bl-loc-badge" style={{ background: 'rgba(239,68,68,0.12)', color: STATUS_COLORS.danger }}>
+              <span
+                className="bl-loc-badge"
+                style={{ background: 'rgba(239,68,68,0.12)', color: STATUS_COLORS.danger }}
+              >
                 <ShieldAlert size={12} /> Type de document incompatible
               </span>
             )}
           </div>
           <div className="bl-loc-footer-right">
-            <Button variant="ghost" onClick={onClose}>Annuler</Button>
+            <Button variant="ghost" onClick={onClose}>
+              Annuler
+            </Button>
             {parsedData && !isWrongDocType && (
-              <Tooltip content="Importer et créer les événements d'affichage dynamique" position="bottom">
-                <Button variant="ghost"                 className="bl-loc-btn-events"
-                onClick={handleGenerateEvents}
-                disabled={generating || saving || !affaireType}
- 
+              <Tooltip
+                content="Importer et créer les événements d'affichage dynamique"
+                position="bottom"
               >
-                <Monitor size={15} />
-                {generating ? 'Génération...' : 'Importer + Événements'}
-              </Button>
+                <Button
+                  variant="ghost"
+                  className="bl-loc-btn-events"
+                  onClick={handleGenerateEvents}
+                  disabled={generating || saving || !affaireType}
+                >
+                  <Monitor size={15} />
+                  {generating ? 'Génération...' : 'Importer + Événements'}
+                </Button>
               </Tooltip>
             )}
             <Button

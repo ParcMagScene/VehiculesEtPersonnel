@@ -4,9 +4,15 @@
    ═══════════════════════════════════════ */
 
 @keyframes ui-skeleton-pulse {
-  0%   { opacity: 1; }
-  50%  { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .ui-skeleton {
@@ -27,7 +33,15 @@
 }
 
 /* ─── Preset sizes ─── */
-.ui-skeleton--sm  { height: 20px; }
-.ui-skeleton--md  { height: 32px; }
-.ui-skeleton--lg  { height: 48px; }
-.ui-skeleton--xl  { height: 80px; }
+.ui-skeleton--sm {
+  height: 20px;
+}
+.ui-skeleton--md {
+  height: 32px;
+}
+.ui-skeleton--lg {
+  height: 48px;
+}
+.ui-skeleton--xl {
+  height: 80px;
+}

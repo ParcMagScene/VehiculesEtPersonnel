@@ -108,8 +108,6 @@
   transform: translateY(-2px);
 }
 
-
-
 .status-badge.approved {
   background: var(--btn-success-bg);
   color: var(--theme-success-text);
@@ -172,16 +170,22 @@
   box-shadow: var(--btn-primary-hover-shadow);
 }
 
-.emails-list, .users-list, .requests-history {
+.emails-list,
+.users-list,
+.requests-history {
   overflow-x: auto;
 }
 
-.emails-list table, .users-list table, .requests-history table {
+.emails-list table,
+.users-list table,
+.requests-history table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.emails-list th, .users-list th, .requests-history th {
+.emails-list th,
+.users-list th,
+.requests-history th {
   text-align: left;
   padding: 4px 12px;
   background: var(--theme-bg-secondary);
@@ -193,7 +197,9 @@
   line-height: 1.2;
 }
 
-.emails-list td, .users-list td, .requests-history td {
+.emails-list td,
+.users-list td,
+.requests-history td {
   padding: 2px 8px;
   border-top: 1px solid var(--theme-border-medium);
   font-size: var(--font-sm);
@@ -356,7 +362,7 @@
   user-select: none;
 }
 
-.admin-checkbox input[type="checkbox"] {
+.admin-checkbox input[type='checkbox'] {
   width: 14px;
   height: 14px;
   cursor: pointer;
@@ -388,7 +394,7 @@
   white-space: nowrap;
 }
 
-.permission-checkbox input[type="checkbox"] {
+.permission-checkbox input[type='checkbox'] {
   width: 14px;
   height: 14px;
   cursor: pointer;
@@ -506,7 +512,7 @@
   border-color: var(--theme-border-muted);
 }
 
-.approve-checkbox-label input[type="checkbox"] {
+.approve-checkbox-label input[type='checkbox'] {
   width: 18px;
   height: 18px;
   margin-top: 1px;
@@ -728,7 +734,7 @@
   background: var(--theme-success-bg);
   border-color: var(--btn-success-hover-bg);
 }
-.contract-type-option input[type="radio"] {
+.contract-type-option input[type='radio'] {
   accent-color: var(--theme-success-alt);
 }
 

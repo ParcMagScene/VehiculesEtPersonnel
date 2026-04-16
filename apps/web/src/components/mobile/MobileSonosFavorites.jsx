@@ -6,7 +6,14 @@ import { useState, useEffect, memo } from 'react';
 import { Heart, Music } from 'lucide-react';
 import { Input } from '@/design-system';
 
-function MobileSonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavorite, nowPlaying, isAdmin }) {
+function MobileSonosFavorites({
+  favorites,
+  favoritesLoading,
+  loadFavorites,
+  playFavorite,
+  nowPlaying,
+  isAdmin,
+}) {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -16,7 +23,7 @@ function MobileSonosFavorites({ favorites, favoritesLoading, loadFavorites, play
   if (!isAdmin) return null;
 
   const filtered = search
-    ? favorites.filter(f => f.title?.toLowerCase().includes(search.toLowerCase()))
+    ? favorites.filter((f) => f.title?.toLowerCase().includes(search.toLowerCase()))
     : favorites;
 
   const currentTitle = nowPlaying?.title;
@@ -24,8 +31,12 @@ function MobileSonosFavorites({ favorites, favoritesLoading, loadFavorites, play
   return (
     <div className="mobile-sonos-favorites">
       <div className="mobile-sonos-fav-header">
-        <span><Heart size={14} /> Favoris</span>
-        <span style={{ fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>{favorites.length}</span>
+        <span>
+          <Heart size={14} /> Favoris
+        </span>
+        <span style={{ fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
+          {favorites.length}
+        </span>
       </div>
 
       {favorites.length > 5 && (
@@ -34,7 +45,7 @@ function MobileSonosFavorites({ favorites, favoritesLoading, loadFavorites, play
             type="text"
             placeholder="Rechercher…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
             size="sm"
           />
         </div>

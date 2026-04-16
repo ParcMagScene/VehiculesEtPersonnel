@@ -67,9 +67,7 @@ function MobileLogin({ onLogin }) {
           <h1>Connexion eM@g</h1>
           <p>{mode === 'register' ? 'Créer un compte' : 'Connectez-vous pour continuer'}</p>
           {mode === 'register' && (
-            <small className="login-register-warning">
-              ⚠️ Email autorisé requis
-            </small>
+            <small className="login-register-warning">⚠️ Email autorisé requis</small>
           )}
         </div>
 
@@ -112,16 +110,21 @@ function MobileLogin({ onLogin }) {
             />
           </FormField>
 
-          {error && (
-            <InlineAlert>{error}</InlineAlert>
-          )}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           <Button variant="ghost" type="submit" className="login-button" disabled={isLoading}>
-            {isLoading ? (mode === 'register' ? 'Création...' : 'Connexion...') : (mode === 'register' ? 'Créer le compte' : 'Se connecter')}
+            {isLoading
+              ? mode === 'register'
+                ? 'Création...'
+                : 'Connexion...'
+              : mode === 'register'
+                ? 'Créer le compte'
+                : 'Se connecter'}
           </Button>
 
-          <Button variant="ghost" 
-            type="button" 
+          <Button
+            variant="ghost"
+            type="button"
             className="toggle-mode-button"
             onClick={() => {
               setMode(mode === 'login' ? 'register' : 'login');
@@ -132,8 +135,9 @@ function MobileLogin({ onLogin }) {
             {mode === 'login' ? 'Créer un compte' : 'Déjà un compte ? Se connecter'}
           </Button>
 
-          <Button variant="ghost" 
-            type="button" 
+          <Button
+            variant="ghost"
+            type="button"
             className="access-request-button"
             onClick={() => setShowAccessRequest(true)}
           >
@@ -142,7 +146,9 @@ function MobileLogin({ onLogin }) {
           </Button>
 
           {mode === 'login' && (
-            <Button variant="ghost"               type="button"
+            <Button
+              variant="ghost"
+              type="button"
               className="forgot-password-button"
               onClick={() => {
                 setShowResetPassword(true);
@@ -168,36 +174,51 @@ function MobileLogin({ onLogin }) {
         <AccessRequestModal
           onClose={() => setShowAccessRequest(false)}
           onSuccess={() => {
-            toast.success('Demande envoyée avec succès ! Vous recevrez un email dès qu\'un administrateur aura validé votre demande.');
+            toast.success(
+              "Demande envoyée avec succès ! Vous recevrez un email dès qu'un administrateur aura validé votre demande.",
+            );
           }}
         />
       )}
 
       {/* Modal Réinitialisation directe du mot de passe */}
-      <BottomSheet open={showResetPassword} onClose={() => { setShowResetPassword(false); setResetError(''); }} title="🔑 Réinitialiser le mot de passe">
+      <BottomSheet
+        open={showResetPassword}
+        onClose={() => {
+          setShowResetPassword(false);
+          setResetError('');
+        }}
+        title="🔑 Réinitialiser le mot de passe"
+      >
         <div className="mobile-sheet-form">
           <p className="mobile-sheet-desc">
             Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
           </p>
-          
-          <form onSubmit={async (e) => {
-            e.preventDefault();
-            if (resetFormPassword !== resetFormConfirm) {
-              setResetError('Les mots de passe ne correspondent pas');
-              return;
-            }
-            setIsLoading(true);
-            setResetError('');
-            try {
-              const data = await api.selfResetPasswordWithNewPassword(resetFormEmail, resetFormName, resetFormPassword);
-              onLogin(data.user);
-              setShowResetPassword(false);
-            } catch (err) {
-              setResetError(err.message);
-            } finally {
-              setIsLoading(false);
-            }
-          }}>
+
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (resetFormPassword !== resetFormConfirm) {
+                setResetError('Les mots de passe ne correspondent pas');
+                return;
+              }
+              setIsLoading(true);
+              setResetError('');
+              try {
+                const data = await api.selfResetPasswordWithNewPassword(
+                  resetFormEmail,
+                  resetFormName,
+                  resetFormPassword,
+                );
+                onLogin(data.user);
+                setShowResetPassword(false);
+              } catch (err) {
+                setResetError(err.message);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+          >
             <FormField className="form-group" label="Adresse email" htmlFor="reset-email">
               <Input
                 id="reset-email"
@@ -234,7 +255,11 @@ function MobileLogin({ onLogin }) {
               />
             </FormField>
 
-            <FormField className="form-group" label="Confirmer le mot de passe" htmlFor="reset-confirm">
+            <FormField
+              className="form-group"
+              label="Confirmer le mot de passe"
+              htmlFor="reset-confirm"
+            >
               <Input
                 id="reset-confirm"
                 type="password"
@@ -248,18 +273,31 @@ function MobileLogin({ onLogin }) {
             </FormField>
 
             {resetError && <InlineAlert>{resetError}</InlineAlert>}
-            
+
             <div className="mobile-sheet-form-actions">
-              <Button variant="ghost"                 type="button"
+              <Button
+                variant="ghost"
+                type="button"
                 className="toggle-mode-button"
-                onClick={() => { setShowResetPassword(false); setResetError(''); }}
+                onClick={() => {
+                  setShowResetPassword(false);
+                  setResetError('');
+                }}
                 disabled={isLoading}
               >
                 Annuler
               </Button>
-              <Button variant="ghost"                 type="submit"
+              <Button
+                variant="ghost"
+                type="submit"
                 className="login-button"
-                disabled={isLoading || !resetFormEmail || !resetFormName || !resetFormPassword || !resetFormConfirm}
+                disabled={
+                  isLoading ||
+                  !resetFormEmail ||
+                  !resetFormName ||
+                  !resetFormPassword ||
+                  !resetFormConfirm
+                }
               >
                 {isLoading ? 'Réinitialisation...' : 'Réinitialiser'}
               </Button>

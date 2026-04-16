@@ -1,7 +1,28 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Calendar, Briefcase, Paperclip, LinkIcon, Plus, ChevronLeft, ChevronRight, FileText, BarChart2, RefreshCw, PackagePlus, DollarSign } from 'lucide-react';
+import {
+  Calendar,
+  Briefcase,
+  Paperclip,
+  LinkIcon,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  BarChart2,
+  RefreshCw,
+  PackagePlus,
+  DollarSign,
+} from 'lucide-react';
 import api from '../../utils/api';
-import { format, startOfMonth, endOfMonth, addMonths, subMonths, startOfYear, endOfYear } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  subMonths,
+  startOfYear,
+  endOfYear,
+} from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { capitalizeText } from '../../utils/dateUtils';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
@@ -9,7 +30,16 @@ import { AffaireSlidePanel, AffaireDetailDialog } from './AffaireDetailPanel';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import './AffairesPanel.css';
-import { Button, Checkbox, Divider, EmptyState, InlineAlert, SearchBar, Spinner, Tooltip } from '@/design-system';
+import {
+  Button,
+  Checkbox,
+  Divider,
+  EmptyState,
+  InlineAlert,
+  SearchBar,
+  Spinner,
+  Tooltip,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS, ACCENT_COLORS } from '../../constants/colors';
@@ -53,7 +83,8 @@ const getAffaireStatus = (affaire, today) => {
 };
 
 const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) => {
-  const isAdmin = currentUser?.isAdmin || currentUser?.role === 'admin' || currentUser?.role === 'manager';
+  const isAdmin =
+    currentUser?.isAdmin || currentUser?.role === 'admin' || currentUser?.role === 'manager';
   const [dbAffaires, setDbAffaires] = useState([]);
   const [googleAffaires, setGoogleAffaires] = useState([]);
   const [googleEventIdsMap, setGoogleEventIdsMap] = useState({}); // { AF32844: ['eventId1', 'eventId2', ...] }
@@ -66,11 +97,13 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterDateStart, setFilterDateStart] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - 1);
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
     return d.toISOString().slice(0, 10);
   });
   const [filterDateEnd, setFilterDateEnd] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() + 6);
+    const d = new Date();
+    d.setDate(d.getDate() + 6);
     return d.toISOString().slice(0, 10);
   });
   const [showArchived, setShowArchived] = useState(false);
@@ -151,8 +184,10 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
         if (!eventIdsMap[numero]) eventIdsMap[numero] = [];
         eventIdsMap[numero].push(event.id);
 
-        const startDate = event.start?.date || (event.start?.dateTime ? event.start.dateTime.split('T')[0] : '');
-        const endDate = event.end?.date || (event.end?.dateTime ? event.end.dateTime.split('T')[0] : '');
+        const startDate =
+          event.start?.date || (event.start?.dateTime ? event.start.dateTime.split('T')[0] : '');
+        const endDate =
+          event.end?.date || (event.end?.dateTime ? event.end.dateTime.split('T')[0] : '');
         // Pour les événements "all-day", Google donne la date de fin exclusive => reculer d'1j
         let adjustedEndDate = endDate;
         if (event.end?.date && !event.end?.dateTime && endDate) {
@@ -164,8 +199,10 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
         const existing = affaireMap.get(numero);
         if (existing) {
           // Fusionner : étendre la plage de dates, accumuler les events
-          if (startDate && (!existing.dateDebut || startDate < existing.dateDebut)) existing.dateDebut = startDate;
-          if (adjustedEndDate && (!existing.dateFin || adjustedEndDate > existing.dateFin)) existing.dateFin = adjustedEndDate;
+          if (startDate && (!existing.dateDebut || startDate < existing.dateDebut))
+            existing.dateDebut = startDate;
+          if (adjustedEndDate && (!existing.dateFin || adjustedEndDate > existing.dateFin))
+            existing.dateFin = adjustedEndDate;
           existing.googleEventCount = (existing.googleEventCount || 1) + 1;
           // Garder le client détecté si pas encore trouvé
           if (!existing.eventName && event.summary) {
@@ -174,9 +211,11 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
         } else {
           // Détecter le type depuis le titre de l'événement
           const titleLower = (event.summary || '').toLowerCase();
-          const detectedType = /\bvente\b/.test(titleLower) ? 'Vente'
-            : /\bpresta(?:tion)?\b/.test(titleLower) ? 'Prestation'
-            : 'Location';
+          const detectedType = /\bvente\b/.test(titleLower)
+            ? 'Vente'
+            : /\bpresta(?:tion)?\b/.test(titleLower)
+              ? 'Prestation'
+              : 'Location';
           affaireMap.set(numero, {
             id: null,
             numeroAffaire: numero,
@@ -248,7 +287,13 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     const loadAll = async () => {
       setIsLoading(true);
       setError(null);
-      await Promise.all([loadDbAffaires(), loadGoogleAffaires(), loadAttachmentsIndex(), loadPersonnelCounts(), loadAllTasks()]);
+      await Promise.all([
+        loadDbAffaires(),
+        loadGoogleAffaires(),
+        loadAttachmentsIndex(),
+        loadPersonnelCounts(),
+        loadAllTasks(),
+      ]);
       setIsLoading(false);
     };
     loadAll();
@@ -279,13 +324,16 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       const existing = merged.get(ga.numeroAffaire);
       if (existing) {
         // L'affaire existe en DB — enrichir avec les infos Google manquantes
-        if (!existing.adresseLivraison && ga.adresseLivraison) existing.adresseLivraison = ga.adresseLivraison;
+        if (!existing.adresseLivraison && ga.adresseLivraison)
+          existing.adresseLivraison = ga.adresseLivraison;
         if (!existing.eventName && ga.eventName) existing.eventName = ga.eventName;
         if (!existing.titre && ga.titre) existing.titre = ga.titre;
         if (!existing.description && ga.description) existing.description = ga.description;
         // Étendre les dates si Google a une plus grande plage
-        if (ga.dateDebut && (!existing.dateDebut || ga.dateDebut < existing.dateDebut)) existing.dateDebut = ga.dateDebut;
-        if (ga.dateFin && (!existing.dateFin || ga.dateFin > existing.dateFin)) existing.dateFin = ga.dateFin;
+        if (ga.dateDebut && (!existing.dateDebut || ga.dateDebut < existing.dateDebut))
+          existing.dateDebut = ga.dateDebut;
+        if (ga.dateFin && (!existing.dateFin || ga.dateFin > existing.dateFin))
+          existing.dateFin = ga.dateFin;
         existing.googleEventCount = ga.googleEventCount || 1;
       } else {
         // Nouvelle affaire connue uniquement de Google
@@ -299,7 +347,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   // Enrichir les affaires avec les indicateurs (event Google, pièces jointes, liens Drive)
   // + récupérer client, prestation et lieu depuis les réservations liées si manquants
   const enrichedAffaires = useMemo(() => {
-    return affaires.map(a => {
+    return affaires.map((a) => {
       const num = a.numeroAffaire;
       const hasGoogleEvent = !!(googleEventIdsMap[num] && googleEventIdsMap[num].length > 0);
       const localAttachmentCount = attachmentsIndex.counts?.[num] || 0;
@@ -310,9 +358,13 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       let resaPrestation = '';
       let resaLieu = '';
       for (const r of reservations) {
-        if ((r.affaire && r.affaire.toUpperCase() === num?.toUpperCase()) || (r.googleEventId && eventIdSet.has(r.googleEventId))) {
+        if (
+          (r.affaire && r.affaire.toUpperCase() === num?.toUpperCase()) ||
+          (r.googleEventId && eventIdSet.has(r.googleEventId))
+        ) {
           resaCount++;
-          if (r.googleDriveLinks && r.googleDriveLinks.length > 0) driveLinksCount += r.googleDriveLinks.length;
+          if (r.googleDriveLinks && r.googleDriveLinks.length > 0)
+            driveLinksCount += r.googleDriveLinks.length;
           else if (r.googleDriveLink && r.googleDriveLink.trim()) driveLinksCount += 1;
           if (!resaClient && r.clientName) resaClient = r.clientName;
           if (!resaPrestation && r.prestationName) resaPrestation = r.prestationName;
@@ -344,7 +396,11 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       if (!num) continue;
       const key = num.toUpperCase();
       if (!map[key]) map[key] = [];
-      map[key].push({ section: t.section, title: t.title || t.googleEventTitle || '', status: t.status });
+      map[key].push({
+        section: t.section,
+        title: t.title || t.googleEventTitle || '',
+        status: t.status,
+      });
     }
     return map;
   }, [allTasks]);
@@ -363,19 +419,25 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     d.setHours(0, 0, 0, 0);
     if (mode === 'week') {
       if (sliding) {
-        const s = new Date(d); s.setDate(d.getDate() - 1);
-        const e = new Date(d); e.setDate(d.getDate() + 6);
+        const s = new Date(d);
+        s.setDate(d.getDate() - 1);
+        const e = new Date(d);
+        e.setDate(d.getDate() + 6);
         return { start: s, end: e };
       } else {
-        const s = new Date(d); s.setDate(d.getDate() - d.getDay() + 1);
+        const s = new Date(d);
+        s.setDate(d.getDate() - d.getDay() + 1);
         if (d.getDay() === 0) s.setDate(s.getDate() - 7);
-        const e = new Date(s); e.setDate(s.getDate() + 6);
+        const e = new Date(s);
+        e.setDate(s.getDate() + 6);
         return { start: s, end: e };
       }
     } else {
       if (sliding) {
-        const s = new Date(d); s.setDate(d.getDate() - 7);
-        const e = new Date(d); e.setDate(d.getDate() + 21);
+        const s = new Date(d);
+        s.setDate(d.getDate() - 7);
+        const e = new Date(d);
+        e.setDate(d.getDate() + 21);
         return { start: s, end: e };
       } else {
         const s = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -385,11 +447,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     }
   }, []);
 
-  const applyAffaireRange = useCallback((anchorDate, mode, sliding) => {
-    const { start, end } = getAffaireRange(anchorDate, mode, sliding);
-    setFilterDateStart(fmtDateISO(start));
-    setFilterDateEnd(fmtDateISO(end));
-  }, [getAffaireRange]);
+  const applyAffaireRange = useCallback(
+    (anchorDate, mode, sliding) => {
+      const { start, end } = getAffaireRange(anchorDate, mode, sliding);
+      setFilterDateStart(fmtDateISO(start));
+      setFilterDateEnd(fmtDateISO(end));
+    },
+    [getAffaireRange],
+  );
 
   const goToPrevious = useCallback(() => {
     if (!filterDateStart) return;
@@ -463,11 +528,14 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     }
   }, [filterDateStart, filterDateEnd, viewMode, slidingMode]);
 
-  const handleViewModeChange = useCallback((newMode) => {
-    setViewMode(newMode);
-    const anchor = filterDateStart ? new Date(filterDateStart) : new Date();
-    applyAffaireRange(anchor, newMode, slidingMode);
-  }, [filterDateStart, slidingMode, applyAffaireRange]);
+  const handleViewModeChange = useCallback(
+    (newMode) => {
+      setViewMode(newMode);
+      const anchor = filterDateStart ? new Date(filterDateStart) : new Date();
+      applyAffaireRange(anchor, newMode, slidingMode);
+    },
+    [filterDateStart, slidingMode, applyAffaireRange],
+  );
 
   // Filtrer et trier
   const filteredAffaires = useMemo(() => {
@@ -484,7 +552,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
 
     // Marquer les affaires archivées (terminées depuis + d'1 semaine)
     // Exception : les affaires créées récemment ne sont jamais archivées
-    result = result.map(a => {
+    result = result.map((a) => {
       const createdDate = (a.createdAt || '').slice(0, 10);
       const isRecent = createdDate >= recentThreshold;
       const isArchived = !isRecent && a.dateFin ? a.dateFin < archiveThreshold : false;
@@ -493,30 +561,31 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
 
     // Filtrer les archivées sauf si showArchived ou filtre type actif
     if (!showArchived && !filterType) {
-      result = result.filter(a => !a.isArchived);
+      result = result.filter((a) => !a.isArchived);
     }
     // Filtre recherche texte
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(a =>
-        (a.numeroAffaire || '').toLowerCase().includes(term) ||
-        (a.client || '').toLowerCase().includes(term) ||
-        (a.eventName || '').toLowerCase().includes(term) ||
-        (a.titre || '').toLowerCase().includes(term) ||
-        (a.adresseLivraison || '').toLowerCase().includes(term)
+      result = result.filter(
+        (a) =>
+          (a.numeroAffaire || '').toLowerCase().includes(term) ||
+          (a.client || '').toLowerCase().includes(term) ||
+          (a.eventName || '').toLowerCase().includes(term) ||
+          (a.titre || '').toLowerCase().includes(term) ||
+          (a.adresseLivraison || '').toLowerCase().includes(term),
       );
     }
 
     // Filtre par type
     if (filterType) {
-      result = result.filter(a => a.type === filterType);
+      result = result.filter((a) => a.type === filterType);
     }
 
     // Filtre par période : chevauchement strict [dateDebut, dateFin] ∩ [filterDateStart, filterDateEnd]
     // Les affaires sans aucune date sont toujours incluses
     // Quand un filtre de type est actif, on désactive le filtre de dates pour tout afficher
     if ((filterDateStart || filterDateEnd) && !filterType) {
-      result = result.filter(a => {
+      result = result.filter((a) => {
         if (!a.dateDebut && !a.dateFin) return true;
         const debut = a.dateDebut || '0000-00-00';
         const fin = a.dateFin || '9999-12-31';
@@ -542,7 +611,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       } else if (sortBy === 'lieu') {
         cmp = (a.adresseLivraison || '').localeCompare(b.adresseLivraison || '');
       } else if (sortBy === 'tasks') {
-        cmp = (tasksByAffaire[a.numeroAffaire?.toUpperCase()]?.length || 0) - (tasksByAffaire[b.numeroAffaire?.toUpperCase()]?.length || 0);
+        cmp =
+          (tasksByAffaire[a.numeroAffaire?.toUpperCase()]?.length || 0) -
+          (tasksByAffaire[b.numeroAffaire?.toUpperCase()]?.length || 0);
       } else if (sortBy === 'resa') {
         cmp = (a.reservationCount || 0) - (b.reservationCount || 0);
       } else if (sortBy === 'pers') {
@@ -552,7 +623,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     });
 
     return result;
-  }, [enrichedAffaires, searchTerm, filterType, filterDateStart, filterDateEnd, sortBy, sortOrder, showArchived, tasksByAffaire]);
+  }, [
+    enrichedAffaires,
+    searchTerm,
+    filterType,
+    filterDateStart,
+    filterDateEnd,
+    sortBy,
+    sortOrder,
+    showArchived,
+    tasksByAffaire,
+  ]);
 
   // ═══ Frise chronologique — calculs ═══
 
@@ -622,7 +703,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   // Position du marqueur "Aujourd'hui"
   const todayRatio = useMemo(() => {
     const { startDate, endDate, totalMs } = periodRange;
-    const now = new Date(); now.setHours(12, 0, 0, 0);
+    const now = new Date();
+    now.setHours(12, 0, 0, 0);
     if (now < startDate || now > endDate) return null;
     return (now.getTime() - startDate.getTime()) / totalMs;
   }, [periodRange]);
@@ -630,13 +712,19 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   // Blocs affaires sur la frise
   const timelineBlocks = useMemo(() => {
     const { startDate, totalMs } = periodRange;
-    return filteredAffaires.map(a => {
+    return filteredAffaires.map((a) => {
       const aStart = new Date((a.dateDebut || periodRange.start) + 'T00:00:00');
       const aEnd = new Date((a.dateFin || a.dateDebut || periodRange.start) + 'T23:59:59');
       const left = Math.max(0, (aStart.getTime() - startDate.getTime()) / totalMs);
       const right = Math.min(1, (aEnd.getTime() - startDate.getTime()) / totalMs);
       const typeInfo = getTypeInfo(a.type);
-      return { id: a.id || a.numeroAffaire, left, width: Math.max(0.004, right - left), color: typeInfo.color, numero: a.numeroAffaire };
+      return {
+        id: a.id || a.numeroAffaire,
+        left,
+        width: Math.max(0.004, right - left),
+        color: typeInfo.color,
+        numero: a.numeroAffaire,
+      };
     });
   }, [filteredAffaires, periodRange]);
 
@@ -651,7 +739,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     if (!cursorDate) return new Set();
     const cursorStr = cursorDate.toISOString().slice(0, 10);
     const ids = new Set();
-    filteredAffaires.forEach(a => {
+    filteredAffaires.forEach((a) => {
       const debut = a.dateDebut || '';
       const fin = a.dateFin || a.dateDebut || '';
       if (debut <= cursorStr && fin >= cursorStr) ids.add(a.id || a.numeroAffaire);
@@ -673,10 +761,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   // Scroll initial vers la première affaire active (aujourd'hui) au chargement
   const hasScrolledInitRef = useRef(false);
   useEffect(() => {
-    if (hasScrolledInitRef.current || isLoading || filteredAffaires.length === 0 || !listRef.current) return;
+    if (
+      hasScrolledInitRef.current ||
+      isLoading ||
+      filteredAffaires.length === 0 ||
+      !listRef.current
+    )
+      return;
     hasScrolledInitRef.current = true;
-    const firstActive = filteredAffaires.find(a => getAffaireStatus(a, today) === STATUS.ACTIVE)
-      || filteredAffaires.find(a => getAffaireStatus(a, today) === 'upcoming');
+    const firstActive =
+      filteredAffaires.find((a) => getAffaireStatus(a, today) === STATUS.ACTIVE) ||
+      filteredAffaires.find((a) => getAffaireStatus(a, today) === 'upcoming');
     if (!firstActive) return;
     const key = firstActive.id || firstActive.numeroAffaire;
     const row = listRef.current.querySelector(`[data-affaire-id="${CSS.escape(String(key))}"]`);
@@ -703,15 +798,20 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     const handleMouseUp = () => setIsDragging(false);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-    return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
   }, [isDragging]);
 
   // Reset curseur quand la période change
-  useEffect(() => { setCursorRatio(null); }, [filterDateStart, filterDateEnd]);
+  useEffect(() => {
+    setCursorRatio(null);
+  }, [filterDateStart, filterDateEnd]);
 
   const toggleSort = (field) => {
     if (sortBy === field) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortBy(field);
       setSortOrder('asc');
@@ -741,11 +841,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   return (
     <div className="affaires-panel">
       {error && (
-        <InlineAlert action={<Button variant="ghost" onClick={handleRefresh}>Réessayer</Button>}>{error}</InlineAlert>
+        <InlineAlert
+          action={
+            <Button variant="ghost" onClick={handleRefresh}>
+              Réessayer
+            </Button>
+          }
+        >
+          {error}
+        </InlineAlert>
       )}
-      {googleError && (
-        <InlineAlert variant="warning">{googleError}</InlineAlert>
-      )}
+      {googleError && <InlineAlert variant="warning">{googleError}</InlineAlert>}
       {isLoadingGoogle && (
         <div className="affaires-google-loading">
           <div className="loading-spinner small"></div>
@@ -767,12 +873,20 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
               <div
                 key={b.id || i}
                 className={`timeline-block${highlightedIds.has(b.id) ? ' tl-highlighted' : ''}`}
-                style={{ left: `${b.left * 100}%`, width: `${b.width * 100}%`, background: b.color }}
+                style={{
+                  left: `${b.left * 100}%`,
+                  width: `${b.width * 100}%`,
+                  background: b.color,
+                }}
                 title={b.numero}
               />
             ))}
             {todayRatio !== null && (
-              <div className="timeline-today" style={{ left: `${todayRatio * 100}%` }} title="Aujourd'hui" />
+              <div
+                className="timeline-today"
+                style={{ left: `${todayRatio * 100}%` }}
+                title="Aujourd'hui"
+              />
             )}
             {cursorRatio !== null && (
               <div className="timeline-cursor" style={{ left: `${cursorRatio * 100}%` }}>
@@ -791,20 +905,28 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       <div className="affaires-toolbar-bar">
         <div className="affaires-toolbar-actions">
           {/* Recherche */}
-          <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher affaire..." size="sm" />
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Rechercher affaire..."
+            size="sm"
+          />
 
           {/* Type — sélecteur horizontal */}
           <div className="affaires-type-selector">
             <Tooltip content="Tous les types" position="bottom">
-              <Button variant="ghost"               className={`affaires-type-btn${!filterType ? ' active' : ''}`}
-              onClick={() => setFilterType('')}
- 
-            >
-              Tous
-            </Button>
+              <Button
+                variant="ghost"
+                className={`affaires-type-btn${!filterType ? ' active' : ''}`}
+                onClick={() => setFilterType('')}
+              >
+                Tous
+              </Button>
             </Tooltip>
-            {AFFAIRE_TYPES.map(t => (
-              <Button variant="ghost"                 key={t.value}
+            {AFFAIRE_TYPES.map((t) => (
+              <Button
+                variant="ghost"
+                key={t.value}
                 className={`affaires-type-btn${filterType === t.value ? ' active' : ''}`}
                 style={filterType === t.value ? { '--type-color': t.color } : {}}
                 onClick={() => setFilterType(filterType === t.value ? '' : t.value)}
@@ -820,17 +942,55 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
 
           {/* Vue semaine / mois */}
           <div className="affaires-tb-view-selector">
-            <Button variant="ghost" className={`affaires-tb-view-btn${viewMode === 'week' ? ' active' : ''}`} onClick={() => handleViewModeChange('week')}>Sem.</Button>
-            <Button variant="ghost" className={`affaires-tb-view-btn${viewMode === 'month' ? ' active' : ''}`} onClick={() => handleViewModeChange('month')}>Mois</Button>
+            <Button
+              variant="ghost"
+              className={`affaires-tb-view-btn${viewMode === 'week' ? ' active' : ''}`}
+              onClick={() => handleViewModeChange('week')}
+            >
+              Sem.
+            </Button>
+            <Button
+              variant="ghost"
+              className={`affaires-tb-view-btn${viewMode === 'month' ? ' active' : ''}`}
+              onClick={() => handleViewModeChange('month')}
+            >
+              Mois
+            </Button>
           </div>
 
           {/* Navigation dates */}
-          <Tooltip content="Période précédente"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToPrevious} aria-label="Période précédente"><ChevronLeft size={16} /></Button></Tooltip>
-          <Button variant="ghost" className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
-          <Tooltip content="Période suivante"><Button variant="ghost" className="affaires-tb-nav-btn" onClick={goToNext} aria-label="Période suivante"><ChevronRight size={16} /></Button></Tooltip>
+          <Tooltip content="Période précédente">
+            <Button
+              variant="ghost"
+              className="affaires-tb-nav-btn"
+              onClick={goToPrevious}
+              aria-label="Période précédente"
+            >
+              <ChevronLeft size={16} />
+            </Button>
+          </Tooltip>
+          <Button
+            variant="ghost"
+            className={`affaires-tb-nav-btn${!isCurrentPeriod ? ' today-hl' : ''}`}
+            onClick={goToToday}
+          >
+            Aujourd'hui
+          </Button>
+          <Tooltip content="Période suivante">
+            <Button
+              variant="ghost"
+              className="affaires-tb-nav-btn"
+              onClick={goToNext}
+              aria-label="Période suivante"
+            >
+              <ChevronRight size={16} />
+            </Button>
+          </Tooltip>
           <div
             className="affaires-tb-date-label"
-            onClick={() => { viewMode === 'month' ? setShowMonthSelector(true) : setShowWeekSelector(true); }}
+            onClick={() => {
+              viewMode === 'month' ? setShowMonthSelector(true) : setShowWeekSelector(true);
+            }}
             title={viewMode === 'month' ? 'Sélectionner un mois' : 'Sélectionner une semaine'}
           >
             {dateLabel}
@@ -839,29 +999,43 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
           <Divider orientation="vertical" />
 
           {/* Glissant */}
-          <label className="affaires-tb-toggle" title={slidingMode ? 'Mode glissant' : 'Mode calendaire'}>
-            <Checkbox checked={slidingMode} onChange={e => {
-              const newSliding = e.target.checked;
-              setSlidingMode(newSliding);
-              if (filterDateStart) {
-                applyAffaireRange(new Date(filterDateStart), viewMode, newSliding);
-              }
-            }} />
+          <label
+            className="affaires-tb-toggle"
+            title={slidingMode ? 'Mode glissant' : 'Mode calendaire'}
+          >
+            <Checkbox
+              checked={slidingMode}
+              onChange={(e) => {
+                const newSliding = e.target.checked;
+                setSlidingMode(newSliding);
+                if (filterDateStart) {
+                  applyAffaireRange(new Date(filterDateStart), viewMode, newSliding);
+                }
+              }}
+            />
             <span>Glissant</span>
           </label>
 
           {/* Archivées */}
- <Tooltip content="Afficher les affaires terminées depuis plus d'une semaine" position="bottom">
-   <label className="affaires-tb-toggle">
-            <Checkbox checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
-            <span>Archivées</span>
-          </label>
- </Tooltip>
+          <Tooltip
+            content="Afficher les affaires terminées depuis plus d'une semaine"
+            position="bottom"
+          >
+            <label className="affaires-tb-toggle">
+              <Checkbox
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+              />
+              <span>Archivées</span>
+            </label>
+          </Tooltip>
 
           <Divider orientation="vertical" />
 
           {/* Boutons d'actions */}
-          <Button variant="ghost"             className="affaires-new-btn"
+          <Button
+            variant="ghost"
+            className="affaires-new-btn"
             onClick={async () => {
               try {
                 const newAffaire = {
@@ -892,38 +1066,46 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
           </Button>
           {/* Import BL/BP unifié */}
           <Tooltip content="Importer un ou plusieurs BL / BP" position="bottom">
-            <Button variant="ghost"             className="affaires-tb-bl-import-btn multi-import u-gap-1"
-            onClick={() => setShowMultiImport(true)}
- 
-          >
-            <PackagePlus size={14} /> Import BL/BP
-          </Button>
+            <Button
+              variant="ghost"
+              className="affaires-tb-bl-import-btn multi-import u-gap-1"
+              onClick={() => setShowMultiImport(true)}
+            >
+              <PackagePlus size={14} /> Import BL/BP
+            </Button>
           </Tooltip>
           <Tooltip content="Analyse batch des BL PDF" position="bottom">
-            <Button variant="ghost"             className="affaires-tb-bl-import-btn u-gap-1"
-            onClick={() => setShowBatchAnalysis(true)}
- 
-          >
-            <BarChart2 size={14} /> Analyse batch
-          </Button>
+            <Button
+              variant="ghost"
+              className="affaires-tb-bl-import-btn u-gap-1"
+              onClick={() => setShowBatchAnalysis(true)}
+            >
+              <BarChart2 size={14} /> Analyse batch
+            </Button>
           </Tooltip>
 
           <Divider orientation="vertical" />
 
           {/* Stats */}
           <Tooltip content="Rafraîchir les affaires" position="bottom">
-            <Button variant="ghost"             className="affaires-tb-nav-btn u-flex-center u-gap-1"
-            onClick={handleRefresh}
- 
-          >
-            <RefreshCw size={14} />
-          </Button>
+            <Button
+              variant="ghost"
+              className="affaires-tb-nav-btn u-flex-center u-gap-1"
+              onClick={handleRefresh}
+            >
+              <RefreshCw size={14} />
+            </Button>
           </Tooltip>
           <div className="affaires-count-box">
             <span className="affaires-count-number">{filteredAffaires.length}</span>
-            <span className="affaires-count-label">affaire{filteredAffaires.length !== 1 ? 's' : ''}</span>
+            <span className="affaires-count-label">
+              affaire{filteredAffaires.length !== 1 ? 's' : ''}
+            </span>
           </div>
-          <span className="affaires-tb-count" title={`${filteredAffaires.length} affaire(s) affichée(s) sur ${enrichedAffaires.length} total`}>
+          <span
+            className="affaires-tb-count"
+            title={`${filteredAffaires.length} affaire(s) affichée(s) sur ${enrichedAffaires.length} total`}
+          >
             {filteredAffaires.length}/{enrichedAffaires.length}
           </span>
         </div>
@@ -933,182 +1115,318 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       <div className="affaires-body">
         {/* Liste des affaires */}
         <div className="affaires-list" ref={listRef}>
-        {filteredAffaires.length === 0 ? (
-          <EmptyState
-            icon={<Briefcase size={48} strokeWidth={1} />}
-            title={hasActiveFilters ? 'Aucune affaire ne correspond aux critères' : 'Aucune affaire trouvée'}
-          />
-        ) : (
-          <>
-            {/* En-tête du tableau (cliquable pour trier) */}
-            <div className="affaire-table-header">
-              <span className="ath-status"></span>
-              <span className="ath-numero sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('numero')}>
-                N° Affaire {sortBy === 'numero' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-              <span className="ath-type sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('type')}>
-                Type {sortBy === 'type' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-              <span className="ath-dates sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('dateDebut')}>
-                Période {sortBy === 'dateDebut' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-              <span className="ath-client sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('client')}>
-                Client {sortBy === 'client' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-              <span className="ath-titre sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('titre')}>
-                Titre / Événement {sortBy === 'titre' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-              <span className="ath-lieu sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('lieu')}>
-                Lieu {sortBy === 'lieu' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-              <span className="ath-bl">BL</span>
-              <span className="ath-orders">Cmd</span>
-              <span className="ath-icons"></span>
-              <span className="ath-tasks sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('tasks')}>
-                Tâches {sortBy === 'tasks' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-              <span className="ath-resa sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('resa')}>
-                Résa {sortBy === 'resa' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-              <span className="ath-pers sortable" role="columnheader" tabIndex={0} onClick={() => toggleSort('pers')}>
-                Pers {sortBy === 'pers' && <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>}
-              </span>
-            </div>
-            {/* Lignes */}
-            {filteredAffaires.map(affaire => {
-              const typeInfo = getTypeInfo(affaire.type);
-              const status = getAffaireStatus(affaire, today);
-              const affaireKey = affaire.id || affaire.numeroAffaire;
-              const isHighlighted = highlightedIds.has(affaireKey);
-              return (
-                <div
-                  key={affaireKey}
-                  data-affaire-id={affaireKey}
-                  className={`affaire-row status-${status}${affaire.isArchived ? ' archived' : ''}${isHighlighted ? ' highlighted' : ''}${selectedAffaire && (selectedAffaire.id || selectedAffaire.numeroAffaire) === affaireKey ? ' selected' : ''}`}
-                  onClick={() => {
-                    clearTimeout(clickTimerRef.current);
-                    clickTimerRef.current = setTimeout(() => {
-                      setSelectedAffaire(prev => (prev && (prev.id || prev.numeroAffaire) === affaireKey) ? null : affaire);
-                    }, 200);
-                  }}
-                  onDoubleClick={() => {
-                    clearTimeout(clickTimerRef.current);
-                    setDialogAffaire(affaire);
-                  }}
+          {filteredAffaires.length === 0 ? (
+            <EmptyState
+              icon={<Briefcase size={48} strokeWidth={1} />}
+              title={
+                hasActiveFilters
+                  ? 'Aucune affaire ne correspond aux critères'
+                  : 'Aucune affaire trouvée'
+              }
+            />
+          ) : (
+            <>
+              {/* En-tête du tableau (cliquable pour trier) */}
+              <div className="affaire-table-header">
+                <span className="ath-status"></span>
+                <span
+                  className="ath-numero sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('numero')}
                 >
-                  <span className="ar-status">
-                    {affaire.isArchived ? (
- <Tooltip content="Archivée" position="bottom"><span className="status-dot archived" /></Tooltip>
-                    ) : (
-                      <span className={`status-dot ${status}`} title={status === STATUS.ACTIVE ? 'En cours' : status === 'upcoming' ? 'À venir' : 'Terminée'} />
-                    )}
-                  </span>
-                  <span className="ar-numero">{affaire.numeroAffaire || '—'}</span>
-                  <span className="ar-type">
-                    <span className="affaire-type-tag" style={{ background: typeInfo.color }}>{typeInfo.label}</span>
-                  </span>
-                  <span className="ar-dates">
-                    {formatDate(affaire.dateDebut)}
-                    {affaire.dateFin && affaire.dateFin !== affaire.dateDebut && (
-                      <> → {formatDate(affaire.dateFin)}</>
-                    )}
-                  </span>
-                  <span className="ar-client" title={affaire.client || ''}>{capitalizeText(affaire.client) || '—'}</span>
-                  <span className="ar-titre" title={affaire.eventName || affaire.titre || ''}>
-                    {affaire.hasGoogleEvent && <Calendar size={11} className="ar-event-icon" title={`${affaire.googleEventCount || 1} événement(s) Google`} />}
-                    {capitalizeText(affaire.eventName || affaire.titre) || '—'}
-                  </span>
-                  <span className="ar-lieu" title={affaire.adresseLivraison || ''}>{capitalizeText(affaire.adresseLivraison) || '—'}</span>
-                  <span className="ar-bl">
-                    {affaire.blImportCount > 0 && (
-                      <span className="ar-bl-dot" title={`${affaire.blImportCount} BL/BP importé(s)`}>
-                        <FileText size={12} />
-                      </span>
-                    )}
-                  </span>
-                  <span className="ar-orders">
-                    {affaire.orderCount > 0 && (
-                      <span className="ar-orders-dot" title={`${affaire.orderCount} commande(s)`}>
-                        <DollarSign size={12} />
-                      </span>
-                    )}
-                  </span>
-                  <span className="ar-icons">
-                    {affaire.localAttachmentCount > 0 && (
-                      <span className="ar-icon-badge file-badge" title={`${affaire.localAttachmentCount} fichier(s)`}>
-                        <Paperclip size={11} />
-                        <span className="badge-count">{affaire.localAttachmentCount}</span>
-                      </span>
-                    )}
-                    {affaire.driveLinksCount > 0 && (
-                      <span className="ar-icon-badge link-badge" title={`${affaire.driveLinksCount} lien(s) Drive`}>
-                        <LinkIcon size={11} />
-                        <span className="badge-count">{affaire.driveLinksCount}</span>
-                      </span>
-                    )}
-                  </span>
-                  <span className="ar-tasks">
-                    {(() => {
-                      const tasks = tasksByAffaire[affaire.numeroAffaire?.toUpperCase()] || [];
-                      if (!tasks.length) return null;
-                      // Grouper par section
-                      const groups = {};
-                      for (const t of tasks) {
-                        const s = t.section || 'manual';
-                        if (!groups[s]) groups[s] = { count: 0, done: 0 };
-                        groups[s].count++;
-                        if (t.status === STATUS.DONE) groups[s].done++;
-                      }
-                      const SECTION_META = {
-                        prep_locations: { e: '📦', c: STATUS_COLORS.warning, l: 'Prép. Loc' },
-                        prep_prestations: { e: '🎤', c: STATUS_COLORS.info, l: 'Prép. Presta' },
-                        prep_ventes: { e: '🏷️', c: STATUS_COLORS.success, l: 'Prép. Ventes' },
-                        prep_installations: { e: '⚙️', c: ACCENT_COLORS.violet, l: 'Prép. Instal.' },
-                        prep_tournees: { e: '🚐', c: ACCENT_COLORS.pink, l: 'Prép. Tournées' },
-                        chargement: { e: '📦', c: STATUS_COLORS.warning, l: 'Chargement' },
-                        depart: { e: '🚀', c: STATUS_COLORS.info, l: 'Départ' },
-                        installation: { e: '🛠️', c: STATUS_COLORS.success, l: 'Installation' },
-                        montage: { e: '🔩', c: ACCENT_COLORS.cyanDark, l: 'Montage' },
-                        demontage: { e: '🔧', c: STATUS_COLORS.dangerDark, l: 'Démontage' },
-                        courses: { e: '🚗', c: ACCENT_COLORS.violet, l: 'Courses' },
-                        taches_prioritaires: { e: '🔴', c: STATUS_COLORS.danger, l: 'Prioritaire' },
-                        taches_secondaires: { e: '🟡', c: STATUS_COLORS.warning, l: 'Secondaire' },
-                        manual: { e: '📋', c: STATUS_COLORS.neutral, l: 'Autre' },
-                        rdv: { e: '📅', c: '#059669', l: 'RDV' },
-                        evenements: { e: '📌', c: STATUS_COLORS.neutral, l: 'Événement' },
-                      };
-                      return Object.entries(groups).map(([sec, { count, done }]) => {
-                        const meta = SECTION_META[sec] || { e: '📋', c: STATUS_COLORS.neutral, l: sec };
-                        const allDone = done === count;
-                        return (
-                          <span
-                            key={sec}
-                            className={`ar-task-chip${allDone ? ' done' : ''}`}
-                            style={{ background: `${meta.c}18`, color: meta.c, borderColor: `${meta.c}40` }}
-                            title={`${meta.l}: ${done}/${count} terminée(s)`}
-                          >
-                            {meta.e}{count > 1 && <span className="ar-task-count">×{count}</span>}
-                          </span>
+                  N° Affaire{' '}
+                  {sortBy === 'numero' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+                <span
+                  className="ath-type sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('type')}
+                >
+                  Type{' '}
+                  {sortBy === 'type' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+                <span
+                  className="ath-dates sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('dateDebut')}
+                >
+                  Période{' '}
+                  {sortBy === 'dateDebut' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+                <span
+                  className="ath-client sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('client')}
+                >
+                  Client{' '}
+                  {sortBy === 'client' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+                <span
+                  className="ath-titre sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('titre')}
+                >
+                  Titre / Événement{' '}
+                  {sortBy === 'titre' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+                <span
+                  className="ath-lieu sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('lieu')}
+                >
+                  Lieu{' '}
+                  {sortBy === 'lieu' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+                <span className="ath-bl">BL</span>
+                <span className="ath-orders">Cmd</span>
+                <span className="ath-icons"></span>
+                <span
+                  className="ath-tasks sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('tasks')}
+                >
+                  Tâches{' '}
+                  {sortBy === 'tasks' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+                <span
+                  className="ath-resa sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('resa')}
+                >
+                  Résa{' '}
+                  {sortBy === 'resa' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+                <span
+                  className="ath-pers sortable"
+                  role="columnheader"
+                  tabIndex={0}
+                  onClick={() => toggleSort('pers')}
+                >
+                  Pers{' '}
+                  {sortBy === 'pers' && (
+                    <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+              </div>
+              {/* Lignes */}
+              {filteredAffaires.map((affaire) => {
+                const typeInfo = getTypeInfo(affaire.type);
+                const status = getAffaireStatus(affaire, today);
+                const affaireKey = affaire.id || affaire.numeroAffaire;
+                const isHighlighted = highlightedIds.has(affaireKey);
+                return (
+                  <div
+                    key={affaireKey}
+                    data-affaire-id={affaireKey}
+                    className={`affaire-row status-${status}${affaire.isArchived ? ' archived' : ''}${isHighlighted ? ' highlighted' : ''}${selectedAffaire && (selectedAffaire.id || selectedAffaire.numeroAffaire) === affaireKey ? ' selected' : ''}`}
+                    onClick={() => {
+                      clearTimeout(clickTimerRef.current);
+                      clickTimerRef.current = setTimeout(() => {
+                        setSelectedAffaire((prev) =>
+                          prev && (prev.id || prev.numeroAffaire) === affaireKey ? null : affaire,
                         );
-                      });
-                    })()}
-                  </span>
-                  <span className="ar-resa">{affaire.reservationCount || 0}</span>
-                  <span className="ar-pers">{affaire.personnelCount || 0}</span>
-                </div>
-              );
-            })}
-          </>
-        )}
+                      }, 200);
+                    }}
+                    onDoubleClick={() => {
+                      clearTimeout(clickTimerRef.current);
+                      setDialogAffaire(affaire);
+                    }}
+                  >
+                    <span className="ar-status">
+                      {affaire.isArchived ? (
+                        <Tooltip content="Archivée" position="bottom">
+                          <span className="status-dot archived" />
+                        </Tooltip>
+                      ) : (
+                        <span
+                          className={`status-dot ${status}`}
+                          title={
+                            status === STATUS.ACTIVE
+                              ? 'En cours'
+                              : status === 'upcoming'
+                                ? 'À venir'
+                                : 'Terminée'
+                          }
+                        />
+                      )}
+                    </span>
+                    <span className="ar-numero">{affaire.numeroAffaire || '—'}</span>
+                    <span className="ar-type">
+                      <span className="affaire-type-tag" style={{ background: typeInfo.color }}>
+                        {typeInfo.label}
+                      </span>
+                    </span>
+                    <span className="ar-dates">
+                      {formatDate(affaire.dateDebut)}
+                      {affaire.dateFin && affaire.dateFin !== affaire.dateDebut && (
+                        <> → {formatDate(affaire.dateFin)}</>
+                      )}
+                    </span>
+                    <span className="ar-client" title={affaire.client || ''}>
+                      {capitalizeText(affaire.client) || '—'}
+                    </span>
+                    <span className="ar-titre" title={affaire.eventName || affaire.titre || ''}>
+                      {affaire.hasGoogleEvent && (
+                        <Calendar
+                          size={11}
+                          className="ar-event-icon"
+                          title={`${affaire.googleEventCount || 1} événement(s) Google`}
+                        />
+                      )}
+                      {capitalizeText(affaire.eventName || affaire.titre) || '—'}
+                    </span>
+                    <span className="ar-lieu" title={affaire.adresseLivraison || ''}>
+                      {capitalizeText(affaire.adresseLivraison) || '—'}
+                    </span>
+                    <span className="ar-bl">
+                      {affaire.blImportCount > 0 && (
+                        <span
+                          className="ar-bl-dot"
+                          title={`${affaire.blImportCount} BL/BP importé(s)`}
+                        >
+                          <FileText size={12} />
+                        </span>
+                      )}
+                    </span>
+                    <span className="ar-orders">
+                      {affaire.orderCount > 0 && (
+                        <span className="ar-orders-dot" title={`${affaire.orderCount} commande(s)`}>
+                          <DollarSign size={12} />
+                        </span>
+                      )}
+                    </span>
+                    <span className="ar-icons">
+                      {affaire.localAttachmentCount > 0 && (
+                        <span
+                          className="ar-icon-badge file-badge"
+                          title={`${affaire.localAttachmentCount} fichier(s)`}
+                        >
+                          <Paperclip size={11} />
+                          <span className="badge-count">{affaire.localAttachmentCount}</span>
+                        </span>
+                      )}
+                      {affaire.driveLinksCount > 0 && (
+                        <span
+                          className="ar-icon-badge link-badge"
+                          title={`${affaire.driveLinksCount} lien(s) Drive`}
+                        >
+                          <LinkIcon size={11} />
+                          <span className="badge-count">{affaire.driveLinksCount}</span>
+                        </span>
+                      )}
+                    </span>
+                    <span className="ar-tasks">
+                      {(() => {
+                        const tasks = tasksByAffaire[affaire.numeroAffaire?.toUpperCase()] || [];
+                        if (!tasks.length) return null;
+                        // Grouper par section
+                        const groups = {};
+                        for (const t of tasks) {
+                          const s = t.section || 'manual';
+                          if (!groups[s]) groups[s] = { count: 0, done: 0 };
+                          groups[s].count++;
+                          if (t.status === STATUS.DONE) groups[s].done++;
+                        }
+                        const SECTION_META = {
+                          prep_locations: { e: '📦', c: STATUS_COLORS.warning, l: 'Prép. Loc' },
+                          prep_prestations: { e: '🎤', c: STATUS_COLORS.info, l: 'Prép. Presta' },
+                          prep_ventes: { e: '🏷️', c: STATUS_COLORS.success, l: 'Prép. Ventes' },
+                          prep_installations: {
+                            e: '⚙️',
+                            c: ACCENT_COLORS.violet,
+                            l: 'Prép. Instal.',
+                          },
+                          prep_tournees: { e: '🚐', c: ACCENT_COLORS.pink, l: 'Prép. Tournées' },
+                          chargement: { e: '📦', c: STATUS_COLORS.warning, l: 'Chargement' },
+                          depart: { e: '🚀', c: STATUS_COLORS.info, l: 'Départ' },
+                          installation: { e: '🛠️', c: STATUS_COLORS.success, l: 'Installation' },
+                          montage: { e: '🔩', c: ACCENT_COLORS.cyanDark, l: 'Montage' },
+                          demontage: { e: '🔧', c: STATUS_COLORS.dangerDark, l: 'Démontage' },
+                          courses: { e: '🚗', c: ACCENT_COLORS.violet, l: 'Courses' },
+                          taches_prioritaires: {
+                            e: '🔴',
+                            c: STATUS_COLORS.danger,
+                            l: 'Prioritaire',
+                          },
+                          taches_secondaires: {
+                            e: '🟡',
+                            c: STATUS_COLORS.warning,
+                            l: 'Secondaire',
+                          },
+                          manual: { e: '📋', c: STATUS_COLORS.neutral, l: 'Autre' },
+                          rdv: { e: '📅', c: '#059669', l: 'RDV' },
+                          evenements: { e: '📌', c: STATUS_COLORS.neutral, l: 'Événement' },
+                        };
+                        return Object.entries(groups).map(([sec, { count, done }]) => {
+                          const meta = SECTION_META[sec] || {
+                            e: '📋',
+                            c: STATUS_COLORS.neutral,
+                            l: sec,
+                          };
+                          const allDone = done === count;
+                          return (
+                            <span
+                              key={sec}
+                              className={`ar-task-chip${allDone ? ' done' : ''}`}
+                              style={{
+                                background: `${meta.c}18`,
+                                color: meta.c,
+                                borderColor: `${meta.c}40`,
+                              }}
+                              title={`${meta.l}: ${done}/${count} terminée(s)`}
+                            >
+                              {meta.e}
+                              {count > 1 && <span className="ar-task-count">×{count}</span>}
+                            </span>
+                          );
+                        });
+                      })()}
+                    </span>
+                    <span className="ar-resa">{affaire.reservationCount || 0}</span>
+                    <span className="ar-pers">{affaire.personnelCount || 0}</span>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
 
         {/* Volet de détail (clic simple) */}
         <AffaireSlidePanel
           affaire={selectedAffaire}
           reservations={reservations}
-          googleEventIds={selectedAffaire ? (googleEventIdsMap[selectedAffaire.numeroAffaire] || []) : []}
+          googleEventIds={
+            selectedAffaire ? googleEventIdsMap[selectedAffaire.numeroAffaire] || [] : []
+          }
           onClose={() => setSelectedAffaire(null)}
-          onOpenDialog={(aff) => { setSelectedAffaire(null); setDialogAffaire(aff); }}
+          onOpenDialog={(aff) => {
+            setSelectedAffaire(null);
+            setDialogAffaire(aff);
+          }}
           onNavigateToEntity={onNavigateToEntity}
           onRefresh={handleRefresh}
           currentUser={currentUser}
@@ -1119,43 +1437,49 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       <AffaireDetailDialog
         affaire={dialogAffaire}
         reservations={reservations}
-        googleEventIds={dialogAffaire ? (googleEventIdsMap[dialogAffaire.numeroAffaire] || []) : []}
+        googleEventIds={dialogAffaire ? googleEventIdsMap[dialogAffaire.numeroAffaire] || [] : []}
         onClose={() => setDialogAffaire(null)}
-        onDataChanged={(updatedAffaire) => { if (updatedAffaire) setDialogAffaire(updatedAffaire); loadDbAffaires(); loadAllTasks(); }}
+        onDataChanged={(updatedAffaire) => {
+          if (updatedAffaire) setDialogAffaire(updatedAffaire);
+          loadDbAffaires();
+          loadAllTasks();
+        }}
         onNavigateToEntity={onNavigateToEntity}
         currentUser={currentUser}
       />
 
       {/* FAB création rapide d'affaire */}
       {isAdmin && (
-      <Button variant="ghost"         className="affaire-fab-create"
-        onClick={async () => {
-          try {
-            const newAffaire = {
-              numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
-              nom: '',
-              client: '',
-              interlocuteur: '',
-              tel: '',
-              type: 'Prestation',
-              dateDebut: format(new Date(), 'yyyy-MM-dd'),
-              dateFin: '',
-              adresseLivraison: '',
-              description: '',
-              devis: '',
-              source: 'db',
-            };
-            const created = await api.createOrUpdateAffaire(newAffaire);
-            await loadDbAffaires();
-            setDialogAffaire({ ...newAffaire, id: created.id, ...created });
-          } catch (err) {
-            console.error('Erreur création affaire:', err);
-          }
-        }}
-        title="Nouvelle affaire"
-      >
-        <Plus size={22} />
-      </Button>
+        <Button
+          variant="ghost"
+          className="affaire-fab-create"
+          onClick={async () => {
+            try {
+              const newAffaire = {
+                numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+                nom: '',
+                client: '',
+                interlocuteur: '',
+                tel: '',
+                type: 'Prestation',
+                dateDebut: format(new Date(), 'yyyy-MM-dd'),
+                dateFin: '',
+                adresseLivraison: '',
+                description: '',
+                devis: '',
+                source: 'db',
+              };
+              const created = await api.createOrUpdateAffaire(newAffaire);
+              await loadDbAffaires();
+              setDialogAffaire({ ...newAffaire, id: created.id, ...created });
+            } catch (err) {
+              console.error('Erreur création affaire:', err);
+            }
+          }}
+          title="Nouvelle affaire"
+        >
+          <Plus size={22} />
+        </Button>
       )}
 
       {/* Sélecteurs de date */}
@@ -1194,7 +1518,10 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
         <Suspense fallback={null}>
           <BLMultiImportModal
             onClose={() => setShowMultiImport(false)}
-            onImported={() => { setShowMultiImport(false); handleRefresh(); }}
+            onImported={() => {
+              setShowMultiImport(false);
+              handleRefresh();
+            }}
             defaultAffaireType={filterType}
           />
         </Suspense>

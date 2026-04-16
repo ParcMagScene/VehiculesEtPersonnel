@@ -369,7 +369,11 @@
 }
 
 .readonly-input {
-  background: linear-gradient(135deg, var(--theme-bg-tertiary) 0%, var(--theme-border-medium) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-bg-tertiary) 0%,
+    var(--theme-border-medium) 100%
+  ) !important;
   color: var(--theme-text-body) !important;
   font-weight: 500;
   cursor: not-allowed;
@@ -440,7 +444,11 @@
 }
 
 .route-info {
-  background: linear-gradient(135deg, var(--theme-purple-bg) 0%, var(--theme-purple-bg-strong) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-purple-bg) 0%,
+    var(--theme-purple-bg-strong) 100%
+  );
   border: 2px solid var(--theme-secondary);
   padding: 1.25rem;
   border-radius: var(--radius-md-lg);
@@ -666,85 +674,89 @@
 }
 
 /* ==================== Dark Theme ==================== */
-[data-theme="dark"] .pac-container {
+[data-theme='dark'] .pac-container {
   background: var(--theme-bg-card) !important;
   border-color: var(--theme-border) !important;
   box-shadow: 0 4px 12px var(--overlay-light) !important;
 }
-[data-theme="dark"] .pac-container .pac-item {
+[data-theme='dark'] .pac-container .pac-item {
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   border-top-color: var(--theme-border);
 }
-[data-theme="dark"] .pac-container .pac-item:hover {
+[data-theme='dark'] .pac-container .pac-item:hover {
   background: var(--theme-bg-tertiary);
 }
-[data-theme="dark"] .pac-container .pac-item .pac-item-query {
+[data-theme='dark'] .pac-container .pac-item .pac-item-query {
   color: var(--theme-text-primary);
 }
 
-[data-theme="dark"] .coordinates-badge.success {
+[data-theme='dark'] .coordinates-badge.success {
   background: var(--success-tint-accent);
   color: var(--theme-success-border);
 }
-[data-theme="dark"] .coordinates-badge strong {
+[data-theme='dark'] .coordinates-badge strong {
   color: #34d399;
 }
-[data-theme="dark"] .coordinates-badge small {
+[data-theme='dark'] .coordinates-badge small {
   color: var(--theme-success-border);
 }
 
-[data-theme="dark"] .error-banner,
-[data-theme="dark"] .location-error {
+[data-theme='dark'] .error-banner,
+[data-theme='dark'] .location-error {
   background: linear-gradient(135deg, var(--theme-danger-border) 0%, var(--theme-danger-bg) 100%);
   color: var(--theme-danger-border);
 }
-[data-theme="dark"] .error-banner strong {
+[data-theme='dark'] .error-banner strong {
   color: var(--theme-danger);
 }
-[data-theme="dark"] .error-banner small {
+[data-theme='dark'] .error-banner small {
   color: var(--theme-danger-border);
 }
-[data-theme="dark"] .error-banner code {
+[data-theme='dark'] .error-banner code {
   background: var(--glass-subtle);
 }
 
-[data-theme="dark"] .success-banner {
-  background: linear-gradient(135deg, var(--success-tint-accent) 0%, var(--success-tint-light) 100%);
+[data-theme='dark'] .success-banner {
+  background: linear-gradient(
+    135deg,
+    var(--success-tint-accent) 0%,
+    var(--success-tint-light) 100%
+  );
   color: var(--theme-success-border);
 }
-[data-theme="dark"] .success-banner strong {
+[data-theme='dark'] .success-banner strong {
   color: #34d399;
 }
 
-[data-theme="dark"] .form-section {
+[data-theme='dark'] .form-section {
   background: var(--theme-bg-secondary);
 }
 
-[data-theme="dark"] .coordinates-info {
+[data-theme='dark'] .coordinates-info {
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0.08) 100%);
   border-color: rgba(14, 165, 233, 0.4);
 }
-[data-theme="dark"] .coordinates-info p {
+[data-theme='dark'] .coordinates-info p {
   color: #7dd3fc;
 }
 
-[data-theme="dark"] .route-info {
+[data-theme='dark'] .route-info {
   background: linear-gradient(135deg, rgba(167, 139, 250, 0.12) 0%, rgba(167, 139, 250, 0.08) 100%);
   border-color: rgba(167, 139, 250, 0.4);
 }
-[data-theme="dark"] .route-info h3 {
+[data-theme='dark'] .route-info h3 {
   color: var(--theme-purple-accent);
 }
-[data-theme="dark"] .route-detail svg,
-[data-theme="dark"] .route-item svg {
+[data-theme='dark'] .route-detail svg,
+[data-theme='dark'] .route-item svg {
   color: var(--theme-secondary);
 }
-[data-theme="dark"] .route-detail span,
-[data-theme="dark"] .route-item span {
+[data-theme='dark'] .route-detail span,
+[data-theme='dark'] .route-item span {
   color: var(--theme-purple-accent);
 }
-[data-theme="dark"] .loading-route,
-[data-theme="dark"] .route-info .loading {
+[data-theme='dark'] .loading-route,
+[data-theme='dark'] .route-info .loading {
   color: var(--theme-secondary);
 }

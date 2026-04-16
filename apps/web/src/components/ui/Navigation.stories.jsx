@@ -9,7 +9,9 @@ export const TabsDefault = () => (
     <TabList>
       <Tab value="tab1">Général</Tab>
       <Tab value="tab2">Détails</Tab>
-      <Tab value="tab3" disabled>Archivé</Tab>
+      <Tab value="tab3" disabled>
+        Archivé
+      </Tab>
     </TabList>
     <TabPanel value="tab1">Contenu de l'onglet Général</TabPanel>
     <TabPanel value="tab2">Contenu de l'onglet Détails</TabPanel>

@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  X, Plus, Search, Unlink, MapPin, Clock, User, Briefcase, Truck, ChevronDown
+  X,
+  Plus,
+  Search,
+  Unlink,
+  MapPin,
+  Clock,
+  User,
+  Briefcase,
+  Truck,
+  ChevronDown,
 } from 'lucide-react';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
@@ -14,21 +23,33 @@ import { PLANNING_SECTIONS } from '../../constants/colors';
 import './AddTaskModal.css';
 
 // ═══ Constantes (depuis colorConstants) ═══
-const { rdv: _rdv, evenements: _evenements, depot: _depot, ...ADD_TASK_SECTIONS } = PLANNING_SECTIONS;
+const {
+  rdv: _rdv,
+  evenements: _evenements,
+  depot: _depot,
+  ...ADD_TASK_SECTIONS
+} = PLANNING_SECTIONS;
 const SECTIONS = ADD_TASK_SECTIONS;
 
 const EVENT_TYPES = {
-  preparation:  { label: 'Préparation',  emoji: '🔧' },
-  enlevement:   { label: 'Enlèvement',   emoji: '📦' },
-  livraison:    { label: 'Livraison',     emoji: '🚚' },
-  depart:       { label: 'Départ',        emoji: '🚀' },
-  retour:       { label: 'Retour',        emoji: '↩️' },
-  recuperation: { label: 'Récupération',  emoji: '📥' },
-  montage:      { label: 'Montage',       emoji: '🔩' },
-  demontage:    { label: 'Démontage',     emoji: '🔧' },
+  preparation: { label: 'Préparation', emoji: '🔧' },
+  enlevement: { label: 'Enlèvement', emoji: '📦' },
+  livraison: { label: 'Livraison', emoji: '🚚' },
+  depart: { label: 'Départ', emoji: '🚀' },
+  retour: { label: 'Retour', emoji: '↩️' },
+  recuperation: { label: 'Récupération', emoji: '📥' },
+  montage: { label: 'Montage', emoji: '🔩' },
+  demontage: { label: 'Démontage', emoji: '🔧' },
 };
 
-const VEHICLE_SECTIONS = new Set(['courses', 'chargement', 'depart', 'enlevement', 'retour', 'recuperation']);
+const VEHICLE_SECTIONS = new Set([
+  'courses',
+  'chargement',
+  'depart',
+  'enlevement',
+  'retour',
+  'recuperation',
+]);
 const COURSE_SECTION = 'courses';
 
 export default function AddTaskModal({
@@ -73,7 +94,10 @@ export default function AddTaskModal({
   // Load eMag locations
   useEffect(() => {
     if (isOpen) {
-      api.getLocations().then(setEmagLocations).catch(() => {});
+      api
+        .getLocations()
+        .then(setEmagLocations)
+        .catch(() => {});
     }
   }, [isOpen]);
 
@@ -113,39 +137,47 @@ export default function AddTaskModal({
   const filteredAffaires = useMemo(() => {
     if (!affaireSearch.trim()) return allAffairesList.slice(0, 30);
     const q = affaireSearch.toLowerCase();
-    return allAffairesList.filter(a =>
-      (a.numeroAffaire || '').toLowerCase().includes(q) ||
-      (a.client || '').toLowerCase().includes(q) ||
-      (a.nom || '').toLowerCase().includes(q) ||
-      (a.titre || '').toLowerCase().includes(q)
-    ).slice(0, 30);
+    return allAffairesList
+      .filter(
+        (a) =>
+          (a.numeroAffaire || '').toLowerCase().includes(q) ||
+          (a.client || '').toLowerCase().includes(q) ||
+          (a.nom || '').toLowerCase().includes(q) ||
+          (a.titre || '').toLowerCase().includes(q),
+      )
+      .slice(0, 30);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAffairesList, affaireSearch]);
 
   const selectedAffaire = useMemo(() => {
-    return affaireNum ? allAffairesList.find(a => a.numeroAffaire === affaireNum) : null;
+    return affaireNum ? allAffairesList.find((a) => a.numeroAffaire === affaireNum) : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAffairesList, affaireNum]);
 
   // All events for dropdown
-  const allEvents = useMemo(() => [...(googleEvents || []), ...(icalEvents || [])], [googleEvents, icalEvents]);
+  const allEvents = useMemo(
+    () => [...(googleEvents || []), ...(icalEvents || [])],
+    [googleEvents, icalEvents],
+  );
 
   // Reservations filtered for date
   const dayReservations = useMemo(() => {
-    return (reservations || []).filter(r => r.startDate <= selectedDate && r.endDate >= selectedDate);
+    return (reservations || []).filter(
+      (r) => r.startDate <= selectedDate && r.endDate >= selectedDate,
+    );
   }, [reservations, selectedDate]);
 
   // Location suggestions from eMag (deduplicated, name + address)
   const locationSuggestions = useMemo(() => {
     const seen = new Set();
     return emagLocations
-      .filter(l => {
+      .filter((l) => {
         const key = (l.address || l.name || '').toLowerCase().trim();
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .map(l => ({
+      .map((l) => ({
         name: l.name || '',
         address: l.address || '',
         value: l.address || l.name,
@@ -158,7 +190,8 @@ export default function AddTaskModal({
   useEffect(() => {
     if (!locationDropdownOpen) return;
     const handle = (e) => {
-      if (locationRef.current && !locationRef.current.contains(e.target)) setLocationDropdownOpen(false);
+      if (locationRef.current && !locationRef.current.contains(e.target))
+        setLocationDropdownOpen(false);
     };
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
@@ -167,8 +200,8 @@ export default function AddTaskModal({
   const filteredLocationSuggestions = useMemo(() => {
     if (!locationAddress.trim()) return locationSuggestions;
     const q = locationAddress.toLowerCase();
-    return locationSuggestions.filter(s =>
-      s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)
+    return locationSuggestions.filter(
+      (s) => s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q),
     );
   }, [locationSuggestions, locationAddress]);
 
@@ -204,7 +237,9 @@ export default function AddTaskModal({
             end_date: selectedDate,
             end_period: period || 'PM',
             client_name: client || selectedAffaire?.client || '',
-            driver_name: personId ? persons.find(p => String(p.id) === String(personId))?.firstName || '' : '',
+            driver_name: personId
+              ? persons.find((p) => String(p.id) === String(personId))?.firstName || ''
+              : '',
             prestation_name: finalTitle,
             affaire: affaireNum || '',
             notes: '',
@@ -219,10 +254,16 @@ export default function AddTaskModal({
       }
 
       // Source type
-      const selectedGoogEvent = googleEventId ? allEvents.find(e => e.id === googleEventId) : null;
+      const selectedGoogEvent = googleEventId
+        ? allEvents.find((e) => e.id === googleEventId)
+        : null;
       const sourceType = selectedGoogEvent
-        ? (selectedGoogEvent._source === 'ical' ? 'ical_event' : 'google_event')
-        : selectedAffaire ? 'affaire' : 'manual';
+        ? selectedGoogEvent._source === 'ical'
+          ? 'ical_event'
+          : 'google_event'
+        : selectedAffaire
+          ? 'affaire'
+          : 'manual';
 
       await api.createTask({
         date: selectedDate,
@@ -262,7 +303,9 @@ export default function AddTaskModal({
   // ESC to close
   useEffect(() => {
     if (!isOpen) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
@@ -274,32 +317,45 @@ export default function AddTaskModal({
   const showVehicle = VEHICLE_SECTIONS.has(section);
 
   return (
-    <div className="atm-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div
+      className="atm-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="atm-modal" role="dialog" aria-modal="true">
         {/* Header */}
         <div className="atm-header">
-          <h3><Plus size={18} /> Nouvelle tâche</h3>
-          <Button variant="ghost" className="atm-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
+          <h3>
+            <Plus size={18} /> Nouvelle tâche
+          </h3>
+          <Button variant="ghost" className="atm-close" onClick={onClose} aria-label="Fermer">
+            <X size={18} />
+          </Button>
         </div>
 
         {/* Body */}
         <div className="atm-body">
-
           {/* Section / Type de tâche */}
           <div className="atm-field">
             <label>Type de tâche</label>
             <Select
               value={section}
-              onChange={e => {
+              onChange={(e) => {
                 const key = e.target.value;
                 setSection(key);
                 if (key !== COURSE_SECTION) setCourseType('');
-                if (!VEHICLE_SECTIONS.has(key)) { setReservationId(''); setVehicleId(''); }
+                if (!VEHICLE_SECTIONS.has(key)) {
+                  setReservationId('');
+                  setVehicleId('');
+                }
                 if (key !== COURSE_SECTION) setLocationAddress('');
               }}
             >
               {Object.entries(SECTIONS).map(([key, info]) => (
-                <option key={key} value={key}>{info.emoji} {info.label}</option>
+                <option key={key} value={key}>
+                  {info.emoji} {info.label}
+                </option>
               ))}
             </Select>
           </div>
@@ -308,10 +364,12 @@ export default function AddTaskModal({
           {showCourseType && (
             <div className="atm-field">
               <label>Type de course</label>
-              <Select value={courseType} onChange={e => setCourseType(e.target.value)}>
+              <Select value={courseType} onChange={(e) => setCourseType(e.target.value)}>
                 <option value="">— Sélectionner —</option>
                 {Object.entries(EVENT_TYPES).map(([key, info]) => (
-                  <option key={key} value={key}>{info.emoji} {info.label}</option>
+                  <option key={key} value={key}>
+                    {info.emoji} {info.label}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -319,12 +377,14 @@ export default function AddTaskModal({
 
           {/* Titre */}
           <div className="atm-field">
-            <label>Titre <span className="atm-required">*</span></label>
+            <label>
+              Titre <span className="atm-required">*</span>
+            </label>
             <Input
               type="text"
               value={title}
-              onChange={e => setTitle(e.target.value)}
-              onBlur={e => {
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={(e) => {
                 const v = e.target.value.trim();
                 if (v) setTitle(v.charAt(0).toUpperCase() + v.slice(1));
               }}
@@ -333,18 +393,31 @@ export default function AddTaskModal({
               spellCheck
               lang="fr"
               autoComplete="off"
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSubmit(); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) handleSubmit();
+              }}
             />
           </div>
 
           {/* Affaire */}
           <div className="atm-field" ref={affaireRef}>
-            <label><Briefcase size={13} /> Affaire</label>
+            <label>
+              <Briefcase size={13} /> Affaire
+            </label>
             {affaireNum ? (
               <div className="atm-affaire-selected">
                 <AffaireBadge numero={affaireNum} type={selectedAffaire?.type} />
                 <span className="atm-affaire-client">{selectedAffaire?.client || ''}</span>
-                <Button variant="ghost" type="button" className="atm-affaire-clear" onClick={() => { setAffaireNum(''); setClient(''); setAffaireSearch(''); }}>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="atm-affaire-clear"
+                  onClick={() => {
+                    setAffaireNum('');
+                    setClient('');
+                    setAffaireSearch('');
+                  }}
+                >
                   <Unlink size={12} />
                 </Button>
               </div>
@@ -354,7 +427,10 @@ export default function AddTaskModal({
                 <Input
                   type="text"
                   value={affaireSearch}
-                  onChange={e => { setAffaireSearch(e.target.value); setAffaireOpen(true); }}
+                  onChange={(e) => {
+                    setAffaireSearch(e.target.value);
+                    setAffaireOpen(true);
+                  }}
                   onFocus={() => setAffaireOpen(true)}
                   placeholder="N° affaire, client…"
                   className="atm-affaire-input"
@@ -363,23 +439,27 @@ export default function AddTaskModal({
                   <div className="atm-affaire-dropdown">
                     {filteredAffaires.length === 0 ? (
                       <div className="atm-affaire-empty">Aucune affaire trouvée</div>
-                    ) : filteredAffaires.map(a => (
-                      <Button variant="ghost"                         key={a.numeroAffaire}
-                        type="button"
-                        className="atm-affaire-option"
-                        onClick={() => {
-                          setAffaireNum(a.numeroAffaire);
-                          setGoogleEventId('');
-                          setClient(a.client || '');
-                          if (!title) setTitle(a.nom || a.event_name || '');
-                          setAffaireSearch('');
-                          setAffaireOpen(false);
-                        }}
-                      >
-                        <span className="atm-affaire-opt-num">{a.numeroAffaire}</span>
-                        <span className="atm-affaire-opt-client">{a.client || a.nom || ''}</span>
-                      </Button>
-                    ))}
+                    ) : (
+                      filteredAffaires.map((a) => (
+                        <Button
+                          variant="ghost"
+                          key={a.numeroAffaire}
+                          type="button"
+                          className="atm-affaire-option"
+                          onClick={() => {
+                            setAffaireNum(a.numeroAffaire);
+                            setGoogleEventId('');
+                            setClient(a.client || '');
+                            if (!title) setTitle(a.nom || a.event_name || '');
+                            setAffaireSearch('');
+                            setAffaireOpen(false);
+                          }}
+                        >
+                          <span className="atm-affaire-opt-num">{a.numeroAffaire}</span>
+                          <span className="atm-affaire-opt-client">{a.client || a.nom || ''}</span>
+                        </Button>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
@@ -392,19 +472,22 @@ export default function AddTaskModal({
               <label>Événement associé</label>
               <Select
                 value={googleEventId}
-                onChange={e => {
+                onChange={(e) => {
                   const evId = e.target.value;
                   setGoogleEventId(evId);
                   setAffaireNum('');
                   if (evId) {
-                    const ev = allEvents.find(ev2 => ev2.id === evId);
+                    const ev = allEvents.find((ev2) => ev2.id === evId);
                     if (ev) {
                       setTitle(ev.summary || ev.title || '');
-                      const startDT = ev._source === 'ical' ? (ev.start || '') : (ev.start?.dateTime || '');
+                      const startDT =
+                        ev._source === 'ical' ? ev.start || '' : ev.start?.dateTime || '';
                       if (startDT && startDT.includes('T')) {
                         const d = safeParseDate(startDT);
                         if (d) {
-                          setTime(d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+                          setTime(
+                            d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                          );
                           setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
                         }
                       }
@@ -413,8 +496,10 @@ export default function AddTaskModal({
                 }}
               >
                 <option value="">— Événement Google / iCal —</option>
-                {allEvents.map(ev => (
-                  <option key={ev.id} value={ev.id}>{ev.summary || ev.title || '(sans titre)'}</option>
+                {allEvents.map((ev) => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.summary || ev.title || '(sans titre)'}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -423,17 +508,24 @@ export default function AddTaskModal({
           {/* Lieu (courses) */}
           {showLocation && (
             <div className="atm-field atm-field-location" ref={locationRef}>
-              <label><MapPin size={13} /> Lieu</label>
+              <label>
+                <MapPin size={13} /> Lieu
+              </label>
               <AddressAutocomplete
                 value={locationAddress}
-                onChange={(val) => { setLocationAddress(val); setLocationDropdownOpen(true); }}
+                onChange={(val) => {
+                  setLocationAddress(val);
+                  setLocationDropdownOpen(true);
+                }}
                 placeholder="Adresse ou lieu de la course…"
                 className="atm-location-input"
               />
               {locationSuggestions.length > 0 && (
-                <Button variant="ghost"                   type="button"
+                <Button
+                  variant="ghost"
+                  type="button"
                   className="atm-location-toggle"
-                  onClick={() => setLocationDropdownOpen(v => !v)}
+                  onClick={() => setLocationDropdownOpen((v) => !v)}
                 >
                   <MapPin size={12} /> Lieux enregistrés <ChevronDown size={12} />
                 </Button>
@@ -441,7 +533,9 @@ export default function AddTaskModal({
               {locationDropdownOpen && filteredLocationSuggestions.length > 0 && (
                 <div className="atm-location-dropdown">
                   {filteredLocationSuggestions.map((s, i) => (
-                    <Button variant="ghost"                       key={i}
+                    <Button
+                      variant="ghost"
+                      key={i}
                       type="button"
                       className="atm-location-option"
                       onClick={() => {
@@ -463,11 +557,15 @@ export default function AddTaskModal({
           {/* Responsable + Client (row) */}
           <div className="atm-row">
             <div className="atm-field atm-field-half">
-              <label><User size={13} /> Responsable</label>
-              <Select value={personId} onChange={e => setPersonId(e.target.value)}>
+              <label>
+                <User size={13} /> Responsable
+              </label>
+              <Select value={personId} onChange={(e) => setPersonId(e.target.value)}>
                 <option value="">— Aucun —</option>
-                {persons.map(p => (
-                  <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                {persons.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.firstName} {p.lastName}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -476,7 +574,7 @@ export default function AddTaskModal({
               <Input
                 type="text"
                 value={client}
-                onChange={e => setClient(e.target.value)}
+                onChange={(e) => setClient(e.target.value)}
                 placeholder="Client..."
               />
             </div>
@@ -485,21 +583,36 @@ export default function AddTaskModal({
           {/* Véhicule (si section compatible) */}
           {showVehicle && (
             <div className="atm-field">
-              <label><Truck size={13} /> Réservation véhicule</label>
-              <Select value={reservationId} onChange={e => { setReservationId(e.target.value); if (e.target.value !== '__new__') setVehicleId(''); }}>
+              <label>
+                <Truck size={13} /> Réservation véhicule
+              </label>
+              <Select
+                value={reservationId}
+                onChange={(e) => {
+                  setReservationId(e.target.value);
+                  if (e.target.value !== '__new__') setVehicleId('');
+                }}
+              >
                 <option value="">— Aucune —</option>
-                {dayReservations.map(r => (
+                {dayReservations.map((r) => (
                   <option key={r.id} value={r.id}>
-                    🚗 {r.vehicleName || '?'} {r.immatriculation ? `(${r.immatriculation})` : ''} — {r.clientName || r.prestationName || r.driverName || 'Sans nom'}
+                    🚗 {r.vehicleName || '?'} {r.immatriculation ? `(${r.immatriculation})` : ''} —{' '}
+                    {r.clientName || r.prestationName || r.driverName || 'Sans nom'}
                   </option>
                 ))}
                 <option value="__new__">＋ Nouvelle réservation…</option>
               </Select>
               {reservationId === '__new__' && (
-                <Select className="atm-vehicle-select" value={vehicleId} onChange={e => setVehicleId(e.target.value)}>
+                <Select
+                  className="atm-vehicle-select"
+                  value={vehicleId}
+                  onChange={(e) => setVehicleId(e.target.value)}
+                >
                   <option value="">— Véhicule —</option>
-                  {(vehicles || []).map(v => (
-                    <option key={v.id} value={v.id}>{v.name} {v.registration ? `(${v.registration})` : ''}</option>
+                  {(vehicles || []).map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} {v.registration ? `(${v.registration})` : ''}
+                    </option>
                   ))}
                 </Select>
               )}
@@ -509,12 +622,14 @@ export default function AddTaskModal({
           {/* Heure + Période */}
           <div className="atm-row">
             <div className="atm-field atm-field-half">
-              <label><Clock size={13} /> Heure</label>
-              <input type="time" value={time} onChange={e => handleTimeChange(e.target.value)} />
+              <label>
+                <Clock size={13} /> Heure
+              </label>
+              <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} />
             </div>
             <div className="atm-field atm-field-half">
               <label>Période</label>
-              <Select value={period} onChange={e => setPeriod(e.target.value)}>
+              <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
                 <option value="AM">AM (Matin)</option>
                 <option value="PM">PM (Après-midi)</option>
               </Select>
@@ -524,9 +639,17 @@ export default function AddTaskModal({
 
         {/* Footer */}
         <div className="atm-footer">
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
           <Button variant="primary" onClick={handleSubmit} disabled={submitting || !title.trim()}>
-            {submitting ? 'Ajout…' : <><Plus size={15} /> Ajouter</>}
+            {submitting ? (
+              'Ajout…'
+            ) : (
+              <>
+                <Plus size={15} /> Ajouter
+              </>
+            )}
           </Button>
         </div>
       </div>

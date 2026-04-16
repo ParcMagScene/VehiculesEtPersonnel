@@ -41,10 +41,7 @@ export default function Tooltip({
     >
       {children}
       {visible && (
-        <span
-          className={`ui-tooltip ui-tooltip--${position}`}
-          role="tooltip"
-        >
+        <span className={`ui-tooltip ui-tooltip--${position}`} role="tooltip">
           {content}
         </span>
       )}

@@ -16,25 +16,32 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
 
   useEffect(() => {
     if (vehicle?.id) {
-      api.getHistory('vehicle', vehicle.id).then(history => {
-        const kmEntries = (history || []).filter(h => h.action === 'mileage_update').map(h => {
-          let parsed = {};
-          try { parsed = typeof h.changes === 'string' ? JSON.parse(h.changes) : (h.changes || {}); } catch(e) {}
-          return { ...h, parsed };
-        });
-        setMileageHistory(kmEntries);
-      }).catch(() => {});
+      api
+        .getHistory('vehicle', vehicle.id)
+        .then((history) => {
+          const kmEntries = (history || [])
+            .filter((h) => h.action === 'mileage_update')
+            .map((h) => {
+              let parsed = {};
+              try {
+                parsed = typeof h.changes === 'string' ? JSON.parse(h.changes) : h.changes || {};
+              } catch (e) {}
+              return { ...h, parsed };
+            });
+          setMileageHistory(kmEntries);
+        })
+        .catch(() => {});
     }
   }, [vehicle?.id]);
 
   const vehicleMaintenances = maintenances
-    .filter(m => m.vehicleId === vehicle.id)
+    .filter((m) => m.vehicleId === vehicle.id)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const controlesTechniques = vehicle.controlesTechniques
-    ? (typeof vehicle.controlesTechniques === 'string'
-        ? JSON.parse(vehicle.controlesTechniques)
-        : vehicle.controlesTechniques)
+    ? typeof vehicle.controlesTechniques === 'string'
+      ? JSON.parse(vehicle.controlesTechniques)
+      : vehicle.controlesTechniques
     : [];
 
   const getDeadlineStatus = (deadline) => {
@@ -42,37 +49,66 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
     const now = new Date();
     const deadlineDate = new Date(deadline);
     const diffDays = Math.ceil((deadlineDate - now) / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return { status: 'expired', label: `Expiré depuis ${Math.abs(diffDays)}j`, className: 'deadline-expired' };
-    if (diffDays <= 30) return { status: 'warning', label: `Dans ${diffDays}j`, className: 'deadline-warning' };
+    if (diffDays < 0)
+      return {
+        status: 'expired',
+        label: `Expiré depuis ${Math.abs(diffDays)}j`,
+        className: 'deadline-expired',
+      };
+    if (diffDays <= 30)
+      return { status: 'warning', label: `Dans ${diffDays}j`, className: 'deadline-warning' };
     return { status: 'ok', label: `Dans ${diffDays}j`, className: 'deadline-ok' };
   };
 
   const getControleTypeLabel = (type) => {
-    const types = { 'VL': 'CT VL', 'PL': 'CT PL', 'SEMI': 'CT Semi', 'SCENE': 'CT Scène', 'POLLUTION': 'Pollution', 'HAYON': 'Hayon (VGP)' };
+    const types = {
+      VL: 'CT VL',
+      PL: 'CT PL',
+      SEMI: 'CT Semi',
+      SCENE: 'CT Scène',
+      POLLUTION: 'Pollution',
+      HAYON: 'Hayon (VGP)',
+    };
     return types[type] || type;
   };
 
   const getStatusBadge = (status) => {
     const cfg = {
-      'planned': { label: 'Planifiée', cls: 'status-planned' }, 'scheduled': { label: 'Programmée', cls: 'status-planned' },
-      'in-progress': { label: 'En cours', cls: 'status-in-progress' }, 'in_progress': { label: 'En cours', cls: 'status-in-progress' },
-      'IN_PROGRESS': { label: 'En cours', cls: 'status-in-progress' },
-      'completed': { label: 'Terminée', cls: 'status-completed' }, 'COMPLETED': { label: 'Terminée', cls: 'status-completed' },
-      'cancelled': { label: 'Annulée', cls: 'status-cancelled' },
-      'pending': { label: 'En attente', cls: 'status-pending' }, 'PENDING': { label: 'En attente', cls: 'status-pending' },
-      'reported': { label: 'Signalée', cls: 'status-reported' },
-      'rescheduled': { label: 'Reportée', cls: 'status-rescheduled' }
+      planned: { label: 'Planifiée', cls: 'status-planned' },
+      scheduled: { label: 'Programmée', cls: 'status-planned' },
+      'in-progress': { label: 'En cours', cls: 'status-in-progress' },
+      in_progress: { label: 'En cours', cls: 'status-in-progress' },
+      IN_PROGRESS: { label: 'En cours', cls: 'status-in-progress' },
+      completed: { label: 'Terminée', cls: 'status-completed' },
+      COMPLETED: { label: 'Terminée', cls: 'status-completed' },
+      cancelled: { label: 'Annulée', cls: 'status-cancelled' },
+      pending: { label: 'En attente', cls: 'status-pending' },
+      PENDING: { label: 'En attente', cls: 'status-pending' },
+      reported: { label: 'Signalée', cls: 'status-reported' },
+      rescheduled: { label: 'Reportée', cls: 'status-rescheduled' },
     };
     const c = cfg[status] || { label: status, cls: '' };
     return <span className={`vdp-status-badge ${c.cls}`}>{c.label}</span>;
   };
 
   const getTypeLabel = (type) => {
-    const types = { 'maintenance': 'Maintenance', 'repair': 'Réparation', 'inspection': 'CT', 'technical_inspection': 'CT', 'breakdown': 'Panne', 'revision': 'Révision', 'internal': 'Interne', 'external': 'Externe', 'other': 'Panne' };
+    const types = {
+      maintenance: 'Maintenance',
+      repair: 'Réparation',
+      inspection: 'CT',
+      technical_inspection: 'CT',
+      breakdown: 'Panne',
+      revision: 'Révision',
+      internal: 'Interne',
+      external: 'Externe',
+      other: 'Panne',
+    };
     return types[type] || type;
   };
 
-  const lastMaintenanceWithKm = vehicleMaintenances.find(m => m.mileage && parseInt(m.mileage) > 0);
+  const lastMaintenanceWithKm = vehicleMaintenances.find(
+    (m) => m.mileage && parseInt(m.mileage) > 0,
+  );
   const vehicleKm = vehicle.kilometrage || 0;
   const maintenanceKm = lastMaintenanceWithKm ? parseInt(lastMaintenanceWithKm.mileage) : 0;
   const lastKm = Math.max(vehicleKm, maintenanceKm);
@@ -84,16 +120,28 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
       <section className="vdp-section">
         <div className="vdp-photo-block">
           {vehicle.photo ? (
-            <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" className="vdp-photo" />
+            <img
+              src={`/Photos/${vehicle.photo}`}
+              alt={vehicle.name}
+              loading="lazy"
+              className="vdp-photo"
+            />
           ) : (
-            <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vdp-photo vdp-avatar" />
+            <img
+              src={getVehicleAvatar(vehicle.type)}
+              alt={vehicle.name}
+              loading="lazy"
+              className="vdp-photo vdp-avatar"
+            />
           )}
         </div>
         <div className="vdp-info-grid">
           {(vehicle.immatriculation || vehicle.registration) && (
             <div className="vdp-info-item">
               <span className="vdp-info-label">Immatriculation</span>
-              <span className="vdp-info-value">{vehicle.immatriculation || vehicle.registration}</span>
+              <span className="vdp-info-value">
+                {vehicle.immatriculation || vehicle.registration}
+              </span>
             </div>
           )}
           {(vehicle.marque || vehicle.brand) && (
@@ -132,12 +180,20 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
         </div>
         {lastKm > 0 && (
           <div className="vdp-km-card">
-            <div className="vdp-km-label"><Gauge size={13} /> Kilométrage</div>
+            <div className="vdp-km-label">
+              <Gauge size={13} /> Kilométrage
+            </div>
             <div className="vdp-km-value">{lastKm.toLocaleString('fr-FR')} km</div>
             <div className="vdp-km-meta">
-              {lastMileageEntry?.timestamp && <span><Calendar size={11} /> {formatDateSimple(lastMileageEntry.timestamp)}</span>}
+              {lastMileageEntry?.timestamp && (
+                <span>
+                  <Calendar size={11} /> {formatDateSimple(lastMileageEntry.timestamp)}
+                </span>
+              )}
               {(lastMileageEntry?.userName || lastMileageEntry?.user_name) && (
-                <span><User size={11} /> {lastMileageEntry.userName || lastMileageEntry.user_name}</span>
+                <span>
+                  <User size={11} /> {lastMileageEntry.userName || lastMileageEntry.user_name}
+                </span>
               )}
             </div>
           </div>
@@ -149,18 +205,34 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
         <div className="vdp-actions">
           {isAdmin && (
             <>
-              <Button variant="ghost" className="vdp-action-btn vdp-schedule" onClick={() => onAction?.('schedule')}>
+              <Button
+                variant="ghost"
+                className="vdp-action-btn vdp-schedule"
+                onClick={() => onAction?.('schedule')}
+              >
                 <Calendar size={14} /> Programmer
               </Button>
-              <Button variant="ghost" className="vdp-action-btn vdp-request" onClick={() => onAction?.('request')}>
+              <Button
+                variant="ghost"
+                className="vdp-action-btn vdp-request"
+                onClick={() => onAction?.('request')}
+              >
                 <Wrench size={14} /> Demander
               </Button>
-              <Button variant="ghost" className="vdp-action-btn vdp-km-ctrl" onClick={() => onAction?.('km')}>
+              <Button
+                variant="ghost"
+                className="vdp-action-btn vdp-km-ctrl"
+                onClick={() => onAction?.('km')}
+              >
                 <Gauge size={14} /> KM & CT
               </Button>
             </>
           )}
-          <Button variant="ghost" className="vdp-action-btn vdp-breakdown" onClick={() => onAction?.('breakdown')}>
+          <Button
+            variant="ghost"
+            className="vdp-action-btn vdp-breakdown"
+            onClick={() => onAction?.('breakdown')}
+          >
             <AlertTriangle size={14} /> Panne
           </Button>
         </div>
@@ -169,7 +241,9 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
       {/* Contrôles techniques */}
       {controlesTechniques.length > 0 && (
         <section className="vdp-section">
-          <h4 className="vdp-section-title"><Calendar size={14} /> Contrôles techniques</h4>
+          <h4 className="vdp-section-title">
+            <Calendar size={14} /> Contrôles techniques
+          </h4>
           <div className="vdp-ct-list">
             {controlesTechniques.map((ct, i) => {
               const deadline = getDeadlineStatus(ct.deadline);
@@ -177,7 +251,9 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
                 <div key={i} className="vdp-ct-item">
                   <div className="vdp-ct-header">
                     <span className="vdp-ct-type">{getControleTypeLabel(ct.type)}</span>
-                    {deadline && <span className={`vdp-ct-badge ${deadline.className}`}>{deadline.label}</span>}
+                    {deadline && (
+                      <span className={`vdp-ct-badge ${deadline.className}`}>{deadline.label}</span>
+                    )}
                   </div>
                   <div className="vdp-ct-dates">
                     <span>Dernier : {formatDateSimple(ct.date)}</span>
@@ -192,12 +268,14 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
 
       {/* Historique des interventions */}
       <section className="vdp-section">
-        <h4 className="vdp-section-title"><Wrench size={14} /> Interventions ({vehicleMaintenances.length})</h4>
+        <h4 className="vdp-section-title">
+          <Wrench size={14} /> Interventions ({vehicleMaintenances.length})
+        </h4>
         {vehicleMaintenances.length === 0 ? (
           <p className="vdp-empty">Aucune intervention enregistrée</p>
         ) : (
           <div className="vdp-intervention-list">
-            {vehicleMaintenances.map(m => (
+            {vehicleMaintenances.map((m) => (
               <div key={m.id} className={`vdp-intervention-item status-${m.status}`}>
                 <div className="vdp-intervention-header">
                   <span className="vdp-intervention-type">{getTypeLabel(m.type)}</span>
@@ -207,10 +285,20 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
                 {m.description && <div className="vdp-intervention-desc">{m.description}</div>}
                 <div className="vdp-intervention-tags">
                   {m.mileage && parseInt(m.mileage) > 0 && (
-                    <Tag color="info" size="sm"><Gauge size={11} /> {parseInt(m.mileage).toLocaleString('fr-FR')} km</Tag>
+                    <Tag color="info" size="sm">
+                      <Gauge size={11} /> {parseInt(m.mileage).toLocaleString('fr-FR')} km
+                    </Tag>
                   )}
-                  {m.cost && <Tag color="amber" size="sm">💰 {parseFloat(m.cost).toFixed(0)} €</Tag>}
-                  {m.garage && <Tag color="neutral" size="sm">📍 {m.garage}</Tag>}
+                  {m.cost && (
+                    <Tag color="amber" size="sm">
+                      💰 {parseFloat(m.cost).toFixed(0)} €
+                    </Tag>
+                  )}
+                  {m.garage && (
+                    <Tag color="neutral" size="sm">
+                      📍 {m.garage}
+                    </Tag>
+                  )}
                 </div>
               </div>
             ))}
@@ -224,7 +312,14 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
 /* ═══════════════════════════════════════════════
    Volet glissant (slide panel) véhicule
    ═══════════════════════════════════════════════ */
-const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpenDialog, onAction }) => {
+const VehicleSlidePanel = ({
+  vehicle,
+  maintenances,
+  currentUser,
+  onClose,
+  onOpenDialog,
+  onAction,
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -242,7 +337,10 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
     } else {
       setIsOpen(false);
       setIsClosing(true);
-      const timer = setTimeout(() => { setIsVisible(false); setIsClosing(false); }, 350);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setIsClosing(false);
+      }, 350);
       return () => clearTimeout(timer);
     }
   }, [vehicle]);
@@ -269,20 +367,30 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
   const currentVehicle = vehicle || {};
 
   return (
-    <div className={`vehicle-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
+    <div
+      className={`vehicle-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
+      ref={panelRef}
+    >
       {/* Header */}
       <div className="vdp-slide-header">
         <div className="vdp-slide-title-row">
           <div
             className="vdp-slide-color"
-            style={{ backgroundColor: currentVehicle.displayColor || currentVehicle.color || STATUS_COLORS.info }}
+            style={{
+              backgroundColor:
+                currentVehicle.displayColor || currentVehicle.color || STATUS_COLORS.info,
+            }}
           />
           <div className="vdp-slide-title-info">
             <span className="vdp-slide-name">{currentVehicle.name}</span>
             <div className="vdp-slide-badges">
-              {currentVehicle.type && <span className="vdp-slide-badge">{currentVehicle.type}</span>}
+              {currentVehicle.type && (
+                <span className="vdp-slide-badge">{currentVehicle.type}</span>
+              )}
               {(currentVehicle.immatriculation || currentVehicle.registration) && (
-                <span className="vdp-slide-badge vdp-slide-reg">{currentVehicle.immatriculation || currentVehicle.registration}</span>
+                <span className="vdp-slide-badge vdp-slide-reg">
+                  {currentVehicle.immatriculation || currentVehicle.registration}
+                </span>
               )}
             </div>
           </div>
@@ -304,7 +412,11 @@ const VehicleSlidePanel = ({ vehicle, maintenances, currentUser, onClose, onOpen
 
       {/* Footer */}
       <div className="vdp-slide-footer">
-        <Button variant="ghost" className="vdp-slide-open-btn" onClick={() => onOpenDialog?.(currentVehicle)}>
+        <Button
+          variant="ghost"
+          className="vdp-slide-open-btn"
+          onClick={() => onOpenDialog?.(currentVehicle)}
+        >
           <ExternalLink size={14} /> Ouvrir la fiche complète
         </Button>
       </div>

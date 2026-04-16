@@ -17,7 +17,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
     startDate: '',
     endDate: '',
     description: '',
-    location: ''
+    location: '',
   });
   const [saving, setSaving] = useState(false);
   const { resetDirty, guardClose } = useDirtyForm(formData);
@@ -34,10 +34,14 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         startDateTime: event.start?.dateTime ? toLocalInput(event.start.dateTime) : '',
         endDateTime: event.end?.dateTime ? toLocalInput(event.end.dateTime) : '',
         allDay: isAllDay,
-        startDate: event.start?.date || (event.start?.dateTime ? format(new Date(event.start.dateTime), 'yyyy-MM-dd') : ''),
-        endDate: event.end?.date || (event.end?.dateTime ? format(new Date(event.end.dateTime), 'yyyy-MM-dd') : ''),
+        startDate:
+          event.start?.date ||
+          (event.start?.dateTime ? format(new Date(event.start.dateTime), 'yyyy-MM-dd') : ''),
+        endDate:
+          event.end?.date ||
+          (event.end?.dateTime ? format(new Date(event.end.dateTime), 'yyyy-MM-dd') : ''),
         description: event.description || '',
-        location: event.location || ''
+        location: event.location || '',
       });
     } else {
       // Create mode — defaults based on currentDate
@@ -57,7 +61,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         startDate: format(start, 'yyyy-MM-dd'),
         endDate: format(start, 'yyyy-MM-dd'),
         description: '',
-        location: ''
+        location: '',
       });
     }
     needsResetRef.current = true;
@@ -82,7 +86,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -124,11 +128,11 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         }
         eventData.start = {
           dateTime: new Date(formData.startDateTime).toISOString(),
-          timeZone
+          timeZone,
         };
         eventData.end = {
           dateTime: new Date(formData.endDateTime).toISOString(),
-          timeZone
+          timeZone,
         };
       }
 
@@ -144,23 +148,35 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
   if (!isOpen) return null;
 
   return (
-    <div className="event-form-overlay" onMouseDown={(e) => e.target === e.currentTarget && safeClose()}>
-      <div className="event-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
+    <div
+      className="event-form-overlay"
+      onMouseDown={(e) => e.target === e.currentTarget && safeClose()}
+    >
+      <div
+        className="event-form-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="event-form-header">
           <Calendar size={20} />
-          <h2>{mode === 'edit' ? 'Modifier l\'événement' : 'Nouvel événement Google'}</h2>
-          <Button variant="ghost" className="event-form-close" onClick={safeClose}>×</Button>
+          <h2>{mode === 'edit' ? "Modifier l'événement" : 'Nouvel événement Google'}</h2>
+          <Button variant="ghost" className="event-form-close" onClick={safeClose}>
+            ×
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="event-form-body">
             {/* Titre */}
             <div className="event-form-field">
-              <label><Type size={15} /> Titre</label>
+              <label>
+                <Type size={15} /> Titre
+              </label>
               <Input
                 type="text"
                 value={formData.summary}
-                onChange={e => handleChange('summary', e.target.value)}
+                onChange={(e) => handleChange('summary', e.target.value)}
                 placeholder="Titre de l'événement"
                 autoFocus
                 required
@@ -169,10 +185,12 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
 
             {/* Journée entière toggle */}
             <div className="event-form-field event-form-toggle">
-              <label><Clock size={15} /> Journée entière</label>
+              <label>
+                <Clock size={15} /> Journée entière
+              </label>
               <Toggle
                 checked={formData.allDay}
-                onChange={e => handleChange('allDay', e.target.checked)}
+                onChange={(e) => handleChange('allDay', e.target.checked)}
               />
             </div>
 
@@ -184,7 +202,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
                   <input
                     type="date"
                     value={formData.startDate}
-                    onChange={e => handleChange('startDate', e.target.value)}
+                    onChange={(e) => handleChange('startDate', e.target.value)}
                     required
                   />
                 </div>
@@ -193,7 +211,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
                   <input
                     type="date"
                     value={formData.endDate}
-                    onChange={e => handleChange('endDate', e.target.value)}
+                    onChange={(e) => handleChange('endDate', e.target.value)}
                   />
                 </div>
               </div>
@@ -204,7 +222,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
                   <input
                     type="datetime-local"
                     value={formData.startDateTime}
-                    onChange={e => handleChange('startDateTime', e.target.value)}
+                    onChange={(e) => handleChange('startDateTime', e.target.value)}
                     required
                   />
                 </div>
@@ -213,7 +231,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
                   <input
                     type="datetime-local"
                     value={formData.endDateTime}
-                    onChange={e => handleChange('endDateTime', e.target.value)}
+                    onChange={(e) => handleChange('endDateTime', e.target.value)}
                     required
                   />
                 </div>
@@ -222,20 +240,24 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
 
             {/* Lieu */}
             <div className="event-form-field">
-              <label><MapPin size={15} /> Lieu</label>
+              <label>
+                <MapPin size={15} /> Lieu
+              </label>
               <AddressAutocomplete
                 value={formData.location}
-                onChange={val => handleChange('location', val)}
+                onChange={(val) => handleChange('location', val)}
                 placeholder="Adresse ou lieu"
               />
             </div>
 
             {/* Description */}
             <div className="event-form-field">
-              <label><AlignLeft size={15} /> Description</label>
+              <label>
+                <AlignLeft size={15} /> Description
+              </label>
               <Textarea
                 value={formData.description}
-                onChange={e => handleChange('description', e.target.value)}
+                onChange={(e) => handleChange('description', e.target.value)}
                 placeholder="Description de l'événement"
                 rows={4}
               />
@@ -248,7 +270,11 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
             </Button>
             <Button variant="primary" type="submit" disabled={saving}>
               <Save size={16} />
-              {saving ? 'Enregistrement...' : mode === 'edit' ? 'Mettre à jour' : 'Créer l\'événement'}
+              {saving
+                ? 'Enregistrement...'
+                : mode === 'edit'
+                  ? 'Mettre à jour'
+                  : "Créer l'événement"}
             </Button>
           </div>
         </form>

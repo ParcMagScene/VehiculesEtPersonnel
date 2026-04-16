@@ -2,7 +2,6 @@
 
 export function registerAffairesMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     async getAffaires() {
       return this.request('/affaires');
     },
@@ -19,7 +18,10 @@ export function registerAffairesMethods(ApiClient) {
       return this.request(`/affaires/${id}`, { method: 'DELETE' });
     },
     async syncGoogleEventsToAffaires(events) {
-      return this.request('/affaires/sync-google-events', { method: 'POST', body: JSON.stringify({ events }) });
+      return this.request('/affaires/sync-google-events', {
+        method: 'POST',
+        body: JSON.stringify({ events }),
+      });
     },
 
     // Liaisons entre affaires
@@ -27,7 +29,10 @@ export function registerAffairesMethods(ApiClient) {
       return this.request(`/affaires/${affaireId}/links`);
     },
     async createAffaireLink(parentId, childAffaireId) {
-      return this.request(`/affaires/${parentId}/links`, { method: 'POST', body: JSON.stringify({ childAffaireId }) });
+      return this.request(`/affaires/${parentId}/links`, {
+        method: 'POST',
+        body: JSON.stringify({ childAffaireId }),
+      });
     },
     async deleteAffaireLink(affaireId, linkId) {
       return this.request(`/affaires/${affaireId}/links/${linkId}`, { method: 'DELETE' });
@@ -52,7 +57,10 @@ export function registerAffairesMethods(ApiClient) {
       return this.requestFormData('/upload-attachment', formData);
     },
     async deleteAttachment(affaireId, filename) {
-      return this.request(`/attachments/${encodeURIComponent(affaireId)}/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      return this.request(
+        `/attachments/${encodeURIComponent(affaireId)}/${encodeURIComponent(filename)}`,
+        { method: 'DELETE' },
+      );
     },
     async uploadBL(file, affaireId) {
       const formData = new FormData();

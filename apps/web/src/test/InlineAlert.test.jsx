@@ -27,7 +27,11 @@ describe('InlineAlert', () => {
   it('affiche le bouton de fermeture si dismissible + onDismiss', async () => {
     const onDismiss = vi.fn();
     const user = userEvent.setup();
-    render(<InlineAlert dismissible onDismiss={onDismiss}>msg</InlineAlert>);
+    render(
+      <InlineAlert dismissible onDismiss={onDismiss}>
+        msg
+      </InlineAlert>,
+    );
 
     const btn = screen.getByRole('button', { name: 'Fermer' });
     await user.click(btn);
@@ -39,7 +43,7 @@ describe('InlineAlert', () => {
     expect(screen.queryByRole('button', { name: 'Fermer' })).not.toBeInTheDocument();
   });
 
-  it('affiche l\'action optionnelle', () => {
+  it("affiche l'action optionnelle", () => {
     render(<InlineAlert action={<button>Réessayer</button>}>msg</InlineAlert>);
     expect(screen.getByRole('button', { name: 'Réessayer' })).toBeInTheDocument();
   });

@@ -26,7 +26,9 @@ describe('EntityCombobox', () => {
   });
 
   it('placeholder personnalisé', () => {
-    render(<EntityCombobox value="" onChange={() => {}} options={options} placeholder="Choisir…" />);
+    render(
+      <EntityCombobox value="" onChange={() => {}} options={options} placeholder="Choisir…" />,
+    );
     expect(screen.getByText('Choisir…')).toBeInTheDocument();
   });
 
@@ -68,9 +70,11 @@ describe('EntityCombobox', () => {
     expect(screen.getByText('Aucun résultat')).toBeInTheDocument();
   });
 
-  it('aria-selected sur l\'option active', async () => {
+  it("aria-selected sur l'option active", async () => {
     const user = userEvent.setup();
-    const { container } = render(<EntityCombobox value="1" onChange={() => {}} options={options} />);
+    const { container } = render(
+      <EntityCombobox value="1" onChange={() => {}} options={options} />,
+    );
     await user.click(container.querySelector('.ecb-control'));
     expect(screen.getByRole('option', { name: 'Alpha' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('option', { name: 'Bravo' })).toHaveAttribute('aria-selected', 'false');
@@ -80,7 +84,7 @@ describe('EntityCombobox', () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     const { container } = render(
-      <EntityCombobox value="1" onChange={onChange} options={options} allowClear />
+      <EntityCombobox value="1" onChange={onChange} options={options} allowClear />,
     );
     const clearBtn = container.querySelector('.ecb-clear');
     expect(clearBtn).toBeInTheDocument();
@@ -88,9 +92,11 @@ describe('EntityCombobox', () => {
     expect(onChange).toHaveBeenCalledWith('');
   });
 
-  it('disabled empêche l\'ouverture', async () => {
+  it("disabled empêche l'ouverture", async () => {
     const user = userEvent.setup();
-    const { container } = render(<EntityCombobox value="" onChange={() => {}} options={options} disabled />);
+    const { container } = render(
+      <EntityCombobox value="" onChange={() => {}} options={options} disabled />,
+    );
     await user.click(container.querySelector('.ecb-control'));
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });

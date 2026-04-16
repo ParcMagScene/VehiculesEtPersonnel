@@ -23,6 +23,57 @@ function parseDriveLinks(value) {
   }
 }
 
+// Helper : calculer le prix de location d'une réservation
+// Logique : on calcule le nombre de demi-journées, puis on optimise mois > semaines > jours
+function calculateRentalPrice(vehicle, startDate, startPeriod, endDate, endPeriod) {
+  if (!vehicle || !vehicle.is_location) return null;
+  const dailyRate = vehicle.daily_rate || 0;
+  const weeklyRate = vehicle.weekly_rate || 0;
+  const monthlyRate = vehicle.monthly_rate || 0;
+  if (dailyRate === 0 && weeklyRate === 0 && monthlyRate === 0) return null;
+
+  // Calculer le nombre de jours (une demi-journée = 0.5)
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+
+  let days = Math.round((end - start) / 86400000);
+
+  // Ajuster pour les demi-journées AM/PM
+  // Même jour : AM-AM=0.5, AM-PM=1, PM-PM=0.5
+  // Multi-jours : les bornes comptent en demi-journée
+  if (days === 0) {
+    days = startPeriod === 'AM' && endPeriod === 'PM' ? 1 : 0.5;
+  } else {
+    // Jour de début : AM = journée complète, PM = demi-journée
+    const startFraction = startPeriod === 'AM' ? 1 : 0.5;
+    // Jour de fin : AM = demi-journée, PM = journée complète
+    const endFraction = endPeriod === 'PM' ? 1 : 0.5;
+    // Jours intermédiaires = jours - 1
+    days = days - 1 + startFraction + endFraction;
+  }
+
+  // Optimiser : mois (30j) > semaines (7j) > jours
+  let total = 0;
+  let remaining = days;
+
+  if (monthlyRate > 0 && remaining >= 30) {
+    const months = Math.floor(remaining / 30);
+    total += months * monthlyRate;
+    remaining -= months * 30;
+  }
+  if (weeklyRate > 0 && remaining >= 7) {
+    const weeks = Math.floor(remaining / 7);
+    total += weeks * weeklyRate;
+    remaining -= weeks * 7;
+  }
+  if (dailyRate > 0 && remaining > 0) {
+    total += remaining * dailyRate;
+  }
+
+  return Math.round(total * 100) / 100; // Arrondi 2 décimales
+}
+
 export function setupVehicleRoutes(
   app,
   authenticateToken,
@@ -68,6 +119,9 @@ export function setupVehicleRoutes(
           insuranceNumber: v.insurance_number,
           insuranceExpiry: v.insurance_expiry,
           isLocation: v.is_location ? true : false,
+          dailyRate: v.daily_rate || 0,
+          weeklyRate: v.weekly_rate || 0,
+          monthlyRate: v.monthly_rate || 0,
           orderIndex: v.order_index || 0,
           latitude: v.latitude,
           longitude: v.longitude,
@@ -94,9 +148,9 @@ export function setupVehicleRoutes(
       INSERT INTO vehicles (id, name, type, category, registration, brand, model, year, color, vin, status, notes, photo,
         last_maintenance_date, last_maintenance_km, controles_techniques, kilometrage, mileage_history, assigned_to, pupitre,
         is_insured, insurance_company, insurance_number, insurance_expiry,
-        is_location, order_index,
+        is_location, daily_rate, weekly_rate, monthly_rate, order_index,
         latitude, longitude, location_updated_at, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
         stmt.run(
           vehicle.id,
@@ -124,6 +178,9 @@ export function setupVehicleRoutes(
           vehicle.insurance_number || '',
           vehicle.insurance_expiry || null,
           vehicle.is_location ? 1 : 0,
+          vehicle.daily_rate || 0,
+          vehicle.weekly_rate || 0,
+          vehicle.monthly_rate || 0,
           vehicle.order_index || 0,
           vehicle.latitude || null,
           vehicle.longitude || null,
@@ -173,7 +230,7 @@ export function setupVehicleRoutes(
         last_maintenance_date = ?, last_maintenance_km = ?, controles_techniques = ?, kilometrage = ?, mileage_history = ?,
         assigned_to = ?, pupitre = ?,
         is_insured = ?, insurance_company = ?, insurance_number = ?, insurance_expiry = ?,
-        is_location = ?, order_index = ?,
+        is_location = ?, daily_rate = ?, weekly_rate = ?, monthly_rate = ?, order_index = ?,
         latitude = ?, longitude = ?, location_updated_at = ?,
         modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
@@ -203,6 +260,9 @@ export function setupVehicleRoutes(
           vehicle.insurance_number || '',
           vehicle.insurance_expiry || null,
           vehicle.is_location ? 1 : 0,
+          vehicle.daily_rate || 0,
+          vehicle.weekly_rate || 0,
+          vehicle.monthly_rate || 0,
           vehicle.order_index || 0,
           vehicle.latitude || null,
           vehicle.longitude || null,
@@ -247,7 +307,8 @@ export function setupVehicleRoutes(
     (req, res) => {
       try {
         const stmt = db.prepare(`
-      SELECT r.*, v.name as vehicle_name, v.type as vehicle_type, v.registration as immatriculation
+      SELECT r.*, v.name as vehicle_name, v.type as vehicle_type, v.registration as immatriculation,
+             v.is_location as vehicle_is_location
       FROM reservations r
       LEFT JOIN vehicles v ON r.vehicle_id = v.id
     `);
@@ -279,6 +340,8 @@ export function setupVehicleRoutes(
           notes: r.notes,
           googleDriveLink: r.google_drive_link || '',
           googleDriveLinks: parseDriveLinks(r.google_drive_link),
+          rentalPrice: r.rental_price,
+          isRental: r.vehicle_is_location === 1,
           createdBy: r.created_by,
           modifiedBy: r.modified_by,
           createdAt: r.created_at,
@@ -308,11 +371,24 @@ export function setupVehicleRoutes(
           logger.info('⚠️ ID manquant, génération côté serveur:', reservation.id);
         }
 
+        // Calcul automatique du prix de location si véhicule de location
+        const vehicleForPrice = db
+          .prepare('SELECT * FROM vehicles WHERE id = ?')
+          .get(reservation.vehicle_id);
+        const rentalPrice = calculateRentalPrice(
+          vehicleForPrice,
+          reservation.start_date,
+          reservation.start_period || 'AM',
+          reservation.end_date,
+          reservation.end_period || 'PM',
+        );
+
         const stmt = db.prepare(`
       INSERT INTO reservations (id, vehicle_id, start_date, start_period, end_date, end_period, 
                                client_name, driver_name, location_name, prestation_name, 
-                               notes, google_event_id, google_drive_link, affaire, is_tournee, linked_event_ids, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               notes, google_event_id, google_drive_link, affaire, is_tournee, linked_event_ids,
+                               rental_price, created_by, modified_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
         stmt.run(
@@ -332,6 +408,7 @@ export function setupVehicleRoutes(
           reservation.affaire || '',
           reservation.is_tournee ? 1 : 0,
           reservation.linked_event_ids ? JSON.stringify(reservation.linked_event_ids) : null,
+          rentalPrice,
           req.user.id,
           req.user.id,
         );
@@ -390,6 +467,8 @@ export function setupVehicleRoutes(
             ? JSON.parse(createdReservation.linked_event_ids)
             : [],
           googleDriveLink: createdReservation.google_drive_link || '',
+          rentalPrice,
+          isRental: !!(vehicleForPrice && vehicleForPrice.is_location),
         };
 
         // Sync eM@g -> Google (best effort). N'empêche pas la création locale en cas d'échec.
@@ -440,17 +519,29 @@ export function setupVehicleRoutes(
           .get(req.params.id);
         const existingDriveLink = existing ? existing.google_drive_link : '';
 
+        // Recalculer le prix de location
+        const vehicleId = reservation.vehicleId || reservation.vehicle_id;
+        const vehicleForPrice = db.prepare('SELECT * FROM vehicles WHERE id = ?').get(vehicleId);
+        const rentalPrice = calculateRentalPrice(
+          vehicleForPrice,
+          reservation.date || reservation.start_date,
+          reservation.period || reservation.start_period || 'AM',
+          reservation.endDate || reservation.end_date,
+          reservation.endPeriod || reservation.end_period || 'PM',
+        );
+
         const stmt = db.prepare(`
       UPDATE reservations 
       SET vehicle_id = ?, start_date = ?, start_period = ?, end_date = ?, end_period = ?,
           client_name = ?, driver_name = ?, location_name = ?, prestation_name = ?,
           notes = ?, google_event_id = ?, google_drive_link = ?, affaire = ?, is_tournee = ?, linked_event_ids = ?,
+          rental_price = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
 
         stmt.run(
-          reservation.vehicleId || reservation.vehicle_id,
+          vehicleId,
           reservation.date || reservation.start_date,
           reservation.period || reservation.start_period || 'AM',
           reservation.endDate || reservation.end_date,
@@ -467,6 +558,7 @@ export function setupVehicleRoutes(
           reservation.linkedEventIds || reservation.linked_event_ids
             ? JSON.stringify(reservation.linkedEventIds || reservation.linked_event_ids)
             : null,
+          rentalPrice,
           req.user.id,
           req.params.id,
         );
@@ -1177,6 +1269,189 @@ export function setupVehicleRoutes(
     try {
       const history = getHistory(req.params.entityType, req.params.entityId);
       res.json(history);
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ============ LOCATION — CALCUL PRIX PREVIEW ============
+
+  app.get('/api/rental/calculate-price', authenticateToken, (req, res) => {
+    try {
+      const { vehicleId, startDate, startPeriod, endDate, endPeriod } = req.query;
+      if (!vehicleId || !startDate || !endDate) {
+        return res.status(400).json({ error: 'vehicleId, startDate et endDate requis' });
+      }
+      const vehicle = db.prepare('SELECT * FROM vehicles WHERE id = ?').get(vehicleId);
+      if (!vehicle) {
+        return res.status(404).json({ error: 'Véhicule introuvable' });
+      }
+      const price = calculateRentalPrice(
+        vehicle,
+        startDate,
+        startPeriod || 'AM',
+        endDate,
+        endPeriod || 'PM',
+      );
+      // Calculer le nombre de jours pour l'affichage
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      let days = Math.round((end - start) / 86400000);
+      if (days === 0) {
+        days = (startPeriod || 'AM') === 'AM' && (endPeriod || 'PM') === 'PM' ? 1 : 0.5;
+      } else {
+        const sf = (startPeriod || 'AM') === 'AM' ? 1 : 0.5;
+        const ef = (endPeriod || 'PM') === 'PM' ? 1 : 0.5;
+        days = days - 1 + sf + ef;
+      }
+      res.json({
+        price,
+        days,
+        dailyRate: vehicle.daily_rate || 0,
+        weeklyRate: vehicle.weekly_rate || 0,
+        monthlyRate: vehicle.monthly_rate || 0,
+        isLocation: !!vehicle.is_location,
+      });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ============ LOCATION — REPORTING ============
+
+  app.get('/api/rental/reporting', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+
+      // Véhicules de location
+      const locationVehicles = db
+        .prepare(
+          'SELECT id, name, type, registration, daily_rate, weekly_rate, monthly_rate FROM vehicles WHERE is_location = 1',
+        )
+        .all();
+
+      // Filtrer les réservations par période si spécifiée
+      let dateFilter = '';
+      const params = [];
+      if (startDate && endDate) {
+        dateFilter = 'AND r.start_date <= ? AND r.end_date >= ?';
+        params.push(endDate, startDate);
+      }
+
+      // Revenus par véhicule
+      const revenueByVehicle = db
+        .prepare(
+          `
+          SELECT v.id, v.name, v.type, v.registration,
+                 COUNT(r.id) as reservation_count,
+                 COALESCE(SUM(r.rental_price), 0) as total_revenue,
+                 MIN(r.start_date) as first_reservation,
+                 MAX(r.end_date) as last_reservation
+          FROM vehicles v
+          LEFT JOIN reservations r ON r.vehicle_id = v.id ${dateFilter}
+          WHERE v.is_location = 1
+          GROUP BY v.id
+          ORDER BY total_revenue DESC
+        `,
+        )
+        .all(...params);
+
+      // Résumé global
+      const totals = db
+        .prepare(
+          `
+          SELECT COUNT(r.id) as total_reservations,
+                 COALESCE(SUM(r.rental_price), 0) as total_revenue,
+                 COUNT(DISTINCT r.vehicle_id) as active_vehicles,
+                 COUNT(DISTINCT r.client_name) as unique_clients
+          FROM reservations r
+          JOIN vehicles v ON r.vehicle_id = v.id
+          WHERE v.is_location = 1 ${dateFilter}
+        `,
+        )
+        .get(...params);
+
+      // Top clients
+      const topClients = db
+        .prepare(
+          `
+          SELECT r.client_name, COUNT(r.id) as reservation_count,
+                 COALESCE(SUM(r.rental_price), 0) as total_spent
+          FROM reservations r
+          JOIN vehicles v ON r.vehicle_id = v.id
+          WHERE v.is_location = 1 AND r.client_name != '' ${dateFilter}
+          GROUP BY r.client_name
+          ORDER BY total_spent DESC
+          LIMIT 10
+        `,
+        )
+        .all(...params);
+
+      // Taux d'occupation (jours réservés vs jours de la période)
+      let occupancyData = [];
+      if (startDate && endDate) {
+        const periodDays = Math.max(
+          1,
+          Math.round((new Date(endDate) - new Date(startDate)) / 86400000),
+        );
+        occupancyData = locationVehicles.map((v) => {
+          const reservedDays = db
+            .prepare(
+              `
+              SELECT COALESCE(SUM(
+                CAST(julianday(MIN(end_date, ?)) - julianday(MAX(start_date, ?)) AS INTEGER) + 1
+              ), 0) as days
+              FROM reservations
+              WHERE vehicle_id = ? AND start_date <= ? AND end_date >= ?
+            `,
+            )
+            .get(endDate, startDate, v.id, endDate, startDate);
+          return {
+            vehicleId: v.id,
+            vehicleName: v.name,
+            reservedDays: Math.max(0, reservedDays.days),
+            periodDays,
+            occupancyRate: Math.round((Math.max(0, reservedDays.days) / periodDays) * 100),
+          };
+        });
+      }
+
+      res.json({
+        vehicles: locationVehicles.map((v) => ({
+          id: v.id,
+          name: v.name,
+          type: v.type,
+          registration: v.registration,
+          dailyRate: v.daily_rate || 0,
+          weeklyRate: v.weekly_rate || 0,
+          monthlyRate: v.monthly_rate || 0,
+        })),
+        revenueByVehicle: revenueByVehicle.map((r) => ({
+          id: r.id,
+          name: r.name,
+          type: r.type,
+          registration: r.registration,
+          reservationCount: r.reservation_count,
+          totalRevenue: r.total_revenue,
+          firstReservation: r.first_reservation,
+          lastReservation: r.last_reservation,
+        })),
+        totals: {
+          totalReservations: totals.total_reservations,
+          totalRevenue: totals.total_revenue,
+          activeVehicles: totals.active_vehicles,
+          uniqueClients: totals.unique_clients,
+          vehicleCount: locationVehicles.length,
+        },
+        topClients: topClients.map((c) => ({
+          clientName: c.client_name,
+          reservationCount: c.reservation_count,
+          totalSpent: c.total_spent,
+        })),
+        occupancy: occupancyData,
+      });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

@@ -167,5 +167,18 @@ export function registerVehicleMethods(ApiClient) {
         skipCamelCase: true,
       });
     },
+
+    // Location — calcul de prix et reporting
+    async getRentalPrice({ vehicleId, startDate, startPeriod, endDate, endPeriod }) {
+      const params = new URLSearchParams({ vehicleId, startDate, startPeriod, endDate, endPeriod });
+      return this.request(`/rental/calculate-price?${params}`);
+    },
+    async getRentalReporting({ startDate, endDate } = {}) {
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      const qs = params.toString();
+      return this.request(`/rental/reporting${qs ? '?' + qs : ''}`);
+    },
   });
 }

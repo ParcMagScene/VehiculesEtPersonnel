@@ -806,4 +806,33 @@ export function runPostInitMigrations(db) {
   } catch (e) {
     logger.warn('⚠️ Migration drop google_tokens:', e.message);
   }
+
+  // ═══ Phase 8 — Plan de location : tarifs véhicules + prix réservation ═══
+  try {
+    const vehicleCols = db
+      .prepare("PRAGMA table_info('vehicles')")
+      .all()
+      .map((c) => c.name);
+    if (!vehicleCols.includes('daily_rate')) {
+      db.exec('ALTER TABLE vehicles ADD COLUMN daily_rate REAL DEFAULT 0');
+      db.exec('ALTER TABLE vehicles ADD COLUMN weekly_rate REAL DEFAULT 0');
+      db.exec('ALTER TABLE vehicles ADD COLUMN monthly_rate REAL DEFAULT 0');
+      logger.info('✅ Migration Phase 8: colonnes tarifs ajoutées à vehicles');
+    }
+  } catch (e) {
+    logger.warn('⚠️ Migration Phase 8 vehicles tarifs:', e.message);
+  }
+
+  try {
+    const resCols = db
+      .prepare("PRAGMA table_info('reservations')")
+      .all()
+      .map((c) => c.name);
+    if (!resCols.includes('rental_price')) {
+      db.exec('ALTER TABLE reservations ADD COLUMN rental_price REAL');
+      logger.info('✅ Migration Phase 8: colonne rental_price ajoutée à reservations');
+    }
+  } catch (e) {
+    logger.warn('⚠️ Migration Phase 8 reservations rental_price:', e.message);
+  }
 } // fin runPostInitMigrations

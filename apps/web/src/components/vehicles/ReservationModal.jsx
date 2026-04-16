@@ -166,6 +166,9 @@ const ReservationModal = ({
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
 
+  // État pour le calcul de prix de location
+  const [rentalPrice, setRentalPrice] = useState(null);
+
   // État pour l'adresse du siège
   const [companyAddress, setCompanyAddress] = useState('');
   const [allLocations, setAllLocations] = useState(locations);
@@ -245,6 +248,40 @@ const ReservationModal = ({
     }
     return result;
   }, [locationSearch, locationTypeFilter, allLocations]);
+
+  // Calcul du prix de location en temps réel
+  useEffect(() => {
+    const selectedVehicle = vehicles.find((v) => v.id === parseInt(formData.vehicleId));
+    if (!selectedVehicle?.isLocation || !formData.date || !formData.endDate) {
+      setRentalPrice(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .getRentalPrice({
+        vehicleId: formData.vehicleId,
+        startDate: formData.date,
+        startPeriod: formData.period,
+        endDate: formData.endDate,
+        endPeriod: formData.endPeriod,
+      })
+      .then((data) => {
+        if (!cancelled) setRentalPrice(data);
+      })
+      .catch(() => {
+        if (!cancelled) setRentalPrice(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    formData.vehicleId,
+    formData.date,
+    formData.period,
+    formData.endDate,
+    formData.endPeriod,
+    vehicles,
+  ]);
 
   // Fermer le dropdown lieu quand on clique en dehors
   useEffect(() => {
@@ -839,6 +876,7 @@ const ReservationModal = ({
   };
 
   const _selectedVehicle = vehicles.find((v) => v.id === parseInt(formData.vehicleId));
+  const isRentalVehicle = _selectedVehicle?.isLocation;
   const displayDate = formData.date
     ? format(new Date(formData.date), 'EEEE d MMMM yyyy', { locale: fr })
     : '';
@@ -1186,6 +1224,18 @@ const ReservationModal = ({
                   </Select>
                 </FormField>
               </div>
+
+              {/* Aperçu du prix de location */}
+              {isRentalVehicle && rentalPrice?.price != null && (
+                <div className="rental-price-preview">
+                  <div className="rental-price-amount">💰 {rentalPrice.price.toFixed(2)} €</div>
+                  <div className="rental-price-detail">
+                    {rentalPrice.days} jour(s) — Tarif : {_selectedVehicle.dailyRate || 0}€/j
+                    {_selectedVehicle.weeklyRate > 0 && ` · ${_selectedVehicle.weeklyRate}€/sem`}
+                    {_selectedVehicle.monthlyRate > 0 && ` · ${_selectedVehicle.monthlyRate}€/mois`}
+                  </div>
+                </div>
+              )}
             </div>
             {/* Fin de la section RÉSERVATION */}
 

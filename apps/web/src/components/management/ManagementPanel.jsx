@@ -37,6 +37,7 @@ import GoogleCalendarConfig from '../vehicles/GoogleCalendarConfig';
 import LocationDialog from '../vehicles/LocationDialog';
 import ReservationRequestsPanel from '../vehicles/ReservationRequestsPanel';
 import VehicleMaintenanceModal from '../vehicles/VehicleMaintenanceModal';
+import RentalReportingPanel from './RentalReportingPanel';
 import UserManagement from './UserManagement';
 const PersonnelPanel = React.lazy(() => import('../personnel/PersonnelPanel'));
 import './ManagementPanel.css';
@@ -210,7 +211,15 @@ const ManagementPanel = ({
           { id: 'vehicles', label: 'Véhicules', icon: Truck, color: STATUS_COLORS.info },
           { id: 'clients', label: 'Clients', icon: UserCircle2, color: ACCENT_COLORS.violet },
           ...(currentUser?.isAdmin
-            ? [{ id: 'requests', label: 'Demandes', icon: Calendar, color: ACCENT_COLORS.orange }]
+            ? [
+                { id: 'requests', label: 'Demandes', icon: Calendar, color: ACCENT_COLORS.orange },
+                {
+                  id: 'rental-reports',
+                  label: 'Rapports Locations',
+                  icon: Gauge,
+                  color: ACCENT_COLORS.cyan || '#06b6d4',
+                },
+              ]
             : []),
         ];
 
@@ -1153,6 +1162,9 @@ const ManagementPanel = ({
             </div>
           )}
 
+          {/* Reporting Location (Admin uniquement) */}
+          {activeTab === 'rental-reports' && currentUser?.isAdmin && <RentalReportingPanel />}
+
           {/* Demandes de réservation (Admin uniquement) */}
           {activeTab === 'requests' && currentUser?.isAdmin && (
             <ReservationRequestsPanel
@@ -1173,6 +1185,7 @@ const ManagementPanel = ({
             activeTab !== 'google-config' &&
             activeTab !== 'mobile' &&
             activeTab !== 'requests' &&
+            activeTab !== 'rental-reports' &&
             activeTab !== 'depot-map' && (
               <div className="items-section">
                 {activeTab === 'vehicles' ? (
@@ -1588,6 +1601,50 @@ const ManagementPanel = ({
                                       ))}
                                     </div>
                                   </div>
+                                  <div className="rental-rates-edit">
+                                    <label>Tarifs de location :</label>
+                                    <div className="rental-rates-grid">
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Tarif jour (€)"
+                                        value={editingItem.dailyRate || ''}
+                                        onChange={(e) =>
+                                          setEditingItem({
+                                            ...editingItem,
+                                            dailyRate: parseFloat(e.target.value) || 0,
+                                          })
+                                        }
+                                      />
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Tarif semaine (€)"
+                                        value={editingItem.weeklyRate || ''}
+                                        onChange={(e) =>
+                                          setEditingItem({
+                                            ...editingItem,
+                                            weeklyRate: parseFloat(e.target.value) || 0,
+                                          })
+                                        }
+                                      />
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Tarif mois (€)"
+                                        value={editingItem.monthlyRate || ''}
+                                        onChange={(e) =>
+                                          setEditingItem({
+                                            ...editingItem,
+                                            monthlyRate: parseFloat(e.target.value) || 0,
+                                          })
+                                        }
+                                      />
+                                    </div>
+                                  </div>
                                   <div className="edit-actions">
                                     <Button variant="primary" onClick={handleSaveEdit}>
                                       Enregistrer
@@ -1633,6 +1690,20 @@ const ManagementPanel = ({
                                         🚗 {item.marque || item.brand || ''}{' '}
                                         {item.couleurVehicule || item.model || ''}
                                       </div>
+                                      {(item.dailyRate > 0 ||
+                                        item.weeklyRate > 0 ||
+                                        item.monthlyRate > 0) && (
+                                        <div className="item-rates">
+                                          💰{' '}
+                                          {[
+                                            item.dailyRate > 0 && `${item.dailyRate}€/j`,
+                                            item.weeklyRate > 0 && `${item.weeklyRate}€/sem`,
+                                            item.monthlyRate > 0 && `${item.monthlyRate}€/mois`,
+                                          ]
+                                            .filter(Boolean)
+                                            .join(' · ')}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="item-actions">

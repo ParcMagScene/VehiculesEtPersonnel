@@ -1384,3 +1384,34 @@
 [data-theme='dark'] .sync-tips ul {
   color: var(--theme-text-secondary);
 }
+
+/* ═══ Tarifs de location ═══ */
+
+.rental-rates-edit {
+  margin-top: 0.5rem;
+}
+
+.rental-rates-edit label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--theme-text-secondary);
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.rental-rates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.rental-rates-grid input {
+  font-size: 0.85rem;
+}
+
+.item-rates {
+  font-size: 0.75rem;
+  color: var(--theme-success, #16a34a);
+  font-weight: 500;
+  margin-top: 2px;
+}

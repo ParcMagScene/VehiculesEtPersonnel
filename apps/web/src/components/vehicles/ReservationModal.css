@@ -1477,3 +1477,24 @@
   text-align: center;
   color: var(--theme-text-gray);
 }
+
+/* Location — aperçu prix */
+.rental-price-preview {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--theme-bg-success, #f0fdf4);
+  border: 1px solid var(--theme-border-success, #bbf7d0);
+  border-radius: var(--radius-md, 8px);
+}
+
+.rental-price-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--theme-text-success, #16a34a);
+}
+
+.rental-price-detail {
+  font-size: 0.8rem;
+  color: var(--theme-text-gray);
+  margin-top: 0.25rem;
+}

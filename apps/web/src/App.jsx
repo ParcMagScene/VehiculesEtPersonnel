@@ -126,6 +126,13 @@ function AppContent() {
   const [activeModule, _setActiveModule] = useState('vehicles');
   const [, startModuleTransition] = useTransition();
   const setActiveModule = useCallback((mod) => {
+    // Fermer les panneaux véhicules à chaque changement de module
+    setVehicleForDialog(null);
+    setSelectedVehicleForDetails(null);
+    setSelectedVehicleForMaintenance(null);
+    setSelectedVehicleForKilometrageControl(null);
+    setMaintenanceToEdit(null);
+    setMaintenanceActionType(null);
     startModuleTransition(() => _setActiveModule(mod));
   }, []);
   const [showManagement, setShowManagement] = useState(false);

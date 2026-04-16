@@ -1,36 +1,9 @@
-/* Modal Fiche Détaillée Véhicule */
-.vd-overlay {
-  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
-  background: var(--theme-overlay);
-  z-index: var(--z-modal);
-  padding: 1rem;
-  backdrop-filter: blur(4px);
-  isolation: isolate;
-  animation: vdOverlayFadeIn 0.2s ease-out;
-}
-
-@keyframes vdOverlayFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+/* Modal Fiche Détaillée Véhicule
+   Utilise <Modal size="lg"> du DS — seuls les overrides spécifiques ici */
 
 .vehicle-details-modal {
   background: var(--theme-bg-page);
-  border-radius: var(--radius-xl);
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-modal);
-  position: relative;
-  z-index: var(--z-base);
-  animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: min(800px, 94vw);
 }
 
 .vehicle-details-modal .modal-header {
@@ -742,8 +715,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .vehicle-details-modal {
-    width: 95%;
-    max-height: 95vh;
+    width: 95vw;
   }
 
   .vehicle-details-modal .modal-header {

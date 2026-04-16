@@ -330,6 +330,9 @@ function onMouseUp(e) {
 function enhanceModal(modal) {
   if (modal.dataset.draggableEnhanced) return;
 
+  // Ne pas enhancer les overlays eux-mêmes (ex: .ui-modal-overlay matche [class*="-modal"])
+  if (modal.matches(OVERLAY_SELECTORS)) return;
+
   // Ne pas enhancer les sous-éléments d'un modal déjà enhancé (header, body, footer, etc.)
   if (modal.parentElement?.closest('[data-draggable-enhanced]')) return;
 

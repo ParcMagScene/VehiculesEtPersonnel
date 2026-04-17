@@ -18,6 +18,8 @@ import {
   updateLastSync,
 } from './googleTokenManager.js';
 import logger from './logger.js';
+import { validate } from './schemas/imports.js';
+import { pullReservationsSchema } from './schemas/google.js';
 
 const GOOGLE_API_BASE = 'https://www.googleapis.com/calendar/v3';
 const GCAL_TIMEOUT_MS = 10000;
@@ -339,6 +341,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
   app.post(
     '/api/google/sync/pull-reservations',
     authenticateToken,
+    validate(pullReservationsSchema),
     gcalRoute(async (req, res) => {
       const days = Math.max(
         1,

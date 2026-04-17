@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
 import { validateFileType } from './middleware/validateFileType.js';
+import { validate } from './schemas/imports.js';
+import { createFolderSchema } from './schemas/attachments.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -100,12 +102,9 @@ const uploadAttachment = multer({
 
 export function setupAttachmentsRoutes(app, authenticateToken, requireAdmin) {
   // Créer un dossier (sécurisé)
-  app.post('/api/create-folder', authenticateToken, (req, res) => {
+  app.post('/api/create-folder', authenticateToken, validate(createFolderSchema), (req, res) => {
     try {
       const { path: folderPath } = req.body;
-      if (!folderPath) {
-        return res.status(400).json({ success: false, error: 'Chemin du dossier manquant' });
-      }
       const safePath = sanitizePath(attachmentsPath, folderPath.replace(attachmentsPath, ''));
       if (!safePath) {
         return res.status(403).json({ success: false, error: 'Chemin non autorisé' });

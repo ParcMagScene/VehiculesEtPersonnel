@@ -13,6 +13,25 @@ import { cacheMiddleware, icalCache, invalidateEntity, listCache, statsCache } f
 import db from './database.js';
 import logger from './logger.js';
 import { uploadBL } from './middleware/upload.js';
+import { validate } from './schemas/imports.js';
+import {
+  assignPersonSchema,
+  bpItemMatchArticleSchema,
+  bpItemMatchSchema,
+  dateBodySchema,
+  displayEventCreateSchema,
+  displayEventUpdateSchema,
+  exportPdfSchema,
+  fromDateBodySchema,
+  icalCalendarCreateSchema,
+  icalCalendarUpdateSchema,
+  planningAssignmentSchema,
+  recurringTaskCreateSchema,
+  recurringTaskUpdateSchema,
+  taskBatchSchema,
+  taskCreateSchema,
+  taskUpdateSchema,
+} from './schemas/planning.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -150,131 +169,142 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
   });
 
   // ─── POST /api/planning/display-events ───
-  app.post('/api/planning/display-events', authenticateToken, (req, res) => {
-    try {
-      const {
-        affaire_id,
-        bl_import_id,
-        type,
-        category,
-        date,
-        period,
-        time,
-        comment,
-        client,
-        location,
-      } = req.body;
+  app.post(
+    '/api/planning/display-events',
+    authenticateToken,
+    validate(displayEventCreateSchema),
+    (req, res) => {
+      try {
+        const {
+          affaire_id,
+          bl_import_id,
+          type,
+          category,
+          date,
+          period,
+          time,
+          comment,
+          client,
+          location,
+        } = req.body;
 
-      if (!type || !category || !date) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Champs obligatoires : type, category, date' });
-      }
-      if (!isValidDate(date)) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
-      }
-      if (time && !isValidTime(time)) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Format heure invalide (attendu HH:mm)' });
-      }
+        if (!type || !category || !date) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Champs obligatoires : type, category, date' });
+        }
+        if (!isValidDate(date)) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
+        }
+        if (time && !isValidTime(time)) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Format heure invalide (attendu HH:mm)' });
+        }
 
-      const id = crypto.randomUUID().replace(/-/g, '');
+        const id = crypto.randomUUID().replace(/-/g, '');
 
-      const stmt = db.prepare(`
+        const stmt = db.prepare(`
         INSERT INTO dynamic_display_events (id, affaire_id, bl_import_id, type, category, date, period, time, comment, client, location, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
-      stmt.run(
-        id,
-        affaire_id || null,
-        bl_import_id || null,
-        type,
-        category,
-        date,
-        period || null,
-        time || null,
-        comment || '',
-        client || '',
-        location || '',
-        req.user.id,
-      );
+        stmt.run(
+          id,
+          affaire_id || null,
+          bl_import_id || null,
+          type,
+          category,
+          date,
+          period || null,
+          time || null,
+          comment || '',
+          client || '',
+          location || '',
+          req.user.id,
+        );
 
-      const created = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(id);
-      res.status(201).json(created);
-    } catch (error) {
-      logger.error('POST /api/planning/display-events error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        const created = db.prepare('SELECT * FROM dynamic_display_events WHERE id = ?').get(id);
+        res.status(201).json(created);
+      } catch (error) {
+        logger.error('POST /api/planning/display-events error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ─── PUT /api/planning/display-events/:id ───
-  app.put('/api/planning/display-events/:id', authenticateToken, (req, res) => {
-    try {
-      const existing = db
-        .prepare('SELECT * FROM dynamic_display_events WHERE id = ?')
-        .get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
+  app.put(
+    '/api/planning/display-events/:id',
+    authenticateToken,
+    validate(displayEventUpdateSchema),
+    (req, res) => {
+      try {
+        const existing = db
+          .prepare('SELECT * FROM dynamic_display_events WHERE id = ?')
+          .get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Événement non trouvé' });
 
-      const {
-        affaire_id,
-        bl_import_id,
-        type,
-        category,
-        date,
-        period,
-        time,
-        comment,
-        client,
-        location,
-        visible,
-      } = req.body;
+        const {
+          affaire_id,
+          bl_import_id,
+          type,
+          category,
+          date,
+          period,
+          time,
+          comment,
+          client,
+          location,
+          visible,
+        } = req.body;
 
-      if (date && !isValidDate(date)) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
-      }
-      if (time && !isValidTime(time)) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Format heure invalide (attendu HH:mm)' });
-      }
+        if (date && !isValidDate(date)) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
+        }
+        if (time && !isValidTime(time)) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Format heure invalide (attendu HH:mm)' });
+        }
 
-      const stmt = db.prepare(`
+        const stmt = db.prepare(`
         UPDATE dynamic_display_events
         SET affaire_id = ?, bl_import_id = ?, type = ?, category = ?, date = ?, period = ?, time = ?, comment = ?, client = ?, location = ?, visible = ?, modified_by = ?, modified_at = datetime('now')
         WHERE id = ?
       `);
 
-      stmt.run(
-        affaire_id ?? existing.affaire_id,
-        bl_import_id ?? existing.bl_import_id,
-        type || existing.type,
-        category || existing.category,
-        date || existing.date,
-        period !== undefined ? period : existing.period,
-        time !== undefined ? time : existing.time,
-        comment !== undefined ? comment : existing.comment,
-        client !== undefined ? client : existing.client,
-        location !== undefined ? location : existing.location,
-        visible !== undefined ? (visible ? 1 : 0) : (existing.visible ?? 1),
-        req.user.id,
-        req.params.id,
-      );
+        stmt.run(
+          affaire_id ?? existing.affaire_id,
+          bl_import_id ?? existing.bl_import_id,
+          type || existing.type,
+          category || existing.category,
+          date || existing.date,
+          period !== undefined ? period : existing.period,
+          time !== undefined ? time : existing.time,
+          comment !== undefined ? comment : existing.comment,
+          client !== undefined ? client : existing.client,
+          location !== undefined ? location : existing.location,
+          visible !== undefined ? (visible ? 1 : 0) : (existing.visible ?? 1),
+          req.user.id,
+          req.params.id,
+        );
 
-      const updated = db
-        .prepare('SELECT * FROM dynamic_display_events WHERE id = ?')
-        .get(req.params.id);
-      res.json(updated);
-    } catch (error) {
-      logger.error('PUT /api/planning/display-events/:id error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        const updated = db
+          .prepare('SELECT * FROM dynamic_display_events WHERE id = ?')
+          .get(req.params.id);
+        res.json(updated);
+      } catch (error) {
+        logger.error('PUT /api/planning/display-events/:id error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ─── DELETE /api/planning/display-events/:id ───
   app.delete('/api/planning/display-events/:id', authenticateToken, (req, res) => {
@@ -1156,76 +1186,88 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
   // ─── PUT /api/planning/bp-items/:id/match ───
   // Lier manuellement un article BP à un matériel
-  app.put('/api/planning/bp-items/:id/match', authenticateToken, (req, res) => {
-    try {
-      const { equipment_id } = req.body;
-      const item = db.prepare('SELECT * FROM bp_items WHERE id = ?').get(req.params.id);
-      if (!item) return res.status(404).json({ success: false, error: 'Article BP non trouvé' });
+  app.put(
+    '/api/planning/bp-items/:id/match',
+    authenticateToken,
+    validate(bpItemMatchSchema),
+    (req, res) => {
+      try {
+        const { equipment_id } = req.body;
+        const item = db.prepare('SELECT * FROM bp_items WHERE id = ?').get(req.params.id);
+        if (!item) return res.status(404).json({ success: false, error: 'Article BP non trouvé' });
 
-      if (equipment_id) {
-        const eqItem = db.prepare('SELECT id FROM equipment WHERE id = ?').get(equipment_id);
-        if (!eqItem) return res.status(404).json({ success: false, error: 'Matériel introuvable' });
-        db.prepare(
-          'UPDATE bp_items SET equipment_id = ?, match_status = ?, match_confidence = 1.0 WHERE id = ?',
-        ).run(equipment_id, 'manual', req.params.id);
-      } else {
-        // Délier
-        db.prepare(
-          'UPDATE bp_items SET equipment_id = NULL, match_status = ?, match_confidence = 0 WHERE id = ?',
-        ).run('unmatched', req.params.id);
-      }
+        if (equipment_id) {
+          const eqItem = db.prepare('SELECT id FROM equipment WHERE id = ?').get(equipment_id);
+          if (!eqItem)
+            return res.status(404).json({ success: false, error: 'Matériel introuvable' });
+          db.prepare(
+            'UPDATE bp_items SET equipment_id = ?, match_status = ?, match_confidence = 1.0 WHERE id = ?',
+          ).run(equipment_id, 'manual', req.params.id);
+        } else {
+          // Délier
+          db.prepare(
+            'UPDATE bp_items SET equipment_id = NULL, match_status = ?, match_confidence = 0 WHERE id = ?',
+          ).run('unmatched', req.params.id);
+        }
 
-      const updated = db
-        .prepare(
-          `
+        const updated = db
+          .prepare(
+            `
         SELECT bp.*, eq.name AS catalog_name, eq.reference AS catalog_reference
         FROM bp_items bp LEFT JOIN equipment eq ON bp.equipment_id = eq.id
         WHERE bp.id = ?
       `,
-        )
-        .get(req.params.id);
+          )
+          .get(req.params.id);
 
-      res.json(updated);
-    } catch (error) {
-      logger.error('PUT /api/planning/bp-items/:id/match error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json(updated);
+      } catch (error) {
+        logger.error('PUT /api/planning/bp-items/:id/match error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ─── PUT /api/planning/bp-items/:id/match-article ───
   // Lier manuellement un article BP (type='article') à un supplier_article ou stock_item
-  app.put('/api/planning/bp-items/:id/match-article', authenticateToken, (req, res) => {
-    try {
-      const { supplier_article_id, stock_item_id } = req.body;
-      const item = db.prepare('SELECT * FROM bp_items WHERE id = ?').get(req.params.id);
-      if (!item) return res.status(404).json({ success: false, error: 'Article BP non trouvé' });
+  app.put(
+    '/api/planning/bp-items/:id/match-article',
+    authenticateToken,
+    validate(bpItemMatchArticleSchema),
+    (req, res) => {
+      try {
+        const { supplier_article_id, stock_item_id } = req.body;
+        const item = db.prepare('SELECT * FROM bp_items WHERE id = ?').get(req.params.id);
+        if (!item) return res.status(404).json({ success: false, error: 'Article BP non trouvé' });
 
-      if (supplier_article_id) {
-        const sa = db
-          .prepare('SELECT id FROM supplier_articles WHERE id = ?')
-          .get(supplier_article_id);
-        if (!sa)
-          return res.status(404).json({ success: false, error: 'Article fournisseur introuvable' });
-        db.prepare(
-          'UPDATE bp_items SET supplier_article_id = ?, stock_item_id = NULL WHERE id = ?',
-        ).run(supplier_article_id, req.params.id);
-      } else if (stock_item_id) {
-        const si = db.prepare('SELECT id FROM stock_items WHERE id = ?').get(stock_item_id);
-        if (!si)
-          return res.status(404).json({ success: false, error: 'Article stock introuvable' });
-        db.prepare(
-          'UPDATE bp_items SET stock_item_id = ?, supplier_article_id = NULL WHERE id = ?',
-        ).run(stock_item_id, req.params.id);
-      } else {
-        // Délier
-        db.prepare(
-          'UPDATE bp_items SET supplier_article_id = NULL, stock_item_id = NULL WHERE id = ?',
-        ).run(req.params.id);
-      }
+        if (supplier_article_id) {
+          const sa = db
+            .prepare('SELECT id FROM supplier_articles WHERE id = ?')
+            .get(supplier_article_id);
+          if (!sa)
+            return res
+              .status(404)
+              .json({ success: false, error: 'Article fournisseur introuvable' });
+          db.prepare(
+            'UPDATE bp_items SET supplier_article_id = ?, stock_item_id = NULL WHERE id = ?',
+          ).run(supplier_article_id, req.params.id);
+        } else if (stock_item_id) {
+          const si = db.prepare('SELECT id FROM stock_items WHERE id = ?').get(stock_item_id);
+          if (!si)
+            return res.status(404).json({ success: false, error: 'Article stock introuvable' });
+          db.prepare(
+            'UPDATE bp_items SET stock_item_id = ?, supplier_article_id = NULL WHERE id = ?',
+          ).run(stock_item_id, req.params.id);
+        } else {
+          // Délier
+          db.prepare(
+            'UPDATE bp_items SET supplier_article_id = NULL, stock_item_id = NULL WHERE id = ?',
+          ).run(req.params.id);
+        }
 
-      const updated = db
-        .prepare(
-          `
+        const updated = db
+          .prepare(
+            `
         SELECT bp.*, sa.designation AS supplier_article_name, sa.supplier_ref AS supplier_article_ref,
                si.name AS stock_item_name, si.reference AS stock_item_ref
         FROM bp_items bp
@@ -1233,15 +1275,16 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
         LEFT JOIN stock_items si ON bp.stock_item_id = si.id
         WHERE bp.id = ?
       `,
-        )
-        .get(req.params.id);
+          )
+          .get(req.params.id);
 
-      res.json(updated);
-    } catch (error) {
-      logger.error('PUT /api/planning/bp-items/:id/match-article error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json(updated);
+      } catch (error) {
+        logger.error('PUT /api/planning/bp-items/:id/match-article error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ═══════════════════════════════════════════════
   // PLANIFICATION — TÂCHES — CRUD
@@ -2284,7 +2327,7 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
   });
 
   // ─── POST /api/planning/tasks ───
-  app.post('/api/planning/tasks', authenticateToken, (req, res) => {
+  app.post('/api/planning/tasks', authenticateToken, validate(taskCreateSchema), (req, res) => {
     try {
       const {
         display_event_id,
@@ -2388,65 +2431,66 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
   // ─── POST /api/planning/tasks/batch ───
   // Création en lot de tâches (pour workflow événement → tâches)
-  app.post('/api/planning/tasks/batch', authenticateToken, (req, res) => {
-    try {
-      const { tasks: taskList } = req.body;
-      if (!Array.isArray(taskList) || taskList.length === 0) {
-        return res.status(400).json({ success: false, error: 'Un tableau de tâches est requis' });
-      }
+  app.post(
+    '/api/planning/tasks/batch',
+    authenticateToken,
+    validate(taskBatchSchema),
+    (req, res) => {
+      try {
+        const { tasks: taskList } = req.body;
 
-      const EVENT_SECTIONS_BATCH = ['rdv', 'evenements'];
-      const insertStmt = db.prepare(`
+        const EVENT_SECTIONS_BATCH = ['rdv', 'evenements'];
+        const insertStmt = db.prepare(`
         INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `);
 
-      const createdIds = [];
-      const skipped = [];
-      const insertMany = db.transaction((items) => {
-        for (const t of items) {
-          if (!t.date) continue;
-          if (!isValidDate(t.date)) {
-            skipped.push(t.date);
-            continue;
+        const createdIds = [];
+        const skipped = [];
+        const insertMany = db.transaction((items) => {
+          for (const t of items) {
+            if (!t.date) continue;
+            if (!isValidDate(t.date)) {
+              skipped.push(t.date);
+              continue;
+            }
+            const id = crypto.randomUUID().replace(/-/g, '');
+            const sect = t.section || 'manual';
+            const vis = EVENT_SECTIONS_BATCH.includes(sect) ? 0 : 1;
+            insertStmt.run(
+              id,
+              t.display_event_id || null,
+              t.person_id || null,
+              t.date,
+              t.period || null,
+              t.time || null,
+              t.end_time || null,
+              sect,
+              t.title || null,
+              t.notes || '',
+              t.source_type || 'manual',
+              t.source_id || null,
+              t.google_event_title || null,
+              t.affaire_num || null,
+              t.status || 'pending',
+              vis,
+              t.location_address || null,
+              t.location_lat != null ? t.location_lat : null,
+              t.location_lng != null ? t.location_lng : null,
+              req.user.id,
+            );
+            createdIds.push(id);
           }
-          const id = crypto.randomUUID().replace(/-/g, '');
-          const sect = t.section || 'manual';
-          const vis = EVENT_SECTIONS_BATCH.includes(sect) ? 0 : 1;
-          insertStmt.run(
-            id,
-            t.display_event_id || null,
-            t.person_id || null,
-            t.date,
-            t.period || null,
-            t.time || null,
-            t.end_time || null,
-            sect,
-            t.title || null,
-            t.notes || '',
-            t.source_type || 'manual',
-            t.source_id || null,
-            t.google_event_title || null,
-            t.affaire_num || null,
-            t.status || 'pending',
-            vis,
-            t.location_address || null,
-            t.location_lat != null ? t.location_lat : null,
-            t.location_lng != null ? t.location_lng : null,
-            req.user.id,
-          );
-          createdIds.push(id);
-        }
-      });
+        });
 
-      insertMany(taskList);
+        insertMany(taskList);
 
-      // Retourner les tâches créées
-      if (createdIds.length > 0) {
-        const placeholders = createdIds.map(() => '?').join(',');
-        const created = db
-          .prepare(
-            `
+        // Retourner les tâches créées
+        if (createdIds.length > 0) {
+          const placeholders = createdIds.map(() => '?').join(',');
+          const created = db
+            .prepare(
+              `
           SELECT ta.*, 
                  p.first_name AS person_first_name,
                  p.last_name AS person_last_name
@@ -2455,17 +2499,18 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
           WHERE ta.id IN (${placeholders})
           ORDER BY ta.date ASC, ta.time ASC
         `,
-          )
-          .all(...createdIds);
-        res.status(201).json(created);
-      } else {
-        res.status(201).json([]);
+            )
+            .all(...createdIds);
+          res.status(201).json(created);
+        } else {
+          res.status(201).json([]);
+        }
+      } catch (error) {
+        logger.error('POST /api/planning/tasks/batch error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-    } catch (error) {
-      logger.error('POST /api/planning/tasks/batch error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // ─── DELETE /api/planning/tasks/by-source/:sourceId ───
   // Supprimer toutes les tâches liées à un événement source
@@ -2484,7 +2529,7 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
   });
 
   // ─── PUT /api/planning/tasks/:id ───
-  app.put('/api/planning/tasks/:id', authenticateToken, (req, res) => {
+  app.put('/api/planning/tasks/:id', authenticateToken, validate(taskUpdateSchema), (req, res) => {
     try {
       const existing = db
         .prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL')
@@ -2952,36 +2997,41 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
   // ─── PUT /api/planning/display-events/:id/assign ───
   // Affecter un personnel à un événement d'affichage
-  app.put('/api/planning/display-events/:id/assign', authenticateToken, (req, res) => {
-    try {
-      const { person_id } = req.body;
-      const event = db
-        .prepare('SELECT * FROM dynamic_display_events WHERE id = ?')
-        .get(req.params.id);
-      if (!event) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
+  app.put(
+    '/api/planning/display-events/:id/assign',
+    authenticateToken,
+    validate(assignPersonSchema),
+    (req, res) => {
+      try {
+        const { person_id } = req.body;
+        const event = db
+          .prepare('SELECT * FROM dynamic_display_events WHERE id = ?')
+          .get(req.params.id);
+        if (!event) return res.status(404).json({ success: false, error: 'Événement non trouvé' });
 
-      db.prepare('UPDATE dynamic_display_events SET assigned_person_id = ? WHERE id = ?').run(
-        person_id || null,
-        req.params.id,
-      );
+        db.prepare('UPDATE dynamic_display_events SET assigned_person_id = ? WHERE id = ?').run(
+          person_id || null,
+          req.params.id,
+        );
 
-      const updated = db
-        .prepare(
-          `
+        const updated = db
+          .prepare(
+            `
         SELECT de.*, p.first_name as assigned_person_first_name, p.last_name as assigned_person_last_name
         FROM dynamic_display_events de
         LEFT JOIN persons p ON p.id = de.assigned_person_id
         WHERE de.id = ?
       `,
-        )
-        .get(req.params.id);
+          )
+          .get(req.params.id);
 
-      res.json(updated);
-    } catch (error) {
-      logger.error('PUT /api/planning/display-events/:id/assign error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json(updated);
+      } catch (error) {
+        logger.error('PUT /api/planning/display-events/:id/assign error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ═══════════════════════════════════════════════════════════════
   // ──────── TÂCHES RÉCURRENTES ─────────────────────────────────
@@ -2999,69 +3049,86 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
   });
 
   // POST /api/planning/recurring-tasks
-  app.post('/api/planning/recurring-tasks', authenticateToken, (req, res) => {
-    try {
-      const { title, section, time, period, recurrence, day_of_week, day_of_month, notes } =
-        req.body;
-      if (!title || !title.trim())
-        return res.status(400).json({ success: false, error: 'Titre requis' });
-      const id = crypto.randomUUID().replace(/-/g, '');
-      db.prepare(
-        `
+  app.post(
+    '/api/planning/recurring-tasks',
+    authenticateToken,
+    validate(recurringTaskCreateSchema),
+    (req, res) => {
+      try {
+        const { title, section, time, period, recurrence, day_of_week, day_of_month, notes } =
+          req.body;
+        const id = crypto.randomUUID().replace(/-/g, '');
+        db.prepare(
+          `
         INSERT INTO recurring_tasks (id, title, section, time, period, recurrence, day_of_week, day_of_month, notes, active, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, datetime('now'))
       `,
-      ).run(
-        id,
-        title.trim(),
-        section || 'manual',
-        time || null,
-        period || null,
-        recurrence || 'daily',
-        day_of_week ?? null,
-        day_of_month ?? null,
-        notes || '',
-        req.user.id,
-      );
-      const created = db.prepare('SELECT * FROM recurring_tasks WHERE id = ?').get(id);
-      res.json(created);
-    } catch (error) {
-      logger.error('POST /api/planning/recurring-tasks error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+        ).run(
+          id,
+          title.trim(),
+          section || 'manual',
+          time || null,
+          period || null,
+          recurrence || 'daily',
+          day_of_week ?? null,
+          day_of_month ?? null,
+          notes || '',
+          req.user.id,
+        );
+        const created = db.prepare('SELECT * FROM recurring_tasks WHERE id = ?').get(id);
+        res.json(created);
+      } catch (error) {
+        logger.error('POST /api/planning/recurring-tasks error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // PUT /api/planning/recurring-tasks/:id
-  app.put('/api/planning/recurring-tasks/:id', authenticateToken, (req, res) => {
-    try {
-      const { title, section, time, period, recurrence, day_of_week, day_of_month, notes, active } =
-        req.body;
-      db.prepare(
-        `
+  app.put(
+    '/api/planning/recurring-tasks/:id',
+    authenticateToken,
+    validate(recurringTaskUpdateSchema),
+    (req, res) => {
+      try {
+        const {
+          title,
+          section,
+          time,
+          period,
+          recurrence,
+          day_of_week,
+          day_of_month,
+          notes,
+          active,
+        } = req.body;
+        db.prepare(
+          `
         UPDATE recurring_tasks SET title = ?, section = ?, time = ?, period = ?, recurrence = ?, day_of_week = ?, day_of_month = ?, notes = ?, active = ?
         WHERE id = ?
       `,
-      ).run(
-        title,
-        section || 'manual',
-        time || null,
-        period || null,
-        recurrence || 'daily',
-        day_of_week ?? null,
-        day_of_month ?? null,
-        notes || '',
-        active ?? 1,
-        req.params.id,
-      );
-      const updated = db.prepare('SELECT * FROM recurring_tasks WHERE id = ?').get(req.params.id);
-      if (!updated)
-        return res.status(404).json({ success: false, error: 'Tâche récurrente introuvable' });
-      res.json(updated);
-    } catch (error) {
-      logger.error('PUT /api/planning/recurring-tasks/:id error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+        ).run(
+          title,
+          section || 'manual',
+          time || null,
+          period || null,
+          recurrence || 'daily',
+          day_of_week ?? null,
+          day_of_month ?? null,
+          notes || '',
+          active ?? 1,
+          req.params.id,
+        );
+        const updated = db.prepare('SELECT * FROM recurring_tasks WHERE id = ?').get(req.params.id);
+        if (!updated)
+          return res.status(404).json({ success: false, error: 'Tâche récurrente introuvable' });
+        res.json(updated);
+      } catch (error) {
+        logger.error('PUT /api/planning/recurring-tasks/:id error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // DELETE /api/planning/recurring-tasks/:id
   app.delete('/api/planning/recurring-tasks/:id', authenticateToken, (req, res) => {
@@ -3078,62 +3145,74 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
   // POST /api/planning/recurring-tasks/generate
   // Génère les tâches récurrentes pour une date donnée
-  app.post('/api/planning/recurring-tasks/generate', authenticateToken, (req, res) => {
-    try {
-      const { date } = req.body;
-      if (!date) return res.status(400).json({ success: false, error: 'Date requise' });
-      const count = generateRecurringTasks(date);
-      res.json({ generated: count });
-    } catch (error) {
-      logger.error('POST /api/planning/recurring-tasks/generate error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+  app.post(
+    '/api/planning/recurring-tasks/generate',
+    authenticateToken,
+    validate(dateBodySchema),
+    (req, res) => {
+      try {
+        const { date } = req.body;
+        const count = generateRecurringTasks(date);
+        res.json({ generated: count });
+      } catch (error) {
+        logger.error('POST /api/planning/recurring-tasks/generate error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // POST /api/planning/tasks/clear-completed
   // Soft-delete toutes les tâches terminées d'une date donnée
-  app.post('/api/planning/tasks/clear-completed', authenticateToken, (req, res) => {
-    try {
-      const { date } = req.body;
-      if (!date) return res.status(400).json({ success: false, error: 'Date requise' });
-      const result = db
-        .prepare(
-          `
+  app.post(
+    '/api/planning/tasks/clear-completed',
+    authenticateToken,
+    validate(dateBodySchema),
+    (req, res) => {
+      try {
+        const { date } = req.body;
+        const result = db
+          .prepare(
+            `
         UPDATE task_assignments
         SET deleted_at = datetime('now'), modified_by = ?, modified_at = datetime('now')
         WHERE date = ? AND status = 'done' AND deleted_at IS NULL
       `,
-        )
-        .run(req.user.id, date);
-      // Aussi nettoyer display_completed_events associés
-      db.prepare(
-        `
+          )
+          .run(req.user.id, date);
+        // Aussi nettoyer display_completed_events associés
+        db.prepare(
+          `
         DELETE FROM display_completed_events
         WHERE event_id IN (
           SELECT id FROM task_assignments WHERE date = ? AND status = 'done'
         )
       `,
-      ).run(date);
-      res.json({ cleared: result.changes });
-    } catch (error) {
-      logger.error('POST /api/planning/tasks/clear-completed error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+        ).run(date);
+        res.json({ cleared: result.changes });
+      } catch (error) {
+        logger.error('POST /api/planning/tasks/clear-completed error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // POST /api/planning/tasks/rollover
   // Reporter les tâches non terminées au lendemain
-  app.post('/api/planning/tasks/rollover', authenticateToken, (req, res) => {
-    try {
-      const { fromDate } = req.body;
-      if (!fromDate) return res.status(400).json({ success: false, error: 'Date requise' });
-      const count = rolloverPendingTasks(fromDate);
-      res.json({ rolled: count });
-    } catch (error) {
-      logger.error('POST /api/planning/tasks/rollover error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+  app.post(
+    '/api/planning/tasks/rollover',
+    authenticateToken,
+    validate(fromDateBodySchema),
+    (req, res) => {
+      try {
+        const { fromDate } = req.body;
+        const count = rolloverPendingTasks(fromDate);
+        res.json({ rolled: count });
+      } catch (error) {
+        logger.error('POST /api/planning/tasks/rollover error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // ═══════════════════════════════════════════════════════
   // iCal Calendars — CRUD + synchronisation
@@ -3151,42 +3230,50 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
   });
 
   // POST /api/planning/ical-calendars
-  app.post('/api/planning/ical-calendars', authenticateToken, (req, res) => {
-    try {
-      const { name, url, color } = req.body;
-      if (!name?.trim() || !url?.trim())
-        return res.status(400).json({ success: false, error: 'Nom et URL requis' });
-      const id = crypto.randomUUID().replace(/-/g, '');
-      db.prepare('INSERT INTO ical_calendars (id, name, url, color) VALUES (?, ?, ?, ?)').run(
-        id,
-        name.trim(),
-        url.trim(),
-        color || '#3b82f6',
-      );
-      const created = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(id);
-      res.json(created);
-    } catch (error) {
-      logger.error('POST ical-calendars error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+  app.post(
+    '/api/planning/ical-calendars',
+    authenticateToken,
+    validate(icalCalendarCreateSchema),
+    (req, res) => {
+      try {
+        const { name, url, color } = req.body;
+        const id = crypto.randomUUID().replace(/-/g, '');
+        db.prepare('INSERT INTO ical_calendars (id, name, url, color) VALUES (?, ?, ?, ?)').run(
+          id,
+          name.trim(),
+          url.trim(),
+          color || '#3b82f6',
+        );
+        const created = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(id);
+        res.json(created);
+      } catch (error) {
+        logger.error('POST ical-calendars error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // PUT /api/planning/ical-calendars/:id
-  app.put('/api/planning/ical-calendars/:id', authenticateToken, (req, res) => {
-    try {
-      const { name, url, color, enabled } = req.body;
-      db.prepare(
-        'UPDATE ical_calendars SET name = ?, url = ?, color = ?, enabled = ? WHERE id = ?',
-      ).run(name, url, color || '#3b82f6', enabled ?? 1, req.params.id);
-      const updated = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(req.params.id);
-      if (!updated)
-        return res.status(404).json({ success: false, error: 'Calendrier introuvable' });
-      res.json(updated);
-    } catch (error) {
-      logger.error('PUT ical-calendars error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+  app.put(
+    '/api/planning/ical-calendars/:id',
+    authenticateToken,
+    validate(icalCalendarUpdateSchema),
+    (req, res) => {
+      try {
+        const { name, url, color, enabled } = req.body;
+        db.prepare(
+          'UPDATE ical_calendars SET name = ?, url = ?, color = ?, enabled = ? WHERE id = ?',
+        ).run(name, url, color || '#3b82f6', enabled ?? 1, req.params.id);
+        const updated = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(req.params.id);
+        if (!updated)
+          return res.status(404).json({ success: false, error: 'Calendrier introuvable' });
+        res.json(updated);
+      } catch (error) {
+        logger.error('PUT ical-calendars error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // DELETE /api/planning/ical-calendars/:id
   app.delete('/api/planning/ical-calendars/:id', authenticateToken, (req, res) => {
@@ -3513,39 +3600,39 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
   // POST /api/planning/planning-assignments
   // Body: { entity_type, entity_id, person_id }
-  app.post('/api/planning/planning-assignments', authenticateToken, (req, res) => {
-    try {
-      const { entity_type, entity_id, person_id } = req.body;
-      if (!entity_type || !entity_id || !person_id) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'entity_type, entity_id et person_id requis' });
-      }
-      const id = crypto.randomUUID().replace(/-/g, '');
-      db.prepare(
-        `
+  app.post(
+    '/api/planning/planning-assignments',
+    authenticateToken,
+    validate(planningAssignmentSchema),
+    (req, res) => {
+      try {
+        const { entity_type, entity_id, person_id } = req.body;
+        const id = crypto.randomUUID().replace(/-/g, '');
+        db.prepare(
+          `
         INSERT OR IGNORE INTO planning_assignments (id, entity_type, entity_id, person_id)
         VALUES (?, ?, ?, ?)
       `,
-      ).run(id, entity_type, entity_id, person_id);
-      // Retourner toutes les affectations pour cette entité
-      const assignments = db
-        .prepare(
-          `
+        ).run(id, entity_type, entity_id, person_id);
+        // Retourner toutes les affectations pour cette entité
+        const assignments = db
+          .prepare(
+            `
         SELECT pa.*, p.first_name, p.last_name
         FROM planning_assignments pa
         LEFT JOIN persons p ON p.id = pa.person_id
         WHERE pa.entity_type = ? AND pa.entity_id = ?
         ORDER BY pa.created_at ASC
       `,
-        )
-        .all(entity_type, entity_id);
-      res.json(assignments);
-    } catch (error) {
-      logger.error('POST /api/planning/planning-assignments error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+          )
+          .all(entity_type, entity_id);
+        res.json(assignments);
+      } catch (error) {
+        logger.error('POST /api/planning/planning-assignments error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // DELETE /api/planning/planning-assignments/:id
   app.delete('/api/planning/planning-assignments/:id', authenticateToken, (req, res) => {

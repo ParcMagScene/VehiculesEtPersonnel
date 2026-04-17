@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import db from './database.js';
 import logger from './logger.js';
 import { validateFileType } from './middleware/validateFileType.js';
+import { validate } from './schemas/imports.js';
+import { preferencesSchema, profileNameSchema } from './schemas/profile.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,12 +41,9 @@ export function setupProfileRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // Mettre à jour son propre profil (nom)
-  app.patch('/api/users/me', authenticateToken, (req, res) => {
+  app.patch('/api/users/me', authenticateToken, validate(profileNameSchema), (req, res) => {
     try {
       const { name } = req.body;
-      if (!name || !name.trim()) {
-        return res.status(400).json({ success: false, error: 'Le nom est requis' });
-      }
       db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), req.user.id);
       const updated = db
         .prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?')
@@ -129,49 +128,57 @@ export function setupProfileRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // Mettre à jour ses préférences utilisateur
-  app.put('/api/users/me/preferences', authenticateToken, (req, res) => {
-    try {
-      const prefs = JSON.stringify(req.body || {});
-      db.prepare('UPDATE users SET preferences = ? WHERE id = ?').run(prefs, req.user.id);
-      res.json(req.body);
-    } catch (error) {
-      logger.error('Erreur sauvegarde préférences:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+  app.put(
+    '/api/users/me/preferences',
+    authenticateToken,
+    validate(preferencesSchema),
+    (req, res) => {
+      try {
+        const prefs = JSON.stringify(req.body || {});
+        db.prepare('UPDATE users SET preferences = ? WHERE id = ?').run(prefs, req.user.id);
+        res.json(req.body);
+      } catch (error) {
+        logger.error('Erreur sauvegarde préférences:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // ============ ADMIN: MODIFIER LE PROFIL D'UN UTILISATEUR ============
 
   // Mettre à jour le nom d'un utilisateur (admin)
-  app.patch('/api/users/:id/profile', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const { id } = req.params;
-      const { name } = req.body;
-      if (!name || !name.trim()) {
-        return res.status(400).json({ success: false, error: 'Le nom est requis' });
-      }
-      const existing = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
-      if (!existing)
-        return res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
+  app.patch(
+    '/api/users/:id/profile',
+    authenticateToken,
+    requireAdmin,
+    validate(profileNameSchema),
+    (req, res) => {
+      try {
+        const { id } = req.params;
+        const { name } = req.body;
+        const existing = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Utilisateur non trouvé' });
 
-      db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), id);
-      const updated = db
-        .prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?')
-        .get(id);
-      const user = {
-        id: updated.id,
-        email: updated.email,
-        name: updated.name,
-        isAdmin: updated.is_admin === 1,
-        avatar: updated.avatar || null,
-      };
-      logger.info(`✏️ Admin ${req.user.id} a modifié le nom de user ${id} → ${name.trim()}`);
-      res.json({ success: true, user });
-    } catch (error) {
-      logger.error('Erreur mise à jour profil utilisateur:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+        db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), id);
+        const updated = db
+          .prepare('SELECT id, email, name, is_admin, avatar FROM users WHERE id = ?')
+          .get(id);
+        const user = {
+          id: updated.id,
+          email: updated.email,
+          name: updated.name,
+          isAdmin: updated.is_admin === 1,
+          avatar: updated.avatar || null,
+        };
+        logger.info(`✏️ Admin ${req.user.id} a modifié le nom de user ${id} → ${name.trim()}`);
+        res.json({ success: true, user });
+      } catch (error) {
+        logger.error('Erreur mise à jour profil utilisateur:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // Upload d'avatar pour un utilisateur (admin)
   app.post(

@@ -5,7 +5,6 @@ import {
   Boxes,
   Briefcase,
   Building2,
-  ClipboardCheck,
   HelpCircle,
   MapPin,
   Moon,
@@ -280,7 +279,6 @@ const Header = ({
                   { id: 'lieux', label: 'Lieux', icon: MapPin },
                   { id: 'video', label: 'Vidéo', icon: Video },
                   { id: 'sonos', label: 'Sonos', icon: Music },
-                  { id: 'suivi', label: 'Suivi', icon: ClipboardCheck },
                 ];
                 const hiddenTabs = tabPrefs.hiddenTabs || [];
                 const tabOrder = tabPrefs.tabOrder || allTabs.map((t) => t.id);

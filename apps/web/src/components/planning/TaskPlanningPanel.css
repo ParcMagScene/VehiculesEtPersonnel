@@ -1245,6 +1245,20 @@
   color: var(--theme-bg-card);
 }
 
+/* Bouton Valider du dropdown d'affectation */
+.task-planning-panel .assign-dropdown-validate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: calc(100% - 12px);
+  margin: 6px 6px 4px;
+  padding: 5px 0;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+}
+
 /* Smaller chips for multi-assign */
 .task-planning-panel .multi-assign-chips .task-person.assigned {
   padding: 1px 6px;

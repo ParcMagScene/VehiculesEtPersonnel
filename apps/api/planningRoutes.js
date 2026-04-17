@@ -2619,6 +2619,16 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
         )
         .get(req.params.id);
 
+      // Synchroniser le statut vers le suivi du personnel
+      const newStatus = status || existing.status;
+      if (newStatus === 'done' || newStatus === 'pending') {
+        const completedValue = newStatus === 'done' ? 1 : null;
+        db.prepare('UPDATE tracking_entries SET completed = ? WHERE task_assignment_id = ?').run(
+          completedValue,
+          req.params.id,
+        );
+      }
+
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/tasks/:id error:', error);

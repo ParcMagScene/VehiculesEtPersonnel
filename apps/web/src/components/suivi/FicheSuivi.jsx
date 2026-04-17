@@ -3,7 +3,17 @@
    Grille d'entrées AM/PM avec tâches, temps, commentaires
    ═══════════════════════════════════════════════════════════════ */
 
-import { Check, GripVertical, Loader2, Plus, Save, Send, Trash2, X } from 'lucide-react';
+import {
+  Check,
+  GripVertical,
+  HelpCircle,
+  Loader2,
+  Minus,
+  Plus,
+  Save,
+  Send,
+  Trash2,
+} from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 
 function newEntry(period = 'AM', sortOrder = 0) {
@@ -13,7 +23,7 @@ function newEntry(period = 'AM', sortOrder = 0) {
     task: '',
     time_spent: 0,
     comment: '',
-    completed: 0,
+    completed: null,
     task_assignment_id: null,
     sort_order: sortOrder,
   };
@@ -53,7 +63,12 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
 
   const handleToggleCompleted = useCallback((key) => {
     setEntries((prev) =>
-      prev.map((e) => (e._key === key ? { ...e, completed: e.completed ? 0 : 1 } : e)),
+      prev.map((e) => {
+        if (e._key !== key) return e;
+        // Cycle: null(?) → 1(Oui) → 0(Non) → null(?)
+        const next = e.completed === null ? 1 : e.completed === 1 ? 0 : null;
+        return { ...e, completed: next };
+      }),
     );
     setDirty(true);
   }, []);
@@ -66,7 +81,7 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
         task: e.task,
         time_spent: parseFloat(e.time_spent) || 0,
         comment: e.comment || '',
-        completed: e.completed ? 1 : 0,
+        completed: e.completed === 1 ? 1 : e.completed === 0 ? 0 : null,
         task_assignment_id: e.task_assignment_id || null,
         sort_order: i,
       }));
@@ -80,10 +95,13 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
   const amEntries = entries.filter((e) => e.period === 'AM');
   const pmEntries = entries.filter((e) => e.period === 'PM');
   const totalTime = entries.reduce((s, e) => s + (parseFloat(e.time_spent) || 0), 0);
-  const totalDone = entries.filter((e) => e.completed).length;
+  const totalDone = entries.filter((e) => e.completed === 1).length;
 
   const renderEntryRow = (entry) => (
-    <tr key={entry._key} className={`fiche-row ${entry.completed ? 'completed' : ''}`}>
+    <tr
+      key={entry._key}
+      className={`fiche-row ${entry.completed === 1 ? 'completed' : entry.completed === 0 ? 'not-done' : ''}`}
+    >
       <td className="fiche-col-grip">
         <GripVertical size={14} className="grip-icon" />
       </td>
@@ -126,12 +144,20 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
       </td>
       <td className="fiche-col-done">
         <button
-          className={`fiche-check-btn ${entry.completed ? 'checked' : ''}`}
+          className={`fiche-check-btn ${entry.completed === 1 ? 'checked' : entry.completed === 0 ? 'not-done' : 'unknown'}`}
           onClick={() => handleToggleCompleted(entry._key)}
           disabled={isValidated}
-          title={entry.completed ? 'Marquer non fait' : 'Marquer fait'}
+          title={
+            entry.completed === 1 ? 'Fait' : entry.completed === 0 ? 'Non fait' : 'Indéterminé'
+          }
         >
-          {entry.completed ? <Check size={16} /> : <X size={16} />}
+          {entry.completed === 1 ? (
+            <Check size={16} />
+          ) : entry.completed === 0 ? (
+            <Minus size={16} />
+          ) : (
+            <HelpCircle size={16} />
+          )}
         </button>
       </td>
       <td className="fiche-col-actions">

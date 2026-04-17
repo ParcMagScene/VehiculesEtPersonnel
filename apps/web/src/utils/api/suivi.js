@@ -4,12 +4,12 @@ export function registerSuiviMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
     // Liste personnel avec stats suivi
     async getSuiviPersonnel() {
-      return this.request('/suivi/personnel');
+      return this.request('/suivi/personnel', { skipCamelCase: true });
     },
 
     // Récupérer (ou créer automatiquement) la fiche d'un jour
     async getSuiviSheet(personnelId, date) {
-      return this.request(`/suivi/${personnelId}/${date}`);
+      return this.request(`/suivi/${personnelId}/${date}`, { skipCamelCase: true });
     },
 
     // Mise à jour complète (statut + notes + entrées)
@@ -17,6 +17,7 @@ export function registerSuiviMethods(ApiClient) {
       return this.request(`/suivi/${personnelId}/${date}`, {
         method: 'POST',
         body: JSON.stringify(data),
+        skipCamelCase: true,
       });
     },
 
@@ -25,28 +26,47 @@ export function registerSuiviMethods(ApiClient) {
       return this.request(`/suivi/tache/${entryId}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
+        skipCamelCase: true,
       });
     },
 
     // Valider une fiche (admin)
     async validateSuiviSheet(sheetId) {
-      return this.request(`/suivi/${sheetId}/validate`, { method: 'PUT' });
+      return this.request(`/suivi/${sheetId}/validate`, { method: 'PUT', skipCamelCase: true });
     },
 
     // Synthèses JSON
     async getSuiviSyntheseJour(date) {
-      return this.request(`/suivi/synthese/jour/${date}`);
+      return this.request(`/suivi/synthese/jour/${date}`, { skipCamelCase: true });
     },
     async getSuiviSyntheseSemaine(week) {
-      return this.request(`/suivi/synthese/semaine/${week}`);
+      return this.request(`/suivi/synthese/semaine/${week}`, { skipCamelCase: true });
     },
     async getSuiviSyntheseMois(month) {
-      return this.request(`/suivi/synthese/mois/${month}`);
+      return this.request(`/suivi/synthese/mois/${month}`, { skipCamelCase: true });
     },
 
     // Export PDF individuel
     async exportSuiviSheetPdf(sheetId) {
       return this.requestBlob(`/suivi/${sheetId}/pdf`);
+    },
+
+    // Export PDF batch (multi-fiches sélectionnées, format normal)
+    async exportSuiviBatchPdf(sheetIds) {
+      return this.requestBlob('/suivi/batch/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sheetIds }),
+      });
+    },
+
+    // Impression batch (multi-fiches, recto-verso + filigrane)
+    async printSuiviBatch(sheetIds) {
+      return this.requestBlob('/suivi/batch/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sheetIds }),
+      });
     },
 
     // Export PDF synthèses

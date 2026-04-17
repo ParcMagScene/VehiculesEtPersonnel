@@ -1,6 +1,6 @@
 import './PlanningPanel.css';
 
-import { Calendar, ClipboardList, Tv2, Users } from 'lucide-react';
+import { Calendar, ClipboardCheck, ClipboardList, Tv2, Users } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState, useTransition } from 'react';
 
 import { Button } from '@/design-system';
@@ -9,6 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 
 const PersonnelPanel = lazy(() => import('../personnel/PersonnelPanel'));
+const SuiviPanel = lazy(() => import('../suivi/SuiviPanel'));
 const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
 const DisplayDashboardPanel = lazy(() => import('../DisplayDashboard/DisplayDashboardPanel'));
 
@@ -51,6 +52,7 @@ function PlanningPanel({
 
   const subTabs = [
     { id: 'personnel', label: 'Personnel', icon: Users },
+    { id: 'suivi', label: 'Suivi', icon: ClipboardCheck },
     { id: 'tasks', label: 'Planification', icon: ClipboardList, count: stats?.tasksPending || 0 },
     { id: 'dashboard', label: 'Dashboard Écrans', icon: Tv2 },
   ];
@@ -104,6 +106,11 @@ function PlanningPanel({
               quickAssignmentSlot={quickAssignmentSlot}
               onQuickAssignmentHandled={onQuickAssignmentHandled}
             />
+          </Suspense>
+        )}
+        {activeSubTab === 'suivi' && (
+          <Suspense fallback={null}>
+            <SuiviPanel currentUser={currentUser} />
           </Suspense>
         )}
         {activeSubTab === 'tasks' && (

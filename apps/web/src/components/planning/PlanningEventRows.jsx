@@ -72,6 +72,14 @@ export const MultiAssignWidget = React.memo(function MultiAssignWidget({
               </div>
             );
           })}
+          <Button
+            variant="primary"
+            size="sm"
+            className="assign-dropdown-validate"
+            onClick={() => setAssigningEntity(null)}
+          >
+            <Check size={14} /> Valider
+          </Button>
         </div>
       )}
     </div>

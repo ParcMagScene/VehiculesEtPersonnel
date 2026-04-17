@@ -4,26 +4,22 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Bell, Eye, Radio, RefreshCw } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/design-system';
 
 import api from '../../utils/api';
 import TVScreenMini from './TVScreenMini';
 function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
-  const [liveState, setLiveState] = useState(null);
+  const iframeRef = useRef(null);
   const [adminState, setAdminState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alarmSending, setAlarmSending] = useState(false);
 
-  const fetchLiveState = useCallback(async () => {
+  const fetchAdminState = useCallback(async () => {
     try {
-      const [publicData, adminData] = await Promise.all([
-        api.getDisplayTVPublicState(),
-        api.getDisplayTVState(),
-      ]);
-      setLiveState(publicData);
-      setAdminState(adminData);
+      const data = await api.getDisplayTVState();
+      setAdminState(data);
     } catch {
       // Silent — preview non critique
     } finally {
@@ -42,12 +38,18 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
     }
   }, []);
 
-  // Chargement initial + polling toutes les 15s
+  const reloadIframe = useCallback(() => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.location.reload();
+    }
+  }, []);
+
+  // Chargement initial + polling toutes les 15s (état admin pour Preview)
   useEffect(() => {
-    fetchLiveState();
-    const timer = setInterval(fetchLiveState, 15000);
+    fetchAdminState();
+    const timer = setInterval(fetchAdminState, 15000);
     return () => clearInterval(timer);
-  }, [fetchLiveState, refreshKey]);
+  }, [fetchAdminState, refreshKey]);
 
   // Fusion état admin + overrides du formulaire pour l'aperçu brouillon
   const draftState = useMemo(() => {
@@ -72,7 +74,7 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
     };
   }, [adminState, previewOverrides]);
 
-  if (loading && !liveState) {
+  if (loading && !adminState) {
     return (
       <div className="tv-preview-panel" style={style}>
         <div className="tv-preview-loading">Chargement aperçu…</div>
@@ -90,7 +92,7 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
           <Button
             variant="ghost"
             className="tv-preview-refresh"
-            onClick={fetchLiveState}
+            onClick={reloadIframe}
             title="Rafraîchir"
           >
             <RefreshCw size={10} />
@@ -107,11 +109,12 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
           </Button>
         </div>
         <div className="tv-preview-frame">
-          {liveState ? (
-            <TVScreenMini state={liveState} />
-          ) : (
-            <div className="tv-preview-empty">Aucune donnée</div>
-          )}
+          <iframe
+            ref={iframeRef}
+            src="/tv-client/index.html"
+            className="tv-preview-iframe"
+            title="Dashboard TV — Direct"
+          />
         </div>
       </div>
 

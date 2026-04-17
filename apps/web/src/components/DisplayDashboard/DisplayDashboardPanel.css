@@ -2505,6 +2505,14 @@
   container-name: tv-frame;
 }
 
+/* Iframe Direct — miroir pixel-perfect du vrai client TV */
+.tv-preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
 .tv-preview-zone.draft .tv-preview-frame {
   border-color: var(--warning-tint-medium);
   box-shadow: 0 2px 12px rgba(245, 158, 11, 0.08);

@@ -194,7 +194,7 @@ header {
 /* Structure en colonnes : Période | Titre | Badge affaire | Icône lieu */
 .event-columns {
   display: grid;
-  grid-template-columns: 10em 1fr auto auto;
+  grid-template-columns: auto 1fr auto auto;
   gap: 0.8em;
   align-items: center;
   width: 100%;
@@ -235,8 +235,6 @@ main {
   font-weight: 600;
   font-size: 1.1em;
   white-space: nowrap;
-  width: 10em;
-  min-width: 10em;
   text-align: left;
 }
 .col-location {
@@ -454,7 +452,7 @@ footer {
   #datetime { font-size: clamp(0.8em, 2vw, 1.2em); }
   #date, #heure { font-size: clamp(0.7em, 1.5vw, 1em); }
   .event-columns {
-    grid-template-columns: 10em 1fr auto auto;
+    grid-template-columns: auto 1fr auto auto;
     gap: 0.6em;
   }
   .col-time { font-size: clamp(1em, 2vw, 1.3em); }
@@ -476,7 +474,7 @@ footer {
   header { padding: 0.3em 1em; }
   #logo { height: 70px; }
   #welcome { font-size: 1.8em; }
-  .event-columns { grid-template-columns: 9em 1fr auto auto; gap: 0.5em; }
+  .event-columns { grid-template-columns: auto 1fr auto auto; gap: 0.5em; }
   .col-time { white-space: nowrap; }
   .col-location { height: 48px; }
   .col-location .location-icon { width: 42px; min-width: 42px; height: 42px; }

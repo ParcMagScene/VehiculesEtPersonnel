@@ -109,6 +109,10 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'http://localhost:3003',
         changeOrigin: true
+      },
+      '/tv-client': {
+        target: 'http://localhost:3003',
+        changeOrigin: true
       }
     }
   },
@@ -135,6 +139,11 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       '/api': {
+        target: 'https://localhost:3443',
+        changeOrigin: true,
+        secure: false
+      },
+      '/tv-client': {
         target: 'https://localhost:3443',
         changeOrigin: true,
         secure: false

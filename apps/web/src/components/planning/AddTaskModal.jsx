@@ -88,17 +88,22 @@ export default function AddTaskModal({
   // Affaire autocomplete
   const [affaireSearch, setAffaireSearch] = useState('');
   const [affaireOpen, setAffaireOpen] = useState(false);
+  const [loadedAllAffaires, setLoadedAllAffaires] = useState([]);
   const affaireRef = useRef(null);
 
   // Locations eMag (enregistrées)
   const [emagLocations, setEmagLocations] = useState([]);
 
-  // Load eMag locations
+  // Load eMag locations + all affaires
   useEffect(() => {
     if (isOpen) {
       api
         .getLocations()
         .then(setEmagLocations)
+        .catch(() => {});
+      api
+        .getAffaires()
+        .then((data) => setLoadedAllAffaires(Array.isArray(data) ? data : []))
         .catch(() => {});
     }
   }, [isOpen]);
@@ -135,7 +140,8 @@ export default function AddTaskModal({
 
   // Filtered affaires
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const allAffairesList = allAffaires || affaires || [];
+  const allAffairesList =
+    loadedAllAffaires.length > 0 ? loadedAllAffaires : allAffaires || affaires || [];
   const filteredAffaires = useMemo(() => {
     if (!affaireSearch.trim()) return allAffairesList.slice(0, 30);
     const q = affaireSearch.toLowerCase();

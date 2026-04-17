@@ -5,6 +5,21 @@
 
 * { box-sizing: border-box; }
 
+/* Variables internes (fallbacks pour variables référencées dans le CSS) */
+:root {
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-md-lg: 10px;
+  --radius-xl: 16px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-5: 20px;
+  --font-base: 1rem;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -291,6 +306,10 @@ main {
   padding: 0.15em 0.6em;
   border-radius: 5px;
   color: var(--badge-color, #3b82f6);
+  /* Fallback pour navigateurs sans color-mix() (ancien Chromium Pi) */
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  /* Navigateurs modernes : utilise la vraie couleur du badge */
   background: color-mix(in srgb, var(--badge-color, #3b82f6) 15%, transparent);
   border: 1px solid color-mix(in srgb, var(--badge-color, #3b82f6) 35%, transparent);
   white-space: nowrap;

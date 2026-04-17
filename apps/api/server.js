@@ -235,11 +235,11 @@ const tvClientDir = path.join(__dirname, '..', 'tv-client');
 app.use(
   '/tv-client',
   (req, res, next) => {
-    if (req.path.endsWith('.html') || req.path === '/') {
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-    }
+    // Désactiver le cache pour TOUS les fichiers TV (HTML, CSS, JS)
+    // pour éviter les décalages entre Pi / navigateur local
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     next();
   },
   express.static(tvClientDir),

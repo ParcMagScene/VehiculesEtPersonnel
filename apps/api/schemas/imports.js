@@ -68,7 +68,9 @@ export const savImportSchema = z.object({
     .min(1)
     .max(10000),
   mode: z.enum(['preview', 'import']),
-  manualLinks: z.record(z.string(), z.number()).optional(),
+  manualLinks: z.record(z.string(), z.number()).nullish(),
+  skipDuplicates: z.boolean().optional(),
+  updateDuplicates: z.boolean().optional(),
 });
 
 // ── Affaire Create/Update ──

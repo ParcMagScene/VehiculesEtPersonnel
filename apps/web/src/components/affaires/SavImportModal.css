@@ -209,3 +209,48 @@
     padding: 8px 10px;
   }
 }
+
+/* --- Flux SAV (entrées/sorties) --- */
+.sav-import-flow-box {
+  padding: 10px 14px;
+  background: var(--theme-bg-subtle, #f8fafc);
+  border-radius: var(--radius-md-lg);
+  border: 1px solid var(--theme-border-subtle, #e2e8f0);
+}
+
+.sav-import-flow-box h4 {
+  margin: 0 0 8px;
+  font-size: var(--font-base);
+  font-weight: 600;
+}
+
+.sav-import-flow-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sav-import-flow-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sav-flow-entry {
+  background: rgba(234, 179, 8, 0.12);
+  color: var(--theme-warning);
+}
+
+.sav-flow-exit {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--theme-success);
+}
+
+.sav-flow-transition {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--theme-info, #3b82f6);
+}

@@ -78,13 +78,21 @@ function parseCSV(text, separator = ';') {
     return HEADER_MAP[lower] || lower.replace(/\s+/g, '_');
   });
 
+  // Dé-quoter un champ CSV (guillemets doubles)
+  const dequote = (val) => {
+    if (!val) return val;
+    const t = val.trim();
+    if (t.startsWith('"') && t.endsWith('"')) return t.slice(1, -1).replace(/""/g, '"');
+    return t;
+  };
+
   const rows = [];
   for (let i = headerLineIndex + 1; i < lines.length; i++) {
     const values = lines[i].split(separator);
     if (values.every((v) => !v.trim())) continue;
     const row = {};
     for (let j = 0; j < mappedHeaders.length; j++) {
-      row[mappedHeaders[j]] = (values[j] || '').trim();
+      row[mappedHeaders[j]] = dequote(values[j] || '');
     }
     if (row.intervention || row.code_article || row.nom_article) {
       rows.push(row);
@@ -96,6 +104,7 @@ function parseCSV(text, separator = ';') {
 
 const STATUS_MAP = {
   closed: { label: 'Clôturée', color: 'var(--theme-text-gray)', icon: '✅' },
+  resolved: { label: 'Sortie SAV', color: STATUS_COLORS.success, icon: '✅' },
   in_progress: { label: 'En cours', color: STATUS_COLORS.warning, icon: '🔧' },
   open: { label: 'Ouverte', color: STATUS_COLORS.danger, icon: '🔴' },
 };
@@ -347,6 +356,30 @@ const SavImportModal = ({ onClose, onImportDone }) => {
               </div>
             )}
           </div>
+
+          {/* Détection entrées / sorties SAV */}
+          {(preview.entries > 0 || preview.exits > 0) && (
+            <div className="eq-import-section sav-import-flow-box">
+              <h4>🔄 Détection des flux SAV</h4>
+              <div className="sav-import-flow-stats">
+                {preview.entries > 0 && (
+                  <span className="sav-import-flow-badge sav-flow-entry">
+                    📥 {preview.entries} entrée(s) en SAV (sans date de fin)
+                  </span>
+                )}
+                {preview.exits > 0 && (
+                  <span className="sav-import-flow-badge sav-flow-exit">
+                    📤 {preview.exits} sortie(s) SAV (date de fin renseignée)
+                  </span>
+                )}
+                {preview.statusTransitions > 0 && (
+                  <span className="sav-import-flow-badge sav-flow-transition">
+                    🔄 {preview.statusTransitions} intervention(s) à clôturer automatiquement
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Option doublons */}
           {preview.duplicatesCount > 0 && (
@@ -665,6 +698,14 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                   {result.skippedDuplicates}
                 </span>
                 <span>🔁 Doublons ignorés</span>
+              </div>
+            )}
+            {result.resolved > 0 && (
+              <div className="eq-import-result-stat">
+                <span className="eq-import-result-value" style={{ color: STATUS_COLORS.success }}>
+                  {result.resolved}
+                </span>
+                <span>📤 Sorties SAV détectées</span>
               </div>
             )}
           </div>

@@ -315,8 +315,11 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           req.user.id,
         );
 
-      // Générer l'UID unique basé sur l'ID
-      const uid = 'EMAG-' + String(result.lastInsertRowid).padStart(5, '0');
+      // Générer l'UID unique basé sur l'ID (ou synchroniser avec le serial si c'est un EMAG)
+      const emagMatch = serial_number && serial_number.match(/EMAG-\d{5}/i);
+      const uid = emagMatch
+        ? emagMatch[0].toUpperCase()
+        : 'EMAG-' + String(result.lastInsertRowid).padStart(5, '0');
       db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, result.lastInsertRowid);
 
       addToHistory(
@@ -390,6 +393,23 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         stock_quantity,
         req.params.id,
       );
+
+      // Si le serial contient un UID EMAG, synchroniser le champ uid
+      if (serial_number) {
+        const emagMatch = serial_number.match(/EMAG-\d{5}/i);
+        if (emagMatch) {
+          db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
+            emagMatch[0].toUpperCase(),
+            req.params.id,
+          );
+        }
+      }
+      // S'assurer que le uid n'est jamais vide
+      const currentEquip = db.prepare('SELECT uid FROM equipment WHERE id = ?').get(req.params.id);
+      if (!currentEquip?.uid) {
+        const autoUid = 'EMAG-' + String(req.params.id).padStart(5, '0');
+        db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(autoUid, req.params.id);
+      }
 
       // Propager la photo aux équipements ayant la même référence
       if (photo !== undefined && reference) {
@@ -850,9 +870,29 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
                   existing.id,
                 );
               }
+              // Synchroniser UID si le serial contient un EMAG
+              if (serialNumber) {
+                const emagMatch = serialNumber.match(/EMAG-\d{5}/i);
+                if (emagMatch) {
+                  db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
+                    emagMatch[0].toUpperCase(),
+                    existing.id,
+                  );
+                }
+              }
+              // S'assurer que l'uid n'est jamais vide
+              const existUid = db
+                .prepare('SELECT uid FROM equipment WHERE id = ?')
+                .get(existing.id);
+              if (!existUid?.uid) {
+                db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
+                  'EMAG-' + String(existing.id).padStart(5, '0'),
+                  existing.id,
+                );
+              }
               updated++;
             } else {
-              insertEquip.run(
+              const insResult = insertEquip.run(
                 nom,
                 reference,
                 serialNumber,
@@ -862,9 +902,17 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
                 zone,
                 req.user.id,
               );
+              // Générer UID (ou synchroniser avec serial EMAG)
+              const newId = insResult.lastInsertRowid;
+              const emagMatch = serialNumber && serialNumber.match(/EMAG-\d{5}/i);
+              const uid = emagMatch
+                ? emagMatch[0].toUpperCase()
+                : 'EMAG-' + String(newId).padStart(5, '0');
+              db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, newId);
               if (resolved.brand_id) {
-                db.prepare('UPDATE equipment SET brand_id = ? WHERE id = last_insert_rowid()').run(
+                db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(
                   resolved.brand_id,
+                  newId,
                 );
               }
               created++;
@@ -1398,6 +1446,33 @@ export function setupSavTicketsRoutes(
           return null;
         };
 
+        // Dé-quoter un champ CSV (guillemets doubles)
+        const dequoteCSV = (val) => {
+          if (!val) return val;
+          const trimmed = val.trim();
+          if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+            return trimmed.slice(1, -1).replace(/""/g, '"');
+          }
+          return trimmed;
+        };
+
+        // Dériver le statut depuis la date Fin et la colonne A
+        const deriveStatus = (endDate, aColumn) => {
+          // Si date de fin remplie → intervention résolue (matériel rentré)
+          if (endDate) return 'resolved';
+          const a = (aColumn || '').trim().toLowerCase();
+          if (
+            a === 'clôturée' ||
+            a === 'cloturee' ||
+            a === 'terminée' ||
+            a === 'terminee' ||
+            a === 'fermé' ||
+            a === 'fermée'
+          )
+            return 'closed';
+          return 'in_progress';
+        };
+
         // Parser le coût (format européen)
         const parseCost = (str) => {
           if (!str || !str.trim()) return 0;
@@ -1480,6 +1555,12 @@ export function setupSavTicketsRoutes(
             return equipByUid[parsed.uid].id;
           }
 
+          // Si le champ série contient un UID EMAG mais qu'on ne l'a pas trouvé,
+          // ne PAS fallback sur code_article (ce serait un autre équipement)
+          if (parsed.uid) {
+            return null;
+          }
+
           // 3. Match par code article (reference)
           const code = (row.code_article || '').trim().toUpperCase();
           if (code && equipByRef[code]) {
@@ -1501,11 +1582,11 @@ export function setupSavTicketsRoutes(
           return null;
         };
 
-        // Index des tickets existants pour détection de doublons (par N° intervention)
+        // Index des tickets existants pour détection de doublons
         const existingByIntervention = {};
         const existingTickets = db
           .prepare(
-            'SELECT id, title, equipment_id, status, import_code, import_serial FROM sav_tickets',
+            'SELECT id, title, equipment_id, status, import_code, import_serial, import_name, resolved_at FROM sav_tickets',
           )
           .all();
         for (const t of existingTickets) {
@@ -1523,6 +1604,26 @@ export function setupSavTicketsRoutes(
         const existingByTitle = {};
         for (const t of existingTickets) {
           existingByTitle[t.title.trim().toLowerCase()] = t;
+        }
+        // Index par N° série importé (nettoyé) et par UID EMAG
+        const existingBySerial = {};
+        const existingByUid = {};
+        for (const t of existingTickets) {
+          if (t.import_serial) {
+            const parsed = parseSerialField(t.import_serial);
+            if (parsed.serial) existingBySerial[parsed.serial] = t;
+            if (parsed.uid) existingByUid[parsed.uid] = t;
+            // Aussi indexer le champ brut nettoyé
+            const clean = cleanSerial(t.import_serial);
+            if (clean) existingBySerial[clean] = t;
+          }
+        }
+        // Index par equipment_id + statut actif (un seul ticket actif par équipement)
+        const existingActiveByEquip = {};
+        for (const t of existingTickets) {
+          if (t.equipment_id && ['open', 'in_progress', 'waiting_parts'].includes(t.status)) {
+            existingActiveByEquip[t.equipment_id] = t;
+          }
         }
 
         // Analyser les données
@@ -1550,26 +1651,45 @@ export function setupSavTicketsRoutes(
             });
           }
 
-          // Détection de doublons par N° intervention ou titre exact
+          // Dé-quoter les champs texte (CSV avec guillemets)
+          const nomArticle = dequoteCSV(row.nom_article) || '';
+          const cleanTitle = `${(row.intervention || '').trim()} — ${nomArticle.trim()}`;
           const interventionNum = (row.intervention || '').trim().toUpperCase();
-          const title = `${(row.intervention || '').trim()} — ${(row.nom_article || '').trim()}`;
+
+          // Détection de doublons multi-critères (priorité décroissante)
+          // 1. Par N° intervention (le plus fiable)
+          // 2. Par UID EMAG parsé
+          // 3. Par N° de série parsé (import_serial)
+          // 4. Par N° série brut nettoyé
+          // 5. Par équipement avec ticket actif existant
+          // 6. Par titre exact
+          const rowSerial = parsed.serial; // déjà parsé plus haut
+          const rowUid = parsed.uid;
+          const rowSerialRaw = cleanSerial(row.numero_de_serie);
           const existingTicket =
             (interventionNum && existingByIntervention[interventionNum]) ||
-            existingByTitle[title.trim().toLowerCase()] ||
+            (rowUid && existingByUid[rowUid]) ||
+            (rowSerial && existingBySerial[rowSerial]) ||
+            (rowSerialRaw && existingBySerial[rowSerialRaw]) ||
+            (equipmentId && existingActiveByEquip[equipmentId]) ||
+            existingByTitle[cleanTitle.trim().toLowerCase()] ||
             null;
+          const endDate = parseDate(row.fin);
+          const status = deriveStatus(endDate, row.a);
 
           return {
             ...row,
+            nom_article: nomArticle,
             _equipmentId: equipmentId,
             _parsedUid: parsed.uid,
             _parsedSerial: parsed.serial,
-            _status: 'in_progress', // Tous les tickets importés → en cours
+            _status: status,
             _cost: parseCost(row.cout),
             _startDate: parseDate(row.debut),
-            _endDate: parseDate(row.fin),
+            _endDate: endDate,
             _existingTicket: existingTicket,
             _isDuplicate: !!existingTicket,
-            _title: title,
+            _title: cleanTitle,
           };
         });
 
@@ -1581,7 +1701,22 @@ export function setupSavTicketsRoutes(
             nom: r.nom_article,
             existingId: r._existingTicket?.id,
             existingStatus: r._existingTicket?.status,
+            newStatus: r._status,
+            hasNewEndDate: !!r._endDate && !r._existingTicket?.resolved_at,
           }));
+
+        // Compteurs entrées / sorties
+        const entries = processed.filter(
+          (r) => r._status === 'in_progress' && !r._isDuplicate,
+        ).length;
+        const exits = processed.filter(
+          (r) => r._status === 'resolved' || r._status === 'closed',
+        ).length;
+        const statusTransitions = duplicates.filter(
+          (d) =>
+            d.existingStatus === 'in_progress' &&
+            (d.newStatus === 'resolved' || d.newStatus === 'closed'),
+        ).length;
 
         if (mode === 'preview') {
           const statusCounts = {};
@@ -1606,6 +1741,9 @@ export function setupSavTicketsRoutes(
             duplicates: duplicates.slice(0, 20),
             statusCounts,
             totalCost,
+            entries,
+            exits,
+            statusTransitions,
             existingTickets: existingTickets.length,
             equipmentList,
             sample: processed.slice(0, 10).map((r) => ({
@@ -1647,7 +1785,8 @@ export function setupSavTicketsRoutes(
           createdLinked = 0,
           createdUnlinked = 0,
           skippedDuplicates = 0,
-          updatedDuplicates = 0;
+          updatedDuplicates = 0,
+          resolved = 0;
 
         const importAll = db.transaction(() => {
           for (const row of processed) {
@@ -1661,8 +1800,10 @@ export function setupSavTicketsRoutes(
 
             // Doublon détecté
             if (row._isDuplicate) {
-              if (updateDuplicates) {
-                // Mettre à jour le ticket existant (status, equipment_id, cost)
+              // Toujours mettre à jour si le statut change (ex: intervention terminée → resolved)
+              const statusChanged = row._existingTicket.status !== row._status;
+              const hasNewEnd = !!row._endDate && !row._existingTicket.resolved_at;
+              if (updateDuplicates || statusChanged || hasNewEnd) {
                 updateTicket.run(
                   row._equipmentId || null,
                   row._status,
@@ -1672,14 +1813,18 @@ export function setupSavTicketsRoutes(
                   row._existingTicket.id,
                 );
                 updatedDuplicates++;
+                if (row._status === 'resolved' && row._existingTicket.status !== 'resolved') {
+                  resolved++;
+                }
               } else if (skipDuplicates) {
                 skippedDuplicates++;
               } else {
-                // Créer quand même (comportement par défaut si aucune option)
                 skippedDuplicates++;
               }
               continue;
             }
+
+            if (row._status === 'resolved') resolved++;
 
             insertTicket.run(
               row._equipmentId || null,
@@ -1701,15 +1846,12 @@ export function setupSavTicketsRoutes(
 
         importAll();
 
-        // Mettre en maintenance les équipements qui ont des tickets actifs
-        const activeEquipIds = [
-          ...new Set(
-            processed
-              .filter((r) => r._equipmentId && r._status !== 'closed' && r._status !== 'resolved')
-              .map((r) => r._equipmentId),
-          ),
+        // Rafraîchir le statut de TOUS les équipements concernés
+        // (maintenance pour les actifs, available/in_use pour les résolus)
+        const allEquipIds = [
+          ...new Set(processed.filter((r) => r._equipmentId).map((r) => r._equipmentId)),
         ];
-        for (const eqId of activeEquipIds) {
+        for (const eqId of allEquipIds) {
           refreshEquipmentStatus(eqId);
         }
 
@@ -1723,6 +1865,7 @@ export function setupSavTicketsRoutes(
             createdUnlinked,
             skippedDuplicates,
             updatedDuplicates,
+            resolved,
             total: data.length,
           },
           req.user.id,
@@ -1736,8 +1879,9 @@ export function setupSavTicketsRoutes(
           createdUnlinked,
           skippedDuplicates,
           updatedDuplicates,
+          resolved,
           total: data.length,
-          message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${updatedDuplicates > 0 ? `, ${updatedDuplicates} mis à jour` : ''}${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}`,
+          message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${resolved > 0 ? `, ${resolved} sortie(s) SAV détectée(s)` : ''}${updatedDuplicates > 0 ? `, ${updatedDuplicates} mis à jour` : ''}${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}`,
         });
       } catch (error) {
         logger.error('Erreur import CSV interventions:', error);

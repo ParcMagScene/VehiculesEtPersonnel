@@ -175,6 +175,36 @@ const SavTicketFormModal = ({
     cost: ticket?.cost || '',
   });
 
+  // Recherche globale
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchRef = useRef(null);
+
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q || q.length < 2) return [];
+    return equipment
+      .filter((eq) => {
+        const name = (eq.name || '').toLowerCase();
+        const ref = (eq.reference || '').toLowerCase();
+        const serial = (eq.serialNumber || eq.serial_number || '').toLowerCase();
+        const uid = (eq.uid || '').toLowerCase();
+        return name.includes(q) || ref.includes(q) || serial.includes(q) || uid.includes(q);
+      })
+      .slice(0, 20);
+  }, [equipment, searchQuery]);
+
+  // Fermer la dropdown quand on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const allCategories = categories || [];
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -276,6 +306,79 @@ const SavTicketFormModal = ({
               </div>
             ) : (
               <>
+                <div className="sav-search-global" ref={searchRef}>
+                  <div className="sav-search-input-wrap">
+                    <Search size={16} className="sav-search-icon" />
+                    <input
+                      type="text"
+                      className="sav-search-input"
+                      placeholder="Rechercher par nom, référence, N° série ou UID…"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setSearchFocused(true);
+                      }}
+                      onFocus={() => setSearchFocused(true)}
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        className="sav-search-clear"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSearchFocused(false);
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                  {searchFocused && searchQuery.length >= 2 && (
+                    <div className="sav-search-dropdown">
+                      {searchResults.length === 0 ? (
+                        <div className="sav-search-empty">Aucun résultat</div>
+                      ) : (
+                        searchResults.map((eq) => (
+                          <button
+                            key={eq.id}
+                            type="button"
+                            className={`sav-search-item${String(form.equipment_id) === String(eq.id) ? ' selected' : ''}`}
+                            onClick={() => {
+                              setForm((f) => ({ ...f, equipment_id: eq.id }));
+                              setSearchQuery('');
+                              setSearchFocused(false);
+                              // Synchroniser la cascade
+                              const hier = getCategoryHierarchy(eq, allCategories);
+                              setSelFamille(hier?.family?.id ? String(hier.family.id) : '');
+                              setSelSousFamille(
+                                hier?.subfamily?.id ? String(hier.subfamily.id) : '',
+                              );
+                              setSelType(hier?.category?.id ? String(hier.category.id) : '');
+                            }}
+                          >
+                            <span className="sav-search-item-name">
+                              {eq.categoryIcon || '📦'} {cleanName(eq.name)}
+                            </span>
+                            <span className="sav-search-item-meta">
+                              {eq.reference && (
+                                <span className="sav-search-ref">{eq.reference}</span>
+                              )}
+                              {(eq.serialNumber || eq.serial_number) && (
+                                <span className="sav-search-serial">
+                                  S/N: {eq.serialNumber || eq.serial_number}
+                                </span>
+                              )}
+                              {eq.uid && <span className="sav-search-uid">{eq.uid}</span>}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="sav-search-separator">
+                  <span>ou parcourir par catégorie</span>
+                </div>
                 <div className="eq-form-cascade">
                   <Select
                     value={selFamille}

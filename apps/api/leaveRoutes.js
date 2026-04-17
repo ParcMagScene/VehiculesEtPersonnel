@@ -793,12 +793,10 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         }
 
         if (existing.status !== 'pending') {
-          return res
-            .status(400)
-            .json({
-              success: false,
-              error: 'Seules les demandes en attente peuvent être traitées',
-            });
+          return res.status(400).json({
+            success: false,
+            error: 'Seules les demandes en attente peuvent être traitées',
+          });
         }
 
         // Motif obligatoire pour refus et modification

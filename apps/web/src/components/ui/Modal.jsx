@@ -55,14 +55,18 @@ function Modal({ open, onClose, size = 'md', className = '', children }) {
       }
     };
     document.addEventListener('keydown', handler);
-    // Auto-focus first focusable element
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
+  /* ── Auto-focus first element on open (once) ── */
+  useEffect(() => {
+    if (!open) return;
     const modal = overlayRef.current?.querySelector('[role="dialog"]');
     const firstFocusable = modal?.querySelector(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
     firstFocusable?.focus();
-    return () => document.removeEventListener('keydown', handler);
-  }, [open, onClose]);
+  }, [open]);
 
   const handleOverlayClick = useCallback(
     (e) => {

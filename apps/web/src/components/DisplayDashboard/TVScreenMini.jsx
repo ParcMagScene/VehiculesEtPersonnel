@@ -160,24 +160,16 @@ function TVScreenMini({ state = {} }) {
     const iconFile = getTaskIcon(task);
     const eventId = String(task.id || i);
     const isDone = task.status === STATUS.DONE || completed.includes(eventId);
-    // Plage horaire : "07:00 → 08:30" comme le vrai TV
-    const endTime = task.end_time || task.endTime || '';
-    const timeDisplay = task.time
-      ? endTime
-        ? `${task.time} → ${endTime}`
-        : task.time
-      : task.period === 'AM'
-        ? 'Matin'
-        : task.period === 'PM'
-          ? 'Après-midi'
-          : '';
+    // Affichage horaire identique au vrai TV client
+    const periodStr = task.period || '';
+    const timeDisplay = task.time ? task.time : periodStr || '';
     const affNum = task.affaireNum || task.affaire_num || '';
     const affType = task.affaireType || task.affaire_type || '';
     const badgeColor = AFFAIRE_TYPE_COLORS[affType] || STATUS_COLORS.info;
     return (
       <div
         key={i}
-        className={`tv-mini-event${isDone ? ' done' : ''}${!task.time ? ' all-day' : ''}${task.title && task.title.includes('!') && !isDone ? ' urgent' : ''}`}
+        className={`tv-mini-event${isDone ? ' done' : ''}${!task.time && !periodStr ? ' all-day' : ''}${task.title && task.title.includes('!') && !isDone ? ' urgent' : ''}`}
         style={{ color: isDone ? undefined : color, background: eventBgColor }}
       >
         <span className="tv-mini-evt-time">{timeDisplay}</span>

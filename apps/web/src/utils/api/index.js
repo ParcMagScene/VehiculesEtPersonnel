@@ -14,6 +14,7 @@ import { registerPersonnelMethods } from './personnel.js';
 import { registerPlanningMethods } from './planning.js';
 import { registerSonosMethods } from './sonos.js';
 import { registerStockMethods } from './stock.js';
+import { registerSuiviMethods } from './suivi.js';
 import { registerVehicleMethods } from './vehicles.js';
 import { registerVideoMethods } from './video.js';
 
@@ -34,6 +35,7 @@ registerDisplayMethods(ApiClient);
 registerSonosMethods(ApiClient);
 registerInventoryMethods(ApiClient);
 registerVideoMethods(ApiClient);
+registerSuiviMethods(ApiClient);
 
 // Singleton
 export const api = new ApiClient();

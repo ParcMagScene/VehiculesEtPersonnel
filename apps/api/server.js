@@ -114,6 +114,7 @@ import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
+import { setupSuiviRoutes } from './suiviRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -349,6 +350,9 @@ setupInventoryRoutes(app, authenticateToken);
 
 // Routes Module Surveillance Vidéo (caméras CRUD, WebRTC, PTZ, snapshots, logs)
 setupVideoRoutes(app, authenticateToken, requireAdmin);
+
+// Routes Module Suivi du Personnel (fiches quotidiennes, synthèses, PDF)
+setupSuiviRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Google Calendar OAuth2 v2 (Authorization Code Flow)
 app.use('/api/google', googleCalendarLimiter);

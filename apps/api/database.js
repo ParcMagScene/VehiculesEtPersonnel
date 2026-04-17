@@ -3259,6 +3259,54 @@ function initializeDatabase() {
     logger.warn('⚠️ Migration Articles Fournisseurs:', error.message);
   }
 
+  // ── Module Suivi du Personnel ──
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_sheets (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft', 'submitted', 'validated')),
+        validated_by INTEGER REFERENCES users(id),
+        validated_at TEXT,
+        notes TEXT DEFAULT '',
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER REFERENCES users(id),
+        modified_at TEXT,
+        UNIQUE(person_id, date)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_entries (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        sheet_id TEXT NOT NULL REFERENCES tracking_sheets(id) ON DELETE CASCADE,
+        period TEXT NOT NULL CHECK(period IN ('AM', 'PM')),
+        task TEXT NOT NULL DEFAULT '',
+        time_spent REAL DEFAULT 0,
+        comment TEXT DEFAULT '',
+        completed INTEGER NOT NULL DEFAULT 0,
+        task_assignment_id TEXT REFERENCES task_assignments(id) ON DELETE SET NULL,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_at TEXT
+      )
+    `);
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_tracking_sheets_person_date ON tracking_sheets(person_id, date);
+      CREATE INDEX IF NOT EXISTS idx_tracking_sheets_date ON tracking_sheets(date);
+      CREATE INDEX IF NOT EXISTS idx_tracking_sheets_status ON tracking_sheets(status);
+      CREATE INDEX IF NOT EXISTS idx_tracking_entries_sheet ON tracking_entries(sheet_id);
+      CREATE INDEX IF NOT EXISTS idx_tracking_entries_task_assignment ON tracking_entries(task_assignment_id);
+    `);
+
+    logger.info('  ✅ Module Suivi du Personnel initialisé');
+  } catch (error) {
+    logger.warn('⚠️ Migration Suivi du Personnel:', error.message);
+  }
+
   // ── Index de performance — Phase 4 ──
   // Véhicules & réservations (tables les plus requêtées)
   db.exec(`

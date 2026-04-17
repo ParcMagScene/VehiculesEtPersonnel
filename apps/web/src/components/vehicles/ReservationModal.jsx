@@ -2,8 +2,8 @@ import './ReservationModal.css';
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Link2, MapPin, Paperclip, Trash2, Unlink } from 'lucide-react';
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { Briefcase, Link2, MapPin, Paperclip, Search, Trash2, Unlink } from 'lucide-react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Button,
@@ -158,6 +158,12 @@ const ReservationModal = ({
   // État pour la liaison de trajets
   const [linkEventComboboxOpen, setLinkEventComboboxOpen] = useState(null); // eventId source ou null
 
+  // Recherche d'affaire
+  const [allAffaires, setAllAffaires] = useState([]);
+  const [affaireSearch, setAffaireSearch] = useState('');
+  const [affaireOpen, setAffaireOpen] = useState(false);
+  const affaireRef = useRef(null);
+
   // Index des affaires ayant des pièces jointes
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
   const [attachmentCounts, setAttachmentCounts] = useState({});
@@ -168,6 +174,45 @@ const ReservationModal = ({
 
   // État pour le calcul de prix de location
   const [rentalPrice, setRentalPrice] = useState(null);
+
+  // Charger toutes les affaires pour la recherche
+  useEffect(() => {
+    api
+      .getAffaires()
+      .then((data) => setAllAffaires(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
+
+  // Filtre de recherche affaires
+  const filteredAffaires = useMemo(() => {
+    if (!affaireSearch.trim()) return allAffaires.slice(0, 30);
+    const q = affaireSearch.toLowerCase();
+    return allAffaires
+      .filter(
+        (a) =>
+          (a.numeroAffaire || '').toLowerCase().includes(q) ||
+          (a.client || '').toLowerCase().includes(q) ||
+          (a.nom || '').toLowerCase().includes(q) ||
+          (a.titre || '').toLowerCase().includes(q),
+      )
+      .slice(0, 30);
+  }, [allAffaires, affaireSearch]);
+
+  // L'affaire actuellement sélectionnée (première du tableau)
+  const selectedAffaireObj = useMemo(() => {
+    const num = formData.affaires[0];
+    return num ? allAffaires.find((a) => a.numeroAffaire === num) : null;
+  }, [allAffaires, formData.affaires]);
+
+  // Fermer dropdown affaire au clic extérieur
+  useEffect(() => {
+    if (!affaireOpen) return;
+    const handle = (e) => {
+      if (affaireRef.current && !affaireRef.current.contains(e.target)) setAffaireOpen(false);
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [affaireOpen]);
 
   // État pour l'adresse du siège
   const [companyAddress, setCompanyAddress] = useState('');
@@ -992,18 +1037,91 @@ const ReservationModal = ({
               {/* Champs conditionnels (masqués si tournée) */}
               {!formData.isTournee && (
                 <>
-                  <FormField
-                    className="form-group"
-                    label="Client / Prestation"
-                    htmlFor="clientName"
-                  >
+                  {/* Champ Affaire avec recherche */}
+                  <FormField className="form-group" label="Affaire" htmlFor="affaireSearch">
+                    <div className="rm-affaire-field" ref={affaireRef}>
+                      {formData.affaires.length > 0 ? (
+                        <div className="rm-affaire-selected">
+                          <AffaireBadge
+                            numero={formData.affaires[0]}
+                            type={selectedAffaireObj?.type}
+                            size="sm"
+                          />
+                          <span className="rm-affaire-client">
+                            {selectedAffaireObj?.client || ''}
+                          </span>
+                          {!isReadOnly && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setFormData((prev) => ({ ...prev, affaires: [] }));
+                                setAffaireSearch('');
+                              }}
+                            >
+                              <Unlink size={12} />
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="rm-affaire-wrap">
+                          <Search size={13} className="rm-affaire-icon" />
+                          <Input
+                            id="affaireSearch"
+                            value={affaireSearch}
+                            onChange={(e) => {
+                              setAffaireSearch(e.target.value);
+                              setAffaireOpen(true);
+                            }}
+                            onFocus={() => setAffaireOpen(true)}
+                            placeholder="N° affaire, client, nom…"
+                            disabled={isReadOnly}
+                          />
+                          {affaireOpen && (
+                            <div className="rm-affaire-dropdown">
+                              {filteredAffaires.length === 0 ? (
+                                <div className="rm-affaire-empty">Aucune affaire trouvée</div>
+                              ) : (
+                                filteredAffaires.map((a) => (
+                                  <button
+                                    type="button"
+                                    className="rm-affaire-option"
+                                    key={a.numeroAffaire}
+                                    onClick={() => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        affaires: [a.numeroAffaire],
+                                        clientName: prev.clientName || a.client || '',
+                                      }));
+                                      setAffaireSearch('');
+                                      setAffaireOpen(false);
+                                    }}
+                                  >
+                                    <span className="rm-affaire-opt-num">{a.numeroAffaire}</span>
+                                    <span className="rm-affaire-opt-client">
+                                      {a.client || a.nom || ''}
+                                    </span>
+                                    {a.titre && (
+                                      <span className="rm-affaire-opt-titre">{a.titre}</span>
+                                    )}
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </FormField>
+
+                  <FormField className="form-group" label="Client" htmlFor="clientName">
                     <Input
                       id="clientName"
                       type="text"
                       name="clientName"
                       value={formData.clientName}
                       onChange={handleChange}
-                      placeholder="Nom du client ou de la prestation"
+                      placeholder="Nom du client"
                       list="clients-autocomplete"
                     />
                     <datalist id="clients-autocomplete">

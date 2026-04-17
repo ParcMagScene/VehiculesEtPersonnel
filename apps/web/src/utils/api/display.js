@@ -210,6 +210,9 @@ export function registerDisplayMethods(ApiClient) {
     async getDisplayTVState() {
       return this.request('/display/tv-state');
     },
+    async getDisplayTVPublicState() {
+      return this.request('/display/tv-public-state');
+    },
     async triggerTVAlarmTest() {
       return this.request('/display/tv/test-alarm', { method: 'POST' });
     },

@@ -12,13 +12,18 @@ import api from '../../utils/api';
 import TVScreenMini from './TVScreenMini';
 function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
   const [liveState, setLiveState] = useState(null);
+  const [adminState, setAdminState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alarmSending, setAlarmSending] = useState(false);
 
   const fetchLiveState = useCallback(async () => {
     try {
-      const data = await api.getDisplayTVState();
-      setLiveState(data);
+      const [publicData, adminData] = await Promise.all([
+        api.getDisplayTVPublicState(),
+        api.getDisplayTVState(),
+      ]);
+      setLiveState(publicData);
+      setAdminState(adminData);
     } catch {
       // Silent — preview non critique
     } finally {
@@ -44,26 +49,28 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
     return () => clearInterval(timer);
   }, [fetchLiveState, refreshKey]);
 
-  // Fusion état sauvé + overrides du formulaire pour l'aperçu brouillon
+  // Fusion état admin + overrides du formulaire pour l'aperçu brouillon
   const draftState = useMemo(() => {
-    if (!liveState) return null;
+    if (!adminState) return null;
     return {
-      ...liveState,
-      config: { ...(liveState.config || {}), ...(previewOverrides.config || {}) },
+      ...adminState,
+      config: { ...(adminState.config || {}), ...(previewOverrides.config || {}) },
       welcomeMessage:
         previewOverrides.welcomeMessage !== undefined
           ? previewOverrides.welcomeMessage
-          : liveState.welcomeMessage,
+          : adminState.welcomeMessage,
       colorRules:
         previewOverrides.colorRules !== undefined
           ? previewOverrides.colorRules
-          : liveState.colorRules,
+          : adminState.colorRules,
       iconRules:
-        previewOverrides.iconRules !== undefined ? previewOverrides.iconRules : liveState.iconRules,
+        previewOverrides.iconRules !== undefined
+          ? previewOverrides.iconRules
+          : adminState.iconRules,
       logoUrl:
-        previewOverrides.logoUrl !== undefined ? previewOverrides.logoUrl : liveState.logoUrl,
+        previewOverrides.logoUrl !== undefined ? previewOverrides.logoUrl : adminState.logoUrl,
     };
-  }, [liveState, previewOverrides]);
+  }, [adminState, previewOverrides]);
 
   if (loading && !liveState) {
     return (

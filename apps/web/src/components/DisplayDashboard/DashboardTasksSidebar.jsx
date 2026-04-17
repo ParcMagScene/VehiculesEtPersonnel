@@ -227,13 +227,14 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     [affairesMap],
   );
 
-  // ─── Grouper par section ───
+  // ─── Grouper par section (exclure les tâches validées) ───
   const grouped = useMemo(() => {
     const groups = {};
     SECTION_ORDER.forEach((key) => {
       groups[key] = [];
     });
     tasks.forEach((t) => {
+      if (t.status === STATUS.DONE) return;
       if (t.sourceType === 'google_event' && !t.section) return;
       const sec = normalizeSection(t.section || 'manual');
       if (!groups[sec]) groups[sec] = [];

@@ -536,8 +536,8 @@ const PlanningDayView = React.memo(function PlanningDayView({
   return (
     <div className="sections-container">
       {/* ── En-têtes de colonnes (sticky) ── */}
-      <div className="ev-columns-header sticky-columns-header">
-        <span className="ev-col-h ev-col-h-check">✔</span>
+      <div className="tp-columns-header">
+        <span className="ev-col-h ev-col-h-status">✔</span>
         <span className="ev-col-h ev-col-h-affaire">Affaire</span>
         <span className="ev-col-h ev-col-h-nom">Titre / Nom</span>
         <span className="ev-col-h ev-col-h-client">Client</span>

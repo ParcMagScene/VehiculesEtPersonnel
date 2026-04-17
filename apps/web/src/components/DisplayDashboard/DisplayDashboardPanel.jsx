@@ -120,26 +120,6 @@ function DisplayDashboardPanel({ currentUser }) {
     <div className="display-dashboard">
       {/* Sous-onglets Configuration TV */}
       <Tabs value={activeTab} onChange={setActiveTab}>
-        <div className="display-tabs-container">
-          <TabList className="display-subtabs">
-            {CONFIG_TABS.map((tab) => (
-              <Tab key={tab.id} value={tab.id} icon={<tab.icon size={14} />}>
-                {tab.label}
-              </Tab>
-            ))}
-          </TabList>
-          <a
-            href={getTvUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="display-tv-link"
-            title="Ouvrir le Dashboard TV dans un nouvel onglet"
-          >
-            <ExternalLink size={14} />
-            <span>{getTvUrl()}</span>
-          </a>
-        </div>
-
         {/* Corps — split layout : tâches | config | divider | aperçu TV */}
         <div className="display-body split" ref={bodyRef}>
           {/* Sidebar tâches du jour + Sonos */}
@@ -155,6 +135,25 @@ function DisplayDashboardPanel({ currentUser }) {
           />
 
           <div className="display-tab-content">
+            <div className="display-tabs-container">
+              <TabList className="display-subtabs">
+                {CONFIG_TABS.map((tab) => (
+                  <Tab key={tab.id} value={tab.id} icon={<tab.icon size={14} />}>
+                    {tab.label}
+                  </Tab>
+                ))}
+              </TabList>
+              <a
+                href={getTvUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="display-tv-link"
+                title="Ouvrir le Dashboard TV dans un nouvel onglet"
+              >
+                <ExternalLink size={14} />
+                <span>{getTvUrl()}</span>
+              </a>
+            </div>
             <Suspense fallback={<div className="display-loading">Chargement…</div>}>
               <TabPanel value="appearance">
                 <AppearanceTab

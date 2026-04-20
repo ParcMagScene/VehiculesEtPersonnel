@@ -172,7 +172,7 @@
   position: sticky;
   left: 0;
   right: 0;
-  width: 100vw;
+  width: 100%;
   z-index: var(--z-base);
   pointer-events: none;
 }
@@ -248,7 +248,7 @@
   position: sticky;
   left: 0;
   right: 0;
-  width: 100vw;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -330,7 +330,7 @@
   position: sticky;
   left: 0;
   right: 0;
-  width: 100vw;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;

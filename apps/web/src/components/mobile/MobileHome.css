@@ -5,25 +5,37 @@
 /* ── Grille d'icônes ── */
 .home-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-2-5);
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4);
 }
 
 .home-grid-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-1-5);
-  padding: var(--space-3) var(--space-1);
-  background: none;
-  border: none;
-  border-radius: var(--radius-lg);
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-2);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border-light);
+  border-radius: var(--radius-xl);
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 1px 3px var(--shadow-sm);
+  min-height: 80px;
 }
 
 .home-grid-item:active {
-  opacity: 0.6;
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+.home-grid-item > svg {
+  flex-shrink: 0;
 }
 
 .home-grid-item > span {

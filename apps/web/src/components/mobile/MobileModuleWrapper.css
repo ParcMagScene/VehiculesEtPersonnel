@@ -44,7 +44,6 @@
 .mobile-module-content {
   flex: 1;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-module-content .equipment-panel,

@@ -2,10 +2,8 @@
 .mobile-messaging-chat {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 60px);
-  height: calc(100dvh - 60px);
+  height: 100%;
   background: var(--theme-bg-page);
-  margin: -1rem;
 }
 
 /* Header */

@@ -75,7 +75,7 @@ function getOrCreateSheet(personId, date, userId) {
         const entryId = crypto.randomUUID().replace(/-/g, '');
         const label =
           t.title || t.google_event_title || t.notes || `Tâche ${t.section || 'manuelle'}`;
-        const completed = t.status === 'done' ? 1 : null;
+        const completed = t.status === 'done' ? 1 : 0;
         insert.run(entryId, sheet.id, t.period || 'AM', label, completed, t.id, nextOrder++);
       }
     });

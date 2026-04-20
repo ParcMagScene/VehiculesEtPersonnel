@@ -18,7 +18,7 @@ import { memo, useCallback, useEffect, useState } from 'react';
 
 function newEntry(period = 'AM', sortOrder = 0) {
   return {
-    _key: crypto.randomUUID(),
+    _key: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
     period,
     task: '',
     time_spent: 0,
@@ -38,7 +38,9 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
     if (sheet) {
       const mapped = (sheet.entries || []).map((e) => ({
         ...e,
-        _key: e.id || crypto.randomUUID(),
+        _key:
+          e.id ||
+          (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)),
       }));
       setEntries(mapped);
       setNotes(sheet.notes || '');

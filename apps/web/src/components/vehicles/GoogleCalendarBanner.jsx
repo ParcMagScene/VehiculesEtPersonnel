@@ -360,8 +360,8 @@ function GoogleCalendarBanner({
         }
       };
 
-      calendarScrollArea.addEventListener('scroll', handleCalendarScroll);
-      bannerScrollArea.addEventListener('scroll', handleBannerScroll);
+      calendarScrollArea.addEventListener('scroll', handleCalendarScroll, { passive: true });
+      bannerScrollArea.addEventListener('scroll', handleBannerScroll, { passive: true });
 
       cleanupFn = () => {
         calendarScrollArea.removeEventListener('scroll', handleCalendarScroll);

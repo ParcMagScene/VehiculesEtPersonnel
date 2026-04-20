@@ -280,8 +280,8 @@ const Calendar = ({
         }
       });
     };
-    vehicleColumn.addEventListener('scroll', onScroll);
-    scrollArea.addEventListener('scroll', onScroll);
+    vehicleColumn.addEventListener('scroll', onScroll, { passive: true });
+    scrollArea.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       vehicleColumn.removeEventListener('scroll', onScroll);
       scrollArea.removeEventListener('scroll', onScroll);
@@ -297,10 +297,12 @@ const Calendar = ({
       if (!leftColumn || !grid) return;
       const leftChildren = Array.from(leftColumn.children);
       const gridChildren = Array.from(grid.children);
+      // Batch reads then writes to avoid forced reflow
+      const heights = leftChildren.map((c) => c.offsetHeight);
       leftChildren.forEach((leftChild, index) => {
         const gridChild = gridChildren[index];
         if (!gridChild) return;
-        const leftHeight = leftChild.offsetHeight;
+        const leftHeight = heights[index];
         if (gridChild.classList.contains('vehicle-row')) {
           gridChild.querySelectorAll('.time-slot').forEach((slot) => {
             slot.style.height = `${leftHeight}px`;

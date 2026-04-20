@@ -159,5 +159,17 @@ export function registerAnnuaireMethods(ApiClient) {
         skipCamelCase: true,
       });
     },
+
+    // Matching lieux ↔ entités
+    async getMatchingLocations() {
+      return this.request('/annuaire/matching-locations', { skipCamelCase: true });
+    },
+    async bulkLinkLocations(links) {
+      return this.request('/annuaire/bulk-link-locations', {
+        method: 'POST',
+        body: JSON.stringify({ links }),
+        skipCamelCase: true,
+      });
+    },
   });
 }

@@ -2,9 +2,9 @@
 
 > Référence complète de tous les endpoints REST du backend Express.js.
 >
-> **Version** : 1.0.0  
-> **Dernière mise à jour** : 7 avril 2026  
-> **Base URL** : `http://localhost:3002/api`
+> **Version** : 1.1.0  
+> **Dernière mise à jour** : 20 avril 2026  
+> **Base URL** : `http://localhost:3002/api` (production) / `http://localhost:3003/api` (dev)
 
 ---
 
@@ -27,16 +27,21 @@ Les routes marquées 🔑 requièrent en plus le rôle `is_admin`.
 | Commandes & Fournisseurs | `ordersRoutes.js` | [orders.md](orders.md) | 24 |
 | Stock | `stockRoutes.js` | [stock.md](stock.md) | 12 |
 | Planning & Tâches | `planningRoutes.js` | [planning.md](planning.md) | 28 |
+| Suivi personnel | `suiviRoutes.js` | [suivi.md](suivi.md) | 15 |
 | Messagerie | `messagingRoutes.js` | [messaging.md](messaging.md) | 9 |
 | Congés | `leaveRoutes.js` | [leaves.md](leaves.md) | 20 |
 | Annuaire | `annuaireRoutes.js` | [annuaire.md](annuaire.md) | 18 |
 | Vidéo | `videoRoutes.js` | [video.md](video.md) | 11 |
 | Affichage TV | `displayRoutes.js` | [display.md](display.md) | 16 |
+| Sonos | `sonosRoutes.js` | [sonos.md](sonos.md) | 20+ |
 | Pièces jointes | `attachmentsRoutes.js` | [attachments.md](attachments.md) | 5 |
 | Catalogue fournisseurs | `supplierCatalogRoutes.js` | [supplier-catalog.md](supplier-catalog.md) | 12 |
+| Inventaire | `inventoryRoutes.js` | [inventory.md](inventory.md) | 20+ |
+| Google OAuth2 | `googleRoutes.js` | [google.md](google.md) | 10+ |
+| 2FA TOTP | `totpRoutes.js` | [totp.md](totp.md) | 5 |
 | Profil utilisateur | `profileRoutes.js` | [auth.md](auth.md#profil-utilisateur) | 8 |
 
-**Total : ~243 endpoints**
+**Total : ~457 endpoints**
 
 ---
 

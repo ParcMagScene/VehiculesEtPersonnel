@@ -187,7 +187,7 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 ## 🔄 Historique des Mises à Jour Sécurité
 
 ### 2026-03-11 — Mise à jour fonctionnelle + refactor Phase 3
-- ✅ **Phase 3 backend** : Routes extraites en 18 fichiers, middlewares et configs séparés
+- ✅ **Phase 3 backend** : Routes extraites en 25+ fichiers/modules, middlewares et configs séparés
 - ✅ **Phase 3 frontend** : Composants réorganisés en 15 sous-dossiers par domaine (131 composants)
 - ✅ **Sélecteur d'affaire** dans TaskEditModal (recherche, lien/suppression)
 - ✅ **Nettoyage titres TV** : `cleanTvTitle()` supprime emojis, sections et n° AF sur les écrans
@@ -198,7 +198,7 @@ git checkout main && git merge security-update-$(date +%Y%m%d)
 
 ### 2026-03-10 — Mise à jour documentation
 - ✅ Documentation complète mise à jour (ARCHITECTURE, README, SECURITY, GUIDE)
-- ✅ 92 tables DB, ~431 routes API, 131 composants React
+- ✅ ~86 tables DB déclarées, ~457 routes API, 131 composants React
 - ✅ Nouveau module Dashboard TV (21 composants, 13 tables display_*, Sonos, Sneaky, apparence, couleurs, bienvenue)
 - ✅ Nouveau module Mon Espace (espace personnel utilisateur)
 - ✅ Nouveaux composants : BLMultiImportModal, DynamicDisplayDialog, EventTaskModal, MonEspacePanel

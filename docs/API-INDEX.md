@@ -3,8 +3,8 @@
 > Référence exhaustive de toute la documentation interne du projet eM@g.
 > Équivalent d'une API Reference (type Swagger) pour la documentation.
 >
-> **Dernière mise à jour** : Avril 2026
-> **Fichiers indexés** : 16 fichiers Markdown dans `docs/`
+> **Dernière mise à jour** : 20 avril 2026
+> **Fichiers indexés** : 87 fichiers Markdown dans `docs/`
 
 ---
 
@@ -32,9 +32,9 @@
 | Section | Anchor | Contenu clé |
 |---------|--------|-------------|
 | Vue d'ensemble | [§1](01-Architecture/ARCHITECTURE.md#1-vue-densemble) | 14 modules métier, architecture globale |
-| Stack technique | [§2](01-Architecture/ARCHITECTURE.md#2-stack-technique) | React 18, Vite 6, Express.js ESM, SQLite, JWT |
+| Stack technique | [§2](01-Architecture/ARCHITECTURE.md#2-stack-technique) | React 18, Vite 5, Express.js ESM, SQLite, JWT |
 | Structure des dossiers | [§3](01-Architecture/ARCHITECTURE.md#3-structure-des-dossiers) | Monorepo `apps/api`, `apps/web`, `apps/tv-client` |
-| Architecture Backend | [§4](01-Architecture/ARCHITECTURE.md#4-architecture-backend) | Express, 18 fichiers routes, middlewares, `.env` |
+| Architecture Backend | [§4](01-Architecture/ARCHITECTURE.md#4-architecture-backend) | Express, 25+ fichiers routes/modules API, middlewares, `.env` |
 | Architecture Frontend | [§5](01-Architecture/ARCHITECTURE.md#5-architecture-frontend) | App.jsx, code splitting, IndexedDB (12 stores), API client (15 modules, ~375 méthodes) |
 | Déploiement & infrastructure | [§14](01-Architecture/ARCHITECTURE.md#14-déploiement--infrastructure) | PM2, Raspberry Pi, Dynamic DNS, ports 3002/4173 |
 | Design System | [§15](01-Architecture/ARCHITECTURE.md#15-design-system) | Variables CSS, tokens, thèmes |
@@ -49,7 +49,7 @@
 
 📄 **Source** : [01-Architecture/ARCHITECTURE.md — §6](01-Architecture/ARCHITECTURE.md#6-base-de-données)
 
-**Moteur** : SQLite (better-sqlite3) — **92 tables** — Fichier : `apps/api/db.sqlite3`
+**Moteur** : SQLite (better-sqlite3) — **~86 tables déclarées (hors évolutions dynamiques)** — Fichier : `apps/api/vehicules.db` (configurable via `DB_PATH`)
 
 | Groupe de tables | Nombre | Détail |
 |------------------|:------:|--------|
@@ -70,7 +70,7 @@
 
 📄 **Source** : [01-Architecture/ARCHITECTURE.md — §7](01-Architecture/ARCHITECTURE.md#7-api--catalogue-des-routes)
 
-**Total** : ~431 routes réparties sur 18 fichiers
+**Total** : ~457 routes réparties sur 25+ fichiers/modules
 
 | Module API | Préfixe | Routes | Fichier backend |
 |------------|---------|:------:|-----------------|
@@ -95,7 +95,10 @@
 | Vidéo | `/api/video` | — | `videoRoutes.js` |
 | Planning | `/api/planning` | — | `planningRoutes.js` |
 | Display TV | `/api/display` | — | `displayRoutes.js` |
-| Google Calendar | `/api/google-calendar` | — | `googleCalendarRoutes.js` |
+| Google OAuth2 | `/api/google` | — | `googleRoutes.js` |
+| Sonos | `/api/sonos` | — | `sonosRoutes.js` |
+| Suivi personnel | `/api/suivi` | — | `suiviRoutes.js` |
+| 2FA TOTP | `/api/auth/2fa` | — | `totpRoutes.js` |
 | Fournisseurs | `/api/supplier-catalog` | — | `supplierCatalogRoutes.js` |
 | Profil | `/api/profile` | — | `profileRoutes.js` |
 | Santé | `/api/health` | 1 | `server.js` (GET — vérifie DB, uptime, retourne 503 si erreur) |
@@ -154,7 +157,7 @@ Ces routes restent fonctionnelles pour rétrocompatibilité mais émettent un av
 | **App.jsx** | Point d'entrée, lazy loading, gestion onglets |
 | **Code splitting** | ~30 composants lazy-loaded |
 | **Cache IndexedDB** | 12 stores (vehicles, persons, reservations…) |
-| **API Client** | 15 modules, ~375 méthodes dans `apps/web/src/api/` |
+| **API Client** | 19 modules, ~375 méthodes dans `apps/web/src/utils/api/` |
 | **Design System** | Variables CSS, tokens — [§15](01-Architecture/ARCHITECTURE.md#15-design-system) |
 
 ---

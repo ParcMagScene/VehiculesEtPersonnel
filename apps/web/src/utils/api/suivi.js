@@ -35,6 +35,11 @@ export function registerSuiviMethods(ApiClient) {
       return this.request(`/suivi/${sheetId}/validate`, { method: 'PUT', skipCamelCase: true });
     },
 
+    // Tâches planifiées du jour non affectées (pour sélection dans le suivi)
+    async getSuiviPlanningTasks(date) {
+      return this.request(`/suivi/planning-tasks/${date}`, { skipCamelCase: true });
+    },
+
     // Synthèses JSON
     async getSuiviSyntheseJour(date) {
       return this.request(`/suivi/synthese/jour/${date}`, { skipCamelCase: true });

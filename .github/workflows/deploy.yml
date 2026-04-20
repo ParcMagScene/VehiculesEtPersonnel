@@ -32,6 +32,9 @@ jobs:
           npm run lint
           npm run format:check
 
+      - name: Vérifier la cohérence docs ↔ code
+        run: npm run docs:check
+
       - name: Tests backend
         run: npm test
 

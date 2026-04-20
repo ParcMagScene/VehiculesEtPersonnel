@@ -164,44 +164,24 @@ Le script `scripts/safe-deploy.sh` effectue :
 
 ```
 eM@g/
-├── index.html              # Point d'entrée HTML (SPA)
-├── package.json            # Dépendances frontend
-├── vite.config.js          # Configuration Vite (proxy /api → :3003)
-├── src/
-│   ├── main.jsx            # Point d'entrée React
-│   ├── App.jsx             # Composant racine (~901 lignes)
-│   ├── contexts/           # AuthContext (auth state, login/logout)
-│   ├── components/         # 131 composants React organisés par domaine
-│   │   ├── vehicles/       # (21) Calendar, VehicleDetailsModal…
-│   │   ├── affaires/       # (8) AffairesPanel, BLImportModal…
-│   │   ├── personnel/      # (9) PersonnelPanel, PersonnelAgenda…
-│   │   ├── planning/       # (9) PlanningPanel, TaskPlanningPanel…
-│   │   ├── management/     # (5) ManagementPanel, DashboardPanel…
-│   │   ├── equipment/      # (5) EquipmentPanel…
-│   │   ├── orders/         # (3) OrdersPanel, CataloguePanel, StockPanel
-│   │   ├── auth/           # (6) LoginForm, ChangePassword…
-│   │   ├── DisplayDashboard/ # (21) Module affichage dynamique
-│   │   ├── mobile/         # (16) Interface mobile complète
-│   │   ├── ui/             # (6) Composants réutilisables
-│   │   └── ...             # messaging, mailing, annuaire, leaves…
-│   ├── hooks/              # 10 hooks custom (useAppData, useGoogleCalendar…)
-│   └── utils/
-│       ├── api/            # Client API modulaire (15 modules, ~375 méthodes)
-│       └── ...             # dates, indexedDB, pdfParser, deepLinking
+├── package.json            # Scripts racine et workspaces
 ├── apps/
 │   ├── api/                # ══ BACKEND EXPRESS ══
 │   │   ├── server.js       # Point d'entrée Express (health endpoint, middlewares)
-│   │   ├── database.js     # SQLite 92 tables + 15 index perf
+│   │   ├── database.js     # SQLite (initialisation + migrations runtime)
 │   │   ├── schemas/        # Validation Zod (imports CSV/JSON)
 │   │   ├── config/         # Helmet, CORS, rate limiters
 │   │   ├── middleware/     # Auth JWT, authorize, sanitize, upload, errorHandler
-│   │   ├── *Routes.js      # 18+ fichiers de routes API
+│   │   ├── *Routes.js      # 25+ fichiers/modules de routes API
 │   │   ├── cache.js        # Cache LRU/TTL (5 instances)
 │   │   ├── emailService.js # Service d'envoi d'emails
 │   │   └── migrations/     # 17 fichiers SQL
 │   ├── web/                # ══ FRONTEND REACT ══
+│   │   ├── index.html      # Point d'entrée HTML (SPA)
+│   │   ├── vite.config.js  # Configuration Vite
+│   │   └── src/            # App.jsx, composants, hooks, utils/api
 │   └── tv-client/          # ══ CLIENT TV ══
-├── tests/                  # 85 tests backend (unit, schemas Zod, DB init)
+├── tests/                  # Tests Node (unit, schemas, DB init, API)
 ├── public/
 │   ├── depot-zones.json    # Plan dépôt 1 (Événementiel)
 │   ├── depot2-zones.json   # Plan dépôt 2 (Structure)
@@ -244,7 +224,7 @@ npm run preview      # Prévisualiser le build
 npm run deploy       # Build + déploiement PM2
 npm run lint         # Vérification du code (ESLint)
 npm run dev:start    # Démarre backend + frontend en dev
-npm test             # Lance les 608+ tests (523 frontend + 85 backend)
+npm test             # Lance la suite backend ciblée (unit + schemas + db-init + audit-fixes)
 ```
 
 ---

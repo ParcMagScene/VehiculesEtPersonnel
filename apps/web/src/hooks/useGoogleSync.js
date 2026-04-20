@@ -140,6 +140,7 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
   const currentFetchRef = useRef(null); // guard against concurrent fetches
   const mountedRef = useRef(true);
   const eventsRef = useRef([]); // stable ref pour le diff (évite de recréer fetchEvents)
+  const lastSyncRef = useRef(0);
 
   // Cache key for the current view
   const dateStr = currentDate ? currentDate.toISOString().slice(0, 10) : '';
@@ -171,10 +172,19 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
           if (
             tabId !== tabIdRef.current &&
             payload?.cacheKey === cacheKeyRef.current &&
-            payload?.events
+            payload?.timestamp
           ) {
-            setEvents(payload.events);
-            setLastSync(payload.timestamp);
+            // Ignore stale messages and avoid heavy payload cloning over BroadcastChannel.
+            if (payload.timestamp <= lastSyncRef.current) break;
+            lastSyncRef.current = payload.timestamp;
+
+            (async () => {
+              const cached = await idbGet(cacheKeyRef.current);
+              if (!mountedRef.current || !cached?.events) return;
+              setEvents(cached.events);
+              eventsRef.current = cached.events;
+              setLastSync(payload.timestamp);
+            })();
           }
           break;
 
@@ -304,12 +314,13 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
           channelRef.current?.postMessage({
             type: 'events-updated',
             tabId: tabIdRef.current,
-            payload: { cacheKey, events: freshEvents, timestamp: Date.now() },
+            payload: { cacheKey, timestamp: Date.now() },
           });
         }
 
         const now = Date.now();
         setLastSync(now);
+        lastSyncRef.current = now;
         setFetchError(null);
       } catch (err) {
         if (!silent) {
@@ -335,6 +346,7 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
       if (cached?.events && !cancelled) {
         setEvents(cached.events);
         setLastSync(cached.timestamp || null);
+        lastSyncRef.current = cached.timestamp || 0;
       }
     })();
 
@@ -350,6 +362,7 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
       setEvents([]);
       eventsRef.current = [];
       setLastSync(null);
+      lastSyncRef.current = 0;
       setFetchError(null);
     }
   }, [isSignedIn]);

@@ -71,6 +71,7 @@ const EquipmentPanel = ({
   isMobile,
 }) => {
   const toast = useToast();
+  const [exportFamilyId, setExportFamilyId] = React.useState('');
   const {
     // Data
     equipment,
@@ -144,6 +145,7 @@ const EquipmentPanel = ({
     showReportModal,
     setShowReportModal,
     exportingSavPdf,
+    exportingEquipmentInventoryPdf,
     showMobileSavRequest,
     setShowMobileSavRequest,
     labelPrintEquipment,
@@ -167,6 +169,7 @@ const EquipmentPanel = ({
     handleSaveSavTicket,
     toggleList,
     handleExportSavPdf,
+    handleExportEquipmentInventoryPdf,
     // Confirm dialog
     confirm,
     ConfirmDialogRenderer,
@@ -347,7 +350,20 @@ const EquipmentPanel = ({
                   <Plus size={14} /> Ticket SAV
                 </Button>
               )}
-              {isMobile && (
+              {isMobile && canManageEquipmentMaintenance && (
+                <Button
+                  variant="primary"
+                  className="eq-mobile-sav-request"
+                  onClick={() => {
+                    setSavTicketEquipment(null);
+                    setEditingSavTicket(null);
+                    setShowSavModal(true);
+                  }}
+                >
+                  <Plus size={14} /> Ticket SAV
+                </Button>
+              )}
+              {isMobile && !canManageEquipmentMaintenance && (
                 <Button
                   variant="primary"
                   className="eq-mobile-sav-request"
@@ -749,7 +765,11 @@ const EquipmentPanel = ({
         <MobileSavRequestForm
           equipment={equipment}
           onSubmit={async (data) => {
-            await api.createSavRequest(data);
+            if (canManageEquipmentMaintenance) {
+              await api.createSavTicket(data);
+            } else {
+              await api.createSavRequest(data);
+            }
             setShowMobileSavRequest(false);
             loadData();
           }}
@@ -837,6 +857,34 @@ const EquipmentPanel = ({
                     >
                       <Upload size={16} /> Importer un fichier CSV
                     </Button>
+                    <div className="u-mt-2">
+                      <Select
+                        className="eq-filter"
+                        value={exportFamilyId}
+                        onChange={(e) => setExportFamilyId(e.target.value)}
+                        title="Famille à exporter"
+                      >
+                        <option value="">Toutes les familles</option>
+                        {families.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.icon || '📁'} {f.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="u-mt-2">
+                      <Button
+                        variant="secondary"
+                        className="eq-mgmt-import-btn"
+                        onClick={() => handleExportEquipmentInventoryPdf(exportFamilyId || null)}
+                        disabled={exportingEquipmentInventoryPdf}
+                      >
+                        <Download size={16} />{' '}
+                        {exportingEquipmentInventoryPdf
+                          ? 'Export PDF en cours...'
+                          : 'Exporter PDF inventaire équipements'}
+                      </Button>
+                    </div>
                   </div>
                   <div className="eq-management-section">
                     <h3>

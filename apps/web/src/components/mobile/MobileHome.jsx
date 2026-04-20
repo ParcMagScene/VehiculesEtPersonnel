@@ -3,6 +3,8 @@ import './MobileHome.css';
 import {
   Briefcase,
   ClipboardList,
+  FileText,
+  LayoutDashboard,
   Map,
   Package,
   Palmtree,
@@ -32,6 +34,10 @@ function MobileHome({ onNavigate, currentUser }) {
         <button className="home-grid-item tasks" onClick={() => onNavigate('tasks')}>
           <ClipboardList size={28} />
           <span>Tâches</span>
+        </button>
+        <button className="home-grid-item suivi" onClick={() => onNavigate('suivi')}>
+          <FileText size={28} />
+          <span>Suivi</span>
         </button>
         <button className="home-grid-item personnel" onClick={() => onNavigate('personnel')}>
           <Users size={28} />
@@ -63,6 +69,15 @@ function MobileHome({ onNavigate, currentUser }) {
           <Map size={28} />
           <span>Plan</span>
         </button>
+        {isAdmin && (
+          <button
+            className="home-grid-item dashboard-admin"
+            onClick={() => onNavigate('dashboard-admin')}
+          >
+            <LayoutDashboard size={28} />
+            <span>Dashboard</span>
+          </button>
+        )}
       </div>
     </div>
   );

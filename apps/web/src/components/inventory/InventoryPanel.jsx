@@ -49,7 +49,15 @@ import { formatDateTime } from '../../utils/formatUtils';
 // ═══════ SUB-VIEWS (inline pour éviter le surcoût de fichiers séparés) ═══════
 
 // ── Dashboard View ──
-function DashboardView({ stats, alerts, _anomalies, onRefresh, onExportCSV, onRunAbc }) {
+function DashboardView({
+  stats,
+  alerts,
+  _anomalies,
+  onRefresh,
+  onExportCSV,
+  onExportPDF,
+  onRunAbc,
+}) {
   if (!stats) return <div className="inv-loading">Chargement des statistiques…</div>;
   const { summary } = stats;
 
@@ -122,6 +130,9 @@ function DashboardView({ stats, alerts, _anomalies, onRefresh, onExportCSV, onRu
         </Button>
         <Button variant="ghost" className="inv-btn" onClick={onExportCSV}>
           <Download size={14} /> Export CSV
+        </Button>
+        <Button variant="ghost" className="inv-btn" onClick={onExportPDF}>
+          <Download size={14} /> Export PDF
         </Button>
         <Button variant="ghost" className="inv-btn" onClick={onRunAbc}>
           <Star size={14} /> Classification ABC
@@ -898,6 +909,7 @@ export default function InventoryPanel({ _currentUser }) {
                   anomalies={inv.anomalies}
                   onRefresh={inv.refreshStats}
                   onExportCSV={inv.exportCSV}
+                  onExportPDF={inv.exportPDF}
                   onRunAbc={inv.runAbcClassification}
                 />
               </TabPanel>

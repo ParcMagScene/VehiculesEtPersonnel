@@ -58,6 +58,8 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
   const [submitSuccess, setSubmitSuccess] = useState(null);
 
   const isAdmin = currentUser?.isAdmin === true;
+  const canManageEquipmentMaintenance =
+    isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance === true;
 
   useEffect(() => {
     const load = async () => {
@@ -102,14 +104,25 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     if (!savForm.title.trim()) return toast.warning('Titre requis');
     setSubmitting(true);
     try {
-      await api.createSavRequest({
-        equipment_id: equipment.id,
-        title: savForm.title,
-        description: savForm.description,
-        type: savForm.type,
-        priority: savForm.priority,
-      });
-      setSubmitSuccess('Demande SAV créée !');
+      if (canManageEquipmentMaintenance) {
+        await api.createSavTicket({
+          equipment_id: equipment.id,
+          title: savForm.title,
+          description: savForm.description,
+          type: savForm.type,
+          priority: savForm.priority,
+        });
+        setSubmitSuccess('Ticket SAV créé !');
+      } else {
+        await api.createSavRequest({
+          equipment_id: equipment.id,
+          title: savForm.title,
+          description: savForm.description,
+          type: savForm.type,
+          priority: savForm.priority,
+        });
+        setSubmitSuccess('Demande SAV créée !');
+      }
       setSavForm({ title: '', description: '', type: 'panne', priority: 'medium' });
       setTimeout(() => {
         setSubmitSuccess(null);
@@ -362,7 +375,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           <Button variant="ghost" onClick={() => setScreen('menu')} aria-label="Retour">
             <ArrowLeft size={20} />
           </Button>
-          <h2>🔧 Demande de SAV</h2>
+          <h2>{canManageEquipmentMaintenance ? '🔧 Ticket SAV' : '🔧 Demande de SAV'}</h2>
         </div>
         {submitSuccess ? (
           <InlineAlert variant="success">{submitSuccess}</InlineAlert>
@@ -412,7 +425,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
               disabled={submitting}
             >
               {submitting ? <Loader size={16} className="spin" /> : <Wrench size={16} />}
-              Créer la demande SAV
+              {canManageEquipmentMaintenance ? 'Créer le ticket SAV' : 'Créer la demande SAV'}
             </Button>
           </div>
         )}
@@ -420,7 +433,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     );
   }
 
-  // ═══ INTERVENTION DIRECTE (admin) ═══
+  // ═══ INTERVENTION DIRECTE (maintenance matériel) ═══
   if (screen === 'intervention') {
     return (
       <div className="m-eq-qr">
@@ -562,12 +575,16 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
         <Button variant="ghost" className="m-eq-qr-menu-btn sav" onClick={() => setScreen('sav')}>
           <Wrench size={24} />
           <div>
-            <strong>Demande de SAV</strong>
-            <span>Créer un ticket d'intervention</span>
+            <strong>{canManageEquipmentMaintenance ? 'Ticket SAV' : 'Demande de SAV'}</strong>
+            <span>
+              {canManageEquipmentMaintenance
+                ? "Créer un ticket d'intervention"
+                : "Créer une demande d'intervention"}
+            </span>
           </div>
         </Button>
 
-        {isAdmin && (
+        {canManageEquipmentMaintenance && (
           <Button
             variant="ghost"
             className="m-eq-qr-menu-btn intervention"

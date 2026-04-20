@@ -36,6 +36,7 @@ export const useEquipment = ({ currentUser, initialTab }) => {
   const [showSavImportModal, setShowSavImportModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [exportingSavPdf, setExportingSavPdf] = useState(false);
+  const [exportingEquipmentInventoryPdf, setExportingEquipmentInventoryPdf] = useState(false);
   const [showMobileSavRequest, setShowMobileSavRequest] = useState(false);
   const [labelPrintEquipment, setLabelPrintEquipment] = useState(null);
   const [mgmtTab, setMgmtTab] = useState('imports');
@@ -356,6 +357,205 @@ export const useEquipment = ({ currentUser, initialTab }) => {
     }
   };
 
+  const handleExportEquipmentInventoryPdf = async (familyId = null) => {
+    setExportingEquipmentInventoryPdf(true);
+    try {
+      const categoryById = new Map(categories.map((c) => [Number(c.id), c]));
+
+      const resolveHierarchy = (eq) => {
+        const categoryId = Number(eq.categoryId || eq.category_id);
+        const node = categoryById.get(categoryId);
+        if (!node) {
+          return { family: 'Non classé', category: 'Non classé', type: 'Non classé' };
+        }
+
+        if (node.level === 'category') {
+          const sub = categoryById.get(Number(node.parentId || node.parent_id));
+          const fam = sub ? categoryById.get(Number(sub.parentId || sub.parent_id)) : null;
+          return {
+            family: fam?.name || 'Non classé',
+            category: sub?.name || 'Non classé',
+            type: node.name || 'Non classé',
+          };
+        }
+
+        if (node.level === 'subfamily') {
+          const fam = categoryById.get(Number(node.parentId || node.parent_id));
+          return {
+            family: fam?.name || 'Non classé',
+            category: node.name || 'Non classé',
+            type: 'Non classé',
+          };
+        }
+
+        return {
+          family: node.name || 'Non classé',
+          category: 'Non classé',
+          type: 'Non classé',
+        };
+      };
+
+      const resolveFamilyId = (eq) => {
+        const categoryId = Number(eq.categoryId || eq.category_id);
+        const node = categoryById.get(categoryId);
+        if (!node) return null;
+
+        if (node.level === 'family') return Number(node.id);
+        if (node.level === 'subfamily') return Number(node.parentId || node.parent_id) || null;
+        if (node.level === 'category') {
+          const sub = categoryById.get(Number(node.parentId || node.parent_id));
+          return Number(sub?.parentId || sub?.parent_id) || null;
+        }
+        return null;
+      };
+
+      const selectedFamilyId = familyId != null && familyId !== '' ? Number(familyId) : null;
+
+      const groupedByReference = new Map();
+      for (const eq of equipment) {
+        if (selectedFamilyId != null && resolveFamilyId(eq) !== selectedFamilyId) continue;
+
+        const reference = String(eq.reference || '').trim();
+        const key = reference || `__no_ref__${eq.id}`;
+        const hierarchy = resolveHierarchy(eq);
+        const qty = Number(eq.stockQuantity || eq.stock_quantity || 1);
+        const unitPrice = Number(eq.purchasePrice || eq.purchase_price || 0);
+        const status = eq.status || 'unknown';
+        const existing = groupedByReference.get(key);
+
+        if (!existing) {
+          groupedByReference.set(key, {
+            reference: reference || 'Sans référence',
+            name: eq.name || '',
+            family: hierarchy.family,
+            category: hierarchy.category,
+            type: hierarchy.type,
+            quantity: qty,
+            totalValue: qty * unitPrice,
+            status,
+          });
+          continue;
+        }
+
+        existing.quantity += qty;
+        existing.totalValue += qty * unitPrice;
+        if (!existing.name && eq.name) existing.name = eq.name;
+        if (existing.family !== hierarchy.family) existing.family = 'Mixte';
+        if (existing.category !== hierarchy.category) existing.category = 'Mixte';
+        if (existing.type !== hierarchy.type) existing.type = 'Mixte';
+        if (existing.status !== status) existing.status = 'mixte';
+      }
+
+      const rows = Array.from(groupedByReference.values()).sort((a, b) => {
+        const famCmp = a.family.localeCompare(b.family, 'fr', { sensitivity: 'base' });
+        if (famCmp !== 0) return famCmp;
+        const catCmp = a.category.localeCompare(b.category, 'fr', { sensitivity: 'base' });
+        if (catCmp !== 0) return catCmp;
+        const typeCmp = a.type.localeCompare(b.type, 'fr', { sensitivity: 'base' });
+        if (typeCmp !== 0) return typeCmp;
+        return a.reference.localeCompare(b.reference, 'fr', { sensitivity: 'base' });
+      });
+
+      const [{ jsPDF }, autoTableModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+      const autoTable = autoTableModule.default;
+
+      const formatNumber = (value) =>
+        Number(value || 0).toLocaleString('fr-FR', {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        });
+
+      const formatCurrency = (value) =>
+        Number(value || 0).toLocaleString('fr-FR', {
+          style: 'currency',
+          currency: 'EUR',
+          minimumFractionDigits: 2,
+        });
+
+      const statusLabels = {
+        available: 'Disponible',
+        in_use: 'En service',
+        maintenance: 'Maintenance',
+        retired: 'Retiré',
+      };
+
+      const selectedFamilyName =
+        selectedFamilyId != null ? categoryById.get(selectedFamilyId)?.name || '' : '';
+
+      const today = new Date();
+      const stamp = today.toISOString().slice(0, 10);
+      const humanDate = today.toLocaleDateString('fr-FR');
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+      doc.setFontSize(14);
+      doc.text('Inventaire équipements — 1 ligne par référence', 14, 12);
+      doc.setFontSize(9);
+      doc.text(
+        `Tri: Famille > Catégorie > Type | Généré le ${humanDate}${selectedFamilyName ? ` | Famille: ${selectedFamilyName}` : ''}`,
+        14,
+        18,
+      );
+
+      autoTable(doc, {
+        startY: 22,
+        head: [
+          ['Famille', 'Catégorie', 'Type', 'Référence', 'Désignation', 'Qté', 'Statut', 'Valeur'],
+        ],
+        body: rows.map((r) => [
+          r.family,
+          r.category,
+          r.type,
+          r.reference,
+          r.name,
+          formatNumber(r.quantity),
+          statusLabels[r.status] || r.status,
+          formatCurrency(r.totalValue),
+        ]),
+        styles: { fontSize: 8, cellPadding: 1.6, valign: 'middle' },
+        headStyles: { fillColor: [17, 24, 39], textColor: 255, fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 38 },
+          1: { cellWidth: 36 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 34 },
+          4: { cellWidth: 74 },
+          5: { halign: 'right', cellWidth: 16 },
+          6: { cellWidth: 26 },
+          7: { halign: 'right', cellWidth: 28 },
+        },
+        didDrawPage: (data) => {
+          const pageSize = doc.internal.pageSize;
+          const pageWidth = pageSize.getWidth();
+          const pageHeight = pageSize.getHeight();
+          doc.setFontSize(8);
+          doc.text(`Total références: ${rows.length}`, 14, pageHeight - 6);
+          doc.text(`Page ${data.pageNumber}`, pageWidth - 24, pageHeight - 6);
+        },
+      });
+
+      const fileSuffix = selectedFamilyName
+        ? `_${selectedFamilyName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/gi, '_')
+            .replace(/^_|_$/g, '')}`
+        : '';
+      doc.save(`equipements_inventaire${fileSuffix}_${stamp}.pdf`);
+      toast.success(
+        selectedFamilyName
+          ? `Export PDF équipements téléchargé (${selectedFamilyName})`
+          : 'Export PDF des équipements téléchargé',
+      );
+    } catch (err) {
+      console.error('Erreur export PDF équipements:', err);
+      toast.error('Erreur export PDF des équipements');
+    } finally {
+      setExportingEquipmentInventoryPdf(false);
+    }
+  };
+
   return {
     // Data
     equipment,
@@ -430,6 +630,7 @@ export const useEquipment = ({ currentUser, initialTab }) => {
     showReportModal,
     setShowReportModal,
     exportingSavPdf,
+    exportingEquipmentInventoryPdf,
     showMobileSavRequest,
     setShowMobileSavRequest,
     labelPrintEquipment,
@@ -453,6 +654,7 @@ export const useEquipment = ({ currentUser, initialTab }) => {
     handleSaveSavTicket,
     toggleList,
     handleExportSavPdf,
+    handleExportEquipmentInventoryPdf,
     // Confirm dialog
     confirm,
     ConfirmDialogRenderer,

@@ -74,6 +74,12 @@
 .home-grid-item.location {
   color: var(--theme-indigo);
 }
+.home-grid-item.suivi {
+  color: var(--theme-accent, var(--theme-primary));
+}
+.home-grid-item.dashboard-admin {
+  color: var(--theme-purple-accent, var(--theme-primary));
+}
 
 .module-card {
   background: var(--theme-bg-card);

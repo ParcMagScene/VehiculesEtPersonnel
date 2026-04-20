@@ -95,6 +95,9 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
+      - name: Vérifier la cohérence docs ↔ code
+        run: npm run docs:check
+
       - name: Lancer les tests unitaires
         run: npm test
 

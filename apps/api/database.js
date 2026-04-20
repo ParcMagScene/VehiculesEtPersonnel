@@ -2563,6 +2563,78 @@ function initializeDatabase() {
       logger.warn('Migration section installation:', migErr4.message);
     }
 
+    // Migration : ajout section 'intervention' dans task_assignments
+    try {
+      // Vérifie si 'intervention' est déjà dans le CHECK via tentative d'insert
+      const testId = '__check_intervention__';
+      try {
+        db.prepare(
+          `INSERT INTO task_assignments (id, date, section) VALUES (?, '2000-01-01', 'intervention')`,
+        ).run(testId);
+        db.prepare('DELETE FROM task_assignments WHERE id = ?').run(testId);
+        logger.info('✅ Section intervention déjà supportée');
+      } catch {
+        // CHECK constraint rejecte 'intervention' → recréer la table
+        db.exec('BEGIN TRANSACTION');
+        db.exec(`
+          CREATE TABLE task_assignments_new (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            display_event_id TEXT REFERENCES dynamic_display_events(id) ON DELETE SET NULL,
+            person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+            date TEXT NOT NULL,
+            period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+            time TEXT,
+            end_time TEXT,
+            section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
+              'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+              'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+              'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual',
+              'montage', 'demontage', 'intervention'
+            )),
+            title TEXT,
+            notes TEXT DEFAULT '',
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire', 'recurring')),
+            source_id TEXT,
+            google_event_title TEXT,
+            affaire_num TEXT,
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
+            visible INTEGER DEFAULT 1,
+            reservation_id INTEGER,
+            location_address TEXT,
+            location_lat REAL,
+            location_lng REAL,
+            created_by INTEGER REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            modified_by INTEGER,
+            modified_at TEXT,
+            deleted_at TEXT
+          )
+        `);
+        const oldCols5 = db.pragma('table_info(task_assignments)').map((c) => c.name);
+        const newCols5 = db.pragma('table_info(task_assignments_new)').map((c) => c.name);
+        const commonCols5 = oldCols5.filter((c) => newCols5.includes(c)).join(', ');
+        db.exec(
+          `INSERT INTO task_assignments_new (${commonCols5}) SELECT ${commonCols5} FROM task_assignments`,
+        );
+        db.exec('DROP TABLE task_assignments');
+        db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_person ON task_assignments(person_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+        db.exec('COMMIT');
+        logger.info('✅ Section intervention ajoutée à task_assignments');
+      }
+    } catch (migErr5) {
+      try {
+        db.exec('ROLLBACK');
+      } catch (_e) {
+        /* ignored */
+      }
+      logger.warn('Migration section intervention:', migErr5.message);
+    }
+
     // Migration : colonnes enrichies pour bl_imports (Phase 5)
     const blCols = db
       .prepare('PRAGMA table_info(bl_imports)')
@@ -3066,6 +3138,26 @@ function initializeDatabase() {
     if (!prestaCols.includes('naf_code')) {
       db.exec('ALTER TABLE prestataires ADD COLUMN naf_code TEXT');
       logger.info('  + prestataires.naf_code');
+    }
+
+    // --- Migration : ajouter location_id aux entités de l'annuaire ---
+    if (!clientCols.includes('location_id')) {
+      db.exec(
+        'ALTER TABLE clients ADD COLUMN location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL',
+      );
+      logger.info('  + clients.location_id');
+    }
+    if (!supplierCols.includes('location_id')) {
+      db.exec(
+        'ALTER TABLE suppliers ADD COLUMN location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL',
+      );
+      logger.info('  + suppliers.location_id');
+    }
+    if (!prestaCols.includes('location_id')) {
+      db.exec(
+        'ALTER TABLE prestataires ADD COLUMN location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL',
+      );
+      logger.info('  + prestataires.location_id');
     }
 
     // --- Seed lookup tables (si vides) ---

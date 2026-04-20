@@ -199,8 +199,8 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
           `
         INSERT INTO clients (name, code_libre, email, phone, phone2, address, postal_code, city, country,
           type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes, 
-          is_active, created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+          location_id, is_active, created_by, modified_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
       `,
         )
         .run(
@@ -221,6 +221,7 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
           activity_sector || null,
           service_types ? JSON.stringify(service_types) : null,
           notes || null,
+          req.body.location_id || null,
           req.user.id,
           req.user.id,
         );
@@ -274,7 +275,7 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
         UPDATE clients SET name = ?, code_libre = ?, email = ?, phone = ?, phone2 = ?,
           address = ?, postal_code = ?, city = ?, country = ?,
           type = ?, legal_structure = ?, siret = ?, tva_intra = ?, website = ?,
-          activity_sector = ?, service_types = ?, notes = ?, is_active = ?,
+          activity_sector = ?, service_types = ?, notes = ?, location_id = ?, is_active = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
@@ -296,6 +297,7 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
         activity_sector || null,
         service_types ? JSON.stringify(service_types) : null,
         notes || null,
+        req.body.location_id || null,
         is_active !== undefined ? is_active : 1,
         req.user.id,
         req.params.id,
@@ -427,8 +429,8 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
           `
         INSERT INTO suppliers (name, code_libre, contact_name, email, phone, phone2, address, postal_code, city, country,
           type, legal_structure, siret, tva_intra, website, activity_sector, service_types, notes,
-          is_active, created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+          location_id, is_active, created_by, modified_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
       `,
         )
         .run(
@@ -450,6 +452,7 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
           activity_sector || null,
           service_types ? JSON.stringify(service_types) : null,
           notes || null,
+          req.body.location_id || null,
           req.user.id,
           req.user.id,
         );
@@ -505,7 +508,7 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
         UPDATE suppliers SET name = ?, code_libre = ?, contact_name = ?, email = ?, phone = ?, phone2 = ?,
           address = ?, postal_code = ?, city = ?, country = ?,
           type = ?, legal_structure = ?, siret = ?, tva_intra = ?, website = ?,
-          activity_sector = ?, service_types = ?, notes = ?, is_active = ?,
+          activity_sector = ?, service_types = ?, notes = ?, location_id = ?, is_active = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
@@ -528,6 +531,7 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
         activity_sector || null,
         service_types ? JSON.stringify(service_types) : null,
         notes || null,
+        req.body.location_id || null,
         is_active !== undefined ? is_active : 1,
         req.user.id,
         req.params.id,
@@ -652,8 +656,8 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
           `
         INSERT INTO prestataires (name, code_libre, email, phone, phone2, address, postal_code, city, country,
           legal_structure, siret, tva_intra, website, activity_sector, service_types, notes,
-          is_active, created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+          location_id, is_active, created_by, modified_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
       `,
         )
         .run(
@@ -673,6 +677,7 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
           activity_sector || null,
           service_types ? JSON.stringify(service_types) : null,
           notes || null,
+          req.body.location_id || null,
           req.user.id,
           req.user.id,
         );
@@ -726,7 +731,7 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
         UPDATE prestataires SET name = ?, code_libre = ?, email = ?, phone = ?, phone2 = ?,
           address = ?, postal_code = ?, city = ?, country = ?,
           legal_structure = ?, siret = ?, tva_intra = ?, website = ?,
-          activity_sector = ?, service_types = ?, notes = ?, is_active = ?,
+          activity_sector = ?, service_types = ?, notes = ?, location_id = ?, is_active = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
@@ -747,6 +752,7 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
         activity_sector || null,
         service_types ? JSON.stringify(service_types) : null,
         notes || null,
+        req.body.location_id || null,
         is_active !== undefined ? is_active : 1,
         req.user.id,
         req.params.id,
@@ -1556,6 +1562,127 @@ export function setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin) 
       res.json(stats);
     } catch (error) {
       logger.error('Annuaire stats:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MATCHING LIEUX ↔ ENTITÉS
+// ═══════════════════════════════════════════════════════════════
+export function setupAnnuaireMatchingRoutes(app, authenticateToken, requireAdmin) {
+  /**
+   * GET /api/annuaire/matching-locations
+   * Compare clients / fournisseurs / prestataires avec les lieux
+   * et renvoie les correspondances possibles (nom ou ville identiques).
+   */
+  app.get('/api/annuaire/matching-locations', authenticateToken, (req, res) => {
+    try {
+      const locations = db.prepare('SELECT id, name, address, type FROM locations').all();
+      if (!locations.length) return res.json({ matches: [] });
+
+      const entities = [
+        ...db
+          .prepare('SELECT id, name, address, city, location_id FROM clients WHERE is_active = 1')
+          .all()
+          .map((e) => ({ ...e, entity_type: 'client' })),
+        ...db
+          .prepare('SELECT id, name, address, city, location_id FROM suppliers WHERE is_active = 1')
+          .all()
+          .map((e) => ({ ...e, entity_type: 'supplier' })),
+        ...db
+          .prepare(
+            'SELECT id, name, address, city, location_id FROM prestataires WHERE is_active = 1',
+          )
+          .all()
+          .map((e) => ({ ...e, entity_type: 'prestataire' })),
+      ];
+
+      const normalize = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+
+      const matches = [];
+      for (const entity of entities) {
+        // Skip entities already linked
+        if (entity.location_id) continue;
+
+        const eName = normalize(entity.name);
+        const eAddr = normalize(entity.address);
+        const eCity = normalize(entity.city);
+
+        for (const loc of locations) {
+          const lName = normalize(loc.name);
+          const lAddr = normalize(loc.address);
+
+          // Match criteria: name includes or address+city overlap
+          const nameMatch = eName && lName && (eName.includes(lName) || lName.includes(eName));
+          const addrMatch = eAddr && lAddr && (eAddr.includes(lAddr) || lAddr.includes(eAddr));
+          const cityInAddr = eCity && lAddr && lAddr.includes(normalize(eCity));
+
+          if (nameMatch || addrMatch || (eCity && cityInAddr && eAddr)) {
+            matches.push({
+              entity_type: entity.entity_type,
+              entity_id: entity.id,
+              entity_name: entity.name,
+              entity_address: entity.address,
+              entity_city: entity.city,
+              location_id: loc.id,
+              location_name: loc.name,
+              location_address: loc.address,
+              match_reason: nameMatch ? 'name' : addrMatch ? 'address' : 'city',
+            });
+          }
+        }
+      }
+
+      res.json({ matches });
+    } catch (error) {
+      logger.error('Annuaire matching-locations:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  /**
+   * POST /api/annuaire/bulk-link-locations
+   * Body: { links: [{ entity_type, entity_id, location_id }] }
+   */
+  app.post('/api/annuaire/bulk-link-locations', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const { links } = req.body;
+      if (!Array.isArray(links) || links.length === 0) {
+        return res.status(400).json({ success: false, error: 'Le tableau links est requis' });
+      }
+
+      const allowedTypes = ['client', 'supplier', 'prestataire'];
+      const tableMap = { client: 'clients', supplier: 'suppliers', prestataire: 'prestataires' };
+      let linked = 0;
+
+      const updateTx = db.transaction(() => {
+        for (const { entity_type, entity_id, location_id } of links) {
+          if (!allowedTypes.includes(entity_type)) continue;
+          const table = tableMap[entity_type];
+          // Validate location exists
+          const loc = db.prepare('SELECT id FROM locations WHERE id = ?').get(location_id);
+          if (!loc) continue;
+
+          db.prepare(
+            `UPDATE ${table} SET location_id = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          ).run(location_id, req.user.id, entity_id);
+          addToHistory(
+            entity_type,
+            entity_id,
+            'linked_location',
+            { location_id },
+            req.user.id,
+            req.user.name,
+          );
+          linked++;
+        }
+      });
+      updateTx();
+
+      res.json({ success: true, linked });
+    } catch (error) {
+      logger.error('Annuaire bulk-link-locations:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });

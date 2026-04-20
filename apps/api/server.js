@@ -35,6 +35,7 @@ import {
   setupAnnuaireContactsRoutes,
   setupAnnuaireImportRoutes,
   setupAnnuaireLookupsRoutes,
+  setupAnnuaireMatchingRoutes,
   setupAnnuairePrestatairesRoutes,
   setupAnnuaireSearchRoutes,
   setupAnnuaireSuppliersRoutes,
@@ -329,6 +330,7 @@ setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin);
 setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin);
 setupAnnuaireSearchRoutes(app, authenticateToken);
 setupAnnuaireImportRoutes(app, authenticateToken, requireAdmin);
+setupAnnuaireMatchingRoutes(app, authenticateToken, requireAdmin);
 
 // Routes extraites de server.js — Phase 2 Refactoring
 setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev });

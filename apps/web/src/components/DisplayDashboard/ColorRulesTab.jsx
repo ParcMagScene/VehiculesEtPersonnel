@@ -30,6 +30,7 @@ const TASK_SECTIONS = [
   { key: 'installation', label: '🔧 Installation' },
   { key: 'montage', label: '🔩 Montage' },
   { key: 'demontage', label: '🔧 Démontage' },
+  { key: 'intervention', label: '🛠️ Intervention' },
   { key: 'taches_secondaires', label: '📋 Secondaire' },
   { key: 'manual', label: '✏️ Divers' },
 ];

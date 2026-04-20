@@ -26,16 +26,24 @@ import SwipeableRow from './SwipeableRow';
 
 const SECTIONS = {
   rdv: { label: 'Rendez-vous', emoji: '📅', color: STATUS_COLORS.info },
+  evenements: { label: 'Événements', emoji: '📌', color: '#64748b' },
+  taches_prioritaires: { label: 'Prioritaires', emoji: '🔴', color: STATUS_COLORS.danger },
   courses: { label: 'Courses', emoji: '🚗', color: STATUS_COLORS.warning },
   prep_locations: { label: 'Prép. Locations', emoji: '📦', color: ACCENT_COLORS.violet },
   prep_prestations: { label: 'Prép. Prestations', emoji: '🎤', color: ACCENT_COLORS.pink },
   prep_ventes: { label: 'Prép. Ventes', emoji: '🏷️', color: '#14b8a6' },
+  prep_installations: { label: 'Prép. Installations', emoji: '⚙️', color: '#8b5cf6' },
+  prep_tournees: { label: 'Prép. Tournées', emoji: '🚐', color: '#ec4899' },
   chargement: { label: 'Chargement', emoji: '📦', color: ACCENT_COLORS.indigo },
   depart: { label: 'Départ', emoji: '🚀', color: '#0ea5e9' },
+  enlevement: { label: 'Enlèvement', emoji: '📦', color: '#f59e0b' },
   installation: { label: 'Installation', emoji: '🛠️', color: STATUS_COLORS.success },
   montage: { label: 'Montage', emoji: '🔩', color: '#059669' },
   demontage: { label: 'Démontage', emoji: '🔧', color: STATUS_COLORS.warningDark },
-  taches_prioritaires: { label: 'Prioritaires', emoji: '🔴', color: STATUS_COLORS.danger },
+  intervention: { label: 'Intervention', emoji: '🛠️', color: '#0d9488' },
+  retour: { label: 'Retour', emoji: '↩️', color: '#8b5cf6' },
+  recuperation: { label: 'Récupération', emoji: '📥', color: '#ef4444' },
+  depot: { label: 'Dépôt', emoji: '🏠', color: '#6366f1' },
   taches_secondaires: { label: 'Secondaires', emoji: '🟡', color: ACCENT_COLORS.amber },
   manual: { label: 'Autres', emoji: '📋', color: STATUS_COLORS.neutralSoft },
 };
@@ -119,10 +127,10 @@ function MobileTasks({ currentUser, onBack }) {
     });
   };
 
-  // Grouper par section
+  // Grouper par section (fallback to 'manual' if section not in SECTIONS)
   const grouped = {};
   tasks.forEach((t) => {
-    const sec = t.section || 'manual';
+    const sec = t.section && SECTIONS[t.section] ? t.section : 'manual';
     if (!grouped[sec]) grouped[sec] = [];
     grouped[sec].push(t);
   });

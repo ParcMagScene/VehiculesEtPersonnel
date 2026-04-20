@@ -39,6 +39,7 @@ const SECTIONS = {
   installation: 'Installation',
   montage: 'Montage',
   demontage: 'Démontage',
+  intervention: 'Intervention',
   depot: 'Dépôt',
   prep_tournees: 'Préparations Tournées',
   evenements: 'Autres Événements',

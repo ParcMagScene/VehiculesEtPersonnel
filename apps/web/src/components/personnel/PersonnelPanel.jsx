@@ -1363,6 +1363,7 @@ const PlanningTab = ({
   const [collapsedSections, setCollapsedSections] = useState({
     permanents: false,
     nonPermanents: false,
+    inactifs: false,
   });
   const [selectedPersonForDetails, setSelectedPersonForDetails] = useState(null);
   const clickTimerRef = useRef(null);
@@ -1778,21 +1779,60 @@ const PlanningTab = ({
   // Déterminer si un jour est aujourd'hui
   const isToday = (day) => isSameDay(day, new Date());
 
-  const activePersons = persons.filter((p) => p.isActive !== false);
-
-  // Appliquer recherche et filtre
+  // Appliquer recherche et filtre sur tout le personnel (actif + inactif)
   const filteredPersons = useMemo(() => {
-    return activePersons.filter((p) => {
+    return persons.filter((p) => {
       const matchSearch =
         !planningSearch ||
         `${p.firstName} ${p.lastName}`.toLowerCase().includes(planningSearch.toLowerCase());
       const matchFilter = !planningFilter || p.type === planningFilter;
       return matchSearch && matchFilter;
     });
-  }, [activePersons, planningSearch, planningFilter]);
+  }, [persons, planningSearch, planningFilter]);
 
-  const permanents = filteredPersons.filter((p) => PERMANENT_TYPES.includes(p.type));
-  const nonPermanentsRaw = filteredPersons.filter((p) => NON_PERMANENT_TYPES.includes(p.type));
+  const isPersonInactive = useCallback(
+    (p) => p.status === STATUS.INACTIVE || p.isActive === false,
+    [],
+  );
+
+  // Stagiaires en période entreprise : traités comme permanents sur la période affichée
+  const enterpriseTraineeIds = useMemo(() => {
+    if (!days.length) return new Set();
+    const start = days[0];
+    const end = view === 'year' ? endOfMonth(days[days.length - 1]) : days[days.length - 1];
+    const ids = new Set();
+
+    (planningData.availabilities || []).forEach((avail) => {
+      if (avail.status === STATUS.REJECTED) return;
+      if ((avail.type || '').toLowerCase() !== 'entreprise') return;
+
+      try {
+        const aStart = parseISO(avail.start_date || avail.startDate);
+        const aEnd = parseISO(avail.end_date || avail.endDate);
+        if (aStart <= end && aEnd >= start) {
+          ids.add(avail.person_id || avail.personId);
+        }
+      } catch {
+        /* ignore */
+      }
+    });
+
+    return ids;
+  }, [planningData.availabilities, days, view]);
+
+  const activeFilteredPersons = filteredPersons.filter((p) => !isPersonInactive(p));
+  const inactivePersons = filteredPersons.filter((p) => isPersonInactive(p));
+
+  const permanents = activeFilteredPersons.filter(
+    (p) =>
+      PERMANENT_TYPES.includes(p.type) ||
+      (p.type === 'stagiaire' && enterpriseTraineeIds.has(p.id)),
+  );
+  const nonPermanentsRaw = activeFilteredPersons.filter(
+    (p) =>
+      NON_PERMANENT_TYPES.includes(p.type) &&
+      !(p.type === 'stagiaire' && enterpriseTraineeIds.has(p.id)),
+  );
 
   // Tri : favoris en haut des non-permanents
   const nonPermanents = useMemo(() => {
@@ -2464,7 +2504,7 @@ const PlanningTab = ({
         </Button>
       </div>
 
-      {activePersons.length === 0 ? (
+      {filteredPersons.length === 0 ? (
         <EmptyState
           icon={<CalendarDays size={48} />}
           title="Ajoutez du personnel pour afficher le planning"
@@ -2652,6 +2692,56 @@ const PlanningTab = ({
                       </span>
                     </div>
                   ))}
+
+                {/* Section Inactifs */}
+                {inactivePersons.length > 0 && (
+                  <div className="pp-section-header">
+                    <span>Inactifs</span>
+                    <Button
+                      variant="ghost"
+                      className="pp-section-toggle"
+                      onClick={() =>
+                        setCollapsedSections((prev) => ({
+                          ...prev,
+                          inactifs: !prev.inactifs,
+                        }))
+                      }
+                    >
+                      {collapsedSections.inactifs ? '▼' : '▲'}
+                    </Button>
+                  </div>
+                )}
+                {!collapsedSections.inactifs &&
+                  inactivePersons.map((person) => (
+                    <div
+                      key={person.id}
+                      className={`pp-person-cell u-cursor-pointer pp-person-inactive${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}`}
+                      onClick={() => {
+                        if (clickTimerRef.current) return;
+                        clickTimerRef.current = setTimeout(() => {
+                          clickTimerRef.current = null;
+                          setSelectedPersonForDetails(person);
+                        }, 250);
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        if (clickTimerRef.current) {
+                          clearTimeout(clickTimerRef.current);
+                          clickTimerRef.current = null;
+                        }
+                        onPersonEdit && onPersonEdit(person);
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenu({ x: e.clientX, y: e.clientY, person });
+                      }}
+                    >
+                      <span className="pp-person-name">
+                        {person.firstName} {person.lastName || ''}
+                      </span>
+                      <span className="pp-status-dot inactive">○ Inactif</span>
+                    </div>
+                  ))}
               </div>
 
               <div className="pp-scroll-area" ref={scrollAreaRef}>
@@ -2683,6 +2773,28 @@ const PlanningTab = ({
 
                   {/* Lignes Contractuels */}
                   {!collapsedSections.nonPermanents && nonPermanents.map(renderPersonRow)}
+
+                  {/* Séparateur Inactifs dans la grille */}
+                  {inactivePersons.length > 0 && (
+                    <div className="pp-section-separator" style={{ gridColumn: '1 / -1' }}>
+                      <span>Inactifs</span>
+                      <Button
+                        variant="ghost"
+                        className="pp-section-toggle"
+                        onClick={() =>
+                          setCollapsedSections((prev) => ({
+                            ...prev,
+                            inactifs: !prev.inactifs,
+                          }))
+                        }
+                      >
+                        {collapsedSections.inactifs ? '▼' : '▲'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Lignes Inactifs */}
+                  {!collapsedSections.inactifs && inactivePersons.map(renderPersonRow)}
                 </div>
               </div>
             </div>
@@ -2731,7 +2843,7 @@ const PlanningTab = ({
       {showLeaveModal && (
         <LeaveRequestForm
           person={showLeaveModal.person || null}
-          persons={activePersons}
+          persons={persons.filter((p) => !isPersonInactive(p))}
           isAdmin={!!currentUser?.isAdmin}
           currentUser={currentUser}
           onClose={() => setShowLeaveModal(null)}

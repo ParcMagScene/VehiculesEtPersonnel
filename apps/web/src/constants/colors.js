@@ -87,6 +87,7 @@ export const PLANNING_SECTIONS = {
   installation: { label: 'Installation', emoji: '🛠️', color: '#10b981', affaireOnly: true },
   montage: { label: 'Montage', emoji: '🔩', color: '#0891b2', affaireOnly: true },
   demontage: { label: 'Démontage', emoji: '🔧', color: '#dc2626', affaireOnly: true },
+  intervention: { label: 'Intervention', emoji: '🛠️', color: '#0d9488' },
   depot: { label: 'Dépôt', emoji: '🏠', color: '#6366f1' },
   taches_secondaires: { label: 'Tâches Secondaires', emoji: '🟡', color: '#f59e0b' },
   manual: { label: 'Autres', emoji: '📋', color: '#64748b' },

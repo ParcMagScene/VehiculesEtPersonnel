@@ -177,6 +177,160 @@ export function useInventory({ isAuthenticated, toast }) {
     toast?.success('Export JSON téléchargé');
   }, [toast]);
 
+  const exportPDF = useCallback(async () => {
+    const [items, categories] = await Promise.all([
+      api.getStockItems({ active_only: 'true' }),
+      api.getStockCategories(),
+    ]);
+
+    const categoryById = new Map(categories.map((c) => [Number(c.id), c]));
+
+    const resolveFamilyCategory = (item) => {
+      const catId = Number(item.category_id);
+      const cat = categoryById.get(catId);
+      if (!cat) return { family: 'Non classé', category: 'Non classé' };
+
+      if (cat.parent_id) {
+        const parent = categoryById.get(Number(cat.parent_id));
+        return {
+          family: parent?.name || cat.parent_name || 'Non classé',
+          category: cat.name || 'Non classé',
+        };
+      }
+
+      return { family: cat.name || 'Non classé', category: 'Non classé' };
+    };
+
+    const typeLabels = {
+      vente: 'Vente',
+      sav: 'SAV',
+      location: 'Location',
+      prestation: 'Prestation',
+      installation: 'Installation',
+    };
+
+    const groupedByReference = new Map();
+    for (const item of items) {
+      const reference = String(item.reference || '').trim();
+      const key = reference || `__no_ref__${item.id}`;
+      const { family, category } = resolveFamilyCategory(item);
+      const type = typeLabels[item.stock_type] || item.stock_type || 'Non défini';
+      const quantity = Number(item.quantity || 0);
+      const unitPrice = Number(item.unit_price || 0);
+      const row = groupedByReference.get(key);
+
+      if (!row) {
+        groupedByReference.set(key, {
+          reference: reference || 'Sans référence',
+          name: item.name || '',
+          family,
+          category,
+          type,
+          unit: item.unit || 'u',
+          quantity,
+          stockValue: quantity * unitPrice,
+        });
+        continue;
+      }
+
+      row.quantity += quantity;
+      row.stockValue += quantity * unitPrice;
+      if (!row.name && item.name) row.name = item.name;
+      if (row.family !== family) row.family = 'Mixte';
+      if (row.category !== category) row.category = 'Mixte';
+      if (row.type !== type) row.type = 'Mixte';
+      if (row.unit !== (item.unit || 'u')) row.unit = 'mixte';
+    }
+
+    const rows = Array.from(groupedByReference.values()).sort((a, b) => {
+      const familyCmp = a.family.localeCompare(b.family, 'fr', { sensitivity: 'base' });
+      if (familyCmp !== 0) return familyCmp;
+      const categoryCmp = a.category.localeCompare(b.category, 'fr', { sensitivity: 'base' });
+      if (categoryCmp !== 0) return categoryCmp;
+      const typeCmp = a.type.localeCompare(b.type, 'fr', { sensitivity: 'base' });
+      if (typeCmp !== 0) return typeCmp;
+      return a.reference.localeCompare(b.reference, 'fr', { sensitivity: 'base' });
+    });
+
+    const [{ jsPDF }, autoTableModule] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
+    const autoTable = autoTableModule.default;
+
+    const formatNumber = (value) =>
+      Number(value || 0).toLocaleString('fr-FR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+
+    const formatCurrency = (value) =>
+      Number(value || 0).toLocaleString('fr-FR', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 2,
+      });
+
+    const today = new Date();
+    const stamp = today.toISOString().slice(0, 10);
+    const humanDate = today.toLocaleDateString('fr-FR');
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    doc.setFontSize(14);
+    doc.text('Inventaire matériel — 1 ligne par référence', 14, 12);
+    doc.setFontSize(9);
+    doc.text(`Tri: Famille > Catégorie > Type | Généré le ${humanDate}`, 14, 18);
+
+    autoTable(doc, {
+      startY: 22,
+      head: [
+        [
+          'Famille',
+          'Catégorie',
+          'Type',
+          'Référence',
+          'Désignation',
+          'Qté',
+          'Unité',
+          'Valeur stock',
+        ],
+      ],
+      body: rows.map((r) => [
+        r.family,
+        r.category,
+        r.type,
+        r.reference,
+        r.name,
+        formatNumber(r.quantity),
+        r.unit,
+        formatCurrency(r.stockValue),
+      ]),
+      styles: { fontSize: 8, cellPadding: 1.6, valign: 'middle' },
+      headStyles: { fillColor: [17, 24, 39], textColor: 255, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 40 },
+        1: { cellWidth: 38 },
+        2: { cellWidth: 24 },
+        3: { cellWidth: 34 },
+        4: { cellWidth: 72 },
+        5: { halign: 'right', cellWidth: 18 },
+        6: { cellWidth: 18 },
+        7: { halign: 'right', cellWidth: 30 },
+      },
+      didDrawPage: (data) => {
+        const pageSize = doc.internal.pageSize;
+        const pageWidth = pageSize.getWidth();
+        const pageHeight = pageSize.getHeight();
+        doc.setFontSize(8);
+        doc.text(`Total références: ${rows.length}`, 14, pageHeight - 6);
+        doc.text(`Page ${data.pageNumber}`, pageWidth - 24, pageHeight - 6);
+      },
+    });
+
+    doc.save(`inventaire_${stamp}.pdf`);
+    toast?.success('Export PDF inventaire téléchargé');
+  }, [toast]);
+
   return {
     // State
     locations,
@@ -199,6 +353,7 @@ export function useInventory({ isAuthenticated, toast }) {
     runAbcClassification,
     refreshStats,
     exportCSV,
+    exportPDF,
     exportJSON,
   };
 }

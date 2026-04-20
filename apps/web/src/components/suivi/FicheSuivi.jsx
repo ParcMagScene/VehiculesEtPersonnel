@@ -4,7 +4,9 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import {
+  Calendar,
   Check,
+  ChevronDown,
   GripVertical,
   HelpCircle,
   Loader2,
@@ -14,7 +16,9 @@ import {
   Send,
   Trash2,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+
+import api from '../../utils/api';
 
 function newEntry(period = 'AM', sortOrder = 0) {
   return {
@@ -33,6 +37,11 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
   const [entries, setEntries] = useState([]);
   const [notes, setNotes] = useState('');
   const [dirty, setDirty] = useState(false);
+  // Planning task picker
+  const [planningTasks, setPlanningTasks] = useState([]);
+  const [showPicker, setShowPicker] = useState(null); // 'AM' | 'PM' | null
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const pickerRef = useRef(null);
 
   useEffect(() => {
     if (sheet) {
@@ -47,6 +56,57 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
       setDirty(false);
     }
   }, [sheet?.id, sheet?.modified_at]);
+
+  // Fetch unassigned planning tasks for this date
+  useEffect(() => {
+    if (!sheet?.date) return;
+    setLoadingTasks(true);
+    api
+      .getSuiviPlanningTasks(sheet.date)
+      .then((res) => setPlanningTasks(Array.isArray(res) ? res : res.tasks || []))
+      .catch(() => setPlanningTasks([]))
+      .finally(() => setLoadingTasks(false));
+  }, [sheet?.date]);
+
+  // Close picker on outside click
+  useEffect(() => {
+    if (!showPicker) return;
+    const handleClick = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        setShowPicker(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showPicker]);
+
+  const handlePickPlanningTask = useCallback(
+    (task, period) => {
+      const entry = {
+        _key:
+          crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
+        period,
+        task: task.title,
+        time_spent: 0,
+        comment: task.notes || '',
+        completed: null,
+        task_assignment_id: task.id,
+        sort_order: entries.length,
+      };
+      setEntries((prev) => [...prev, entry]);
+      setPlanningTasks((prev) => prev.filter((t) => t.id !== task.id));
+      setDirty(true);
+      setShowPicker(null);
+
+      // Affecter automatiquement la tâche au personnel de cette fiche
+      if (sheet?.person_id) {
+        api
+          .updateTask(task.id, { person_id: sheet.person_id })
+          .catch((e) => console.error('Erreur affectation tâche:', e));
+      }
+    },
+    [entries.length, sheet?.person_id],
+  );
 
   const handleEntryChange = useCallback((key, field, value) => {
     setEntries((prev) => prev.map((e) => (e._key === key ? { ...e, [field]: value } : e)));
@@ -176,35 +236,73 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
     </tr>
   );
 
-  const renderSection = (label, sectionEntries, period) => (
-    <div className="fiche-section">
-      <div className="fiche-section-header">
-        <h4>{label}</h4>
-        {!isValidated && (
-          <button className="fiche-add-btn" onClick={() => handleAddEntry(period)}>
-            <Plus size={14} /> Ajouter
-          </button>
+  const renderSection = (label, sectionEntries, period) => {
+    const availableTasks = planningTasks.filter(
+      (t) => !t.period || t.period === period || t.period === 'FULL',
+    );
+
+    return (
+      <div className="fiche-section">
+        <div className="fiche-section-header">
+          <h4>{label}</h4>
+          {!isValidated && (
+            <div className="fiche-section-actions">
+              <button className="fiche-add-btn" onClick={() => handleAddEntry(period)}>
+                <Plus size={14} /> Ajouter
+              </button>
+              {availableTasks.length > 0 && (
+                <div
+                  className="fiche-picker-wrapper"
+                  ref={showPicker === period ? pickerRef : null}
+                >
+                  <button
+                    className="fiche-add-btn fiche-add-btn-planning"
+                    onClick={() => setShowPicker(showPicker === period ? null : period)}
+                  >
+                    <Calendar size={14} /> Depuis planning
+                    <ChevronDown size={12} />
+                  </button>
+                  {showPicker === period && (
+                    <div className="fiche-picker-dropdown">
+                      {availableTasks.map((t) => (
+                        <button
+                          key={t.id}
+                          className="fiche-picker-item"
+                          onClick={() => handlePickPlanningTask(t, period)}
+                        >
+                          <span className="fiche-picker-title">{t.title}</span>
+                          {t.section && <span className="fiche-picker-section">{t.section}</span>}
+                          {t.time && <span className="fiche-picker-time">{t.time}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {loadingTasks && <Loader2 size={14} className="animate-spin" />}
+            </div>
+          )}
+        </div>
+        {sectionEntries.length > 0 ? (
+          <table className="fiche-table">
+            <thead>
+              <tr>
+                <th style={{ width: 30 }} />
+                <th>Tâche</th>
+                <th style={{ width: 70 }}>Temps (h)</th>
+                <th>Commentaire</th>
+                <th style={{ width: 50 }}>Fait</th>
+                <th style={{ width: 40 }} />
+              </tr>
+            </thead>
+            <tbody>{sectionEntries.map(renderEntryRow)}</tbody>
+          </table>
+        ) : (
+          <p className="fiche-empty">Aucune tâche pour cette période</p>
         )}
       </div>
-      {sectionEntries.length > 0 ? (
-        <table className="fiche-table">
-          <thead>
-            <tr>
-              <th style={{ width: 30 }} />
-              <th>Tâche</th>
-              <th style={{ width: 70 }}>Temps (h)</th>
-              <th>Commentaire</th>
-              <th style={{ width: 50 }}>Fait</th>
-              <th style={{ width: 40 }} />
-            </tr>
-          </thead>
-          <tbody>{sectionEntries.map(renderEntryRow)}</tbody>
-        </table>
-      ) : (
-        <p className="fiche-empty">Aucune tâche pour cette période</p>
-      )}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="fiche-suivi">

@@ -50,6 +50,23 @@ jobs:
       - name: Prettier (vérification)
         run: npm run format:check
 
+  # ─── Documentation ──────────────────────────────────
+  docs:
+    name: Documentation coherence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Vérifier la cohérence docs ↔ code
+        run: npm run docs:check
+
   # ─── Tests backend ────────────────────────────────────
   test-backend:
     name: Tests backend (node:test)
@@ -119,7 +136,7 @@ jobs:
   build:
     name: Build frontend
     runs-on: ubuntu-latest
-    needs: [lint, test-backend, test-frontend]
+    needs: [lint, docs, test-backend, test-frontend]
     steps:
       - uses: actions/checkout@v4
 

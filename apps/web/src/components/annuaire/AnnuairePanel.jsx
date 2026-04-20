@@ -44,6 +44,7 @@ import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import LocationsTab from './LocationsTab';
+import MatchingLocationsModal from './MatchingLocationsModal';
 
 // ═══ Constantes ═══
 const ENTITY_TABS = [
@@ -111,6 +112,8 @@ function AnnuairePanel({ currentUser }) {
   const [editingRef, setEditingRef] = useState(null);
   // Import CSV contacts
   const [showContactsImport, setShowContactsImport] = useState(false);
+  // Matching lieux
+  const [showMatching, setShowMatching] = useState(false);
   // Compteurs de version pour déclencher un refresh après CRUD
   const [dataVersion, setDataVersion] = useState(0);
   const [refVersion, setRefVersion] = useState(0);
@@ -439,6 +442,16 @@ function AnnuairePanel({ currentUser }) {
                   </Button>
                 </Tooltip>
               )}
+              {(activeTab === 'clients' ||
+                activeTab === 'suppliers' ||
+                activeTab === 'prestataires') &&
+                currentUser?.isAdmin && (
+                  <Tooltip content="Correspondances lieux ↔ entités" position="bottom">
+                    <Button variant="secondary" onClick={() => setShowMatching(true)}>
+                      <MapPin size={15} /> Lier lieux
+                    </Button>
+                  </Tooltip>
+                )}
               <Button
                 variant="primary"
                 onClick={() => {
@@ -638,6 +651,16 @@ function AnnuairePanel({ currentUser }) {
             loadStats();
           }}
           toast={toast}
+        />
+      )}
+
+      {showMatching && (
+        <MatchingLocationsModal
+          onClose={() => setShowMatching(false)}
+          onLinked={(count) => {
+            toast.success(`${count} entité(s) liée(s) à un lieu`);
+            setDataVersion((v) => v + 1);
+          }}
         />
       )}
     </div>
@@ -1258,8 +1281,20 @@ function EntityFormModal({
       notes: item?.notes || '',
       is_active: item?.is_active !== undefined ? item.is_active : 1,
       contact_name: item?.contact_name || '',
+      location_id: item?.location_id || '',
     };
   });
+
+  // Liste des lieux pour le sélecteur de liaison
+  const [locationsList, setLocationsList] = useState([]);
+  useEffect(() => {
+    if (!isContact) {
+      api
+        .getLocations()
+        .then((res) => setLocationsList(res || []))
+        .catch(() => {});
+    }
+  }, [isContact]);
 
   // Recherche d'entités pour le sélecteur de liaison contact
   const [entitySearch, setEntitySearch] = useState('');
@@ -1638,6 +1673,36 @@ function EntityFormModal({
                 />
               </FormField>
             </div>
+
+            <FormField className="form-group" label="Lieu lié">
+              <div className="form-row" style={{ gap: 8, alignItems: 'center' }}>
+                <Select
+                  style={{ flex: 1 }}
+                  value={form.location_id || ''}
+                  onChange={(e) =>
+                    handleChange('location_id', e.target.value ? Number(e.target.value) : null)
+                  }
+                >
+                  <option value="">— Aucun lieu —</option>
+                  {locationsList.map((l) => (
+                    <option key={l.id} value={l.id}>
+                      {l.name}
+                      {l.address ? ` — ${l.address}` : ''}
+                    </option>
+                  ))}
+                </Select>
+                {form.location_id && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleChange('location_id', null)}
+                    title="Délier"
+                  >
+                    <X size={14} />
+                  </Button>
+                )}
+              </div>
+            </FormField>
 
             <div className="form-row">
               <FormField className="form-group" label="Téléphone">

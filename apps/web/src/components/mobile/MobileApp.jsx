@@ -1,29 +1,6 @@
 import './MobileApp.css';
 
-import {
-  Briefcase,
-  Car,
-  ClipboardCheck,
-  ClipboardList,
-  Home,
-  LayoutGrid,
-  LogOut,
-  MapPin,
-  Menu,
-  MessageSquare,
-  Monitor,
-  Moon,
-  Music,
-  Package,
-  Palette,
-  Palmtree,
-  Settings,
-  ShoppingCart,
-  Sun,
-  Truck,
-  Users,
-  X,
-} from 'lucide-react';
+import { LayoutGrid, LogOut, MessageSquare, Monitor, Moon, Palette, Sun } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { BottomSheet, Button, Skeleton, Spinner } from '@/design-system';
@@ -35,8 +12,10 @@ import { PALETTES, useTheme } from '../../hooks/useTheme';
 import api from '../../utils/api';
 import MobileAffaires from './MobileAffaires';
 import MobileAvailability from './MobileAvailability';
+import MobileDashboardAdmin from './MobileDashboardAdmin';
 import MobileEquipment from './MobileEquipment';
 import MobileEquipmentQR from './MobileEquipmentQR';
+import MobileHeader from './MobileHeader';
 import MobileHome from './MobileHome';
 import MobileInventory from './MobileInventory';
 import MobileLeaves from './MobileLeaves';
@@ -51,6 +30,7 @@ import MobilePlanning from './MobilePlanning';
 import MobileQRLanding from './MobileQRLanding';
 import MobileReservations from './MobileReservations';
 import MobileSonos from './MobileSonos';
+import MobileSuivi from './MobileSuivi';
 import MobileTasks from './MobileTasks';
 
 function MobileApp({ onSwitchToDesktop }) {
@@ -66,9 +46,7 @@ function MobileApp({ onSwitchToDesktop }) {
   const [drivers, setDrivers] = useState([]);
   const [garages, setGarages] = useState([]);
   const { theme: _theme, isDark, toggleTheme, palette, setPalette } = useTheme();
-  const [showThemePanel, setShowThemePanel] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = !!currentUser?.isAdmin;
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [msgToast, setMsgToast] = useState(null);
@@ -228,46 +206,21 @@ function MobileApp({ onSwitchToDesktop }) {
 
   return (
     <div className="mobile-app">
-      {/* Header */}
-      <header className="mobile-header">
-        <Button
-          variant="ghost"
-          className="menu-toggle"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-          aria-pressed={menuOpen}
-          aria-expanded={menuOpen}
-        >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </Button>
-        <img src="/Logos/LogoEmagTransp.png" alt="eM@g" className="mobile-header-logo" />
-        <div className="user-info">
-          <Button
-            variant="ghost"
-            className="header-msg-btn"
-            onClick={() => {
-              setCurrentScreen('messaging');
-              currentScreenRef.current = 'messaging';
-            }}
-            aria-label="Messagerie"
-          >
-            <MessageSquare size={20} />
-            {unreadMsgCount > 0 && (
-              <span className="header-msg-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            className="user-initial"
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            aria-label="Menu utilisateur"
-          >
-            {currentUser?.name?.charAt(0)}
-          </Button>
-        </div>
-      </header>
+      {/* Header unifié */}
+      <MobileHeader
+        currentScreen={currentScreen}
+        onBack={goBack}
+        onHome={() => navigate('home')}
+        onMessaging={() => {
+          setCurrentScreen('messaging');
+          currentScreenRef.current = 'messaging';
+        }}
+        unreadMsgCount={unreadMsgCount}
+        currentUser={currentUser}
+        onUserMenu={() => setShowUserMenu(!showUserMenu)}
+      />
 
-      {/* User menu bottom-sheet */}
+      {/* User menu bottom-sheet (+ thème + actions) */}
       <BottomSheet open={showUserMenu} onClose={() => setShowUserMenu(false)} title="">
         <div className="mobile-sheet-user">
           <div className="mobile-sheet-avatar">{currentUser?.name?.charAt(0)}</div>
@@ -277,6 +230,33 @@ function MobileApp({ onSwitchToDesktop }) {
           </div>
         </div>
         <div className="mobile-sheet-actions">
+          {/* Thème */}
+          <div className="mobile-sheet-theme">
+            <Button variant="ghost" onClick={toggleTheme}>
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? 'Mode clair' : 'Mode sombre'}
+            </Button>
+            <div className="mobile-sheet-palette-grid">
+              {PALETTES.map((p) => {
+                const colors = isDark ? p.darkColors : p.colors;
+                return (
+                  <button
+                    key={p.id}
+                    className={`mobile-sheet-palette-btn ${palette === p.id ? 'active' : ''}`}
+                    onClick={() => setPalette(p.id)}
+                    title={p.name}
+                  >
+                    <span
+                      className="mobile-sheet-palette-dot"
+                      style={{
+                        background: `linear-gradient(135deg, ${colors.primary} 50%, ${colors.accent} 50%)`,
+                      }}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <Button
             variant="ghost"
             onClick={() => {
@@ -285,8 +265,20 @@ function MobileApp({ onSwitchToDesktop }) {
             }}
           >
             <LayoutGrid size={18} />
-            Changer d'utilisateur
+            Changer d&apos;utilisateur
           </Button>
+          {onSwitchToDesktop && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowUserMenu(false);
+                onSwitchToDesktop();
+              }}
+            >
+              <Monitor size={18} />
+              Version bureau
+            </Button>
+          )}
           <Button
             variant="ghost"
             className="danger"
@@ -300,280 +292,6 @@ function MobileApp({ onSwitchToDesktop }) {
           </Button>
         </div>
       </BottomSheet>
-
-      {/* Menu latéral */}
-      <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-        <div
-          className="menu-overlay"
-          onMouseDown={() => setMenuOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setMenuOpen(false);
-          }}
-        ></div>
-        <div className="menu-content">
-          <div className="menu-user">
-            <div className="menu-avatar">{currentUser?.name?.charAt(0)}</div>
-            <div className="menu-user-details">
-              <p className="menu-user-name">{currentUser?.name}</p>
-              <p className="menu-user-email">{currentUser?.email}</p>
-            </div>
-          </div>
-
-          <nav className="menu-nav" role="navigation" aria-label="Menu principal">
-            <Button
-              variant="ghost"
-              className={currentScreen === 'home' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('home');
-                setMenuOpen(false);
-              }}
-            >
-              <Home size={20} />
-              <span>Accueil</span>
-            </Button>
-
-            <div className="menu-section-label">Parc</div>
-            <Button
-              variant="ghost"
-              className={currentScreen === 'parc-dashboard' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('parc-dashboard');
-                setMenuOpen(false);
-              }}
-            >
-              <Truck size={20} />
-              <span>Tableau de bord</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={currentScreen === 'planning' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('planning');
-                setMenuOpen(false);
-              }}
-            >
-              <LayoutGrid size={20} />
-              <span>Planning</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={currentScreen === 'reservations' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('reservations');
-                setMenuOpen(false);
-              }}
-            >
-              <Car size={20} />
-              <span>Réservations</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={currentScreen === 'maintenances' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('maintenances');
-                setMenuOpen(false);
-              }}
-            >
-              <Settings size={20} />
-              <span>Interventions</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              className={currentScreen === 'affaires' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('affaires');
-                setMenuOpen(false);
-              }}
-            >
-              <Briefcase size={20} />
-              <span>Affaires</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={currentScreen === 'tasks' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('tasks');
-                setMenuOpen(false);
-              }}
-            >
-              <ClipboardList size={20} />
-              <span>Tâches du jour</span>
-            </Button>
-
-            <div className="menu-section-label">Équipe</div>
-            <Button
-              variant="ghost"
-              className={currentScreen === 'personnel' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('personnel');
-                setMenuOpen(false);
-              }}
-            >
-              <Users size={20} />
-              <span>Personnel</span>
-            </Button>
-            <Button
-              variant="ghost"
-              className={currentScreen === 'messaging' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('messaging');
-                setMenuOpen(false);
-              }}
-            >
-              <MessageSquare size={20} />
-              <span>Messagerie</span>
-              {unreadMsgCount > 0 && <span className="menu-badge">{unreadMsgCount}</span>}
-            </Button>
-
-            <div className="menu-section-label">Gestion</div>
-            {(isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance) && (
-              <Button
-                variant="ghost"
-                className={currentScreen === 'equipment' ? 'active' : ''}
-                onClick={() => {
-                  setCurrentScreen('equipment');
-                  setMenuOpen(false);
-                }}
-              >
-                <Package size={20} />
-                <span>Matériel & SAV</span>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              className={currentScreen === 'location' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('location');
-                setMenuOpen(false);
-              }}
-            >
-              <MapPin size={20} />
-              <span>Localisation</span>
-            </Button>
-            {(isAdmin || currentUser?.permissions?.canManageCatalog) && (
-              <Button
-                variant="ghost"
-                className={currentScreen === 'orders' ? 'active' : ''}
-                onClick={() => {
-                  setCurrentScreen('orders');
-                  setMenuOpen(false);
-                }}
-              >
-                <ShoppingCart size={20} />
-                <span>Commandes</span>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              className={currentScreen === 'leaves' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('leaves');
-                setMenuOpen(false);
-              }}
-            >
-              <Palmtree size={20} />
-              <span>Congés</span>
-            </Button>
-            {(isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance) && (
-              <Button
-                variant="ghost"
-                className={currentScreen === 'inventory' ? 'active' : ''}
-                onClick={() => {
-                  setCurrentScreen('inventory');
-                  setMenuOpen(false);
-                }}
-              >
-                <ClipboardCheck size={20} />
-                <span>Inventaire</span>
-              </Button>
-            )}
-
-            {/* ── Multimédia ── */}
-            <div className="menu-section-label">Multimédia</div>
-            <Button
-              variant="ghost"
-              className={currentScreen === 'sonos' ? 'active' : ''}
-              onClick={() => {
-                setCurrentScreen('sonos');
-                setMenuOpen(false);
-              }}
-            >
-              <Music size={20} />
-              <span>Sonos</span>
-            </Button>
-
-            {/* ── Thème ── */}
-            <div className="menu-section-label">Apparence</div>
-            <Button variant="ghost" onClick={() => setShowThemePanel(!showThemePanel)}>
-              <Palette size={20} />
-              <span>Thème & couleurs</span>
-              <span className="menu-theme-indicator">{isDark ? '🌙' : '☀️'}</span>
-            </Button>
-            {showThemePanel && (
-              <div className="menu-theme-panel">
-                <div className="menu-theme-mode">
-                  <Button
-                    variant="ghost"
-                    className={`menu-theme-mode-btn ${!isDark ? 'active' : ''}`}
-                    onClick={() => {
-                      if (isDark) toggleTheme();
-                    }}
-                  >
-                    <Sun size={16} /> Clair
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className={`menu-theme-mode-btn ${isDark ? 'active' : ''}`}
-                    onClick={() => {
-                      if (!isDark) toggleTheme();
-                    }}
-                  >
-                    <Moon size={16} /> Sombre
-                  </Button>
-                </div>
-                <div className="menu-palette-grid">
-                  {PALETTES.map((p) => {
-                    const colors = isDark ? p.darkColors : p.colors;
-                    return (
-                      <Button
-                        variant="ghost"
-                        key={p.id}
-                        className={`menu-palette-btn ${palette === p.id ? 'active' : ''}`}
-                        onClick={() => setPalette(p.id)}
-                        title={p.name}
-                      >
-                        <div className="menu-palette-preview">
-                          <div
-                            className="menu-palette-left"
-                            style={{ background: colors.primary }}
-                          />
-                          <div
-                            className="menu-palette-right"
-                            style={{ background: colors.accent }}
-                          />
-                        </div>
-                        <span>{p.name.replace('Flat ', '')}</span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </nav>
-
-          <Button variant="ghost" className="menu-logout" onClick={handleLogout}>
-            <LogOut size={20} />
-            <span>Se déconnecter</span>
-          </Button>
-          {onSwitchToDesktop && (
-            <Button variant="ghost" className="menu-desktop" onClick={onSwitchToDesktop}>
-              <Monitor size={20} />
-              <span>Version bureau</span>
-            </Button>
-          )}
-        </div>
-      </div>
 
       {/* Contenu principal */}
       <main className="mobile-content" {...swipeBackProps}>
@@ -723,6 +441,14 @@ function MobileApp({ onSwitchToDesktop }) {
 
         {currentScreen === 'sonos' && (
           <MobileSonos currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+        )}
+
+        {currentScreen === 'suivi' && (
+          <MobileSuivi currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+        )}
+
+        {currentScreen === 'dashboard-admin' && isAdmin && (
+          <MobileDashboardAdmin currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
         )}
       </main>
 

@@ -20,6 +20,8 @@ const ROUTES = {
   inventory: '/mobile/inventory',
   location: '/mobile/location',
   sonos: '/mobile/sonos',
+  suivi: '/mobile/suivi',
+  'dashboard-admin': '/mobile/dashboard-admin',
 };
 
 const REVERSE = Object.fromEntries(Object.entries(ROUTES).map(([s, p]) => [p, s]));
@@ -31,6 +33,8 @@ const BACK_TARGET = {
   maintenances: 'parc-dashboard',
   availability: 'parc-dashboard',
   'equipment-qr': 'equipment',
+  suivi: 'home',
+  'dashboard-admin': 'home',
 };
 
 /**

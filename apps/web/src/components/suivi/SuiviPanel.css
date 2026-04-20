@@ -482,6 +482,79 @@
   color: var(--accent-color, #60a5fa);
 }
 
+/* Section actions wrapper */
+.fiche-section-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Planning picker */
+.fiche-add-btn-planning {
+  border-style: solid;
+  border-color: var(--accent-color, #60a5fa);
+  color: var(--accent-color, #60a5fa);
+  opacity: 0.8;
+}
+.fiche-add-btn-planning:hover {
+  opacity: 1;
+}
+.fiche-picker-wrapper {
+  position: relative;
+}
+.fiche-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 50;
+  min-width: 260px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 4px;
+  padding: 4px;
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--border-color, #475569);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.fiche-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-primary, #e2e8f0);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.fiche-picker-item:hover {
+  background: var(--bg-tertiary, #334155);
+}
+.fiche-picker-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fiche-picker-section {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-secondary, #1e293b);
+  color: var(--text-secondary, #94a3b8);
+  font-size: 10px;
+  text-transform: capitalize;
+}
+.fiche-picker-time {
+  color: var(--text-tertiary, #64748b);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
 /* Table */
 .fiche-table {
   width: 100%;

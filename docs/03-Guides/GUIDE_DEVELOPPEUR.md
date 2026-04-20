@@ -104,10 +104,10 @@ eM@g/                           # Monorepo
 ├── apps/
 │   ├── api/                    # ══ BACKEND EXPRESS ══
 │   │   ├── server.js           # Point d'entrée Express
-│   │   ├── database.js         # SQLite ~92 tables + index
+│   │   ├── database.js         # SQLite (initialisation + migrations runtime)
 │   │   ├── config/             # Helmet, CORS, rate limiters
 │   │   ├── middleware/         # Auth JWT, authorize, sanitize, upload, errorHandler
-│   │   ├── *Routes.js          # ~15 fichiers de routes API
+│   │   ├── *Routes.js          # ~25 fichiers/modules de routes API
 │   │   ├── cache.js            # Cache LRU/TTL
 │   │   ├── emailService.js     # Service email
 │   │   ├── migrations.js       # Migrations DB

@@ -235,10 +235,13 @@ function buildSynthese(dates, personId) {
 
 const PDF_MARGIN = 40;
 const PDF_TABLE_LEFT = 40;
-const PDF_COL_WIDTHS = [30, 200, 55, 160, 70]; // N, Tache, Temps, Commentaire, Fait
+const PDF_COL_WIDTHS = [24, 250, 48, 145, 48]; // N, Tache, Temps, Commentaire, Fait
 const PDF_TABLE_WIDTH = PDF_COL_WIDTHS.reduce((a, b) => a + b, 0);
 const PDF_HEADERS = ['N.', 'Tache', 'Temps (h)', 'Commentaire', 'Fait'];
-const PDF_ROW_H = 22;
+const PDF_ROW_MIN_H = 22;
+const PDF_TEXT_PADDING_X = 4;
+const PDF_TEXT_PADDING_Y = 5;
+const PDF_TABLE_BOTTOM = 760;
 const PDF_WATERMARK_COLOR = '#e0e4e8';
 
 // ─── Helpers PDF communs ───
@@ -280,71 +283,110 @@ function drawPdfTableHeader(doc, y) {
   return y + 20;
 }
 
-function drawPdfEntryRow(doc, entry, rowNum, y) {
+function getPdfEntryRowHeight(doc, entry) {
+  const taskWidth = PDF_COL_WIDTHS[1] - PDF_TEXT_PADDING_X * 2;
+  const commentWidth = PDF_COL_WIDTHS[3] - PDF_TEXT_PADDING_X * 2;
+
+  doc.font('Helvetica').fontSize(8);
+
+  const taskLines = doc.heightOfString(entry.task || '', {
+    width: taskWidth,
+    align: 'left',
+  });
+  const commentLines = doc.heightOfString(entry.comment || '', {
+    width: commentWidth,
+    align: 'left',
+  });
+
+  const lineHeight = doc.currentLineHeight(true);
+  const taskHeight = Math.max(lineHeight, Math.ceil(taskLines));
+  const commentHeight = Math.max(lineHeight, Math.ceil(commentLines));
+
+  return Math.max(
+    PDF_ROW_MIN_H,
+    Math.ceil(taskHeight + PDF_TEXT_PADDING_Y * 2 + 2),
+    Math.ceil(commentHeight + PDF_TEXT_PADDING_Y * 2 + 2),
+  );
+}
+
+function drawPdfEntryRow(doc, entry, rowNum, y, rowHeight) {
   const bgColor = entry.completed === 1 ? '#f0fdf4' : '#ffffff';
-  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, PDF_ROW_H).fillColor(bgColor).fill();
+  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, rowHeight).fillColor(bgColor).fill();
 
   doc.lineWidth(0.5).strokeColor('#cbd5e1');
-  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, PDF_ROW_H).stroke();
+  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, rowHeight).stroke();
   let x = PDF_TABLE_LEFT;
   for (let i = 0; i < PDF_COL_WIDTHS.length - 1; i++) {
     x += PDF_COL_WIDTHS[i];
     doc
       .moveTo(x, y)
-      .lineTo(x, y + PDF_ROW_H)
+      .lineTo(x, y + rowHeight)
       .stroke();
   }
 
   doc.fillColor('#111111').font('Helvetica').fontSize(8);
   x = PDF_TABLE_LEFT;
-  doc.text(String(rowNum), x + 2, y + 7, { width: PDF_COL_WIDTHS[0] - 4, align: 'center' });
+  doc.text(String(rowNum), x + 2, y + PDF_TEXT_PADDING_Y, {
+    width: PDF_COL_WIDTHS[0] - 4,
+    align: 'center',
+  });
   x += PDF_COL_WIDTHS[0];
 
-  const taskText = entry.task || '';
-  doc.text(taskText.substring(0, 70), x + 4, y + 7, { width: PDF_COL_WIDTHS[1] - 8 });
+  doc.text(entry.task || '', x + PDF_TEXT_PADDING_X, y + PDF_TEXT_PADDING_Y, {
+    width: PDF_COL_WIDTHS[1] - PDF_TEXT_PADDING_X * 2,
+    align: 'left',
+    lineBreak: true,
+  });
   x += PDF_COL_WIDTHS[1];
 
-  doc.text(entry.time_spent ? String(entry.time_spent) : '-', x + 2, y + 7, {
+  doc.text(entry.time_spent ? String(entry.time_spent) : '-', x + 2, y + PDF_TEXT_PADDING_Y, {
     width: PDF_COL_WIDTHS[2] - 4,
     align: 'center',
   });
   x += PDF_COL_WIDTHS[2];
 
-  doc.text((entry.comment || '').substring(0, 50), x + 4, y + 7, {
-    width: PDF_COL_WIDTHS[3] - 8,
+  doc.text(entry.comment || '', x + PDF_TEXT_PADDING_X, y + PDF_TEXT_PADDING_Y, {
+    width: PDF_COL_WIDTHS[3] - PDF_TEXT_PADDING_X * 2,
+    align: 'left',
+    lineBreak: true,
   });
   x += PDF_COL_WIDTHS[3];
 
-  doc.text(entry.completed === 1 ? 'Oui' : entry.completed === 0 ? 'Non' : '', x + 2, y + 7, {
-    width: PDF_COL_WIDTHS[4] - 4,
-    align: 'center',
-  });
+  doc.text(
+    entry.completed === 1 ? 'Oui' : entry.completed === 0 ? 'Non' : '',
+    x + 2,
+    y + PDF_TEXT_PADDING_Y,
+    {
+      width: PDF_COL_WIDTHS[4] - 4,
+      align: 'center',
+    },
+  );
 }
 
 function drawPdfWatermarkRows(doc, startY, maxY) {
   let y = startY;
   let rowNum = 0;
-  while (y + PDF_ROW_H <= maxY) {
+  while (y + PDF_ROW_MIN_H <= maxY) {
     rowNum++;
     doc.lineWidth(0.3).strokeColor(PDF_WATERMARK_COLOR);
-    doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, PDF_ROW_H).stroke();
+    doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, PDF_ROW_MIN_H).stroke();
 
     let x = PDF_TABLE_LEFT;
     for (let i = 0; i < PDF_COL_WIDTHS.length - 1; i++) {
       x += PDF_COL_WIDTHS[i];
       doc
         .moveTo(x, y)
-        .lineTo(x, y + PDF_ROW_H)
+        .lineTo(x, y + PDF_ROW_MIN_H)
         .stroke();
     }
 
     doc.fillColor(PDF_WATERMARK_COLOR).font('Helvetica').fontSize(7);
-    doc.text(String(rowNum), PDF_TABLE_LEFT + 2, y + 7, {
+    doc.text(String(rowNum), PDF_TABLE_LEFT + 2, y + PDF_TEXT_PADDING_Y, {
       width: PDF_COL_WIDTHS[0] - 4,
       align: 'center',
     });
 
-    y += PDF_ROW_H;
+    y += PDF_ROW_MIN_H;
   }
   return y;
 }
@@ -385,13 +427,14 @@ function drawPdfFooter(doc, entries, label) {
 function renderNormalEntries(doc, entries, startY) {
   let y = startY;
   for (let i = 0; i < entries.length; i++) {
-    if (y + PDF_ROW_H > 760) {
+    const rowHeight = getPdfEntryRowHeight(doc, entries[i]);
+    if (y + rowHeight > PDF_TABLE_BOTTOM) {
       drawPdfFooter(doc, entries.slice(0, i), 'Suite page suivante');
       doc.addPage();
       y = drawPdfTableHeader(doc, PDF_MARGIN);
     }
-    drawPdfEntryRow(doc, entries[i], i + 1, y);
-    y += PDF_ROW_H;
+    drawPdfEntryRow(doc, entries[i], i + 1, y, rowHeight);
+    y += rowHeight;
   }
   return y;
 }
@@ -446,12 +489,13 @@ function renderPrintHalfDayPage(doc, sheet, entries, subtitle) {
   let y = drawPdfTableHeader(doc, doc.y);
 
   for (let i = 0; i < entries.length; i++) {
-    if (y + PDF_ROW_H > 760) break;
-    drawPdfEntryRow(doc, entries[i], i + 1, y);
-    y += PDF_ROW_H;
+    const rowHeight = getPdfEntryRowHeight(doc, entries[i]);
+    if (y + rowHeight > PDF_TABLE_BOTTOM) break;
+    drawPdfEntryRow(doc, entries[i], i + 1, y, rowHeight);
+    y += rowHeight;
   }
 
-  drawPdfWatermarkRows(doc, y, 760);
+  drawPdfWatermarkRows(doc, y, PDF_TABLE_BOTTOM);
   drawPdfFooter(doc, entries, subtitle);
 }
 
@@ -663,6 +707,36 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       res.json(persons);
     } catch (error) {
       logger.error('GET /api/suivi/personnel error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── GET /api/suivi/planning-tasks/:date ─── Tâches planifiées du jour non encore affectées à du personnel
+  app.get('/api/suivi/planning-tasks/:date', authenticateToken, (req, res) => {
+    try {
+      const { date } = req.params;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ success: false, error: 'Format date invalide' });
+      }
+
+      // Tâches du jour qui ne sont pas déjà liées à une entrée de suivi
+      const tasks = db
+        .prepare(
+          `SELECT ta.id, ta.title, ta.section, ta.period, ta.time, ta.end_time,
+                  ta.affaire_num, ta.notes, ta.status, ta.google_event_title
+           FROM task_assignments ta
+           WHERE ta.date = ? AND ta.deleted_at IS NULL
+             AND ta.id NOT IN (
+               SELECT te.task_assignment_id FROM tracking_entries te
+               WHERE te.task_assignment_id IS NOT NULL
+             )
+           ORDER BY ta.period ASC, ta.time ASC, ta.section ASC`,
+        )
+        .all(date);
+
+      res.json(tasks);
+    } catch (error) {
+      logger.error('GET /api/suivi/planning-tasks error:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });

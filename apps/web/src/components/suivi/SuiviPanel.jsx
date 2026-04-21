@@ -63,11 +63,11 @@ function SuiviPanel({ currentUser, initialPersonId }) {
 
   // Groupes de personnel
   const permanents = useMemo(
-    () => personnel.filter((p) => p.type === 'permanent' || p.type === 'apprenti'),
+    () => personnel.filter((p) => ['permanent', 'apprenti', 'stagiaire'].includes(p.type)),
     [personnel],
   );
   const nonPermanents = useMemo(
-    () => personnel.filter((p) => p.type !== 'permanent' && p.type !== 'apprenti'),
+    () => personnel.filter((p) => !['permanent', 'apprenti', 'stagiaire'].includes(p.type)),
     [personnel],
   );
 
@@ -346,11 +346,11 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                       {permanents.map((p) => renderPersonItem(p))}
                     </div>
                   )}
-                  {/* Groupe Contractuels / Stagiaires */}
+                  {/* Groupe Contractuels */}
                   {nonPermanents.length > 0 && (
                     <div className="suivi-group">
                       <div className="suivi-group-header">
-                        Contractuels / Stagiaires ({nonPermanents.length})
+                        Contractuels ({nonPermanents.length})
                       </div>
                       {nonPermanents.map((p) => renderPersonItem(p))}
                     </div>

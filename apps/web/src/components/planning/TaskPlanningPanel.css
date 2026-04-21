@@ -95,7 +95,7 @@
 /* Bouton principal "Nouvelle tâche" */
 .task-planning-panel .btn-add-task-main {
   background: var(--primary, var(--theme-info)) !important;
-  color: var(--theme-bg-card) !important;
+  color: var(--text-inverse) !important;
   border-color: var(--primary, var(--theme-info)) !important;
 }
 .task-planning-panel .btn-add-task-main:hover {
@@ -123,13 +123,13 @@
   position: sticky;
   top: 0;
   z-index: var(--z-dropdown);
-  background: var(--theme-bg-page);
-  border-bottom: 2px solid var(--theme-border);
+  background: var(--surface-page);
+  border-bottom: 2px solid var(--border-default);
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 .task-planning-panel .tp-columns-header .ev-col-h {
   padding: 0 8px;
@@ -149,7 +149,7 @@
 .task-planning-panel .tp-columns-header .ev-col-h-nom {
   flex: 1 1 180px;
   min-width: 140px;
-  border-left: 1px solid var(--theme-border);
+  border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-client {
@@ -164,14 +164,14 @@
 .task-planning-panel .tp-columns-header .ev-col-h-time {
   width: 140px;
   flex: 0 0 140px;
-  border-left: 1px solid var(--theme-border);
+  border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-actions {
   width: 160px;
   flex: 0 0 160px;
   padding-left: 8px;
-  border-left: 1px solid var(--theme-border);
+  border-left: 1px solid var(--border-default);
   text-align: center;
 }
 
@@ -185,10 +185,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   border-radius: var(--radius-md-lg) var(--radius-md-lg) 0 0;
-  border: 1px solid var(--theme-border);
-  border-bottom: 2px solid var(--theme-border);
+  border: 1px solid var(--border-default);
+  border-bottom: 2px solid var(--border-default);
   transition: background 0.15s;
 }
 
@@ -199,7 +199,7 @@
   margin: 0;
   font-size: 0.88rem;
   font-weight: 700;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .task-planning-panel .section-header .section-count {
@@ -207,8 +207,8 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--radius-md-lg);
-  background: var(--theme-primary);
-  color: var(--theme-bg-card);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   margin-right: auto;
   margin-left: 8px;
 }
@@ -219,7 +219,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-top: none;
   transition: background 0.1s;
 }
@@ -229,14 +229,14 @@
 }
 
 .task-planning-panel .task-row:hover {
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .task-planning-panel .task-status-btn {
   width: 24px;
   height: 24px;
   border-radius: var(--radius-full);
-  border: 2px solid var(--theme-border);
+  border: 2px solid var(--border-default);
   background: transparent;
   cursor: pointer;
   display: flex;
@@ -249,7 +249,7 @@
 .task-planning-panel .task-status-btn.done {
   border-color: var(--theme-success-alt);
   background: var(--theme-success-alt);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .task-planning-panel .task-status-btn.in-progress {
@@ -266,7 +266,7 @@
 .task-planning-panel .task-title {
   font-size: 1.05rem;
   font-weight: 600;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .task-planning-panel .task-title.done {
@@ -276,7 +276,7 @@
 
 .task-planning-panel .task-subtitle {
   font-size: 0.92rem;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   font-style: italic;
   margin-top: 1px;
   white-space: nowrap;
@@ -290,7 +290,7 @@
   align-items: center;
   gap: 10px;
   font-size: var(--font-base);
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -307,7 +307,7 @@
   padding: 3px 10px;
   border-radius: var(--radius-lg);
   background: var(--accent-tint-light);
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   font-size: 0.92rem;
   font-weight: 600;
   flex-shrink: 0;

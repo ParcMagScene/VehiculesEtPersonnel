@@ -36,7 +36,7 @@
   padding: 6px 14px;
   border: none;
   background: transparent;
-  color: var(--text-muted, var(--theme-neutral));
+  color: var(--text-muted, var(--text-muted));
   cursor: pointer;
   font-size: var(--font-base);
   border-radius: var(--radius-sm);

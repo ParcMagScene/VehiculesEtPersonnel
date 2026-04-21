@@ -555,7 +555,7 @@
   border-left: 3px solid var(--theme-danger);
 }
 .lt-request-card.cancelled {
-  border-left: 3px solid var(--theme-text-gray);
+  border-left: 3px solid var(--text-muted);
 }
 
 .lt-card-main {
@@ -680,7 +680,7 @@
 }
 .lt-action-btn.yes {
   background: var(--theme-danger);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   border-color: var(--theme-danger);
 }
 .lt-action-btn.no {

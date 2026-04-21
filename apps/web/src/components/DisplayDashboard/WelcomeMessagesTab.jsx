@@ -140,7 +140,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
           />
         </div>
         <div className="dtv-form-row">
-          <div className="dtv-form-group" style={{ flex: 1 }}>
+          <div className="dtv-form-group dtv-form-group-fill">
             <label>Durée d'affichage</label>
             <Select value={sneakyDuration} onChange={(e) => setSneakyDuration(e.target.value)}>
               {DURATION_OPTIONS.map((d) => (
@@ -154,7 +154,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
             variant="primary"
             size="sm"
             onClick={handleActivateSneaky}
-            style={{ alignSelf: 'flex-end' }}
+            className="dtv-align-end"
           >
             <Zap size={14} /> Activer
           </Button>

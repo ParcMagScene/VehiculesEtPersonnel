@@ -427,7 +427,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
         />
         <p className="dtv-hint">Entrez l'adresse IP de votre enceinte Sonos sur le réseau local.</p>
         <div className="dtv-form-row">
-          <div className="dtv-form-group" style={{ flex: 1 }}>
+          <div className="dtv-form-group dtv-form-group-fill">
             <label>Adresse IP Sonos</label>
             <Input
               type="text"
@@ -436,12 +436,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
               placeholder="192.168.1.xxx"
             />
           </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleSave}
-            style={{ alignSelf: 'flex-end' }}
-          >
+          <Button variant="primary" size="sm" onClick={handleSave} className="dtv-align-end">
             Enregistrer
           </Button>
         </div>
@@ -455,13 +450,16 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
             icon={<Layers size={16} />}
             title={`Zones (${zones.length})`}
             action={
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
                 className="dtv-sonos-btn dtv-sonos-btn-sm"
+                aria-label={zonesOpen ? 'Masquer les zones' : 'Afficher les zones'}
                 onClick={() => setZonesOpen((o) => !o)}
               >
                 {zonesOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
+              </Button>
             }
           />
           {zonesOpen && (
@@ -492,7 +490,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
             Monitoring temps réel (5s)
           </label>
         </div>
-        <Button variant="secondary" size="sm" onClick={handleRefresh} style={{ marginBottom: 12 }}>
+        <Button variant="secondary" size="sm" onClick={handleRefresh} className="dtv-btn-mb-sm">
           <RefreshCw size={14} /> Rafraîchir
         </Button>
 

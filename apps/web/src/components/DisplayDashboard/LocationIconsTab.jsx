@@ -297,7 +297,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
             variant="secondary"
             size="sm"
             onClick={() => setShowMosaic(null)}
-            style={{ marginTop: 12, width: '100%' }}
+            className="dtv-btn-block mt-12"
           >
             <X size={14} /> Annuler
           </Button>

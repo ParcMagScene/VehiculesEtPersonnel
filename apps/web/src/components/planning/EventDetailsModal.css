@@ -1040,6 +1040,12 @@ section h3 {
   transform: translateX(4px);
 }
 
+.event-details-modal .attachment-item.clickable:focus-visible,
+.event-details-modal .folder-file-card:focus-visible {
+  outline: 2px solid var(--theme-border-focus);
+  outline-offset: 2px;
+}
+
 /* Label comme bouton */
 label.btn-open-folder,
 label.btn-primary {

@@ -753,7 +753,16 @@ function EventDetailsModal({
                   <div
                     key={index}
                     className="attachment-item clickable"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleFileClick(file)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleFileClick(file);
+                      }
+                    }}
+                    aria-label={`Prévisualiser ${file.name}`}
                     title="Cliquer pour prévisualiser"
                   >
                     <FileText size={16} />
@@ -959,10 +968,20 @@ function EventDetailsModal({
                   <div
                     key={index}
                     className="folder-file-card"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       setShowFolderView(false);
                       handleFileClick(file);
                     }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowFolderView(false);
+                        handleFileClick(file);
+                      }
+                    }}
+                    aria-label={`Ouvrir ${file.name}`}
                   >
                     <Button
                       variant="ghost"

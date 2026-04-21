@@ -566,7 +566,7 @@ const PlanningDayView = React.memo(function PlanningDayView({
         <PlanningDaySection sectionKey="rdv" {...sectionProps} />
       </div>
 
-      <Divider label="Opérations & Tâches" style={{ margin: '18px 0 14px' }} />
+      <Divider label="Opérations & Tâches" className="sections-divider" />
       <div className="sections-group sections-ops-group">
         {OPS_SECTION_KEYS.map((key) => (
           <PlanningDaySection key={key} sectionKey={key} {...sectionProps} />

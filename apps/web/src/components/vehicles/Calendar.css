@@ -1321,7 +1321,7 @@
 }
 
 /* Responsive */
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .vehicle-cell {
     padding: 0.75rem;
   }

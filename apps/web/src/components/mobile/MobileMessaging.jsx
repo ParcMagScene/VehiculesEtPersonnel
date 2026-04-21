@@ -157,14 +157,16 @@ function MobileMessaging({ currentUser, onBack }) {
     }, 800);
   }, []);
 
-  const loadMessages = useCallback(async (convId) => {
+  const loadMessages = useCallback(async (convId, { markAsRead = true } = {}) => {
     try {
       const data = await api.getMessages(convId);
       setMessages(data);
-      await api.markConversationRead(convId);
-      setConversations((prev) =>
-        prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c)),
-      );
+      if (markAsRead) {
+        await api.markConversationRead(convId);
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c)),
+        );
+      }
     } catch (err) {
       console.error('Erreur chargement messages:', err);
     }
@@ -282,7 +284,8 @@ function MobileMessaging({ currentUser, onBack }) {
               );
               scheduleMarkConversationRead(currentConv.id);
             } else {
-              await loadMessages(currentConv.id);
+              await loadMessages(currentConv.id, { markAsRead: false });
+              scheduleMarkConversationRead(currentConv.id);
             }
           }
         } catch {
@@ -369,7 +372,7 @@ function MobileMessaging({ currentUser, onBack }) {
     pollRef.current = setInterval(() => {
       scheduleConversationsRefresh(true);
       if (activeConversation) {
-        loadMessages(activeConversation.id).catch(() => {
+        loadMessages(activeConversation.id, { markAsRead: false }).catch(() => {
           // silencieux
         });
       }
@@ -457,7 +460,7 @@ function MobileMessaging({ currentUser, onBack }) {
       const conv = refreshedConversations.find((c) => c.id === result.id);
       if (conv) {
         setActiveConversation(conv);
-        await loadMessages(conv.id);
+        await loadMessages(conv.id, { markAsRead: false });
       }
     } catch (err) {
       console.error('Erreur création conversation:', err);

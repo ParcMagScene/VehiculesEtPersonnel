@@ -385,7 +385,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
         params.push(before);
       }
 
-      query += ' ORDER BY m.created_at DESC LIMIT ?';
+      // Pagination par curseur basée sur l'id: tri cohérent et plus efficace.
+      query += ' ORDER BY m.id DESC LIMIT ?';
       params.push(limit);
 
       const messages = db.prepare(query).all(...params);

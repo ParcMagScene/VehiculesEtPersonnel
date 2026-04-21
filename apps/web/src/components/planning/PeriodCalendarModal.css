@@ -44,7 +44,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .pcm-header-info {
@@ -76,7 +76,7 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--close-btn-hover-bg);
   background: var(--close-btn-bg);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -177,23 +177,23 @@
 
 .pcm-cal-day.today {
   font-weight: 800;
-  box-shadow: inset 0 0 0 2px var(--theme-info);
+  box-shadow: inset 0 0 0 2px var(--feedback-info);
 }
 
 .pcm-cal-day.in-range {
-  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 12%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--feedback-info)) 12%, transparent);
   border-radius: 0;
 }
 
 .pcm-cal-day.range-start {
-  background: var(--range-color, var(--theme-info));
+  background: var(--range-color, var(--feedback-info));
   color: var(--text-inverse);
   font-weight: 700;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
 .pcm-cal-day.range-end {
-  background: var(--range-color, var(--theme-info));
+  background: var(--range-color, var(--feedback-info));
   color: var(--text-inverse);
   font-weight: 700;
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
@@ -205,7 +205,7 @@
 
 /* Périodes déjà enregistrées */
 .pcm-cal-day.saved {
-  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 22%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--feedback-info)) 22%, transparent);
   border-radius: 0;
   position: relative;
 }
@@ -219,18 +219,18 @@
   width: 4px;
   height: 4px;
   border-radius: var(--radius-full);
-  background: var(--range-color, var(--theme-info));
+  background: var(--range-color, var(--feedback-info));
   opacity: 0.7;
 }
 
 /* Quand saved + in-range, la sélection active prime */
 .pcm-cal-day.saved.in-range {
-  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 12%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--feedback-info)) 12%, transparent);
 }
 
 .pcm-cal-day.saved.range-start,
 .pcm-cal-day.saved.range-end {
-  background: var(--range-color, var(--theme-info));
+  background: var(--range-color, var(--feedback-info));
   color: var(--text-inverse);
 }
 
@@ -276,7 +276,7 @@
 }
 
 .pcm-period-toggle button.active {
-  background: var(--theme-info);
+  background: var(--feedback-info);
   color: var(--text-inverse);
 }
 
@@ -315,7 +315,7 @@
 }
 
 .pcm-reason input:focus {
-  border-color: var(--theme-info);
+  border-color: var(--feedback-info);
   box-shadow: var(--focus-ring);
 }
 
@@ -324,12 +324,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--theme-warning-bg);
-  border: 1px solid var(--theme-warning-border);
+  background: var(--feedback-warning-bg);
+  border: 1px solid var(--feedback-warning-border);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-warning-text);
+  color: var(--feedback-warning-text);
 }
 
 .pcm-approval-notice {
@@ -337,12 +337,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--theme-info-bg);
-  border: 1px solid var(--theme-info-border);
+  background: var(--feedback-info-bg);
+  border: 1px solid var(--feedback-info-border);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-info-dark);
+  color: var(--feedback-info-text);
 }
 
 .pcm-error {
@@ -350,12 +350,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--theme-danger-bg);
-  border: 1px solid var(--btn-danger-hover-bg);
+  background: var(--feedback-error-bg);
+  border: 1px solid var(--feedback-error-border);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-danger-dark);
+  color: var(--feedback-error-text);
 }
 
 .pcm-success-banner {
@@ -364,12 +364,12 @@
   gap: 8px;
   padding: 10px 14px;
   margin: 0 20px 12px;
-  background: var(--theme-success-bg);
-  border: 1px solid var(--theme-success-border);
+  background: var(--feedback-success-bg);
+  border: 1px solid var(--feedback-success-border);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-success-text-alt);
+  color: var(--feedback-success-text);
   animation: fadeIn 0.2s ease;
 }
 
@@ -535,6 +535,6 @@
 
 .pcm-google-warn {
   font-size: var(--font-xs);
-  color: var(--theme-warning-text, var(--theme-warning));
+  color: var(--feedback-warning-text, var(--feedback-warning));
   margin-left: auto;
 }

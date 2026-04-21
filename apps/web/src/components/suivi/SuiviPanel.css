@@ -115,6 +115,18 @@
   color: var(--bg-primary, #0f172a);
 }
 
+.suivi-group {
+  margin-bottom: 4px;
+}
+.suivi-group-header {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #64748b);
+  padding: 6px 8px 2px;
+}
+
 .suivi-person-list {
   flex: 1;
   overflow-y: auto;

@@ -26,7 +26,7 @@ function FitBoundsOnLoad({ locations }) {
   useEffect(() => {
     if (locations.length === 0) return;
     const bounds = L.latLngBounds(locations.map((l) => [l.lat, l.lng]));
-    map.fitBounds(bounds, { padding: BOUNDS_PADDING, maxZoom: 14 });
+    map.fitBounds(bounds, { padding: BOUNDS_PADDING, maxZoom: 10 });
   }, [locations, map]);
 
   return null;

@@ -10,7 +10,6 @@ import {
   Truck,
   Unlink,
   User,
-  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -161,6 +160,20 @@ export default function AddTaskModal({
     return affaireNum ? allAffairesList.find((a) => a.numeroAffaire === affaireNum) : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAffairesList, affaireNum]);
+
+  const clientSuggestions = useMemo(() => {
+    const seen = new Set();
+    return allAffairesList
+      .map((a) => (a.client || '').trim())
+      .filter((name) => {
+        if (!name) return false;
+        const key = name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+  }, [allAffairesList]);
 
   // All events for dropdown
   const allEvents = useMemo(
@@ -571,7 +584,15 @@ export default function AddTaskModal({
               value={client}
               onChange={(e) => setClient(e.target.value)}
               placeholder="Client..."
+              list="atm-client-suggestions"
             />
+            {clientSuggestions.length > 0 && (
+              <datalist id="atm-client-suggestions">
+                {clientSuggestions.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+            )}
           </div>
         </div>
 

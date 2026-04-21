@@ -12,8 +12,6 @@ import {
   Loader2,
   Minus,
   Plus,
-  Save,
-  Send,
   Trash2,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -33,10 +31,11 @@ function newEntry(period = 'AM', sortOrder = 0) {
   };
 }
 
-function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
+function FicheSuivi({ sheet, onSave, saving }) {
   const [entries, setEntries] = useState([]);
   const [notes, setNotes] = useState('');
   const [dirty, setDirty] = useState(false);
+  const autoSaveTimer = useRef(null);
   // Planning task picker
   const [planningTasks, setPlanningTasks] = useState([]);
   const [showPicker, setShowPicker] = useState(null); // 'AM' | 'PM' | null
@@ -153,7 +152,18 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
     [entries, notes, onSave],
   );
 
-  const isValidated = sheet?.status === 'validated';
+  const isValidated = false; // La fiche est toujours éditable
+
+  // Auto-save débouncé — sauvegarde 600ms après la dernière modification
+  useEffect(() => {
+    if (!dirty) return;
+    clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      handleSave('draft');
+    }, 600);
+    return () => clearTimeout(autoSaveTimer.current);
+  }, [entries, notes, dirty, handleSave]);
+
   const amEntries = entries.filter((e) => e.period === 'AM');
   const pmEntries = entries.filter((e) => e.period === 'PM');
   const totalTime = entries.reduce((s, e) => s + (parseFloat(e.time_spent) || 0), 0);
@@ -332,27 +342,8 @@ function FicheSuivi({ sheet, onSave, saving, isAdmin }) {
           </span>
           <span>—</span>
           <span>{totalTime}h total</span>
+          {saving && <Loader2 size={14} className="animate-spin" />}
         </div>
-
-        {!isValidated && (
-          <div className="fiche-footer-actions">
-            <button
-              className="suivi-btn suivi-btn-secondary"
-              onClick={() => handleSave('draft')}
-              disabled={saving || !dirty}
-            >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Enregistrer brouillon
-            </button>
-            <button
-              className="suivi-btn suivi-btn-primary"
-              onClick={() => handleSave('submitted')}
-              disabled={saving}
-            >
-              <Send size={14} /> Soumettre
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

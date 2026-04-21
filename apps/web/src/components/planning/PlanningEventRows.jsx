@@ -54,7 +54,19 @@ export const MultiAssignWidget = React.memo(function MultiAssignWidget({
       </div>
       {isOpen && (
         <div className="assign-dropdown">
-          <div className="assign-dropdown-title">Multi-affectation :</div>
+          <div className="assign-dropdown-header">
+            <div className="assign-dropdown-title">Multi-affectation :</div>
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              className="assign-dropdown-close"
+              onClick={() => setAssigningEntity(null)}
+              aria-label="Fermer la multi-affectation"
+            >
+              <X size={14} />
+            </Button>
+          </div>
           {persons.map((p) => {
             const isAssigned = assignments.some((a) => a.personId === p.id);
             return (

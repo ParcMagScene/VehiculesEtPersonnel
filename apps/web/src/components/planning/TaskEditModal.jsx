@@ -21,6 +21,7 @@ import { Button, EntityCombobox, Input, ModalLayout, Select, Textarea } from '@/
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import AddressAutocomplete from '../AddressAutocomplete';
 import AffaireBadge from '../AffaireBadge';
 
 const SECTIONS = {
@@ -378,12 +379,11 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               <MapPin size={13} /> Lieu
             </label>
             <div className="tem-location-row">
-              <Input
-                type="text"
+              <AddressAutocomplete
                 value={form.locationAddress}
-                onChange={(e) => update('locationAddress', e.target.value)}
+                onChange={(value) => update('locationAddress', value)}
                 placeholder="Adresse ou lieu de la course…"
-                autoComplete="off"
+                className="tem-location-input"
               />
               {form.locationAddress.trim() && (
                 <a

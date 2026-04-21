@@ -107,6 +107,7 @@ const PersonnelPanel = ({
   onNavigateToPersonHandled,
   quickAssignmentSlot,
   onQuickAssignmentHandled,
+  onOpenSuivi,
 }) => {
   const toast = useToast();
   const [subTab, setSubTab] = useState(mode === 'planning' ? 'planning' : 'persons');
@@ -333,6 +334,7 @@ const PersonnelPanel = ({
           quickAssignmentSlot={quickAssignmentSlot}
           onQuickAssignmentHandled={onQuickAssignmentHandled}
           currentUser={currentUser}
+          onOpenSuivi={onOpenSuivi}
         />
         {editFormVisible && (
           <ModalLayout
@@ -1353,6 +1355,7 @@ const PlanningTab = ({
   quickAssignmentSlot,
   onQuickAssignmentHandled,
   currentUser,
+  onOpenSuivi,
 }) => {
   const toast = useToast();
   const { confirm: confirmDelete, ConfirmDialogRenderer: DeleteConfirmRenderer } =
@@ -1360,6 +1363,8 @@ const PlanningTab = ({
   const scrollAreaRef = useRef(null);
   const headerScrollRef = useRef(null);
   const personColumnRef = useRef(null);
+  const [personColumnWidth, setPersonColumnWidth] = useState(250);
+  const columnResizingRef = useRef(false);
   const [collapsedSections, setCollapsedSections] = useState({
     permanents: false,
     nonPermanents: false,
@@ -2584,7 +2589,33 @@ const PlanningTab = ({
 
             {/* Corps : colonne personnel + grille */}
             <div className="pp-content-row">
-              <div className="pp-person-column" ref={personColumnRef}>
+              <div
+                className="pp-person-column"
+                ref={personColumnRef}
+                style={{ width: personColumnWidth }}
+              >
+                {/* Poignée de redimensionnement de la colonne */}
+                <div
+                  className="pp-column-resize-handle"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const startX = e.clientX;
+                    const startWidth = personColumnWidth;
+                    columnResizingRef.current = true;
+                    const onMove = (ev) => {
+                      if (!columnResizingRef.current) return;
+                      const delta = ev.clientX - startX;
+                      setPersonColumnWidth(Math.max(150, Math.min(420, startWidth + delta)));
+                    };
+                    const onUp = () => {
+                      columnResizingRef.current = false;
+                      document.removeEventListener('mousemove', onMove);
+                      document.removeEventListener('mouseup', onUp);
+                    };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                  }}
+                />
                 {/* Section Permanents */}
                 {!collapsedSections.permanents &&
                   permanents.map((person) => (
@@ -2885,7 +2916,9 @@ const PlanningTab = ({
           onSelect={(type, person) => {
             const day = contextMenu.day; // [2.6] date de la cellule clic-droit
             setContextMenu(null);
-            if (type === 'conge_paye') {
+            if (type === 'suivi') {
+              onOpenSuivi && onOpenSuivi(person);
+            } else if (type === 'conge_paye') {
               setShowLeaveModal({ person, day });
             } else {
               setPeriodCalendar({ person, type, day });

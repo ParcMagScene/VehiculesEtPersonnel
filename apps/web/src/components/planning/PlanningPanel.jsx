@@ -34,6 +34,7 @@ function PlanningPanel({
   const [_isPending, startTransition] = useTransition();
   const [stats, setStats] = useState(null);
   const [displayRefreshKey, _setDisplayRefreshKey] = useState(0);
+  const [suiviInitialPersonId, setSuiviInitialPersonId] = useState(null);
 
   // Auto-switch vers l'onglet Personnel quand navigation demandée
   useEffect(() => {
@@ -42,6 +43,12 @@ function PlanningPanel({
       setActiveSubTab('personnel');
     }
   }, [navigateToPersonId, quickAssignmentSlot]);
+
+  // Ouvrir l'onglet Suivi depuis le planning (menu clic-droit)
+  const handleOpenSuivi = (person) => {
+    setSuiviInitialPersonId(person?.id ?? null);
+    startTransition(() => setActiveSubTab('suivi'));
+  };
 
   useEffect(() => {
     api
@@ -105,12 +112,13 @@ function PlanningPanel({
               onNavigateToPersonHandled={onNavigateToPersonHandled}
               quickAssignmentSlot={quickAssignmentSlot}
               onQuickAssignmentHandled={onQuickAssignmentHandled}
+              onOpenSuivi={handleOpenSuivi}
             />
           </Suspense>
         )}
         {activeSubTab === 'suivi' && (
           <Suspense fallback={null}>
-            <SuiviPanel currentUser={currentUser} />
+            <SuiviPanel currentUser={currentUser} initialPersonId={suiviInitialPersonId} />
           </Suspense>
         )}
         {activeSubTab === 'tasks' && (

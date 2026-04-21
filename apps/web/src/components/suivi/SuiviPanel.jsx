@@ -7,7 +7,6 @@ import './SuiviPanel.css';
 
 import {
   Calendar,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
@@ -41,15 +40,13 @@ function formatDateFR(dateStr) {
 }
 
 const TYPE_LABELS = {
-  all: 'Tous',
   permanent: 'Permanent',
+  apprenti: 'Apprenti',
   contractuel: 'Contractuel',
   stagiaire: 'Stagiaire',
 };
 
-const TYPE_FILTERS = ['all', 'permanent', 'contractuel', 'stagiaire'];
-
-function SuiviPanel({ currentUser }) {
+function SuiviPanel({ currentUser, initialPersonId }) {
   const [activeTab, setActiveTab] = useState('fiches');
   const [personnel, setPersonnel] = useState([]);
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -58,28 +55,20 @@ function SuiviPanel({ currentUser }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [typeFilter, setTypeFilter] = useState('permanent');
   const [selectedSheetIds, setSelectedSheetIds] = useState(new Set());
   const [batchExporting, setBatchExporting] = useState(false);
   const [batchPrinting, setBatchPrinting] = useState(false);
   const isAdmin = !!currentUser?.isAdmin;
 
-  // Filtrer le personnel par type
-  const filteredPersonnel = useMemo(() => {
-    if (typeFilter === 'all') return personnel;
-    if (typeFilter === 'permanent')
-      return personnel.filter((p) => p.type === 'permanent' || p.type === 'apprenti');
-    return personnel.filter((p) => p.type === typeFilter);
-  }, [personnel, typeFilter]);
-
-  // Compteurs par type (pour les badges)
-  const typeCounts = useMemo(() => {
-    const counts = { all: personnel.length };
-    for (const p of personnel) {
-      counts[p.type] = (counts[p.type] || 0) + 1;
-    }
-    return counts;
-  }, [personnel]);
+  // Groupes de personnel
+  const permanents = useMemo(
+    () => personnel.filter((p) => p.type === 'permanent' || p.type === 'apprenti'),
+    [personnel],
+  );
+  const nonPermanents = useMemo(
+    () => personnel.filter((p) => p.type !== 'permanent' && p.type !== 'apprenti'),
+    [personnel],
+  );
 
   // Charger la liste du personnel
   useEffect(() => {
@@ -88,7 +77,18 @@ function SuiviPanel({ currentUser }) {
         const data = await api.getSuiviPersonnel();
         setPersonnel(data);
         if (data.length > 0 && !selectedPerson) {
-          const firstMatch = data.find((p) => p.type === 'permanent') || data[0];
+          // Tenter de sélectionner la fiche de l'utilisateur connecté ou initialPersonId
+          const userMatch =
+            (initialPersonId && data.find((p) => p.id === initialPersonId)) ||
+            (currentUser &&
+              data.find(
+                (p) =>
+                  p.id === currentUser.person_id ||
+                  (currentUser.first_name &&
+                    p.first_name?.toLowerCase() === currentUser.first_name.toLowerCase() &&
+                    p.last_name?.toLowerCase() === currentUser.last_name?.toLowerCase()),
+              ));
+          const firstMatch = userMatch || data.find((p) => p.type === 'permanent') || data[0];
           setSelectedPerson(firstMatch);
         }
       } catch (err) {
@@ -96,17 +96,6 @@ function SuiviPanel({ currentUser }) {
       }
     })();
   }, []);
-
-  // Si le filtre change et la personne sélectionnée n'est plus visible, sélectionner la première
-  useEffect(() => {
-    if (
-      filteredPersonnel.length > 0 &&
-      selectedPerson &&
-      !filteredPersonnel.find((p) => p.id === selectedPerson.id)
-    ) {
-      setSelectedPerson(filteredPersonnel[0]);
-    }
-  }, [typeFilter, filteredPersonnel]);
 
   // Charger la fiche quand personne ou date change
   useEffect(() => {
@@ -155,16 +144,6 @@ function SuiviPanel({ currentUser }) {
     [selectedPerson, selectedDate],
   );
 
-  const handleValidate = useCallback(async () => {
-    if (!sheet?.id) return;
-    try {
-      const updated = await api.validateSuiviSheet(sheet.id);
-      setSheet(updated);
-    } catch {
-      setError('Erreur validation');
-    }
-  }, [sheet?.id]);
-
   // ─── Sélection multi-fiches pour impression ───
   const handleToggleSelect = useCallback(
     (personId) => {
@@ -184,13 +163,45 @@ function SuiviPanel({ currentUser }) {
     [selectedDate],
   );
 
+  // ─── Renderer d'un item personnel ───
+  const renderPersonItem = useCallback(
+    (p) => (
+      <div
+        key={p.id}
+        className={`suivi-person-item ${selectedPerson?.id === p.id ? 'selected' : ''}`}
+      >
+        <input
+          type="checkbox"
+          className="suivi-person-check"
+          checked={selectedSheetIds.has(`${p.id}__${selectedDate}`)}
+          onChange={() => handleToggleSelect(p.id)}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <button className="suivi-person-btn" onClick={() => setSelectedPerson(p)}>
+          <div className="suivi-person-info">
+            <span className="suivi-person-name">
+              {p.first_name} {p.last_name}
+            </span>
+            <span className={`suivi-person-type suivi-type-${p.type || 'permanent'}`}>
+              {TYPE_LABELS[p.type] || p.type}
+            </span>
+          </div>
+          <span className="suivi-person-stats">
+            {p.validated_sheets ?? 0}/{p.total_sheets ?? 0}
+          </span>
+        </button>
+      </div>
+    ),
+    [selectedPerson?.id, selectedSheetIds, selectedDate, handleToggleSelect],
+  );
+
   const handleSelectAll = useCallback(() => {
-    if (selectedSheetIds.size === filteredPersonnel.length) {
+    if (selectedSheetIds.size === personnel.length) {
       setSelectedSheetIds(new Set());
     } else {
-      setSelectedSheetIds(new Set(filteredPersonnel.map((p) => `${p.id}__${selectedDate}`)));
+      setSelectedSheetIds(new Set(personnel.map((p) => `${p.id}__${selectedDate}`)));
     }
-  }, [filteredPersonnel, selectedDate, selectedSheetIds.size]);
+  }, [personnel, selectedDate, selectedSheetIds.size]);
 
   // Résoudre les IDs de fiches à partir de la sélection
   const resolveSheetIds = useCallback(async () => {
@@ -275,23 +286,9 @@ function SuiviPanel({ currentUser }) {
               <Users size={16} /> Personnel
             </h3>
 
-            {/* Filtre par type */}
-            <div className="suivi-type-filters">
-              {TYPE_FILTERS.filter((t) => t === 'all' || typeCounts[t] > 0).map((t) => (
-                <button
-                  key={t}
-                  className={`suivi-type-filter ${typeFilter === t ? 'active' : ''}`}
-                  onClick={() => setTypeFilter(t)}
-                >
-                  {TYPE_LABELS[t]}
-                  <span className="suivi-type-count">{typeCounts[t] || 0}</span>
-                </button>
-              ))}
-            </div>
-
             <div className="suivi-person-list">
-              {filteredPersonnel.length === 0 ? (
-                <div className="suivi-person-empty">Aucun personnel de ce type</div>
+              {personnel.length === 0 ? (
+                <div className="suivi-person-empty">Aucun personnel trouvé</div>
               ) : (
                 <>
                   {/* Sélectionner tout / PDF + Imprimer sélection */}
@@ -299,10 +296,7 @@ function SuiviPanel({ currentUser }) {
                     <label className="suivi-select-all" title="Tout sélectionner">
                       <input
                         type="checkbox"
-                        checked={
-                          selectedSheetIds.size === filteredPersonnel.length &&
-                          filteredPersonnel.length > 0
-                        }
+                        checked={selectedSheetIds.size === personnel.length && personnel.length > 0}
                         onChange={handleSelectAll}
                       />
                       <span>Tout</span>
@@ -338,33 +332,22 @@ function SuiviPanel({ currentUser }) {
                       </div>
                     )}
                   </div>
-                  {filteredPersonnel.map((p) => (
-                    <div
-                      key={p.id}
-                      className={`suivi-person-item ${selectedPerson?.id === p.id ? 'selected' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="suivi-person-check"
-                        checked={selectedSheetIds.has(`${p.id}__${selectedDate}`)}
-                        onChange={() => handleToggleSelect(p.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <button className="suivi-person-btn" onClick={() => setSelectedPerson(p)}>
-                        <div className="suivi-person-info">
-                          <span className="suivi-person-name">
-                            {p.first_name} {p.last_name}
-                          </span>
-                          <span className={`suivi-person-type suivi-type-${p.type || 'permanent'}`}>
-                            {TYPE_LABELS[p.type] || p.type}
-                          </span>
-                        </div>
-                        <span className="suivi-person-stats">
-                          {p.validated_sheets ?? 0}/{p.total_sheets ?? 0}
-                        </span>
-                      </button>
+                  {/* Groupe Permanents */}
+                  {permanents.length > 0 && (
+                    <div className="suivi-group">
+                      <div className="suivi-group-header">Permanents ({permanents.length})</div>
+                      {permanents.map((p) => renderPersonItem(p))}
                     </div>
-                  ))}
+                  )}
+                  {/* Groupe Contractuels / Stagiaires */}
+                  {nonPermanents.length > 0 && (
+                    <div className="suivi-group">
+                      <div className="suivi-group-header">
+                        Contractuels / Stagiaires ({nonPermanents.length})
+                      </div>
+                      {nonPermanents.map((p) => renderPersonItem(p))}
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -391,29 +374,8 @@ function SuiviPanel({ currentUser }) {
                 <ChevronRight size={18} />
               </button>
 
-              <div className="suivi-actions">
-                {sheet && isAdmin && sheet.status !== 'validated' && (
-                  <button
-                    className="suivi-btn suivi-btn-validate"
-                    onClick={handleValidate}
-                    title="Valider la fiche"
-                  >
-                    <CheckCircle2 size={14} /> Valider
-                  </button>
-                )}
-              </div>
+              <div className="suivi-actions" />
             </div>
-
-            {/* Statut */}
-            {sheet && (
-              <div className={`suivi-status suivi-status-${sheet.status}`}>
-                {sheet.status === 'validated'
-                  ? '✓ Fiche validée'
-                  : sheet.status === 'submitted'
-                    ? '◎ Fiche soumise'
-                    : '✎ Brouillon'}
-              </div>
-            )}
 
             {error && <div className="suivi-error">{error}</div>}
 

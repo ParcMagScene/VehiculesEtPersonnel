@@ -1,6 +1,14 @@
 import './PersonnelContextMenu.css';
 
-import { Building2, Calendar, Clock, FileCheck, GraduationCap, Wrench } from 'lucide-react';
+import {
+  Building2,
+  Calendar,
+  ClipboardCheck,
+  Clock,
+  FileCheck,
+  GraduationCap,
+  Wrench,
+} from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 import { Button, Divider, Tag } from '@/design-system';
@@ -129,6 +137,17 @@ const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
           </Button>
         );
       })}
+      <Divider className="pp-context-menu-divider" />
+      <Button
+        variant="ghost"
+        className="pp-context-menu-item pp-context-menu-suivi"
+        onClick={() => onSelect('suivi', person)}
+      >
+        <span className="pp-context-menu-icon" style={{ color: '#38bdf8' }}>
+          <ClipboardCheck size={16} />
+        </span>
+        <span className="pp-context-menu-label">Suivi du personnel</span>
+      </Button>
     </div>
   );
 };

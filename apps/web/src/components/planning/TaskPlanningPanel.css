@@ -1186,13 +1186,35 @@
   margin-top: 4px;
 }
 
+.task-planning-panel .assign-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 8px 6px;
+}
+
 .task-planning-panel .assign-dropdown-title {
-  padding: 4px 12px 6px;
   font-size: var(--font-xs);
   font-weight: 600;
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.task-planning-panel .assign-dropdown-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+}
+
+.task-planning-panel .assign-dropdown-close:hover {
+  background: var(--theme-bg-hover);
+  color: var(--theme-text-primary);
 }
 
 .task-planning-panel .assign-option {

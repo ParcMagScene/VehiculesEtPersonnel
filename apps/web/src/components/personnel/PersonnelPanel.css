@@ -1364,6 +1364,24 @@
 }
 
 /* Section header dans la colonne personnel */
+/* Poignée de redimensionnement de la colonne personnel */
+.pp-column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.15s;
+}
+.pp-column-resize-handle:hover,
+.pp-column-resize-handle:active {
+  background: var(--accent-color, #60a5fa);
+  opacity: 0.6;
+}
+
 .pp-section-header {
   background: var(--theme-gradient);
   color: var(--theme-text-inverse);

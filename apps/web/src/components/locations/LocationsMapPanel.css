@@ -241,6 +241,10 @@
   flex-shrink: 0;
 }
 
+.locations-map-legend-dot-siege {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
 /* ── Marqueurs Leaflet custom ── */
 .emag-map-marker {
   background: transparent !important;

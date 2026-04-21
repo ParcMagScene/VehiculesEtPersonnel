@@ -100,10 +100,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
             </span>
           ))}
           <span className="locations-map-legend-item">
-            <span
-              className="locations-map-legend-dot"
-              style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)' }}
-            />
+            <span className="locations-map-legend-dot locations-map-legend-dot-siege" />
             Siège
           </span>
         </div>

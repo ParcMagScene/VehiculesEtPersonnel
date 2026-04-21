@@ -67,18 +67,18 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
   return (
     <div className="display-media-tab">
       {/* Filtres */}
-      <div className="media-filters">
+      <div className="display-media-filters">
         {['all', 'image', 'video'].map((f) => (
           <Button
             variant="ghost"
             key={f}
-            className={`filter-btn ${filter === f ? 'active' : ''}`}
+            className={filter === f ? 'active' : ''}
             onClick={() => setFilter(f)}
           >
             {f === 'all' ? 'Tous' : f === 'image' ? '🖼 Images' : '🎬 Vidéos'}
           </Button>
         ))}
-        <span className="media-count">{media.length} fichier(s)</span>
+        <span className="count">{media.length} fichier(s)</span>
       </div>
 
       {media.length === 0 ? (
@@ -88,30 +88,37 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
           description="Uploadez des images ou vidéos pour vos écrans d'affichage."
         />
       ) : (
-        <div className="media-grid">
+        <div className="display-media-grid">
           {media.map((item) => (
-            <div key={item.id} className="media-card">
+            <div key={item.id} className="display-media-card">
               <div
-                className="media-preview"
+                className="display-media-thumb"
                 role="button"
                 tabIndex={0}
                 onClick={() => setPreview(item)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setPreview(item);
+                  }
+                }}
+                aria-label={`Aperçu du média ${item.original_name}`}
               >
                 {item.media_type === 'video' ? (
-                  <div className="media-video-thumb">
+                  <div className="display-media-video-thumb">
                     <Film size={32} />
                   </div>
                 ) : (
                   <img src={item.file_path} alt={item.original_name} loading="lazy" />
                 )}
               </div>
-              <div className="media-info">
-                <span className="media-name" title={item.original_name}>
+              <div className="display-media-info">
+                <span className="display-media-name" title={item.original_name}>
                   {item.original_name}
                 </span>
-                <span className="media-size">{formatFileSize(item.file_size)}</span>
+                <span className="display-media-size">{formatFileSize(item.file_size)}</span>
               </div>
-              <div className="media-actions">
+              <div className="display-media-actions">
                 <Tooltip content="Aperçu">
                   <Button
                     variant="ghost"
@@ -153,17 +160,17 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
               src={preview?.file_path}
               controls
               autoPlay
-              style={{ maxWidth: '100%', maxHeight: '80vh' }}
+              className="display-media-preview-asset"
             />
           ) : (
             <img
               src={preview?.file_path}
               alt={preview?.original_name}
               loading="lazy"
-              style={{ maxWidth: '100%', maxHeight: '80vh' }}
+              className="display-media-preview-asset"
             />
           )}
-          {preview && <p className="preview-filename">{preview.original_name}</p>}
+          {preview && <p className="display-preview-filename">{preview.original_name}</p>}
         </ModalBody>
       </Modal>
       {ConfirmDialogRenderer}

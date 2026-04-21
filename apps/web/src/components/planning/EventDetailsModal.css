@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--theme-overlay);
+  background: var(--surface-overlay);
   backdrop-filter: blur(4px);
   isolation: isolate;
   display: flex;
@@ -16,7 +16,7 @@
 }
 
 .event-details-modal {
-  background: var(--theme-bg-page);
+  background: var(--surface-page);
   border-radius: var(--radius-xl);
   max-width: 900px;
   width: 100%;
@@ -98,18 +98,18 @@
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-track {
-  background: var(--theme-border-light);
+  background: var(--border-subtle);
   border-radius: var(--radius-xs);
   margin: 8px 0;
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb {
-  background: var(--theme-bg-muted);
+  background: var(--surface-tertiary);
   border-radius: var(--radius-xs);
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-text-muted);
+  background: var(--text-subtle);
 }
 
 /* Sections */
@@ -128,7 +128,7 @@ section h3 {
   margin: 0 0 16px 0;
   font-size: var(--font-lg);
   font-weight: 600;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .section-header {
@@ -162,7 +162,7 @@ section h3 {
 .event-details-modal .info-item label {
   font-size: var(--font-2xs);
   font-weight: 600;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -173,13 +173,13 @@ section h3 {
 .event-details-modal .info-item span,
 .event-details-modal .info-item p {
   font-size: var(--font-base);
-  color: var(--theme-text-dark);
+  color: var(--text-body);
 }
 
 .event-details-modal .event-description {
   margin: 0;
   padding: 12px;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   border-left: 3px solid var(--theme-primary);
   border-radius: var(--radius-xs);
   line-height: 1.5;
@@ -198,8 +198,8 @@ section h3 {
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: var(--theme-bg-secondary);
-  border: 2px solid var(--theme-border-medium);
+  background: var(--surface-secondary);
+  border: 2px solid var(--border-default);
   border-radius: var(--radius-md);
   transition: all 0.2s;
 }
@@ -219,17 +219,17 @@ section h3 {
 .event-details-modal .reservation-vehicle {
   font-weight: 700;
   font-size: 15px;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .reservation-details {
   font-size: var(--font-base);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
 }
 
 .event-details-modal .reservation-dates {
   font-size: var(--font-base);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
@@ -288,11 +288,11 @@ section h3 {
 .event-details-modal .drive-link-edit-form .drive-link-input {
   flex: 1;
   border: 1px solid var(--theme-purple-accent);
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: var(--font-base);
-  color: var(--theme-text-dark);
+  color: var(--text-body);
   outline: none;
 }
 
@@ -374,7 +374,7 @@ section h3 {
   cursor: pointer;
   transition: all 0.15s;
   background: transparent;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   padding: 0;
 }
 
@@ -416,7 +416,7 @@ section h3 {
 }
 
 .event-details-modal .drive-link-save:disabled {
-  background: var(--theme-text-muted);
+  background: var(--text-subtle);
   cursor: not-allowed;
 }
 
@@ -427,7 +427,7 @@ section h3 {
 
 .event-details-modal .drive-link-cancel:hover {
   background: var(--btn-secondary-hover-bg);
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .event-details-modal .btn-edit-reservation {
@@ -463,25 +463,25 @@ section h3 {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: var(--theme-bg-secondary);
-  border: 1px solid var(--theme-border-medium);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   transition: all 0.2s;
 }
 
 .event-details-modal .attachment-item:hover {
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
 }
 
 .event-details-modal .file-name {
   flex: 1;
   font-size: var(--font-base);
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .file-size {
   font-size: var(--font-sm);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
@@ -495,7 +495,7 @@ section h3 {
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   cursor: pointer;
   transition: all 0.2s;
   padding: 0;
@@ -510,10 +510,10 @@ section h3 {
 .event-details-modal .empty-state {
   padding: 32px;
   text-align: center;
-  color: var(--theme-text-muted);
-  background: var(--theme-bg-secondary);
+  color: var(--text-subtle);
+  background: var(--surface-secondary);
   border-radius: var(--radius-md);
-  border: 2px dashed var(--theme-border-medium);
+  border: 2px dashed var(--border-default);
 }
 
 .event-details-modal .empty-state p {
@@ -523,11 +523,11 @@ section h3 {
 
 .event-details-modal .empty-state .hint {
   font-size: var(--font-sm);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
 }
 
 .event-details-modal .empty-state code {
-  background: var(--theme-border-medium);
+  background: var(--border-default);
   padding: 2px 6px;
   border-radius: var(--radius-xs);
   font-family: 'Monaco', 'Courier New', monospace;
@@ -592,7 +592,7 @@ section h3 {
 
 .event-details-modal .btn-open-folder:disabled {
   background: var(--btn-secondary-bg);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   cursor: not-allowed;
 }
 
@@ -602,8 +602,8 @@ section h3 {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-4) var(--space-5);
-  border-top: 2px solid var(--theme-border-medium);
-  background: var(--theme-bg-secondary);
+  border-top: 2px solid var(--border-default);
+  background: var(--surface-secondary);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
@@ -614,9 +614,9 @@ section h3 {
 
 .event-details-modal .btn-secondary {
   padding: var(--btn-padding);
-  background: var(--theme-bg-card);
-  color: var(--theme-text-secondary);
-  border: 2px solid var(--theme-border);
+  background: var(--surface-primary);
+  color: var(--text-muted);
+  border: 2px solid var(--border-default);
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
   font-weight: var(--btn-font-weight);
@@ -625,8 +625,8 @@ section h3 {
 }
 
 .event-details-modal .btn-secondary:hover {
-  background: var(--theme-bg-page);
-  border-color: var(--theme-text-muted);
+  background: var(--surface-page);
+  border-color: var(--text-subtle);
 }
 
 .event-details-modal .btn-link {
@@ -771,7 +771,7 @@ section h3 {
 
 /* Modal d'aperçu de fichier */
 .event-details-modal .preview-modal {
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-lg);
   width: 90vw;
   max-width: 1200px;
@@ -783,7 +783,7 @@ section h3 {
 
 .event-details-modal .preview-header {
   padding: 16px 24px;
-  border-bottom: 1px solid var(--theme-border-medium);
+  border-bottom: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -793,7 +793,7 @@ section h3 {
   margin: 0;
   font-size: var(--font-md);
   font-weight: 600;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .btn-close {
@@ -802,7 +802,7 @@ section h3 {
   font-size: var(--font-2xl);
   line-height: 1;
   cursor: pointer;
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   padding: 0;
   width: 32px;
   height: 32px;
@@ -814,14 +814,14 @@ section h3 {
 }
 
 .event-details-modal .btn-close:hover {
-  background: var(--theme-bg-tertiary);
-  color: var(--theme-bg-dark);
+  background: var(--surface-tertiary);
+  color: var(--text-heading);
 }
 
 .event-details-modal .preview-body {
   flex: 1;
   overflow: auto;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -842,11 +842,11 @@ section h3 {
 .event-details-modal .unsupported-preview {
   text-align: center;
   padding: 48px;
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
 }
 
 .event-details-modal .unsupported-preview svg {
-  color: var(--theme-border-muted);
+  color: var(--border-subtle);
   margin-bottom: 16px;
 }
 
@@ -856,21 +856,21 @@ section h3 {
 
 .event-details-modal .preview-footer {
   padding: 16px 24px;
-  border-top: 1px solid var(--theme-border-medium);
+  border-top: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
 }
 
 .event-details-modal .file-info {
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   font-size: var(--font-base);
 }
 
 /* Modal de vue dossier */
 .event-details-modal .folder-view-modal {
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-lg);
   width: 90vw;
   max-width: 1000px;
@@ -882,7 +882,7 @@ section h3 {
 
 .event-details-modal .folder-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--theme-border-medium);
+  border-bottom: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -904,17 +904,17 @@ section h3 {
   flex: 1;
   overflow: auto;
   padding: 24px;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .event-details-modal .empty-folder {
   text-align: center;
   padding: 64px 24px;
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
 }
 
 .event-details-modal .empty-folder svg {
-  color: var(--theme-border-muted);
+  color: var(--border-subtle);
   margin-bottom: 16px;
 }
 
@@ -925,8 +925,8 @@ section h3 {
 }
 
 .event-details-modal .folder-file-card {
-  background: var(--theme-bg-card);
-  border: 1px solid var(--theme-border-medium);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   padding: 16px;
   cursor: pointer;
@@ -949,7 +949,7 @@ section h3 {
   top: 6px;
   right: 6px;
   background: var(--theme-bg-card-translucent);
-  border: 1px solid var(--theme-border-medium);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   width: 28px;
   height: 28px;
@@ -957,7 +957,7 @@ section h3 {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   transition: all 0.2s;
   opacity: 0;
   padding: 0;
@@ -980,7 +980,7 @@ section h3 {
   align-items: center;
   justify-content: center;
   color: var(--theme-primary);
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
   border-radius: var(--radius-md);
 }
 
@@ -999,7 +999,7 @@ section h3 {
 .event-details-modal .folder-file-card .file-name {
   font-size: var(--font-base);
   font-weight: 500;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
   margin: 0 0 4px 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1009,22 +1009,22 @@ section h3 {
 
 .event-details-modal .folder-file-card .file-size {
   font-size: var(--font-sm);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   margin: 0;
 }
 
 .event-details-modal .folder-footer {
   padding: 16px 24px;
-  border-top: 1px solid var(--theme-border-medium);
+  border-top: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .event-details-modal .folder-footer span {
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   font-size: var(--font-base);
 }
 
@@ -1035,14 +1035,14 @@ section h3 {
 }
 
 .event-details-modal .attachment-item.clickable:hover {
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
   border-color: var(--theme-primary);
   transform: translateX(4px);
 }
 
 .event-details-modal .attachment-item.clickable:focus-visible,
 .event-details-modal .folder-file-card:focus-visible {
-  outline: 2px solid var(--theme-border-focus);
+  outline: 2px solid var(--border-focus);
   outline-offset: 2px;
 }
 

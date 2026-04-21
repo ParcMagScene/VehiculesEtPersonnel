@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--theme-overlay);
+  background-color: var(--surface-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -24,7 +24,7 @@
 }
 
 .overdue-intervention-modal {
-  background: var(--theme-bg-page);
+  background: var(--surface-page);
   border-radius: var(--radius-xl);
   width: 90%;
   max-width: 500px;
@@ -53,7 +53,7 @@
   align-items: center;
   padding: 20px 24px;
   background: var(--theme-danger-gradient);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   border-radius: var(--modal-header-border-radius);
 }
 
@@ -110,25 +110,25 @@
 .intervention-info {
   margin-bottom: 24px;
   padding-bottom: 20px;
-  border-bottom: 1px solid var(--theme-border-medium);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .intervention-info h3 {
   font-size: var(--font-lg);
   font-weight: 600;
   margin: 0 0 12px 0;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .intervention-description {
-  color: var(--theme-text-subtle);
+  color: var(--text-subtle);
   font-size: 15px;
   margin: 0 0 8px 0;
   line-height: 1.5;
 }
 
 .intervention-dates {
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   font-size: var(--font-base);
   margin: 0;
   font-style: italic;
@@ -139,8 +139,8 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px 24px;
-  border-top: 1px solid var(--theme-border-medium);
-  background: var(--theme-bg-secondary);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-secondary);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   flex-shrink: 0;
 }
@@ -157,7 +157,7 @@
   font-weight: var(--btn-font-weight);
   cursor: pointer;
   transition: var(--btn-transition);
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
 }
 
 .action-button.completed {
@@ -167,7 +167,7 @@
 
 .action-button.completed:hover {
   background: var(--theme-success);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px var(--success-tint-medium);
 }
@@ -179,7 +179,7 @@
 
 .action-button.not-completed:hover {
   background: var(--theme-danger);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px var(--danger-tint-medium);
 }
@@ -191,7 +191,7 @@
 
 .action-button.reschedule:hover {
   background: var(--btn-warning-color, var(--theme-warning-dark));
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
 }
@@ -203,7 +203,7 @@
 
 .action-button.pending:hover {
   background: var(--theme-primary-light);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   transform: translateY(-2px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
@@ -216,13 +216,13 @@
 
 .reason-input-container label {
   font-weight: 500;
-  color: var(--theme-text-body);
+  color: var(--text-body);
   font-size: var(--font-base);
 }
 
 .reason-input-container textarea {
   padding: 12px;
-  border: 2px solid var(--theme-border);
+  border: 2px solid var(--border-default);
   border-radius: var(--btn-radius);
   font-size: var(--font-base);
   font-family: inherit;
@@ -232,7 +232,7 @@
 
 .reason-input-container textarea:focus {
   outline: none;
-  border-color: var(--focus-border, var(--theme-border-focus));
+  border-color: var(--focus-border, var(--border-focus));
   box-shadow: var(--focus-ring);
 }
 
@@ -241,8 +241,8 @@
   gap: 12px;
   justify-content: flex-end;
   padding: 16px 24px;
-  border-top: 1px solid var(--theme-border-medium);
-  background: var(--theme-bg-secondary);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-secondary);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   flex-shrink: 0;
 }

@@ -89,8 +89,25 @@ export function setupVehicleRoutes(
     cacheMiddleware(listCache, () => 'vehicles', 30_000),
     (req, res) => {
       try {
-        const stmt = db.prepare('SELECT * FROM vehicles ORDER BY order_index ASC LIMIT 5000');
-        const vehicles = stmt.all();
+        const parsePositiveInt = (value, fallback) => {
+          const parsed = Number.parseInt(value, 10);
+          return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+        };
+        const parseNonNegativeInt = (value, fallback) => {
+          const parsed = Number.parseInt(value, 10);
+          return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+        };
+
+        const pageSize = Math.min(
+          parsePositiveInt(req.query.pageSize ?? req.query.limit, 5000),
+          5000,
+        );
+        const page = parsePositiveInt(req.query.page, 1);
+        const hasOffset = req.query.offset !== undefined;
+        const offset = hasOffset ? parseNonNegativeInt(req.query.offset, 0) : (page - 1) * pageSize;
+
+        const stmt = db.prepare('SELECT * FROM vehicles ORDER BY order_index ASC LIMIT ? OFFSET ?');
+        const vehicles = stmt.all(pageSize, offset);
 
         // Mapper snake_case vers camelCase pour le frontend
         const mappedVehicles = vehicles.map((v) => ({

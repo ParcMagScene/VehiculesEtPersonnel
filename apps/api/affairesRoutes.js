@@ -213,6 +213,166 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // GET /api/affaires/mobile/:numero/detail — Détail agrégé pour mobile (réduit le fan-out)
+  app.get('/api/affaires/mobile/:numero/detail', authenticateToken, (req, res) => {
+    try {
+      const numeroAffaire = String(req.params.numero || '')
+        .trim()
+        .toUpperCase();
+
+      if (!numeroAffaire) {
+        return res.status(400).json({ success: false, error: "Numéro d'affaire requis" });
+      }
+
+      const affaire = db
+        .prepare(
+          `
+      SELECT id, numero_affaire, nom, type, client, interlocuteur, tel, fax,
+             date_debut, date_fin, devis, adresse_livraison, titre, description,
+             google_event_id, event_name, status
+      FROM affaires
+      WHERE UPPER(numero_affaire) = ?
+      LIMIT 1
+    `,
+        )
+        .get(numeroAffaire);
+
+      if (!affaire) {
+        return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
+      }
+
+      const mapAffaire = (row) => ({
+        id: row.id,
+        numeroAffaire: row.numero_affaire,
+        nom: row.nom || '',
+        type: row.type,
+        status: row.status || 'brouillon',
+        client: row.client || '',
+        interlocuteur: row.interlocuteur || '',
+        tel: row.tel || '',
+        fax: row.fax || '',
+        dateDebut: row.date_debut,
+        dateFin: row.date_fin,
+        devis: row.devis || '',
+        adresseLivraison: row.adresse_livraison || '',
+        titre: row.titre || '',
+        description: row.description || '',
+        googleEventId: row.google_event_id || '',
+        eventName: row.event_name || '',
+      });
+
+      const children = db
+        .prepare(
+          `
+      SELECT a.*
+      FROM affaire_links al
+      JOIN affaires a ON a.id = al.child_affaire_id
+      WHERE al.parent_affaire_id = ?
+      ORDER BY a.date_debut
+    `,
+        )
+        .all(affaire.id)
+        .map(mapAffaire);
+
+      const parents = db
+        .prepare(
+          `
+      SELECT a.*
+      FROM affaire_links al
+      JOIN affaires a ON a.id = al.parent_affaire_id
+      WHERE al.child_affaire_id = ?
+      ORDER BY a.date_debut
+    `,
+        )
+        .all(affaire.id)
+        .map(mapAffaire);
+
+      const reservations = db
+        .prepare(
+          `
+      SELECT r.id,
+             r.vehicle_id as vehicleId,
+             r.start_date as startDate,
+             r.end_date as endDate,
+             r.status,
+             v.name as vehicleName
+      FROM reservations r
+      LEFT JOIN vehicles v ON r.vehicle_id = v.id
+      WHERE r.affaire = ?
+      ORDER BY r.start_date ASC
+      LIMIT 300
+    `,
+        )
+        .all(numeroAffaire);
+
+      const tasks = db
+        .prepare(
+          `
+      SELECT ta.id, ta.title, ta.status, ta.section, ta.notes,
+             ta.date as date,
+             TRIM(COALESCE(p.first_name, '') || ' ' || COALESCE(p.last_name, '')) as assignee
+      FROM task_assignments ta
+      LEFT JOIN persons p ON ta.person_id = p.id
+      WHERE ta.affaire_num = ? AND ta.deleted_at IS NULL
+      ORDER BY ta.date ASC
+      LIMIT 400
+    `,
+        )
+        .all(numeroAffaire);
+
+      const personnel = db
+        .prepare(
+          `
+      SELECT DISTINCT p.id,
+             TRIM(COALESCE(p.first_name, '') || ' ' || COALESCE(p.last_name, '')) as name,
+             COALESCE(ma.role, p.type, '') as role
+      FROM missions m
+      JOIN mission_assignments ma ON ma.mission_id = m.id
+      JOIN persons p ON p.id = ma.person_id
+      WHERE UPPER(m.affaire) = ?
+      ORDER BY p.last_name, p.first_name
+    `,
+        )
+        .all(numeroAffaire);
+
+      const personnelCount =
+        db
+          .prepare(
+            `
+      SELECT COUNT(DISTINCT person_id) as c FROM (
+        SELECT ma.person_id
+        FROM missions m
+        JOIN mission_assignments ma ON ma.mission_id = m.id
+        WHERE UPPER(m.affaire) = ?
+        UNION
+        SELECT ma.person_id
+        FROM reservations r
+        JOIN missions m ON m.reservation_id = r.id
+        JOIN mission_assignments ma ON ma.mission_id = m.id
+        WHERE UPPER(r.affaire) = ?
+      )
+    `,
+          )
+          .get(numeroAffaire, numeroAffaire)?.c || personnel.length;
+
+      res.json({
+        affaire: mapAffaire(affaire),
+        links: {
+          children,
+          parents,
+          total: children.length + parents.length,
+        },
+        reservations,
+        tasks,
+        personnel,
+        personnelCount,
+      });
+    } catch (error) {
+      logger.error('Erreur GET /api/affaires/mobile/:numero/detail:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // POST /api/affaires — Créer ou mettre à jour une affaire (upsert par numero_affaire)
   app.post('/api/affaires', authenticateToken, validate(affaireSchema), (req, res) => {
     try {

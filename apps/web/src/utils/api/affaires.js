@@ -8,6 +8,9 @@ export function registerAffairesMethods(ApiClient) {
     async getAffairesPersonnelCounts() {
       return this.request('/affaires/personnel-counts');
     },
+    async getAffaireMobileDetail(numeroAffaire) {
+      return this.request(`/affaires/mobile/${encodeURIComponent(numeroAffaire)}/detail`);
+    },
     async createOrUpdateAffaire(affaire) {
       return this.request('/affaires', { method: 'POST', body: JSON.stringify(affaire) });
     },

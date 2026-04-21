@@ -127,51 +127,95 @@ export function setupMessagingRoutes(app, authenticateToken) {
   // GET /api/messaging/conversations — Liste des conversations de l'utilisateur
   app.get('/api/messaging/conversations', authenticateToken, (req, res) => {
     try {
+      const parsePositiveInt = (value, fallback) => {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+      };
+      const parseNonNegativeInt = (value, fallback) => {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+      };
+
+      const pageSize = Math.min(parsePositiveInt(req.query.limit ?? req.query.pageSize, 50), 200);
+      const page = parsePositiveInt(req.query.page, 1);
+      const hasOffset = req.query.offset !== undefined;
+      const offset = hasOffset ? parseNonNegativeInt(req.query.offset, 0) : (page - 1) * pageSize;
+
       const conversations = db
         .prepare(
           `
-        SELECT c.id, c.type, c.title, c.created_at, c.updated_at,
-          cp.last_read_at,
-          (SELECT COUNT(*) FROM messages m 
-           WHERE m.conversation_id = c.id 
-           AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
-           AND m.sender_id != ?
-          ) as unread_count,
-          (SELECT m2.content FROM messages m2 
-           WHERE m2.conversation_id = c.id 
-           ORDER BY m2.created_at DESC LIMIT 1
-          ) as last_message,
-          (SELECT m3.created_at FROM messages m3 
-           WHERE m3.conversation_id = c.id 
-           ORDER BY m3.created_at DESC LIMIT 1
-          ) as last_message_at,
-          (SELECT u.name FROM messages m4 
-           JOIN users u ON m4.sender_id = u.id
-           WHERE m4.conversation_id = c.id 
-           ORDER BY m4.created_at DESC LIMIT 1
-          ) as last_message_sender
-        FROM conversations c
-        JOIN conversation_participants cp ON c.id = cp.conversation_id
-        WHERE cp.user_id = ?
-        ORDER BY COALESCE(
-          (SELECT MAX(m5.created_at) FROM messages m5 WHERE m5.conversation_id = c.id),
-          c.created_at
-        ) DESC
+        WITH user_conversations AS (
+          SELECT c.id, c.type, c.title, c.created_at, c.updated_at, cp.last_read_at
+          FROM conversations c
+          JOIN conversation_participants cp ON c.id = cp.conversation_id
+          WHERE cp.user_id = ?
+        ),
+        last_messages AS (
+          SELECT m.conversation_id, m.content, m.created_at, u.name as sender_name
+          FROM messages m
+          JOIN users u ON u.id = m.sender_id
+          JOIN (
+            SELECT conversation_id, MAX(id) as max_message_id
+            FROM messages
+            GROUP BY conversation_id
+          ) lm ON lm.max_message_id = m.id
+        ),
+        unread_counts AS (
+          SELECT m.conversation_id, COUNT(*) as unread_count
+          FROM messages m
+          JOIN conversation_participants cp
+            ON cp.conversation_id = m.conversation_id
+           AND cp.user_id = ?
+          WHERE m.sender_id != ?
+            AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
+          GROUP BY m.conversation_id
+        )
+        SELECT uc.id, uc.type, uc.title, uc.created_at, uc.updated_at, uc.last_read_at,
+               COALESCE(ucount.unread_count, 0) as unread_count,
+               lm.content as last_message,
+               lm.created_at as last_message_at,
+               lm.sender_name as last_message_sender
+        FROM user_conversations uc
+        LEFT JOIN unread_counts ucount ON ucount.conversation_id = uc.id
+        LEFT JOIN last_messages lm ON lm.conversation_id = uc.id
+        ORDER BY COALESCE(lm.created_at, uc.created_at) DESC
+        LIMIT ? OFFSET ?
       `,
         )
-        .all(req.user.id, req.user.id);
+        .all(req.user.id, req.user.id, req.user.id, pageSize, offset);
 
-      // Pour chaque conversation, récupérer les participants
-      const participantsStmt = db.prepare(`
-        SELECT u.id, u.name, u.email
+      if (conversations.length === 0) {
+        return res.json([]);
+      }
+
+      const conversationIds = conversations.map((c) => c.id);
+      const placeholders = conversationIds.map(() => '?').join(',');
+      const participantsRows = db
+        .prepare(
+          `
+        SELECT cp.conversation_id, u.id, u.name, u.email
         FROM conversation_participants cp
         JOIN users u ON cp.user_id = u.id
-        WHERE cp.conversation_id = ?
-      `);
+        WHERE cp.conversation_id IN (${placeholders})
+      `,
+        )
+        .all(...conversationIds);
+
+      const participantsByConversation = new Map();
+      for (const row of participantsRows) {
+        if (!participantsByConversation.has(row.conversation_id)) {
+          participantsByConversation.set(row.conversation_id, []);
+        }
+        participantsByConversation.get(row.conversation_id).push({
+          id: row.id,
+          name: row.name,
+          email: row.email,
+        });
+      }
 
       const result = conversations.map((conv) => ({
         ...conv,
-        participants: participantsStmt.all(conv.id),
+        participants: participantsByConversation.get(conv.id) || [],
       }));
 
       res.json(result);
@@ -238,7 +282,9 @@ export function setupMessagingRoutes(app, authenticateToken) {
   app.get('/api/messaging/conversations/:id/messages', authenticateToken, (req, res) => {
     try {
       const convId = req.params.id;
-      const limit = parseInt(req.query.limit) || 50;
+      const parsedLimit = Number.parseInt(req.query.limit, 10);
+      const limit =
+        Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 200) : 50;
       const before = req.query.before; // cursor-based pagination
 
       // Vérifier que l'utilisateur est participant

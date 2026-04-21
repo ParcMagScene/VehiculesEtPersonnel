@@ -82,9 +82,12 @@ function MobileMessaging({ currentUser, onBack }) {
   const [showNewConv, setShowNewConv] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [sseReady, setSseReady] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const pollRef = useRef(null);
+  const sseRef = useRef(null);
+  const activeConversationRef = useRef(null);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -114,21 +117,108 @@ function MobileMessaging({ currentUser, onBack }) {
     loadConversations();
   }, [loadConversations]);
 
+  useEffect(() => {
+    activeConversationRef.current = activeConversation;
+  }, [activeConversation]);
+
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(
     loadConversations,
     { disabled: !!activeConversation },
   );
 
-  // Polling
+  // SSE temps réel (rafraîchit la conversation active et la liste)
   useEffect(() => {
-    pollRef.current = setInterval(() => {
-      if (activeConversation) {
-        loadMessages(activeConversation.id);
+    let reconnectTimer = null;
+    let retries = 0;
+    let closed = false;
+
+    const closeSource = () => {
+      if (sseRef.current) {
+        sseRef.current.close();
+        sseRef.current = null;
       }
-      loadConversations();
-    }, 5000);
-    return () => clearInterval(pollRef.current);
-  }, [activeConversation, loadMessages, loadConversations]);
+    };
+
+    const connect = () => {
+      if (closed) return;
+      closeSource();
+
+      const es = new EventSource('/api/messaging/sse', { withCredentials: true });
+      sseRef.current = es;
+
+      es.onopen = () => {
+        retries = 0;
+        setSseReady(true);
+      };
+
+      es.addEventListener('new_message', async (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          await loadConversations();
+          const currentConv = activeConversationRef.current;
+          if (currentConv && Number(data?.conversation_id) === Number(currentConv.id)) {
+            await loadMessages(currentConv.id);
+          }
+        } catch {
+          // silencieux
+        }
+      });
+
+      es.addEventListener('unread_update', () => {
+        loadConversations().catch(() => {
+          // silencieux
+        });
+      });
+
+      es.onerror = () => {
+        setSseReady(false);
+        closeSource();
+        if (closed) return;
+        retries += 1;
+        const delay = Math.min(retries * 2000, 30000);
+        reconnectTimer = setTimeout(connect, delay);
+      };
+    };
+
+    connect();
+
+    return () => {
+      closed = true;
+      setSseReady(false);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      closeSource();
+    };
+  }, [loadConversations, loadMessages]);
+
+  // Fallback polling lent si SSE indisponible
+  useEffect(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+
+    if (sseReady) {
+      return undefined;
+    }
+
+    pollRef.current = setInterval(() => {
+      loadConversations().catch(() => {
+        // silencieux
+      });
+      if (activeConversation) {
+        loadMessages(activeConversation.id).catch(() => {
+          // silencieux
+        });
+      }
+    }, 30000);
+
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [activeConversation, loadConversations, loadMessages, sseReady]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

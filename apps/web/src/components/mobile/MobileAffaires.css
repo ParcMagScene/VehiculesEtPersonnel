@@ -240,6 +240,9 @@
   border-left: 4px solid transparent;
   cursor: pointer;
   transition: transform 0.1s;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .maff-card:active {
@@ -301,22 +304,24 @@
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--theme-text-heading);
-  margin-bottom: var(--space-0-5);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-bottom: 0;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .maff-card-client {
   font-size: var(--font-base);
   color: var(--theme-text-muted);
-  margin-bottom: var(--space-1-5);
+  margin-bottom: 0;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .maff-card-footer {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2-5);
+  gap: var(--space-1-5) var(--space-2-5);
   font-size: var(--font-sm);
   color: var(--theme-text-muted);
 }
@@ -324,15 +329,16 @@
 .maff-card-dates,
 .maff-card-lieu {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-1);
+  min-width: 0;
 }
 
 .maff-card-lieu span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 180px;
+  white-space: normal;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  max-width: none;
 }
 
 .maff-card-badges {
@@ -340,6 +346,44 @@
   gap: var(--space-2);
   margin-top: var(--space-1-5);
   flex-wrap: wrap;
+}
+
+/* Défense anti-masquage: certains moteurs/styles globaux peuvent injecter
+   des fonds/pseudo-éléments sur les lignes de texte en mobile. */
+.maff-card-title,
+.maff-card-client,
+.maff-card-dates,
+.maff-card-lieu,
+.maff-card-lieu span,
+.maff-badge,
+.maff-card-num {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
+  mask: none !important;
+  -webkit-mask: none !important;
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+}
+
+.maff-card-title::before,
+.maff-card-title::after,
+.maff-card-client::before,
+.maff-card-client::after,
+.maff-card-dates::before,
+.maff-card-dates::after,
+.maff-card-lieu::before,
+.maff-card-lieu::after,
+.maff-card-lieu span::before,
+.maff-card-lieu span::after,
+.maff-badge::before,
+.maff-badge::after {
+  content: none !important;
+  display: none !important;
 }
 
 .maff-badge {

@@ -15,9 +15,26 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/persons — Liste tout le personnel (avec compétences)
   app.get('/api/persons', authenticateToken, (req, res) => {
     try {
+      const parsePositiveInt = (value, fallback) => {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+      };
+      const parseNonNegativeInt = (value, fallback) => {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+      };
+
+      const pageSize = Math.min(
+        parsePositiveInt(req.query.pageSize ?? req.query.limit, 5000),
+        5000,
+      );
+      const page = parsePositiveInt(req.query.page, 1);
+      const hasOffset = req.query.offset !== undefined;
+      const offset = hasOffset ? parseNonNegativeInt(req.query.offset, 0) : (page - 1) * pageSize;
+
       const persons = db
-        .prepare('SELECT * FROM persons ORDER BY last_name, first_name LIMIT 5000')
-        .all();
+        .prepare('SELECT * FROM persons ORDER BY last_name, first_name LIMIT ? OFFSET ?')
+        .all(pageSize, offset);
 
       // Charger toutes les compétences en une seule requête (évite N+1)
       const allSkills = db

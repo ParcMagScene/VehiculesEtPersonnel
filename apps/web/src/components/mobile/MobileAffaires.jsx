@@ -25,13 +25,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS } from '../../constants/colors';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
-import useSwipeAction from '../../hooks/useSwipeAction';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import api from '../../utils/api';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
-import SwipeableRow from './SwipeableRow';
 
 // Statut temporel
 const getAffaireStatus = (a, todayStr) => {
@@ -74,7 +71,6 @@ function MobileAffaires({ onBack }) {
   }, [loadAffaires]);
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadAffaires);
-  const { getSwipeProps, swipeState, resetSwipe } = useSwipeAction();
 
   // Filtrer : affaires en cours ou à venir dans la semaine suivante depuis la date courante
   const filteredAffaires = useMemo(() => {
@@ -134,43 +130,13 @@ function MobileAffaires({ onBack }) {
     }
     setDetailLoading(true);
     try {
-      const [links, personnelCounts, allReservations, tasks, allMissions] = await Promise.all([
-        api.getAffaireLinks(affaire.id).catch(() => ({ children: [], parents: [], total: 0 })),
-        api.getAffairesPersonnelCounts().catch(() => ({})),
-        api.getReservations().catch(() => []),
-        api.getTasks({ affaire_num: affaire.numeroAffaire }).catch(() => []),
-        api.getMissions().catch(() => []),
-      ]);
-
-      // Filtrer les réservations liées
-      const reservations = (Array.isArray(allReservations) ? allReservations : []).filter(
-        (r) => r.affaire === affaire.numeroAffaire,
-      );
-
-      // Extraire le personnel depuis les missions
-      const linkedMissions = (Array.isArray(allMissions) ? allMissions : []).filter(
-        (m) => m.affaire === affaire.numeroAffaire,
-      );
-      const personnelMap = new Map();
-      linkedMissions.forEach((m) => {
-        (m.assignments || []).forEach((a) => {
-          if (a.personId && !personnelMap.has(a.personId)) {
-            personnelMap.set(a.personId, {
-              id: a.personId,
-              name: a.personName || a.name || `Personne #${a.personId}`,
-              role: a.role || '',
-            });
-          }
-        });
-      });
-      const personnel = Array.from(personnelMap.values());
-
+      const detail = await api.getAffaireMobileDetail(affaire.numeroAffaire);
       setDetailData({
-        links,
-        personnelCount: personnelCounts[affaire.numeroAffaire] || personnel.length || 0,
-        reservations,
-        tasks: Array.isArray(tasks) ? tasks : [],
-        personnel,
+        links: detail?.links || { children: [], parents: [], total: 0 },
+        personnelCount: detail?.personnelCount || 0,
+        reservations: Array.isArray(detail?.reservations) ? detail.reservations : [],
+        tasks: Array.isArray(detail?.tasks) ? detail.tasks : [],
+        personnel: Array.isArray(detail?.personnel) ? detail.personnel : [],
       });
     } catch {
       setDetailData(null);
@@ -579,104 +545,70 @@ function MobileAffaires({ onBack }) {
             const typeInfo = getTypeInfo(a.type);
             const isActive = status === STATUS.ACTIVE;
             return (
-              <SwipeableRow
+              <div
                 key={a.id || a.numeroAffaire}
-                itemId={a.id || a.numeroAffaire}
-                swipeState={swipeState}
-                getSwipeProps={getSwipeProps}
-                onReset={resetSwipe}
-                leftAction={
-                  a.clientTel
-                    ? {
-                        label: 'Appeler',
-                        icon: '📞',
-                        color: STATUS_COLORS.success,
-                        onClick: () => {
-                          window.location.href = `tel:${a.clientTel}`;
-                        },
-                      }
-                    : null
-                }
-                rightAction={
-                  a.adresseLivraison
-                    ? {
-                        label: 'Itinéraire',
-                        icon: '🗺️',
-                        color: STATUS_COLORS.info,
-                        onClick: () => {
-                          window.open(
-                            `https://maps.google.com/maps?q=${encodeURIComponent(a.adresseLivraison)}`,
-                            '_blank',
-                          );
-                        },
-                      }
-                    : null
-                }
+                className={`maff-card ${isActive ? 'active' : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => openDetail(a)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openDetail(a);
+                  }
+                }}
               >
-                <div
-                  className={`maff-card ${isActive ? 'active' : ''}`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openDetail(a)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      openDetail(a);
-                    }
-                  }}
-                >
-                  <div className="maff-card-header">
-                    <span className="maff-card-type" style={{ background: typeInfo.color }}>
-                      {typeInfo.icon}
-                    </span>
-                    <span className="maff-card-num">{a.numeroAffaire}</span>
-                    <span className={`maff-card-status ${status}`}>
-                      {isActive ? 'En cours' : 'À venir'}
-                    </span>
-                  </div>
+                <div className="maff-card-header">
+                  <span className="maff-card-type" style={{ background: typeInfo.color }}>
+                    {typeInfo.icon}
+                  </span>
+                  <span className="maff-card-num">{a.numeroAffaire}</span>
+                  <span className={`maff-card-status ${status}`}>
+                    {isActive ? 'En cours' : 'À venir'}
+                  </span>
+                </div>
 
-                  <div className="maff-card-title">{a.nom || a.titre || a.eventName || '—'}</div>
+                <div className="maff-card-title">{a.nom || a.titre || a.eventName || '—'}</div>
 
-                  {a.client && <div className="maff-card-client">{a.client}</div>}
+                {a.client && <div className="maff-card-client">{a.client}</div>}
 
-                  <div className="maff-card-footer">
-                    <span className="maff-card-dates">
-                      <Calendar size={13} />
-                      {a.dateDebut && format(parseISO(a.dateDebut), 'd MMM', { locale: fr })}
-                      {a.dateFin && a.dateFin !== a.dateDebut && (
-                        <> → {format(parseISO(a.dateFin), 'd MMM', { locale: fr })}</>
-                      )}
+                <div className="maff-card-footer">
+                  <span className="maff-card-dates">
+                    <Calendar size={13} />
+                    {a.dateDebut && format(parseISO(a.dateDebut), 'd MMM', { locale: fr })}
+                    {a.dateFin && a.dateFin !== a.dateDebut && (
+                      <> → {format(parseISO(a.dateFin), 'd MMM', { locale: fr })}</>
+                    )}
+                  </span>
+                  {a.adresseLivraison && (
+                    <span className="maff-card-lieu">
+                      <MapPin size={13} />
+                      <span>{a.adresseLivraison}</span>
                     </span>
-                    {a.adresseLivraison && (
-                      <span className="maff-card-lieu">
-                        <MapPin size={13} />
-                        <span>{a.adresseLivraison}</span>
+                  )}
+                </div>
+
+                {/* Badges compteurs */}
+                {(a.reservationCount > 0 || a.personnelCount > 0 || a.blImportCount > 0) && (
+                  <div className="maff-card-badges">
+                    {a.reservationCount > 0 && (
+                      <span className="maff-badge">
+                        <Truck size={12} /> {a.reservationCount}
+                      </span>
+                    )}
+                    {a.personnelCount > 0 && (
+                      <span className="maff-badge">
+                        <Users size={12} /> {a.personnelCount}
+                      </span>
+                    )}
+                    {a.blImportCount > 0 && (
+                      <span className="maff-badge">
+                        <FileText size={12} /> {a.blImportCount}
                       </span>
                     )}
                   </div>
-
-                  {/* Badges compteurs */}
-                  {(a.reservationCount > 0 || a.personnelCount > 0 || a.blImportCount > 0) && (
-                    <div className="maff-card-badges">
-                      {a.reservationCount > 0 && (
-                        <span className="maff-badge">
-                          <Truck size={12} /> {a.reservationCount}
-                        </span>
-                      )}
-                      {a.personnelCount > 0 && (
-                        <span className="maff-badge">
-                          <Users size={12} /> {a.personnelCount}
-                        </span>
-                      )}
-                      {a.blImportCount > 0 && (
-                        <span className="maff-badge">
-                          <FileText size={12} /> {a.blImportCount}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </SwipeableRow>
+                )}
+              </div>
             );
           })}
         </div>

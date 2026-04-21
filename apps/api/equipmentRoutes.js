@@ -171,10 +171,32 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       }
 
       sql += ' ORDER BY e.name';
-      if (limit) {
-        sql += ' LIMIT ?';
-        params.push(parseInt(limit, 10));
+
+      const hasPagination =
+        req.query.limit !== undefined ||
+        req.query.offset !== undefined ||
+        req.query.page !== undefined ||
+        req.query.pageSize !== undefined;
+
+      if (hasPagination) {
+        const parsePositiveInt = (value, fallback) => {
+          const parsed = Number.parseInt(value, 10);
+          return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+        };
+        const parseNonNegativeInt = (value, fallback) => {
+          const parsed = Number.parseInt(value, 10);
+          return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+        };
+
+        const pageSize = Math.min(parsePositiveInt(req.query.pageSize ?? limit, 200), 5000);
+        const page = parsePositiveInt(req.query.page, 1);
+        const hasOffset = req.query.offset !== undefined;
+        const offset = hasOffset ? parseNonNegativeInt(req.query.offset, 0) : (page - 1) * pageSize;
+
+        sql += ' LIMIT ? OFFSET ?';
+        params.push(pageSize, offset);
       }
+
       const equipment = db.prepare(sql).all(...params);
 
       // Enrichir avec le dernier assignment actif — requête unique au lieu de N+1

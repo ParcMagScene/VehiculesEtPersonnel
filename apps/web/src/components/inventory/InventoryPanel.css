@@ -8,8 +8,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--theme-bg-primary, var(--theme-bg-secondary));
-  color: var(--theme-text-primary, #1a1a2e);
+  background: var(--surface-page, var(--surface-secondary));
+  color: var(--text-body, #1a1a2e);
 }
 
 .inv-header {
@@ -17,8 +17,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background: var(--theme-bg-secondary, var(--theme-bg-card));
-  border-bottom: 1px solid var(--theme-border, var(--theme-border));
+  background: var(--surface-secondary, var(--surface-primary));
+  border-bottom: 1px solid var(--border-default);
   flex-shrink: 0;
   gap: 12px;
 }
@@ -36,7 +36,7 @@
   padding: 6px 14px;
   border: none;
   background: transparent;
-  color: var(--theme-text-secondary, var(--theme-neutral));
+  color: var(--text-muted, var(--theme-neutral));
   cursor: pointer;
   font-size: var(--font-base);
   border-radius: var(--radius-sm);
@@ -44,11 +44,11 @@
   position: relative;
 }
 .inv-tab:hover {
-  background: var(--theme-bg-hover, var(--shadow-xs));
+  background: var(--surface-hover, var(--shadow-xs));
 }
 .inv-tab.active {
-  background: var(--theme-primary, var(--theme-info));
-  color: var(--theme-bg-card);
+  background: var(--interactive-primary, var(--feedback-info));
+  color: var(--text-inverse);
 }
 
 .inv-tab-badge {
@@ -56,7 +56,7 @@
   top: -2px;
   right: -2px;
   background: var(--theme-danger);
-  color: var(--theme-bg-card);
+  color: var(--text-inverse);
   font-size: 0.65rem;
   min-width: 16px;
   height: 16px;
@@ -78,12 +78,12 @@
   border-radius: var(--radius-lg);
   font-size: var(--font-sm);
   font-weight: 600;
-  background: var(--theme-bg-hover, var(--shadow-inner));
-  color: var(--theme-text-secondary, #555);
+  background: var(--surface-hover, var(--shadow-inner));
+  color: var(--text-muted, #555);
 }
 .inv-stat-badge.warning {
   background: rgba(255, 152, 0, 0.15);
-  color: var(--theme-warning-text);
+  color: var(--feedback-warning-text);
 }
 
 .inv-content {
@@ -99,7 +99,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: var(--theme-text-muted, var(--theme-text-muted));
+  color: var(--text-muted, var(--text-muted));
 }
 
 .inv-empty {
@@ -108,7 +108,7 @@
   gap: 8px;
   justify-content: center;
   padding: 40px 20px;
-  color: var(--theme-text-muted, var(--theme-text-muted));
+  color: var(--text-muted, var(--text-muted));
   font-size: 0.95rem;
 }
 
@@ -118,20 +118,20 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  border: 1px solid var(--theme-border, var(--theme-border-muted));
-  background: var(--theme-bg-secondary, var(--theme-bg-card));
-  color: var(--theme-text-primary, var(--theme-text-body));
+  border: 1px solid var(--border-default);
+  background: var(--surface-secondary, var(--surface-primary));
+  color: var(--text-body, var(--text-body));
   cursor: pointer;
   font-size: 0.82rem;
   border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
 .inv-btn:hover {
-  background: var(--theme-bg-hover, var(--theme-bg-tertiary));
+  background: var(--surface-hover, var(--surface-tertiary));
 }
 .inv-btn.primary {
-  background: var(--theme-primary, var(--theme-info));
-  color: var(--theme-bg-card);
+  background: var(--interactive-primary, var(--feedback-info));
+  color: var(--text-inverse);
   border-color: transparent;
 }
 .inv-btn.primary:hover {
@@ -153,12 +153,12 @@
   height: 28px;
   border: none;
   background: transparent;
-  color: var(--theme-text-secondary, var(--theme-text-muted));
+  color: var(--text-muted, var(--text-muted));
   cursor: pointer;
   border-radius: var(--radius-xs);
 }
 .inv-btn-icon:hover {
-  background: var(--theme-bg-hover, var(--theme-bg-tertiary));
+  background: var(--surface-hover, var(--surface-tertiary));
 }
 .inv-btn-icon.danger:hover {
   background: rgba(220, 53, 69, 0.1);
@@ -188,11 +188,11 @@
 }
 .inv-search-group input {
   padding: 6px 10px;
-  border: 1px solid var(--theme-border, var(--theme-border-muted));
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   font-size: var(--font-base);
-  background: var(--theme-bg-secondary, var(--theme-bg-card));
-  color: var(--theme-text-primary, var(--theme-text-body));
+  background: var(--surface-secondary, var(--surface-primary));
+  color: var(--text-body, var(--text-body));
 }
 
 /* ── Actions bar ── */
@@ -213,20 +213,20 @@
 .inv-table td {
   padding: 8px 12px;
   text-align: left;
-  border-bottom: 1px solid var(--theme-border, var(--theme-border));
+  border-bottom: 1px solid var(--border-default);
 }
 .inv-table th {
   font-weight: 600;
-  color: var(--theme-text-secondary, var(--theme-text-secondary));
+  color: var(--text-muted, var(--text-muted));
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  background: var(--theme-bg-secondary, var(--theme-bg-card));
+  background: var(--surface-secondary, var(--surface-primary));
   position: sticky;
   top: 0;
 }
 .inv-table tr:hover td {
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.02));
+  background: var(--surface-hover, rgba(0, 0, 0, 0.02));
 }
 .inv-row-warning td {
   background: rgba(255, 193, 7, 0.06);

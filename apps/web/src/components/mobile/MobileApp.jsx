@@ -54,6 +54,12 @@ function MobileApp({ onSwitchToDesktop }) {
   const [clients, setClients] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [garages, setGarages] = useState([]);
+  const [auxLoaded, setAuxLoaded] = useState({
+    clients: false,
+    drivers: false,
+    garages: false,
+  });
+  const [auxDataLoading, setAuxDataLoading] = useState(false);
   const { theme: _theme, isDark, toggleTheme, palette, setPalette } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const isAdmin = !!currentUser?.isAdmin;
@@ -111,31 +117,18 @@ function MobileApp({ onSwitchToDesktop }) {
     setCurrentScreen('home');
   };
 
-  // Charger les données
-  const loadParcData = useCallback(async () => {
+  // Charger les données coeur (utilisées par l'accueil/parc)
+  const loadCoreParcData = useCallback(async () => {
     try {
-      const [
-        vehiclesData,
-        reservationsData,
-        maintenancesData,
-        clientsData,
-        driversData,
-        garagesData,
-      ] = await Promise.all([
+      const [vehiclesData, reservationsData, maintenancesData] = await Promise.all([
         api.getVehicles(),
         api.getReservations(),
         api.getMaintenances(),
-        api.getClients(),
-        api.getDrivers(),
-        api.getGarages(),
       ]);
 
       setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
       setReservations(reservationsData);
       setMaintenances(maintenancesData);
-      setClients(clientsData);
-      setDrivers(driversData);
-      setGarages(garagesData);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       if (error.message.includes('authentification') || error.message.includes('401')) {
@@ -144,10 +137,94 @@ function MobileApp({ onSwitchToDesktop }) {
     }
   }, []);
 
+  // Charger les référentiels à la demande (écrans planning/réservation/maintenance)
+  const loadAuxiliaryParcData = useCallback(
+    async ({
+      includeClients = false,
+      includeDrivers = false,
+      includeGarages = false,
+      force = false,
+    } = {}) => {
+      const needClients = includeClients && (force || !auxLoaded.clients);
+      const needDrivers = includeDrivers && (force || !auxLoaded.drivers);
+      const needGarages = includeGarages && (force || !auxLoaded.garages);
+
+      if (!needClients && !needDrivers && !needGarages) return;
+
+      setAuxDataLoading(true);
+      try {
+        const tasks = [];
+        if (needClients) {
+          tasks.push(
+            api.getClients().then((data) => {
+              setClients(data);
+            }),
+          );
+        }
+        if (needDrivers) {
+          tasks.push(
+            api.getDrivers().then((data) => {
+              setDrivers(data);
+            }),
+          );
+        }
+        if (needGarages) {
+          tasks.push(
+            api.getGarages().then((data) => {
+              setGarages(data);
+            }),
+          );
+        }
+
+        await Promise.all(tasks);
+
+        setAuxLoaded((prev) => ({
+          clients: prev.clients || needClients,
+          drivers: prev.drivers || needDrivers,
+          garages: prev.garages || needGarages,
+        }));
+      } catch (error) {
+        console.error('Erreur lors du chargement des référentiels:', error);
+        if (error.message.includes('authentification') || error.message.includes('401')) {
+          handleLogout();
+        }
+      } finally {
+        setAuxDataLoading(false);
+      }
+    },
+    [auxLoaded],
+  );
+
+  // Refresh complet demandé par certains écrans
+  const loadParcData = useCallback(async () => {
+    await Promise.all([
+      loadCoreParcData(),
+      loadAuxiliaryParcData({
+        includeClients: true,
+        includeDrivers: true,
+        includeGarages: true,
+        force: true,
+      }),
+    ]);
+  }, [loadCoreParcData, loadAuxiliaryParcData]);
+
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
-    loadParcData();
-  }, [isAuthenticated, isLoading, loadParcData]);
+    loadCoreParcData();
+  }, [isAuthenticated, isLoading, loadCoreParcData]);
+
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+
+    if (currentScreen === 'planning' || currentScreen === 'reservations') {
+      loadAuxiliaryParcData({ includeClients: true, includeDrivers: true });
+      return;
+    }
+
+    if (currentScreen === 'maintenances') {
+      loadAuxiliaryParcData({ includeGarages: true });
+    }
+  }, [currentScreen, isAuthenticated, isLoading, loadAuxiliaryParcData]);
 
   // Sync currentScreen ref
   useEffect(() => {
@@ -183,6 +260,10 @@ function MobileApp({ onSwitchToDesktop }) {
   const handleCreateMaintenance = () => {
     maintenanceFormRef.current?.openForm();
   };
+
+  const planningDepsReady = auxLoaded.clients && auxLoaded.drivers;
+  const reservationsDepsReady = auxLoaded.clients && auxLoaded.drivers;
+  const maintenancesDepsReady = auxLoaded.garages;
 
   if (isLoading) {
     return (
@@ -337,20 +418,23 @@ function MobileApp({ onSwitchToDesktop }) {
           />
         )}
 
-        {currentScreen === 'planning' && (
-          <Suspense fallback={<MobileScreenFallback />}>
-            <MobilePlanning
-              vehicles={vehicles}
-              reservations={reservations}
-              maintenances={maintenances}
-              currentDate={new Date()}
-              onClose={() => setCurrentScreen('parc-dashboard')}
-              clients={clients}
-              drivers={drivers}
-              onRefresh={loadParcData}
-            />
-          </Suspense>
-        )}
+        {currentScreen === 'planning' &&
+          (!planningDepsReady || auxDataLoading ? (
+            <MobileScreenFallback />
+          ) : (
+            <Suspense fallback={<MobileScreenFallback />}>
+              <MobilePlanning
+                vehicles={vehicles}
+                reservations={reservations}
+                maintenances={maintenances}
+                currentDate={new Date()}
+                onClose={() => setCurrentScreen('parc-dashboard')}
+                clients={clients}
+                drivers={drivers}
+                onRefresh={loadParcData}
+              />
+            </Suspense>
+          ))}
 
         {currentScreen === 'availability' && (
           <Suspense fallback={<MobileScreenFallback />}>
@@ -366,36 +450,42 @@ function MobileApp({ onSwitchToDesktop }) {
           </Suspense>
         )}
 
-        {currentScreen === 'reservations' && (
-          <Suspense fallback={<MobileScreenFallback />}>
-            <MobileReservations
-              ref={reservationFormRef}
-              vehicles={vehicles}
-              reservations={reservations}
-              clients={clients}
-              drivers={drivers}
-              currentUser={currentUser}
-              onReservationCreated={handleReservationCreated}
-              onBack={() => setCurrentScreen('parc-dashboard')}
-              onRefresh={loadParcData}
-            />
-          </Suspense>
-        )}
+        {currentScreen === 'reservations' &&
+          (!reservationsDepsReady || auxDataLoading ? (
+            <MobileScreenFallback />
+          ) : (
+            <Suspense fallback={<MobileScreenFallback />}>
+              <MobileReservations
+                ref={reservationFormRef}
+                vehicles={vehicles}
+                reservations={reservations}
+                clients={clients}
+                drivers={drivers}
+                currentUser={currentUser}
+                onReservationCreated={handleReservationCreated}
+                onBack={() => setCurrentScreen('parc-dashboard')}
+                onRefresh={loadParcData}
+              />
+            </Suspense>
+          ))}
 
-        {currentScreen === 'maintenances' && (
-          <Suspense fallback={<MobileScreenFallback />}>
-            <MobileMaintenances
-              ref={maintenanceFormRef}
-              vehicles={vehicles}
-              maintenances={maintenances}
-              garages={garages}
-              currentUser={currentUser}
-              onMaintenanceCreated={handleMaintenanceCreated}
-              onBack={() => setCurrentScreen('parc-dashboard')}
-              onRefresh={loadParcData}
-            />
-          </Suspense>
-        )}
+        {currentScreen === 'maintenances' &&
+          (!maintenancesDepsReady || auxDataLoading ? (
+            <MobileScreenFallback />
+          ) : (
+            <Suspense fallback={<MobileScreenFallback />}>
+              <MobileMaintenances
+                ref={maintenanceFormRef}
+                vehicles={vehicles}
+                maintenances={maintenances}
+                garages={garages}
+                currentUser={currentUser}
+                onMaintenanceCreated={handleMaintenanceCreated}
+                onBack={() => setCurrentScreen('parc-dashboard')}
+                onRefresh={loadParcData}
+              />
+            </Suspense>
+          ))}
 
         {currentScreen === 'affaires' && (
           <Suspense fallback={<MobileScreenFallback />}>

@@ -164,7 +164,7 @@
   gap: 10px;
   padding: 8px 12px;
   border-radius: var(--radius-md);
-  border-left: 3px solid var(--theme-info);
+  border-left: 3px solid var(--feedback-info);
   background: var(--info-tint-faint);
   transition: background 0.15s;
   flex-wrap: wrap;
@@ -176,7 +176,7 @@
   border-left-color: var(--theme-success-alt);
 }
 .dd-rdv-row.affaire-rdv {
-  border-left-color: var(--theme-primary, var(--theme-indigo));
+  border-left-color: var(--interactive-primary, var(--theme-indigo));
   background: var(--accent-tint-subtle);
 }
 .dd-rdv-row.affaire-rdv:hover {
@@ -243,7 +243,7 @@
   padding: 1px 6px;
   border-radius: var(--radius-xs);
   background: rgba(66, 133, 244, 0.12);
-  color: var(--theme-info);
+  color: var(--feedback-info);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -254,8 +254,8 @@
   width: 20px;
   height: 20px;
   border-radius: var(--radius-xs);
-  background: var(--theme-info);
-  color: var(--theme-bg-card);
+  background: var(--feedback-info);
+  color: var(--text-inverse);
   font-size: 0.7rem;
   font-weight: 700;
 }
@@ -520,7 +520,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .dynamic-display-panel .events-empty svg {
@@ -543,20 +543,20 @@
   gap: 8px;
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0 0 12px 0;
   padding-bottom: 8px;
-  border-bottom: 2px solid var(--theme-border);
+  border-bottom: 2px solid var(--border-default);
 }
 
 /* Event cards */
 .dynamic-display-panel .event-card {
   display: flex;
   align-items: stretch;
-  background: var(--theme-bg-card);
-  border: 1px solid var(--theme-border);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md-lg);
   margin-bottom: 8px;
   overflow: hidden;
@@ -564,7 +564,7 @@
 }
 
 .dynamic-display-panel .event-card:hover {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   box-shadow: 0 2px 8px var(--accent-tint);
 }
 
@@ -602,13 +602,13 @@
 .dynamic-display-panel .event-card .event-affaire {
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .dynamic-display-panel .event-card .event-category {
   font-size: var(--font-sm);
-  color: var(--theme-text-secondary);
-  background: var(--theme-bg-tertiary);
+  color: var(--text-muted);
+  background: var(--surface-tertiary);
   padding: 2px 8px;
   border-radius: var(--radius-md);
 }
@@ -618,7 +618,7 @@
   align-items: center;
   gap: 16px;
   font-size: var(--font-sm);
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .dynamic-display-panel .event-card .event-details span {
@@ -629,7 +629,7 @@
 
 .dynamic-display-panel .event-card .event-comment {
   font-size: var(--font-sm);
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   font-style: italic;
   margin-top: 2px;
 }
@@ -651,17 +651,17 @@
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .dynamic-display-panel .event-card .card-actions button:hover {
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
 }
 
 .dynamic-display-panel .event-card .card-actions button.edit:hover {
-  color: var(--theme-info);
+  color: var(--feedback-info);
 }
 
 .dynamic-display-panel .event-card .card-actions button.delete:hover {
@@ -673,7 +673,7 @@
 }
 
 .dynamic-display-panel .event-card .card-actions button.toggle-visible.hidden-state {
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .dynamic-display-panel .event-card .card-actions button.toggle-visible.hidden-state:hover {
@@ -683,7 +683,7 @@
 /* Événement masqué */
 .dynamic-display-panel .event-card.event-hidden {
   opacity: 0.5;
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
 }
 
 .dynamic-display-panel .event-card.event-hidden .type-stripe {
@@ -694,8 +694,8 @@
   font-size: 0.65rem;
   padding: 1px 6px;
   border-radius: var(--radius-xs);
-  background: var(--theme-text-muted) 22;
-  color: var(--theme-text-secondary);
+  background: var(--text-muted) 22;
+  color: var(--text-muted);
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -708,7 +708,7 @@
   align-items: center;
   justify-content: center;
   padding: 80px 20px;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -722,7 +722,7 @@
 .bl-import-placeholder h3 {
   margin: 0 0 8px 0;
   font-size: var(--font-lg);
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .task-planning-placeholder p,
@@ -767,7 +767,7 @@
 /* ═══ Toggle jour/semaine (Affichage dynamique) ═══ */
 .dynamic-display-panel .dd-view-toggle {
   display: flex;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -778,8 +778,8 @@
   gap: 5px;
   padding: 6px 12px;
   border: none;
-  background: var(--theme-bg-card);
-  color: var(--theme-text-secondary);
+  background: var(--surface-primary);
+  color: var(--text-muted);
   font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
@@ -787,12 +787,12 @@
 }
 
 .dynamic-display-panel .dd-view-toggle button.active {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 
 .dynamic-display-panel .dd-view-toggle button:not(:last-child) {
-  border-right: 1px solid var(--theme-border);
+  border-right: 1px solid var(--border-default);
 }
 
 /* ═══ Vue semaine affichage dynamique ═══ */
@@ -811,15 +811,15 @@
 .dd-week-column {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
   min-height: 200px;
 }
 
 .dd-week-column.today {
-  border-color: var(--theme-primary);
-  box-shadow: 0 0 0 1px var(--theme-primary);
+  border-color: var(--interactive-primary);
+  box-shadow: 0 0 0 1px var(--interactive-primary);
 }
 
 .dd-week-header {
@@ -827,8 +827,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  background: var(--theme-bg-secondary);
-  border-bottom: 1px solid var(--theme-border);
+  background: var(--surface-secondary);
+  border-bottom: 1px solid var(--border-default);
   text-transform: capitalize;
 }
 
@@ -839,13 +839,13 @@
 .dd-week-label {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .dd-week-count {
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   background: var(--accent-tint);
   padding: 1px 6px;
   border-radius: var(--radius-md);
@@ -864,7 +864,7 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   font-size: var(--font-sm);
 }
 
@@ -872,13 +872,13 @@
   padding: 6px 8px;
   border-left: 3px solid;
   border-radius: var(--radius-xs);
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
   font-size: var(--font-sm);
   transition: background 0.1s;
 }
 
 .dd-week-card:hover {
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .dd-week-card-top {
@@ -902,7 +902,7 @@
   border: none;
   border-radius: var(--radius-xs);
   background: transparent;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   cursor: pointer;
   opacity: 0;
   transition: all 0.15s;
@@ -913,8 +913,8 @@
 }
 
 .dd-week-del:hover {
-  background: var(--theme-danger-bg);
-  color: var(--theme-danger);
+  background: var(--feedback-error-bg);
+  color: var(--feedback-error);
 }
 
 /* Week card actions group */
@@ -934,7 +934,7 @@
   border: none;
   border-radius: var(--radius-xs);
   background: transparent;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   cursor: pointer;
   opacity: 0;
   transition: all 0.15s;
@@ -952,7 +952,7 @@
 
 .dd-week-toggle.hidden-state {
   opacity: 0.7;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .dd-week-toggle.hidden-state:hover {
@@ -962,7 +962,7 @@
 
 .dd-week-edit:hover {
   background: var(--primary-tint-light);
-  color: var(--theme-info);
+  color: var(--feedback-info);
 }
 
 /* Événement semaine masqué */
@@ -972,7 +972,7 @@
 
 .dd-week-client {
   font-weight: 600;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -982,7 +982,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   font-weight: 600;
   font-size: 0.7rem;
 }
@@ -991,7 +991,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   font-size: 0.7rem;
 }
 
@@ -1008,7 +1008,7 @@
 
 /* ═══ Affaire cards in day view ═══ */
 .dynamic-display-panel .affaire-card {
-  border-left: 4px solid var(--theme-primary);
+  border-left: 4px solid var(--interactive-primary);
   background: var(--accent-tint-muted);
 }
 
@@ -1036,17 +1036,17 @@
 
 .dynamic-display-panel .affaire-badge.bl {
   background: var(--primary-tint-light);
-  color: var(--theme-info);
+  color: var(--feedback-info);
 }
 
 .dynamic-display-panel .affaire-badge.events {
   background: var(--accent-tint);
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
 }
 
 .dynamic-display-panel .affaire-badge.date {
   background: rgba(100, 116, 139, 0.1);
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 /* Affaire type group header in day view */
@@ -1063,12 +1063,12 @@
 
 /* ═══ Task cards in dynamic display ═══ */
 .dynamic-display-panel .task-card {
-  border-left: 4px solid var(--theme-primary);
+  border-left: 4px solid var(--interactive-primary);
   background: var(--accent-tint-muted);
 }
 .dynamic-display-panel .task-card.google-sourced {
   background: var(--info-tint-faint);
-  border-left-color: var(--theme-info);
+  border-left-color: var(--feedback-info);
 }
 .dd-google-badge,
 .dd-google-badge-sm {
@@ -1078,8 +1078,8 @@
   width: 18px;
   height: 18px;
   border-radius: var(--radius-full);
-  background: var(--theme-info);
-  color: var(--theme-bg-card);
+  background: var(--feedback-info);
+  color: var(--text-inverse);
   font-size: 0.65rem;
   font-weight: 700;
   flex-shrink: 0;
@@ -1099,7 +1099,7 @@
 }
 .task-status-chip.pending {
   background: var(--primary-tint-light);
-  color: var(--theme-info);
+  color: var(--feedback-info);
 }
 .task-status-chip.in_progress {
   background: var(--warning-tint-light);
@@ -1121,6 +1121,6 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   font-size: 0.7rem;
 }

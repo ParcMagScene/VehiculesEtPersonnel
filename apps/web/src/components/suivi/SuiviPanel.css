@@ -126,6 +126,25 @@
   color: var(--text-muted, #64748b);
   padding: 6px 8px 2px;
 }
+.suivi-group-header-collapsible {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.suivi-group-header-collapsible:hover {
+  color: var(--text-secondary, #94a3b8);
+}
+.suivi-group-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  min-width: 12px;
+  transition: transform 0.15s;
+}
 
 .suivi-person-list {
   flex: 1;
@@ -462,7 +481,7 @@
 .fiche-section {
   border: 1px solid var(--border-color, #334155);
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
 }
 .fiche-section-header {
   display: flex;

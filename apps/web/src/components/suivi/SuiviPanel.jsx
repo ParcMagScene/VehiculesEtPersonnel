@@ -59,6 +59,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
   const [selectedSheetIds, setSelectedSheetIds] = useState(new Set());
   const [batchExporting, setBatchExporting] = useState(false);
   const [batchPrinting, setBatchPrinting] = useState(false);
+  const [collapsedNonPermanents, setCollapsedNonPermanents] = useState(true);
   const isAdmin = !!currentUser?.isAdmin;
 
   // Groupes de personnel
@@ -349,10 +350,19 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                   {/* Groupe Contractuels */}
                   {nonPermanents.length > 0 && (
                     <div className="suivi-group">
-                      <div className="suivi-group-header">
+                      <div
+                        className="suivi-group-header suivi-group-header-collapsible"
+                        onClick={() => setCollapsedNonPermanents((v) => !v)}
+                        role="button"
+                        tabIndex={0}
+                        title={collapsedNonPermanents ? 'Afficher' : 'Masquer'}
+                      >
+                        <span className="suivi-group-toggle-icon">
+                          {collapsedNonPermanents ? '▶' : '▼'}
+                        </span>
                         Contractuels ({nonPermanents.length})
                       </div>
-                      {nonPermanents.map((p) => renderPersonItem(p))}
+                      {!collapsedNonPermanents && nonPermanents.map((p) => renderPersonItem(p))}
                     </div>
                   )}
                 </>

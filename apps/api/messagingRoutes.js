@@ -48,6 +48,31 @@ function getUnreadCountForUser(userId) {
   return result.total_unread;
 }
 
+function getUnreadCountsForUsers(userIds) {
+  const counts = new Map();
+  if (!Array.isArray(userIds) || userIds.length === 0) return counts;
+
+  const placeholders = userIds.map(() => '?').join(',');
+  const rows = db
+    .prepare(
+      `
+    SELECT cp.user_id, COUNT(*) as total_unread
+    FROM messages m
+    JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
+    WHERE cp.user_id IN (${placeholders})
+      AND m.sender_id != cp.user_id
+      AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
+    GROUP BY cp.user_id
+  `,
+    )
+    .all(...userIds);
+
+  for (const userId of userIds) counts.set(userId, 0);
+  for (const row of rows) counts.set(row.user_id, row.total_unread);
+
+  return counts;
+}
+
 // [AUDIT Phase 4] Types MIME autorisés pour les uploads messagerie
 const MESSAGING_ALLOWED_MIMES = new Set([
   'image/jpeg',
@@ -438,10 +463,12 @@ export function setupMessagingRoutes(app, authenticateToken) {
         });
 
         // SSE — notifier les autres participants
-        const participants = getConversationParticipantIds(convId);
+        const participants = getConversationParticipantIds(convId).filter(
+          (pid) => pid !== req.user.id,
+        );
+        const unreadByUser = getUnreadCountsForUsers(participants);
         for (const pid of participants) {
-          if (pid === req.user.id) continue;
-          const unread = getUnreadCountForUser(pid);
+          const unread = unreadByUser.get(pid) || 0;
           notifyUser(pid, 'new_message', {
             id: messageId,
             conversation_id: parseInt(convId),
@@ -579,10 +606,12 @@ export function setupMessagingRoutes(app, authenticateToken) {
       });
 
       // SSE — notifier les autres participants
-      const participants = getConversationParticipantIds(convId);
+      const participants = getConversationParticipantIds(convId).filter(
+        (pid) => pid !== req.user.id,
+      );
+      const unreadByUser = getUnreadCountsForUsers(participants);
       for (const pid of participants) {
-        if (pid === req.user.id) continue;
-        const unread = getUnreadCountForUser(pid);
+        const unread = unreadByUser.get(pid) || 0;
         notifyUser(pid, 'new_message', {
           id: messageId,
           conversation_id: parseInt(convId),

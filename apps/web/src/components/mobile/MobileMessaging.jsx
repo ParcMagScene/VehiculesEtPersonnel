@@ -90,6 +90,8 @@ function MobileMessaging({ currentUser, onBack }) {
   const activeConversationRef = useRef(null);
   const convRefreshTimerRef = useRef(null);
   const lastConvRefreshRef = useRef(0);
+  const readReceiptTimerRef = useRef(null);
+  const pendingReadConvRef = useRef(null);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -135,6 +137,23 @@ function MobileMessaging({ currentUser, onBack }) {
     },
     [loadConversations],
   );
+
+  const scheduleMarkConversationRead = useCallback((convId) => {
+    if (!convId) return;
+    pendingReadConvRef.current = convId;
+
+    if (readReceiptTimerRef.current) return;
+
+    readReceiptTimerRef.current = setTimeout(() => {
+      const targetConvId = pendingReadConvRef.current;
+      pendingReadConvRef.current = null;
+      readReceiptTimerRef.current = null;
+      if (!targetConvId) return;
+      api.markConversationRead(targetConvId).catch(() => {
+        // silencieux
+      });
+    }, 800);
+  }, []);
 
   const loadMessages = useCallback(async (convId) => {
     try {
@@ -223,9 +242,7 @@ function MobileMessaging({ currentUser, onBack }) {
                     : c,
                 ),
               );
-              api.markConversationRead(currentConv.id).catch(() => {
-                // silencieux
-              });
+              scheduleMarkConversationRead(currentConv.id);
             } else {
               await loadMessages(currentConv.id);
             }
@@ -259,9 +276,14 @@ function MobileMessaging({ currentUser, onBack }) {
         clearTimeout(convRefreshTimerRef.current);
         convRefreshTimerRef.current = null;
       }
+      if (readReceiptTimerRef.current) {
+        clearTimeout(readReceiptTimerRef.current);
+        readReceiptTimerRef.current = null;
+      }
+      pendingReadConvRef.current = null;
       closeSource();
     };
-  }, [loadMessages, scheduleConversationsRefresh]);
+  }, [loadMessages, scheduleConversationsRefresh, scheduleMarkConversationRead]);
 
   // Fallback polling lent si SSE indisponible
   useEffect(() => {

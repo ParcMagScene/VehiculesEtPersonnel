@@ -97,6 +97,26 @@ const areMessagesEquivalent = (prev, next) => {
   return true;
 };
 
+const areConversationsEquivalent = (prev, next) => {
+  if (prev === next) return true;
+  if (!Array.isArray(prev) || !Array.isArray(next)) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    const a = prev[i];
+    const b = next[i];
+    if (!a || !b) return false;
+    if (a.id !== b.id) return false;
+    if (a.unread_count !== b.unread_count) return false;
+    if (a.last_message !== b.last_message) return false;
+    if (a.last_message_at !== b.last_message_at) return false;
+    if (a.last_message_sender !== b.last_message_sender) return false;
+    if (a.display_name !== b.display_name) return false;
+  }
+
+  return true;
+};
+
 function MobileMessaging({ currentUser, onBack }) {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -146,7 +166,7 @@ function MobileMessaging({ currentUser, onBack }) {
   const loadConversations = useCallback(async () => {
     try {
       const data = await api.getConversations({ limit: 30, includeParticipants: false });
-      setConversations(data);
+      setConversations((prev) => (areConversationsEquivalent(prev, data) ? prev : data));
       return data;
     } catch (err) {
       console.error('Erreur chargement conversations:', err);
@@ -488,7 +508,6 @@ function MobileMessaging({ currentUser, onBack }) {
       const result = await api.createConversation('direct', null, [selectedUserId]);
       setShowNewConv(false);
       setSelectedUserId(null);
-      scheduleConversationsRefresh(true);
       const refreshedConversations = await loadConversations();
       const conv = refreshedConversations.find((c) => c.id === result.id);
       if (conv) {

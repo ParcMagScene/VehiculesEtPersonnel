@@ -13,7 +13,7 @@ import {
   Send,
   Users,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Input, ModalLayout, Spinner } from '@/design-system';
 
@@ -501,7 +501,7 @@ function MobileMessaging({ currentUser, onBack }) {
     }
   };
 
-  const messagesWithDates = () => {
+  const messagesWithDates = useMemo(() => {
     const result = [];
     let lastDate = null;
     for (const msg of messages) {
@@ -513,9 +513,12 @@ function MobileMessaging({ currentUser, onBack }) {
       result.push({ type: 'message', ...msg });
     }
     return result;
-  };
+  }, [messages]);
 
-  const totalUnread = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+  const totalUnread = useMemo(
+    () => conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0),
+    [conversations],
+  );
 
   // Vue Chat
   if (activeConversation) {
@@ -547,7 +550,7 @@ function MobileMessaging({ currentUser, onBack }) {
         </div>
 
         <div className="mmsg-messages">
-          {messagesWithDates().map((item, i) => {
+          {messagesWithDates.map((item, i) => {
             if (item.type === 'date') {
               return (
                 <div key={`date-${i}`} className="mmsg-date-sep">

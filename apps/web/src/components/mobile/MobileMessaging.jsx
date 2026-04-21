@@ -88,17 +88,53 @@ function MobileMessaging({ currentUser, onBack }) {
   const pollRef = useRef(null);
   const sseRef = useRef(null);
   const activeConversationRef = useRef(null);
+  const convRefreshTimerRef = useRef(null);
+  const lastConvRefreshRef = useRef(0);
 
   const loadConversations = useCallback(async () => {
     try {
       const data = await api.getConversations({ limit: 30, includeParticipants: false });
       setConversations(data);
+      return data;
     } catch (err) {
       console.error('Erreur chargement conversations:', err);
+      return [];
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const scheduleConversationsRefresh = useCallback(
+    (force = false) => {
+      const now = Date.now();
+      const elapsed = now - lastConvRefreshRef.current;
+      const minIntervalMs = 1200;
+
+      const runRefresh = () => {
+        lastConvRefreshRef.current = Date.now();
+        loadConversations().catch(() => {
+          // silencieux
+        });
+      };
+
+      if (force || elapsed >= minIntervalMs) {
+        if (convRefreshTimerRef.current) {
+          clearTimeout(convRefreshTimerRef.current);
+          convRefreshTimerRef.current = null;
+        }
+        runRefresh();
+        return;
+      }
+
+      if (!convRefreshTimerRef.current) {
+        convRefreshTimerRef.current = setTimeout(() => {
+          convRefreshTimerRef.current = null;
+          runRefresh();
+        }, minIntervalMs - elapsed);
+      }
+    },
+    [loadConversations],
+  );
 
   const loadMessages = useCallback(async (convId) => {
     try {
@@ -154,7 +190,7 @@ function MobileMessaging({ currentUser, onBack }) {
       es.addEventListener('new_message', async (e) => {
         try {
           const data = JSON.parse(e.data);
-          await loadConversations();
+          scheduleConversationsRefresh();
           const currentConv = activeConversationRef.current;
           if (currentConv && Number(data?.conversation_id) === Number(currentConv.id)) {
             await loadMessages(currentConv.id);
@@ -165,9 +201,7 @@ function MobileMessaging({ currentUser, onBack }) {
       });
 
       es.addEventListener('unread_update', () => {
-        loadConversations().catch(() => {
-          // silencieux
-        });
+        scheduleConversationsRefresh();
       });
 
       es.onerror = () => {
@@ -186,9 +220,13 @@ function MobileMessaging({ currentUser, onBack }) {
       closed = true;
       setSseReady(false);
       if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (convRefreshTimerRef.current) {
+        clearTimeout(convRefreshTimerRef.current);
+        convRefreshTimerRef.current = null;
+      }
       closeSource();
     };
-  }, [loadConversations, loadMessages]);
+  }, [loadMessages, scheduleConversationsRefresh]);
 
   // Fallback polling lent si SSE indisponible
   useEffect(() => {
@@ -202,9 +240,7 @@ function MobileMessaging({ currentUser, onBack }) {
     }
 
     pollRef.current = setInterval(() => {
-      loadConversations().catch(() => {
-        // silencieux
-      });
+      scheduleConversationsRefresh(true);
       if (activeConversation) {
         loadMessages(activeConversation.id).catch(() => {
           // silencieux
@@ -218,7 +254,7 @@ function MobileMessaging({ currentUser, onBack }) {
         pollRef.current = null;
       }
     };
-  }, [activeConversation, loadConversations, loadMessages, sseReady]);
+  }, [activeConversation, loadMessages, scheduleConversationsRefresh, sseReady]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -289,8 +325,9 @@ function MobileMessaging({ currentUser, onBack }) {
       const result = await api.createConversation('direct', null, [selectedUserId]);
       setShowNewConv(false);
       setSelectedUserId(null);
-      await loadConversations();
-      const conv = (await api.getConversations()).find((c) => c.id === result.id);
+      scheduleConversationsRefresh(true);
+      const refreshedConversations = await loadConversations();
+      const conv = refreshedConversations.find((c) => c.id === result.id);
       if (conv) {
         setActiveConversation(conv);
         await loadMessages(conv.id);

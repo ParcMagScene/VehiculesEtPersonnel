@@ -36,16 +36,12 @@ function getUnreadCountForUser(userId) {
   const result = db
     .prepare(
       `
-    SELECT COALESCE(SUM(
-      (SELECT COUNT(*) FROM messages m 
-       WHERE m.conversation_id = c.id 
-       AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
-       AND m.sender_id != ?
-      )
-    ), 0) as total_unread
-    FROM conversations c
-    JOIN conversation_participants cp ON c.id = cp.conversation_id
+    SELECT COUNT(*) as total_unread
+    FROM messages m
+    JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
     WHERE cp.user_id = ?
+      AND m.sender_id != ?
+      AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
   `,
     )
     .get(userId, userId);
@@ -347,15 +343,40 @@ export function setupMessagingRoutes(app, authenticateToken) {
 
       const messages = db.prepare(query).all(...params);
 
-      // Récupérer les pièces jointes pour chaque message de type file/image/video
-      const attachStmt = db.prepare(
-        'SELECT id, filename, original_name, mime_type, size FROM message_attachments WHERE message_id = ?',
-      );
+      // Charger les pièces jointes en batch pour éviter le N+1
+      const messageIdsWithAttachments = messages.filter((m) => m.type !== 'text').map((m) => m.id);
+
+      const attachmentsByMessageId = new Map();
+      if (messageIdsWithAttachments.length > 0) {
+        const placeholders = messageIdsWithAttachments.map(() => '?').join(',');
+        const rows = db
+          .prepare(
+            `
+          SELECT id, message_id, filename, original_name, mime_type, size
+          FROM message_attachments
+          WHERE message_id IN (${placeholders})
+        `,
+          )
+          .all(...messageIdsWithAttachments);
+
+        for (const row of rows) {
+          if (!attachmentsByMessageId.has(row.message_id)) {
+            attachmentsByMessageId.set(row.message_id, []);
+          }
+          attachmentsByMessageId.get(row.message_id).push({
+            id: row.id,
+            filename: row.filename,
+            original_name: row.original_name,
+            mime_type: row.mime_type,
+            size: row.size,
+          });
+        }
+      }
 
       const result = messages
         .map((m) => ({
           ...m,
-          attachments: m.type !== 'text' ? attachStmt.all(m.id) : [],
+          attachments: m.type !== 'text' ? attachmentsByMessageId.get(m.id) || [] : [],
         }))
         .reverse(); // Remettre dans l'ordre chronologique
 

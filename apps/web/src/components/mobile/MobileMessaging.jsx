@@ -119,6 +119,30 @@ function MobileMessaging({ currentUser, onBack }) {
   const pendingReadConvRef = useRef(null);
   const lastNewMessageEventRef = useRef(0);
 
+  const updateConversationIfChanged = useCallback((conversationId, mutate) => {
+    setConversations((prev) => {
+      const idx = prev.findIndex((c) => Number(c.id) === Number(conversationId));
+      if (idx === -1) return prev;
+
+      const current = prev[idx];
+      const next = mutate(current);
+
+      if (!next || next === current) return prev;
+
+      const sameUnread = next.unread_count === current.unread_count;
+      const sameLastMessage = next.last_message === current.last_message;
+      const sameLastMessageAt = next.last_message_at === current.last_message_at;
+      const sameLastSender = next.last_message_sender === current.last_message_sender;
+
+      if (sameUnread && sameLastMessage && sameLastMessageAt && sameLastSender) {
+        return prev;
+      }
+
+      const rest = [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+      return [next, ...rest];
+    });
+  }, []);
+
   const loadConversations = useCallback(async () => {
     try {
       const data = await api.getConversations({ limit: 30, includeParticipants: false });
@@ -251,23 +275,16 @@ function MobileMessaging({ currentUser, onBack }) {
             );
 
             if (hasConversation) {
-              setConversations((prev) => {
-                const idx = prev.findIndex((c) => Number(c.id) === targetConvId);
-                if (idx === -1) return prev;
-                const current = prev[idx];
-                const updated = {
-                  ...current,
-                  last_message: data.content,
-                  last_message_at: data.created_at,
-                  last_message_sender: data.sender_name,
-                  unread_count:
-                    currentConv && Number(currentConv.id) === targetConvId
-                      ? 0
-                      : current.unread_count || 0,
-                };
-                const rest = [...prev.slice(0, idx), ...prev.slice(idx + 1)];
-                return [updated, ...rest];
-              });
+              updateConversationIfChanged(targetConvId, (current) => ({
+                ...current,
+                last_message: data.content,
+                last_message_at: data.created_at,
+                last_message_sender: data.sender_name,
+                unread_count:
+                  currentConv && Number(currentConv.id) === targetConvId
+                    ? 0
+                    : current.unread_count || 0,
+              }));
             } else {
               scheduleConversationsRefresh();
             }
@@ -293,19 +310,13 @@ function MobileMessaging({ currentUser, onBack }) {
                   },
                 ];
               });
-              setConversations((prev) =>
-                prev.map((c) =>
-                  c.id === currentConv.id
-                    ? {
-                        ...c,
-                        unread_count: 0,
-                        last_message: data.content,
-                        last_message_at: data.created_at,
-                        last_message_sender: data.sender_name,
-                      }
-                    : c,
-                ),
-              );
+              updateConversationIfChanged(currentConv.id, (current) => ({
+                ...current,
+                unread_count: 0,
+                last_message: data.content,
+                last_message_at: data.created_at,
+                last_message_sender: data.sender_name,
+              }));
               scheduleMarkConversationRead(currentConv.id);
             } else {
               await loadMessages(currentConv.id, { markAsRead: false });
@@ -331,17 +342,10 @@ function MobileMessaging({ currentUser, onBack }) {
             ? Number(parsed.conversation_unread)
             : 0;
 
-          setConversations((prev) => {
-            const idx = prev.findIndex((c) => Number(c.id) === targetConvId);
-            if (idx === -1) return prev;
-            const current = prev[idx];
-            const updated = {
-              ...current,
-              unread_count: nextUnread,
-            };
-            const rest = [...prev.slice(0, idx), ...prev.slice(idx + 1)];
-            return [updated, ...rest];
-          });
+          updateConversationIfChanged(targetConvId, (current) => ({
+            ...current,
+            unread_count: nextUnread,
+          }));
           return;
         }
 
@@ -380,7 +384,12 @@ function MobileMessaging({ currentUser, onBack }) {
       pendingReadConvRef.current = null;
       closeSource();
     };
-  }, [loadMessages, scheduleConversationsRefresh, scheduleMarkConversationRead]);
+  }, [
+    loadMessages,
+    scheduleConversationsRefresh,
+    scheduleMarkConversationRead,
+    updateConversationIfChanged,
+  ]);
 
   // Fallback polling lent si SSE indisponible
   useEffect(() => {

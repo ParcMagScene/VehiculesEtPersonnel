@@ -48,55 +48,51 @@ function getUnreadCountForUser(userId) {
   return result.total_unread;
 }
 
-function getUnreadCountsForUsers(userIds) {
-  const counts = new Map();
-  if (!Array.isArray(userIds) || userIds.length === 0) return counts;
+function getUnreadStatsForUsers(conversationId, userIds) {
+  const stats = new Map();
+  if (!Array.isArray(userIds) || userIds.length === 0) return stats;
 
   const placeholders = userIds.map(() => '?').join(',');
   const rows = db
     .prepare(
       `
-    SELECT cp.user_id, COUNT(*) as total_unread
-    FROM messages m
-    JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
+    SELECT
+      cp.user_id,
+      SUM(
+        CASE
+          WHEN m.sender_id != cp.user_id
+           AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
+          THEN 1 ELSE 0
+        END
+      ) AS total_unread,
+      SUM(
+        CASE
+          WHEN m.conversation_id = ?
+           AND m.sender_id != cp.user_id
+           AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
+          THEN 1 ELSE 0
+        END
+      ) AS conversation_unread
+    FROM conversation_participants cp
+    LEFT JOIN messages m ON m.conversation_id = cp.conversation_id
     WHERE cp.user_id IN (${placeholders})
-      AND m.sender_id != cp.user_id
-      AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
-    GROUP BY cp.user_id
-  `,
-    )
-    .all(...userIds);
-
-  for (const userId of userIds) counts.set(userId, 0);
-  for (const row of rows) counts.set(row.user_id, row.total_unread);
-
-  return counts;
-}
-
-function getConversationUnreadCountsForUsers(conversationId, userIds) {
-  const counts = new Map();
-  if (!Array.isArray(userIds) || userIds.length === 0) return counts;
-
-  const placeholders = userIds.map(() => '?').join(',');
-  const rows = db
-    .prepare(
-      `
-    SELECT cp.user_id, COUNT(*) as conversation_unread
-    FROM messages m
-    JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
-    WHERE m.conversation_id = ?
-      AND cp.user_id IN (${placeholders})
-      AND m.sender_id != cp.user_id
-      AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
     GROUP BY cp.user_id
   `,
     )
     .all(conversationId, ...userIds);
 
-  for (const userId of userIds) counts.set(userId, 0);
-  for (const row of rows) counts.set(row.user_id, row.conversation_unread);
+  for (const userId of userIds) {
+    stats.set(userId, { totalUnread: 0, conversationUnread: 0 });
+  }
 
-  return counts;
+  for (const row of rows) {
+    stats.set(row.user_id, {
+      totalUnread: Number(row.total_unread) || 0,
+      conversationUnread: Number(row.conversation_unread) || 0,
+    });
+  }
+
+  return stats;
 }
 
 // [AUDIT Phase 4] Types MIME autorisés pour les uploads messagerie
@@ -492,10 +488,13 @@ export function setupMessagingRoutes(app, authenticateToken) {
         const participants = getConversationParticipantIds(convId).filter(
           (pid) => pid !== req.user.id,
         );
-        const unreadByUser = getUnreadCountsForUsers(participants);
-        const conversationUnreadByUser = getConversationUnreadCountsForUsers(convId, participants);
+        const unreadStatsByUser = getUnreadStatsForUsers(convId, participants);
         for (const pid of participants) {
-          const unread = unreadByUser.get(pid) || 0;
+          const stats = unreadStatsByUser.get(pid) || {
+            totalUnread: getUnreadCountForUser(pid),
+            conversationUnread: 0,
+          };
+          const unread = stats.totalUnread;
           notifyUser(pid, 'new_message', {
             id: messageId,
             conversation_id: parseInt(convId),
@@ -509,7 +508,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
           notifyUser(pid, 'unread_update', {
             unread,
             conversation_id: Number(convId),
-            conversation_unread: conversationUnreadByUser.get(pid) || 0,
+            conversation_unread: stats.conversationUnread,
           });
         }
       } catch (error) {
@@ -640,10 +639,13 @@ export function setupMessagingRoutes(app, authenticateToken) {
       const participants = getConversationParticipantIds(convId).filter(
         (pid) => pid !== req.user.id,
       );
-      const unreadByUser = getUnreadCountsForUsers(participants);
-      const conversationUnreadByUser = getConversationUnreadCountsForUsers(convId, participants);
+      const unreadStatsByUser = getUnreadStatsForUsers(convId, participants);
       for (const pid of participants) {
-        const unread = unreadByUser.get(pid) || 0;
+        const stats = unreadStatsByUser.get(pid) || {
+          totalUnread: getUnreadCountForUser(pid),
+          conversationUnread: 0,
+        };
+        const unread = stats.totalUnread;
         notifyUser(pid, 'new_message', {
           id: messageId,
           conversation_id: parseInt(convId),
@@ -665,7 +667,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
         notifyUser(pid, 'unread_update', {
           unread,
           conversation_id: Number(convId),
-          conversation_unread: conversationUnreadByUser.get(pid) || 0,
+          conversation_unread: stats.conversationUnread,
         });
       }
     } catch (error) {

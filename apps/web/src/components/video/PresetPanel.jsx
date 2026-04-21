@@ -148,15 +148,16 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
             <label>Caméras ({editCameraIds.length}/4)</label>
             <div className="preset-panel__camera-list">
               {enabledCameras.map((cam) => (
-                <button
+                <Button
                   key={cam.id}
-                  type="button"
+                  variant="ghost"
+                  size="sm"
                   className={`preset-panel__camera-chip ${editCameraIds.includes(cam.id) ? 'selected' : ''}`}
                   onClick={() => toggleCameraInEdit(cam.id)}
                   disabled={!editCameraIds.includes(cam.id) && editCameraIds.length >= 4}
                 >
                   {cam.name}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

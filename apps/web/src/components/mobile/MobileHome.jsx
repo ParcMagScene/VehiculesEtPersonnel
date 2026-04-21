@@ -23,54 +23,83 @@ function MobileHome({ onNavigate, currentUser }) {
     <div className="mobile-home">
       {/* Grille d'icônes modules */}
       <div className="home-grid">
-        <button className="home-grid-item parc" onClick={() => onNavigate('parc-dashboard')}>
+        <button
+          type="button"
+          className="home-grid-item parc"
+          onClick={() => onNavigate('parc-dashboard')}
+        >
           <Truck size={28} />
           <span>Parc</span>
         </button>
-        <button className="home-grid-item affaires" onClick={() => onNavigate('affaires')}>
+        <button
+          type="button"
+          className="home-grid-item affaires"
+          onClick={() => onNavigate('affaires')}
+        >
           <Briefcase size={28} />
           <span>Affaires</span>
         </button>
-        <button className="home-grid-item tasks" onClick={() => onNavigate('tasks')}>
+        <button type="button" className="home-grid-item tasks" onClick={() => onNavigate('tasks')}>
           <ClipboardList size={28} />
           <span>Tâches</span>
         </button>
-        <button className="home-grid-item suivi" onClick={() => onNavigate('suivi')}>
+        <button type="button" className="home-grid-item suivi" onClick={() => onNavigate('suivi')}>
           <FileText size={28} />
           <span>Suivi</span>
         </button>
-        <button className="home-grid-item personnel" onClick={() => onNavigate('personnel')}>
+        <button
+          type="button"
+          className="home-grid-item personnel"
+          onClick={() => onNavigate('personnel')}
+        >
           <Users size={28} />
           <span>Personnel</span>
         </button>
         {canManageEquipment && (
-          <button className="home-grid-item equipment" onClick={() => onNavigate('equipment')}>
+          <button
+            type="button"
+            className="home-grid-item equipment"
+            onClick={() => onNavigate('equipment')}
+          >
             <Package size={28} />
             <span>Équipements</span>
           </button>
         )}
         {canManageEquipment && (
-          <button className="home-grid-item sav" onClick={() => onNavigate('sav')}>
+          <button type="button" className="home-grid-item sav" onClick={() => onNavigate('sav')}>
             <Wrench size={28} />
             <span>SAV</span>
           </button>
         )}
         {canManageCatalog && (
-          <button className="home-grid-item orders" onClick={() => onNavigate('orders')}>
+          <button
+            type="button"
+            className="home-grid-item orders"
+            onClick={() => onNavigate('orders')}
+          >
             <ShoppingCart size={28} />
             <span>Commandes</span>
           </button>
         )}
-        <button className="home-grid-item leaves" onClick={() => onNavigate('leaves')}>
+        <button
+          type="button"
+          className="home-grid-item leaves"
+          onClick={() => onNavigate('leaves')}
+        >
           <Palmtree size={28} />
           <span>Congés</span>
         </button>
-        <button className="home-grid-item location" onClick={() => onNavigate('location')}>
+        <button
+          type="button"
+          className="home-grid-item location"
+          onClick={() => onNavigate('location')}
+        >
           <Map size={28} />
           <span>Plan</span>
         </button>
         {isAdmin && (
           <button
+            type="button"
             className="home-grid-item dashboard-admin"
             onClick={() => onNavigate('dashboard-admin')}
           >

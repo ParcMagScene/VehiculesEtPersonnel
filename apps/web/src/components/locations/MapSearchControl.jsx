@@ -136,7 +136,12 @@ export default function MapSearchControl({ locations }) {
           autoComplete="off"
         />
         {query && (
-          <button className="map-search-clear" onClick={handleClear} aria-label="Effacer">
+          <button
+            type="button"
+            className="map-search-clear"
+            onClick={handleClear}
+            aria-label="Effacer"
+          >
             <X size={14} />
           </button>
         )}

@@ -63,6 +63,7 @@ export default function MapOffScreenIndicators({ locations }) {
     <div className="map-offscreen-layer">
       {offScreen.map((loc) => (
         <button
+          type="button"
           key={loc.id}
           className="map-offscreen-pill"
           style={{ left: loc.x, top: loc.y }}

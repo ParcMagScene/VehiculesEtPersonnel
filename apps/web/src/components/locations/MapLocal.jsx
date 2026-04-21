@@ -69,6 +69,7 @@ export default function MapLocal({ locations, darkMode = false, onEditLocation }
         <div className="map-radius-presets">
           {RADIUS_PRESETS.map((km) => (
             <button
+              type="button"
               key={km}
               className={`map-radius-preset ${radius === km * 1000 ? 'active' : ''}`}
               onClick={() => setRadius(km * 1000)}

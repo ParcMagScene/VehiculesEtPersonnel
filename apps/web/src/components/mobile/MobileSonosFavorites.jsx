@@ -62,6 +62,7 @@ function MobileSonosFavorites({
         ) : (
           filtered.map((fav, i) => (
             <button
+              type="button"
               key={i}
               className={`mobile-sonos-fav-item${currentTitle === fav.title ? ' mobile-sonos-fav-playing' : ''}`}
               onClick={() => playFavorite(fav)}

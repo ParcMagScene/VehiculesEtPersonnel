@@ -31,7 +31,11 @@ export default function MapPopup({ location, onEdit }) {
 
         <div className="map-popup-actions">
           {onEdit && !location.isCompanyLocation && (
-            <button className="map-popup-btn map-popup-btn-edit" onClick={() => onEdit(location)}>
+            <button
+              type="button"
+              className="map-popup-btn map-popup-btn-edit"
+              onClick={() => onEdit(location)}
+            >
               Modifier
             </button>
           )}

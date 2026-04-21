@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 
+import Button from '../ui/Button';
 import api from '../../utils/api/index.js';
 
 function getISOWeek(d) {
@@ -113,19 +114,24 @@ function SynthesesPanel({ currentUser }) {
       <div className="syntheses-controls">
         <div className="syntheses-mode-tabs">
           {['jour', 'semaine', 'mois'].map((m) => (
-            <button
+            <Button
               key={m}
+              variant="ghost"
               className={`suivi-tab ${mode === m ? 'active' : ''}`}
               onClick={() => setMode(m)}
             >
               {m === 'jour' ? 'Jour' : m === 'semaine' ? 'Semaine' : 'Mois'}
-            </button>
+            </Button>
           ))}
         </div>
 
         <div className="syntheses-date-nav">
-          <button
+          <Button
+            variant="ghost"
+            iconOnly
             className="suivi-nav-btn"
+            title="Période précédente"
+            aria-label="Période précédente"
             onClick={() =>
               mode === 'jour'
                 ? handleNavigateDay(-1)
@@ -135,7 +141,7 @@ function SynthesesPanel({ currentUser }) {
             }
           >
             <ChevronLeft size={18} />
-          </button>
+          </Button>
 
           {mode === 'jour' && (
             <input
@@ -162,8 +168,12 @@ function SynthesesPanel({ currentUser }) {
             />
           )}
 
-          <button
+          <Button
+            variant="ghost"
+            iconOnly
             className="suivi-nav-btn"
+            title="Période suivante"
+            aria-label="Période suivante"
             onClick={() =>
               mode === 'jour'
                 ? handleNavigateDay(1)
@@ -173,15 +183,17 @@ function SynthesesPanel({ currentUser }) {
             }
           >
             <ChevronRight size={18} />
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             className="suivi-btn suivi-btn-pdf"
             onClick={handleExportPdf}
             title="Exporter PDF"
           >
             <Download size={14} /> PDF
-          </button>
+          </Button>
         </div>
       </div>
 

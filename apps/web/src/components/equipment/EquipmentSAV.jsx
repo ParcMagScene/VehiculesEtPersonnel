@@ -321,16 +321,19 @@ const SavTicketFormModal = ({
                       onFocus={() => setSearchFocused(true)}
                     />
                     {searchQuery && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        iconOnly
                         className="sav-search-clear"
                         onClick={() => {
                           setSearchQuery('');
                           setSearchFocused(false);
                         }}
+                        aria-label="Effacer la recherche"
                       >
                         <X size={14} />
-                      </button>
+                      </Button>
                     )}
                   </div>
                   {searchFocused && searchQuery.length >= 2 && (
@@ -339,9 +342,10 @@ const SavTicketFormModal = ({
                         <div className="sav-search-empty">Aucun résultat</div>
                       ) : (
                         searchResults.map((eq) => (
-                          <button
+                          <Button
                             key={eq.id}
-                            type="button"
+                            variant="ghost"
+                            size="sm"
                             className={`sav-search-item${String(form.equipment_id) === String(eq.id) ? ' selected' : ''}`}
                             onClick={() => {
                               setForm((f) => ({ ...f, equipment_id: eq.id }));
@@ -370,7 +374,7 @@ const SavTicketFormModal = ({
                               )}
                               {eq.uid && <span className="sav-search-uid">{eq.uid}</span>}
                             </span>
-                          </button>
+                          </Button>
                         ))
                       )}
                     </div>

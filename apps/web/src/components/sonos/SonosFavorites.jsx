@@ -51,6 +51,7 @@ function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavori
         ) : (
           filtered.map((fav, i) => (
             <button
+              type="button"
               key={i}
               className={`sonos-favs-item${currentTitle === fav.title ? ' sonos-favs-active' : ''}`}
               onClick={() => playFavorite(fav)}

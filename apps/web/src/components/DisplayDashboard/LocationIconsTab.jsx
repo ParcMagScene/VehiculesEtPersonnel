@@ -249,7 +249,13 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
                   </option>
                 ))}
               </Select>
-              <Button variant="danger" size="sm" iconOnly onClick={() => handleRemoveRule(index)}>
+              <Button
+                variant="danger"
+                size="sm"
+                iconOnly
+                aria-label="Supprimer la règle"
+                onClick={() => handleRemoveRule(index)}
+              >
                 <Trash2 size={14} />
               </Button>
             </div>

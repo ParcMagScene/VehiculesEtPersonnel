@@ -21,6 +21,7 @@ function MobileSonosVolume({ volume, muted, onSetVolume, onMute, onUnmute, busy,
   return (
     <div className="mobile-sonos-volume">
       <button
+        type="button"
         className={`mobile-sonos-transport-btn mobile-sonos-transport-sm${isMuted ? ' mobile-sonos-muted' : ''}`}
         onClick={() => {
           setIsMuted(!isMuted);

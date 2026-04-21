@@ -52,6 +52,7 @@ function MobileSonos({ currentUser, onBack }) {
             <div className="mobile-sonos-zones">
               {sonos.zones.map((z, i) => (
                 <button
+                  type="button"
                   key={i}
                   className={`mobile-sonos-zone-pill${sonos.activeZone === z.coordinator ? ' mobile-sonos-zone-pill-active' : ''}`}
                   onClick={() => sonos.setActiveZone(z.coordinator)}

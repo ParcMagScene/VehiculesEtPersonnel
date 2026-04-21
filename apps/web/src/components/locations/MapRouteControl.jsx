@@ -149,6 +149,7 @@ export default function MapRouteControl({ locations }) {
       {/* Bouton toggle */}
       <div className="map-route-toggle">
         <button
+          type="button"
           className={`map-route-toggle-btn ${open ? 'active' : ''}`}
           onClick={() => setOpen(!open)}
           title="Calcul de trajet"
@@ -164,6 +165,7 @@ export default function MapRouteControl({ locations }) {
           <div className="map-route-panel-header">
             <span>Calculer un trajet</span>
             <button
+              type="button"
               onClick={() => {
                 setOpen(false);
                 handleReset();
@@ -193,7 +195,7 @@ export default function MapRouteControl({ locations }) {
               </select>
             </div>
 
-            <button className="map-route-swap" onClick={handleSwap} title="Inverser">
+            <button type="button" className="map-route-swap" onClick={handleSwap} title="Inverser">
               <ArrowDown size={14} />
             </button>
 
@@ -217,6 +219,7 @@ export default function MapRouteControl({ locations }) {
 
             <div className="map-route-actions">
               <button
+                type="button"
                 className="map-route-calc-btn"
                 onClick={calculateRoute}
                 disabled={!origin || !destination || origin === destination || loading}
@@ -224,7 +227,7 @@ export default function MapRouteControl({ locations }) {
                 {loading ? 'Calcul…' : 'Calculer'}
               </button>
               {route && (
-                <button className="map-route-reset-btn" onClick={handleReset}>
+                <button type="button" className="map-route-reset-btn" onClick={handleReset}>
                   <RotateCcw size={14} /> Effacer
                 </button>
               )}

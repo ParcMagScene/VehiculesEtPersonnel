@@ -174,12 +174,24 @@ function ScreensTab({ currentUser, refreshKey, onRefresh }) {
                   </Button>
                 </Tooltip>
                 <Tooltip content={screen.is_active ? 'Désactiver' : 'Activer'}>
-                  <Button variant="ghost" size="sm" iconOnly onClick={() => handleToggle(screen)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    aria-label={screen.is_active ? "Désactiver l'écran" : "Activer l'écran"}
+                    onClick={() => handleToggle(screen)}
+                  >
                     {screen.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
                   </Button>
                 </Tooltip>
                 <Tooltip content="Supprimer">
-                  <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(screen)}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    iconOnly
+                    aria-label="Supprimer l'écran"
+                    onClick={() => handleDelete(screen)}
+                  >
                     <Trash2 size={14} />
                   </Button>
                 </Tooltip>

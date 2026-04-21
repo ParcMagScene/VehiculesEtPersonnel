@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
+import Button from '../ui/Button';
 import api from '../../utils/api';
 
 function newEntry(period = 'AM', sortOrder = 0) {
@@ -215,11 +216,17 @@ function FicheSuivi({ sheet, onSave, saving }) {
         />
       </td>
       <td className="fiche-col-done">
-        <button
+        <Button
+          variant="ghost"
+          size="xs"
+          iconOnly
           className={`fiche-check-btn ${entry.completed === 1 ? 'checked' : entry.completed === 0 ? 'not-done' : 'unknown'}`}
           onClick={() => handleToggleCompleted(entry._key)}
           disabled={isValidated}
           title={
+            entry.completed === 1 ? 'Fait' : entry.completed === 0 ? 'Non fait' : 'Indéterminé'
+          }
+          aria-label={
             entry.completed === 1 ? 'Fait' : entry.completed === 0 ? 'Non fait' : 'Indéterminé'
           }
         >
@@ -230,17 +237,21 @@ function FicheSuivi({ sheet, onSave, saving }) {
           ) : (
             <HelpCircle size={16} />
           )}
-        </button>
+        </Button>
       </td>
       <td className="fiche-col-actions">
         {!isValidated && (
-          <button
+          <Button
+            variant="ghost"
+            size="xs"
+            iconOnly
             className="fiche-delete-btn"
             onClick={() => handleRemoveEntry(entry._key)}
             title="Supprimer"
+            aria-label="Supprimer l'entrée"
           >
             <Trash2 size={14} />
-          </button>
+          </Button>
         )}
       </td>
     </tr>
@@ -257,25 +268,33 @@ function FicheSuivi({ sheet, onSave, saving }) {
           <h4>{label}</h4>
           {!isValidated && (
             <div className="fiche-section-actions">
-              <button className="fiche-add-btn" onClick={() => handleAddEntry(period)}>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="fiche-add-btn"
+                onClick={() => handleAddEntry(period)}
+              >
                 <Plus size={14} /> Ajouter
-              </button>
+              </Button>
               {availableTasks.length > 0 && (
                 <div
                   className="fiche-picker-wrapper"
                   ref={showPicker === period ? pickerRef : null}
                 >
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     className="fiche-add-btn fiche-add-btn-planning"
                     onClick={() => setShowPicker(showPicker === period ? null : period)}
                   >
                     <Calendar size={14} /> Depuis planning
                     <ChevronDown size={12} />
-                  </button>
+                  </Button>
                   {showPicker === period && (
                     <div className="fiche-picker-dropdown">
                       {availableTasks.map((t) => (
                         <button
+                          type="button"
                           key={t.id}
                           className="fiche-picker-item"
                           onClick={() => handlePickPlanningTask(t, period)}

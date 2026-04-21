@@ -113,12 +113,24 @@ function MediaTab({ _currentUser, refreshKey, _onUpload, onRefresh }) {
               </div>
               <div className="media-actions">
                 <Tooltip content="Aperçu">
-                  <Button variant="ghost" size="sm" iconOnly onClick={() => setPreview(item)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    aria-label="Aperçu du média"
+                    onClick={() => setPreview(item)}
+                  >
                     <Eye size={14} />
                   </Button>
                 </Tooltip>
                 <Tooltip content="Supprimer">
-                  <Button variant="danger" size="sm" iconOnly onClick={() => handleDelete(item)}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    iconOnly
+                    aria-label="Supprimer le média"
+                    onClick={() => handleDelete(item)}
+                  >
                     <Trash2 size={14} />
                   </Button>
                 </Tooltip>

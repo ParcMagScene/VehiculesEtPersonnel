@@ -121,6 +121,7 @@ function PlaybackControls({
       )}
       <div className="dtv-sonos-transport">
         <button
+          type="button"
           className={`dtv-sonos-btn dtv-sonos-btn-sm${shuffleActive ? ' dtv-sonos-active' : ''}`}
           onClick={() => exec(() => api.sonosShuffle(zone, !shuffleActive), 'shuffle')}
           disabled={busy}
@@ -129,6 +130,7 @@ function PlaybackControls({
           <Shuffle size={14} />
         </button>
         <button
+          type="button"
           className="dtv-sonos-btn"
           onClick={() => exec(() => api.sonosPrevious(zone), 'previous')}
           disabled={busy}
@@ -138,6 +140,7 @@ function PlaybackControls({
         </button>
         {state === 'playing' ? (
           <button
+            type="button"
             className="dtv-sonos-btn dtv-sonos-btn-main"
             onClick={() => exec(() => api.sonosPause(zone), 'pause')}
             disabled={busy}
@@ -147,6 +150,7 @@ function PlaybackControls({
           </button>
         ) : (
           <button
+            type="button"
             className="dtv-sonos-btn dtv-sonos-btn-main"
             onClick={() => exec(() => api.sonosPlay(zone), 'play')}
             disabled={busy}
@@ -156,6 +160,7 @@ function PlaybackControls({
           </button>
         )}
         <button
+          type="button"
           className="dtv-sonos-btn"
           onClick={() => exec(() => api.sonosNext(zone), 'next')}
           disabled={busy}
@@ -164,6 +169,7 @@ function PlaybackControls({
           <SkipForward size={16} />
         </button>
         <button
+          type="button"
           className={`dtv-sonos-btn dtv-sonos-btn-sm${repeatMode && repeatMode !== 'none' ? ' dtv-sonos-active' : ''}`}
           onClick={() => exec(() => api.sonosRepeat(zone, nextRepeatMode()), 'repeat')}
           disabled={busy}
@@ -174,6 +180,7 @@ function PlaybackControls({
       </div>
       <div className="dtv-sonos-volume">
         <button
+          type="button"
           className={`dtv-sonos-btn dtv-sonos-btn-sm${isMuted ? ' dtv-sonos-muted' : ''}`}
           onClick={() => {
             const fn = isMuted ? () => api.sonosUnmute(zone) : () => api.sonosMute(zone);
@@ -205,6 +212,7 @@ function PlaybackControls({
 function ZoneCard({ zone, isActive, onClick }) {
   return (
     <button
+      type="button"
       className={`dtv-sonos-zone${isActive ? ' dtv-sonos-zone-active' : ''}`}
       onClick={() => onClick(zone.coordinator)}
     >
@@ -257,6 +265,7 @@ function FavoritesList({ zone, isAdmin }) {
   return (
     <div className="dtv-sonos-favorites">
       <button
+        type="button"
         className="dtv-sonos-fav-toggle"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -274,6 +283,7 @@ function FavoritesList({ zone, isAdmin }) {
           ) : (
             favorites.map((fav, i) => (
               <button
+                type="button"
                 key={i}
                 className="dtv-sonos-fav-item"
                 onClick={() => playFavorite(fav)}
@@ -446,6 +456,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
             title={`Zones (${zones.length})`}
             action={
               <button
+                type="button"
                 className="dtv-sonos-btn dtv-sonos-btn-sm"
                 onClick={() => setZonesOpen((o) => !o)}
               >

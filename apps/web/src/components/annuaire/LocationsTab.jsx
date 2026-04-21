@@ -235,6 +235,7 @@ function LocationsTab({ currentUser }) {
                                     variant="danger"
                                     size="sm"
                                     iconOnly
+                                    aria-label="Supprimer le lieu"
                                     onClick={() => handleDelete(loc)}
                                   >
                                     <Trash2 size={14} />

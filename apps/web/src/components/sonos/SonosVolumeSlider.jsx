@@ -21,6 +21,7 @@ function SonosVolumeSlider({ volume, muted, onSetVolume, onMute, onUnmute, busy 
   return (
     <div className="sonos-vol">
       <button
+        type="button"
         className={`sonos-icon-btn${isMuted ? ' sonos-vol-muted' : ''}`}
         onClick={() => {
           setIsMuted(!isMuted);

@@ -732,7 +732,12 @@ function EntityTable({
                   )}
                   {currentUser?.isAdmin && (
                     <Tooltip content="Supprimer">
-                      <Button variant="danger" iconOnly onClick={() => onDelete(c)}>
+                      <Button
+                        variant="danger"
+                        iconOnly
+                        aria-label="Supprimer"
+                        onClick={() => onDelete(c)}
+                      >
                         <Trash2 size={14} />
                       </Button>
                     </Tooltip>
@@ -800,7 +805,12 @@ function EntityTable({
                 )}
                 {currentUser?.isAdmin && (
                   <Tooltip content="Supprimer">
-                    <Button variant="danger" iconOnly onClick={() => onDelete(item)}>
+                    <Button
+                      variant="danger"
+                      iconOnly
+                      aria-label="Supprimer"
+                      onClick={() => onDelete(item)}
+                    >
                       <Trash2 size={14} />
                     </Button>
                   </Tooltip>
@@ -1861,7 +1871,12 @@ function ReferentielsView({
                       </Button>
                     </Tooltip>
                     <Tooltip content="Supprimer">
-                      <Button variant="danger" iconOnly onClick={() => onDelete(item)}>
+                      <Button
+                        variant="danger"
+                        iconOnly
+                        aria-label="Supprimer"
+                        onClick={() => onDelete(item)}
+                      >
                         <Trash2 size={14} />
                       </Button>
                     </Tooltip>

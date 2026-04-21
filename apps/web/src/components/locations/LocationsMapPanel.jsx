@@ -45,6 +45,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
             onDualPrint={() => setShowDualPrint(true)}
           />
           <button
+            type="button"
             className="map-theme-toggle"
             onClick={() => setDarkMode(!darkMode)}
             title={darkMode ? 'Mode clair' : 'Mode sombre'}
@@ -59,6 +60,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
         {/* Onglets */}
         <div className="locations-map-tabs" role="tablist">
           <button
+            type="button"
             role="tab"
             aria-selected={activeView === 'general'}
             className={`locations-map-tab ${activeView === 'general' ? 'active' : ''}`}
@@ -68,6 +70,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
             Carte générale
           </button>
           <button
+            type="button"
             role="tab"
             aria-selected={activeView === 'local'}
             className={`locations-map-tab ${activeView === 'local' ? 'active' : ''}`}

@@ -331,6 +331,7 @@ function MobileApp({ onSwitchToDesktop }) {
                 const colors = isDark ? p.darkColors : p.colors;
                 return (
                   <button
+                    type="button"
                     key={p.id}
                     className={`mobile-sheet-palette-btn ${palette === p.id ? 'active' : ''}`}
                     onClick={() => setPalette(p.id)}

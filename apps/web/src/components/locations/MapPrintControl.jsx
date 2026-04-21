@@ -40,6 +40,7 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
   return (
     <div className="map-print-control" ref={menuRef}>
       <button
+        type="button"
         className="map-print-btn"
         onClick={() => setOpen(!open)}
         title="Imprimer / Exporter la carte"
@@ -52,18 +53,18 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
       {open && (
         <div className="map-print-menu" role="menu">
           <div className="map-print-menu-title">Imprimer</div>
-          <button role="menuitem" onClick={() => handlePrint('A4', 'landscape')}>
+          <button type="button" role="menuitem" onClick={() => handlePrint('A4', 'landscape')}>
             A4 Paysage
           </button>
-          <button role="menuitem" onClick={() => handlePrint('A4', 'portrait')}>
+          <button type="button" role="menuitem" onClick={() => handlePrint('A4', 'portrait')}>
             A4 Portrait
           </button>
-          <button role="menuitem" onClick={() => handlePrint('A3', 'landscape')}>
+          <button type="button" role="menuitem" onClick={() => handlePrint('A3', 'landscape')}>
             A3 Paysage
           </button>
           <div className="map-print-menu-divider" />
           <div className="map-print-menu-title">Exporter</div>
-          <button role="menuitem" onClick={handleExport}>
+          <button type="button" role="menuitem" onClick={handleExport}>
             PNG haute résolution
           </button>
           {onDualPrint && (
@@ -71,6 +72,7 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
               <div className="map-print-menu-divider" />
               <div className="map-print-menu-title">Double carte</div>
               <button
+                type="button"
                 role="menuitem"
                 onClick={() => {
                   onDualPrint();

@@ -71,6 +71,7 @@ function SonosSources({
       {/* Tabs */}
       <div className="sonos-sources-tabs">
         <button
+          type="button"
           className={`sonos-sources-tab${tab === 'favorites' ? ' sonos-sources-tab-active' : ''}`}
           onClick={() => {
             setTab('favorites');
@@ -83,6 +84,7 @@ function SonosSources({
         </button>
         {isAdmin && (
           <button
+            type="button"
             className={`sonos-sources-tab${tab === 'sources' ? ' sonos-sources-tab-active' : ''}`}
             onClick={() => setTab('sources')}
           >
@@ -106,6 +108,7 @@ function SonosSources({
           ) : (
             filteredFavorites.map((fav, i) => (
               <button
+                type="button"
                 key={i}
                 className={`sonos-sources-item sonos-sources-playable${currentNowTitle === fav.title ? ' sonos-sources-active' : ''}`}
                 onClick={() => playFavorite(fav)}
@@ -136,7 +139,12 @@ function SonosSources({
           {/* Breadcrumb header when browsing */}
           {isBrowsing && (
             <div className="sonos-sources-head">
-              <button className="sonos-sources-back" onClick={browseBack} title="Retour">
+              <button
+                type="button"
+                className="sonos-sources-back"
+                onClick={browseBack}
+                title="Retour"
+              >
                 <ChevronLeft size={16} />
               </button>
               <span className="sonos-sources-breadcrumb">{currentTitle}</span>
@@ -180,6 +188,7 @@ function ServiceList({ services, onBrowse, search }) {
     <div className="sonos-sources-list">
       {filtered.map((svc) => (
         <button
+          type="button"
           key={svc.id}
           className="sonos-sources-item"
           onClick={() => onBrowse(svc.id, svc.title)}
@@ -226,7 +235,12 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
   return (
     <div className="sonos-sources-list">
       {containers.map((c) => (
-        <button key={c.id} className="sonos-sources-item" onClick={() => onBrowse(c.id, c.title)}>
+        <button
+          type="button"
+          key={c.id}
+          className="sonos-sources-item"
+          onClick={() => onBrowse(c.id, c.title)}
+        >
           {c.albumArtURI ? (
             <img src={c.albumArtURI} alt="" className="sonos-sources-art" loading="lazy" />
           ) : (
@@ -242,6 +256,7 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
 
       {items.map((item, i) => (
         <button
+          type="button"
           key={i}
           className="sonos-sources-item sonos-sources-playable"
           onClick={() => onPlay({ uri: item.uri, title: item.title })}

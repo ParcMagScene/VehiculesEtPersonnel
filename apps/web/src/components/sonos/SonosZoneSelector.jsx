@@ -11,6 +11,7 @@ function SonosZoneSelector({ zones, activeZone, onZoneSelect, zonesOpen, setZone
   return (
     <div className="sonos-zones">
       <button
+        type="button"
         className="sonos-zones-toggle"
         onClick={() => setZonesOpen((o) => !o)}
         aria-expanded={zonesOpen}
@@ -26,6 +27,7 @@ function SonosZoneSelector({ zones, activeZone, onZoneSelect, zonesOpen, setZone
         <div className="sonos-zones-list">
           {zones.map((z, i) => (
             <button
+              type="button"
               key={i}
               className={`sonos-zones-item${activeZone === z.coordinator ? ' sonos-zones-active' : ''}`}
               onClick={() => onZoneSelect(z.coordinator)}

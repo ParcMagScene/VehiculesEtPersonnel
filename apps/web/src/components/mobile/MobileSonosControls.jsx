@@ -70,6 +70,7 @@ function MobileSonosControls({
       {/* Transport */}
       <div className="mobile-sonos-transport">
         <button
+          type="button"
           className={`mobile-sonos-transport-btn mobile-sonos-transport-sm${shuffleActive ? ' mobile-sonos-active' : ''}`}
           onClick={() => onShuffle(!shuffleActive)}
           disabled={busy}
@@ -78,6 +79,7 @@ function MobileSonosControls({
           <Shuffle size={16} />
         </button>
         <button
+          type="button"
           className="mobile-sonos-transport-btn"
           onClick={onPrevious}
           disabled={busy}
@@ -87,6 +89,7 @@ function MobileSonosControls({
         </button>
         {state === 'playing' ? (
           <button
+            type="button"
             className="mobile-sonos-transport-btn mobile-sonos-transport-main"
             onClick={onPause}
             disabled={busy}
@@ -96,6 +99,7 @@ function MobileSonosControls({
           </button>
         ) : (
           <button
+            type="button"
             className="mobile-sonos-transport-btn mobile-sonos-transport-main"
             onClick={onPlay}
             disabled={busy}
@@ -105,6 +109,7 @@ function MobileSonosControls({
           </button>
         )}
         <button
+          type="button"
           className="mobile-sonos-transport-btn"
           onClick={onNext}
           disabled={busy}
@@ -113,6 +118,7 @@ function MobileSonosControls({
           <SkipForward size={22} />
         </button>
         <button
+          type="button"
           className={`mobile-sonos-transport-btn mobile-sonos-transport-sm${repeatMode && repeatMode !== 'none' ? ' mobile-sonos-active' : ''}`}
           onClick={() => onRepeat(nextRepeatMode())}
           disabled={busy}

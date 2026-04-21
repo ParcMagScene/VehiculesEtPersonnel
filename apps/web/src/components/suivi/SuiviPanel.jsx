@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
+import Button from '../ui/Button';
 import api from '../../utils/api/index.js';
 import FicheSuivi from './FicheSuivi';
 import SynthesesPanel from './SynthesesPanel';
@@ -177,7 +178,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
           onChange={() => handleToggleSelect(p.id)}
           onClick={(e) => e.stopPropagation()}
         />
-        <button className="suivi-person-btn" onClick={() => setSelectedPerson(p)}>
+        <Button variant="ghost" className="suivi-person-btn" onClick={() => setSelectedPerson(p)}>
           <div className="suivi-person-info">
             <span className="suivi-person-name">
               {p.first_name} {p.last_name}
@@ -189,7 +190,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
           <span className="suivi-person-stats">
             {p.validated_sheets ?? 0}/{p.total_sheets ?? 0}
           </span>
-        </button>
+        </Button>
       </div>
     ),
     [selectedPerson?.id, selectedSheetIds, selectedDate, handleToggleSelect],
@@ -262,20 +263,22 @@ function SuiviPanel({ currentUser, initialPersonId }) {
     <div className="suivi-panel">
       {/* Barre d'onglets */}
       <div className="suivi-tabs-bar">
-        <button
+        <Button
+          variant="ghost"
           className={`suivi-tab ${activeTab === 'fiches' ? 'active' : ''}`}
           onClick={() => setActiveTab('fiches')}
         >
           <ClipboardCheck size={16} />
           Fiches quotidiennes
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           className={`suivi-tab ${activeTab === 'syntheses' ? 'active' : ''}`}
           onClick={() => setActiveTab('syntheses')}
         >
           <FileText size={16} />
           Synthèses
-        </button>
+        </Button>
       </div>
 
       {activeTab === 'fiches' && (
@@ -303,7 +306,9 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                     </label>
                     {selectedSheetIds.size > 0 && (
                       <div className="suivi-batch-actions">
-                        <button
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           className="suivi-btn suivi-btn-batch-pdf"
                           onClick={handleBatchExportPdf}
                           disabled={batchExporting}
@@ -315,8 +320,10 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                             <Download size={13} />
                           )}
                           PDF
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           className="suivi-btn suivi-btn-batch-print"
                           onClick={handleBatchPrint}
                           disabled={batchPrinting}
@@ -328,7 +335,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                             <Printer size={13} />
                           )}
                           Imprimer
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -357,9 +364,16 @@ function SuiviPanel({ currentUser, initialPersonId }) {
           <main className="suivi-main">
             {/* Nav date */}
             <div className="suivi-date-nav">
-              <button className="suivi-nav-btn" onClick={() => handleNavigateDay(-1)}>
+              <Button
+                variant="ghost"
+                iconOnly
+                className="suivi-nav-btn"
+                onClick={() => handleNavigateDay(-1)}
+                title="Jour précédent"
+                aria-label="Jour précédent"
+              >
                 <ChevronLeft size={18} />
-              </button>
+              </Button>
               <div className="suivi-date-display">
                 <Calendar size={16} />
                 <input
@@ -370,9 +384,16 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                 />
                 <span className="suivi-date-label">{formatDateFR(selectedDate)}</span>
               </div>
-              <button className="suivi-nav-btn" onClick={() => handleNavigateDay(1)}>
+              <Button
+                variant="ghost"
+                iconOnly
+                className="suivi-nav-btn"
+                onClick={() => handleNavigateDay(1)}
+                title="Jour suivant"
+                aria-label="Jour suivant"
+              >
                 <ChevronRight size={18} />
-              </button>
+              </Button>
 
               <div className="suivi-actions" />
             </div>

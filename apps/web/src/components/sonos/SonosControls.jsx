@@ -29,6 +29,7 @@ function SonosControls({
   return (
     <div className="sonos-transport">
       <button
+        type="button"
         className={`sonos-tbtn sonos-tbtn-sm${shuffleActive ? ' sonos-tbtn-active' : ''}`}
         onClick={() => onShuffle(!shuffleActive)}
         disabled={busy}
@@ -36,11 +37,18 @@ function SonosControls({
       >
         <Shuffle size={14} />
       </button>
-      <button className="sonos-tbtn" onClick={onPrevious} disabled={busy} title="Précédent">
+      <button
+        type="button"
+        className="sonos-tbtn"
+        onClick={onPrevious}
+        disabled={busy}
+        title="Précédent"
+      >
         <SkipBack size={18} />
       </button>
       {state === 'playing' ? (
         <button
+          type="button"
           className="sonos-tbtn sonos-tbtn-main"
           onClick={onPause}
           disabled={busy}
@@ -50,6 +58,7 @@ function SonosControls({
         </button>
       ) : (
         <button
+          type="button"
           className="sonos-tbtn sonos-tbtn-main"
           onClick={onPlay}
           disabled={busy}
@@ -58,10 +67,11 @@ function SonosControls({
           <Play size={22} />
         </button>
       )}
-      <button className="sonos-tbtn" onClick={onNext} disabled={busy} title="Suivant">
+      <button type="button" className="sonos-tbtn" onClick={onNext} disabled={busy} title="Suivant">
         <SkipForward size={18} />
       </button>
       <button
+        type="button"
         className={`sonos-tbtn sonos-tbtn-sm${repeatMode && repeatMode !== 'none' ? ' sonos-tbtn-active' : ''}`}
         onClick={() => onRepeat(nextRepeatMode())}
         disabled={busy}

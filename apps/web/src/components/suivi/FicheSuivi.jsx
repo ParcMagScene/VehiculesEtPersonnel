@@ -258,8 +258,10 @@ function FicheSuivi({ sheet, onSave, saving }) {
   );
 
   const renderSection = (label, sectionEntries, period) => {
+    const existingTaskIds = new Set(entries.map((e) => e.task_assignment_id).filter(Boolean));
     const availableTasks = planningTasks.filter(
-      (t) => !t.period || t.period === period || t.period === 'FULL',
+      (t) =>
+        (!t.period || t.period === period || t.period === 'FULL') && !existingTaskIds.has(t.id),
     );
 
     return (

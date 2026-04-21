@@ -711,7 +711,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  // ─── GET /api/suivi/planning-tasks/:date ─── Tâches planifiées du jour non encore affectées à du personnel
+  // ─── GET /api/suivi/planning-tasks/:date ─── Tâches planifiées du jour (inclut terminées)
   app.get('/api/suivi/planning-tasks/:date', authenticateToken, (req, res) => {
     try {
       const { date } = req.params;
@@ -719,17 +719,13 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ success: false, error: 'Format date invalide' });
       }
 
-      // Tâches du jour qui ne sont pas déjà liées à une entrée de suivi
+      // Tâches du jour (on conserve aussi les tâches terminées)
       const tasks = db
         .prepare(
           `SELECT ta.id, ta.title, ta.section, ta.period, ta.time, ta.end_time,
                   ta.affaire_num, ta.notes, ta.status, ta.google_event_title
            FROM task_assignments ta
            WHERE ta.date = ? AND ta.deleted_at IS NULL
-             AND ta.id NOT IN (
-               SELECT te.task_assignment_id FROM tracking_entries te
-               WHERE te.task_assignment_id IS NOT NULL
-             )
            ORDER BY ta.period ASC, ta.time ASC, ta.section ASC`,
         )
         .all(date);

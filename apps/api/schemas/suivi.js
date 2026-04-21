@@ -7,7 +7,7 @@ const trackingEntrySchema = z.object({
   task: z.string().max(500).default(''),
   time_spent: z.coerce.number().min(0).max(24).default(0),
   comment: z.string().max(2000).default(''),
-  completed: z.coerce.number().int().min(0).max(1).default(0),
+  completed: z.number().int().min(0).max(1).nullable().default(null),
   task_assignment_id: z.string().nullable().optional(),
   sort_order: z.coerce.number().int().min(0).default(0),
 });
@@ -21,7 +21,7 @@ export const sheetUpdateSchema = z.object({
 
 // ── Mise à jour d'une entrée individuelle ──
 export const entryPatchSchema = z.object({
-  completed: z.coerce.number().int().min(0).max(1).optional(),
+  completed: z.number().int().min(0).max(1).nullable().optional(),
   time_spent: z.coerce.number().min(0).max(24).optional(),
   comment: z.string().max(2000).optional(),
   task: z.string().max(500).optional(),

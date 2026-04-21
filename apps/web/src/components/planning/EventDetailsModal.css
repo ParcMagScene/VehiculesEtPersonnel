@@ -180,7 +180,7 @@ section h3 {
   margin: 0;
   padding: 12px;
   background: var(--surface-secondary);
-  border-left: 3px solid var(--theme-primary);
+  border-left: 3px solid var(--interactive-primary);
   border-radius: var(--radius-xs);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -205,7 +205,7 @@ section h3 {
 }
 
 .event-details-modal .reservation-card:hover {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   box-shadow: 0 2px 8px var(--accent-tint-alt);
 }
 
@@ -258,7 +258,7 @@ section h3 {
   cursor: pointer;
   transition: var(--btn-transition);
   background: var(--theme-primary-light);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .btn-add-drive-link:hover {
@@ -408,7 +408,7 @@ section h3 {
 
 .event-details-modal .drive-link-save {
   background: var(--theme-success);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .drive-link-save:hover {
@@ -431,8 +431,8 @@ section h3 {
 }
 
 .event-details-modal .btn-edit-reservation {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   width: 36px;
   height: 36px;
@@ -446,7 +446,7 @@ section h3 {
 }
 
 .event-details-modal .btn-edit-reservation:hover {
-  background: var(--theme-primary-dark);
+  background: var(--interactive-active);
   transform: translateY(-1px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
@@ -558,19 +558,19 @@ section h3 {
 }
 
 .event-details-modal .btn-import-bl {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .btn-import-bl:hover {
-  background: var(--theme-primary-dark);
+  background: var(--interactive-active);
   transform: translateY(-1px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .event-details-modal .btn-add-reservation {
   background: var(--theme-success);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .btn-add-reservation:hover {
@@ -581,7 +581,7 @@ section h3 {
 
 .event-details-modal .btn-open-folder {
   background: var(--theme-warning);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .btn-open-folder:hover:not(:disabled) {
@@ -634,8 +634,8 @@ section h3 {
   align-items: center;
   gap: 6px;
   padding: var(--btn-padding);
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -646,7 +646,7 @@ section h3 {
 }
 
 .event-details-modal .btn-link:hover {
-  background: var(--theme-primary-dark);
+  background: var(--interactive-active);
   transform: translateY(-1px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
@@ -656,8 +656,8 @@ section h3 {
   align-items: center;
   gap: 6px;
   padding: var(--btn-padding);
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -678,8 +678,8 @@ section h3 {
   gap: 6px;
   padding: var(--btn-padding);
   background: var(--accent-tint-light);
-  color: var(--theme-primary);
-  border: 1px solid var(--theme-primary);
+  color: var(--interactive-primary);
+  border: 1px solid var(--interactive-primary);
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
   font-weight: var(--btn-font-weight);
@@ -688,8 +688,8 @@ section h3 {
 }
 
 .event-details-modal .btn-bl-import:hover {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   transform: translateY(-1px);
 }
 
@@ -710,7 +710,7 @@ section h3 {
 
 .event-details-modal .btn-display-event:hover {
   background: var(--theme-success-alt);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   transform: translateY(-1px);
 }
 
@@ -720,7 +720,7 @@ section h3 {
   gap: 6px;
   padding: var(--btn-padding);
   background: var(--theme-danger);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -887,7 +887,7 @@ section h3 {
   justify-content: space-between;
   align-items: center;
   background: var(--theme-gradient);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
@@ -939,7 +939,7 @@ section h3 {
 }
 
 .event-details-modal .folder-file-card:hover {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   box-shadow: 0 4px 12px var(--focus-ring);
   transform: translateY(-2px);
 }
@@ -979,7 +979,7 @@ section h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   background: var(--surface-tertiary);
   border-radius: var(--radius-md);
 }
@@ -1036,7 +1036,7 @@ section h3 {
 
 .event-details-modal .attachment-item.clickable:hover {
   background: var(--surface-tertiary);
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   transform: translateX(4px);
 }
 
@@ -1081,14 +1081,14 @@ label.btn-primary:has(input:disabled) {
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: var(--theme-bg-secondary);
-  border: 2px solid var(--theme-border-medium);
+  background: var(--surface-secondary);
+  border: 2px solid var(--border-strong);
   border-radius: var(--radius-md);
   transition: all 0.2s;
 }
 
 .event-details-modal .affaire-card:hover {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   box-shadow: 0 2px 8px var(--accent-tint-alt);
 }
 
@@ -1110,12 +1110,12 @@ label.btn-primary:has(input:disabled) {
 .event-details-modal .affaire-client {
   font-weight: 600;
   font-size: var(--font-base);
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .affaire-titre {
   font-size: var(--font-base);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1123,7 +1123,7 @@ label.btn-primary:has(input:disabled) {
 
 .event-details-modal .affaire-dates {
   font-size: var(--font-sm);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
 }
 
 .event-details-modal .affaire-stats {
@@ -1134,6 +1134,6 @@ label.btn-primary:has(input:disabled) {
 
 .event-details-modal .affaire-stat {
   font-size: var(--font-base);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   white-space: nowrap;
 }

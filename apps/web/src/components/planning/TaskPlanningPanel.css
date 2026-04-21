@@ -616,7 +616,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .task-planning-panel .empty-state svg {
@@ -644,7 +644,7 @@
 /* ═══ Toggle Jour / Semaine ═══ */
 .task-planning-panel .tp-view-toggle {
   display: flex;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -655,8 +655,8 @@
   gap: 5px;
   padding: 6px 12px;
   border: none;
-  background: var(--theme-bg-card);
-  color: var(--theme-text-secondary);
+  background: var(--surface-primary);
+  color: var(--text-muted);
   font-size: var(--font-sm);
   font-weight: 600;
   cursor: pointer;
@@ -664,22 +664,22 @@
 }
 
 .task-planning-panel .tp-view-toggle button + button {
-  border-left: 1px solid var(--theme-border);
+  border-left: 1px solid var(--border-default);
 }
 
 .task-planning-panel .tp-view-toggle button.active {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 
 .task-planning-panel .tp-view-toggle button:hover:not(.active) {
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
 }
 
 /* ═══ Display event rows in planning ═══ */
 .task-planning-panel .display-event-row {
   background: var(--accent-tint-subtle);
-  border-left: 3px solid var(--theme-primary);
+  border-left: 3px solid var(--interactive-primary);
 }
 
 .task-planning-panel .display-event-icon {
@@ -700,17 +700,17 @@
 }
 
 .task-planning-panel .task-actions .toggle-visible {
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .task-planning-panel .task-actions .toggle-visible.off {
-  color: var(--theme-text-tertiary, var(--theme-text-gray));
+  color: var(--text-subtle, var(--text-subtle));
   opacity: 0.6;
 }
 
 .task-planning-panel .task-actions .toggle-visible:hover {
   background: var(--accent-tint);
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
 }
 
 /* ═══ Date badge for week mode ═══ */
@@ -719,7 +719,7 @@
   padding: 2px 7px;
   border-radius: var(--radius-xs);
   background: var(--accent-tint);
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   font-size: var(--font-base);
   font-weight: 600;
   margin-right: 6px;
@@ -733,7 +733,7 @@
   padding: 2px 8px;
   border-radius: var(--radius-xs);
   background: var(--primary-tint);
-  color: var(--theme-info);
+  color: var(--feedback-info);
   font-size: 0.82rem;
   font-weight: 700;
   margin-right: 6px;
@@ -744,7 +744,7 @@
 
 /* ═══ Affaire rows in sections ═══ */
 .task-planning-panel .affaire-row {
-  border-left: 3px solid var(--theme-primary);
+  border-left: 3px solid var(--interactive-primary);
   background: var(--accent-tint-subtle);
   cursor: pointer;
   transition: background 0.15s;
@@ -774,8 +774,8 @@
   justify-content: center;
   font-size: 0.6rem;
   font-weight: 700;
-  color: var(--theme-bg-card);
-  background: var(--theme-info);
+  color: var(--text-inverse);
+  background: var(--feedback-info);
   border-radius: var(--radius-xs);
   padding: 0 4px;
   margin-left: 6px;
@@ -785,8 +785,8 @@
 .task-planning-panel .wk-google-badge {
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--theme-bg-card);
-  background: var(--theme-info);
+  color: var(--text-inverse);
+  background: var(--feedback-info);
   border-radius: 2px;
   padding: 0 3px;
   line-height: 1.3;
@@ -796,7 +796,7 @@
 .task-planning-panel .wk-affaire-badge {
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--theme-info);
+  color: var(--feedback-info);
   background: var(--primary-tint);
   border-radius: 2px;
   padding: 0 3px;
@@ -815,7 +815,7 @@
   align-items: center;
   gap: 12px;
   margin: 18px 0 14px;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   font-size: var(--font-sm);
   font-weight: 700;
   text-transform: uppercase;
@@ -827,7 +827,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--theme-border);
+  background: var(--border-default);
 }
 
 /* ═══ RDV section ═══ */
@@ -838,12 +838,12 @@
 }
 
 .task-planning-panel .rdv-row {
-  border-left: 3px solid var(--theme-primary);
+  border-left: 3px solid var(--interactive-primary);
   background: var(--accent-tint-subtle);
 }
 
 .task-planning-panel .google-rdv-row {
-  border-left: 3px solid var(--theme-info);
+  border-left: 3px solid var(--feedback-info);
   background: var(--info-tint-faint);
 }
 
@@ -889,10 +889,10 @@
   min-width: 140px;
   font-weight: 600;
   font-size: 1.05rem;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
   overflow: hidden;
   text-overflow: ellipsis;
-  border-left: 1px solid var(--theme-border);
+  border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
 
@@ -900,7 +900,7 @@
   font-weight: 400;
   font-size: 0.82rem;
   font-style: italic;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   margin-left: 6px;
 }
 /* Col: Client (largeur fixe) */
@@ -908,7 +908,7 @@
   width: 220px;
   flex: 0 0 220px;
   font-size: 0.92rem;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   padding-left: 10px;
@@ -920,11 +920,11 @@
 }
 /* Col: Heure / Période (largeur fixe) */
 .task-planning-panel .ev-col-time {
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   font-size: var(--font-base);
   width: 140px;
   flex: 0 0 140px;
-  border-left: 1px solid var(--theme-border);
+  border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
 .task-planning-panel .ev-col-time .period-badge {
@@ -933,8 +933,8 @@
   font-weight: 600;
   padding: 1px 6px;
   border-radius: var(--radius-xs);
-  background: var(--theme-bg-tertiary, var(--shadow-sm));
-  color: var(--theme-text-secondary);
+  background: var(--surface-tertiary, var(--shadow-sm));
+  color: var(--text-muted);
 }
 /* Badge type course (Enlèvement, Livraison, Retour, Récupération…) */
 .task-planning-panel .course-type-badge {
@@ -961,7 +961,7 @@
   margin-left: 4px;
   border-radius: var(--radius-md-lg);
   background: var(--primary-tint-light);
-  color: var(--theme-info);
+  color: var(--feedback-info);
   border: 1px solid var(--primary-tint-strong);
   white-space: nowrap;
   line-height: 1.5;
@@ -1012,7 +1012,7 @@
 .task-planning-panel .task-done-row .ev-col-time,
 .task-planning-panel .task-done-row .ev-col-date {
   text-decoration: line-through;
-  color: var(--theme-text-muted, var(--theme-text-muted));
+  color: var(--text-muted, var(--text-muted));
 }
 /* Status btn dans layout colonnes */
 .task-planning-panel .event-row-cols .task-status-btn {
@@ -1047,8 +1047,8 @@
   width: 20px;
   height: 20px;
   border-radius: var(--radius-xs);
-  background: var(--theme-info);
-  color: var(--theme-text-inverse);
+  background: var(--feedback-info);
+  color: var(--text-inverse);
   font-size: 0.7rem;
   font-weight: 700;
   line-height: 1;
@@ -1059,7 +1059,7 @@
   padding: 1px 6px;
   border-radius: var(--radius-xs);
   background: var(--accent-tint);
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   font-size: 0.78rem;
   font-weight: 600;
   margin-right: 4px;
@@ -1067,7 +1067,7 @@
 
 .task-planning-panel .google-rdv-row .affaire-tag {
   background: rgba(66, 133, 244, 0.12);
-  color: var(--theme-info);
+  color: var(--feedback-info);
 }
 
 .task-planning-panel .rdv-row:hover {
@@ -1085,10 +1085,10 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  background: var(--theme-bg-card);
-  color: var(--theme-text-secondary);
+  background: var(--surface-primary);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1103,8 +1103,8 @@
   width: 100%;
   margin-top: 8px;
   padding: 10px 14px;
-  background: var(--theme-bg-secondary);
-  border: 1px solid var(--theme-border);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
@@ -1115,11 +1115,11 @@
 .task-planning-panel .rdv-detail-row {
   display: flex;
   gap: 6px;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .task-planning-panel .rdv-detail-row strong {
-  color: var(--theme-text-primary);
+  color: var(--text-body);
   min-width: 90px;
 }
 
@@ -1143,7 +1143,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 1px dashed var(--theme-border);
+  border: 1px dashed var(--border-default);
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-tertiary);
@@ -1153,8 +1153,8 @@
 
 .task-planning-panel .btn-assign:hover {
   background: var(--accent-tint-light);
-  color: var(--theme-primary);
-  border-color: var(--theme-primary);
+  color: var(--interactive-primary);
+  border-color: var(--interactive-primary);
 }
 
 .task-planning-panel .task-person.assigned {
@@ -1166,7 +1166,7 @@
   align-items: center;
   gap: 4px;
   background: var(--accent-tint-light);
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   transition: background 0.15s;
 }
 
@@ -1182,8 +1182,8 @@
   width: 200px;
   max-height: 260px;
   overflow-y: auto;
-  background: var(--theme-bg-card);
-  border: 1px solid var(--theme-border);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px var(--shadow-dropdown);
   padding: 6px 0;
@@ -1217,8 +1217,8 @@
 }
 
 .task-planning-panel .assign-dropdown-close:hover {
-  background: var(--theme-bg-hover);
-  color: var(--theme-text-primary);
+  background: var(--surface-hover);
+  color: var(--text-body);
 }
 
 .task-planning-panel .assign-option {
@@ -1227,7 +1227,7 @@
   gap: 8px;
   padding: 6px 12px;
   font-size: 0.82rem;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
   cursor: pointer;
   transition: background 0.1s;
 }
@@ -1238,7 +1238,7 @@
 
 .task-planning-panel .assign-option.unassign {
   color: var(--theme-danger);
-  border-bottom: 1px solid var(--theme-border);
+  border-bottom: 1px solid var(--border-default);
   margin-bottom: 2px;
 }
 
@@ -1250,7 +1250,7 @@
 .task-planning-panel .assign-option.selected {
   background: rgba(99, 102, 241, 0.1);
   font-weight: 600;
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
 }
 
 .task-planning-panel .assign-check {
@@ -1260,15 +1260,15 @@
   width: 16px;
   height: 16px;
   border-radius: var(--radius-xs);
-  border: 1.5px solid var(--theme-border);
+  border: 1.5px solid var(--border-default);
   flex-shrink: 0;
   transition: all 0.15s;
 }
 
 .task-planning-panel .assign-check.on {
-  background: var(--theme-primary);
-  border-color: var(--theme-primary);
-  color: var(--theme-bg-card);
+  background: var(--interactive-primary);
+  border-color: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 
 /* Bouton Valider du dropdown d'affectation */
@@ -1312,7 +1312,7 @@
 
 .google-status-badge.pending {
   background: var(--primary-tint-light);
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
 }
 
 /* ═══ Google task badge ═══ */
@@ -1325,7 +1325,7 @@
   height: 16px;
   border-radius: var(--radius-xs);
   background: rgba(66, 133, 244, 0.15);
-  color: var(--theme-info);
+  color: var(--feedback-info);
   font-size: 0.65rem;
   font-weight: 800;
   margin-right: 4px;
@@ -1334,11 +1334,11 @@
 
 /* Google-sourced task row highlight */
 .google-task-row {
-  border-left: 2px solid var(--theme-info);
+  border-left: 2px solid var(--feedback-info);
 }
 
 .task-row .task-actions .edit {
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
@@ -1350,7 +1350,7 @@
 
 .task-row .task-actions .edit:hover {
   background: var(--primary-tint-light);
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
 }
 
 /* ═══════════════════════════════════════════
@@ -1419,14 +1419,14 @@
   align-items: center;
   justify-content: center;
   cursor: ns-resize;
-  background: var(--theme-border-color, var(--theme-border));
+  background: var(--border-default);
   transition: background 0.15s;
   position: relative;
   z-index: var(--z-base);
 }
 .wk-split-handle:hover,
 .wk-split-handle:active {
-  background: var(--theme-primary, var(--theme-info));
+  background: var(--interactive-primary, var(--feedback-info));
 }
 .wk-split-handle-grip {
   width: 24px;
@@ -1447,7 +1447,7 @@
   flex-shrink: 0;
 }
 .wk-section-label.ev-label {
-  color: var(--theme-info);
+  color: var(--feedback-info);
   background: rgba(66, 133, 244, 0.05);
 }
 .wk-section-label.task-label {
@@ -1455,7 +1455,7 @@
   background: rgba(16, 185, 129, 0.05);
 }
 .wk-empty-mini {
-  color: var(--theme-text-muted, var(--theme-text-muted));
+  color: var(--text-muted, var(--text-muted));
   text-align: center;
   padding: 4px 0;
   font-size: var(--font-xs);
@@ -1468,9 +1468,9 @@
   min-width: 120px;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--theme-border-color, var(--theme-border));
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--theme-card-bg, var(--theme-bg-card));
+  background: var(--surface-primary);
   overflow: hidden;
   transition:
     flex 0.3s ease,
@@ -1478,8 +1478,9 @@
 }
 
 .wk-day-col.today {
-  border-color: var(--theme-primary, var(--theme-info));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-primary, var(--theme-info)) 25%, transparent);
+  border-color: var(--interactive-primary, var(--feedback-info));
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--interactive-primary, var(--feedback-info)) 25%, transparent);
 }
 .wk-day-col.expanded {
   flex: 4;
@@ -1501,8 +1502,8 @@
   font-size: var(--font-sm);
   font-weight: 700;
   text-transform: capitalize;
-  background: var(--theme-bg-secondary, var(--theme-bg-page));
-  border-bottom: 1px solid var(--theme-border-color, var(--theme-border));
+  background: var(--surface-secondary, var(--surface-page));
+  border-bottom: 1px solid var(--border-default);
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
@@ -1513,15 +1514,15 @@
   background: var(--theme-hover-bg, #eef2f7);
 }
 .wk-col-header.today {
-  background: var(--theme-primary, var(--theme-info));
-  color: var(--theme-bg-card);
-  border-color: var(--theme-primary, var(--theme-info));
+  background: var(--interactive-primary, var(--feedback-info));
+  color: var(--text-inverse);
+  border-color: var(--interactive-primary, var(--feedback-info));
 }
 .wk-col-header.today:hover {
   background: color-mix(
     in srgb,
-    var(--theme-primary, var(--theme-info)) 85%,
-    var(--theme-text-heading)
+    var(--interactive-primary, var(--feedback-info)) 85%,
+    var(--text-heading)
   );
 }
 
@@ -1544,8 +1545,8 @@
   text-overflow: ellipsis;
 }
 .wk-day-count {
-  background: var(--theme-primary, var(--theme-info));
-  color: var(--theme-bg-card);
+  background: var(--interactive-primary, var(--feedback-info));
+  color: var(--text-inverse);
   font-size: 0.65rem;
   font-weight: 700;
   border-radius: var(--radius-full);
@@ -1557,8 +1558,8 @@
   flex-shrink: 0;
 }
 .wk-col-header.today .wk-day-count {
-  background: var(--theme-bg-card);
-  color: var(--theme-primary, var(--theme-info));
+  background: var(--surface-primary);
+  color: var(--interactive-primary, var(--feedback-info));
 }
 
 /* ── Contenu de la colonne jour ── */
@@ -1579,7 +1580,7 @@
 }
 
 .wk-empty {
-  color: var(--theme-text-muted, var(--theme-text-muted));
+  color: var(--text-muted, var(--text-muted));
   text-align: center;
   padding: 12px 0;
   font-size: var(--font-sm);
@@ -1599,8 +1600,8 @@
   padding: 3px 4px;
   font-size: 0.65rem;
   gap: 4px;
-  background: var(--theme-bg-secondary, var(--theme-bg-page));
-  border-bottom: 1px solid var(--theme-border-color, var(--theme-border));
+  background: var(--surface-secondary, var(--surface-page));
+  border-bottom: 1px solid var(--border-default);
   margin: 0 -4px;
 }
 .wk-day-expanded .tp-columns-header-mini .ev-col-h {

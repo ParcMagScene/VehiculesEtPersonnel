@@ -92,6 +92,7 @@ function MobileMessaging({ currentUser, onBack }) {
   const lastConvRefreshRef = useRef(0);
   const readReceiptTimerRef = useRef(null);
   const pendingReadConvRef = useRef(null);
+  const lastNewMessageEventRef = useRef(0);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -209,6 +210,7 @@ function MobileMessaging({ currentUser, onBack }) {
       es.addEventListener('new_message', async (e) => {
         try {
           const data = JSON.parse(e.data);
+          lastNewMessageEventRef.current = Date.now();
           scheduleConversationsRefresh();
           const currentConv = activeConversationRef.current;
           if (currentConv && Number(data?.conversation_id) === Number(currentConv.id)) {
@@ -253,6 +255,11 @@ function MobileMessaging({ currentUser, onBack }) {
       });
 
       es.addEventListener('unread_update', () => {
+        // Le backend envoie unread_update juste après new_message:
+        // on évite un 2e refresh inutile si l'événement est corrélé.
+        if (Date.now() - lastNewMessageEventRef.current < 1500) {
+          return;
+        }
         scheduleConversationsRefresh();
       });
 

@@ -129,7 +129,7 @@
   margin: 0;
 }
 .dd-events-count {
-  background: var(--interactive-primary, var(--theme-info));
+  background: var(--interactive-primary, var(--feedback-info));
   color: var(--text-inverse);
   font-size: 0.65rem;
   font-weight: 700;
@@ -176,7 +176,7 @@
   border-left-color: var(--theme-success-alt);
 }
 .dd-rdv-row.affaire-rdv {
-  border-left-color: var(--interactive-primary, var(--theme-indigo));
+  border-left-color: var(--interactive-primary, var(--feedback-info));
   background: var(--accent-tint-subtle);
 }
 .dd-rdv-row.affaire-rdv:hover {

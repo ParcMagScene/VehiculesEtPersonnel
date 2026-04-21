@@ -1283,6 +1283,10 @@ function initializeDatabase() {
     db.exec(
       'CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at)',
     );
+    // Index curseur: couvre WHERE conversation_id=? AND id<? ORDER BY id DESC (lot 17+)
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_messages_conv_id ON messages(conversation_id, id DESC)',
+    );
     db.exec(
       'CREATE INDEX IF NOT EXISTS idx_participants_user ON conversation_participants(user_id)',
     );

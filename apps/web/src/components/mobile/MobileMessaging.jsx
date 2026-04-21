@@ -23,6 +23,7 @@ import api, { getApiUrl } from '../../utils/api';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 const API_BASE_URL = getApiUrl();
+const MOBILE_MESSAGES_LIMIT = 30;
 
 const formatMsgTime = (dateStr) => {
   if (!dateStr) return '';
@@ -159,7 +160,7 @@ function MobileMessaging({ currentUser, onBack }) {
 
   const loadMessages = useCallback(async (convId, { markAsRead = true } = {}) => {
     try {
-      const data = await api.getMessages(convId);
+      const data = await api.getMessages(convId, MOBILE_MESSAGES_LIMIT);
       setMessages(data);
       if (markAsRead) {
         await api.markConversationRead(convId);

@@ -4,7 +4,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-tooltip);
-  background: var(--theme-overlay);
+  background: var(--surface-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,7 +22,7 @@
 }
 
 .tem-modal {
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 480px;
@@ -39,7 +39,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem 0.75rem;
-  border-bottom: 1px solid var(--theme-border-primary);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .tem-header h3 {
@@ -48,21 +48,21 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .tem-close {
   background: none;
   border: none;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
 .tem-close:hover {
-  background: var(--theme-bg-hover);
-  color: var(--theme-text-primary);
+  background: var(--surface-hover);
+  color: var(--text-body);
 }
 
 /* Badges */
@@ -71,7 +71,7 @@
   flex-wrap: wrap;
   gap: 0.4rem;
   padding: 0.6rem 1.25rem;
-  border-bottom: 1px solid var(--theme-border-primary);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .tem-badge {
@@ -94,8 +94,8 @@
   font-size: 0.7rem;
 }
 .tem-badge.section {
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-secondary);
+  background: var(--surface-secondary);
+  color: var(--text-muted);
 }
 
 /* Form */
@@ -124,7 +124,7 @@
 .tem-field label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -135,10 +135,10 @@
 .tem-field textarea {
   width: 100%;
   padding: 0.5rem 0.6rem;
-  border: 1px solid var(--theme-border-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-primary);
+  background: var(--surface-secondary);
+  color: var(--text-body);
   font-size: 0.88rem;
   transition: border-color 0.15s;
   font-family: inherit;
@@ -148,7 +148,7 @@
 .tem-field select:focus,
 .tem-field textarea:focus {
   outline: none;
-  border-color: var(--theme-info);
+  border-color: var(--interactive-primary);
   box-shadow: var(--focus-ring);
 }
 
@@ -163,15 +163,15 @@
   align-items: center;
   gap: 8px;
   padding: 0.4rem 0.6rem;
-  border: 1px solid var(--theme-border-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .tem-affaire-client {
   flex: 1;
   font-size: 0.82rem;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -185,15 +185,15 @@
   height: 22px;
   border: none;
   border-radius: var(--radius-full);
-  background: var(--theme-bg-tertiary);
-  color: var(--theme-text-muted);
+  background: var(--surface-tertiary);
+  color: var(--text-subtle);
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.15s;
 }
 .tem-affaire-clear:hover {
   background: var(--theme-danger, var(--theme-danger));
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .tem-affaire-picker {
@@ -209,22 +209,22 @@
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   pointer-events: none;
 }
 .tem-affaire-search {
   width: 100%;
   padding: 0.5rem 0.6rem 0.5rem 2rem;
-  border: 1px solid var(--theme-border-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-primary);
+  background: var(--surface-secondary);
+  color: var(--text-body);
   font-size: var(--font-base);
   font-family: inherit;
 }
 .tem-affaire-search:focus {
   outline: none;
-  border-color: var(--theme-info);
+  border-color: var(--interactive-primary);
   box-shadow: var(--focus-ring);
 }
 
@@ -235,8 +235,8 @@
   right: 0;
   max-height: 180px;
   overflow-y: auto;
-  background: var(--theme-bg-card);
-  border: 1px solid var(--theme-border-primary);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   box-shadow: 0 8px 24px var(--shadow-modal);
   z-index: var(--z-tooltip);
@@ -247,7 +247,7 @@
   padding: 0.75rem;
   text-align: center;
   font-size: var(--font-sm);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
 }
 
 .tem-affaire-option {
@@ -258,8 +258,8 @@
   padding: 0.4rem 0.5rem;
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--theme-bg-card);
-  color: var(--theme-text-primary);
+  background: var(--surface-primary);
+  color: var(--text-body);
   font-size: 0.82rem;
   font-family: inherit;
   cursor: pointer;
@@ -267,13 +267,13 @@
   transition: background 0.1s;
 }
 .tem-affaire-option:hover {
-  background: var(--theme-bg-hover);
+  background: var(--surface-hover);
 }
 
 .tem-affaire-opt-num {
   font-weight: 700;
   font-size: 0.78rem;
-  color: var(--theme-info);
+  color: var(--interactive-primary);
   white-space: nowrap;
 }
 
@@ -286,7 +286,7 @@
 
 .tem-affaire-opt-titre {
   font-size: var(--font-xs);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -310,7 +310,7 @@
   height: 32px;
   border-radius: var(--radius-sm);
   background: #4285f415;
-  color: var(--theme-info);
+  color: var(--interactive-primary);
   border: 1px solid #4285f430;
   flex-shrink: 0;
   transition:
@@ -328,7 +328,7 @@
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  border-top: 1px solid var(--theme-border-primary);
+  border-top: 1px solid var(--border-default);
 }
 
 .tem-btn {
@@ -344,8 +344,8 @@
   transition: all 0.15s;
 }
 .tem-btn.primary {
-  background: var(--theme-info);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 .tem-btn.primary:hover:not(:disabled) {
   filter: brightness(1.1);
@@ -355,11 +355,11 @@
   cursor: not-allowed;
 }
 .tem-btn.secondary {
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-primary);
+  background: var(--surface-secondary);
+  color: var(--text-body);
 }
 .tem-btn.secondary:hover {
-  background: var(--theme-bg-hover);
+  background: var(--surface-hover);
 }
 
 @media (max-width: 480px) {

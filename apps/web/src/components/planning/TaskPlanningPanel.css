@@ -94,13 +94,13 @@
 
 /* Bouton principal "Nouvelle tâche" */
 .task-planning-panel .btn-add-task-main {
-  background: var(--primary, var(--theme-info)) !important;
+  background: var(--primary, var(--feedback-info)) !important;
   color: var(--text-inverse) !important;
-  border-color: var(--primary, var(--theme-info)) !important;
+  border-color: var(--primary, var(--feedback-info)) !important;
 }
 .task-planning-panel .btn-add-task-main:hover {
-  background: var(--primary-dark, var(--theme-info-dark)) !important;
-  border-color: var(--primary-dark, var(--theme-info-dark)) !important;
+  background: var(--primary-dark, var(--interactive-hover)) !important;
+  border-color: var(--primary-dark, var(--interactive-hover)) !important;
 }
 
 /* Sections container */
@@ -1511,7 +1511,7 @@
   flex-shrink: 0;
 }
 .wk-col-header:hover {
-  background: var(--theme-hover-bg, #eef2f7);
+  background: var(--surface-hover, #eef2f7);
 }
 .wk-col-header.today {
   background: var(--interactive-primary, var(--feedback-info));
@@ -2071,7 +2071,7 @@
   transition: color 0.15s;
 }
 .task-planning-panel .ical-refresh-btn:hover {
-  color: var(--theme-accent);
+  color: var(--interactive-primary);
 }
 .task-planning-panel .ical-refresh-btn .spinning {
   animation: spin-icon 1s linear infinite;
@@ -2110,8 +2110,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: var(--theme-accent);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: var(--radius-sm);
   padding: 4px 10px;
@@ -2338,7 +2338,7 @@
   color: var(--text-muted);
 }
 .task-planning-panel .events-future-group .events-subgroup-header {
-  color: var(--theme-indigo);
+  color: var(--interactive-primary);
 }
 .task-planning-panel .subgroup-chevron {
   transition: transform 0.2s;

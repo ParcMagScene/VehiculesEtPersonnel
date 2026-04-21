@@ -91,7 +91,7 @@ function MobileMessaging({ currentUser, onBack }) {
 
   const loadConversations = useCallback(async () => {
     try {
-      const data = await api.getConversations();
+      const data = await api.getConversations({ limit: 30, includeParticipants: false });
       setConversations(data);
     } catch (err) {
       console.error('Erreur chargement conversations:', err);
@@ -225,6 +225,7 @@ function MobileMessaging({ currentUser, onBack }) {
   }, [messages]);
 
   const getConversationName = (conv) => {
+    if (conv.display_name) return conv.display_name;
     if (conv.title) return conv.title;
     if (conv.type === 'direct' && conv.participants) {
       const other = conv.participants.find((p) => p.id !== currentUser?.id);

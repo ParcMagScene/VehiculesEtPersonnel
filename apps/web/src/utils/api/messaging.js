@@ -2,8 +2,18 @@
 
 export function registerMessagingMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-    async getConversations() {
-      return this.request('/messaging/conversations');
+    async getConversations({ limit, page, offset, includeParticipants } = {}) {
+      const params = new URLSearchParams();
+      if (limit != null) params.set('limit', String(limit));
+      if (page != null) params.set('page', String(page));
+      if (offset != null) params.set('offset', String(offset));
+      if (includeParticipants != null) {
+        params.set('includeParticipants', includeParticipants ? 'true' : 'false');
+      }
+
+      const qs = params.toString();
+      const url = qs ? `/messaging/conversations?${qs}` : '/messaging/conversations';
+      return this.request(url);
     },
     async createConversation(type, title, participantIds) {
       return this.request('/messaging/conversations', {

@@ -135,11 +135,22 @@ export function setupMessagingRoutes(app, authenticateToken) {
         const parsed = Number.parseInt(value, 10);
         return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
       };
+      const parseBoolean = (value, fallback = true) => {
+        if (value === undefined) return fallback;
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+          const normalized = value.trim().toLowerCase();
+          if (normalized === 'true' || normalized === '1') return true;
+          if (normalized === 'false' || normalized === '0') return false;
+        }
+        return fallback;
+      };
 
       const pageSize = Math.min(parsePositiveInt(req.query.limit ?? req.query.pageSize, 50), 200);
       const page = parsePositiveInt(req.query.page, 1);
       const hasOffset = req.query.offset !== undefined;
       const offset = hasOffset ? parseNonNegativeInt(req.query.offset, 0) : (page - 1) * pageSize;
+      const includeParticipants = parseBoolean(req.query.includeParticipants, true);
 
       const conversations = db
         .prepare(
@@ -174,7 +185,17 @@ export function setupMessagingRoutes(app, authenticateToken) {
                COALESCE(ucount.unread_count, 0) as unread_count,
                lm.content as last_message,
                lm.created_at as last_message_at,
-               lm.sender_name as last_message_sender
+               lm.sender_name as last_message_sender,
+               COALESCE(
+                 uc.title,
+                 (
+                   SELECT GROUP_CONCAT(u.name, ', ')
+                   FROM conversation_participants cp2
+                   JOIN users u ON u.id = cp2.user_id
+                   WHERE cp2.conversation_id = uc.id AND cp2.user_id != ?
+                 ),
+                 'Conversation'
+               ) as display_name
         FROM user_conversations uc
         LEFT JOIN unread_counts ucount ON ucount.conversation_id = uc.id
         LEFT JOIN last_messages lm ON lm.conversation_id = uc.id
@@ -182,10 +203,19 @@ export function setupMessagingRoutes(app, authenticateToken) {
         LIMIT ? OFFSET ?
       `,
         )
-        .all(req.user.id, req.user.id, req.user.id, pageSize, offset);
+        .all(req.user.id, req.user.id, req.user.id, req.user.id, pageSize, offset);
 
       if (conversations.length === 0) {
         return res.json([]);
+      }
+
+      if (!includeParticipants) {
+        return res.json(
+          conversations.map((conv) => ({
+            ...conv,
+            participants: [],
+          })),
+        );
       }
 
       const conversationIds = conversations.map((c) => c.id);

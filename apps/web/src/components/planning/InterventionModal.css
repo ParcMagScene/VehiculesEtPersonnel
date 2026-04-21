@@ -1,5 +1,5 @@
 .intervention-modal {
-  background: var(--theme-bg-page);
+  background: var(--surface-page);
   border-radius: var(--radius-xl);
   width: 90%;
   max-width: 600px;
@@ -90,15 +90,15 @@
 }
 
 .deadline-alert.error {
-  background: var(--theme-danger-bg);
-  color: var(--theme-danger-dark);
-  border: 1px solid var(--theme-danger-border);
+  background: var(--feedback-error-bg);
+  color: var(--feedback-error-text);
+  border: 1px solid var(--feedback-error-border);
 }
 
 .deadline-alert.warning {
-  background: var(--theme-warning-bg);
-  color: var(--theme-warning-dark);
-  border: 1px solid var(--theme-warning-border);
+  background: var(--feedback-warning-bg);
+  color: var(--feedback-warning-text);
+  border: 1px solid var(--feedback-warning-border);
 }
 
 .deadline-alert svg {
@@ -113,7 +113,7 @@
   display: block;
   font-size: var(--font-2xs);
   font-weight: 600;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -124,12 +124,12 @@
 .intervention-modal .form-group textarea {
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
   font-family: inherit;
-  color: var(--theme-text-dark);
-  background: var(--theme-bg-card);
+  color: var(--text-body);
+  background: var(--surface-primary);
   transition: border-color 0.15s;
 }
 
@@ -150,7 +150,7 @@
   display: block;
   margin-top: 4px;
   font-size: var(--font-xs);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   font-weight: 400;
 }
 
@@ -160,12 +160,12 @@
   gap: 8px;
   margin-top: 8px;
   padding: 10px 12px;
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
-  border: 1px solid var(--theme-info-border);
+  background: linear-gradient(135deg, var(--feedback-info-bg) 0%, var(--feedback-info-bg) 100%);
+  border: 1px solid var(--feedback-info-border);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
   line-height: 1.4;
-  color: var(--theme-info-dark);
+  color: var(--feedback-info-text);
 }
 
 .ct-periodicity-icon {
@@ -175,11 +175,11 @@
 }
 
 .ct-periodicity-text {
-  color: var(--theme-text-dark);
+  color: var(--text-body);
 }
 
 .ct-periodicity-text strong {
-  color: var(--theme-info-dark);
+  color: var(--feedback-info-text);
 }
 
 .intervention-modal .form-actions {
@@ -187,8 +187,8 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--space-3) var(--space-5);
-  border-top: 1px solid var(--theme-border);
-  background: var(--theme-bg-card);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-primary);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   flex-shrink: 0;
 }

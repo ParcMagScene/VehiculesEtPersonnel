@@ -5,7 +5,7 @@
 .personnel-agenda {
   display: flex;
   height: 100%;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   overflow: hidden;
 }
 
@@ -13,8 +13,8 @@
 .agenda-sidebar {
   width: 260px;
   flex-shrink: 0;
-  background: var(--theme-bg-card);
-  border-right: 2px solid var(--theme-border-medium);
+  background: var(--surface-primary);
+  border-right: 2px solid var(--border-strong);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -27,8 +27,8 @@
   padding: 16px;
   font-weight: 600;
   font-size: 15px;
-  color: var(--theme-text-heading);
-  border-bottom: 1px solid var(--theme-border-medium);
+  color: var(--text-heading);
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .agenda-search {
@@ -36,8 +36,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--theme-border-medium);
-  color: var(--theme-text-gray);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--text-muted);
 }
 
 .agenda-search input {
@@ -46,7 +46,7 @@
   outline: none;
   font-size: var(--font-base);
   background: transparent;
-  color: var(--theme-text-heading);
+  color: var(--text-heading);
 }
 
 .agenda-person-list {
@@ -69,12 +69,12 @@
 }
 
 .agenda-person-item:hover {
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .agenda-person-item.active {
-  background: var(--theme-info-bg);
-  border-right: 3px solid var(--theme-info);
+  background: var(--feedback-info-bg, var(--surface-hover));
+  border-right: 3px solid var(--interactive-primary);
 }
 
 .agenda-person-avatar {
@@ -82,7 +82,7 @@
   height: 36px;
   border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--theme-info), var(--theme-primary-light));
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -100,7 +100,7 @@
 .agenda-person-name {
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--theme-text-heading);
+  color: var(--text-heading);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -108,14 +108,14 @@
 
 .agenda-person-role {
   font-size: var(--font-xs);
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
   margin-top: 1px;
 }
 
 /* Légende */
 .agenda-legend {
   padding: 12px;
-  border-top: 1px solid var(--theme-border-medium);
+  border-top: 1px solid var(--border-strong);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -126,7 +126,7 @@
   align-items: center;
   gap: 8px;
   font-size: var(--font-sm);
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
 }
 
 .legend-dot {
@@ -150,8 +150,8 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3) var(--space-5);
-  background: var(--theme-bg-card);
-  border-bottom: 2px solid var(--theme-border-medium);
+  background: var(--surface-primary);
+  border-bottom: 2px solid var(--border-strong);
   gap: var(--space-3);
   flex-wrap: wrap;
 }
@@ -163,7 +163,7 @@
 .agenda-person-title {
   font-size: var(--font-lg);
   font-weight: 600;
-  color: var(--theme-text-heading);
+  color: var(--text-heading);
   margin: 0;
 }
 
@@ -177,25 +177,25 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--theme-border-medium);
-  background: var(--theme-bg-card);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
   transition: all 0.2s;
 }
 
 .agenda-nav-btn:hover {
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-heading);
+  background: var(--surface-secondary);
+  color: var(--text-heading);
 }
 
 .agenda-period-title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--theme-text-heading);
+  color: var(--text-heading);
   text-transform: capitalize;
   min-width: 200px;
   text-align: center;
@@ -204,18 +204,18 @@
 .agenda-today-btn {
   padding: 6px 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--theme-border-medium);
-  background: var(--theme-bg-card);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-primary);
   font-size: var(--font-base);
   cursor: pointer;
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
   transition: all 0.2s;
 }
 
 .agenda-today-btn:hover {
-  background: var(--theme-info);
-  color: var(--theme-text-inverse);
-  border-color: var(--theme-info);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
+  border-color: var(--interactive-primary);
 }
 
 .agenda-toolbar-right {
@@ -225,7 +225,7 @@
 .agenda-view-toggle {
   display: flex;
   gap: 2px;
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
   border-radius: var(--radius-sm);
   padding: 3px;
 }
@@ -238,13 +238,13 @@
   font-size: var(--font-base);
   font-weight: 500;
   cursor: pointer;
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
   transition: all 0.2s;
 }
 
 .agenda-view-toggle button.active {
-  background: var(--theme-bg-card);
-  color: var(--theme-info);
+  background: var(--surface-primary);
+  color: var(--interactive-primary);
   box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
@@ -258,7 +258,7 @@
   justify-content: center;
   flex: 1;
   gap: 12px;
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
   font-size: 15px;
 }
 
@@ -277,8 +277,8 @@
 .agenda-week-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  border-bottom: 2px solid var(--theme-border-medium);
-  background: var(--theme-bg-tertiary);
+  border-bottom: 2px solid var(--border-strong);
+  background: var(--surface-tertiary);
 }
 
 .agenda-week-day-header {
@@ -286,7 +286,7 @@
   flex-direction: column;
   align-items: center;
   padding: 10px 4px;
-  border-right: 1px solid var(--theme-border-medium);
+  border-right: 1px solid var(--border-strong);
   gap: 4px;
 }
 
@@ -299,26 +299,26 @@
 }
 
 .agenda-week-day-header.weekend {
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
 }
 
 .week-day-name {
   font-size: var(--font-sm);
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
   letter-spacing: 0.5px;
 }
 
 .week-day-number {
   font-size: var(--font-xl);
   font-weight: 600;
-  color: var(--theme-text-heading);
+  color: var(--text-heading);
 }
 
 .today-badge {
-  background: var(--theme-info);
-  color: var(--theme-text-inverse) !important;
+  background: var(--interactive-primary);
+  color: var(--text-inverse) !important;
   border-radius: var(--radius-full);
   width: 28px;
   height: 28px;
@@ -336,13 +336,13 @@
 }
 
 .agenda-week-day {
-  border-right: 1px solid var(--theme-border-medium);
+  border-right: 1px solid var(--border-strong);
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-height: 150px;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
 }
 
 .agenda-week-day:last-child {
@@ -354,7 +354,7 @@
 }
 
 .agenda-week-day.weekend {
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .agenda-day-free {
@@ -433,8 +433,8 @@
 .agenda-month-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  background: var(--theme-bg-tertiary);
-  border-bottom: 2px solid var(--theme-border-medium);
+  background: var(--surface-tertiary);
+  border-bottom: 2px solid var(--border-strong);
 }
 
 .agenda-month-day-label {
@@ -442,7 +442,7 @@
   padding: 10px;
   font-size: var(--font-sm);
   font-weight: 600;
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -455,11 +455,11 @@
 }
 
 .agenda-month-cell {
-  border-right: 1px solid var(--theme-border-medium);
-  border-bottom: 1px solid var(--theme-border-medium);
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
   padding: 4px;
   min-height: 90px;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   display: flex;
   flex-direction: column;
 }
@@ -473,11 +473,11 @@
 }
 
 .agenda-month-cell.weekend {
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .agenda-month-cell.empty {
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
   opacity: 0.5;
 }
 
@@ -486,7 +486,7 @@
   padding: 2px 4px;
   font-size: var(--font-base);
   font-weight: 500;
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
 }
 
 .month-cell-date .today-badge {
@@ -514,7 +514,7 @@
 
 .month-event-label {
   font-size: var(--font-xs);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -523,7 +523,7 @@
 
 .month-event-more {
   font-size: var(--font-xs);
-  color: var(--theme-text-gray);
+  color: var(--text-muted);
   padding: 1px 6px;
   font-weight: 500;
 }
@@ -553,7 +553,7 @@
     width: 100%;
     max-height: 180px;
     border-right: none;
-    border-bottom: 2px solid var(--theme-border-medium);
+    border-bottom: 2px solid var(--border-strong);
   }
 
   .agenda-person-list {
@@ -571,7 +571,7 @@
 
   .agenda-person-item.active {
     border-right: none;
-    background: var(--theme-info-bg-strong);
+    background: var(--feedback-info-bg-strong, var(--feedback-info-bg, var(--surface-hover)));
     border-radius: var(--radius-md);
   }
 

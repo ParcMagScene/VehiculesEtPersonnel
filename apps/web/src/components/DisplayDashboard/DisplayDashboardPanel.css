@@ -1236,6 +1236,10 @@
   gap: 10px;
 }
 
+.display-file-input-hidden {
+  display: none;
+}
+
 .drop-preview-img {
   max-width: 200px;
   max-height: 150px;

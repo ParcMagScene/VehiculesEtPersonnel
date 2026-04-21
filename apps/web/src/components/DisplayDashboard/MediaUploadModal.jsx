@@ -135,7 +135,7 @@ function MediaUploadModal({ onSave, onClose }) {
           type="file"
           accept={ACCEPTED_TYPES}
           onChange={handleFileSelect}
-          style={{ display: 'none' }}
+          className="display-file-input-hidden"
         />
         {file ? (
           <div className="drop-zone-preview">

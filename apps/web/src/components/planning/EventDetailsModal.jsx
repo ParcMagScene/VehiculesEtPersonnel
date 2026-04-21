@@ -711,9 +711,6 @@ function EventDetailsModal({
                       <Tooltip content="Joindre des fichiers" position="bottom">
                         <label
                           className={`btn-open-folder ${!event.affaire || uploading ? 'disabled' : ''}`}
-                          style={{
-                            cursor: !event.affaire || uploading ? 'not-allowed' : 'pointer',
-                          }}
                         >
                           <Plus size={16} />
                           {uploading ? 'Upload...' : 'Joindre fichiers'}
@@ -722,7 +719,7 @@ function EventDetailsModal({
                             multiple
                             onChange={handleFileUpload}
                             disabled={!event.affaire || uploading}
-                            style={{ display: 'none' }}
+                            className="event-hidden-file-input"
                           />
                         </label>
                       </Tooltip>
@@ -900,17 +897,13 @@ function EventDetailsModal({
         >
           <div className="preview-body">
             {previewFile.name.toLowerCase().endsWith('.pdf') ? (
-              <iframe
-                src={previewFile.url}
-                title={previewFile.name}
-                style={{ width: '100%', height: '100%', border: 'none' }}
-              />
+              <iframe src={previewFile.url} title={previewFile.name} className="preview-frame" />
             ) : previewFile.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
               <img
                 src={previewFile.url}
                 alt={previewFile.name}
                 loading="lazy"
-                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                className="preview-image"
               />
             ) : (
               <div className="unsupported-preview">
@@ -948,7 +941,7 @@ function EventDetailsModal({
                   multiple
                   onChange={handleFileUpload}
                   disabled={uploading}
-                  style={{ display: 'none' }}
+                  className="event-hidden-file-input"
                 />
               </label>
             </>

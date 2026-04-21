@@ -74,6 +74,29 @@ const formatFileSize = (bytes) => {
   return (bytes / 1048576).toFixed(1) + ' Mo';
 };
 
+const areMessagesEquivalent = (prev, next) => {
+  if (prev === next) return true;
+  if (!Array.isArray(prev) || !Array.isArray(next)) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    const a = prev[i];
+    const b = next[i];
+    if (!a || !b) return false;
+    if (a.id !== b.id) return false;
+    if (a.created_at !== b.created_at) return false;
+    if (a.edited_at !== b.edited_at) return false;
+    if (a.content !== b.content) return false;
+    if (a.type !== b.type) return false;
+
+    const aAtt = Array.isArray(a.attachments) ? a.attachments : [];
+    const bAtt = Array.isArray(b.attachments) ? b.attachments : [];
+    if (aAtt.length !== bAtt.length) return false;
+  }
+
+  return true;
+};
+
 function MobileMessaging({ currentUser, onBack }) {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -161,7 +184,7 @@ function MobileMessaging({ currentUser, onBack }) {
   const loadMessages = useCallback(async (convId, { markAsRead = true } = {}) => {
     try {
       const data = await api.getMessages(convId, MOBILE_MESSAGES_LIMIT);
-      setMessages(data);
+      setMessages((prev) => (areMessagesEquivalent(prev, data) ? prev : data));
       if (markAsRead) {
         await api.markConversationRead(convId);
         setConversations((prev) =>

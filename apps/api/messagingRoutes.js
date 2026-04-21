@@ -73,6 +73,32 @@ function getUnreadCountsForUsers(userIds) {
   return counts;
 }
 
+function getConversationUnreadCountsForUsers(conversationId, userIds) {
+  const counts = new Map();
+  if (!Array.isArray(userIds) || userIds.length === 0) return counts;
+
+  const placeholders = userIds.map(() => '?').join(',');
+  const rows = db
+    .prepare(
+      `
+    SELECT cp.user_id, COUNT(*) as conversation_unread
+    FROM messages m
+    JOIN conversation_participants cp ON cp.conversation_id = m.conversation_id
+    WHERE m.conversation_id = ?
+      AND cp.user_id IN (${placeholders})
+      AND m.sender_id != cp.user_id
+      AND m.created_at > COALESCE(cp.last_read_at, '1970-01-01')
+    GROUP BY cp.user_id
+  `,
+    )
+    .all(conversationId, ...userIds);
+
+  for (const userId of userIds) counts.set(userId, 0);
+  for (const row of rows) counts.set(row.user_id, row.conversation_unread);
+
+  return counts;
+}
+
 // [AUDIT Phase 4] Types MIME autorisés pour les uploads messagerie
 const MESSAGING_ALLOWED_MIMES = new Set([
   'image/jpeg',
@@ -467,6 +493,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
           (pid) => pid !== req.user.id,
         );
         const unreadByUser = getUnreadCountsForUsers(participants);
+        const conversationUnreadByUser = getConversationUnreadCountsForUsers(convId, participants);
         for (const pid of participants) {
           const unread = unreadByUser.get(pid) || 0;
           notifyUser(pid, 'new_message', {
@@ -479,7 +506,11 @@ export function setupMessagingRoutes(app, authenticateToken) {
             created_at: createdAt,
             attachments: [],
           });
-          notifyUser(pid, 'unread_update', { unread });
+          notifyUser(pid, 'unread_update', {
+            unread,
+            conversation_id: Number(convId),
+            conversation_unread: conversationUnreadByUser.get(pid) || 0,
+          });
         }
       } catch (error) {
         logger.error(error);
@@ -610,6 +641,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
         (pid) => pid !== req.user.id,
       );
       const unreadByUser = getUnreadCountsForUsers(participants);
+      const conversationUnreadByUser = getConversationUnreadCountsForUsers(convId, participants);
       for (const pid of participants) {
         const unread = unreadByUser.get(pid) || 0;
         notifyUser(pid, 'new_message', {
@@ -630,7 +662,11 @@ export function setupMessagingRoutes(app, authenticateToken) {
             },
           ],
         });
-        notifyUser(pid, 'unread_update', { unread });
+        notifyUser(pid, 'unread_update', {
+          unread,
+          conversation_id: Number(convId),
+          conversation_unread: conversationUnreadByUser.get(pid) || 0,
+        });
       }
     } catch (error) {
       logger.error(error);

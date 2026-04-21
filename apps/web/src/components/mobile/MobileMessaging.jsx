@@ -88,6 +88,7 @@ function MobileMessaging({ currentUser, onBack }) {
   const pollRef = useRef(null);
   const sseRef = useRef(null);
   const activeConversationRef = useRef(null);
+  const conversationsRef = useRef([]);
   const convRefreshTimerRef = useRef(null);
   const lastConvRefreshRef = useRef(0);
   const readReceiptTimerRef = useRef(null);
@@ -177,6 +178,10 @@ function MobileMessaging({ currentUser, onBack }) {
     activeConversationRef.current = activeConversation;
   }, [activeConversation]);
 
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(
     loadConversations,
     { disabled: !!activeConversation },
@@ -211,8 +216,39 @@ function MobileMessaging({ currentUser, onBack }) {
         try {
           const data = JSON.parse(e.data);
           lastNewMessageEventRef.current = Date.now();
-          scheduleConversationsRefresh();
           const currentConv = activeConversationRef.current;
+          const targetConvId = Number(data?.conversation_id);
+
+          if (Number.isFinite(targetConvId)) {
+            const hasConversation = conversationsRef.current.some(
+              (c) => Number(c.id) === targetConvId,
+            );
+
+            if (hasConversation) {
+              setConversations((prev) => {
+                const idx = prev.findIndex((c) => Number(c.id) === targetConvId);
+                if (idx === -1) return prev;
+                const current = prev[idx];
+                const updated = {
+                  ...current,
+                  last_message: data.content,
+                  last_message_at: data.created_at,
+                  last_message_sender: data.sender_name,
+                  unread_count:
+                    currentConv && Number(currentConv.id) === targetConvId
+                      ? 0
+                      : current.unread_count || 0,
+                };
+                const rest = [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+                return [updated, ...rest];
+              });
+            } else {
+              scheduleConversationsRefresh();
+            }
+          } else {
+            scheduleConversationsRefresh();
+          }
+
           if (currentConv && Number(data?.conversation_id) === Number(currentConv.id)) {
             if (data?.id) {
               setMessages((prev) => {
@@ -254,7 +290,34 @@ function MobileMessaging({ currentUser, onBack }) {
         }
       });
 
-      es.addEventListener('unread_update', () => {
+      es.addEventListener('unread_update', (e) => {
+        let parsed = null;
+        try {
+          parsed = JSON.parse(e?.data || '{}');
+        } catch {
+          parsed = null;
+        }
+
+        if (parsed && Number.isFinite(Number(parsed.conversation_id))) {
+          const targetConvId = Number(parsed.conversation_id);
+          const nextUnread = Number.isFinite(Number(parsed.conversation_unread))
+            ? Number(parsed.conversation_unread)
+            : 0;
+
+          setConversations((prev) => {
+            const idx = prev.findIndex((c) => Number(c.id) === targetConvId);
+            if (idx === -1) return prev;
+            const current = prev[idx];
+            const updated = {
+              ...current,
+              unread_count: nextUnread,
+            };
+            const rest = [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+            return [updated, ...rest];
+          });
+          return;
+        }
+
         // Le backend envoie unread_update juste après new_message:
         // on évite un 2e refresh inutile si l'événement est corrélé.
         if (Date.now() - lastNewMessageEventRef.current < 1500) {

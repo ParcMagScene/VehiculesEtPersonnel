@@ -706,13 +706,16 @@ export function setupMessagingRoutes(app, authenticateToken) {
           .json({ success: false, error: 'Vous ne pouvez modifier que vos propres messages' });
       }
 
-      db.prepare('UPDATE messages SET content = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ?').run(
-        content.trim(),
+      const trimmed = content.trim();
+      const now = new Date().toISOString();
+      db.prepare('UPDATE messages SET content = ?, edited_at = ? WHERE id = ?').run(
+        trimmed,
+        now,
         req.params.id,
       );
 
-      const updated = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
-      res.json(updated);
+      // Retourner directement sans second SELECT
+      res.json({ ...message, content: trimmed, edited_at: now });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

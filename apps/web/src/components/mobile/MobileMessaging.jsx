@@ -193,7 +193,42 @@ function MobileMessaging({ currentUser, onBack }) {
           scheduleConversationsRefresh();
           const currentConv = activeConversationRef.current;
           if (currentConv && Number(data?.conversation_id) === Number(currentConv.id)) {
-            await loadMessages(currentConv.id);
+            if (data?.id) {
+              setMessages((prev) => {
+                if (prev.some((m) => Number(m.id) === Number(data.id))) return prev;
+                return [
+                  ...prev,
+                  {
+                    id: data.id,
+                    conversation_id: data.conversation_id,
+                    sender_id: data.sender_id,
+                    sender_name: data.sender_name,
+                    content: data.content,
+                    type: data.type || 'text',
+                    created_at: data.created_at,
+                    attachments: Array.isArray(data.attachments) ? data.attachments : [],
+                  },
+                ];
+              });
+              setConversations((prev) =>
+                prev.map((c) =>
+                  c.id === currentConv.id
+                    ? {
+                        ...c,
+                        unread_count: 0,
+                        last_message: data.content,
+                        last_message_at: data.created_at,
+                        last_message_sender: data.sender_name,
+                      }
+                    : c,
+                ),
+              );
+              api.markConversationRead(currentConv.id).catch(() => {
+                // silencieux
+              });
+            } else {
+              await loadMessages(currentConv.id);
+            }
           }
         } catch {
           // silencieux

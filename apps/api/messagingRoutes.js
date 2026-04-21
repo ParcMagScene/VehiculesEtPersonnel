@@ -413,6 +413,8 @@ export function setupMessagingRoutes(app, authenticateToken) {
             'INSERT INTO messages (conversation_id, sender_id, content, type) VALUES (?, ?, ?, ?)',
           )
           .run(convId, req.user.id, content, type);
+        const messageId = Number(result.lastInsertRowid);
+        const createdAt = new Date().toISOString();
 
         // Mettre à jour le timestamp de la conversation
         db.prepare('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
@@ -425,13 +427,13 @@ export function setupMessagingRoutes(app, authenticateToken) {
         ).run(convId, req.user.id);
 
         res.json({
-          id: result.lastInsertRowid,
+          id: messageId,
           conversation_id: parseInt(convId),
           sender_id: req.user.id,
           sender_name: req.user.name,
           content,
           type,
-          created_at: new Date().toISOString(),
+          created_at: createdAt,
           attachments: [],
         });
 
@@ -441,11 +443,14 @@ export function setupMessagingRoutes(app, authenticateToken) {
           if (pid === req.user.id) continue;
           const unread = getUnreadCountForUser(pid);
           notifyUser(pid, 'new_message', {
+            id: messageId,
             conversation_id: parseInt(convId),
             sender_id: req.user.id,
             sender_name: req.user.name,
             content,
             type,
+            created_at: createdAt,
+            attachments: [],
           });
           notifyUser(pid, 'unread_update', { unread });
         }
@@ -539,6 +544,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
         .run(convId, req.user.id, filename, msgType);
 
       const messageId = msgResult.lastInsertRowid;
+      const createdAt = new Date().toISOString();
 
       // Créer l'attachement
       db.prepare(
@@ -560,7 +566,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
         sender_name: req.user.name,
         content: filename,
         type: msgType,
-        created_at: new Date().toISOString(),
+        created_at: createdAt,
         attachments: [
           {
             id: null,
@@ -578,11 +584,22 @@ export function setupMessagingRoutes(app, authenticateToken) {
         if (pid === req.user.id) continue;
         const unread = getUnreadCountForUser(pid);
         notifyUser(pid, 'new_message', {
+          id: messageId,
           conversation_id: parseInt(convId),
           sender_id: req.user.id,
           sender_name: req.user.name,
           content: filename,
           type: msgType,
+          created_at: createdAt,
+          attachments: [
+            {
+              id: null,
+              filename: uniqueName,
+              original_name: filename,
+              mime_type: mimeType || 'application/octet-stream',
+              size: buffer.length,
+            },
+          ],
         });
         notifyUser(pid, 'unread_update', { unread });
       }

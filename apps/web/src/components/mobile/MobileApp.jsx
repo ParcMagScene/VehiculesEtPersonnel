@@ -1,7 +1,7 @@
 import './MobileApp.css';
 
 import { LayoutGrid, LogOut, MessageSquare, Monitor, Moon, Palette, Sun } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 
 import { BottomSheet, Button, Skeleton, Spinner } from '@/design-system';
 
@@ -10,28 +10,37 @@ import useMobileRouter from '../../hooks/useMobileRouter';
 import useSwipeBack from '../../hooks/useSwipeBack';
 import { PALETTES, useTheme } from '../../hooks/useTheme';
 import api from '../../utils/api';
-import MobileAffaires from './MobileAffaires';
-import MobileAvailability from './MobileAvailability';
-import MobileDashboardAdmin from './MobileDashboardAdmin';
-import MobileEquipment from './MobileEquipment';
-import MobileEquipmentQR from './MobileEquipmentQR';
 import MobileHeader from './MobileHeader';
 import MobileHome from './MobileHome';
-import MobileInventory from './MobileInventory';
-import MobileLeaves from './MobileLeaves';
-import MobileLocation from './MobileLocation';
 import MobileLogin from './MobileLogin';
-import MobileMaintenances from './MobileMaintenances';
-import MobileMessaging from './MobileMessaging';
-import MobileOrders from './MobileOrders';
 import MobileParcDashboard from './MobileParcDashboard';
-import MobilePersonnel from './MobilePersonnel';
-import MobilePlanning from './MobilePlanning';
 import MobileQRLanding from './MobileQRLanding';
-import MobileReservations from './MobileReservations';
-import MobileSonos from './MobileSonos';
-import MobileSuivi from './MobileSuivi';
-import MobileTasks from './MobileTasks';
+
+const MobilePlanning = lazy(() => import('./MobilePlanning'));
+const MobileAvailability = lazy(() => import('./MobileAvailability'));
+const MobileReservations = lazy(() => import('./MobileReservations'));
+const MobileMaintenances = lazy(() => import('./MobileMaintenances'));
+const MobileAffaires = lazy(() => import('./MobileAffaires'));
+const MobileTasks = lazy(() => import('./MobileTasks'));
+const MobilePersonnel = lazy(() => import('./MobilePersonnel'));
+const MobileMessaging = lazy(() => import('./MobileMessaging'));
+const MobileEquipment = lazy(() => import('./MobileEquipment'));
+const MobileEquipmentQR = lazy(() => import('./MobileEquipmentQR'));
+const MobileOrders = lazy(() => import('./MobileOrders'));
+const MobileLeaves = lazy(() => import('./MobileLeaves'));
+const MobileInventory = lazy(() => import('./MobileInventory'));
+const MobileLocation = lazy(() => import('./MobileLocation'));
+const MobileSonos = lazy(() => import('./MobileSonos'));
+const MobileSuivi = lazy(() => import('./MobileSuivi'));
+const MobileDashboardAdmin = lazy(() => import('./MobileDashboardAdmin'));
+
+function MobileScreenFallback() {
+  return (
+    <div className="mobile-loading">
+      <Spinner size="lg" />
+    </div>
+  );
+}
 
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -329,126 +338,169 @@ function MobileApp({ onSwitchToDesktop }) {
         )}
 
         {currentScreen === 'planning' && (
-          <MobilePlanning
-            vehicles={vehicles}
-            reservations={reservations}
-            maintenances={maintenances}
-            currentDate={new Date()}
-            onClose={() => setCurrentScreen('parc-dashboard')}
-            clients={clients}
-            drivers={drivers}
-            onRefresh={loadParcData}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobilePlanning
+              vehicles={vehicles}
+              reservations={reservations}
+              maintenances={maintenances}
+              currentDate={new Date()}
+              onClose={() => setCurrentScreen('parc-dashboard')}
+              clients={clients}
+              drivers={drivers}
+              onRefresh={loadParcData}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'availability' && (
-          <MobileAvailability
-            vehicles={vehicles}
-            reservations={reservations}
-            maintenances={maintenances}
-            onClose={() => setCurrentScreen('parc-dashboard')}
-            onCreateReservation={(_vehicleId, _date) => {
-              setCurrentScreen('reservations');
-            }}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileAvailability
+              vehicles={vehicles}
+              reservations={reservations}
+              maintenances={maintenances}
+              onClose={() => setCurrentScreen('parc-dashboard')}
+              onCreateReservation={(_vehicleId, _date) => {
+                setCurrentScreen('reservations');
+              }}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'reservations' && (
-          <MobileReservations
-            ref={reservationFormRef}
-            vehicles={vehicles}
-            reservations={reservations}
-            clients={clients}
-            drivers={drivers}
-            currentUser={currentUser}
-            onReservationCreated={handleReservationCreated}
-            onBack={() => setCurrentScreen('parc-dashboard')}
-            onRefresh={loadParcData}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileReservations
+              ref={reservationFormRef}
+              vehicles={vehicles}
+              reservations={reservations}
+              clients={clients}
+              drivers={drivers}
+              currentUser={currentUser}
+              onReservationCreated={handleReservationCreated}
+              onBack={() => setCurrentScreen('parc-dashboard')}
+              onRefresh={loadParcData}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'maintenances' && (
-          <MobileMaintenances
-            ref={maintenanceFormRef}
-            vehicles={vehicles}
-            maintenances={maintenances}
-            garages={garages}
-            currentUser={currentUser}
-            onMaintenanceCreated={handleMaintenanceCreated}
-            onBack={() => setCurrentScreen('parc-dashboard')}
-            onRefresh={loadParcData}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileMaintenances
+              ref={maintenanceFormRef}
+              vehicles={vehicles}
+              maintenances={maintenances}
+              garages={garages}
+              currentUser={currentUser}
+              onMaintenanceCreated={handleMaintenanceCreated}
+              onBack={() => setCurrentScreen('parc-dashboard')}
+              onRefresh={loadParcData}
+            />
+          </Suspense>
         )}
 
-        {currentScreen === 'affaires' && <MobileAffaires onBack={() => setCurrentScreen('home')} />}
+        {currentScreen === 'affaires' && (
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileAffaires onBack={() => setCurrentScreen('home')} />
+          </Suspense>
+        )}
 
         {currentScreen === 'tasks' && (
-          <MobileTasks currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileTasks currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'personnel' && (
-          <MobilePersonnel onBack={() => setCurrentScreen('home')} currentUser={currentUser} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobilePersonnel onBack={() => setCurrentScreen('home')} currentUser={currentUser} />
+          </Suspense>
         )}
 
         {currentScreen === 'messaging' && (
-          <MobileMessaging currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileMessaging currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'equipment' && (
-          <MobileEquipment
-            onBack={() => setCurrentScreen('home')}
-            initialTab="inventory"
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileEquipment
+              onBack={() => setCurrentScreen('home')}
+              initialTab="inventory"
+              currentUser={currentUser}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'sav' && (
-          <MobileEquipment
-            onBack={() => setCurrentScreen('home')}
-            initialTab="sav"
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileEquipment
+              onBack={() => setCurrentScreen('home')}
+              initialTab="sav"
+              currentUser={currentUser}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'equipment-qr' && qrEquipmentUid && (
-          <MobileEquipmentQR
-            uid={qrEquipmentUid}
-            currentUser={currentUser}
-            onBack={() => {
-              setQrEquipmentUid(null);
-              navigate('equipment');
-            }}
-            onNavigateHome={() => {
-              setQrEquipmentUid(null);
-              navigate('home');
-            }}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileEquipmentQR
+              uid={qrEquipmentUid}
+              currentUser={currentUser}
+              onBack={() => {
+                setQrEquipmentUid(null);
+                navigate('equipment');
+              }}
+              onNavigateHome={() => {
+                setQrEquipmentUid(null);
+                navigate('home');
+              }}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'orders' && (
-          <MobileOrders onBack={() => setCurrentScreen('home')} currentUser={currentUser} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileOrders onBack={() => setCurrentScreen('home')} currentUser={currentUser} />
+          </Suspense>
         )}
 
         {currentScreen === 'leaves' && (
-          <MobileLeaves currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileLeaves currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'inventory' && (
-          <MobileInventory onBack={() => setCurrentScreen('home')} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileInventory onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
-        {currentScreen === 'location' && <MobileLocation onBack={() => setCurrentScreen('home')} />}
+        {currentScreen === 'location' && (
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileLocation onBack={() => setCurrentScreen('home')} />
+          </Suspense>
+        )}
 
         {currentScreen === 'sonos' && (
-          <MobileSonos currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileSonos currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'suivi' && (
-          <MobileSuivi currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileSuivi currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'dashboard-admin' && isAdmin && (
-          <MobileDashboardAdmin currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileDashboardAdmin
+              currentUser={currentUser}
+              onBack={() => setCurrentScreen('home')}
+            />
+          </Suspense>
         )}
       </main>
 

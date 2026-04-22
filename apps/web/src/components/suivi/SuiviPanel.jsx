@@ -64,6 +64,8 @@ function SuiviPanel({ currentUser, initialPersonId }) {
   const [isResizingGroups, setIsResizingGroups] = useState(false);
   const personListRef = useRef(null);
   const resizeStartRef = useRef({ y: 0, height: 280 });
+  const saveInFlightRef = useRef(false);
+  const pendingSaveRef = useRef(null);
   const isAdmin = !!currentUser?.isAdmin;
 
   // Groupes de personnel
@@ -136,14 +138,24 @@ function SuiviPanel({ currentUser, initialPersonId }) {
   const handleSaveSheet = useCallback(
     async (data) => {
       if (!selectedPerson) return;
+      pendingSaveRef.current = data;
+      if (saveInFlightRef.current) return;
+
+      saveInFlightRef.current = true;
       setSaving(true);
       setError(null);
+
       try {
-        const updated = await api.updateSuiviSheet(selectedPerson.id, selectedDate, data);
-        setSheet(updated);
+        while (pendingSaveRef.current) {
+          const payload = pendingSaveRef.current;
+          pendingSaveRef.current = null;
+          const updated = await api.updateSuiviSheet(selectedPerson.id, selectedDate, payload);
+          setSheet(updated);
+        }
       } catch (err) {
         setError('Erreur sauvegarde');
       } finally {
+        saveInFlightRef.current = false;
         setSaving(false);
       }
     },

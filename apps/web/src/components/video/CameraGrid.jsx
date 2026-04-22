@@ -2,7 +2,7 @@
 // CameraGrid.jsx — Grille multi-caméras (1/4/9/16)
 // ═══════════════════════════════════════════════════════════════
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 
@@ -27,6 +27,15 @@ const CameraGrid = ({
   const layout = GRID_LAYOUTS.find((l) => l.id === gridSize) || GRID_LAYOUTS[1];
   const enabledCameras = cameras.filter((c) => c.enabled);
   const visibleCameras = enabledCameras.slice(page * gridSize, (page + 1) * gridSize);
+
+  useEffect(() => {
+    setFullscreenCamera((current) => {
+      if (!current) return current;
+      const stillAvailable = enabledCameras.find((cam) => cam.id === current.id);
+      if (!stillAvailable) return null;
+      return stillAvailable === current ? current : stillAvailable;
+    });
+  }, [enabledCameras]);
 
   const handleFullscreen = useCallback((camera) => {
     setFullscreenCamera((prev) => (prev?.id === camera.id ? null : camera));

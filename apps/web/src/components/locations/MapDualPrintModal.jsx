@@ -7,7 +7,15 @@
 import L from 'leaflet';
 import { Download, Printer } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import {
+  Circle,
+  MapContainer,
+  Marker,
+  TileLayer,
+  Tooltip,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet';
 
 import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
@@ -17,26 +25,55 @@ import {
   DEFAULT_ZOOM,
   filterGeoLocations,
   filterNearby,
+  haversineDistance,
   MAG_SCENE,
   TILE_LIGHT,
 } from './map-utils';
 import { createHQIcon, createLocationIcon } from './MapMarkers';
+import MapOffScreenIndicators from './MapOffScreenIndicators';
+
+const MIN_RADIUS = 500;
+const MAX_RADIUS = 100000;
+
+function destinationEast([lat, lng], distanceMeters) {
+  const earthRadius = 6371000;
+  const latRad = (lat * Math.PI) / 180;
+  const lngRad = (lng * Math.PI) / 180;
+  const angularDistance = distanceMeters / earthRadius;
+  const eastBearing = Math.PI / 2;
+
+  const lat2 = Math.asin(
+    Math.sin(latRad) * Math.cos(angularDistance) +
+      Math.cos(latRad) * Math.sin(angularDistance) * Math.cos(eastBearing),
+  );
+  const lng2 =
+    lngRad +
+    Math.atan2(
+      Math.sin(eastBearing) * Math.sin(angularDistance) * Math.cos(latRad),
+      Math.cos(angularDistance) - Math.sin(latRad) * Math.sin(lat2),
+    );
+
+  return [(lat2 * 180) / Math.PI, (((lng2 * 180) / Math.PI + 540) % 360) - 180];
+}
 
 // ── Composant interne : ajuster les bounds automatiquement ──
-function FitBounds({ locations }) {
+function FitBounds({ locations, enabled = true }) {
   const map = useMap();
   useEffect(() => {
+    if (!enabled) return;
     if (!locations.length) return;
     const bounds = L.latLngBounds(locations.map((l) => [l.lat, l.lng]));
     map.fitBounds(bounds, { padding: BOUNDS_PADDING, maxZoom: 14 });
-  }, [locations, map]);
+  }, [locations, map, enabled]);
   return null;
 }
 
-function FitToRadius({ radius }) {
+function FitToRadius({ center, radius, enabled = true }) {
   const map = useMap();
+  const hasFittedRef = useRef(false);
+
   useEffect(() => {
-    const center = MAG_SCENE;
+    if (!enabled || hasFittedRef.current) return;
     const metersPerDeg = 40075016.686 / 360;
     const latDelta = (radius / metersPerDeg) * 1.3;
     const bounds = [
@@ -44,8 +81,156 @@ function FitToRadius({ radius }) {
       [center[0] + latDelta, center[1] + latDelta / Math.cos((center[0] * Math.PI) / 180)],
     ];
     map.fitBounds(bounds, { padding: [20, 20], animate: false });
-  }, [radius, map]);
+    hasFittedRef.current = true;
+  }, [center, radius, map, enabled]);
   return null;
+}
+
+function ViewportSync({ onViewChange }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!onViewChange) return undefined;
+
+    const emit = () => {
+      const center = map.getCenter();
+      onViewChange({ center: [center.lat, center.lng], zoom: map.getZoom() });
+    };
+
+    map.on('moveend', emit);
+    map.on('zoomend', emit);
+    emit();
+
+    return () => {
+      map.off('moveend', emit);
+      map.off('zoomend', emit);
+    };
+  }, [map, onViewChange]);
+
+  return null;
+}
+
+function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
+  const map = useMap();
+  const [revision, setRevision] = useState(0);
+  const [visibleLabelIds, setVisibleLabelIds] = useState(() => new Set());
+
+  const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
+  const DIR_OFFSETS = {
+    top: [0, -24],
+    right: [14, -4],
+    bottom: [0, 16],
+    left: [-14, -4],
+  };
+
+  const sorted = useMemo(() => [...locations].sort((a, b) => b.lat - a.lat), [locations]);
+  const allItems = useMemo(() => {
+    const base = sorted.map((loc) => ({ ...loc, _isHQ: false }));
+    if (!showHQ) return base;
+    return [
+      { id: '__hq__', name: 'Mag Scène', lat: hqPosition[0], lng: hqPosition[1], _isHQ: true },
+      ...base,
+    ];
+  }, [sorted, showHQ, hqPosition]);
+  const directionById = useMemo(() => {
+    const dirs = {};
+    allItems.forEach((loc, index) => {
+      dirs[loc.id] = DIRECTIONS[index % DIRECTIONS.length];
+    });
+    return dirs;
+  }, [allItems]);
+
+  useMapEvents({
+    moveend: () => setRevision((r) => r + 1),
+    zoomend: () => setRevision((r) => r + 1),
+    resize: () => setRevision((r) => r + 1),
+  });
+
+  useEffect(() => {
+    setRevision((r) => r + 1);
+  }, [allItems.length]);
+
+  useEffect(() => {
+    const bounds = map.getBounds();
+    const size = map.getSize();
+    const occupied = [];
+    const visible = new Set();
+
+    const intersects = (a, b) =>
+      !(a.x + a.w + 6 < b.x || b.x + b.w + 6 < a.x || a.y + a.h + 4 < b.y || b.y + b.h + 4 < a.y);
+
+    allItems.forEach((loc) => {
+      if (!bounds.contains([loc.lat, loc.lng])) return;
+
+      const pt = map.latLngToContainerPoint([loc.lat, loc.lng]);
+      const dir = directionById[loc.id] || 'top';
+      const [ox, oy] = DIR_OFFSETS[dir] || [0, -24];
+      const width = Math.min(260, Math.max(88, (loc.name?.length || 0) * 8 + 24));
+      const height = 28;
+
+      let x = pt.x;
+      let y = pt.y;
+      if (dir === 'top') {
+        x = pt.x + ox - width / 2;
+        y = pt.y + oy - height;
+      } else if (dir === 'bottom') {
+        x = pt.x + ox - width / 2;
+        y = pt.y + oy;
+      } else if (dir === 'right') {
+        x = pt.x + ox;
+        y = pt.y + oy - height / 2;
+      } else {
+        x = pt.x + ox - width;
+        y = pt.y + oy - height / 2;
+      }
+
+      const box = { x, y, w: width, h: height };
+      if (box.x < 0 || box.y < 0 || box.x + box.w > size.x || box.y + box.h > size.y) return;
+      if (occupied.some((other) => intersects(box, other))) return;
+
+      occupied.push(box);
+      visible.add(loc.id);
+    });
+
+    setVisibleLabelIds(visible);
+  }, [map, allItems, directionById, revision]);
+
+  return (
+    <>
+      {showHQ && (
+        <Marker position={hqPosition} icon={createHQIcon()} zIndexOffset={1000}>
+          {visibleLabelIds.has('__hq__') && (
+            <Tooltip permanent direction="top" offset={[0, -30]} className="map-name-tooltip">
+              Mag Scène
+            </Tooltip>
+          )}
+        </Marker>
+      )}
+      {sorted.map((loc) => {
+        const dir = directionById[loc.id] || 'top';
+        return (
+          <Marker
+            key={loc.id}
+            position={[loc.lat, loc.lng]}
+            icon={
+              loc.isCompanyLocation ? createHQIcon(32) : createLocationIcon(loc.type, { size: 30 })
+            }
+          >
+            {visibleLabelIds.has(loc.id) && (
+              <Tooltip
+                permanent
+                direction={dir}
+                offset={DIR_OFFSETS[dir]}
+                className="map-name-tooltip"
+              >
+                {loc.name}
+              </Tooltip>
+            )}
+          </Marker>
+        );
+      })}
+    </>
+  );
 }
 
 // ── Fonction utilitaire : capture via html2canvas ──
@@ -110,13 +295,82 @@ async function captureElement(element) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-export default function MapDualPrintModal({ locations, onClose }) {
+export default function MapDualPrintModal({
+  locations,
+  onClose,
+  initialGeneralView = null,
+  onGeneralViewChange,
+  initialLocalView = null,
+  onLocalViewChange,
+  zoneCenter = MAG_SCENE,
+  zoneRadius = 5000,
+  onZoneChange,
+}) {
   const generalRef = useRef(null);
   const localRef = useRef(null);
+  const initialGeneralViewRef = useRef(initialGeneralView);
+  const initialLocalViewRef = useRef(initialLocalView);
   const [printing, setPrinting] = useState(false);
+  const localRadius = Math.max(MIN_RADIUS, Math.min(MAX_RADIUS, Number(zoneRadius) || 5000));
+  const bootGeneralView = initialGeneralViewRef.current;
+  const bootLocalView = initialLocalViewRef.current;
+  const hasInitialGeneralView = Boolean(
+    bootGeneralView?.center && Number.isFinite(bootGeneralView?.zoom),
+  );
+  const hasInitialLocalView = Boolean(
+    bootLocalView?.center && Number.isFinite(bootLocalView?.zoom),
+  );
+
+  const localCenterHandleIcon = useMemo(
+    () =>
+      L.divIcon({
+        className: 'map-zone-center-handle',
+        html: '<span></span>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      }),
+    [],
+  );
+
+  const localRadiusHandleIcon = useMemo(
+    () =>
+      L.divIcon({
+        className: 'map-zone-radius-handle',
+        html: '<span></span>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      }),
+    [],
+  );
+
+  const localRadiusHandlePosition = useMemo(
+    () => destinationEast(zoneCenter, localRadius),
+    [zoneCenter, localRadius],
+  );
+
+  const formatRadius = (r) => {
+    if (r < 1000) return `${Math.round(r)} m`;
+    const km = r / 1000;
+    return `${Number((km >= 10 ? km.toFixed(1) : km.toFixed(2)).toString())} km`;
+  };
+
+  const applyZoneChange = (nextCenter, nextRadius = localRadius) => {
+    if (!onZoneChange) return;
+    onZoneChange({
+      center: nextCenter,
+      radius: Math.max(MIN_RADIUS, Math.min(MAX_RADIUS, Math.round(nextRadius))),
+    });
+  };
 
   const geoLocations = useMemo(() => filterGeoLocations(locations), [locations]);
-  const nearbyLocations = useMemo(() => filterNearby(locations, MAG_SCENE, 10000), [locations]);
+  const nearbyLocations = useMemo(
+    () => filterNearby(locations, zoneCenter, localRadius),
+    [locations, zoneCenter, localRadius],
+  );
+  const generalLocations = useMemo(() => {
+    const nearbyIds = new Set(nearbyLocations.map((loc) => loc.id));
+    return geoLocations.filter((loc) => !nearbyIds.has(loc.id));
+  }, [geoLocations, nearbyLocations]);
 
   const tile = TILE_LIGHT;
 
@@ -190,7 +444,7 @@ export default function MapDualPrintModal({ locations, onClose }) {
       localImg
         ? `
     <div class="map-inset">
-      <div class="map-inset-label">Autour du dépôt (10 km)</div>
+      <div class="map-inset-label">Autour du dépôt (${formatRadius(localRadius)})</div>
       <img src="${localImg}" alt="Carte locale" />
     </div>`
         : ''
@@ -216,7 +470,7 @@ export default function MapDualPrintModal({ locations, onClose }) {
     } finally {
       setPrinting(false);
     }
-  }, []);
+  }, [localRadius]);
 
   // ── Export PNG ──
   const handleExportPNG = useCallback(async () => {
@@ -274,57 +528,6 @@ export default function MapDualPrintModal({ locations, onClose }) {
     }
   }, []);
 
-  // ── Marqueurs communs avec tooltip permanent (anti-chevauchement) ──
-  const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
-  const DIR_OFFSETS = {
-    top: [0, -24],
-    right: [14, -4],
-    bottom: [0, 16],
-    left: [-14, -4],
-  };
-
-  const renderMarkers = (locs, showHQ = false) => {
-    // Trier par latitude décroissante pour distribuer intelligemment
-    const sorted = [...locs].sort((a, b) => b.lat - a.lat);
-    // Pour chaque lieu, alterner les directions en fonction de l'index
-    const getDirection = (index) => DIRECTIONS[index % DIRECTIONS.length];
-
-    return (
-      <>
-        {showHQ && (
-          <Marker position={MAG_SCENE} icon={createHQIcon()} zIndexOffset={1000}>
-            <Tooltip permanent direction="top" offset={[0, -30]} className="map-name-tooltip">
-              Mag Scène
-            </Tooltip>
-          </Marker>
-        )}
-        {sorted.map((loc, i) => {
-          const dir = getDirection(i);
-          return (
-            <Marker
-              key={loc.id}
-              position={[loc.lat, loc.lng]}
-              icon={
-                loc.isCompanyLocation
-                  ? createHQIcon(32)
-                  : createLocationIcon(loc.type, { size: 30 })
-              }
-            >
-              <Tooltip
-                permanent
-                direction={dir}
-                offset={DIR_OFFSETS[dir]}
-                className="map-name-tooltip"
-              >
-                {loc.name}
-              </Tooltip>
-            </Marker>
-          );
-        })}
-      </>
-    );
-  };
-
   return (
     <Modal open onClose={onClose} size="full" className="dual-print-modal no-drag">
       <ModalHeader onClose={onClose}>
@@ -355,41 +558,53 @@ export default function MapDualPrintModal({ locations, onClose }) {
           <div className="dual-print-main" ref={generalRef}>
             <div className="dual-print-map-label">Carte générale</div>
             <MapContainer
-              center={MAG_SCENE}
-              zoom={DEFAULT_ZOOM}
+              center={hasInitialGeneralView ? bootGeneralView.center : MAG_SCENE}
+              zoom={hasInitialGeneralView ? bootGeneralView.zoom : DEFAULT_ZOOM}
               className="emag-leaflet-map"
               style={{ width: '100%', height: '100%' }}
               scrollWheelZoom
+              wheelPxPerZoomLevel={180}
               zoomControl={false}
               attributionControl={false}
-              zoomSnap={0.25}
-              zoomDelta={0.25}
+              zoomSnap={0.1}
+              zoomDelta={0.1}
             >
               <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
-              <FitBounds locations={geoLocations} />
-              {renderMarkers(geoLocations)}
+              <FitBounds locations={generalLocations} enabled={!hasInitialGeneralView} />
+              <ViewportSync onViewChange={onGeneralViewChange} />
+              <MapOffScreenIndicators locations={generalLocations} />
+              <SmartMarkers locations={generalLocations} />
             </MapContainer>
           </div>
 
           {/* Carte locale (encart) */}
           <div className="dual-print-inset" ref={localRef}>
-            <div className="dual-print-map-label">Autour du dépôt (10 km)</div>
+            <div className="dual-print-map-label">
+              Autour du dépôt ({formatRadius(localRadius)})
+            </div>
             <MapContainer
-              center={MAG_SCENE}
-              zoom={12}
+              center={hasInitialLocalView ? bootLocalView.center : zoneCenter}
+              zoom={hasInitialLocalView ? bootLocalView.zoom : 12}
               className="emag-leaflet-map"
               style={{ width: '100%', height: '100%' }}
               scrollWheelZoom
+              wheelPxPerZoomLevel={180}
               zoomControl={false}
               attributionControl={false}
-              zoomSnap={0.25}
-              zoomDelta={0.25}
+              zoomSnap={0.1}
+              zoomDelta={0.1}
             >
               <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
-              <FitToRadius radius={10000} />
+              <FitToRadius
+                center={zoneCenter}
+                radius={localRadius}
+                enabled={!hasInitialLocalView}
+              />
+              <ViewportSync onViewChange={onLocalViewChange} />
+              <MapOffScreenIndicators locations={nearbyLocations} />
               <Circle
-                center={MAG_SCENE}
-                radius={10000}
+                center={zoneCenter}
+                radius={localRadius}
                 pathOptions={{
                   color: '#667eea',
                   fillColor: '#667eea',
@@ -398,7 +613,43 @@ export default function MapDualPrintModal({ locations, onClose }) {
                   dashArray: '8 4',
                 }}
               />
-              {renderMarkers(nearbyLocations, true)}
+
+              <Marker
+                position={zoneCenter}
+                icon={localCenterHandleIcon}
+                draggable
+                zIndexOffset={1200}
+                eventHandlers={{
+                  dragend: (event) => {
+                    const { lat, lng } = event.target.getLatLng();
+                    applyZoneChange([lat, lng], localRadius);
+                  },
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -12]}>
+                  Déplacer la zone
+                </Tooltip>
+              </Marker>
+
+              <Marker
+                position={localRadiusHandlePosition}
+                icon={localRadiusHandleIcon}
+                draggable
+                zIndexOffset={1200}
+                eventHandlers={{
+                  drag: (event) => {
+                    const { lat, lng } = event.target.getLatLng();
+                    const nextRadius = haversineDistance(zoneCenter[0], zoneCenter[1], lat, lng);
+                    applyZoneChange(zoneCenter, nextRadius);
+                  },
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -10]}>
+                  Redimensionner la zone
+                </Tooltip>
+              </Marker>
+
+              <SmartMarkers locations={nearbyLocations} showHQ hqPosition={MAG_SCENE} />
             </MapContainer>
           </div>
         </div>

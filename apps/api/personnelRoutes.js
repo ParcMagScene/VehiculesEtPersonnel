@@ -197,6 +197,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
           license_types = ?, certifications = ?, contract_type = ?,
           default_positions = ?,
           notes = ?, photo = ?,
+          show_in_planning = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
@@ -218,6 +219,11 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
           : existing.default_positions || '[]',
         p.notes ?? existing.notes,
         p.photo ?? existing.photo,
+        p.show_in_planning !== undefined
+          ? p.show_in_planning
+            ? 1
+            : 0
+          : (existing.show_in_planning ?? 1),
         req.user.id,
         req.params.id,
       );

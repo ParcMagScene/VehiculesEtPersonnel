@@ -91,7 +91,7 @@ function Modal({ open, onClose, size = 'md', className = '', children }) {
 
 /* ── Sub-components ── */
 
-function ModalHeader({ icon, children, onClose, className = '', style }) {
+function ModalHeader({ icon, children, onClose, className = '', style, rightContent = null }) {
   const cls = ['ui-modal-header', className].filter(Boolean).join(' ');
   return (
     <div className={cls} style={style}>
@@ -99,11 +99,14 @@ function ModalHeader({ icon, children, onClose, className = '', style }) {
         {icon && <span className="ui-modal-icon">{icon}</span>}
         <h3>{children}</h3>
       </div>
-      {onClose && (
-        <button className="ui-modal-close" onClick={onClose} aria-label="Fermer" type="button">
-          <X size={18} />
-        </button>
-      )}
+      <div className="ui-modal-header-actions">
+        {rightContent}
+        {onClose && (
+          <button className="ui-modal-close" onClick={onClose} aria-label="Fermer" type="button">
+            <X size={18} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

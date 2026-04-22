@@ -8,7 +8,6 @@ import {
   HelpCircle,
   MapPin,
   Moon,
-  Music,
   Package,
   Radio,
   ShoppingCart,
@@ -279,7 +278,6 @@ const Header = ({
                   { id: 'annuaire', label: 'Annuaire', icon: Building2 },
                   { id: 'lieux', label: 'Lieux', icon: MapPin },
                   { id: 'video', label: 'Vidéo', icon: Video },
-                  { id: 'sonos', label: 'Sonos', icon: Music },
                 ];
                 const hiddenTabs = tabPrefs.hiddenTabs || [];
                 const tabOrder = tabPrefs.tabOrder || allTabs.map((t) => t.id);

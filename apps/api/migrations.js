@@ -895,4 +895,15 @@ export function runPostInitMigrations(db) {
   } catch (e) {
     logger.warn('⚠️ Migration Phase 9 affaire_status_history:', e.message);
   }
+
+  // ═══ Migration : colonne show_in_planning dans persons ═══
+  try {
+    const personCols = db.pragma('table_info(persons)').map((c) => c.name);
+    if (!personCols.includes('show_in_planning')) {
+      db.exec('ALTER TABLE persons ADD COLUMN show_in_planning INTEGER NOT NULL DEFAULT 1');
+      logger.info('✅ Migration: colonne show_in_planning ajoutée à persons');
+    }
+  } catch (e) {
+    logger.warn('⚠️ Migration show_in_planning:', e.message);
+  }
 } // fin runPostInitMigrations

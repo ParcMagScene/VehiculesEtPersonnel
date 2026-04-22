@@ -8,10 +8,9 @@ import {
   Check,
   ChevronDown,
   GripVertical,
-  HelpCircle,
   Loader2,
-  Minus,
   Plus,
+  Square,
   Trash2,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -127,8 +126,8 @@ function FicheSuivi({ sheet, onSave, saving }) {
     setEntries((prev) =>
       prev.map((e) => {
         if (e._key !== key) return e;
-        // Cycle: null(?) → 1(Oui) → 0(Non) → null(?)
-        const next = e.completed === null ? 1 : e.completed === 1 ? 0 : null;
+        // Cycle 2 états : null/0(non fait) → 1(fait) → null(non fait)
+        const next = e.completed === 1 ? null : 1;
         return { ...e, completed: next };
       }),
     );
@@ -171,10 +170,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
   const totalDone = entries.filter((e) => e.completed === 1).length;
 
   const renderEntryRow = (entry) => (
-    <tr
-      key={entry._key}
-      className={`fiche-row ${entry.completed === 1 ? 'completed' : entry.completed === 0 ? 'not-done' : ''}`}
-    >
+    <tr key={entry._key} className={`fiche-row ${entry.completed === 1 ? 'completed' : ''}`}>
       <td className="fiche-col-grip">
         <GripVertical size={14} className="grip-icon" />
       </td>
@@ -220,23 +216,13 @@ function FicheSuivi({ sheet, onSave, saving }) {
           variant="ghost"
           size="xs"
           iconOnly
-          className={`fiche-check-btn ${entry.completed === 1 ? 'checked' : entry.completed === 0 ? 'not-done' : 'unknown'}`}
+          className={`fiche-check-btn ${entry.completed === 1 ? 'checked' : ''}`}
           onClick={() => handleToggleCompleted(entry._key)}
           disabled={isValidated}
-          title={
-            entry.completed === 1 ? 'Fait' : entry.completed === 0 ? 'Non fait' : 'Indéterminé'
-          }
-          aria-label={
-            entry.completed === 1 ? 'Fait' : entry.completed === 0 ? 'Non fait' : 'Indéterminé'
-          }
+          title={entry.completed === 1 ? 'Fait — cliquer pour annuler' : 'Marquer comme fait'}
+          aria-label={entry.completed === 1 ? 'Fait — cliquer pour annuler' : 'Marquer comme fait'}
         >
-          {entry.completed === 1 ? (
-            <Check size={16} />
-          ) : entry.completed === 0 ? (
-            <Minus size={16} />
-          ) : (
-            <HelpCircle size={16} />
-          )}
+          {entry.completed === 1 ? <Check size={16} /> : <Square size={16} />}
         </Button>
       </td>
       <td className="fiche-col-actions">

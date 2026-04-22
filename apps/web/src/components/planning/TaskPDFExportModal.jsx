@@ -14,7 +14,7 @@ import {
   Square,
   User,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, EmptyState, Modal, ModalBody, ModalFooter, ModalHeader } from '@/design-system';
 
@@ -96,6 +96,7 @@ function TaskPDFExportModal({
   onClose,
 }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const initializedRef = useRef(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -204,9 +205,10 @@ function TaskPDFExportModal({
     return { allItems: dedupedItems, grouped: groups, activeSections: active };
   }, [tasks, displayEvents, googleRdvEvents]);
 
-  // Initialiser avec tout sélectionné
+  // Initialiser avec tout sélectionné (une seule fois)
   useEffect(() => {
-    if (allItems.length > 0) {
+    if (allItems.length > 0 && !initializedRef.current) {
+      initializedRef.current = true;
       setSelectedIds(new Set(allItems.map((i) => i.uid)));
     }
   }, [allItems]);

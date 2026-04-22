@@ -526,11 +526,13 @@ const SavTicketFormModal = ({
               onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
             >
               <option value="">— Non assigné —</option>
-              {persons.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.firstName} {p.lastName}
-                </option>
-              ))}
+              {persons
+                .filter((p) => ['permanent', 'apprenti', 'stagiaire'].includes(p.type))
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.firstName} {p.lastName}
+                  </option>
+                ))}
             </Select>
           </div>
           <div className="eq-form-field eq-form-full">

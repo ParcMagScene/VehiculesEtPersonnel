@@ -1394,15 +1394,13 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
       // Exclure les tâches terminées du PDF (tâche done OU display event lié done)
       tasks = tasks.filter((t) => t.status !== 'done' && t.event_status !== 'done');
 
-      if (taskIds) {
-        const ids = taskIds
+      if (req.query.taskIds !== undefined) {
+        const ids = (taskIds || '')
           .split(',')
           .map(Number)
-          .filter((n) => !isNaN(n));
-        if (ids.length > 0) {
-          const idSet = new Set(ids);
-          tasks = tasks.filter((t) => idSet.has(t.id));
-        }
+          .filter((n) => n > 0);
+        const idSet = new Set(ids);
+        tasks = tasks.filter((t) => idSet.has(t.id));
       }
 
       // Affaires exclues de l'export PDF (seules les tâches sont pertinentes)

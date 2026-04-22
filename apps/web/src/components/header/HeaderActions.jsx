@@ -4,7 +4,7 @@ import {
   CalendarCheck,
   ClipboardList,
   Clock,
-  ExternalLink,
+  Music,
   LayoutGrid,
   Mail,
   MessageSquare,
@@ -164,7 +164,7 @@ const HeaderActions = ({
                 onClick={onDetachSonos}
                 aria-label="Détacher Sonos"
               >
-                <ExternalLink size={16} />
+                <Music size={16} />
               </Button>
             </Tooltip>
           )}

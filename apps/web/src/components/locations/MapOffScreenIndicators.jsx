@@ -22,9 +22,50 @@ export default function MapOffScreenIndicators({ locations }) {
     const bounds = map.getBounds();
     const size = map.getSize();
     const center = { x: size.x / 2, y: size.y / 2 };
-    const margin = 48;
+    const edgePadding = 14;
+    const minGap = 30;
 
-    return locations
+    const withEdge = (x, y) => {
+      const distances = {
+        left: x,
+        right: size.x - x,
+        top: y,
+        bottom: size.y - y,
+      };
+      let edge = 'left';
+      let min = distances.left;
+      Object.entries(distances).forEach(([key, value]) => {
+        if (value < min) {
+          min = value;
+          edge = key;
+        }
+      });
+      return edge;
+    };
+
+    const clampToFrame = (value, max) => Math.max(edgePadding, Math.min(max - edgePadding, value));
+
+    const spreadOnEdge = (items, axis, max) => {
+      const sorted = [...items].sort((a, b) => a[axis] - b[axis]);
+      for (let i = 1; i < sorted.length; i += 1) {
+        if (sorted[i][axis] - sorted[i - 1][axis] < minGap) {
+          sorted[i][axis] = sorted[i - 1][axis] + minGap;
+        }
+      }
+      for (let i = sorted.length - 2; i >= 0; i -= 1) {
+        if (sorted[i][axis] > max - edgePadding) {
+          sorted[i][axis] = max - edgePadding;
+        }
+        if (sorted[i + 1][axis] - sorted[i][axis] < minGap) {
+          sorted[i][axis] = sorted[i + 1][axis] - minGap;
+        }
+      }
+      sorted.forEach((item) => {
+        item[axis] = clampToFrame(item[axis], max);
+      });
+    };
+
+    const raw = locations
       .filter((loc) => !bounds.contains([loc.lat, loc.lng]))
       .map((loc) => {
         const pt = map.latLngToContainerPoint([loc.lat, loc.lng]);
@@ -49,11 +90,34 @@ export default function MapOffScreenIndicators({ locations }) {
           ey = center.y + yEdge;
         }
 
-        ex = Math.max(margin, Math.min(size.x - margin, ex));
-        ey = Math.max(margin, Math.min(size.y - margin, ey));
+        ex = clampToFrame(ex, size.x);
+        ey = clampToFrame(ey, size.y);
 
-        return { id: loc.id, name: loc.name, lat: loc.lat, lng: loc.lng, x: ex, y: ey, angle };
+        return {
+          id: loc.id,
+          name: loc.name,
+          lat: loc.lat,
+          lng: loc.lng,
+          x: ex,
+          y: ey,
+          angle,
+          edge: withEdge(ex, ey),
+        };
       });
+
+    const byEdge = {
+      left: raw.filter((item) => item.edge === 'left'),
+      right: raw.filter((item) => item.edge === 'right'),
+      top: raw.filter((item) => item.edge === 'top'),
+      bottom: raw.filter((item) => item.edge === 'bottom'),
+    };
+
+    spreadOnEdge(byEdge.left, 'y', size.y);
+    spreadOnEdge(byEdge.right, 'y', size.y);
+    spreadOnEdge(byEdge.top, 'x', size.x);
+    spreadOnEdge(byEdge.bottom, 'x', size.x);
+
+    return [...byEdge.left, ...byEdge.right, ...byEdge.top, ...byEdge.bottom];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locations, map, revision]);
 
@@ -65,7 +129,7 @@ export default function MapOffScreenIndicators({ locations }) {
         <button
           type="button"
           key={loc.id}
-          className="map-offscreen-pill"
+          className={`map-offscreen-pill edge-${loc.edge}`}
           style={{ left: loc.x, top: loc.y }}
           onClick={() => map.flyTo([loc.lat, loc.lng], 14)}
           title={`Aller vers ${loc.name}`}

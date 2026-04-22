@@ -1,3 +1,5 @@
+import './AnnuairePanel.css';
+
 import { Edit2, ExternalLink, Map, MapPin, Plus, Trash2 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 

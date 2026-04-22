@@ -4,7 +4,7 @@
 
 import L from 'leaflet';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 
 import {
   BOUNDS_PADDING,
@@ -20,14 +20,39 @@ import MapPopup from './MapPopup';
 import MapRouteControl from './MapRouteControl';
 import MapSearchControl from './MapSearchControl';
 
-function FitBoundsOnLoad({ locations }) {
+function FitBoundsOnLoad({ locations, enabled = true }) {
   const map = useMap();
 
   useEffect(() => {
+    if (!enabled) return;
     if (locations.length === 0) return;
     const bounds = L.latLngBounds(locations.map((l) => [l.lat, l.lng]));
     map.fitBounds(bounds, { padding: BOUNDS_PADDING, maxZoom: 10 });
-  }, [locations, map]);
+  }, [locations, map, enabled]);
+
+  return null;
+}
+
+function ViewportSync({ onViewChange }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!onViewChange) return undefined;
+
+    const emit = () => {
+      const center = map.getCenter();
+      onViewChange({ center: [center.lat, center.lng], zoom: map.getZoom() });
+    };
+
+    map.on('moveend', emit);
+    map.on('zoomend', emit);
+    emit();
+
+    return () => {
+      map.off('moveend', emit);
+      map.off('zoomend', emit);
+    };
+  }, [map, onViewChange]);
 
   return null;
 }
@@ -47,11 +72,86 @@ function RefreshMapOnRender({ deps = [] }) {
   return null;
 }
 
-export default function MapGeneral({ locations, darkMode = false, onEditLocation }) {
+function LabelCollisionManager({ locations, getDirection, offsets, onChange }) {
+  const map = useMap();
+  const [revision, setRevision] = useState(0);
+
+  useMapEvents({
+    moveend: () => setRevision((r) => r + 1),
+    zoomend: () => setRevision((r) => r + 1),
+    resize: () => setRevision((r) => r + 1),
+  });
+
+  useEffect(() => {
+    setRevision((r) => r + 1);
+  }, [locations.length]);
+
+  useEffect(() => {
+    const bounds = map.getBounds();
+    const size = map.getSize();
+    const occupied = [];
+    const visible = new Set();
+
+    const intersects = (a, b) =>
+      !(a.x + a.w + 6 < b.x || b.x + b.w + 6 < a.x || a.y + a.h + 4 < b.y || b.y + b.h + 4 < a.y);
+
+    locations.forEach((loc, index) => {
+      if (!bounds.contains([loc.lat, loc.lng])) return;
+
+      const pt = map.latLngToContainerPoint([loc.lat, loc.lng]);
+      const dir = getDirection(loc, index);
+      const [ox, oy] = offsets[dir] || [0, -24];
+      const width = Math.min(260, Math.max(88, (loc.name?.length || 0) * 8 + 24));
+      const height = 28;
+
+      let x = pt.x;
+      let y = pt.y;
+      if (dir === 'top') {
+        x = pt.x + ox - width / 2;
+        y = pt.y + oy - height;
+      } else if (dir === 'bottom') {
+        x = pt.x + ox - width / 2;
+        y = pt.y + oy;
+      } else if (dir === 'right') {
+        x = pt.x + ox;
+        y = pt.y + oy - height / 2;
+      } else {
+        x = pt.x + ox - width;
+        y = pt.y + oy - height / 2;
+      }
+
+      const box = { x, y, w: width, h: height };
+
+      if (box.x < 0 || box.y < 0 || box.x + box.w > size.x || box.y + box.h > size.y) return;
+      if (occupied.some((other) => intersects(box, other))) return;
+
+      occupied.push(box);
+      visible.add(loc.id);
+    });
+
+    onChange(visible);
+  }, [map, locations, getDirection, offsets, onChange, revision]);
+
+  return null;
+}
+
+export default function MapGeneral({
+  locations,
+  darkMode = false,
+  onEditLocation,
+  initialView = null,
+  onViewChange,
+}) {
   const mapRef = useRef(null);
+  const initialViewRef = useRef(initialView);
   const [ready, setReady] = useState(false);
   const geoLocations = useMemo(() => filterGeoLocations(locations), [locations]);
   const tile = darkMode ? TILE_DARK : TILE_LIGHT;
+  const bootView = initialViewRef.current;
+  const hasInitialView = Boolean(bootView?.center && Number.isFinite(bootView?.zoom));
+  const mapCenter = hasInitialView ? bootView.center : MAG_SCENE;
+  const mapZoom = hasInitialView ? bootView.zoom : DEFAULT_ZOOM;
+  const [visibleLabelIds, setVisibleLabelIds] = useState(() => new Set());
 
   // Directions intelligentes pour éviter le chevauchement des bulles
   const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
@@ -94,6 +194,11 @@ export default function MapGeneral({ locations, darkMode = false, onEditLocation
     return dirs;
   }, [sortedLocs]);
 
+  const resolveDirection = useMemo(
+    () => (loc) => labelDirections[loc.id] || 'top',
+    [labelDirections],
+  );
+
   return (
     <div
       className="map-wrapper"
@@ -109,19 +214,29 @@ export default function MapGeneral({ locations, darkMode = false, onEditLocation
       ) : (
         <MapContainer
           ref={mapRef}
-          center={MAG_SCENE}
-          zoom={DEFAULT_ZOOM}
+          center={mapCenter}
+          zoom={mapZoom}
           className="emag-leaflet-map"
           style={{ width: '100%', height: '100%' }}
           scrollWheelZoom
+          wheelPxPerZoomLevel={180}
+          zoomSnap={0.1}
+          zoomDelta={0.1}
           zoomControl
         >
           <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
           <RefreshMapOnRender deps={[darkMode, geoLocations.length]} />
-          <FitBoundsOnLoad locations={geoLocations} />
+          <FitBoundsOnLoad locations={geoLocations} enabled={!hasInitialView} />
+          <ViewportSync onViewChange={onViewChange} />
           <MapSearchControl locations={locations} />
           <MapRouteControl locations={locations} />
           <MapOffScreenIndicators locations={geoLocations} />
+          <LabelCollisionManager
+            locations={sortedLocs}
+            getDirection={resolveDirection}
+            offsets={DIR_OFFSETS}
+            onChange={setVisibleLabelIds}
+          />
 
           {sortedLocs.map((loc) => {
             const dir = labelDirections[loc.id] || 'top';
@@ -131,14 +246,16 @@ export default function MapGeneral({ locations, darkMode = false, onEditLocation
                 position={[loc.lat, loc.lng]}
                 icon={loc.isCompanyLocation ? createHQIcon() : createLocationIcon(loc.type)}
               >
-                <Tooltip
-                  permanent
-                  direction={dir}
-                  offset={DIR_OFFSETS[dir]}
-                  className="map-name-tooltip"
-                >
-                  {loc.name}
-                </Tooltip>
+                {visibleLabelIds.has(loc.id) && (
+                  <Tooltip
+                    permanent
+                    direction={dir}
+                    offset={DIR_OFFSETS[dir]}
+                    className="map-name-tooltip"
+                  >
+                    {loc.name}
+                  </Tooltip>
+                )}
                 <MapPopup location={loc} onEdit={onEditLocation} />
               </Marker>
             );

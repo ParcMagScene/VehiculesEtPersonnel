@@ -432,19 +432,150 @@ function AppContent() {
   };
 
   // ═══ Synchronisation scroll Calendar ↔ GoogleCalendarBanner ═══
-  const handleBannerScroll = (scrollLeft) => {
+  const handleBannerScroll = useCallback((scrollLeft) => {
     const calendarScrollArea = document.querySelector('.calendar-scroll-area');
     if (calendarScrollArea && Math.abs(calendarScrollArea.scrollLeft - scrollLeft) > 1) {
       calendarScrollArea.scrollLeft = scrollLeft;
     }
-  };
+  }, []);
 
-  const handleCalendarScroll = (scrollLeft) => {
+  const handleCalendarScroll = useCallback((scrollLeft) => {
     const bannerScrollArea = document.querySelector('.banner-scroll-area');
     if (bannerScrollArea && Math.abs(bannerScrollArea.scrollLeft - scrollLeft) > 1) {
       bannerScrollArea.scrollLeft = scrollLeft;
     }
-  };
+  }, []);
+
+  const showGoogleBanner = useMemo(
+    () => ['planning', 'vehicles', 'parc', 'google'].includes(activeModule),
+    [activeModule],
+  );
+
+  const handleBannerEventClick = useCallback((event) => {
+    setGoogleEventForReservation(event);
+  }, []);
+
+  const handleBannerRequestViewEvent = useCallback((fn) => {
+    openEventDetailsModalRef.current = fn;
+  }, []);
+
+  const handleBannerReservationsRefresh = useCallback(async () => {
+    try {
+      const res = await api.getReservations();
+      data.setReservations(res);
+    } catch (e) {
+      console.error('Erreur rechargement réservations:', e);
+    }
+  }, [data]);
+
+  const handleBannerNewReservation = useCallback(() => {
+    setActiveModule('vehicles');
+    setShowManagement(false);
+    setShowSettings(false);
+    setQuickReservationSlot({
+      vehicleId: null,
+      date: new Date().toISOString().slice(0, 10),
+      period: 'morning',
+      endDate: new Date().toISOString().slice(0, 10),
+      endPeriod: 'afternoon',
+    });
+  }, [setActiveModule]);
+
+  const handleBannerNewAssignment = useCallback(
+    (event) => {
+      setActiveModule('planning');
+      setShowManagement(false);
+      setShowSettings(false);
+      setQuickAssignmentSlot({
+        day: event?.start
+          ? new Date(event.start).toISOString().slice(0, 10)
+          : new Date().toISOString().slice(0, 10),
+        period: 'AM',
+        title: event?.summary || '',
+        affaire: event?.affaire || '',
+      });
+    },
+    [setActiveModule],
+  );
+
+  const handleBannerNewAffaire = useCallback(async () => {
+    try {
+      const newAffaire = {
+        numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
+        client: '',
+        interlocuteur: '',
+        tel: '',
+        type: 'Prestation',
+        dateDebut: format(new Date(), 'yyyy-MM-dd'),
+        dateFin: '',
+        adresseLivraison: '',
+        description: '',
+        devis: '',
+        source: 'db',
+      };
+      await api.createOrUpdateAffaire(newAffaire);
+      setActiveModule('affaires');
+    } catch (err) {
+      console.error('Erreur création affaire:', err);
+      toast.error("Erreur lors de la création de l'affaire");
+    }
+  }, [setActiveModule, toast]);
+
+  const handleBannerNavigateToAffaire = useCallback(
+    (affaireNum) => {
+      setActiveModule('affaires');
+      setShowManagement(false);
+      setShowSettings(false);
+      // Le numéro d'affaire sera traité par AffairesPanel comme filtre/sélection
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('emag:navigate-affaire', { detail: { affaireNum } }));
+      }, 100);
+    },
+    [setActiveModule],
+  );
+
+  const googleBannerProps = useMemo(
+    () => ({
+      calendarConfig: data.calendarConfig,
+      view,
+      activeModule,
+      currentDate,
+      currentUser,
+      onScroll: handleBannerScroll,
+      onEventClick: handleBannerEventClick,
+      onEventsChange: handleGoogleEventsChange,
+      clients: data.clients,
+      locations: data.locations,
+      reservations: data.reservations,
+      onEventHover: setHoveredEventId,
+      onRequestEditReservation: setReservationToEdit,
+      onRequestViewEvent: handleBannerRequestViewEvent,
+      onReservationsRefresh: handleBannerReservationsRefresh,
+      onNewReservation: handleBannerNewReservation,
+      onNewAssignment: handleBannerNewAssignment,
+      onNewAffaire: handleBannerNewAffaire,
+      onNavigateToAffaire: handleBannerNavigateToAffaire,
+    }),
+    [
+      data.calendarConfig,
+      view,
+      activeModule,
+      currentDate,
+      currentUser,
+      handleBannerScroll,
+      handleBannerEventClick,
+      handleGoogleEventsChange,
+      data.clients,
+      data.locations,
+      data.reservations,
+      handleBannerRequestViewEvent,
+      handleBannerReservationsRefresh,
+      handleBannerNewReservation,
+      handleBannerNewAssignment,
+      handleBannerNewAffaire,
+      handleBannerNavigateToAffaire,
+    ],
+  );
 
   // ═══ Render ═══
 
@@ -542,92 +673,9 @@ function AppContent() {
               onToggleTheme={toggleTheme}
             />
 
-            {activeModule === 'vehicles' && (
+            {showGoogleBanner && (
               <Suspense fallback={null}>
-                <GoogleCalendarBanner
-                  calendarConfig={data.calendarConfig}
-                  view={view}
-                  activeModule={activeModule}
-                  currentDate={currentDate}
-                  currentUser={currentUser}
-                  onScroll={handleBannerScroll}
-                  onEventClick={(event) => setGoogleEventForReservation(event)}
-                  onEventsChange={handleGoogleEventsChange}
-                  clients={data.clients}
-                  locations={data.locations}
-                  reservations={data.reservations}
-                  onEventHover={setHoveredEventId}
-                  onRequestEditReservation={setReservationToEdit}
-                  onRequestViewEvent={(fn) => {
-                    openEventDetailsModalRef.current = fn;
-                  }}
-                  onReservationsRefresh={async () => {
-                    try {
-                      const res = await api.getReservations();
-                      data.setReservations(res);
-                    } catch (e) {
-                      console.error('Erreur rechargement réservations:', e);
-                    }
-                  }}
-                  onNewReservation={() => {
-                    setActiveModule('vehicles');
-                    setShowManagement(false);
-                    setShowSettings(false);
-                    setQuickReservationSlot({
-                      vehicleId: null,
-                      date: new Date().toISOString().slice(0, 10),
-                      period: 'morning',
-                      endDate: new Date().toISOString().slice(0, 10),
-                      endPeriod: 'afternoon',
-                    });
-                  }}
-                  onNewAssignment={(event) => {
-                    setActiveModule('planning');
-                    setShowManagement(false);
-                    setShowSettings(false);
-                    setQuickAssignmentSlot({
-                      day: event?.start
-                        ? new Date(event.start).toISOString().slice(0, 10)
-                        : new Date().toISOString().slice(0, 10),
-                      period: 'AM',
-                      title: event?.summary || '',
-                      affaire: event?.affaire || '',
-                    });
-                  }}
-                  onNewAffaire={async () => {
-                    try {
-                      const newAffaire = {
-                        numeroAffaire: `AF${Date.now().toString().slice(-5)}`,
-                        client: '',
-                        interlocuteur: '',
-                        tel: '',
-                        type: 'Prestation',
-                        dateDebut: format(new Date(), 'yyyy-MM-dd'),
-                        dateFin: '',
-                        adresseLivraison: '',
-                        description: '',
-                        devis: '',
-                        source: 'db',
-                      };
-                      await api.createOrUpdateAffaire(newAffaire);
-                      setActiveModule('affaires');
-                    } catch (err) {
-                      console.error('Erreur création affaire:', err);
-                      toast.error("Erreur lors de la création de l'affaire");
-                    }
-                  }}
-                  onNavigateToAffaire={(affaireNum) => {
-                    setActiveModule('affaires');
-                    setShowManagement(false);
-                    setShowSettings(false);
-                    // Le numéro d'affaire sera traité par AffairesPanel comme filtre/sélection
-                    setTimeout(() => {
-                      window.dispatchEvent(
-                        new CustomEvent('emag:navigate-affaire', { detail: { affaireNum } }),
-                      );
-                    }, 100);
-                  }}
-                />
+                <GoogleCalendarBanner {...googleBannerProps} />
               </Suspense>
             )}
 

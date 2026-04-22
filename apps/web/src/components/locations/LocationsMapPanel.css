@@ -42,6 +42,14 @@
   animation: mapPanelIn 0.25s ease-out;
 }
 
+/* ModalBody n'est pas un conteneur flex par défaut : on le force ici
+   pour que .locations-map-body (flex:1) reçoive une hauteur réelle. */
+.locations-map-panel .ui-modal-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 @keyframes mapPanelIn {
   from {
     transform: scale(0.95) translateY(10px);
@@ -204,6 +212,32 @@
   color: var(--theme-text-secondary, #64748b);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--theme-border, #e2e8f0);
+}
+
+.map-zone-center-handle,
+.map-zone-radius-handle {
+  background: transparent !important;
+  border: none !important;
+}
+
+.map-zone-center-handle span {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #667eea;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+.map-zone-radius-handle span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #667eea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 /* ── Légende ── */
@@ -1180,20 +1214,36 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 10px 3px 6px;
+  padding: 3px 8px 3px 5px;
   border: none;
   border-radius: 12px;
   background: var(--theme-surface, rgba(255, 255, 255, 0.92));
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 600;
   color: var(--theme-text-primary, #1e293b);
   white-space: nowrap;
   cursor: pointer;
   pointer-events: auto;
-  max-width: 160px;
+  max-width: 132px;
   backdrop-filter: blur(4px);
   transition: background 0.15s;
+}
+
+.map-offscreen-pill.edge-left {
+  transform: translate(0, -50%);
+}
+
+.map-offscreen-pill.edge-right {
+  transform: translate(-100%, -50%);
+}
+
+.map-offscreen-pill.edge-top {
+  transform: translate(-50%, 0);
+}
+
+.map-offscreen-pill.edge-bottom {
+  transform: translate(-50%, -100%);
 }
 
 .map-offscreen-pill:hover {
@@ -1208,6 +1258,8 @@
 }
 
 .map-offscreen-label {
+  display: inline-block;
+  max-width: 96px;
   overflow: hidden;
   text-overflow: ellipsis;
 }

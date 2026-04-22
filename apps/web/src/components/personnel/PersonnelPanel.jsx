@@ -134,6 +134,7 @@ const PersonnelPanel = ({
     notes: '',
     skills: [],
     defaultPositions: [],
+    showInPlanning: true,
   });
 
   const openEditDirect = (person) => {
@@ -154,6 +155,7 @@ const PersonnelPanel = ({
       userId: person.userId || null,
       status: person.status || 'active',
       notes: person.notes || '',
+      showInPlanning: person.show_in_planning !== 0 && person.showInPlanning !== false,
       skills: (person.skills || []).map((s) => ({
         skillId: s.skillId || s.skill_id,
         level: s.level || 'interm\u00e9diaire',
@@ -177,6 +179,7 @@ const PersonnelPanel = ({
       notes: '',
       skills: [],
       defaultPositions: [],
+      showInPlanning: true,
     });
     setEditingPersonDirect(null);
     setEditFormVisible(false);
@@ -196,6 +199,7 @@ const PersonnelPanel = ({
       notes: '',
       skills: [],
       defaultPositions: [],
+      showInPlanning: true,
     });
     setEditingPersonDirect(null);
     setEditFormVisible(true);
@@ -216,6 +220,7 @@ const PersonnelPanel = ({
         status: editForm.status,
         notes: editForm.notes || null,
         default_positions: JSON.stringify(editForm.defaultPositions || []),
+        show_in_planning: editForm.showInPlanning ? 1 : 0,
         skills: editForm.skills.map((s) => ({
           skill_id: s.skillId,
           level: s.level,
@@ -463,6 +468,22 @@ const PersonnelPanel = ({
                   onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
                 />
               </FormField>
+              {['permanent', 'apprenti', 'stagiaire'].includes(editForm.type) && (
+                <FormField className="form-group" label="Affichage dans planning">
+                  <label
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!!editForm.showInPlanning}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, showInPlanning: e.target.checked })
+                      }
+                    />
+                    Visible dans la liste du planning
+                  </label>
+                </FormField>
+              )}
               <FormField className="form-group" label="Compétences">
                 <div className="skills-selector">
                   {skills.map((skill) => {

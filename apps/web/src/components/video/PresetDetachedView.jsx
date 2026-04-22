@@ -16,6 +16,7 @@ const PresetDetachedView = ({ presetId }) => {
   const [error, setError] = useState(null);
 
   const loadData = useCallback(async () => {
+    setError(null);
     try {
       const [allPresets, allCameras, proxyStatus] = await Promise.all([
         api.getVideoPresets(),
@@ -24,6 +25,7 @@ const PresetDetachedView = ({ presetId }) => {
       ]);
       const found = allPresets.find((p) => p.id === Number(presetId));
       if (!found) {
+        setPreset(null);
         setError('Preset introuvable');
         return;
       }
@@ -32,6 +34,7 @@ const PresetDetachedView = ({ presetId }) => {
       setProxyAvailable(proxyStatus?.running === true);
       document.title = `Preset — ${found.name}`;
     } catch (err) {
+      setPreset(null);
       setError(err.message || 'Erreur de chargement');
     }
   }, [presetId]);

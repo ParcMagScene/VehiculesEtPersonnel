@@ -1020,34 +1020,38 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
           );
         }
 
-        // Remplacer les entrées
-        db.prepare('DELETE FROM tracking_entries WHERE sheet_id = ?').run(sheet.id);
-        if (entries && entries.length > 0) {
+        // Remplacer les entrées de manière atomique pour éviter toute perte en cas d'erreur
+        const replaceEntries = db.transaction((items) => {
+          db.prepare('DELETE FROM tracking_entries WHERE sheet_id = ?').run(sheet.id);
+
+          if (!items || items.length === 0) return;
+
           const insert = db.prepare(
             `INSERT INTO tracking_entries (id, sheet_id, period, task, time_spent, comment, completed, task_assignment_id, sort_order)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           );
-          const insertAll = db.transaction((items) => {
-            for (let i = 0; i < items.length; i++) {
-              const e = items[i];
-              const entryId = e.id || crypto.randomUUID().replace(/-/g, '');
-              insert.run(
-                entryId,
-                sheet.id,
-                e.period,
-                e.task || '',
-                e.time_spent || 0,
-                e.comment || '',
-                e.completed === 1 ? 1 : e.completed === 0 ? 0 : null,
-                e.task_assignment_id || null,
-                e.sort_order ?? i,
-              );
-            }
-          });
-          insertAll(entries);
+
+          for (let i = 0; i < items.length; i++) {
+            const e = items[i];
+            const entryId = e.id || crypto.randomUUID().replace(/-/g, '');
+            // `completed` est NOT NULL en base: toute valeur non "fait" est stockée à 0.
+            const completed = e.completed === 1 ? 1 : 0;
+
+            insert.run(
+              entryId,
+              sheet.id,
+              e.period,
+              e.task || '',
+              e.time_spent || 0,
+              e.comment || '',
+              completed,
+              e.task_assignment_id || null,
+              e.sort_order ?? i,
+            );
+          }
 
           // Synchroniser le statut des tâches planifiées liées
-          for (const e of entries) {
+          for (const e of items) {
             if (e.task_assignment_id) {
               const newStatus = e.completed === 1 ? 'done' : 'pending';
               db.prepare('UPDATE task_assignments SET status = ? WHERE id = ?').run(
@@ -1056,7 +1060,8 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
               );
             }
           }
-        }
+        });
+        replaceEntries(entries || []);
 
         const full = getSheetWithEntries(sheet.id);
         res.json(full);

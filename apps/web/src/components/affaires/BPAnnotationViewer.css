@@ -169,12 +169,20 @@
   cursor: pointer;
   padding: 0.35rem;
   border-radius: var(--radius-sm);
+  .bp-annotation-content {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+  }
   display: flex;
   margin-left: 0.5rem;
   transition: all 0.15s;
 }
 
 .bp-annotation-close:hover {
+  flex-wrap: nowrap;
   background: var(--danger-tint);
   color: var(--theme-danger);
 }

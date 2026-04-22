@@ -616,26 +616,29 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
         </div>
         <div className="bp-annotation-toolbar">
           <Tooltip content="Zoom -">
-            <Button variant="ghost" onClick={zoomOut} aria-label="Zoom arrière">
+            <Button variant="ghost" iconOnly size="sm" onClick={zoomOut} aria-label="Zoom arrière">
               <ZoomOut size={16} />
             </Button>
           </Tooltip>
           <span className="bp-zoom-label">{Math.round(displayScale * 100)}%</span>
           <Tooltip content="Zoom +">
-            <Button variant="ghost" onClick={zoomIn} aria-label="Zoom avant">
+            <Button variant="ghost" iconOnly size="sm" onClick={zoomIn} aria-label="Zoom avant">
               <ZoomIn size={16} />
             </Button>
           </Tooltip>
           <Tooltip content="Ajuster">
-            <Button variant="ghost" onClick={zoomFit}>
+            <Button variant="ghost" iconOnly size="sm" onClick={zoomFit} aria-label="Ajuster">
               🔍
             </Button>
           </Tooltip>
           <div className="bp-toolbar-sep" />
           <Button
             variant="ghost"
+            iconOnly
+            size="sm"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage <= 1}
+            aria-label="Page précédente"
           >
             <ChevronLeft size={16} />
           </Button>
@@ -644,8 +647,11 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
           </span>
           <Button
             variant="ghost"
+            iconOnly
+            size="sm"
             onClick={() => setCurrentPage((p) => Math.min(numPages, p + 1))}
             disabled={currentPage >= numPages}
+            aria-label="Page suivante"
           >
             <ChevronRight size={16} />
           </Button>
@@ -653,8 +659,11 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
           <Tooltip content="Légende">
             <Button
               variant="ghost"
+              iconOnly
+              size="sm"
               className={showLegend ? 'active' : ''}
               onClick={() => setShowLegend((v) => !v)}
+              aria-label="Afficher la légende"
             >
               <Layers size={16} />
             </Button>
@@ -662,20 +671,29 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
           <Tooltip content="Infos affaire">
             <Button
               variant="ghost"
+              iconOnly
+              size="sm"
               className={showInfo ? 'active' : ''}
               onClick={() => setShowInfo((v) => !v)}
+              aria-label="Afficher les informations"
             >
               <Info size={16} />
             </Button>
           </Tooltip>
           <div className="bp-toolbar-sep" />
           <Tooltip content="Imprimer">
-            <Button variant="ghost" onClick={handlePrint} aria-label="Imprimer">
+            <Button variant="ghost" iconOnly size="sm" onClick={handlePrint} aria-label="Imprimer">
               <Printer size={16} />
             </Button>
           </Tooltip>
           <Tooltip content="Télécharger">
-            <Button variant="ghost" onClick={handleDownload} aria-label="Télécharger">
+            <Button
+              variant="ghost"
+              iconOnly
+              size="sm"
+              onClick={handleDownload}
+              aria-label="Télécharger"
+            >
               <Download size={16} />
             </Button>
           </Tooltip>
@@ -683,7 +701,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
       </ModalHeader>
 
       <ModalBody className="bp-annotation-body">
-        <div ref={containerRef} style={{ height: '100%' }}>
+        <div ref={containerRef} className="bp-annotation-content">
           {/* Légende */}
           {showLegend && (
             <div className="bp-legend">

@@ -132,6 +132,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   const [showMultiImport, setShowMultiImport] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
 
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
   // Timeline / frise chronologique
   const timelineRef = useRef(null);
   const listRef = useRef(null);
@@ -140,13 +142,19 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
 
   // Charger les affaires depuis l'API (DB serveur + auto-détection réservations)
   const loadDbAffaires = useCallback(async () => {
-    try {
-      const data = await api.getAffaires();
-      setDbAffaires(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Erreur chargement affaires DB:', err);
-      setError('Impossible de charger les affaires depuis le serveur');
-      setDbAffaires([]);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const data = await api.getAffaires();
+        setDbAffaires(Array.isArray(data) ? data : []);
+        return;
+      } catch (err) {
+        if (attempt === 1) {
+          console.error('Erreur chargement affaires DB:', err);
+          setDbAffaires([]);
+          throw err;
+        }
+        await wait(250);
+      }
     }
   }, []);
 
@@ -292,13 +300,17 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     const loadAll = async () => {
       setIsLoading(true);
       setError(null);
-      await Promise.all([
+      const results = await Promise.allSettled([
         loadDbAffaires(),
         loadGoogleAffaires(),
         loadAttachmentsIndex(),
         loadPersonnelCounts(),
         loadAllTasks(),
       ]);
+
+      if (results[0]?.status === 'rejected') {
+        setError('Impossible de charger les affaires depuis le serveur');
+      }
       setIsLoading(false);
     };
     loadAll();
@@ -828,8 +840,18 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   const handleRefresh = async () => {
     setIsLoading(true);
     setError(null);
-    await Promise.all([loadDbAffaires(), loadGoogleAffaires(), loadAllTasks()]);
-    setIsLoading(false);
+    try {
+      const results = await Promise.allSettled([
+        loadDbAffaires(),
+        loadGoogleAffaires(),
+        loadAllTasks(),
+      ]);
+      if (results[0]?.status === 'rejected') {
+        setError('Impossible de charger les affaires depuis le serveur');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {

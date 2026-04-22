@@ -135,6 +135,27 @@ function AppContent() {
     setMaintenanceActionType(null);
     startModuleTransition(() => _setActiveModule(mod));
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const params = new URLSearchParams(window.location.search);
+    const startupModule = params.get('module');
+    const allowedModules = new Set([
+      'vehicles',
+      'equipment',
+      'affaires',
+      'orders',
+      'stock',
+      'planning',
+      'annuaire',
+      'lieux',
+      'video',
+      'sonos',
+    ]);
+    if (startupModule && allowedModules.has(startupModule)) {
+      setActiveModule(startupModule);
+    }
+  }, [isAuthenticated, setActiveModule]);
   const [showManagement, setShowManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showEquipmentManagement, setShowEquipmentManagement] = useState(false);
@@ -481,6 +502,14 @@ function AppContent() {
               }}
               onToggleMessaging={() => setShowMessaging((v) => !v)}
               onToggleMailing={() => setShowMailing((v) => !v)}
+              onDetachSonos={() => {
+                const sonosUrl = `${window.location.origin}${window.location.pathname}?module=sonos&detached=1`;
+                window.open(
+                  sonosUrl,
+                  'emag-sonos-detached',
+                  'width=1320,height=860,menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes',
+                );
+              }}
               unreadMsgCount={unreadMsgCount}
               onOpenPreferences={() => setShowPreferences(true)}
               onOpenHelp={() => setShowHelp(true)}

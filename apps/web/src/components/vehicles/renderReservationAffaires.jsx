@@ -316,17 +316,17 @@ export const renderReservationAffaires = (
         <div
           className="u-absolute"
           style={{
-            top: 'auto',
+            top: '1.1rem',
             left: 0,
             right: 0,
-            bottom: 0,
+            bottom: '0.1rem',
             display: 'grid',
             gridTemplateColumns: `repeat(${block.span}, 1fr)`,
             gap: '0.125rem',
             padding: '0.25rem',
             pointerEvents: 'auto',
             zIndex: 10,
-            alignItems: 'center',
+            alignItems: 'start',
           }}
         >
           {gridElements}

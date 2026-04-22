@@ -49,6 +49,7 @@ const Header = ({
   onUserUpdate,
   onToggleMessaging,
   onToggleMailing,
+  onDetachSonos,
   unreadMsgCount = 0,
   onOpenPreferences,
   onOpenHelp,
@@ -347,6 +348,7 @@ const Header = ({
             unreadMsgCount={unreadMsgCount}
             onToggleMessaging={onToggleMessaging}
             onToggleMailing={onToggleMailing}
+            onDetachSonos={onDetachSonos}
             onOpenSettings={onOpenSettings}
             onOpenPreferences={onOpenPreferences}
             onLogout={onLogout}

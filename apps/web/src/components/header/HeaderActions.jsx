@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   ClipboardList,
   Clock,
+  ExternalLink,
   LayoutGrid,
   Mail,
   MessageSquare,
@@ -31,6 +32,7 @@ const HeaderActions = ({
   unreadMsgCount,
   onToggleMessaging,
   onToggleMailing,
+  onDetachSonos,
   onOpenSettings,
   onOpenPreferences,
   onLogout,
@@ -150,6 +152,19 @@ const HeaderActions = ({
                 aria-label="Mailing"
               >
                 <Mail size={20} />
+              </Button>
+            </Tooltip>
+          )}
+
+          {currentUser?.isAdmin && (
+            <Tooltip content="Ouvrir Sonos dans une fenêtre" position="bottom">
+              <Button
+                variant="ghost"
+                className="msg-toggle-button sonos-detach-button"
+                onClick={onDetachSonos}
+                aria-label="Détacher Sonos"
+              >
+                <ExternalLink size={16} />
               </Button>
             </Tooltip>
           )}

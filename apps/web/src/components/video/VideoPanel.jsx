@@ -196,7 +196,13 @@ const VideoPanel = ({ currentUser }) => {
 
   const handleDetachPreset = useCallback(
     (presetId) => {
-      const url = `${window.location.origin}${window.location.pathname}?detached-preset=${presetId}`;
+      const normalizedPresetId = Number(presetId);
+      if (!Number.isInteger(normalizedPresetId) || normalizedPresetId <= 0) {
+        toast.error('Aucun preset actif a detacher.');
+        return;
+      }
+
+      const url = `${window.location.origin}${window.location.pathname}?detached-preset=${normalizedPresetId}`;
 
       if (detachedPresetWindowRef.current && !detachedPresetWindowRef.current.closed) {
         try {

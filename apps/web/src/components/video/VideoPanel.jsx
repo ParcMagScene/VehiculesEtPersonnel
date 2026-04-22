@@ -90,6 +90,14 @@ const VideoPanel = ({ currentUser }) => {
   const enabledCameras = cameras.filter((c) => c.enabled);
   const totalPages = Math.ceil(enabledCameras.length / gridSize);
 
+  useEffect(() => {
+    if (!selectedCamera) return;
+    const isStillEnabled = cameras.some((cam) => cam.id === selectedCamera.id && cam.enabled);
+    if (!isStillEnabled) {
+      setSelectedCamera(null);
+    }
+  }, [cameras, selectedCamera]);
+
   // Reset page si hors limites
   useEffect(() => {
     if (gridPage >= totalPages && totalPages > 0) setGridPage(totalPages - 1);

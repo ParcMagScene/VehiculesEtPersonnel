@@ -48,12 +48,23 @@
   color: var(--theme-text-inverse);
   width: 32px;
   height: 32px;
+  min-width: 32px;
+  padding: 0;
   border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
+}
+
+.msg-header-btn svg,
+.msg-back-btn svg,
+.msg-attach-btn svg,
+.msg-emoji-btn svg,
+.msg-send-btn svg {
+  display: block;
+  stroke: currentColor;
 }
 
 .msg-header-btn:hover {

@@ -361,13 +361,18 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
             <MessageSquare size={18} /> Messages
           </h3>
           <div className="msg-header-actions">
-            <Tooltip content="Nouveau message">
-              <Button variant="ghost" className="msg-header-btn" onClick={openNewConvModal}>
+            <Tooltip content="Nouveau message" position="bottom">
+              <Button
+                variant="ghost"
+                iconOnly
+                className="msg-header-btn"
+                onClick={openNewConvModal}
+              >
                 <Plus size={16} />
               </Button>
             </Tooltip>
-            <Tooltip content="Fermer">
-              <Button variant="ghost" className="msg-header-btn" onClick={onClose}>
+            <Tooltip content="Fermer" position="bottom">
+              <Button variant="ghost" iconOnly className="msg-header-btn" onClick={onClose}>
                 <X size={16} />
               </Button>
             </Tooltip>
@@ -437,6 +442,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
             <div className="msg-chat-header">
               <Button
                 variant="ghost"
+                iconOnly
                 className="msg-back-btn"
                 onClick={() => {
                   setActiveConversation(null);
@@ -513,6 +519,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
               <Tooltip content="Joindre un fichier">
                 <Button
                   variant="ghost"
+                  iconOnly
                   className="msg-attach-btn"
                   onClick={() => fileInputRef.current?.click()}
                 >
@@ -529,6 +536,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
               <Tooltip content="Emojis">
                 <Button
                   variant="ghost"
+                  iconOnly
                   className={`msg-emoji-btn${showEmojiPicker ? ' active' : ''}`}
                   onClick={() => setShowEmojiPicker((v) => !v)}
                 >
@@ -578,6 +586,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
               <Tooltip content="Envoyer">
                 <Button
                   variant="ghost"
+                  iconOnly
                   className="msg-send-btn"
                   onClick={handleSend}
                   disabled={!inputText.trim()}

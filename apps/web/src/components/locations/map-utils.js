@@ -90,10 +90,25 @@ export function haversineDistance(lat1, lng1, lat2, lng2) {
 /**
  * Filtre les lieux ayant des coordonnées valides
  */
+function parseCoordinate(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const normalized = value.trim().replace(',', '.');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 export function filterGeoLocations(locations) {
-  return (locations || []).filter(
-    (loc) => loc.lat != null && loc.lng != null && !isNaN(loc.lat) && !isNaN(loc.lng),
-  );
+  return (locations || []).reduce((acc, loc) => {
+    const lat = parseCoordinate(loc.lat);
+    const lng = parseCoordinate(loc.lng);
+    if (lat == null || lng == null) return acc;
+    acc.push({ ...loc, lat, lng });
+    return acc;
+  }, []);
 }
 
 /**

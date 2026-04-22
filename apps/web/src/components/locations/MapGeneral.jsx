@@ -32,6 +32,21 @@ function FitBoundsOnLoad({ locations }) {
   return null;
 }
 
+function RefreshMapOnRender({ deps = [] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => map.invalidateSize());
+    const timer = setTimeout(() => map.invalidateSize(), 120);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [map, ...deps]);
+
+  return null;
+}
+
 export default function MapGeneral({ locations, darkMode = false, onEditLocation }) {
   const mapRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -102,6 +117,7 @@ export default function MapGeneral({ locations, darkMode = false, onEditLocation
           zoomControl
         >
           <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
+          <RefreshMapOnRender deps={[darkMode, geoLocations.length]} />
           <FitBoundsOnLoad locations={geoLocations} />
           <MapSearchControl locations={locations} />
           <MapRouteControl locations={locations} />

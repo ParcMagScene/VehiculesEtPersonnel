@@ -16,7 +16,7 @@ import {
   Printer,
   Users,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import Button from '../ui/Button';
 import api from '../../utils/api/index.js';
@@ -60,6 +60,10 @@ function SuiviPanel({ currentUser, initialPersonId }) {
   const [batchExporting, setBatchExporting] = useState(false);
   const [batchPrinting, setBatchPrinting] = useState(false);
   const [collapsedNonPermanents, setCollapsedNonPermanents] = useState(true);
+  const [permanentsHeight, setPermanentsHeight] = useState(280);
+  const [isResizingGroups, setIsResizingGroups] = useState(false);
+  const personListRef = useRef(null);
+  const resizeStartRef = useRef({ y: 0, height: 280 });
   const isAdmin = !!currentUser?.isAdmin;
 
   // Groupes de personnel
@@ -260,6 +264,39 @@ function SuiviPanel({ currentUser, initialPersonId }) {
     }
   }, [selectedSheetIds, resolveSheetIds]);
 
+  const handleStartGroupResize = useCallback(
+    (e) => {
+      if (collapsedNonPermanents || !personListRef.current) return;
+      e.preventDefault();
+      resizeStartRef.current = { y: e.clientY, height: permanentsHeight };
+      setIsResizingGroups(true);
+    },
+    [collapsedNonPermanents, permanentsHeight],
+  );
+
+  useEffect(() => {
+    if (!isResizingGroups) return;
+
+    const handleMouseMove = (e) => {
+      const containerHeight = personListRef.current?.clientHeight || 0;
+      if (!containerHeight) return;
+      const delta = e.clientY - resizeStartRef.current.y;
+      const minHeight = 120;
+      const maxHeight = Math.max(minHeight, containerHeight - 120);
+      const next = Math.min(maxHeight, Math.max(minHeight, resizeStartRef.current.height + delta));
+      setPermanentsHeight(next);
+    };
+
+    const handleMouseUp = () => setIsResizingGroups(false);
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingGroups]);
+
   return (
     <div className="suivi-panel">
       {/* Barre d'onglets */}
@@ -290,7 +327,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
               <Users size={16} /> Personnel
             </h3>
 
-            <div className="suivi-person-list">
+            <div className="suivi-person-list" ref={personListRef}>
               {personnel.length === 0 ? (
                 <div className="suivi-person-empty">Aucun personnel trouvé</div>
               ) : (
@@ -340,31 +377,58 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                       </div>
                     )}
                   </div>
-                  {/* Groupe Permanents */}
-                  {permanents.length > 0 && (
-                    <div className="suivi-group">
-                      <div className="suivi-group-header">Permanents ({permanents.length})</div>
-                      {permanents.map((p) => renderPersonItem(p))}
-                    </div>
-                  )}
-                  {/* Groupe Contractuels */}
-                  {nonPermanents.length > 0 && (
-                    <div className="suivi-group">
+                  <div className="suivi-groups-stack">
+                    {/* Groupe Permanents */}
+                    {permanents.length > 0 && (
                       <div
-                        className="suivi-group-header suivi-group-header-collapsible"
-                        onClick={() => setCollapsedNonPermanents((v) => !v)}
-                        role="button"
-                        tabIndex={0}
-                        title={collapsedNonPermanents ? 'Afficher' : 'Masquer'}
+                        className="suivi-group suivi-group-permanents"
+                        style={{
+                          height: nonPermanents.length > 0 ? `${permanentsHeight}px` : 'auto',
+                        }}
                       >
-                        <span className="suivi-group-toggle-icon">
-                          {collapsedNonPermanents ? '▶' : '▼'}
-                        </span>
-                        Contractuels ({nonPermanents.length})
+                        <div className="suivi-group-header">Permanents ({permanents.length})</div>
+                        <div className="suivi-group-body">
+                          {permanents.map((p) => renderPersonItem(p))}
+                        </div>
                       </div>
-                      {!collapsedNonPermanents && nonPermanents.map((p) => renderPersonItem(p))}
-                    </div>
-                  )}
+                    )}
+
+                    {/* Poignee horizontale */}
+                    {permanents.length > 0 &&
+                      nonPermanents.length > 0 &&
+                      !collapsedNonPermanents && (
+                        <div
+                          className={`suivi-group-resizer ${isResizingGroups ? 'is-resizing' : ''}`}
+                          onMouseDown={handleStartGroupResize}
+                          role="separator"
+                          aria-orientation="horizontal"
+                          title="Redimensionner la section permanents"
+                        />
+                      )}
+
+                    {/* Groupe Contractuels */}
+                    {nonPermanents.length > 0 && (
+                      <div className="suivi-group suivi-group-non-permanents">
+                        <div
+                          className="suivi-group-header suivi-group-header-collapsible"
+                          onClick={() => setCollapsedNonPermanents((v) => !v)}
+                          role="button"
+                          tabIndex={0}
+                          title={collapsedNonPermanents ? 'Afficher' : 'Masquer'}
+                        >
+                          <span className="suivi-group-toggle-icon">
+                            {collapsedNonPermanents ? '▶' : '▼'}
+                          </span>
+                          Contractuels ({nonPermanents.length})
+                        </div>
+                        {!collapsedNonPermanents && (
+                          <div className="suivi-group-body">
+                            {nonPermanents.map((p) => renderPersonItem(p))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>

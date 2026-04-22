@@ -30,6 +30,21 @@ function FitToRadius({ radius }) {
   return null;
 }
 
+function RefreshMapOnRender({ deps = [] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => map.invalidateSize());
+    const timer = setTimeout(() => map.invalidateSize(), 120);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [map, ...deps]);
+
+  return null;
+}
+
 export default function MapLocal({ locations, darkMode = false, onEditLocation }) {
   const mapRef = useRef(null);
   const [radius, setRadius] = useState(5000); // 5 km par défaut
@@ -90,6 +105,7 @@ export default function MapLocal({ locations, darkMode = false, onEditLocation }
         zoomControl
       >
         <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
+        <RefreshMapOnRender deps={[darkMode, nearbyLocations.length, radius]} />
         <FitToRadius radius={radius} />
         <MapSearchControl locations={locations} />
         <MapRouteControl locations={locations} />

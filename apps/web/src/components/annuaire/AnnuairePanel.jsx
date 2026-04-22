@@ -84,6 +84,26 @@ const REFERENTIEL_TABS = [
   { slug: 'contact-categories', label: 'Catégories de contact', key: 'contact_categories' },
 ];
 
+function normalizeContactPhone(phone) {
+  if (!phone) return '';
+  const raw = String(phone)
+    .trim()
+    .replace(/[\s().-]/g, '');
+  if (raw.startsWith('+33') && raw.length >= 12) return `0${raw.slice(3)}`;
+  return raw;
+}
+
+function contactDisplayName(c) {
+  return `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.last_name || 'Contact';
+}
+
+function contactEntityLabel(c) {
+  if (c.client_name) return `Client: ${c.client_name}`;
+  if (c.supplier_name) return `Fournisseur: ${c.supplier_name}`;
+  if (c.prestataire_name) return `Prestataire: ${c.prestataire_name}`;
+  return 'Sans entité';
+}
+
 // ═══ Composant Principal ═══
 function AnnuairePanel({ currentUser }) {
   const toast = useToast();
@@ -114,6 +134,11 @@ function AnnuairePanel({ currentUser }) {
   const [showContactsImport, setShowContactsImport] = useState(false);
   // Matching lieux
   const [showMatching, setShowMatching] = useState(false);
+  const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
+  const [scanningDuplicates, setScanningDuplicates] = useState(false);
+  const [duplicateGroups, setDuplicateGroups] = useState([]);
+  const [duplicateMasterByGroup, setDuplicateMasterByGroup] = useState({});
+  const [mergingGroupIndex, setMergingGroupIndex] = useState(null);
   // Compteurs de version pour déclencher un refresh après CRUD
   const [dataVersion, setDataVersion] = useState(0);
   const [refVersion, setRefVersion] = useState(0);
@@ -319,6 +344,164 @@ function AnnuairePanel({ currentUser }) {
     }
   };
 
+  const handleScanContactDuplicates = async () => {
+    setScanningDuplicates(true);
+    try {
+      const allContacts = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      while (currentPage <= totalPages) {
+        const resp = await api.getAnnuaireContacts({ page: currentPage, limit: 500 });
+        const chunk = Array.isArray(resp?.data) ? resp.data : [];
+        allContacts.push(...chunk);
+        totalPages = Math.max(1, Math.ceil((resp?.total || chunk.length) / 500));
+        currentPage += 1;
+      }
+
+      const keyToIds = new Map();
+      const byId = new Map();
+
+      for (const c of allContacts) {
+        byId.set(c.id, c);
+        const keys = [];
+        const email = (c.email || '').trim().toLowerCase();
+        const phone = normalizeContactPhone(c.phone || c.phone2 || '');
+        const name = `${(c.first_name || '').trim().toLowerCase()}|${(c.last_name || '').trim().toLowerCase()}`;
+
+        if (email) keys.push(`email:${email}`);
+        if (phone) keys.push(`phone:${phone}`);
+        if (name !== '|') {
+          keys.push(
+            `name:${name}|${c.client_id || ''}|${c.supplier_id || ''}|${c.prestataire_id || ''}`,
+          );
+        }
+
+        for (const key of keys) {
+          if (!keyToIds.has(key)) keyToIds.set(key, new Set());
+          keyToIds.get(key).add(c.id);
+        }
+      }
+
+      const adjacency = new Map();
+      for (const ids of keyToIds.values()) {
+        const list = Array.from(ids);
+        if (list.length < 2) continue;
+        for (const id of list) {
+          if (!adjacency.has(id)) adjacency.set(id, new Set());
+          for (const other of list) {
+            if (other !== id) adjacency.get(id).add(other);
+          }
+        }
+      }
+
+      const visited = new Set();
+      const groups = [];
+      for (const id of adjacency.keys()) {
+        if (visited.has(id)) continue;
+        const stack = [id];
+        const component = [];
+        while (stack.length > 0) {
+          const node = stack.pop();
+          if (visited.has(node)) continue;
+          visited.add(node);
+          component.push(node);
+          for (const nei of adjacency.get(node) || []) {
+            if (!visited.has(nei)) stack.push(nei);
+          }
+        }
+        if (component.length > 1) {
+          const contacts = component
+            .map((cid) => byId.get(cid))
+            .filter(Boolean)
+            .sort((a, b) => Number(b.is_primary || 0) - Number(a.is_primary || 0));
+          groups.push(contacts);
+        }
+      }
+
+      const masterDefaults = {};
+      groups.forEach((g, idx) => {
+        masterDefaults[idx] = g[0]?.id;
+      });
+
+      setDuplicateGroups(groups);
+      setDuplicateMasterByGroup(masterDefaults);
+      setShowDuplicatesModal(true);
+    } catch (e) {
+      toast?.error('Erreur détection des doublons');
+    } finally {
+      setScanningDuplicates(false);
+    }
+  };
+
+  const handleMergeDuplicateGroup = async (groupIndex) => {
+    const group = duplicateGroups[groupIndex] || [];
+    if (group.length < 2) return;
+
+    const masterId = duplicateMasterByGroup[groupIndex] || group[0].id;
+    const master = group.find((c) => c.id === masterId);
+    const duplicates = group.filter((c) => c.id !== masterId);
+    if (!master || duplicates.length === 0) return;
+
+    setMergingGroupIndex(groupIndex);
+    try {
+      const merged = { ...master };
+      const fields = [
+        'first_name',
+        'last_name',
+        'job_title',
+        'category',
+        'email',
+        'phone',
+        'phone2',
+        'notes',
+      ];
+
+      for (const field of fields) {
+        if (merged[field]) continue;
+        const candidate = duplicates.find((d) => d[field]);
+        if (candidate) merged[field] = candidate[field];
+      }
+
+      if (!merged.client_id)
+        merged.client_id = duplicates.find((d) => d.client_id)?.client_id || null;
+      if (!merged.supplier_id)
+        merged.supplier_id = duplicates.find((d) => d.supplier_id)?.supplier_id || null;
+      if (!merged.prestataire_id)
+        merged.prestataire_id = duplicates.find((d) => d.prestataire_id)?.prestataire_id || null;
+
+      const payload = {
+        client_id: merged.client_id || null,
+        supplier_id: merged.supplier_id || null,
+        prestataire_id: merged.prestataire_id || null,
+        first_name: merged.first_name || null,
+        last_name: merged.last_name || master.last_name || 'Contact',
+        job_title: merged.job_title || null,
+        category: merged.category || null,
+        email: merged.email || null,
+        phone: merged.phone || null,
+        phone2: merged.phone2 || null,
+        is_primary: merged.is_primary ? 1 : 0,
+        notes: merged.notes || null,
+        is_active: merged.is_active !== undefined ? merged.is_active : 1,
+      };
+
+      await api.updateAnnuaireContact(master.id, payload);
+      for (const dup of duplicates) {
+        await api.deleteAnnuaireContact(dup.id);
+      }
+
+      toast?.success(`Fusion effectuée: ${duplicates.length} doublon(s) consolidé(s)`);
+      setDuplicateGroups((prev) => prev.filter((_, idx) => idx !== groupIndex));
+      setDataVersion((v) => v + 1);
+      loadStats();
+    } catch (e) {
+      toast?.error(e.message || 'Erreur lors de la fusion');
+    } finally {
+      setMergingGroupIndex(null);
+    }
+  };
+
   const handleRefSave = async (formData) => {
     try {
       if (editingRef) {
@@ -439,6 +622,17 @@ function AnnuairePanel({ currentUser }) {
                 <Tooltip content="Import CSV Contacts Locmat" position="bottom">
                   <Button variant="secondary" onClick={() => setShowContactsImport(true)}>
                     <Upload size={15} /> CSV
+                  </Button>
+                </Tooltip>
+              )}
+              {activeTab === 'contacts' && currentUser?.isAdmin && (
+                <Tooltip content="Détection et fusion de doublons" position="bottom">
+                  <Button
+                    variant="secondary"
+                    onClick={handleScanContactDuplicates}
+                    disabled={scanningDuplicates}
+                  >
+                    {scanningDuplicates ? <Spinner size="sm" /> : <Filter size={15} />} Doublons
                   </Button>
                 </Tooltip>
               )}
@@ -663,6 +857,72 @@ function AnnuairePanel({ currentUser }) {
           }}
         />
       )}
+
+      {showDuplicatesModal && (
+        <ModalLayout
+          open
+          size="xl"
+          title="Doublons contacts"
+          onClose={() => setShowDuplicatesModal(false)}
+        >
+          <div className="annuaire-duplicates-modal">
+            {duplicateGroups.length === 0 ? (
+              <div className="annuaire-empty">Aucun doublon détecté</div>
+            ) : (
+              duplicateGroups.map((group, groupIndex) => (
+                <div key={groupIndex} className="annuaire-duplicate-group">
+                  <div className="annuaire-duplicate-group-head">
+                    <strong>Groupe {groupIndex + 1}</strong>
+                    <span>{group.length} contacts potentiellement doublons</span>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleMergeDuplicateGroup(groupIndex)}
+                      disabled={mergingGroupIndex === groupIndex}
+                    >
+                      Fusionner
+                    </Button>
+                  </div>
+                  <Table className="annuaire-duplicates-table">
+                    <thead>
+                      <tr>
+                        <th>Maître</th>
+                        <th>Nom</th>
+                        <th>Fonction</th>
+                        <th>Entité</th>
+                        <th>Téléphone</th>
+                        <th>Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.map((c) => (
+                        <tr key={c.id}>
+                          <td>
+                            <Checkbox
+                              checked={duplicateMasterByGroup[groupIndex] === c.id}
+                              onChange={() =>
+                                setDuplicateMasterByGroup((prev) => ({
+                                  ...prev,
+                                  [groupIndex]: c.id,
+                                }))
+                              }
+                            />
+                          </td>
+                          <td>{contactDisplayName(c)}</td>
+                          <td>{c.job_title || '—'}</td>
+                          <td>{contactEntityLabel(c)}</td>
+                          <td>{c.phone || c.phone2 || '—'}</td>
+                          <td>{c.email || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              ))
+            )}
+          </div>
+        </ModalLayout>
+      )}
     </div>
   );
 }
@@ -703,7 +963,7 @@ function EntityTable({
           </thead>
           <tbody>
             {data.map((c) => (
-              <tr key={c.id}>
+              <tr key={c.id} onDoubleClick={() => onSelect(c)}>
                 <td className="name-cell">
                   {c.is_primary ? <Star size={12} className="primary-star" /> : null}
                   {c.first_name} <strong>{c.last_name}</strong>
@@ -723,6 +983,11 @@ function EntityTable({
                 <td>{c.phone ? <a href={`tel:${c.phone}`}>{c.phone}</a> : '—'}</td>
                 <td>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : '—'}</td>
                 <td className="actions-cell">
+                  <Tooltip content="Voir">
+                    <Button variant="ghost" onClick={() => onSelect(c)}>
+                      <Eye size={14} />
+                    </Button>
+                  </Tooltip>
                   {currentUser?.isAdmin && (
                     <Tooltip content="Modifier">
                       <Button variant="ghost" onClick={() => onEdit(c)}>

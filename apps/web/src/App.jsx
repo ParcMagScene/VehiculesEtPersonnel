@@ -1093,8 +1093,9 @@ function AppContent() {
 
 function App() {
   // Fenêtre détachée preset vidéo
-  const detachedPresetId = new URLSearchParams(window.location.search).get('detached-preset');
-  if (detachedPresetId) {
+  const detachedPresetIdParam = new URLSearchParams(window.location.search).get('detached-preset');
+  const detachedPresetId = Number.parseInt(detachedPresetIdParam || '', 10);
+  if (Number.isInteger(detachedPresetId) && detachedPresetId > 0) {
     return (
       <AuthProvider>
         <Suspense

@@ -456,6 +456,22 @@
   animation: fadeIn 0.2s ease-out;
 }
 
+.notifications-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 1300;
+}
+
+.notifications-popup.notifications-popover {
+  position: fixed;
+  z-index: 1301;
+  border-radius: var(--radius-lg);
+  margin: 0;
+  width: min(480px, calc(100vw - 16px));
+  max-height: calc(100vh - 80px);
+}
+
 /* Override du Modal overlay pour positionner en popover */
 .ui-modal-overlay:has(> .notifications-popup) {
   align-items: flex-start;

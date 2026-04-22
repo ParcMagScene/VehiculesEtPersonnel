@@ -4,7 +4,7 @@
 
 import './VideoPanel.css';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import api from '../../utils/api';
 import CameraPlayerWebRTC from './CameraPlayerWebRTC';
@@ -15,34 +15,42 @@ const PresetDetachedView = ({ presetId }) => {
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadData = useCallback(async () => {
-    setError(null);
-    try {
-      const [allPresets, allCameras, proxyStatus] = await Promise.all([
-        api.getVideoPresets(),
-        api.getVideoCameras(),
-        api.getVideoProxyStatus().catch(() => ({ running: false })),
-      ]);
-      const found = allPresets.find((p) => p.id === Number(presetId));
-      if (!found) {
-        setPreset(null);
-        setError('Preset introuvable');
-        return;
-      }
-      setPreset(found);
-      setCameras(allCameras);
-      setProxyAvailable(proxyStatus?.running === true);
-      document.title = `Preset — ${found.name}`;
-    } catch (err) {
-      setPreset(null);
-      setError(err.message || 'Erreur de chargement');
-    }
-  }, [presetId]);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
+    let cancelled = false;
+
+    const loadData = async () => {
+      setError(null);
+      try {
+        const [allPresets, allCameras, proxyStatus] = await Promise.all([
+          api.getVideoPresets(),
+          api.getVideoCameras(),
+          api.getVideoProxyStatus().catch(() => ({ running: false })),
+        ]);
+        if (cancelled) return;
+
+        const found = allPresets.find((p) => p.id === Number(presetId));
+        if (!found) {
+          setPreset(null);
+          setError('Preset introuvable');
+          return;
+        }
+
+        setPreset(found);
+        setCameras(allCameras);
+        setProxyAvailable(proxyStatus?.running === true);
+        document.title = `Preset — ${found.name}`;
+      } catch (err) {
+        if (cancelled) return;
+        setPreset(null);
+        setError(err.message || 'Erreur de chargement');
+      }
+    };
+
     loadData();
-  }, [loadData]);
+    return () => {
+      cancelled = true;
+    };
+  }, [presetId]);
 
   if (error) {
     return (

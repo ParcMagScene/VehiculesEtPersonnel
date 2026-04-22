@@ -70,6 +70,7 @@ const VideoPanel = ({ currentUser }) => {
   const [isRotating, setIsRotating] = useState(false);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const rotateTimer = useRef(null);
+  const detachedPresetWindowRef = useRef(null);
 
   // PTZ clavier
   const { startMove, stopMove, moving } = usePTZ(selectedCamera);
@@ -193,9 +194,16 @@ const VideoPanel = ({ currentUser }) => {
 
   const handleDetachPreset = useCallback((presetId) => {
     const url = `${window.location.origin}?detached-preset=${presetId}`;
-    window.open(
+
+    if (detachedPresetWindowRef.current && !detachedPresetWindowRef.current.closed) {
+      detachedPresetWindowRef.current.location.href = url;
+      detachedPresetWindowRef.current.focus();
+      return;
+    }
+
+    detachedPresetWindowRef.current = window.open(
       url,
-      `preset-${presetId}`,
+      'video-preset-detached',
       'width=960,height=720,menubar=no,toolbar=no,location=no,status=no',
     );
   }, []);

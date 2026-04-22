@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Edit2, ExternalLink, Plus, Save, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
 
@@ -21,6 +21,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   const [editName, setEditName] = useState('');
   const [editCameraIds, setEditCameraIds] = useState([]);
   const [creating, setCreating] = useState(false);
+  const isMountedRef = useRef(true);
 
   const enabledCameras = cameras.filter((c) => c.enabled);
 
@@ -28,6 +29,8 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   const loadPresets = useCallback(async () => {
     try {
       const data = await api.getVideoPresets();
+      if (!isMountedRef.current) return;
+
       setPresets(data);
       setActivePresetId((currentId) => {
         if (data.length === 0) return null;
@@ -40,9 +43,12 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
     loadPresets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadPresets]);
 
   const activePreset = presets.find((p) => p.id === activePresetId);
   const presetCameras = activePreset

@@ -211,7 +211,10 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
         <select
           className="preset-panel__select"
           value={activePresetId || ''}
-          onChange={(e) => setActivePresetId(Number(e.target.value))}
+          onChange={(e) => {
+            const nextId = Number.parseInt(e.target.value, 10);
+            setActivePresetId(Number.isInteger(nextId) && nextId > 0 ? nextId : null);
+          }}
         >
           {presets.map((p) => (
             <option key={p.id} value={p.id}>

@@ -29,11 +29,15 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
     try {
       const data = await api.getVideoPresets();
       setPresets(data);
-      if (data.length > 0 && !activePresetId) setActivePresetId(data[0].id);
+      setActivePresetId((currentId) => {
+        if (data.length === 0) return null;
+        const hasCurrent = data.some((preset) => preset.id === currentId);
+        return hasCurrent ? currentId : data[0].id;
+      });
     } catch (err) {
       console.error('Erreur chargement presets:', err);
     }
-  }, [activePresetId]);
+  }, []);
 
   useEffect(() => {
     loadPresets();
@@ -211,12 +215,12 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
         </select>
         <div className="preset-panel__bar-actions">
           <Tooltip content="Modifier le preset" position="bottom">
-            <Button variant="ghost" size="sm" onClick={startEdit}>
+            <Button variant="ghost" size="sm" onClick={startEdit} disabled={!activePreset}>
               <Edit2 size={14} />
             </Button>
           </Tooltip>
           <Tooltip content="Supprimer le preset" position="bottom">
-            <Button variant="ghost" size="sm" onClick={handleDelete}>
+            <Button variant="ghost" size="sm" onClick={handleDelete} disabled={!activePreset}>
               <Trash2 size={14} />
             </Button>
           </Tooltip>
@@ -227,7 +231,12 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
           </Tooltip>
           {onDetach && (
             <Tooltip content="Détacher dans une fenêtre" position="bottom">
-              <Button variant="ghost" size="sm" onClick={() => onDetach(activePresetId)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDetach(activePresetId)}
+                disabled={!activePresetId}
+              >
                 <ExternalLink size={14} />
               </Button>
             </Tooltip>

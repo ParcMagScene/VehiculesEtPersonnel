@@ -49,7 +49,10 @@ const CameraPlayerWebRTC = ({
       const url = await api.getSnapshot(camera.id);
       setSnapshotUrl(url);
       // Ouvrir dans un nouvel onglet
-      window.open(url, '_blank');
+      const snapshotWindow = window.open(url, '_blank', 'noopener,noreferrer');
+      if (snapshotWindow) {
+        snapshotWindow.opener = null;
+      }
     } catch {
       // Fallback: essayer de capturer le canvas vidéo
       if (videoRef.current && videoRef.current.videoWidth > 0) {
@@ -117,7 +120,10 @@ const CameraPlayerWebRTC = ({
           <Tooltip content="Snapshot">
             <Button
               variant="ghost"
-              onClick={handleSnapshot}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSnapshot();
+              }}
               disabled={status !== 'streaming' || snapshotLoading}
               className="camera-player__btn"
             >
@@ -126,7 +132,14 @@ const CameraPlayerWebRTC = ({
           </Tooltip>
           {status === 'error' || status === 'idle' ? (
             <Tooltip content="Reconnecter">
-              <Button variant="ghost" onClick={connect} className="camera-player__btn">
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  connect();
+                }}
+                className="camera-player__btn"
+              >
                 <RefreshCw size={16} />
               </Button>
             </Tooltip>
@@ -135,7 +148,10 @@ const CameraPlayerWebRTC = ({
             <Tooltip content={isFullscreen ? 'Réduire' : 'Plein écran'}>
               <Button
                 variant="ghost"
-                onClick={() => onFullscreen(camera)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFullscreen(camera);
+                }}
                 className="camera-player__btn"
               >
                 {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
@@ -155,7 +171,14 @@ const CameraPlayerWebRTC = ({
           <div className="camera-player__overlay camera-player__overlay--error">
             <WifiOff size={32} />
             <span>{error || 'Flux indisponible'}</span>
-            <Button variant="ghost" onClick={connect} className="camera-player__retry-btn">
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                connect();
+              }}
+              className="camera-player__retry-btn"
+            >
               Réessayer
             </Button>
           </div>

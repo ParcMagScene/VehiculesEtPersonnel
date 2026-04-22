@@ -115,7 +115,15 @@ function SonosSources({
                 title={`Lire : ${fav.title}`}
               >
                 {fav.albumArtURI ? (
-                  <img src={fav.albumArtURI} alt="" className="sonos-sources-art" loading="lazy" />
+                  <img
+                    src={fav.albumArtURI}
+                    alt=""
+                    className="sonos-sources-art"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
                 ) : (
                   <span className="sonos-sources-icon">
                     <Music size={16} />
@@ -242,7 +250,15 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
           onClick={() => onBrowse(c.id, c.title)}
         >
           {c.albumArtURI ? (
-            <img src={c.albumArtURI} alt="" className="sonos-sources-art" loading="lazy" />
+            <img
+              src={c.albumArtURI}
+              alt=""
+              className="sonos-sources-art"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           ) : (
             <span className="sonos-sources-icon">
               <Folder size={16} />
@@ -263,7 +279,15 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
           title={`Lire : ${item.title}`}
         >
           {item.albumArtURI ? (
-            <img src={item.albumArtURI} alt="" className="sonos-sources-art" loading="lazy" />
+            <img
+              src={item.albumArtURI}
+              alt=""
+              className="sonos-sources-art"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           ) : (
             <span className="sonos-sources-icon">
               <Music size={16} />

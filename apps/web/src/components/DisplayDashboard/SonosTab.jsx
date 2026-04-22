@@ -290,7 +290,15 @@ function FavoritesList({ zone, isAdmin }) {
                 title={`Lire : ${fav.title}`}
               >
                 {fav.albumArtURI ? (
-                  <img src={fav.albumArtURI} alt="" className="dtv-sonos-fav-art" loading="lazy" />
+                  <img
+                    src={fav.albumArtURI}
+                    alt=""
+                    className="dtv-sonos-fav-art"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
                 ) : (
                   <Music size={14} />
                 )}
@@ -507,6 +515,9 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
                       alt="Album art"
                       loading="lazy"
                       className="dtv-sonos-art"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
                     />
                   )}
                   <div className="dtv-sonos-info">

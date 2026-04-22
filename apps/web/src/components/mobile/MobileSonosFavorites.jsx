@@ -68,7 +68,15 @@ function MobileSonosFavorites({
               onClick={() => playFavorite(fav)}
             >
               {fav.albumArtURI ? (
-                <img src={fav.albumArtURI} alt="" className="mobile-sonos-fav-art" loading="lazy" />
+                <img
+                  src={fav.albumArtURI}
+                  alt=""
+                  className="mobile-sonos-fav-art"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               ) : (
                 <Music size={20} />
               )}

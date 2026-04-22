@@ -275,7 +275,14 @@ function TVScreenMini({ state = {} }) {
           style={{ borderColor: primaryColor, color: primaryColor }}
         >
           {state.sonos.albumArtURI && (
-            <img src={state.sonos.albumArtURI} alt="" className="tv-mini-sonos-art" />
+            <img
+              src={state.sonos.albumArtURI}
+              alt=""
+              className="tv-mini-sonos-art"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           )}
           <div className="tv-mini-sonos-info">
             <span className="tv-mini-sonos-title">{sonosTitle}</span>

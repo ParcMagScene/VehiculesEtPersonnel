@@ -29,7 +29,15 @@ function SonosQueue({ queue, queueLoading, nowPlaying }) {
             >
               <span className="sonos-queue-num">{i + 1}</span>
               {item.albumArtURI ? (
-                <img src={item.albumArtURI} alt="" className="sonos-queue-art" loading="lazy" />
+                <img
+                  src={item.albumArtURI}
+                  alt=""
+                  className="sonos-queue-art"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               ) : (
                 <span className="sonos-queue-art sonos-queue-art-ph">
                   <Music size={14} />

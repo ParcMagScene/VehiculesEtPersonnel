@@ -58,7 +58,15 @@ function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavori
               title={`Lire : ${fav.title}`}
             >
               {fav.albumArtURI ? (
-                <img src={fav.albumArtURI} alt="" className="sonos-favs-art" loading="lazy" />
+                <img
+                  src={fav.albumArtURI}
+                  alt=""
+                  className="sonos-favs-art"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
               ) : (
                 <span className="sonos-favs-art sonos-favs-art-ph">
                   <Music size={18} />

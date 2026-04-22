@@ -9,6 +9,7 @@ import { Camera, ExternalLink, Film, MessageCircle, Music, Palette, Tag } from '
 import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Tab, TabList, TabPanel, Tabs } from '@/design-system';
+import ErrorBoundary from '../ErrorBoundary';
 
 // Lazy sub-tabs
 const AppearanceTab = lazy(() => import('./AppearanceTab'));
@@ -116,10 +117,28 @@ function DisplayDashboardPanel({ currentUser }) {
     setRefreshKey((k) => k + 1);
   }, []);
 
+  const validTabIds = CONFIG_TABS.map((t) => t.id);
+  useEffect(() => {
+    if (!validTabIds.includes(activeTab)) {
+      setActiveTab('appearance');
+    }
+  }, [activeTab, validTabIds]);
+
+  const handleTabChange = useCallback(
+    (nextTab) => {
+      if (validTabIds.includes(nextTab)) {
+        setActiveTab(nextTab);
+      } else {
+        setActiveTab('appearance');
+      }
+    },
+    [validTabIds],
+  );
+
   return (
     <div className="display-dashboard">
       {/* Sous-onglets Configuration TV */}
-      <Tabs value={activeTab} onChange={setActiveTab}>
+      <Tabs value={activeTab} onChange={handleTabChange}>
         {/* Corps — split layout : tâches | config | divider | aperçu TV */}
         <div className="display-body split" ref={bodyRef}>
           {/* Sidebar tâches du jour + Sonos */}
@@ -154,42 +173,44 @@ function DisplayDashboardPanel({ currentUser }) {
                 <span>{getTvUrl()}</span>
               </a>
             </div>
-            <Suspense fallback={<div className="display-loading">Chargement…</div>}>
-              <TabPanel value="appearance">
-                <AppearanceTab
-                  currentUser={currentUser}
-                  refreshKey={refreshKey}
-                  onPreviewChange={handlePreviewChange}
-                />
-              </TabPanel>
-              <TabPanel value="welcomeMessages">
-                <WelcomeMessagesTab
-                  currentUser={currentUser}
-                  refreshKey={refreshKey}
-                  onPreviewChange={handlePreviewChange}
-                />
-              </TabPanel>
-              <TabPanel value="colorRules">
-                <ColorRulesTab
-                  currentUser={currentUser}
-                  refreshKey={refreshKey}
-                  onPreviewChange={handlePreviewChange}
-                />
-              </TabPanel>
-              <TabPanel value="locationIcons">
-                <LocationIconsTab
-                  currentUser={currentUser}
-                  refreshKey={refreshKey}
-                  onPreviewChange={handlePreviewChange}
-                />
-              </TabPanel>
-              <TabPanel value="sneaky">
-                <SneakyTab currentUser={currentUser} refreshKey={refreshKey} />
-              </TabPanel>
-              <TabPanel value="sonos">
-                <SonosTab currentUser={currentUser} />
-              </TabPanel>
-            </Suspense>
+            <ErrorBoundary moduleName="Dashboard Écrans (onglets)">
+              <Suspense fallback={<div className="display-loading">Chargement…</div>}>
+                <TabPanel value="appearance">
+                  <AppearanceTab
+                    currentUser={currentUser}
+                    refreshKey={refreshKey}
+                    onPreviewChange={handlePreviewChange}
+                  />
+                </TabPanel>
+                <TabPanel value="welcomeMessages">
+                  <WelcomeMessagesTab
+                    currentUser={currentUser}
+                    refreshKey={refreshKey}
+                    onPreviewChange={handlePreviewChange}
+                  />
+                </TabPanel>
+                <TabPanel value="colorRules">
+                  <ColorRulesTab
+                    currentUser={currentUser}
+                    refreshKey={refreshKey}
+                    onPreviewChange={handlePreviewChange}
+                  />
+                </TabPanel>
+                <TabPanel value="locationIcons">
+                  <LocationIconsTab
+                    currentUser={currentUser}
+                    refreshKey={refreshKey}
+                    onPreviewChange={handlePreviewChange}
+                  />
+                </TabPanel>
+                <TabPanel value="sneaky">
+                  <SneakyTab currentUser={currentUser} refreshKey={refreshKey} />
+                </TabPanel>
+                <TabPanel value="sonos">
+                  <SonosTab currentUser={currentUser} />
+                </TabPanel>
+              </Suspense>
+            </ErrorBoundary>
           </div>
 
           {/* Divider draggable */}

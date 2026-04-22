@@ -514,7 +514,15 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         {nowPlaying && nowPlaying.title ? (
           <div className={`dash-sonos-playing ${nowPlaying.playing ? '' : 'paused'}`}>
             {nowPlaying.albumArtURI && (
-              <img src={nowPlaying.albumArtURI} alt="" loading="lazy" className="dash-sonos-art" />
+              <img
+                src={nowPlaying.albumArtURI}
+                alt=""
+                loading="lazy"
+                className="dash-sonos-art"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             )}
             <div className="dash-sonos-info">
               <div className="dash-sonos-title">{nowPlaying.title}</div>

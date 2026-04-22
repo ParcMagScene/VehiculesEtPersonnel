@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Disc, Music, Pause } from 'lucide-react';
-import { memo, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 
 import { InlineAlert } from '@/design-system';
 
@@ -12,6 +12,11 @@ import { formatTime } from '../../hooks/useSonos';
 
 function MobileSonosNowPlaying({ displayState, onNext, onPrevious }) {
   const touchStartX = useRef(null);
+  const [artFailed, setArtFailed] = useState(false);
+
+  useEffect(() => {
+    setArtFailed(false);
+  }, [displayState?.albumArtURI]);
 
   if (!displayState) return null;
 
@@ -48,12 +53,13 @@ function MobileSonosNowPlaying({ displayState, onNext, onPrevious }) {
         onTouchStart={handleTouchStartArt}
         onTouchEnd={handleTouchEndArt}
       >
-        {displayState.albumArtURI ? (
+        {displayState.albumArtURI && !artFailed ? (
           <img
             src={displayState.albumArtURI}
             alt="Album art"
             loading="lazy"
             className="mobile-sonos-art"
+            onError={() => setArtFailed(true)}
           />
         ) : (
           <div className="mobile-sonos-art-placeholder">

@@ -223,6 +223,13 @@ const ManagementPanel = ({
             : []),
         ];
 
+  useEffect(() => {
+    const validTabIds = tabs.map((t) => t.id);
+    if (!validTabIds.includes(activeTab)) {
+      setActiveTab(validTabIds[0] || (panelType === 'settings' ? 'account' : 'vehicles'));
+    }
+  }, [activeTab, tabs, panelType]);
+
   const getCurrentList = () => {
     switch (activeTab) {
       case 'vehicles':

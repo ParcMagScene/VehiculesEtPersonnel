@@ -3,11 +3,17 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Info, Music } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 import { InlineAlert } from '@/design-system';
 
 function SonosNowPlaying({ displayState }) {
+  const [artFailed, setArtFailed] = useState(false);
+
+  useEffect(() => {
+    setArtFailed(false);
+  }, [displayState?.albumArtURI]);
+
   if (!displayState) return null;
 
   if (displayState.error) {
@@ -31,12 +37,13 @@ function SonosNowPlaying({ displayState }) {
     <div className="sonos-np">
       {/* Grande pochette */}
       <div className="sonos-np-art-wrap">
-        {displayState.albumArtURI ? (
+        {displayState.albumArtURI && !artFailed ? (
           <img
             src={displayState.albumArtURI}
             alt="Album art"
             loading="lazy"
             className="sonos-np-art"
+            onError={() => setArtFailed(true)}
           />
         ) : (
           <div className="sonos-np-art sonos-np-art-placeholder">

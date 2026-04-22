@@ -181,6 +181,37 @@ function AppContent() {
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [globalAffaireDialog, setGlobalAffaireDialog] = useState(null);
   const openEventDetailsModalRef = useRef(null);
+  const sonosDetachedWindowRef = useRef(null);
+
+  const handleDetachSonos = useCallback(() => {
+    const sonosUrl = `${window.location.origin}${window.location.pathname}?module=sonos&detached=1`;
+    const existing = sonosDetachedWindowRef.current;
+
+    if (existing && !existing.closed) {
+      try {
+        existing.location.href = sonosUrl;
+        existing.focus();
+      } catch {
+        // Ignore cross-window focus errors and fallback to a new window.
+      }
+      return;
+    }
+
+    const popup = window.open(
+      sonosUrl,
+      'emag-sonos-detached',
+      'width=1320,height=860,menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes',
+    );
+
+    if (popup) {
+      sonosDetachedWindowRef.current = popup;
+      popup.focus();
+    } else {
+      toast.error(
+        'Popup bloquee. Autorisez les popups pour ouvrir Sonos dans une fenetre detachee.',
+      );
+    }
+  }, [toast]);
 
   // ═══ Messaging polling (hook) ═══
   const showMessagingRef = useRef(false);
@@ -502,14 +533,7 @@ function AppContent() {
               }}
               onToggleMessaging={() => setShowMessaging((v) => !v)}
               onToggleMailing={() => setShowMailing((v) => !v)}
-              onDetachSonos={() => {
-                const sonosUrl = `${window.location.origin}${window.location.pathname}?module=sonos&detached=1`;
-                window.open(
-                  sonosUrl,
-                  'emag-sonos-detached',
-                  'width=1320,height=860,menubar=no,toolbar=no,location=yes,status=no,resizable=yes,scrollbars=yes',
-                );
-              }}
+              onDetachSonos={handleDetachSonos}
               unreadMsgCount={unreadMsgCount}
               onOpenPreferences={() => setShowPreferences(true)}
               onOpenHelp={() => setShowHelp(true)}

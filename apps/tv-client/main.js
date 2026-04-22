@@ -616,6 +616,10 @@ function startAutoScroll() {
   const mainElement = document.querySelector('main');
   if (!mainElement) return;
 
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+
   // Wrapper GPU-composited : transform au lieu de scrollTop → pas de reflow par frame
   const wrapper = document.createElement('div');
   wrapper.style.willChange = 'transform';
@@ -625,33 +629,58 @@ function startAutoScroll() {
   mainElement.appendChild(wrapper);
 
   let scrollPosition = 0;
-  const scrollSpeed = 0.5;
+  const scrollSpeedPxPerSec = 30;
   const pauseAtBottom = 3000;
   const pauseAtTop = 2000;
-  let isPaused = false;
+  let pauseUntil = 0;
+  let lastTs = null;
+  let rafId = null;
 
-  function scroll() {
-    if (!isPaused) {
-      const maxScroll = wrapper.scrollHeight - mainElement.clientHeight;
-      if (maxScroll > 0) {
-        scrollPosition += scrollSpeed;
-        if (scrollPosition >= maxScroll) {
-          scrollPosition = maxScroll;
-          isPaused = true;
-          setTimeout(() => {
-            scrollPosition = 0;
-            wrapper.style.transform = 'translateY(0)';
-            isPaused = true;
-            setTimeout(() => { isPaused = false; }, pauseAtTop);
-          }, pauseAtBottom);
-        }
-        wrapper.style.transform = `translateY(-${scrollPosition}px)`;
-      }
+  function step(ts) {
+    const maxScroll = Math.max(0, wrapper.scrollHeight - mainElement.clientHeight);
+
+    if (lastTs == null) lastTs = ts;
+    const dtMs = ts - lastTs;
+    lastTs = ts;
+
+    if (maxScroll <= 0) {
+      wrapper.style.transform = 'translate3d(0, 0, 0)';
+      rafId = requestAnimationFrame(step);
+      return;
     }
-    requestAnimationFrame(scroll);
+
+    if (ts < pauseUntil) {
+      rafId = requestAnimationFrame(step);
+      return;
+    }
+
+    scrollPosition += (scrollSpeedPxPerSec * dtMs) / 1000;
+
+    if (scrollPosition >= maxScroll) {
+      scrollPosition = maxScroll;
+      wrapper.style.transform = `translate3d(0, -${scrollPosition}px, 0)`;
+      pauseUntil = ts + pauseAtBottom;
+      setTimeout(() => {
+        scrollPosition = 0;
+        wrapper.style.transform = 'translate3d(0, 0, 0)';
+        pauseUntil = performance.now() + pauseAtTop;
+      }, pauseAtBottom);
+    } else {
+      wrapper.style.transform = `translate3d(0, -${scrollPosition}px, 0)`;
+    }
+
+    rafId = requestAnimationFrame(step);
   }
 
-  requestAnimationFrame(scroll);
+  rafId = requestAnimationFrame(step);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (!rafId) {
+      lastTs = null;
+      rafId = requestAnimationFrame(step);
+    }
+  });
 }
 
 

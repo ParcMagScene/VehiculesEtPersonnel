@@ -111,11 +111,11 @@ import {
   setupStockMovementsRoutes,
   setupStockStatsRoutes,
 } from './stockRoutes.js';
+import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
-import { setupSuiviRoutes } from './suiviRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

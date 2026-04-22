@@ -1,9 +1,9 @@
 import {
   AFFAIRE_STATUSES,
-  isValidTransition,
   getAvailableTransitions,
-  validateTransition,
+  isValidTransition,
   STEP_TEMPLATES,
+  validateTransition,
 } from './affaireWorkflow.js';
 import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import db from './database.js';

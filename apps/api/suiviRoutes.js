@@ -4,7 +4,6 @@
 // ═══════════════════════════════════════════════════════════════
 
 import crypto from 'crypto';
-
 import PDFDocument from 'pdfkit';
 
 import db from './database.js';

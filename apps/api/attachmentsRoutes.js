@@ -5,8 +5,8 @@ import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
 import { validateFileType } from './middleware/validateFileType.js';
-import { validate } from './schemas/imports.js';
 import { createFolderSchema } from './schemas/attachments.js';
+import { validate } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

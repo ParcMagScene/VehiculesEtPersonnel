@@ -15,8 +15,8 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
-import Button from '../ui/Button';
 import api from '../../utils/api';
+import Button from '../ui/Button';
 
 function newEntry(period = 'AM', sortOrder = 0) {
   return {

@@ -11,11 +11,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { filterGeoLocations, LOCATION_TYPES } from './map-utils';
+import { loadMapViewState, normalizeViewForStorage, saveMapViewState } from './map-view-state';
 import MapDualPrintModal from './MapDualPrintModal';
 import MapGeneral from './MapGeneral';
 import MapLocal from './MapLocal';
 import MapPrintControl from './MapPrintControl';
-import { loadMapViewState, normalizeViewForStorage, saveMapViewState } from './map-view-state';
 
 export default function LocationsMapPanel({ locations, onClose, onEditLocation }) {
   const [activeView, setActiveView] = useState('general'); // 'general' | 'local'

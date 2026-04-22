@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import Button from '../ui/Button';
 import api from '../../utils/api/index.js';
+import Button from '../ui/Button';
 import FicheSuivi from './FicheSuivi';
 import SynthesesPanel from './SynthesesPanel';
 

@@ -9,6 +9,7 @@ import { Camera, ExternalLink, Film, MessageCircle, Music, Palette, Tag } from '
 import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Tab, TabList, TabPanel, Tabs } from '@/design-system';
+
 import ErrorBoundary from '../ErrorBoundary';
 
 // Lazy sub-tabs

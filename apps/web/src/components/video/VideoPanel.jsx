@@ -29,6 +29,7 @@ import { ROLES } from '../../constants';
 import { useCameraList } from '../../hooks/useCameraList';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { usePTZ } from '../../hooks/usePTZ';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import CameraGrid from './CameraGrid';
 import CameraPTZControls from './CameraPTZControls';
@@ -45,6 +46,7 @@ const GRID_LAYOUTS = [
 const CameraSettingsModal = lazy(() => import('./CameraSettingsModal'));
 
 const VideoPanel = ({ currentUser }) => {
+  const toast = useToast();
   const {
     cameras,
     loading,
@@ -192,21 +194,37 @@ const VideoPanel = ({ currentUser }) => {
     }
   }, [testAll]);
 
-  const handleDetachPreset = useCallback((presetId) => {
-    const url = `${window.location.origin}?detached-preset=${presetId}`;
+  const handleDetachPreset = useCallback(
+    (presetId) => {
+      const url = `${window.location.origin}${window.location.pathname}?detached-preset=${presetId}`;
 
-    if (detachedPresetWindowRef.current && !detachedPresetWindowRef.current.closed) {
-      detachedPresetWindowRef.current.location.href = url;
+      if (detachedPresetWindowRef.current && !detachedPresetWindowRef.current.closed) {
+        try {
+          detachedPresetWindowRef.current.location.href = url;
+          detachedPresetWindowRef.current.focus();
+          return;
+        } catch {
+          // Ignore cross-window access failures and open a new popup instead.
+        }
+      }
+
+      detachedPresetWindowRef.current = window.open(
+        url,
+        'video-preset-detached',
+        'width=960,height=720,menubar=no,toolbar=no,location=no,status=no',
+      );
+
+      if (!detachedPresetWindowRef.current) {
+        toast.error(
+          'Popup bloquee. Autorisez les popups pour ouvrir le preset dans une fenetre detachee.',
+        );
+        return;
+      }
+
       detachedPresetWindowRef.current.focus();
-      return;
-    }
-
-    detachedPresetWindowRef.current = window.open(
-      url,
-      'video-preset-detached',
-      'width=960,height=720,menubar=no,toolbar=no,location=no,status=no',
-    );
-  }, []);
+    },
+    [toast],
+  );
 
   if (loading) {
     return (

@@ -220,7 +220,7 @@ const EquipmentPanel = ({
 
         <div className="eq-toolbar-actions">
           {subTab === 'inventory' && (
-            <>
+            <div className="eq-toolbar-primary-actions">
               <SearchBar
                 value={search}
                 onChange={setSearch}
@@ -290,10 +290,10 @@ const EquipmentPanel = ({
               >
                 <Plus size={14} /> Équipement
               </Button>
-            </>
+            </div>
           )}
           {subTab === 'sav' && (
-            <>
+            <div className="eq-toolbar-primary-actions">
               <SearchBar
                 value={savSearch}
                 onChange={setSavSearch}
@@ -372,7 +372,7 @@ const EquipmentPanel = ({
                   <Plus size={14} /> Demande SAV
                 </Button>
               )}
-            </>
+            </div>
           )}
           <div className="eq-stats-row">
             <Tooltip content="Tous" position="bottom">

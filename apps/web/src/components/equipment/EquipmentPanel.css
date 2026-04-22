@@ -191,8 +191,17 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   width: 100%;
+}
+
+.eq-toolbar-primary-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .eq-filter-check {
@@ -1939,6 +1948,12 @@
 @media (max-width: 768px) {
   .eq-stats-row {
     gap: 2px;
+    margin-left: 0;
+    width: 100%;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid var(--theme-border);
+    padding-top: var(--space-1);
   }
   .eq-stat-btn {
     padding: 3px 6px;
@@ -1954,6 +1969,9 @@
   }
   .eq-toolbar-actions {
     flex-wrap: wrap;
+  }
+  .eq-toolbar-primary-actions {
+    width: 100%;
   }
   .eq-search input {
     width: 100%;

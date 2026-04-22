@@ -361,27 +361,6 @@
   transform: scale(1.1);
 }
 
-.toggle-banner-button {
-  background: var(--glass-light);
-  border: 1px solid var(--glass);
-  color: var(--theme-text-inverse);
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-xs);
-  cursor: pointer;
-  font-size: var(--font-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: all 0.2s;
-}
-
-.toggle-banner-button:hover {
-  background: var(--close-btn-hover-bg);
-  transform: scale(1.05);
-}
-
 /* Zone scrollable à droite */
 .banner-scroll-area {
   flex: 1;

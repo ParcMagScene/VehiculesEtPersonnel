@@ -88,7 +88,7 @@ function GoogleCalendarBanner({
   const [error, setError] = useState(null);
   const [isSignedIn, setIsSignedIn] = useState(cachedState?.isSignedIn || false);
   const [googleConfigured, setGoogleConfigured] = useState(cachedState ? true : null); // null = loading, true/false
-  const [displayMode, setDisplayMode] = useState('compact'); // 'closed', 'compact'
+  const displayMode = 'compact';
   const [bannerHeight, setBannerHeight] = useState(200);
   const [modalOpen, setModalOpen] = useState(false);
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
@@ -409,10 +409,6 @@ function GoogleCalendarBanner({
     if (onScroll) {
       onScroll(e.target.scrollLeft);
     }
-  };
-
-  const cycleDisplayMode = () => {
-    setDisplayMode((prev) => (prev === 'closed' ? 'compact' : 'closed'));
   };
 
   // Ouvrir le modal de détails d'événement
@@ -806,14 +802,6 @@ function GoogleCalendarBanner({
   //   return null;
   // }
 
-  const getModeIcon = () => {
-    return displayMode === 'closed' ? '▼' : '▲';
-  };
-
-  const getModeLabel = () => {
-    return displayMode === 'closed' ? 'Fermé' : 'Réduit';
-  };
-
   return (
     <>
       <div className={`google-calendar-banner-grid ${displayMode}`}>
@@ -831,16 +819,6 @@ function GoogleCalendarBanner({
                     <span>Installations</span>
                   </div>
                 )}
-                <div className="banner-header-actions">
-                  <Button
-                    variant="ghost"
-                    className="toggle-banner-button"
-                    onClick={cycleDisplayMode}
-                    title={getModeLabel()}
-                  >
-                    {getModeIcon()}
-                  </Button>
-                </div>
               </div>
               {/* Bouton contextuel : Nouvelle réservation / Nouvelle affectation / Nouvelle affaire */}
               <Button

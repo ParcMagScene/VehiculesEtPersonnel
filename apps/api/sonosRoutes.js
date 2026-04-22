@@ -28,6 +28,11 @@ function isValidIPv4(ip) {
   return typeof ip === 'string' && IPV4_RE.test(ip);
 }
 
+function isPrivateIPv4(ip) {
+  if (!isValidIPv4(ip)) return false;
+  return ip.startsWith('10.') || ip.startsWith('192.168.') || /^172\.(1[6-9]|2\d|3[01])\./.test(ip);
+}
+
 // ── Timeout wrapper pour appels Sonos UPnP ──────────────────────
 const SONOS_TIMEOUT_MS = 8000;
 function withTimeout(promise, ms = SONOS_TIMEOUT_MS) {
@@ -137,6 +142,33 @@ async function loadSonosLib() {
 function getSonosIP() {
   const row = db.prepare("SELECT value FROM display_config WHERE key = 'sonosIP'").get();
   return row ? JSON.parse(row.value) : '';
+}
+
+function toSonosArtworkUrl(rawUrl, coordinatorIP) {
+  if (!rawUrl) return '';
+
+  if (rawUrl.startsWith('/radio-logos/')) return rawUrl;
+
+  if (rawUrl.startsWith('http://')) {
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.port === '1400' && isPrivateIPv4(parsed.hostname)) {
+        return `/api/sonos/artwork?src=${encodeURIComponent(rawUrl)}`;
+      }
+    } catch {
+      return rawUrl;
+    }
+    return rawUrl;
+  }
+
+  if (rawUrl.startsWith('https://')) return rawUrl;
+
+  if (rawUrl.startsWith('/')) {
+    const sourceUrl = `http://${coordinatorIP}:1400${rawUrl}`;
+    return `/api/sonos/artwork?src=${encodeURIComponent(sourceUrl)}`;
+  }
+
+  return rawUrl;
 }
 
 /**
@@ -314,7 +346,7 @@ async function resolveArtwork(track, coordinatorIP) {
     }
   }
 
-  return artUrl;
+  return toSonosArtworkUrl(artUrl, coordinatorIP);
 }
 
 /**
@@ -367,6 +399,58 @@ export async function getSonosNowPlaying() {
 // ══════════════════════════════════════════════════════════════
 
 export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
+  app.get('/api/sonos/artwork', optionalTvToken, sonosReadLimiter, async (req, res) => {
+    try {
+      const src = String(req.query?.src || '').trim();
+      if (!src || src.length > 1024) {
+        return res.status(400).json({ success: false, error: 'src invalide' });
+      }
+
+      let parsed;
+      try {
+        parsed = new URL(src);
+      } catch {
+        return res.status(400).json({ success: false, error: 'URL invalide' });
+      }
+
+      if (
+        parsed.protocol !== 'http:' ||
+        parsed.port !== '1400' ||
+        !isPrivateIPv4(parsed.hostname)
+      ) {
+        return res.status(400).json({ success: false, error: 'Source artwork non autorisee' });
+      }
+
+      const upstream = await withTimeout(
+        fetch(parsed.toString(), {
+          method: 'GET',
+          redirect: 'error',
+          headers: { Accept: 'image/*,*/*;q=0.8' },
+        }),
+        5000,
+      );
+
+      if (!upstream.ok) {
+        return res
+          .status(upstream.status === 404 ? 404 : 502)
+          .json({ success: false, error: 'Artwork indisponible' });
+      }
+
+      const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
+      if (!contentType.startsWith('image/')) {
+        return res.status(415).json({ success: false, error: 'Format artwork invalide' });
+      }
+
+      const bytes = Buffer.from(await upstream.arrayBuffer());
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      return res.status(200).send(bytes);
+    } catch (error) {
+      logger.warn('Sonos artwork proxy error:', error?.message || error);
+      return res.status(502).json({ success: false, error: 'Proxy artwork indisponible' });
+    }
+  });
+
   // ── Validation zone (IP) ──
   function validateZone(req, res) {
     const zone = req.params.zone;
@@ -766,9 +850,8 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
                 }
               }
             }
-          } else if (albumArtURI && !albumArtURI.startsWith('http')) {
-            // Artwork relatif Sonos → préfixer avec l'IP coordinateur
-            albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
+          } else if (albumArtURI) {
+            albumArtURI = toSonosArtworkUrl(albumArtURI, coordinatorIP);
           }
 
           return { title, uri, albumArtURI, description: f.description || '' };
@@ -800,8 +883,8 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
         const knownLogo = matchKnownRadioLogo(s.uri || '', s.title || '');
         if (knownLogo) {
           albumArtURI = knownLogo;
-        } else if (albumArtURI && !albumArtURI.startsWith('http')) {
-          albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
+        } else if (albumArtURI) {
+          albumArtURI = toSonosArtworkUrl(albumArtURI, coordinatorIP);
         }
         return {
           title: s.title || '',
@@ -908,8 +991,8 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
           const knownLogo = matchKnownRadioLogo(typeof uri === 'string' ? uri : '', title);
           if (knownLogo) {
             albumArtURI = knownLogo;
-          } else if (albumArtURI && !albumArtURI.startsWith('http')) {
-            albumArtURI = `http://${coordinatorIP}:1400${albumArtURI}`;
+          } else if (albumArtURI) {
+            albumArtURI = toSonosArtworkUrl(albumArtURI, coordinatorIP);
           }
 
           items.push({
@@ -1099,11 +1182,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
         title: item.title || '',
         artist: item.artist || '',
         album: item.album || '',
-        albumArtURI: item.albumArtURI
-          ? item.albumArtURI.startsWith('http')
-            ? item.albumArtURI
-            : `http://${coordinatorIP}:1400${item.albumArtURI}`
-          : null,
+        albumArtURI: item.albumArtURI ? toSonosArtworkUrl(item.albumArtURI, coordinatorIP) : null,
         uri: item.uri || '',
       }));
 

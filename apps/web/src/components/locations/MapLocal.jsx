@@ -43,7 +43,7 @@ function destinationEast([lat, lng], distanceMeters) {
       Math.cos(angularDistance) - Math.sin(latRad) * Math.sin(lat2),
     );
 
-  return [(lat2 * 180) / Math.PI, ((lng2 * 180) / Math.PI + 540) % 360 - 180];
+  return [(lat2 * 180) / Math.PI, (((lng2 * 180) / Math.PI + 540) % 360) - 180];
 }
 
 function FitToRadius({ center, radius, enabled = true }) {
@@ -295,7 +295,9 @@ export default function MapLocal({
         zoomControl
       >
         <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
-        <RefreshMapOnRender deps={[darkMode, nearbyLocations.length, radius, zoneCenter[0], zoneCenter[1]]} />
+        <RefreshMapOnRender
+          deps={[darkMode, nearbyLocations.length, radius, zoneCenter[0], zoneCenter[1]]}
+        />
         <FitToRadius center={zoneCenter} radius={radius} enabled={!hasInitialView} />
         <ViewportSync onViewChange={onViewChange} />
         <MapSearchControl locations={locations} />
@@ -345,7 +347,9 @@ export default function MapLocal({
           eventHandlers={{
             drag: (event) => {
               const { lat, lng } = event.target.getLatLng();
-              const nextRadius = Math.round(haversineDistance(zoneCenter[0], zoneCenter[1], lat, lng));
+              const nextRadius = Math.round(
+                haversineDistance(zoneCenter[0], zoneCenter[1], lat, lng),
+              );
               applyZoneChange(zoneCenter, Math.max(MIN_RADIUS, Math.min(MAX_RADIUS, nextRadius)));
             },
           }}

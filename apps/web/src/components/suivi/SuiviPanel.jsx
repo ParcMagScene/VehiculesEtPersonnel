@@ -68,10 +68,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
 
   // Groupes de personnel
   const permanents = useMemo(
-    () =>
-      personnel.filter(
-        (p) => ['permanent', 'apprenti', 'stagiaire'].includes(p.type) && p.show_in_planning !== 0,
-      ),
+    () => personnel.filter((p) => ['permanent', 'apprenti', 'stagiaire'].includes(p.type)),
     [personnel],
   );
   const nonPermanents = useMemo(

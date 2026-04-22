@@ -5,7 +5,7 @@
 import './PlaybackPanel.css';
 
 import { AlertCircle, Calendar, Clock, Film, Loader, Play, Square } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Select, Tooltip } from '@/design-system';
 
@@ -30,9 +30,20 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
   const sessionTokenRef = useRef(null);
   const connectingRef = useRef(false);
   const retryCountRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Filtrer les caméras qui supportent le playback (NVR avec enregistrement)
-  const nvrCameras = cameras.filter((c) => c.enabled && c.supportsPlayback);
+  const nvrCameras = useMemo(
+    () => cameras.filter((c) => c.enabled && c.supportsPlayback),
+    [cameras],
+  );
 
   // Rechercher les enregistrements
   const handleSearch = useCallback(async () => {
@@ -42,15 +53,17 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
     setRecordings([]);
     try {
       const result = await api.getRecordings(selectedCameraId, date);
+      if (!isMountedRef.current) return;
       setRecordings(result.recordings || []);
       if ((result.recordings || []).length === 0) {
         setSearchError('Aucun enregistrement trouvé pour cette date');
       }
     } catch (e) {
+      if (!isMountedRef.current) return;
       const detail = e.response?.data?.detail;
       setSearchError(detail ? `${e.message} : ${detail}` : e.message || 'Erreur de recherche');
     } finally {
-      setSearching(false);
+      if (isMountedRef.current) setSearching(false);
     }
   }, [selectedCameraId, date]);
 
@@ -110,7 +123,7 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
               setPlaybackError(`Connexion perdue — tentative ${retryCountRef.current}/3...`);
               setPlaying(false);
               setTimeout(() => {
-                if (pcRef.current === pc) {
+                if (isMountedRef.current && pcRef.current === pc) {
                   startPlayback(startTime, endTime);
                 }
               }, 2000);

@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Camera, Film, Maximize, Minimize, RefreshCw, WifiOff } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button, Spinner, Tooltip } from '@/design-system';
 
@@ -23,6 +23,14 @@ const CameraPlayerWebRTC = ({
 }) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (autoConnect && camera?.enabled) {
@@ -76,7 +84,7 @@ const CameraPlayerWebRTC = ({
         }, 'image/jpeg');
       }
     } finally {
-      setSnapshotLoading(false);
+      if (isMountedRef.current) setSnapshotLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera?.id, camera?.name]);

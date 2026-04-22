@@ -22,7 +22,6 @@ const CameraPlayerWebRTC = ({
   onPlayback,
 }) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
-  const [_snapshotUrl, setSnapshotUrl] = useState(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
 
   useEffect(() => {
@@ -47,11 +46,16 @@ const CameraPlayerWebRTC = ({
     try {
       setSnapshotLoading(true);
       const url = await api.getSnapshot(camera.id);
-      setSnapshotUrl(url);
-      // Ouvrir dans un nouvel onglet
+      // Ouvrir dans un nouvel onglet ; fallback sur un lien si popup bloquee.
       const snapshotWindow = window.open(url, '_blank', 'noopener,noreferrer');
       if (snapshotWindow) {
         snapshotWindow.opener = null;
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
       }
     } catch {
       // Fallback: essayer de capturer le canvas vidéo

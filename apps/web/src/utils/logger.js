@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Logger conditionnel pour environnement de développement/production
  *

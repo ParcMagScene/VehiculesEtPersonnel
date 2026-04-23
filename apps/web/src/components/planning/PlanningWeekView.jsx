@@ -11,12 +11,12 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import React, { useMemo } from 'react';
+import React from 'react';
 
 import { Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { EVENT_TYPE_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { STATUS_COLORS } from '../../constants/colors';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 import { safeParseDate } from '../../utils/dateUtils';
 import AffaireBadge from '../AffaireBadge';

@@ -1,7 +1,7 @@
 import './AnnuairePanel.css';
 
-import { Check, Link2, MapPin } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { Link2, MapPin } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { Button, Checkbox, ModalLayout, Spinner } from '@/design-system';
 

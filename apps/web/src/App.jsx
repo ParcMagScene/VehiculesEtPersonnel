@@ -25,7 +25,6 @@ import './styles/draggable-modals.css';
 
 import { Button } from '@/design-system';
 
-import { STATUS } from './constants';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NavigationProvider } from './contexts/NavigationContext';
 import { LoadingOverlay } from './design-system';

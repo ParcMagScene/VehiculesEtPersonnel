@@ -341,6 +341,7 @@ const AffaireDetailContent = ({
       setStatusLoading(true);
       try {
         const result = await api.changeAffaireStatus(affaire.id, toStatus, { force });
+        void result;
         showFeedback({
           type: 'success',
           message: `Statut → ${AFFAIRE_STATUS_MAP[toStatus]?.label || toStatus}`,

@@ -70,9 +70,9 @@ const Calendar = ({
   // ═══ DATA HOOK ═══
   const {
     days,
-    periods,
-    reservationLookup,
-    getReservation,
+    periods: _periods,
+    reservationLookup: _reservationLookup,
+    getReservation: _getReservation,
     getMaintenanceConflicts,
     vehicleGroups,
     availabilityCount,
@@ -82,10 +82,10 @@ const Calendar = ({
 
   // ═══ DRAG HOOK ═══
   const {
-    dragState,
-    isDragging,
+    dragState: _dragState,
+    isDragging: _isDragging,
     resizeState,
-    resizePreview,
+    resizePreview: _resizePreview,
     blockDragState,
     blockDragPreview,
     pendingBlockDragRef,
@@ -103,7 +103,7 @@ const Calendar = ({
     handleGlobalMouseUp,
   } = useCalendarDrag({
     view,
-    currentUser,
+    isDragging: _isDragging,
     days,
     reservations,
     onUpdateReservation,

@@ -1,6 +1,6 @@
 import './MobileApp.css';
 
-import { LayoutGrid, LogOut, MessageSquare, Monitor, Moon, Palette, Sun } from 'lucide-react';
+import { LayoutGrid, LogOut, MessageSquare, Monitor, Moon, Sun } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { BottomSheet, Button, Skeleton, Spinner } from '@/design-system';

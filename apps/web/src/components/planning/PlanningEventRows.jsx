@@ -1,3 +1,4 @@
+/* eslint-disable no-misleading-character-class */
 import { Check, Clock, Eye, Link, Plus, User, UserPlus, X } from 'lucide-react';
 import React from 'react';
 

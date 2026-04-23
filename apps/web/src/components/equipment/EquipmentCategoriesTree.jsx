@@ -1,5 +1,5 @@
 import { Check, ChevronRight, Edit2, X } from 'lucide-react';
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Button, Input, Tooltip } from '@/design-system';
 

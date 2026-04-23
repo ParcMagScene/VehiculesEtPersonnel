@@ -2,7 +2,7 @@ import './ReservationModal.css';
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Briefcase, Link2, MapPin, Paperclip, Search, Trash2, Unlink } from 'lucide-react';
+import { Link2, MapPin, Paperclip, Search, Trash2, Unlink } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import {

@@ -1,3 +1,4 @@
+/* eslint-disable no-misleading-character-class */
 import { Check, Clock, Edit2, Eye, EyeOff, Link, MapPin, Trash2, Truck, X } from 'lucide-react';
 import React from 'react';
 

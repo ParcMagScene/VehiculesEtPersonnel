@@ -324,7 +324,6 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
         setFetchError(null);
       } catch (err) {
         if (!silent) {
-          console.debug('[GoogleSync] Fetch failed:', err.message);
           setFetchError(err);
         }
       } finally {

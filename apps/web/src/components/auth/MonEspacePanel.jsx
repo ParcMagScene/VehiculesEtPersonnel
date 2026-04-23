@@ -31,7 +31,6 @@ import {
   Modal,
   ModalBody,
   ModalHeader,
-  Tooltip,
 } from '@/design-system';
 
 import { STATUS } from '../../constants';

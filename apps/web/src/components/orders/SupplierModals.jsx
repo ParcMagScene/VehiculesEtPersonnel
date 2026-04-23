@@ -10,7 +10,6 @@ import {
   Hash,
   Layers,
   Package,
-  Plus,
   Receipt,
   ShoppingCart,
 } from 'lucide-react';
@@ -30,12 +29,11 @@ import {
   Spinner,
   StatusBadge,
   Table,
-  Tag,
   Textarea,
   Tooltip,
 } from '@/design-system';
 
-import { STATUS } from '../../constants';
+import { STATUS as _STATUS } from '../../constants';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
@@ -45,7 +43,7 @@ import {
   DESTINATIONS,
   DOC_TYPES,
   ORDER_STATUS,
-  QUOTE_STATUS,
+  QUOTE_STATUS as _QUOTE_STATUS,
   REQUEST_PRIORITY,
 } from './ordersConstants';
 

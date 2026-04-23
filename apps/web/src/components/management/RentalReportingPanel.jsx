@@ -1,10 +1,9 @@
 import './RentalReportingPanel.css';
 
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { Button, Input, SectionHeader, Select } from '@/design-system';
+import { Input, SectionHeader, Select } from '@/design-system';
 
 import api from '../../utils/api';
 

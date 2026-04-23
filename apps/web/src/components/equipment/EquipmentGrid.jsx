@@ -1,5 +1,4 @@
 import { Eye, MapPin, Package, Star } from 'lucide-react';
-import React from 'react';
 
 import { EmptyState, Table, Tooltip } from '@/design-system';
 

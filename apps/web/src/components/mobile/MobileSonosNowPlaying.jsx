@@ -8,8 +8,6 @@ import { memo, useEffect, useRef, useState } from 'react';
 
 import { InlineAlert } from '@/design-system';
 
-import { formatTime } from '../../hooks/useSonos';
-
 function MobileSonosNowPlaying({ displayState, onNext, onPrevious }) {
   const touchStartX = useRef(null);
   const [artFailed, setArtFailed] = useState(false);

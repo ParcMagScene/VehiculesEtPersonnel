@@ -3,6 +3,7 @@
 // Affiche les tâches du jour (filtrable par section) avec couleurs
 // automatiques (type de tâche + type d'affaire) + widget Sonos
 // ═══════════════════════════════════════════════════════════════
+/* eslint-disable no-misleading-character-class */
 
 import {
   Briefcase,

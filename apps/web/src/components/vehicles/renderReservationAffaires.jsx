@@ -1,6 +1,4 @@
 import { Link, Link2, MapPin } from 'lucide-react';
-import React from 'react';
-
 import { Button, Tooltip } from '@/design-system';
 
 import { capitalizeText } from '../../utils/dateUtils';

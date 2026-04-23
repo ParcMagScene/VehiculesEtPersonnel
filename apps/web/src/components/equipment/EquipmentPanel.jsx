@@ -76,7 +76,7 @@ const EquipmentPanel = ({
     // Data
     equipment,
     categories,
-    savTickets,
+    savTickets: _savTickets,
     persons,
     brandsList,
     loading,

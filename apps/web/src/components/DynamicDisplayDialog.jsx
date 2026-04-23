@@ -170,11 +170,6 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
     }
   };
 
-  // Keyboard: Escape ferme, Enter sauvegarde
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') onClose();
-  };
-
   return (
     <ModalLayout
       open

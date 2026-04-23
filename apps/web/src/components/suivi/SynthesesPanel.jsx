@@ -39,7 +39,7 @@ function formatDateISO(d) {
   return `${y}-${m}-${day}`;
 }
 
-function SynthesesPanel({ currentUser }) {
+function SynthesesPanel({ currentUser: _currentUser }) {
   const [mode, setMode] = useState('jour');
   const [dateJour, setDateJour] = useState(formatDateISO(new Date()));
   const [semaine, setSemaine] = useState(getISOWeek(new Date()));

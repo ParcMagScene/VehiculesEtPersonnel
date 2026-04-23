@@ -16,8 +16,8 @@ import {
   startOfYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarPlus, Plus, RefreshCw } from 'lucide-react';
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarPlus, Plus } from 'lucide-react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
 import { Button, InlineAlert, LoadingOverlay } from '@/design-system';
 
@@ -95,7 +95,7 @@ function GoogleCalendarBanner({
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [_clickedCell, setClickedCell] = useState(null);
   const [googleCalendarId, setGoogleCalendarId] = useState(cachedState?.calendarId || null);
-  const [googleEmail, setGoogleEmail] = useState(cachedState?.email || null);
+  const [_googleEmail, setGoogleEmail] = useState(cachedState?.email || null);
 
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
   const [attachmentCounts, setAttachmentCounts] = useState({});
@@ -214,7 +214,7 @@ function GoogleCalendarBanner({
         }
       } catch (error) {
         // Google non configuré → silencieux (AUDIT_GOOGLE)
-        console.debug('Google status non disponible:', error.message);
+        void error;
         setGoogleConfigured(false);
       }
     };
@@ -556,7 +556,7 @@ function GoogleCalendarBanner({
     }
   };
 
-  const handleReconnect = async () => {
+  const _handleReconnect = async () => {
     // Déconnexion puis reconnexion
     try {
       await api.disconnectGoogle();

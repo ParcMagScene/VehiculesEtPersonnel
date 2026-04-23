@@ -51,7 +51,7 @@ const TASK_SECTIONS = {
  * MobileDashboardAdmin — Dashboard admin mobile.
  * Tâches du jour + gestion des messages display.
  */
-function MobileDashboardAdmin({ currentUser, onBack }) {
+function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);

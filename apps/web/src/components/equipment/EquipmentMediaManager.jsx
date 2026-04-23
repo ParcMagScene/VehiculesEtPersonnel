@@ -1,6 +1,6 @@
 import { Edit2, Image as ImageIcon, Link2, QrCode, Trash2, Upload, ZoomIn } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import React, { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { Button, Input, Modal, ModalBody, SearchBar, Tooltip } from '@/design-system';
 

@@ -1,7 +1,7 @@
 import './AffaireDashboard.css';
 
-import { AlertCircle, ArrowRight, Calendar, CheckCircle, Clock, TrendingUp } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { AlertCircle, ArrowRight, Calendar, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { Spinner } from '@/design-system';
 

@@ -8,12 +8,11 @@ import {
   Hash,
   Package,
   Trash2,
-  Users as UsersIcon,
   X,
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 
-import { Button, Input, ProgressBar, StatusBadge, Table, Tooltip } from '@/design-system';
+import { Button, Input, StatusBadge, Table, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';

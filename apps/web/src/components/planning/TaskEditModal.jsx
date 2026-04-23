@@ -1,5 +1,6 @@
 import './TaskEditModal.css';
 
+/* eslint-disable no-misleading-character-class */
 import {
   Briefcase,
   Calendar,

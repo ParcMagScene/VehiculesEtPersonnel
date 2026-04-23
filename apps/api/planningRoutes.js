@@ -1365,6 +1365,33 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
     try {
       const { date, taskIds, eventIds } = req.query;
       const gcalEvents = req.body?.gcalEvents || [];
+
+      const parseCsvIds = (value) =>
+        String(value || '')
+          .split(',')
+          .map(Number)
+          .filter((n) => Number.isFinite(n) && n > 0);
+      const parseArrayIds = (value) =>
+        Array.isArray(value)
+          ? value.filter((n) => {
+              // Garder les nombres positifs
+              if (typeof n === 'number') {
+                return Number.isFinite(n) && n > 0;
+              }
+              // Garder les strings non-vides (UUIDs, codes, etc.)
+              if (typeof n === 'string') {
+                return n.trim().length > 0;
+              }
+              return false;
+            })
+          : [];
+
+      const selectedTaskIds = parseArrayIds(req.body?.taskIds);
+      if (selectedTaskIds.length === 0) selectedTaskIds.push(...parseCsvIds(taskIds));
+
+      const selectedEventIds = parseArrayIds(req.body?.eventIds);
+      if (selectedEventIds.length === 0) selectedEventIds.push(...parseCsvIds(eventIds));
+
       if (!date) {
         return res.status(400).json({ success: false, error: 'Le paramètre date est requis' });
       }
@@ -1391,15 +1418,11 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
         )
         .all(date);
 
-      // Exclure les tâches terminées du PDF (tâche done OU display event lié done)
-      tasks = tasks.filter((t) => t.status !== 'done' && t.event_status !== 'done');
+      // Exclure les tâches terminées du PDF (ne pas exclure selon le statut du display event lié)
+      tasks = tasks.filter((t) => t.status !== 'done');
 
-      if (req.query.taskIds !== undefined) {
-        const ids = (taskIds || '')
-          .split(',')
-          .map(Number)
-          .filter((n) => n > 0);
-        const idSet = new Set(ids);
+      if (selectedTaskIds.length > 0) {
+        const idSet = new Set(selectedTaskIds);
         tasks = tasks.filter((t) => idSet.has(t.id));
       }
 
@@ -1408,11 +1431,8 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
       // ── 3) Charger les événements d'affichage (exclure les terminés) ──
       let displayEvts = [];
-      if (eventIds) {
-        const ids = eventIds
-          .split(',')
-          .map(Number)
-          .filter((n) => !isNaN(n));
+      if (selectedEventIds.length > 0) {
+        const ids = selectedEventIds.filter((n) => !isNaN(n));
         if (ids.length > 0) {
           const placeholders = ids.map(() => '?').join(',');
           displayEvts = db
@@ -1805,7 +1825,7 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
         12,
         Math.min(18, Math.floor(availableForItems / Math.max(totalItems, 1))),
       );
-      const fs = rowH <= 12 ? 7.5 : rowH <= 14 ? 8.5 : 9;
+      const fs = rowH <= 12 ? 9 : rowH <= 14 ? 10.5 : 11;
       const fsSmall = fs - 1;
       const cbSize = Math.min(8, rowH - 3);
 
@@ -1956,11 +1976,10 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
             );
 
             // Horaires (ou période AM/PM si pas d'heure)
-            const timeStr = t.time
-              ? t.end_time
-                ? `${t.time} > ${t.end_time}`
-                : t.time
-              : t.period || '';
+            const rawTime = t.time || t.period || '';
+            const timeStr = String(rawTime)
+              .split(/\s*(?:>|→|-)\s*/)[0]
+              .trim();
 
             // Multi-affectations ou personne unique
             const multiAssign = assignmentsByEntity.get(`task:${t.id}`) || [];
@@ -2050,8 +2069,17 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
                   .text(notesText, notesX, rowY + 2, { width: notesW, lineBreak: false });
               }
             }
-            // Horaires
+            // Horaires (colonne la plus à droite)
             let rightX = leftX + pageW;
+            if (timeStr) {
+              rightX -= 42;
+              doc
+                .font('Helvetica-Bold')
+                .fontSize(fsSmall)
+                .fillColor('#444444')
+                .text(timeStr, rightX, rowY + 2, { width: 40, lineBreak: false });
+            }
+            // Personnel juste avant la colonne heure/période
             if (personStr) {
               rightX -= 60;
               doc
@@ -2060,7 +2088,7 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
                 .fillColor('#555555')
                 .text(personStr, rightX, rowY + 2, { width: 58, lineBreak: false });
             }
-            // Client/Lieu — seulement si pas déjà dans le titre (éviter doublons pour les courses)
+            // Client/Lieu ensuite (plus à gauche)
             if (showClient) {
               rightX -= 65;
               doc
@@ -2081,14 +2109,6 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
                   width: 53,
                   lineBreak: false,
                 });
-            }
-            if (timeStr) {
-              rightX -= 42;
-              doc
-                .font('Helvetica-Bold')
-                .fontSize(fsSmall)
-                .fillColor('#444444')
-                .text(timeStr, rightX, rowY + 2, { width: 40, lineBreak: false });
             }
             doc.fillColor('#000000');
             doc.y = rowY + rowH;

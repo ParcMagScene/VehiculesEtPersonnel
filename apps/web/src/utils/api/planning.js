@@ -121,15 +121,17 @@ export function registerPlanningMethods(ApiClient) {
 
     // Export PDF tâches
     async exportTasksPdf(date, taskIds, affaireIds, eventIds, gcalEvents) {
-      let endpoint = `/planning/tasks/export-pdf?date=${date}`;
-      endpoint += `&taskIds=${taskIds ? taskIds.join(',') : ''}`;
-      if (affaireIds && affaireIds.length > 0) endpoint += `&affaireIds=${affaireIds.join(',')}`;
-      if (eventIds && eventIds.length > 0) endpoint += `&eventIds=${eventIds.join(',')}`;
-      const body = gcalEvents && gcalEvents.length > 0 ? JSON.stringify({ gcalEvents }) : undefined;
+      const endpoint = `/planning/tasks/export-pdf?date=${date}`;
+      const body = JSON.stringify({
+        taskIds: Array.isArray(taskIds) ? taskIds : [],
+        affaireIds: Array.isArray(affaireIds) ? affaireIds : [],
+        eventIds: Array.isArray(eventIds) ? eventIds : [],
+        gcalEvents: Array.isArray(gcalEvents) ? gcalEvents : [],
+      });
       return this.requestBlob(endpoint, {
-        method: body ? 'POST' : 'GET',
-        headers: body ? { 'Content-Type': 'application/json' } : {},
-        ...(body ? { body } : {}),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
       });
     },
 

@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import L from 'leaflet';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 
 import {
@@ -19,6 +19,18 @@ import MapOffScreenIndicators from './MapOffScreenIndicators';
 import MapPopup from './MapPopup';
 import MapRouteControl from './MapRouteControl';
 import MapSearchControl from './MapSearchControl';
+
+const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
+const DIR_OFFSETS = { top: [0, -11], right: [7, -1], bottom: [0, 9], left: [-7, -1] };
+
+function sameSet(a, b) {
+  if (a === b) return true;
+  if (a.size !== b.size) return false;
+  for (const value of a) {
+    if (!b.has(value)) return false;
+  }
+  return true;
+}
 
 function FitBoundsOnLoad({ locations, enabled = true }) {
   const map = useMap();
@@ -152,10 +164,6 @@ export default function MapGeneral({
   const mapCenter = hasInitialView ? bootView.center : MAG_SCENE;
   const mapZoom = hasInitialView ? bootView.zoom : DEFAULT_ZOOM;
   const [visibleLabelIds, setVisibleLabelIds] = useState(() => new Set());
-
-  // Directions intelligentes pour éviter le chevauchement des bulles
-  const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
-  const DIR_OFFSETS = { top: [0, -28], right: [14, -4], bottom: [0, 16], left: [-14, -4] };
   const sortedLocs = useMemo(() => [...geoLocations].sort((a, b) => b.lat - a.lat), [geoLocations]);
 
   // Calcul de la meilleure direction pour chaque label (évite les voisins proches)
@@ -199,6 +207,12 @@ export default function MapGeneral({
     [labelDirections],
   );
 
+  const handleVisibleLabelsChange = useCallback((nextVisibleIds) => {
+    setVisibleLabelIds((prevVisibleIds) =>
+      sameSet(prevVisibleIds, nextVisibleIds) ? prevVisibleIds : nextVisibleIds,
+    );
+  }, []);
+
   return (
     <div
       className="map-wrapper"
@@ -235,7 +249,7 @@ export default function MapGeneral({
             locations={sortedLocs}
             getDirection={resolveDirection}
             offsets={DIR_OFFSETS}
-            onChange={setVisibleLabelIds}
+            onChange={handleVisibleLabelsChange}
           />
 
           {sortedLocs.map((loc) => {

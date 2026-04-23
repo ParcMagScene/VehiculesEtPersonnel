@@ -226,7 +226,7 @@ export default function MapLocal({
 
   // Directions alternées pour éviter le chevauchement des bulles
   const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
-  const DIR_OFFSETS = { top: [0, -24], right: [14, -4], bottom: [0, 16], left: [-14, -4] };
+  const DIR_OFFSETS = { top: [0, -11], right: [7, -1], bottom: [0, 9], left: [-7, -1] };
   const sortedNearby = useMemo(
     () => [...nearbyLocations].sort((a, b) => b.lat - a.lat),
     [nearbyLocations],
@@ -360,7 +360,7 @@ export default function MapLocal({
         </Marker>
 
         <Marker position={MAG_SCENE} icon={createHQIcon()}>
-          <Tooltip permanent direction="top" offset={[0, -30]} className="map-name-tooltip">
+          <Tooltip permanent direction="top" offset={[0, -12]} className="map-name-tooltip">
             Mag Scène
           </Tooltip>
           <MapPopup

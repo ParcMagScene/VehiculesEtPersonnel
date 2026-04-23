@@ -103,7 +103,7 @@ const Calendar = ({
     handleGlobalMouseUp,
   } = useCalendarDrag({
     view,
-    isDragging: _isDragging,
+    currentUser,
     days,
     reservations,
     onUpdateReservation,

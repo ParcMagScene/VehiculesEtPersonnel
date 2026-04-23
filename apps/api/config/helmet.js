@@ -1,5 +1,8 @@
 import helmet from 'helmet';
 
+const MAP_TILE_SOURCES = ['https://*.tile.openstreetmap.org', 'https://*.basemaps.cartocdn.com'];
+const MAP_API_SOURCES = ['https://nominatim.openstreetmap.org', 'https://router.project-osrm.org'];
+
 /**
  * Configuration Helmet — headers de sécurité HTTP
  */
@@ -16,8 +19,8 @@ export const helmetMiddleware = helmet({
         'https://cdn.jsdelivr.net',
       ],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'data:'],
-      imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'blob:', ...MAP_TILE_SOURCES],
+      connectSrc: ["'self'", ...MAP_API_SOURCES],
       frameSrc: ["'self'", 'blob:'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
@@ -47,8 +50,8 @@ const tvHelmetMiddleware = helmet({
         'https://cdn.jsdelivr.net',
       ],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'data:'],
-      imgSrc: ["'self'", 'data:', 'blob:', '*'],
-      connectSrc: ["'self'"],
+      imgSrc: ["'self'", 'data:', 'blob:', '*', ...MAP_TILE_SOURCES],
+      connectSrc: ["'self'", ...MAP_API_SOURCES],
       frameSrc: ["'self'", 'blob:'],
       mediaSrc: ["'self'", 'blob:'],
       objectSrc: ["'none'"],

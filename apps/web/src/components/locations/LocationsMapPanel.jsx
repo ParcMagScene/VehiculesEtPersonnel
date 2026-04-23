@@ -5,7 +5,7 @@
 import 'leaflet/dist/leaflet.css';
 import './LocationsMapPanel.css';
 
-import { Building2, Map, Moon, Sun } from 'lucide-react';
+import { Building2, Map } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Modal, ModalBody, ModalHeader } from '@/design-system';
@@ -19,7 +19,6 @@ import MapPrintControl from './MapPrintControl';
 
 export default function LocationsMapPanel({ locations, onClose, onEditLocation }) {
   const [activeView, setActiveView] = useState('general'); // 'general' | 'local'
-  const [darkMode, setDarkMode] = useState(false);
   const [showDualPrint, setShowDualPrint] = useState(false);
   const [mapViewState, setMapViewState] = useState(() => loadMapViewState());
   const mapContainerRef = useRef(null);
@@ -110,15 +109,6 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
                 title={activeView === 'general' ? 'Carte générale' : 'Autour du dépôt'}
                 onDualPrint={() => setShowDualPrint(true)}
               />
-              <button
-                type="button"
-                className="map-theme-toggle"
-                onClick={() => setDarkMode(!darkMode)}
-                title={darkMode ? 'Mode clair' : 'Mode sombre'}
-                aria-label={darkMode ? 'Passer au mode clair' : 'Passer au mode sombre'}
-              >
-                {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
             </div>
           </>
         }
@@ -156,7 +146,6 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
           {activeView === 'general' ? (
             <MapGeneral
               locations={locations}
-              darkMode={darkMode}
               onEditLocation={onEditLocation}
               initialView={mapViewState.generalView}
               onViewChange={(view) => updateView('generalView', view)}
@@ -164,7 +153,6 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
           ) : (
             <MapLocal
               locations={locations}
-              darkMode={darkMode}
               onEditLocation={onEditLocation}
               initialView={mapViewState.localView}
               onViewChange={(view) => updateView('localView', view)}

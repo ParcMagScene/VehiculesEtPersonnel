@@ -117,10 +117,10 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
 
   const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
   const DIR_OFFSETS = {
-    top: [0, -24],
-    right: [14, -4],
-    bottom: [0, 16],
-    left: [-14, -4],
+    top: [0, -11],
+    right: [7, -1],
+    bottom: [0, 9],
+    left: [-7, -1],
   };
 
   const sorted = useMemo(() => [...locations].sort((a, b) => b.lat - a.lat), [locations]);
@@ -200,7 +200,7 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
       {showHQ && (
         <Marker position={hqPosition} icon={createHQIcon()} zIndexOffset={1000}>
           {visibleLabelIds.has('__hq__') && (
-            <Tooltip permanent direction="top" offset={[0, -30]} className="map-name-tooltip">
+            <Tooltip permanent direction="top" offset={[0, -12]} className="map-name-tooltip">
               Mag Scène
             </Tooltip>
           )}
@@ -212,9 +212,7 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
           <Marker
             key={loc.id}
             position={[loc.lat, loc.lng]}
-            icon={
-              loc.isCompanyLocation ? createHQIcon(32) : createLocationIcon(loc.type, { size: 30 })
-            }
+            icon={loc.isCompanyLocation ? createHQIcon() : createLocationIcon(loc.type)}
           >
             {visibleLabelIds.has(loc.id) && (
               <Tooltip

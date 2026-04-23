@@ -128,17 +128,11 @@ function TaskPDFExportModal({
       groups[k] = [];
     });
 
-    // 1) Tâches manuelles (exclure les tâches terminées et celles dont l'événement lié est terminé)
-    const doneEventIds = new Set(
-      (displayEvents || []).filter((ev) => ev.status === STATUS.DONE).map((ev) => ev.id),
-    );
+    // 1) Tâches manuelles (exclure uniquement les tâches terminées)
     (tasks || [])
-      .filter(
-        (t) =>
-          t.status !== STATUS.DONE && !(t.displayEventId && doneEventIds.has(t.displayEventId)),
-      )
+      .filter((t) => t.status !== STATUS.DONE)
       .forEach((t) => {
-        const sec = t.section || 'manual';
+        const sec = normalizeSection(t.section || 'manual');
         const item = { uid: `task-${t.id}`, type: 'task', section: sec, data: t };
         items.push(item);
         if (!groups[sec]) groups[sec] = [];
@@ -154,7 +148,7 @@ function TaskPDFExportModal({
     (displayEvents || [])
       .filter((ev) => !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE)
       .forEach((ev) => {
-        const sec = mapEventToSection(ev);
+        const sec = normalizeSection(mapEventToSection(ev));
         const item = { uid: `event-${ev.id}`, type: 'event', section: sec, data: ev };
         items.push(item);
         if (!groups[sec]) groups[sec] = [];
@@ -344,6 +338,7 @@ function TaskPDFExportModal({
 
   const totalItems = allItems.length;
   const dateFr = formatDateFr(date);
+  const previewSrc = pdfUrl ? `${pdfUrl}#zoom=80` : null;
 
   // ── Index affaires par numéro pour enrichir les tâches ──
   const affaireByNum = useMemo(() => {
@@ -490,11 +485,9 @@ function TaskPDFExportModal({
       const clientLocationStr = [displayClient, displayLocation].filter(Boolean).join(' — ');
 
       // Time (ou période AM/PM si pas d'heure)
-      const timeStr = task.time
-        ? task.endTime
-          ? `${task.time} → ${task.endTime}`
-          : task.time
-        : task.period || '';
+      const timeStr = String(task.time || task.period || '')
+        .split(/\s*(?:>|→|-)\s*/)[0]
+        .trim();
 
       const assignments = getAssignments('task', task.id);
       const courseInfo = courseType ? EVENT_TYPES[courseType] : null;
@@ -737,9 +730,11 @@ function TaskPDFExportModal({
 
   return (
     <Modal open={true} onClose={onClose} size="xl" className="pdf-export-modal">
-      <ModalHeader icon={<FileDown size={20} />} onClose={onClose}>
-        Export PDF — Fiche du jour
-        <span className="pdf-export-date">{dateFr}</span>
+      <ModalHeader icon={<FileDown size={20} />} onClose={onClose} className="pdf-export-header">
+        <div className="pdf-header-content">
+          <span>Export PDF — Fiche du jour</span>
+          <span className="pdf-export-date">{dateFr}</span>
+        </div>
       </ModalHeader>
       <ModalBody className="pdf-export-body">
         {/* Panneau de sélection (gauche) */}
@@ -817,7 +812,9 @@ function TaskPDFExportModal({
               <p>Génération de l'aperçu…</p>
             </div>
           ) : pdfUrl ? (
-            <iframe src={pdfUrl} className="pdf-preview-frame" title="Aperçu PDF" />
+            <div className="pdf-preview-frame-wrap">
+              <iframe src={previewSrc} className="pdf-preview-frame" title="Aperçu PDF" />
+            </div>
           ) : (
             <EmptyState
               icon={<Eye size={40} />}

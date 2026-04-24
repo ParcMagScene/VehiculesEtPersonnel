@@ -461,11 +461,20 @@ function buildSynthese(dates, personId) {
 // PDF GENERATION
 // ═══════════════════════════════════════
 
+/** Convertit des heures décimales en "Xh MM" (ex: 1.5 → "1h30", 0.25 → "0h15") */
+function decToHM(h) {
+  if (!h) return '0h00';
+  const total = Math.round(h * 60);
+  const hours = Math.floor(total / 60);
+  const mins = total % 60;
+  return `${hours}h${String(mins).padStart(2, '0')}`;
+}
+
 const PDF_MARGIN = 40;
 const PDF_TABLE_LEFT = 40;
 const PDF_COL_WIDTHS = [24, 250, 60, 133, 48]; // N, Tache, Temps, Commentaire, Fait
 const PDF_TABLE_WIDTH = PDF_COL_WIDTHS.reduce((a, b) => a + b, 0);
-const PDF_HEADERS = ['N.', 'Tache', 'Temps (h)', 'Commentaire', 'Fait'];
+const PDF_HEADERS = ['N.', 'Tache', 'Temps', 'Commentaire', 'Fait'];
 const PDF_ROW_MIN_H = 22;
 const PDF_TEXT_PADDING_X = 4;
 const PDF_TEXT_PADDING_Y = 5;
@@ -624,7 +633,7 @@ function drawPdfEntryRow(doc, entry, rowNum, y, rowHeight) {
   });
   x += PDF_COL_WIDTHS[1];
 
-  doc.text(entry.time_spent ? String(entry.time_spent) : '-', x + 2, y + PDF_TEXT_PADDING_Y, {
+  doc.text(entry.time_spent ? decToHM(entry.time_spent) : '-', x + 2, y + PDF_TEXT_PADDING_Y, {
     width: PDF_COL_WIDTHS[2] - 4,
     align: 'center',
   });
@@ -681,10 +690,15 @@ function drawPdfFooter(doc, entries, label) {
   const totalDone = entries.filter((e) => e.completed === 1).length;
 
   doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e3a5f');
-  doc.text(`${totalDone}/${entries.length} effectuee(s) -- ${totalTime}h`, PDF_TABLE_LEFT, 765, {
-    width: PDF_TABLE_WIDTH * 0.5,
-    lineBreak: false,
-  });
+  doc.text(
+    `${totalDone}/${entries.length} effectuee(s) — ${decToHM(totalTime)}`,
+    PDF_TABLE_LEFT,
+    765,
+    {
+      width: PDF_TABLE_WIDTH * 0.5,
+      lineBreak: false,
+    },
+  );
 
   doc.fontSize(8).font('Helvetica').fillColor('#475569');
   doc.text('Signature / Visa :', PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.55, 760, {
@@ -871,114 +885,197 @@ function generateSynthesePdf(synthese, title, res) {
   res.setHeader('Content-Disposition', `attachment; filename="synthese-${title}.pdf"`);
   doc.pipe(res);
 
+  const LEFT = 30;
+  const USABLE_W = 782;
+  const FOOTER_Y = 570;
+
+  // ─── Titre ───
   doc
     .fontSize(16)
     .font('Helvetica-Bold')
-    .text(`SYNTHESE -- ${title.toUpperCase()}`, { align: 'center' });
-  doc.moveDown(0.3);
+    .fillColor('#1e3a5f')
+    .text(`SYNTHÈSE — ${title.toUpperCase()}`, { align: 'center' });
+  doc.moveDown(0.2);
 
-  // Résumé global
   const s = synthese.summary;
-  doc.fontSize(9).font('Helvetica');
-  doc.text(
-    `${s.total_sheets} fiches | ${s.completed_tasks}/${s.total_tasks} tâches effectuées (${s.completion_rate}%) | Temps total : ${s.total_time}h`,
-    { align: 'center' },
-  );
+  doc
+    .fontSize(9)
+    .font('Helvetica')
+    .fillColor('#475569')
+    .text(
+      `${s.total_sheets} fiches  |  ${s.completed_tasks}/${s.total_tasks} tâches effectuées (${s.completion_rate}%)  |  Temps total : ${decToHM(s.total_time)}`,
+      { align: 'center' },
+    );
   doc.moveDown(0.8);
 
-  // Tableau par personnel
-  const tableLeft = 30;
-  const colWidths = [120, 80, 60, 60, 60, 60, 80, 230];
-  const headers = [
-    'Personnel',
-    'Date',
-    'Total',
-    'Fait',
-    'Non fait',
-    'Temps (h)',
-    'Statut',
-    'Anomalies',
-  ];
-  const tableWidth = colWidths.reduce((a, b) => a + b, 0);
+  // ─── Grouper par personne ───
+  const byPerson = new Map();
+  for (const sh of synthese.sheets) {
+    if (!byPerson.has(sh.person_id)) {
+      byPerson.set(sh.person_id, {
+        first_name: sh.first_name,
+        last_name: sh.last_name,
+        sheets: [],
+      });
+    }
+    byPerson.get(sh.person_id).sheets.push(sh);
+  }
+  const persons = Array.from(byPerson.values()).sort((a, b) =>
+    `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`),
+  );
+
+  // ─── Colonnes tableau journalier ───
+  // Date | AM | PM | Total | Fait | Non fait | Temps | Alertes
+  const COL = [90, 115, 115, 55, 50, 58, 65, 234];
+  const COL_HEADS = ['Date', 'AM', 'PM', 'Total', 'Fait', 'Non fait', 'Temps', 'Alertes'];
 
   let y = doc.y;
-  doc.rect(tableLeft, y, tableWidth, 18).fillColor('#1e3a5f').fill();
-  doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(8);
-  let x = tableLeft;
-  for (let i = 0; i < headers.length; i++) {
-    doc.text(headers[i], x + 2, y + 4, { width: colWidths[i] - 4, align: 'center' });
-    x += colWidths[i];
-  }
-  y += 18;
 
-  doc.font('Helvetica').fontSize(7).fillColor('#111111');
-  for (const sheet of synthese.sheets) {
-    if (y > 540) {
+  const ensureSpace = (needed) => {
+    if (y + needed > FOOTER_Y) {
       doc.addPage();
       y = 30;
     }
-    const bgColor = sheet.stats.not_done > 0 ? '#fef2f2' : '#f0fdf4';
-    doc.rect(tableLeft, y, tableWidth, 15).fillColor(bgColor).fill();
-    doc.fillColor('#111111');
+  };
 
-    x = tableLeft;
-    const personName = `${sheet.first_name} ${sheet.last_name}`;
-    const statusLabel =
-      sheet.status === 'validated'
-        ? 'Validée'
-        : sheet.status === 'submitted'
-          ? 'Soumise'
-          : 'Brouillon';
-    const anomaly = (() => {
-      const parts = [];
-      if (sheet.stats.not_done > 0) parts.push(`${sheet.stats.not_done} non faite(s)`);
-      if (sheet.stats.unreported_am) parts.push('AM non-renseignee');
-      if (sheet.stats.unreported_pm) parts.push('PM non-renseignee');
-      return parts.length > 0 ? parts.join(' / ') : '—';
-    })();
-
-    const values = [
-      personName,
-      sheet.date,
-      String(sheet.stats.total),
-      String(sheet.stats.done),
-      String(sheet.stats.not_done),
-      String(sheet.stats.time),
-      statusLabel,
-      anomaly,
-    ];
-
-    for (let i = 0; i < values.length; i++) {
-      doc.text(values[i], x + 2, y + 4, {
-        width: colWidths[i] - 4,
-        align: i < 2 ? 'left' : 'center',
+  const drawDayColHeaders = () => {
+    doc.rect(LEFT, y, USABLE_W, 14).fillColor('#334155').fill();
+    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(7);
+    let x = LEFT;
+    for (let i = 0; i < COL_HEADS.length; i++) {
+      doc.text(COL_HEADS[i], x + 2, y + 3, {
+        width: COL[i] - 4,
+        align: i < 3 ? 'left' : 'center',
       });
-      x += colWidths[i];
+      x += COL[i];
     }
-    y += 15;
+    y += 14;
+  };
+
+  // ─── Sections par Personnel ───
+  for (const pg of persons) {
+    const totTime = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.time || 0), 0);
+    const totDone = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.done || 0), 0);
+    const totTasks = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.total || 0), 0);
+    const hasWarning = pg.sheets.some(
+      (sh) => sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm,
+    );
+
+    ensureSpace(46 + pg.sheets.length * 14);
+
+    // En-tête personne
+    const headerBg = hasWarning ? '#7f1d1d' : '#1e3a5f';
+    doc.rect(LEFT, y, USABLE_W, 18).fillColor(headerBg).fill();
+    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(9);
+    doc.text(`${pg.first_name} ${pg.last_name}`, LEFT + 6, y + 4, { width: 260 });
+    doc.font('Helvetica').fontSize(8);
+    doc.text(
+      `${pg.sheets.length} jour(s)  |  ${totDone}/${totTasks} tâches  |  ${decToHM(totTime)}`,
+      LEFT + 280,
+      y + 5,
+      { width: USABLE_W - 286 },
+    );
+    y += 18;
+
+    // En-têtes colonnes
+    drawDayColHeaders();
+
+    // Lignes par jour
+    doc.font('Helvetica').fontSize(7).fillColor('#111111');
+    let odd = false;
+    const sortedSheets = [...pg.sheets].sort((a, b) => a.date.localeCompare(b.date));
+    for (const sh of sortedSheets) {
+      const rowBg =
+        sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm
+          ? '#fef2f2'
+          : odd
+            ? '#f8fafc'
+            : '#ffffff';
+      odd = !odd;
+
+      const amEntries = sh.entries?.filter((e) => e.period === 'AM') || [];
+      const pmEntries = sh.entries?.filter((e) => e.period === 'PM') || [];
+      const amTime = amEntries.reduce((acc, e) => acc + (e.time_spent || 0), 0);
+      const pmTime = pmEntries.reduce((acc, e) => acc + (e.time_spent || 0), 0);
+
+      const amCell = sh.stats?.unreported_am
+        ? '⚠ Non renseignée'
+        : `${amEntries.length} tâche(s) — ${decToHM(amTime)}`;
+      const pmCell = sh.stats?.unreported_pm
+        ? '⚠ Non renseignée'
+        : `${pmEntries.length} tâche(s) — ${decToHM(pmTime)}`;
+
+      const alertParts = [];
+      if (sh.stats?.not_done > 0) alertParts.push(`${sh.stats.not_done} non faite(s)`);
+      if (sh.stats?.unreported_am) alertParts.push('AM non-renseignée');
+      if (sh.stats?.unreported_pm) alertParts.push('PM non-renseignée');
+
+      const rowVals = [
+        sh.date,
+        amCell,
+        pmCell,
+        String(sh.stats?.total ?? 0),
+        String(sh.stats?.done ?? 0),
+        String(sh.stats?.not_done ?? 0),
+        decToHM(sh.stats?.time ?? 0),
+        alertParts.join(' / ') || '—',
+      ];
+
+      doc.rect(LEFT, y, USABLE_W, 14).fillColor(rowBg).fill();
+      const textColor = sh.stats?.unreported_am || sh.stats?.unreported_pm ? '#991b1b' : '#111111';
+      doc.fillColor(textColor);
+      let x = LEFT;
+      for (let i = 0; i < rowVals.length; i++) {
+        doc.text(rowVals[i], x + 2, y + 3, {
+          width: COL[i] - 4,
+          align: i < 3 ? 'left' : 'center',
+        });
+        x += COL[i];
+      }
+      y += 14;
+    }
+
+    // Ligne résumé (total personne)
+    doc.rect(LEFT, y, USABLE_W, 14).fillColor('#e2e8f0').fill();
+    doc.font('Helvetica-Bold').fontSize(7).fillColor('#1e3a5f');
+    doc.text('TOTAL', LEFT + 2, y + 3, { width: COL[0] - 4 });
+    let rx = LEFT + COL[0] + COL[1] + COL[2];
+    doc.text(String(totTasks), rx + 2, y + 3, { width: COL[3] - 4, align: 'center' });
+    rx += COL[3];
+    doc.text(String(totDone), rx + 2, y + 3, { width: COL[4] - 4, align: 'center' });
+    rx += COL[4];
+    doc.text(String(totTasks - totDone), rx + 2, y + 3, { width: COL[5] - 4, align: 'center' });
+    rx += COL[5];
+    doc.text(decToHM(totTime), rx + 2, y + 3, { width: COL[6] - 4, align: 'center' });
+    y += 14;
+
+    y += 12; // espace entre personnes
   }
 
-  // Anomalies section
+  // ─── Anomalies ───
   if (s.anomalies.length > 0) {
-    y += 15;
-    doc.font('Helvetica-Bold').fontSize(10).fillColor('#dc2626');
-    doc.text('/!\\ ANOMALIES', tableLeft, y);
-    y += 14;
-    doc.font('Helvetica').fontSize(8).fillColor('#111111');
+    ensureSpace(34 + s.anomalies.length * 12);
+    y += 6;
+    doc.rect(LEFT, y, USABLE_W, 16).fillColor('#dc2626').fill();
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff');
+    doc.text('/!\\ ANOMALIES', LEFT + 6, y + 3);
+    y += 16;
+    doc.font('Helvetica').fontSize(8).fillColor('#7f1d1d');
     for (const a of s.anomalies) {
-      doc.text(
-        `• ${a.person} (${a.date}) : ${a.not_done} tâche(s) non effectuée(s)`,
-        tableLeft + 10,
-        y,
-      );
+      const parts = [];
+      if (a.not_done > 0) parts.push(`${a.not_done} tâche(s) non effectuée(s)`);
+      if (a.unreported_periods?.length > 0)
+        parts.push(`Activité non renseignée : ${a.unreported_periods.join(', ')}`);
+      doc.text(`• ${a.person} (${a.date}) : ${parts.join(' — ')}`, LEFT + 10, y);
       y += 12;
     }
   }
 
+  // ─── Pied de page ───
   doc.fontSize(6).font('Helvetica').fillColor('#999999');
-  doc.text(`Généré par eM@g — ${new Date().toLocaleString('fr-FR')}`, 30, 570, {
+  doc.text(`Généré par eM@g — ${new Date().toLocaleString('fr-FR')}`, LEFT, FOOTER_Y, {
     align: 'center',
-    width: tableWidth,
+    width: USABLE_W,
   });
 
   doc.end();

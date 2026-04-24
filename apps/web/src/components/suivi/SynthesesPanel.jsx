@@ -41,6 +41,15 @@ function formatDateISO(d) {
   return `${y}-${m}-${day}`;
 }
 
+/** Convertit des heures décimales en "Xh MM" */
+function fmtHM(decHours) {
+  if (!decHours) return '0h00';
+  const total = Math.round(decHours * 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${h}h${String(m).padStart(2, '0')}`;
+}
+
 function SynthesesPanel({ currentUser: _currentUser }) {
   const [mode, setMode] = useState('jour');
   const [dateJour, setDateJour] = useState(formatDateISO(new Date()));
@@ -282,7 +291,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
               <div className="summary-card">
                 <Calendar size={20} />
                 <div>
-                  <span className="summary-value">{s.total_time}h</span>
+                  <span className="summary-value">{fmtHM(s.total_time)}</span>
                   <span className="summary-label">Temps total</span>
                 </div>
               </div>
@@ -300,7 +309,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                     <th>Total</th>
                     <th>Fait</th>
                     <th>Non fait</th>
-                    <th>Temps (h)</th>
+                    <th>Temps</th>
                     <th>Alertes</th>
                   </tr>
                 </thead>
@@ -337,7 +346,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                           <td>{pg.stats.total}</td>
                           <td>{pg.stats.done}</td>
                           <td>{pg.stats.not_done}</td>
-                          <td>{pg.stats.time}</td>
+                          <td>{fmtHM(pg.stats.time)}</td>
                           <td>
                             {pg.stats.unreported_am && (
                               <span className="synthese-badge synthese-badge-unreported">
@@ -370,7 +379,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                                 <td>{sh.stats?.total ?? 0}</td>
                                 <td>{sh.stats?.done ?? 0}</td>
                                 <td>{sh.stats?.not_done ?? 0}</td>
-                                <td>{sh.stats?.time ?? 0}</td>
+                                <td>{fmtHM(sh.stats?.time ?? 0)}</td>
                                 <td>
                                   {sh.stats?.unreported_am && (
                                     <span className="synthese-badge synthese-badge-unreported">

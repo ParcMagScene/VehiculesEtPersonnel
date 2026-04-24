@@ -1284,6 +1284,14 @@
 .syntheses-table .row-ok {
   background: rgba(34, 197, 94, 0.04);
 }
+.syntheses-detail-row td {
+  font-size: 12px;
+  opacity: 0.85;
+  border-top: none !important;
+}
+.syntheses-detail-row.row-warning {
+  background: rgba(239, 68, 68, 0.03);
+}
 .synthese-badge {
   display: inline-block;
   padding: 2px 8px;

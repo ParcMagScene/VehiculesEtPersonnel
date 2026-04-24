@@ -7,12 +7,14 @@ import {
   AlertTriangle,
   BarChart3,
   Calendar,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Download,
   Loader2,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
@@ -47,6 +49,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
   const [synthese, setSynthese] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [expandedPersons, setExpandedPersons] = useState(new Set());
 
   const fetchSynthese = useCallback(async () => {
     setLoading(true);
@@ -107,6 +110,51 @@ function SynthesesPanel({ currentUser: _currentUser }) {
   };
 
   const s = synthese?.summary;
+
+  // Groupement par personne (agrégation des stats)
+  const sheetsByPerson = useMemo(() => {
+    if (!synthese?.sheets) return [];
+    const map = new Map();
+    for (const sh of synthese.sheets) {
+      const key = sh.person_id;
+      if (!map.has(key)) {
+        map.set(key, {
+          person_id: sh.person_id,
+          first_name: sh.first_name,
+          last_name: sh.last_name,
+          sheets: [],
+          stats: {
+            total: 0,
+            done: 0,
+            not_done: 0,
+            time: 0,
+            unreported_am: false,
+            unreported_pm: false,
+          },
+        });
+      }
+      const entry = map.get(key);
+      entry.sheets.push(sh);
+      entry.stats.total += sh.stats?.total ?? 0;
+      entry.stats.done += sh.stats?.done ?? 0;
+      entry.stats.not_done += sh.stats?.not_done ?? 0;
+      entry.stats.time += sh.stats?.time ?? 0;
+      if (sh.stats?.unreported_am) entry.stats.unreported_am = true;
+      if (sh.stats?.unreported_pm) entry.stats.unreported_pm = true;
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`),
+    );
+  }, [synthese]);
+
+  const togglePerson = (personId) => {
+    setExpandedPersons((prev) => {
+      const next = new Set(prev);
+      if (next.has(personId)) next.delete(personId);
+      else next.add(personId);
+      return next;
+    });
+  };
 
   return (
     <div className="syntheses-panel">
@@ -241,60 +289,106 @@ function SynthesesPanel({ currentUser: _currentUser }) {
             </div>
           )}
 
-          {/* Tableau détaillé */}
-          {synthese.sheets?.length > 0 ? (
+          {/* Tableau par Personnel */}
+          {sheetsByPerson.length > 0 ? (
             <div className="syntheses-table-wrap">
               <table className="syntheses-table">
                 <thead>
                   <tr>
                     <th>Personnel</th>
-                    <th>Date</th>
+                    {mode !== 'jour' && <th style={{ width: 28 }} />}
                     <th>Total</th>
                     <th>Fait</th>
                     <th>Non fait</th>
                     <th>Temps (h)</th>
-                    <th>Statut</th>
+                    <th>Alertes</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {synthese.sheets.map((sh) => (
-                    <tr
-                      key={sh.id}
-                      className={
-                        sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm
-                          ? 'row-warning'
-                          : 'row-ok'
-                      }
-                    >
-                      <td>
-                        {sh.first_name} {sh.last_name}
-                      </td>
-                      <td>{sh.date}</td>
-                      <td>{sh.stats?.total ?? 0}</td>
-                      <td>{sh.stats?.done ?? 0}</td>
-                      <td>{sh.stats?.not_done ?? 0}</td>
-                      <td>{sh.stats?.time ?? 0}</td>
-                      <td>
-                        <span className={`synthese-badge synthese-badge-${sh.status}`}>
-                          {sh.status === 'validated'
-                            ? 'Validée'
-                            : sh.status === 'submitted'
-                              ? 'Soumise'
-                              : 'Brouillon'}
-                        </span>
-                        {sh.stats?.unreported_am && (
-                          <span className="synthese-badge synthese-badge-unreported">
-                            AM non-renseignée
-                          </span>
-                        )}
-                        {sh.stats?.unreported_pm && (
-                          <span className="synthese-badge synthese-badge-unreported">
-                            PM non-renseignée
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {sheetsByPerson.map((pg) => {
+                    const hasWarning =
+                      pg.stats.not_done > 0 || pg.stats.unreported_am || pg.stats.unreported_pm;
+                    const isExpanded = expandedPersons.has(pg.person_id);
+                    const canExpand = mode !== 'jour' && pg.sheets.length > 1;
+                    return (
+                      <>
+                        <tr
+                          key={pg.person_id}
+                          className={hasWarning ? 'row-warning' : 'row-ok'}
+                          style={canExpand ? { cursor: 'pointer' } : undefined}
+                          onClick={canExpand ? () => togglePerson(pg.person_id) : undefined}
+                        >
+                          <td>
+                            <strong>
+                              {pg.first_name} {pg.last_name}
+                            </strong>
+                          </td>
+                          {mode !== 'jour' && (
+                            <td style={{ textAlign: 'center', opacity: 0.5 }}>
+                              {canExpand ? (
+                                isExpanded ? (
+                                  <ChevronUp size={14} />
+                                ) : (
+                                  <ChevronDown size={14} />
+                                )
+                              ) : null}
+                            </td>
+                          )}
+                          <td>{pg.stats.total}</td>
+                          <td>{pg.stats.done}</td>
+                          <td>{pg.stats.not_done}</td>
+                          <td>{pg.stats.time}</td>
+                          <td>
+                            {pg.stats.unreported_am && (
+                              <span className="synthese-badge synthese-badge-unreported">
+                                AM non-renseignée
+                              </span>
+                            )}
+                            {pg.stats.unreported_pm && (
+                              <span className="synthese-badge synthese-badge-unreported">
+                                PM non-renseignée
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                        {canExpand &&
+                          isExpanded &&
+                          pg.sheets.map((sh) => {
+                            const shWarning =
+                              sh.stats?.not_done > 0 ||
+                              sh.stats?.unreported_am ||
+                              sh.stats?.unreported_pm;
+                            return (
+                              <tr
+                                key={sh.id}
+                                className={`syntheses-detail-row ${shWarning ? 'row-warning' : ''}`}
+                              >
+                                <td style={{ paddingLeft: '2rem', color: 'var(--text-secondary)' }}>
+                                  {sh.date}
+                                </td>
+                                <td />
+                                <td>{sh.stats?.total ?? 0}</td>
+                                <td>{sh.stats?.done ?? 0}</td>
+                                <td>{sh.stats?.not_done ?? 0}</td>
+                                <td>{sh.stats?.time ?? 0}</td>
+                                <td>
+                                  {sh.stats?.unreported_am && (
+                                    <span className="synthese-badge synthese-badge-unreported">
+                                      AM
+                                    </span>
+                                  )}
+                                  {sh.stats?.unreported_pm && (
+                                    <span className="synthese-badge synthese-badge-unreported">
+                                      PM
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

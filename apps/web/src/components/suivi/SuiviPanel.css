@@ -879,6 +879,113 @@
   white-space: nowrap;
 }
 
+/* Recurring tasks (Suivi) */
+.fiche-add-btn-recurring {
+  border-style: solid;
+  border-color: rgba(52, 211, 153, 0.55);
+  color: #34d399;
+}
+.fiche-add-btn-recurring:hover {
+  border-color: #34d399;
+  color: #6ee7b7;
+}
+.fiche-recurring-wrapper {
+  position: relative;
+}
+.fiche-recurring-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: var(--z-dropdown);
+  width: min(360px, 85vw);
+  margin-top: 4px;
+  padding: 8px;
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid var(--border-color, #475569);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fiche-recurring-row {
+  display: flex;
+  gap: 6px;
+}
+.fiche-recurring-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+}
+.fiche-recurring-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 6px;
+  background: var(--bg-secondary, #1e293b);
+  color: var(--text-primary, #e2e8f0);
+  font-size: 12px;
+}
+.fiche-recurring-input:focus {
+  outline: none;
+  border-color: #34d399;
+}
+.fiche-recurring-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.fiche-recurring-error {
+  font-size: 11px;
+  color: #f87171;
+}
+.fiche-recurring-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  border-top: 1px dashed rgba(100, 116, 139, 0.45);
+}
+.fiche-recurring-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  font-size: 11px;
+  color: var(--text-primary, #e2e8f0);
+}
+.fiche-recurring-chip {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  background: rgba(52, 211, 153, 0.12);
+}
+.fiche-recurring-delete {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.fiche-recurring-edit {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  background: rgba(96, 165, 250, 0.12);
+  color: #60a5fa;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
 /* Table */
 .fiche-table {
   width: 100%;

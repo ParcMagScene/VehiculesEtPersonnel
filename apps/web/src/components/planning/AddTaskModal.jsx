@@ -338,7 +338,7 @@ export default function AddTaskModal({
   const showVehicle = VEHICLE_SECTIONS.has(section);
 
   return (
-    <Modal open onClose={onClose} size="lg" className="atm-modal">
+    <Modal open onClose={onClose} size="lg" className="atm-modal no-drag-resize">
       <ModalHeader icon={<Plus size={18} />} onClose={onClose}>
         Nouvelle tâche
       </ModalHeader>

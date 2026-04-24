@@ -330,6 +330,9 @@ function onMouseUp(e) {
 function enhanceModal(modal) {
   if (modal.dataset.draggableEnhanced) return;
 
+  // Opt-out explicite pour les modals qui ne doivent jamais être déplacés/redimensionnés.
+  if (modal.matches?.('.no-drag-resize, [data-no-drag-resize="true"]')) return;
+
   // Ne pas enhancer les overlays eux-mêmes (ex: .ui-modal-overlay matche [class*="-modal"])
   if (modal.matches(OVERLAY_SELECTORS)) return;
 

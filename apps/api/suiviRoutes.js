@@ -12,6 +12,8 @@ import { validate } from './schemas/imports.js';
 import {
   entryPatchSchema,
   sheetUpdateSchema,
+  suiviRecurringTaskCreateSchema,
+  suiviRecurringTaskUpdateSchema,
   syntheseDateSchema,
   syntheseMonthSchema,
   syntheseWeekSchema,
@@ -81,6 +83,63 @@ function getOrCreateSheet(personId, date, userId) {
     insertMany(newTasks);
   }
 
+  const recurringTasks = db
+    .prepare(
+      `SELECT *
+       FROM tracking_recurring_tasks
+       WHERE person_id = ? AND active = 1
+       ORDER BY created_at ASC, id ASC`,
+    )
+    .all(personId);
+
+  if (recurringTasks.length > 0) {
+    const existingRecurringIds = new Set(
+      db
+        .prepare(
+          `SELECT recurring_task_id
+           FROM tracking_entries
+           WHERE sheet_id = ? AND recurring_task_id IS NOT NULL`,
+        )
+        .all(sheet.id)
+        .map((r) => r.recurring_task_id),
+    );
+
+    const maxOrderRecurring = db
+      .prepare('SELECT MAX(sort_order) AS mx FROM tracking_entries WHERE sheet_id = ?')
+      .get(sheet.id);
+    let nextRecurringOrder = (maxOrderRecurring?.mx ?? -1) + 1;
+
+    const insertRecurring = db.prepare(
+      `INSERT INTO tracking_entries (
+         id, sheet_id, period, task, time_spent, comment, completed,
+         task_assignment_id, recurring_task_id, sort_order
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
+    );
+
+    const insertRecurringMany = db.transaction((items) => {
+      for (const rt of items) {
+        if (!isRecurringDueOnDate(rt, date)) continue;
+        if (existingRecurringIds.has(rt.id)) continue;
+
+        const entryId = crypto.randomUUID().replace(/-/g, '');
+        insertRecurring.run(
+          entryId,
+          sheet.id,
+          rt.period || 'AM',
+          rt.title || '',
+          Number(rt.default_time_spent) || 0,
+          rt.default_comment || '',
+          0,
+          rt.id,
+          nextRecurringOrder++,
+        );
+      }
+    });
+
+    insertRecurringMany(recurringTasks);
+  }
+
   return sheet;
 }
 
@@ -115,6 +174,27 @@ function formatDateFR(dateStr) {
     month: 'long',
     year: 'numeric',
   });
+}
+
+function isRecurringDueOnDate(task, dateStr) {
+  const d = new Date(`${dateStr}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return false;
+
+  if (task.recurrence === 'daily') return true;
+  if (task.recurrence === 'weekly') {
+    if (task.day_of_week === null || task.day_of_week === undefined) return false;
+    return d.getDay() === Number(task.day_of_week);
+  }
+  if (task.recurrence === 'monthly') {
+    if (task.day_of_month === null || task.day_of_month === undefined) return false;
+    return d.getDate() === Number(task.day_of_month);
+  }
+  return false;
+}
+
+function canManagePerson(person, user) {
+  if (!person || !user) return false;
+  return user.is_admin === 1 || person.user_id === user.id;
 }
 
 const AVAILABILITY_TYPE_LABELS = {
@@ -333,7 +413,7 @@ function buildSynthese(dates, personId) {
 
 const PDF_MARGIN = 40;
 const PDF_TABLE_LEFT = 40;
-const PDF_COL_WIDTHS = [24, 250, 48, 145, 48]; // N, Tache, Temps, Commentaire, Fait
+const PDF_COL_WIDTHS = [24, 250, 60, 133, 48]; // N, Tache, Temps, Commentaire, Fait
 const PDF_TABLE_WIDTH = PDF_COL_WIDTHS.reduce((a, b) => a + b, 0);
 const PDF_HEADERS = ['N.', 'Tache', 'Temps (h)', 'Commentaire', 'Fait'];
 const PDF_ROW_MIN_H = 22;
@@ -375,7 +455,11 @@ function drawPdfTableHeader(doc, y) {
   doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(9);
   let x = PDF_TABLE_LEFT;
   for (let i = 0; i < PDF_HEADERS.length; i++) {
-    doc.text(PDF_HEADERS[i], x + 3, y + 5, { width: PDF_COL_WIDTHS[i] - 6, align: 'center' });
+    const label = PDF_HEADERS[i];
+    const cellWidth = PDF_COL_WIDTHS[i];
+    const textWidth = doc.widthOfString(label);
+    const textX = x + Math.max(3, (cellWidth - textWidth) / 2);
+    doc.text(label, textX, y + 5, { lineBreak: false });
     x += PDF_COL_WIDTHS[i];
   }
   return y + 20;
@@ -838,6 +922,186 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ─── GET /api/suivi/recurring/:personnelId ─── Liste des récurrences d'un personnel
+  app.get('/api/suivi/recurring/:personnelId', authenticateToken, (req, res) => {
+    try {
+      const personnelId = Number(req.params.personnelId);
+      const person = db.prepare('SELECT id, user_id FROM persons WHERE id = ?').get(personnelId);
+      if (!person) {
+        return res.status(404).json({ success: false, error: 'Personnel non trouvé' });
+      }
+
+      const currentUser = db
+        .prepare('SELECT id, is_admin FROM users WHERE id = ?')
+        .get(req.user.id);
+      if (!canManagePerson(person, currentUser)) {
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      }
+
+      const rows = db
+        .prepare(
+          `SELECT *
+           FROM tracking_recurring_tasks
+           WHERE person_id = ?
+           ORDER BY active DESC, created_at DESC`,
+        )
+        .all(personnelId);
+
+      res.json(rows);
+    } catch (error) {
+      logger.error('GET /api/suivi/recurring/:personnelId error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── POST /api/suivi/recurring/:personnelId ─── Créer une récurrence Suivi
+  app.post(
+    '/api/suivi/recurring/:personnelId',
+    authenticateToken,
+    validate(suiviRecurringTaskCreateSchema),
+    (req, res) => {
+      try {
+        const personnelId = Number(req.params.personnelId);
+        const person = db.prepare('SELECT id, user_id FROM persons WHERE id = ?').get(personnelId);
+        if (!person) {
+          return res.status(404).json({ success: false, error: 'Personnel non trouvé' });
+        }
+
+        const currentUser = db
+          .prepare('SELECT id, is_admin FROM users WHERE id = ?')
+          .get(req.user.id);
+        if (!canManagePerson(person, currentUser)) {
+          return res.status(403).json({ success: false, error: 'Accès refusé' });
+        }
+
+        const {
+          title,
+          period,
+          recurrence,
+          day_of_week,
+          day_of_month,
+          default_time_spent,
+          default_comment,
+          active,
+        } = req.body;
+
+        const id = crypto.randomUUID().replace(/-/g, '');
+
+        db.prepare(
+          `INSERT INTO tracking_recurring_tasks (
+             id, person_id, title, period, recurrence, day_of_week, day_of_month,
+             default_time_spent, default_comment, active, created_by
+           )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(
+          id,
+          personnelId,
+          title,
+          period,
+          recurrence,
+          recurrence === 'weekly' ? day_of_week : null,
+          recurrence === 'monthly' ? day_of_month : null,
+          default_time_spent || 0,
+          default_comment || '',
+          active ?? 1,
+          req.user.id,
+        );
+
+        const created = db.prepare('SELECT * FROM tracking_recurring_tasks WHERE id = ?').get(id);
+        res.status(201).json(created);
+      } catch (error) {
+        logger.error('POST /api/suivi/recurring/:personnelId error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
+
+  // ─── PUT /api/suivi/recurring/:id ─── Modifier une récurrence Suivi
+  app.put(
+    '/api/suivi/recurring/:id',
+    authenticateToken,
+    validate(suiviRecurringTaskUpdateSchema),
+    (req, res) => {
+      try {
+        const recurring = db
+          .prepare('SELECT * FROM tracking_recurring_tasks WHERE id = ?')
+          .get(req.params.id);
+        if (!recurring) {
+          return res.status(404).json({ success: false, error: 'Récurrence introuvable' });
+        }
+
+        const person = db
+          .prepare('SELECT id, user_id FROM persons WHERE id = ?')
+          .get(recurring.person_id);
+        const currentUser = db
+          .prepare('SELECT id, is_admin FROM users WHERE id = ?')
+          .get(req.user.id);
+        if (!canManagePerson(person, currentUser)) {
+          return res.status(403).json({ success: false, error: 'Accès refusé' });
+        }
+
+        const data = req.body;
+        const fields = [
+          'title',
+          'period',
+          'recurrence',
+          'day_of_week',
+          'day_of_month',
+          'default_time_spent',
+          'default_comment',
+          'active',
+        ].filter((f) => data[f] !== undefined);
+
+        if (fields.length === 0) {
+          return res.status(400).json({ success: false, error: 'Aucun champ à mettre à jour' });
+        }
+
+        const setClause = fields.map((f) => `${f} = ?`).join(', ');
+        const values = fields.map((f) => data[f]);
+        db.prepare(`UPDATE tracking_recurring_tasks SET ${setClause} WHERE id = ?`).run(
+          ...values,
+          req.params.id,
+        );
+
+        const updated = db
+          .prepare('SELECT * FROM tracking_recurring_tasks WHERE id = ?')
+          .get(req.params.id);
+        res.json(updated);
+      } catch (error) {
+        logger.error('PUT /api/suivi/recurring/:id error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
+
+  // ─── DELETE /api/suivi/recurring/:id ─── Supprimer une récurrence Suivi
+  app.delete('/api/suivi/recurring/:id', authenticateToken, (req, res) => {
+    try {
+      const recurring = db
+        .prepare('SELECT id, person_id FROM tracking_recurring_tasks WHERE id = ?')
+        .get(req.params.id);
+      if (!recurring) {
+        return res.status(404).json({ success: false, error: 'Récurrence introuvable' });
+      }
+
+      const person = db
+        .prepare('SELECT id, user_id FROM persons WHERE id = ?')
+        .get(recurring.person_id);
+      const currentUser = db
+        .prepare('SELECT id, is_admin FROM users WHERE id = ?')
+        .get(req.user.id);
+      if (!canManagePerson(person, currentUser)) {
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      }
+
+      db.prepare('DELETE FROM tracking_recurring_tasks WHERE id = ?').run(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('DELETE /api/suivi/recurring/:id error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // ─── PATCH /api/suivi/tache/:tacheId ─── Mise à jour d'une entrée
   app.patch(
     '/api/suivi/tache/:tacheId',
@@ -1128,8 +1392,11 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
           if (!items || items.length === 0) return;
 
           const insert = db.prepare(
-            `INSERT INTO tracking_entries (id, sheet_id, period, task, time_spent, comment, completed, task_assignment_id, sort_order)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO tracking_entries (
+              id, sheet_id, period, task, time_spent, comment, completed,
+              task_assignment_id, recurring_task_id, sort_order
+             )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           );
 
           for (let i = 0; i < items.length; i++) {
@@ -1147,6 +1414,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
               e.comment || '',
               completed,
               e.task_assignment_id || null,
+              e.recurring_task_id || null,
               e.sort_order ?? i,
             );
           }

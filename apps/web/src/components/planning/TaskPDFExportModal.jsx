@@ -729,7 +729,7 @@ function TaskPDFExportModal({
   };
 
   return (
-    <Modal open={true} onClose={onClose} size="xl" className="pdf-export-modal">
+    <Modal open={true} onClose={onClose} size="xl" className="pdf-export-modal no-drag-resize">
       <ModalHeader icon={<FileDown size={20} />} onClose={onClose} className="pdf-export-header">
         <div className="pdf-header-content">
           <span>Export PDF — Fiche du jour</span>

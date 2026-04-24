@@ -199,7 +199,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       size="lg"
       title="Modifier la tâche"
       icon={<FileText size={18} />}
-      className="tem-modal"
+      className="tem-modal no-drag-resize"
       footer={
         <>
           <Button variant="ghost" className="tem-btn secondary" onClick={onClose}>

@@ -27,6 +27,7 @@ function newEntry(period = 'AM', sortOrder = 0) {
     comment: '',
     completed: null,
     task_assignment_id: null,
+    recurring_task_id: null,
     sort_order: sortOrder,
   };
 }
@@ -40,7 +41,19 @@ function FicheSuivi({ sheet, onSave, saving }) {
   const [planningTasks, setPlanningTasks] = useState([]);
   const [showPicker, setShowPicker] = useState(null); // 'AM' | 'PM' | null
   const [loadingTasks, setLoadingTasks] = useState(false);
-  const pickerRef = useRef(null);
+  const [recurringTasks, setRecurringTasks] = useState([]);
+  const [showRecurringForm, setShowRecurringForm] = useState(null); // 'AM' | 'PM' | null
+  const [editingRecurringId, setEditingRecurringId] = useState(null); // id ou null
+  const [recurringSaving, setRecurringSaving] = useState(false);
+  const [recurringError, setRecurringError] = useState('');
+  const [recurringForm, setRecurringForm] = useState({
+    title: '',
+    recurrence: 'daily',
+    day_of_week: String(new Date().getDay()),
+    day_of_month: String(new Date().getDate()),
+    default_time_spent: 0,
+    default_comment: '',
+  });
 
   useEffect(() => {
     if (sheet) {
@@ -67,17 +80,29 @@ function FicheSuivi({ sheet, onSave, saving }) {
       .finally(() => setLoadingTasks(false));
   }, [sheet?.date]);
 
-  // Close picker on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
-    if (!showPicker) return;
+    if (!showPicker && !showRecurringForm) return;
     const handleClick = (e) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+      if (
+        !e.target.closest('.fiche-picker-wrapper') &&
+        !e.target.closest('.fiche-recurring-wrapper')
+      ) {
         setShowPicker(null);
+        setShowRecurringForm(null);
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [showPicker]);
+  }, [showPicker, showRecurringForm]);
+
+  useEffect(() => {
+    if (!sheet?.person_id) return;
+    api
+      .getSuiviRecurringTasks(sheet.person_id)
+      .then((rows) => setRecurringTasks(Array.isArray(rows) ? rows : []))
+      .catch(() => setRecurringTasks([]));
+  }, [sheet?.person_id]);
 
   const handlePickPlanningTask = useCallback(
     (task, period) => {
@@ -90,6 +115,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
         comment: task.notes || '',
         completed: null,
         task_assignment_id: task.id,
+        recurring_task_id: null,
         sort_order: entries.length,
       };
       setEntries((prev) => [...prev, entry]);
@@ -149,6 +175,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
         comment: e.comment || '',
         completed: e.completed === 1 ? 1 : e.completed === 0 ? 0 : null,
         task_assignment_id: e.task_assignment_id || null,
+        recurring_task_id: e.recurring_task_id || null,
         sort_order: i,
       }));
       onSave({ status, notes, entries: cleanEntries });
@@ -261,6 +288,146 @@ function FicheSuivi({ sheet, onSave, saving }) {
     return 'fiche-mission-status-unknown';
   };
 
+  const resetRecurringForm = () => {
+    const now = new Date(sheet?.date ? `${sheet.date}T12:00:00` : Date.now());
+    setRecurringForm({
+      title: '',
+      recurrence: 'daily',
+      day_of_week: String(now.getDay()),
+      day_of_month: String(now.getDate()),
+      default_time_spent: 0,
+      default_comment: '',
+    });
+    setEditingRecurringId(null);
+    setRecurringError('');
+  };
+
+  const isRecurringDueForSheet = (payload) => {
+    if (!sheet?.date) return false;
+    const d = new Date(`${sheet.date}T12:00:00`);
+    if (Number.isNaN(d.getTime())) return false;
+    if (payload.recurrence === 'daily') return true;
+    if (payload.recurrence === 'weekly') return d.getDay() === Number(payload.day_of_week);
+    if (payload.recurrence === 'monthly') return d.getDate() === Number(payload.day_of_month);
+    return false;
+  };
+
+  const handleCreateRecurring = async (period) => {
+    if (!sheet?.person_id) return;
+    if (!recurringForm.title.trim()) {
+      setRecurringError('Le titre est requis');
+      return;
+    }
+
+    setRecurringSaving(true);
+    setRecurringError('');
+    try {
+      const payload = {
+        title: recurringForm.title.trim(),
+        period,
+        recurrence: recurringForm.recurrence,
+        day_of_week:
+          recurringForm.recurrence === 'weekly' ? Number(recurringForm.day_of_week) : null,
+        day_of_month:
+          recurringForm.recurrence === 'monthly' ? Number(recurringForm.day_of_month) : null,
+        default_time_spent: Number(recurringForm.default_time_spent) || 0,
+        default_comment: recurringForm.default_comment || '',
+      };
+
+      const created = await api.createSuiviRecurringTask(sheet.person_id, payload);
+      setRecurringTasks((prev) => [created, ...prev]);
+
+      if (isRecurringDueForSheet(payload)) {
+        const entry = {
+          _key:
+            crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
+          period,
+          task: payload.title,
+          time_spent: payload.default_time_spent,
+          comment: payload.default_comment,
+          completed: null,
+          task_assignment_id: null,
+          recurring_task_id: created?.id || null,
+          sort_order: entries.length,
+        };
+        setEntries((prev) => [...prev, entry]);
+        setDirty(true);
+      }
+
+      setShowRecurringForm(null);
+      resetRecurringForm();
+    } catch (e) {
+      setRecurringError(e?.message || 'Erreur lors de la création');
+    } finally {
+      setRecurringSaving(false);
+    }
+  };
+
+  const handleDeleteRecurring = async (id) => {
+    try {
+      await api.deleteSuiviRecurringTask(id);
+      setRecurringTasks((prev) => prev.filter((r) => r.id !== id));
+    } catch (e) {
+      setRecurringError('Suppression impossible');
+    }
+  };
+
+  const handleStartEditRecurring = (r, period) => {
+    setRecurringForm({
+      title: r.title,
+      recurrence: r.recurrence,
+      day_of_week:
+        r.day_of_week !== null && r.day_of_week !== undefined ? String(r.day_of_week) : '1',
+      day_of_month:
+        r.day_of_month !== null && r.day_of_month !== undefined ? String(r.day_of_month) : '1',
+      default_time_spent: r.default_time_spent ?? 0,
+      default_comment: r.default_comment || '',
+    });
+    setEditingRecurringId(r.id);
+    setRecurringError('');
+    setShowRecurringForm(period);
+  };
+
+  const handleUpdateRecurring = async () => {
+    if (!editingRecurringId) return;
+    if (!recurringForm.title.trim()) {
+      setRecurringError('Le titre est requis');
+      return;
+    }
+    setRecurringSaving(true);
+    setRecurringError('');
+    try {
+      const payload = {
+        title: recurringForm.title.trim(),
+        recurrence: recurringForm.recurrence,
+        day_of_week:
+          recurringForm.recurrence === 'weekly' ? Number(recurringForm.day_of_week) : null,
+        day_of_month:
+          recurringForm.recurrence === 'monthly' ? Number(recurringForm.day_of_month) : null,
+        default_time_spent: Number(recurringForm.default_time_spent) || 0,
+        default_comment: recurringForm.default_comment || '',
+      };
+      const updated = await api.updateSuiviRecurringTask(editingRecurringId, payload);
+      setRecurringTasks((prev) => prev.map((r) => (r.id === editingRecurringId ? updated : r)));
+      setShowRecurringForm(null);
+      resetRecurringForm();
+    } catch (e) {
+      setRecurringError(e?.message || 'Erreur lors de la mise à jour');
+    } finally {
+      setRecurringSaving(false);
+    }
+  };
+
+  const formatRecurringLabel = (r) => {
+    if (r.recurrence === 'daily') return 'Chaque jour';
+    if (r.recurrence === 'weekly') {
+      const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+      return `Chaque ${days[Number(r.day_of_week)] || '?'}`;
+    }
+    if (r.recurrence === 'monthly') return `Chaque mois le ${r.day_of_month}`;
+    return r.recurrence;
+  };
+
   const renderEntryRow = (entry) => (
     <tr key={entry._key} className={`fiche-row ${entry.completed === 1 ? 'completed' : ''}`}>
       <td className="fiche-col-grip">
@@ -345,6 +512,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
       (t) =>
         (!t.period || t.period === period || t.period === 'FULL') && !existingTaskIds.has(t.id),
     );
+    const recurringForPeriod = recurringTasks.filter((r) => r.period === period && r.active === 1);
 
     return (
       <div className="fiche-section">
@@ -361,10 +529,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
                 <Plus size={14} /> Ajouter
               </Button>
               {availableTasks.length > 0 && (
-                <div
-                  className="fiche-picker-wrapper"
-                  ref={showPicker === period ? pickerRef : null}
-                >
+                <div className="fiche-picker-wrapper">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -418,6 +583,176 @@ function FicheSuivi({ sheet, onSave, saving }) {
                   )}
                 </div>
               )}
+              <div className="fiche-recurring-wrapper">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="fiche-add-btn fiche-add-btn-recurring"
+                  onClick={() => {
+                    if (showRecurringForm === period) {
+                      setShowRecurringForm(null);
+                      return;
+                    }
+                    resetRecurringForm();
+                    setShowRecurringForm(period);
+                  }}
+                >
+                  ⟳ Récurrente
+                  <ChevronDown size={12} />
+                </Button>
+
+                {showRecurringForm === period && (
+                  <div className="fiche-recurring-dropdown">
+                    <div className="fiche-recurring-row">
+                      <input
+                        type="text"
+                        className="fiche-recurring-input"
+                        placeholder="Titre de la tâche"
+                        value={recurringForm.title}
+                        onChange={(e) =>
+                          setRecurringForm((prev) => ({ ...prev, title: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="fiche-recurring-row fiche-recurring-row-grid">
+                      <select
+                        className="fiche-recurring-input"
+                        value={recurringForm.recurrence}
+                        onChange={(e) =>
+                          setRecurringForm((prev) => ({ ...prev, recurrence: e.target.value }))
+                        }
+                      >
+                        <option value="daily">Journalière</option>
+                        <option value="weekly">Hebdomadaire</option>
+                        <option value="monthly">Mensuelle</option>
+                      </select>
+
+                      <select
+                        className="fiche-recurring-input"
+                        value={Number(recurringForm.default_time_spent) || 0}
+                        onChange={(e) =>
+                          setRecurringForm((prev) => ({
+                            ...prev,
+                            default_time_spent: Number(e.target.value),
+                          }))
+                        }
+                      >
+                        {TIME_OPTIONS.map((o) => (
+                          <option key={`rt-${o.value}`} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {recurringForm.recurrence === 'weekly' && (
+                      <div className="fiche-recurring-row">
+                        <select
+                          className="fiche-recurring-input"
+                          value={recurringForm.day_of_week}
+                          onChange={(e) =>
+                            setRecurringForm((prev) => ({ ...prev, day_of_week: e.target.value }))
+                          }
+                        >
+                          <option value="1">Lundi</option>
+                          <option value="2">Mardi</option>
+                          <option value="3">Mercredi</option>
+                          <option value="4">Jeudi</option>
+                          <option value="5">Vendredi</option>
+                          <option value="6">Samedi</option>
+                          <option value="0">Dimanche</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {recurringForm.recurrence === 'monthly' && (
+                      <div className="fiche-recurring-row">
+                        <input
+                          type="number"
+                          min={1}
+                          max={31}
+                          className="fiche-recurring-input"
+                          value={recurringForm.day_of_month}
+                          onChange={(e) =>
+                            setRecurringForm((prev) => ({ ...prev, day_of_month: e.target.value }))
+                          }
+                        />
+                      </div>
+                    )}
+
+                    <div className="fiche-recurring-row">
+                      <input
+                        type="text"
+                        className="fiche-recurring-input"
+                        placeholder="Commentaire par défaut (optionnel)"
+                        value={recurringForm.default_comment}
+                        onChange={(e) =>
+                          setRecurringForm((prev) => ({ ...prev, default_comment: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    {recurringError ? (
+                      <div className="fiche-recurring-error">{recurringError}</div>
+                    ) : null}
+
+                    <div className="fiche-recurring-actions">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          editingRecurringId
+                            ? handleUpdateRecurring()
+                            : handleCreateRecurring(period)
+                        }
+                        disabled={recurringSaving}
+                      >
+                        {recurringSaving ? <Loader2 size={12} className="animate-spin" /> : null}
+                        {editingRecurringId ? 'Enregistrer' : 'Créer'}
+                      </Button>
+                      {editingRecurringId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowRecurringForm(null);
+                            resetRecurringForm();
+                          }}
+                        >
+                          Annuler
+                        </Button>
+                      )}
+                    </div>
+
+                    {recurringForPeriod.length > 0 && (
+                      <ul className="fiche-recurring-list">
+                        {recurringForPeriod.map((r) => (
+                          <li key={r.id}>
+                            <span>{r.title}</span>
+                            <span className="fiche-recurring-chip">{formatRecurringLabel(r)}</span>
+                            <button
+                              type="button"
+                              className="fiche-recurring-edit"
+                              onClick={() => handleStartEditRecurring(r, period)}
+                              title="Modifier"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              className="fiche-recurring-delete"
+                              onClick={() => handleDeleteRecurring(r.id)}
+                              title="Supprimer"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
               {loadingTasks && <Loader2 size={14} className="animate-spin" />}
             </div>
           )}

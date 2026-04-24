@@ -274,7 +274,7 @@ const PeriodCalendarModal = ({
   const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   return (
-    <Modal open onClose={onClose} size="lg" className="pcm-modal">
+    <Modal open onClose={onClose} size="lg" className="pcm-modal no-drag-resize">
       <ModalHeader onClose={onClose} style={{ background: periodInfo.color }}>
         <span className="pcm-header-emoji">{periodInfo.emoji}</span>
         <div>

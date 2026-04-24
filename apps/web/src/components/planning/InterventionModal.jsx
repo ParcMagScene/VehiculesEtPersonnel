@@ -262,7 +262,7 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
           </div>
         }
         size="lg"
-        className="intervention-modal"
+        className="intervention-modal no-drag-resize"
         footer={
           <>
             {isAdmin && (

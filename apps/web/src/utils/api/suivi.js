@@ -40,6 +40,31 @@ export function registerSuiviMethods(ApiClient) {
       return this.request(`/suivi/planning-tasks/${date}`, { skipCamelCase: true });
     },
 
+    // Tâches récurrentes (Suivi) par personnel
+    async getSuiviRecurringTasks(personnelId) {
+      return this.request(`/suivi/recurring/${personnelId}`, { skipCamelCase: true });
+    },
+    async createSuiviRecurringTask(personnelId, data) {
+      return this.request(`/suivi/recurring/${personnelId}`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+    async deleteSuiviRecurringTask(recurringId) {
+      return this.request(`/suivi/recurring/${recurringId}`, {
+        method: 'DELETE',
+        skipCamelCase: true,
+      });
+    },
+    async updateSuiviRecurringTask(recurringId, data) {
+      return this.request(`/suivi/recurring/${recurringId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+
     // Synthèses JSON
     async getSuiviSyntheseJour(date) {
       return this.request(`/suivi/synthese/jour/${date}`, { skipCamelCase: true });

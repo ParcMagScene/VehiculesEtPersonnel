@@ -446,6 +446,49 @@ export function runPostInitMigrations(db) {
     logger.warn('⚠️ recurring_tasks:', error.message);
   }
 
+  // ── Table tracking_recurring_tasks : récurrences dédiées au Suivi ──
+  try {
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS tracking_recurring_tasks (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      period TEXT NOT NULL CHECK(period IN ('AM', 'PM')),
+      recurrence TEXT NOT NULL CHECK(recurrence IN ('daily', 'weekly', 'monthly')),
+      day_of_week INTEGER,
+      day_of_month INTEGER,
+      default_time_spent REAL DEFAULT 0,
+      default_comment TEXT DEFAULT '',
+      active INTEGER DEFAULT 1,
+      created_by INTEGER REFERENCES users(id),
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+    const teCols = db.pragma('table_info(tracking_entries)').map((c) => c.name);
+    if (!teCols.includes('recurring_task_id')) {
+      db.exec(
+        'ALTER TABLE tracking_entries ADD COLUMN recurring_task_id TEXT REFERENCES tracking_recurring_tasks(id) ON DELETE SET NULL',
+      );
+      logger.info('✅ Migration: tracking_entries.recurring_task_id ajouté');
+    }
+
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_tracking_entries_recurring_task ON tracking_entries(recurring_task_id)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_tracking_recurring_person_active ON tracking_recurring_tasks(person_id, active)',
+    );
+    db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_tracking_entries_sheet_recurring_unique
+      ON tracking_entries(sheet_id, recurring_task_id)
+      WHERE recurring_task_id IS NOT NULL
+    `);
+    logger.info('✅ Table tracking_recurring_tasks vérifiée/créée');
+  } catch (error) {
+    logger.warn('⚠️ tracking_recurring_tasks:', error.message);
+  }
+
   // ── Table ical_calendars : agendas iCal configurés ──
   try {
     db.exec(`

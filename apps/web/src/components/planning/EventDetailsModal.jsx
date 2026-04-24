@@ -385,7 +385,7 @@ function EventDetailsModal({
         }
         icon={<Calendar size={24} />}
         size="lg"
-        className="event-details-modal"
+        className="event-details-modal no-drag-resize"
         footer={
           event.htmlLink ? (
             <a
@@ -894,7 +894,7 @@ function EventDetailsModal({
           onClose={() => setPreviewFile(null)}
           title={previewFile.name}
           size="xl"
-          className="preview-modal"
+          className="preview-modal no-drag-resize"
           footer={
             <>
               <span className="file-info">{previewFile.size}</span>
@@ -938,7 +938,7 @@ function EventDetailsModal({
             </>
           }
           size="lg"
-          className="folder-view-modal"
+          className="folder-view-modal no-drag-resize"
           footer={
             <>
               <span>{attachmentFiles.length} fichier(s)</span>

@@ -63,7 +63,7 @@ const OverdueInterventionModal = ({
         onClose={onClose}
         title="Intervention en retard"
         size="md"
-        className="overdue-intervention-modal"
+        className="overdue-intervention-modal no-drag-resize"
         footer={
           !showReasonInput ? (
             <div className="action-buttons">

@@ -461,7 +461,44 @@ function drawPdfHeader(doc, sheet, subtitle) {
     doc.fontSize(13).font('Helvetica-Bold').fillColor('#334155');
     doc.text(subtitle, { align: 'center' });
   }
-  doc.moveDown(0.5);
+
+  // Affaires planning du jour
+  const affaires = sheet.day_context?.planning_affaires || [];
+  if (affaires.length > 0) {
+    doc.moveDown(0.4);
+    const blockX = PDF_TABLE_LEFT;
+    const blockW = PDF_TABLE_WIDTH;
+    const blockY = doc.y;
+    const labelH = 16;
+    const rowH = 15;
+    const totalH = labelH + affaires.length * rowH + 4;
+
+    // Fond bleu pâle
+    doc.rect(blockX, blockY, blockW, totalH).fillColor('#eef4fb').fill();
+    doc.rect(blockX, blockY, blockW, totalH).lineWidth(0.5).strokeColor('#93c5fd').stroke();
+
+    // Étiquette
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e40af');
+    doc.text('Affaire(s) du planning :', blockX + 6, blockY + 4, { lineBreak: false });
+
+    // Ligne par affaire
+    doc.font('Helvetica').fillColor('#1e3a5f');
+    affaires.forEach((a, idx) => {
+      const rowY = blockY + labelH + idx * rowH;
+      const label = a.affaire_label || a.affaire_num;
+      const client = a.affaire_client ? ` — ${a.affaire_client}` : '';
+      const type = a.affaire_type ? ` [${a.affaire_type}]` : '';
+      doc.fontSize(8).text(`• ${label}${client}${type}`, blockX + 12, rowY, {
+        width: blockW - 18,
+        lineBreak: false,
+        ellipsis: true,
+      });
+    });
+
+    doc.y = blockY + totalH + 4;
+  }
+
+  doc.moveDown(0.4);
 }
 
 function drawPdfTableHeader(doc, y) {
@@ -1284,7 +1321,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       const sheets = [];
       for (const id of sheetIds) {
         const full = getSheetWithEntries(id);
-        if (full) sheets.push(full);
+        if (full) sheets.push(enrichSheetWithDayContext(full));
       }
       if (sheets.length === 0) {
         return res.status(404).json({ success: false, error: 'Aucune fiche trouvée' });
@@ -1313,7 +1350,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       const sheets = [];
       for (const id of sheetIds) {
         const full = getSheetWithEntries(id);
-        if (full) sheets.push(full);
+        if (full) sheets.push(enrichSheetWithDayContext(full));
       }
       if (sheets.length === 0) {
         return res.status(404).json({ success: false, error: 'Aucune fiche trouvée' });
@@ -1462,7 +1499,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       if (!full) {
         return res.status(404).json({ success: false, error: 'Fiche non trouvée' });
       }
-      generateSheetPdf(full, res);
+      generateSheetPdf(enrichSheetWithDayContext(full), res);
     } catch (error) {
       logger.error('GET /api/suivi/:ficheId/pdf error:', error);
       if (!res.headersSent) {

@@ -3,17 +3,12 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Info, Music } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
+import { memo } from 'react';
 
 import { InlineAlert } from '@/design-system';
+import RadioLogo from './RadioLogo';
 
 function SonosNowPlaying({ displayState }) {
-  const [artFailed, setArtFailed] = useState(false);
-
-  useEffect(() => {
-    setArtFailed(false);
-  }, [displayState?.albumArtURI]);
-
   if (!displayState) return null;
 
   if (displayState.error) {
@@ -37,19 +32,13 @@ function SonosNowPlaying({ displayState }) {
     <div className="sonos-np">
       {/* Grande pochette */}
       <div className="sonos-np-art-wrap">
-        {displayState.albumArtURI && !artFailed ? (
-          <img
-            src={displayState.albumArtURI}
-            alt="Album art"
-            loading="lazy"
-            className="sonos-np-art"
-            onError={() => setArtFailed(true)}
-          />
-        ) : (
-          <div className="sonos-np-art sonos-np-art-placeholder">
-            <Music size={48} />
-          </div>
-        )}
+        <RadioLogo
+          src={displayState.albumArtURI}
+          alt="Album art"
+          className="sonos-np-art"
+          placeholderClassName="sonos-np-art sonos-np-art-placeholder"
+          placeholder={<Music size={48} />}
+        />
       </div>
 
       {/* Titre + artiste + album */}

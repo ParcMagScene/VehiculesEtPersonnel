@@ -190,6 +190,100 @@
 }
 
 .mep-balance-grid {
+    .mep-balance-grid {
+      gap: 8px;
+    }
+  }
+
+  /* ─── Section PIN ─────────────────────────────────────────── */
+  .mep-pin-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 8px 0;
+    max-width: 420px;
+  }
+
+  .mep-pin-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--theme-bg-subtle, #f8fafc);
+    border-radius: 8px;
+    border-left: 3px solid var(--theme-primary, #3b82f6);
+    color: var(--text-primary);
+  }
+
+  .mep-pin-header svg {
+    flex-shrink: 0;
+    color: var(--theme-primary, #3b82f6);
+    margin-top: 2px;
+  }
+
+  .mep-pin-desc {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #64748b);
+    line-height: 1.4;
+  }
+
+  .mep-pin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mep-pin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mep-pin-field label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-secondary, #64748b);
+  }
+
+  .mep-pin-field input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 6px;
+    background: var(--theme-bg, #ffffff);
+    color: var(--text-primary);
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    width: 120px;
+    transition: border-color 0.2s;
+  }
+
+  .mep-pin-field input[type="password"] {
+    letter-spacing: normal;
+    width: 100%;
+  }
+
+  .mep-pin-field input:focus {
+    outline: none;
+    border-color: var(--theme-primary, #3b82f6);
+    box-shadow: 0 0 0 2px var(--theme-primary-alpha, rgba(59,130,246,0.15));
+  }
+
+  .mep-pin-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+  }
+
+  .mep-pin-delete {
+    color: var(--color-danger, #ef4444) !important;
+    font-size: 0.82rem;
+  }
+
+  .mep-pin-delete:hover {
+    background: var(--color-danger-alpha, rgba(239,68,68,0.08)) !important;
+  }
   display: flex;
   gap: 16px;
 }

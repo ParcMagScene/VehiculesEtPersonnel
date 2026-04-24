@@ -1722,12 +1722,100 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
                 ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
                 dde.type AS event_type, dde.category AS event_category,
+                COALESCE(
+                  v.name,
+                  (
+                    SELECT GROUP_CONCAT(DISTINCT v2.name)
+                    FROM reservations r2
+                    LEFT JOIN vehicles v2 ON r2.vehicle_id = v2.id
+                    WHERE (
+                        (
+                          ta.affaire_num != ''
+                          AND UPPER(r2.affaire) = UPPER(ta.affaire_num)
+                        )
+                        OR (
+                          (r2.affaire IS NULL OR TRIM(r2.affaire) = '')
+                          AND r2.client_name IS NOT NULL
+                          AND (
+                            (
+                              COALESCE(TRIM(aff.client), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.client))) > 0
+                                OR INSTR(LOWER(TRIM(aff.client)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                            OR (
+                              COALESCE(TRIM(aff.nom), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.nom))) > 0
+                                OR INSTR(LOWER(TRIM(aff.nom)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                            OR (
+                              COALESCE(TRIM(aff.titre), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.titre))) > 0
+                                OR INSTR(LOWER(TRIM(aff.titre)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                          )
+                        )
+                      )
+                      AND ta.date >= r2.start_date
+                      AND ta.date <= r2.end_date
+                  )
+                ) AS reservation_vehicle_name,
+                COALESCE(
+                  v.registration,
+                  (
+                    SELECT GROUP_CONCAT(DISTINCT v2.registration)
+                    FROM reservations r2
+                    LEFT JOIN vehicles v2 ON r2.vehicle_id = v2.id
+                    WHERE (
+                        (
+                          ta.affaire_num != ''
+                          AND UPPER(r2.affaire) = UPPER(ta.affaire_num)
+                        )
+                        OR (
+                          (r2.affaire IS NULL OR TRIM(r2.affaire) = '')
+                          AND r2.client_name IS NOT NULL
+                          AND (
+                            (
+                              COALESCE(TRIM(aff.client), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.client))) > 0
+                                OR INSTR(LOWER(TRIM(aff.client)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                            OR (
+                              COALESCE(TRIM(aff.nom), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.nom))) > 0
+                                OR INSTR(LOWER(TRIM(aff.nom)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                            OR (
+                              COALESCE(TRIM(aff.titre), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.titre))) > 0
+                                OR INSTR(LOWER(TRIM(aff.titre)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                          )
+                        )
+                      )
+                      AND ta.date >= r2.start_date
+                      AND ta.date <= r2.end_date
+                  )
+                ) AS reservation_vehicle_reg,
                 aff.type AS affaire_type,
                 COALESCE(NULLIF(aff.nom, ''), '') AS affaire_nom,
                 COALESCE(NULLIF(aff.titre, ''), '') AS affaire_titre,
                 COALESCE(NULLIF(aff.client, ''), '') AS affaire_client
          FROM task_assignments ta
          LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
+            LEFT JOIN reservations r ON ta.reservation_id = r.id
+            LEFT JOIN vehicles v ON r.vehicle_id = v.id
          LEFT JOIN affaires aff ON ta.affaire_num != '' AND ta.affaire_num = aff.numero_affaire
          WHERE ta.date = ? AND ta.visible = 1
            AND ta.status != 'cancelled'
@@ -1768,6 +1856,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         status: t.status || 'pending',
         location: t.event_location || '',
         client: t.event_client || '',
+        reservation_vehicle_name: t.reservation_vehicle_name || '',
+        reservation_vehicle_reg: t.reservation_vehicle_reg || '',
         notes: t.notes || '',
         affaire_num: t.affaire_num || '',
         affaire_type: t.affaire_type || '',
@@ -1944,12 +2034,100 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
                 ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
                 dde.type AS event_type, dde.category AS event_category,
+                COALESCE(
+                  v.name,
+                  (
+                    SELECT GROUP_CONCAT(DISTINCT v2.name)
+                    FROM reservations r2
+                    LEFT JOIN vehicles v2 ON r2.vehicle_id = v2.id
+                    WHERE (
+                        (
+                          ta.affaire_num != ''
+                          AND UPPER(r2.affaire) = UPPER(ta.affaire_num)
+                        )
+                        OR (
+                          (r2.affaire IS NULL OR TRIM(r2.affaire) = '')
+                          AND r2.client_name IS NOT NULL
+                          AND (
+                            (
+                              COALESCE(TRIM(aff.client), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.client))) > 0
+                                OR INSTR(LOWER(TRIM(aff.client)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                            OR (
+                              COALESCE(TRIM(aff.nom), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.nom))) > 0
+                                OR INSTR(LOWER(TRIM(aff.nom)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                            OR (
+                              COALESCE(TRIM(aff.titre), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.titre))) > 0
+                                OR INSTR(LOWER(TRIM(aff.titre)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                          )
+                        )
+                      )
+                      AND ta.date >= r2.start_date
+                      AND ta.date <= r2.end_date
+                  )
+                ) AS reservation_vehicle_name,
+                COALESCE(
+                  v.registration,
+                  (
+                    SELECT GROUP_CONCAT(DISTINCT v2.registration)
+                    FROM reservations r2
+                    LEFT JOIN vehicles v2 ON r2.vehicle_id = v2.id
+                    WHERE (
+                        (
+                          ta.affaire_num != ''
+                          AND UPPER(r2.affaire) = UPPER(ta.affaire_num)
+                        )
+                        OR (
+                          (r2.affaire IS NULL OR TRIM(r2.affaire) = '')
+                          AND r2.client_name IS NOT NULL
+                          AND (
+                            (
+                              COALESCE(TRIM(aff.client), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.client))) > 0
+                                OR INSTR(LOWER(TRIM(aff.client)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                            OR (
+                              COALESCE(TRIM(aff.nom), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.nom))) > 0
+                                OR INSTR(LOWER(TRIM(aff.nom)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                            OR (
+                              COALESCE(TRIM(aff.titre), '') != ''
+                              AND (
+                                INSTR(LOWER(r2.client_name), LOWER(TRIM(aff.titre))) > 0
+                                OR INSTR(LOWER(TRIM(aff.titre)), LOWER(r2.client_name)) > 0
+                              )
+                            )
+                          )
+                        )
+                      )
+                      AND ta.date >= r2.start_date
+                      AND ta.date <= r2.end_date
+                  )
+                ) AS reservation_vehicle_reg,
                 aff.type AS affaire_type,
                 COALESCE(NULLIF(aff.nom, ''), '') AS affaire_nom,
                 COALESCE(NULLIF(aff.titre, ''), '') AS affaire_titre,
                 COALESCE(NULLIF(aff.client, ''), '') AS affaire_client
          FROM task_assignments ta
          LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
+            LEFT JOIN reservations r ON ta.reservation_id = r.id
+            LEFT JOIN vehicles v ON r.vehicle_id = v.id
          LEFT JOIN affaires aff ON ta.affaire_num != '' AND ta.affaire_num = aff.numero_affaire
          WHERE ta.date = ? AND ta.visible = 1
            AND ta.status != 'cancelled'
@@ -1988,6 +2166,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         status: t.status || 'pending',
         location: t.event_location || '',
         client: t.event_client || '',
+        reservation_vehicle_name: t.reservation_vehicle_name || '',
+        reservation_vehicle_reg: t.reservation_vehicle_reg || '',
         notes: t.notes || '',
         affaire_num: t.affaire_num || '',
         affaire_type: t.affaire_type || '',
@@ -2130,9 +2310,111 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         .prepare(
           `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.period,
                 ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
-                dde.client AS event_client, dde.location AS event_location
+                dde.client AS event_client, dde.location AS event_location,
+                COALESCE(
+                  v.name,
+                  (
+                    SELECT GROUP_CONCAT(DISTINCT v2.name)
+                    FROM reservations r2
+                    LEFT JOIN vehicles v2 ON r2.vehicle_id = v2.id
+                    WHERE (
+                        (
+                          ta.affaire_num != ''
+                          AND UPPER(r2.affaire) = UPPER(ta.affaire_num)
+                        )
+                        OR (
+                          (r2.affaire IS NULL OR TRIM(r2.affaire) = '')
+                          AND r2.client_name IS NOT NULL
+                          AND ta.affaire_num != ''
+                          AND EXISTS (
+                            SELECT 1
+                            FROM affaires af2
+                            WHERE af2.numero_affaire = ta.affaire_num
+                              AND (
+                                (
+                                  COALESCE(TRIM(af2.client), '') != ''
+                                  AND (
+                                    INSTR(LOWER(r2.client_name), LOWER(TRIM(af2.client))) > 0
+                                    OR INSTR(LOWER(TRIM(af2.client)), LOWER(r2.client_name)) >
+                                      0
+                                  )
+                                )
+                                OR (
+                                  COALESCE(TRIM(af2.nom), '') != ''
+                                  AND (
+                                    INSTR(LOWER(r2.client_name), LOWER(TRIM(af2.nom))) > 0
+                                    OR INSTR(LOWER(TRIM(af2.nom)), LOWER(r2.client_name)) > 0
+                                  )
+                                )
+                                OR (
+                                  COALESCE(TRIM(af2.titre), '') != ''
+                                  AND (
+                                    INSTR(LOWER(r2.client_name), LOWER(TRIM(af2.titre))) > 0
+                                    OR INSTR(LOWER(TRIM(af2.titre)), LOWER(r2.client_name)) > 0
+                                  )
+                                )
+                              )
+                          )
+                        )
+                      )
+                      AND ta.date >= r2.start_date
+                      AND ta.date <= r2.end_date
+                  )
+                ) AS reservation_vehicle_name,
+                COALESCE(
+                  v.registration,
+                  (
+                    SELECT GROUP_CONCAT(DISTINCT v2.registration)
+                    FROM reservations r2
+                    LEFT JOIN vehicles v2 ON r2.vehicle_id = v2.id
+                    WHERE (
+                        (
+                          ta.affaire_num != ''
+                          AND UPPER(r2.affaire) = UPPER(ta.affaire_num)
+                        )
+                        OR (
+                          (r2.affaire IS NULL OR TRIM(r2.affaire) = '')
+                          AND r2.client_name IS NOT NULL
+                          AND ta.affaire_num != ''
+                          AND EXISTS (
+                            SELECT 1
+                            FROM affaires af2
+                            WHERE af2.numero_affaire = ta.affaire_num
+                              AND (
+                                (
+                                  COALESCE(TRIM(af2.client), '') != ''
+                                  AND (
+                                    INSTR(LOWER(r2.client_name), LOWER(TRIM(af2.client))) > 0
+                                    OR INSTR(LOWER(TRIM(af2.client)), LOWER(r2.client_name)) >
+                                      0
+                                  )
+                                )
+                                OR (
+                                  COALESCE(TRIM(af2.nom), '') != ''
+                                  AND (
+                                    INSTR(LOWER(r2.client_name), LOWER(TRIM(af2.nom))) > 0
+                                    OR INSTR(LOWER(TRIM(af2.nom)), LOWER(r2.client_name)) > 0
+                                  )
+                                )
+                                OR (
+                                  COALESCE(TRIM(af2.titre), '') != ''
+                                  AND (
+                                    INSTR(LOWER(r2.client_name), LOWER(TRIM(af2.titre))) > 0
+                                    OR INSTR(LOWER(TRIM(af2.titre)), LOWER(r2.client_name)) > 0
+                                  )
+                                )
+                              )
+                          )
+                        )
+                      )
+                      AND ta.date >= r2.start_date
+                      AND ta.date <= r2.end_date
+                  )
+                ) AS reservation_vehicle_reg
          FROM task_assignments ta
          LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
+         LEFT JOIN reservations r ON ta.reservation_id = r.id
+         LEFT JOIN vehicles v ON r.vehicle_id = v.id
          WHERE ta.date = ? AND ta.visible = 1
            AND ta.status != 'cancelled'
            AND ta.deleted_at IS NULL
@@ -2171,6 +2453,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         status: t.status || 'pending',
         location: t.event_location || '',
         client: t.event_client || '',
+        reservation_vehicle_name: t.reservation_vehicle_name || '',
+        reservation_vehicle_reg: t.reservation_vehicle_reg || '',
         description: t.affaire_num ? `Affaire ${t.affaire_num}` : t.notes || '',
         is_recurrent: t.source_type === 'recurring' ? 1 : 0,
       }));

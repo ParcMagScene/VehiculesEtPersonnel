@@ -90,6 +90,7 @@ function AppContent() {
     currentUser,
     isAuthLoading,
     login,
+    loginPin,
     logout,
     updateUser,
     tabPrefs,
@@ -375,6 +376,21 @@ function AppContent() {
     [login, setActiveModule],
   );
 
+  const handleLoginPin = useCallback(
+    async (email, pin) => {
+      const result = await loginPin(email, pin);
+      const prefs = result.prefs || {};
+      if (prefs.defaultModule === 'trucks') setActiveModule('vehicles');
+      else if (prefs.defaultModule === 'communication' || prefs.defaultModule === 'personnel')
+        setActiveModule('planning');
+      else if (prefs.defaultModule === 'inventory') setActiveModule('stock');
+      else if (prefs.defaultModule) setActiveModule(prefs.defaultModule);
+      if (prefs.defaultView) setView(prefs.defaultView);
+      return result;
+    },
+    [loginPin, setActiveModule],
+  );
+
   // ═══ Navigation croisée entre modules ═══
   const handleNavigateToEntity = useCallback(
     (type, entityData) => {
@@ -609,6 +625,7 @@ function AppContent() {
     return (
       <div className="app">
         <LoginForm onLogin={handleLogin} />
+        <LoginForm onLogin={handleLogin} onLoginPin={handleLoginPin} />
       </div>
     );
   }

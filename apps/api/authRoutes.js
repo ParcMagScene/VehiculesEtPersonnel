@@ -11,9 +11,12 @@ import { validatePassword } from './passwordPolicy.js';
 import {
   forceLoginSchema,
   forgotPasswordSchema,
+  loginPinSchema,
   loginSchema,
   registerSchema,
   selfResetPasswordSchema,
+  setPinSchema,
+  suiviPersonalAuthSchema,
 } from './schemas/auth.js';
 import { validate } from './schemas/imports.js';
 
@@ -367,6 +370,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
           email: user.email,
           name: user.name,
           isAdmin: user.is_admin === 1,
+          isTeam: user.is_team === 1,
           avatar: user.avatar || null,
           permissions: perms,
         },
@@ -448,6 +452,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
           email: user.email,
           name: user.name,
           isAdmin: user.is_admin === 1,
+          isTeam: user.is_team === 1,
           avatar: user.avatar || null,
           permissions: forcePerms,
         },
@@ -588,6 +593,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
           email: user.email,
           name: user.name,
           isAdmin: user.is_admin === 1,
+          isTeam: user.is_team === 1,
           avatar: user.avatar || null,
           permissions: perms,
         },
@@ -597,4 +603,186 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
+
+  // ── Connexion par code PIN ──────────────────────────────────────────────────
+  app.post('/api/auth/login-pin', validate(loginPinSchema), async (req, res) => {
+    try {
+      const { email, pin } = req.body;
+      const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+      if (!user || !user.pin_hash) {
+        return res.status(401).json({ success: false, error: 'Code PIN incorrect' });
+      }
+      if (user.is_blocked) {
+        return res.status(403).json({ success: false, error: 'Votre compte a été bloqué.' });
+      }
+
+      const pinMatch = await bcrypt.compare(pin, user.pin_hash);
+      if (!pinMatch) {
+        auditLog({
+          actorId: user.id, actorEmail: user.email,
+          action: AUDIT_ACTIONS.LOGIN_FAILED, targetType: 'user', targetId: user.id,
+          details: { reason: 'wrong_pin' }, req,
+        });
+        return res.status(401).json({ success: false, error: 'Code PIN incorrect' });
+      }
+
+      // Vérifier email autorisé
+      const authorized = db.prepare(
+        "SELECT * FROM authorized_emails WHERE email = ? AND status = 'activated'",
+      ).get(email);
+      if (!authorized) {
+        return res.status(403).json({ error: 'EMAIL_NOT_AUTHORIZED', message: "Email non autorisé." });
+      }
+
+      let perms = {};
+      try { perms = user.permissions ? JSON.parse(user.permissions) : {}; } catch { perms = {}; }
+
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+        algorithm: 'HS256', expiresIn: `${JWT_EXPIRY_DAYS}d`,
+      });
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex').substring(0, 64);
+      const expiresAt = new Date(Date.now() + JWT_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      db.prepare('INSERT INTO active_sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)').run(user.id, tokenHash, expiresAt);
+
+      // Nettoyer les vieilles sessions (max 10)
+      const cnt = db.prepare('SELECT COUNT(*) as cnt FROM active_sessions WHERE user_id = ?').get(user.id).cnt;
+      if (cnt > 10) {
+        db.prepare('DELETE FROM active_sessions WHERE id IN (SELECT id FROM active_sessions WHERE user_id = ? ORDER BY last_activity ASC LIMIT ?)').run(user.id, cnt - 10);
+      }
+
+      auditLog({
+        actorId: user.id, actorEmail: user.email,
+        action: AUDIT_ACTIONS.LOGIN_SUCCESS, targetType: 'session', targetId: user.id,
+        details: { method: 'pin' }, req,
+      });
+
+      res.cookie('auth_token', token, cookieOptions);
+      res.json({
+        user: {
+          id: user.id, email: user.email, name: user.name,
+          isAdmin: user.is_admin === 1, isTeam: user.is_team === 1,
+          avatar: user.avatar || null, permissions: perms,
+        },
+      });
+    } catch (error) {
+      logger.error('Erreur login-pin:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ── Définir / modifier son code PIN ────────────────────────────────────────
+  app.put('/api/auth/me/pin', authenticateToken, validate(setPinSchema), async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { pin, currentPassword, currentPin } = req.body;
+      const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+
+      if (!user) return res.status(404).json({ success: false, error: 'Utilisateur introuvable' });
+
+      // Vérifier l'identité : soit le mot de passe actuel, soit le PIN actuel
+      if (user.pin_hash) {
+        // Il a déjà un PIN — doit fournir currentPin ou currentPassword pour le changer
+        let verified = false;
+        if (currentPin) {
+          verified = await bcrypt.compare(currentPin, user.pin_hash);
+        } else if (currentPassword) {
+          verified = await bcrypt.compare(currentPassword, user.password_hash);
+        }
+        if (!verified) {
+          return res.status(401).json({ success: false, error: 'Vérification échouée — code PIN ou mot de passe incorrect' });
+        }
+      } else {
+        // Pas encore de PIN — doit fournir le mot de passe
+        if (!currentPassword) {
+          return res.status(400).json({ success: false, error: 'Le mot de passe actuel est requis pour définir un code PIN' });
+        }
+        const pwOk = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!pwOk) {
+          return res.status(401).json({ success: false, error: 'Mot de passe incorrect' });
+        }
+      }
+
+      const pinHash = await bcrypt.hash(pin, 10);
+      db.prepare('UPDATE users SET pin_hash = ? WHERE id = ?').run(pinHash, userId);
+
+      logger.info(`🔐 PIN mis à jour pour user ${userId}`);
+      res.json({ success: true, message: 'Code PIN mis à jour' });
+    } catch (error) {
+      logger.error('Erreur set-pin:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ── Supprimer le code PIN ───────────────────────────────────────────────────
+  app.delete('/api/auth/me/pin', authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      db.prepare('UPDATE users SET pin_hash = NULL WHERE id = ?').run(userId);
+      logger.info(`🔐 PIN supprimé pour user ${userId}`);
+      res.json({ success: true, message: 'Code PIN supprimé' });
+    } catch (error) {
+      logger.error('Erreur delete-pin:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ── Statut PIN (a-t-on un PIN ?) ───────────────────────────────────────────
+  app.get('/api/auth/me/pin-status', authenticateToken, (req, res) => {
+    try {
+      const user = db.prepare('SELECT pin_hash FROM users WHERE id = ?').get(req.user.id);
+      res.json({ hasPin: !!user?.pin_hash });
+    } catch (error) {
+      logger.error('Erreur pin-status:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ── Auth personnelle pour compte Equipe → accès Suivi ─────────────────────
+  // Utilisé quand le compte commun@magsav.com veut accéder à une fiche de suivi
+  // Vérifie le PIN ou mot de passe du user lié à la personne
+  app.post('/api/suivi/personal-auth', authenticateToken, validate(suiviPersonalAuthSchema), async (req, res) => {
+    try {
+      const { personId, pin, password } = req.body;
+
+      if (!pin && !password) {
+        return res.status(400).json({ success: false, error: 'Code PIN ou mot de passe requis' });
+      }
+
+      // Récupérer la personne et son user_id lié
+      const person = db.prepare('SELECT id, first_name, last_name, user_id FROM persons WHERE id = ? AND status = ?').get(personId, 'active');
+      if (!person) {
+        return res.status(404).json({ success: false, error: 'Personnel introuvable' });
+      }
+      if (!person.user_id) {
+        return res.status(403).json({ success: false, error: 'Aucun compte lié à ce personnel' });
+      }
+
+      const linkedUser = db.prepare('SELECT id, password_hash, pin_hash, is_blocked FROM users WHERE id = ?').get(person.user_id);
+      if (!linkedUser || linkedUser.is_blocked) {
+        return res.status(403).json({ success: false, error: 'Compte lié introuvable ou bloqué' });
+      }
+
+      let verified = false;
+      if (pin && linkedUser.pin_hash) {
+        verified = await bcrypt.compare(pin, linkedUser.pin_hash);
+      } else if (password) {
+        verified = await bcrypt.compare(password, linkedUser.password_hash);
+      }
+
+      if (!verified) {
+        return res.status(401).json({ success: false, error: 'Code PIN ou mot de passe incorrect' });
+      }
+
+      logger.info(`🔐 Auth suivi réussie: personne ${personId} (user ${linkedUser.id})`);
+      res.json({
+        success: true,
+        person: { id: person.id, first_name: person.first_name, last_name: person.last_name },
+      });
+    } catch (error) {
+      logger.error('Erreur personal-auth:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
 } // end setupAuthRoutes

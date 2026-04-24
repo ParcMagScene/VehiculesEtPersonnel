@@ -371,6 +371,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       const eventIdSet = new Set(googleEventIdsMap[num] || []);
       let driveLinksCount = 0;
       let resaCount = 0;
+      const reservationVehicleMap = new Map();
       let resaClient = '';
       let resaPrestation = '';
       let resaLieu = '';
@@ -380,6 +381,27 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
           (r.googleEventId && eventIdSet.has(r.googleEventId))
         ) {
           resaCount++;
+          const vehicleName =
+            r.vehicleName ||
+            r.vehicle_name ||
+            r.vehicleLabel ||
+            r.vehicle_label ||
+            (r.vehicleId || r.vehicle_id ? `Véhicule #${r.vehicleId || r.vehicle_id}` : '');
+          const vehicleRegistration =
+            r.immatriculation ||
+            r.registration ||
+            r.vehicleRegistration ||
+            r.vehicle_registration ||
+            '';
+          if (vehicleName || vehicleRegistration) {
+            const vehicleKey = `${vehicleName}__${vehicleRegistration}`;
+            if (!reservationVehicleMap.has(vehicleKey)) {
+              reservationVehicleMap.set(vehicleKey, {
+                name: vehicleName || 'Véhicule',
+                registration: vehicleRegistration,
+              });
+            }
+          }
           if (r.googleDriveLinks && r.googleDriveLinks.length > 0)
             driveLinksCount += r.googleDriveLinks.length;
           else if (r.googleDriveLink && r.googleDriveLink.trim()) driveLinksCount += 1;
@@ -397,6 +419,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
         driveLinksCount,
         totalPieces: localAttachmentCount + driveLinksCount,
         reservationCount: resaCount,
+        reservationVehicles: Array.from(reservationVehicleMap.values()),
         personnelCount: persCount,
         client: a.client || resaClient,
         titre: a.titre || resaPrestation,
@@ -1247,6 +1270,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
                     <span className="sort-arrow">{sortOrder === 'asc' ? '▲' : '▼'}</span>
                   )}
                 </span>
+                <span className="ath-resa-vehicle">Véhicule</span>
                 <span
                   className="ath-pers sortable"
                   role="columnheader"
@@ -1448,6 +1472,26 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
                       })()}
                     </span>
                     <span className="ar-resa">{affaire.reservationCount || 0}</span>
+                    <span className="ar-resa-vehicle">
+                      {(affaire.reservationVehicles || []).length > 0 ? (
+                        affaire.reservationVehicles.map((vehicle, idx) => (
+                          <span
+                            key={`${vehicle.name}-${vehicle.registration || 'no-reg'}-${idx}`}
+                            className="ar-resa-vehicle-badge"
+                            title={
+                              vehicle.registration
+                                ? `${vehicle.name} (${vehicle.registration})`
+                                : vehicle.name
+                            }
+                          >
+                            {vehicle.name}
+                            {vehicle.registration ? ` ${vehicle.registration}` : ''}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="ar-resa-vehicle-empty">—</span>
+                      )}
+                    </span>
                     <span className="ar-pers">{affaire.personnelCount || 0}</span>
                   </div>
                 );

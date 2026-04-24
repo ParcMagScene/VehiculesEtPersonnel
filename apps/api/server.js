@@ -229,6 +229,10 @@ app.use(
   '/radio-logos',
   express.static(path.join(__dirname, '..', '..', 'public', 'radio-logos'), staticCacheOpts),
 );
+app.use(
+  '/sonos-logos',
+  express.static(path.join(__dirname, '..', '..', 'public', 'sonos-logos'), staticCacheOpts),
+);
 app.get('/SNCF.wav', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', '..', 'public', 'SNCF.wav'));
 });

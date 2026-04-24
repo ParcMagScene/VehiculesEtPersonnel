@@ -12,8 +12,11 @@ import {
   ClipboardCheck,
   Download,
   FileText,
+  Lock,
+  LogOut,
   Loader2,
   Printer,
+  UserCheck,
   Users,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -60,6 +63,15 @@ function SuiviPanel({ currentUser, initialPersonId }) {
   const [batchExporting, setBatchExporting] = useState(false);
   const [batchPrinting, setBatchPrinting] = useState(false);
   const [collapsedNonPermanents, setCollapsedNonPermanents] = useState(true);
+  // Compte Equipe : personne sélectionnée via PIN/MDP
+  const isTeamAccount = !!currentUser?.isTeam;
+  const [suiviPerson, setSuiviPerson] = useState(null); // personne authentifiée pour le suivi
+  const [teamAuthError, setTeamAuthError] = useState('');
+  const [teamAuthLoading, setTeamAuthLoading] = useState(false);
+  const [teamPinInput, setTeamPinInput] = useState('');
+  const [teamPasswordInput, setTeamPasswordInput] = useState('');
+  const [teamAuthMode, setTeamAuthMode] = useState('pin'); // 'pin' | 'password'
+  const [teamSelectedPerson, setTeamSelectedPerson] = useState(null);
   const [permanentsHeight, setPermanentsHeight] = useState(280);
   const [isResizingGroups, setIsResizingGroups] = useState(false);
   const personListRef = useRef(null);
@@ -313,8 +325,150 @@ function SuiviPanel({ currentUser, initialPersonId }) {
     };
   }, [isResizingGroups]);
 
+  const handleTeamAuth = async (e) => {
+    e.preventDefault();
+    if (!teamSelectedPerson) return;
+    setTeamAuthError('');
+    setTeamAuthLoading(true);
+    try {
+      const creds =
+        teamAuthMode === 'pin'
+          ? { pin: teamPinInput }
+          : { password: teamPasswordInput };
+      await api.suiviPersonalAuth(teamSelectedPerson.id, creds.pin, creds.password);
+      setSuiviPerson(teamSelectedPerson);
+      setSelectedPerson(teamSelectedPerson);
+      setTeamPinInput('');
+      setTeamPasswordInput('');
+      setTeamSelectedPerson(null);
+    } catch (err) {
+      setTeamAuthError(err.message || 'Identifiants incorrects');
+    } finally {
+      setTeamAuthLoading(false);
+    }
+  };
+
+  if (isTeamAccount && !suiviPerson) {
+    return (
+      <div className="suivi-panel suivi-team-auth">
+        <div className="suivi-team-auth-card">
+          <div className="suivi-team-auth-header">
+            <UserCheck size={32} />
+            <h2>Accès au suivi</h2>
+            <p>Sélectionnez votre nom et entrez votre code PIN ou mot de passe</p>
+          </div>
+
+          <form className="suivi-team-auth-form" onSubmit={handleTeamAuth}>
+            {/* Sélection de la personne */}
+            <div className="suivi-team-person-list">
+              {personnel.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`suivi-team-person-item ${teamSelectedPerson?.id === p.id ? 'selected' : ''}`}
+                  onClick={() => {
+                    setTeamSelectedPerson(p);
+                    setTeamAuthError('');
+                  }}
+                >
+                  <span className="suivi-team-person-name">
+                    {p.first_name} {p.last_name}
+                  </span>
+                  <span className={`suivi-person-type suivi-type-${p.type || 'permanent'}`}>
+                    {TYPE_LABELS[p.type] || p.type}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {teamSelectedPerson && (
+              <>
+                <div className="suivi-team-auth-mode-toggle">
+                  <button
+                    type="button"
+                    className={`suivi-auth-mode-btn ${teamAuthMode === 'pin' ? 'active' : ''}`}
+                    onClick={() => setTeamAuthMode('pin')}
+                  >
+                    Code PIN
+                  </button>
+                  <button
+                    type="button"
+                    className={`suivi-auth-mode-btn ${teamAuthMode === 'password' ? 'active' : ''}`}
+                    onClick={() => setTeamAuthMode('password')}
+                  >
+                    Mot de passe
+                  </button>
+                </div>
+
+                {teamAuthMode === 'pin' ? (
+                  <div className="suivi-team-auth-field">
+                    <label>Code PIN (4 chiffres)</label>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={4}
+                      pattern="\d{4}"
+                      value={teamPinInput}
+                      onChange={(e) => setTeamPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      placeholder="••••"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div className="suivi-team-auth-field">
+                    <label>Mot de passe</label>
+                    <input
+                      type="password"
+                      value={teamPasswordInput}
+                      onChange={(e) => setTeamPasswordInput(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            {teamAuthError && <div className="suivi-team-auth-error">{teamAuthError}</div>}
+
+            <button
+              type="submit"
+              className="suivi-team-auth-submit"
+              disabled={!teamSelectedPerson || teamAuthLoading}
+            >
+              <Lock size={16} />
+              {teamAuthLoading ? 'Vérification...' : 'Accéder à mon suivi'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="suivi-panel">
+      {/* Bouton quitter le suivi (compte Equipe) */}
+      {isTeamAccount && suiviPerson && (
+        <div className="suivi-team-session-bar">
+          <span>
+            <UserCheck size={14} />
+            {suiviPerson.first_name} {suiviPerson.last_name}
+          </span>
+          <Button
+            variant="ghost"
+            className="suivi-team-quit-btn"
+            onClick={() => {
+              setSuiviPerson(null);
+              setSelectedPerson(null);
+            }}
+          >
+            <LogOut size={14} />
+            Quitter mon suivi
+          </Button>
+        </div>
+      )}
       {/* Barre d'onglets */}
       <div className="suivi-tabs-bar">
         <Button

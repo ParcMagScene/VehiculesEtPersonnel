@@ -30,6 +30,8 @@ let completedEvents = [];
 let tvConfig = {};
 let allEvents = [];
 let isOffline = false;
+let regularAutoScrollStop = null;
+let recurrentAutoScrollStop = null;
 
 // ===============================================
 //  CACHE OFFLINE — localStorage
@@ -306,6 +308,8 @@ function renderEvents(events) {
         const li = createEventElement(event);
         regularList.appendChild(li);
       });
+      if (regularAutoScrollStop) regularAutoScrollStop();
+      regularAutoScrollStop = enableAutoScroll(regularList);
     }
   }
 
@@ -321,8 +325,59 @@ function renderEvents(events) {
         const li = createEventElement(event);
         recurrentList.appendChild(li);
       });
+      if (recurrentAutoScrollStop) recurrentAutoScrollStop();
+      recurrentAutoScrollStop = enableAutoScroll(recurrentList);
     }
   }
+}
+
+// Auto-scroll vertical doux pour afficher toute la liste sans interaction
+function enableAutoScroll(listEl) {
+  if (!listEl) return null;
+
+  listEl.scrollTop = 0;
+  const maxScroll = listEl.scrollHeight - listEl.clientHeight;
+  if (maxScroll <= 8) return null;
+
+  let rafId = null;
+  let dir = 1;
+  let lastTs = performance.now();
+  let pauseUntil = lastTs + 1800;
+  const speed = 26; // px/s
+  let stopped = false;
+
+  const step = (ts) => {
+    if (stopped) return;
+    const max = listEl.scrollHeight - listEl.clientHeight;
+    if (max <= 8) return;
+
+    if (ts < pauseUntil) {
+      rafId = requestAnimationFrame(step);
+      return;
+    }
+
+    const dt = Math.max(0, (ts - lastTs) / 1000);
+    lastTs = ts;
+    listEl.scrollTop += speed * dt * dir;
+
+    if (listEl.scrollTop >= max - 1) {
+      listEl.scrollTop = max;
+      dir = -1;
+      pauseUntil = ts + 2200;
+    } else if (listEl.scrollTop <= 1) {
+      listEl.scrollTop = 0;
+      dir = 1;
+      pauseUntil = ts + 2200;
+    }
+
+    rafId = requestAnimationFrame(step);
+  };
+
+  rafId = requestAnimationFrame(step);
+  return () => {
+    stopped = true;
+    if (rafId) cancelAnimationFrame(rafId);
+  };
 }
 
 // ===============================================
@@ -349,6 +404,8 @@ function createEventElement(event) {
   const eventLocation = escapeHtml(event.location || '');
   const affaireNum = event.affaire_num || '';
   const affaireType = event.affaire_type || '';
+  const reservationVehicleName = escapeHtml(event.reservation_vehicle_name || '');
+  const reservationVehicleReg = escapeHtml(event.reservation_vehicle_reg || '');
 
   // Vérifier si terminé (status 'done' dans la planification OU marqué manuellement sur l'écran)
   const isCompleted = event.status === 'done' || completedEvents.includes(eventId);
@@ -378,12 +435,15 @@ function createEventElement(event) {
   const affaireBadge = affaireNum
     ? `<span class="tv-affaire-badge" style="--badge-color:${badgeColor}">${escapeHtml(affaireNum)}</span>`
     : '';
+  const reservationVehicleBadge = reservationVehicleName
+    ? `<span class="tv-vehicle-badge" title="${reservationVehicleReg ? `${reservationVehicleName} (${reservationVehicleReg})` : reservationVehicleName}">🚛 ${reservationVehicleName}${reservationVehicleReg ? ` (${reservationVehicleReg})` : ''}</span>`
+    : '';
 
   li.innerHTML = `
     <div class="event-columns">
       <div class="col-time">${timeDisplay}</div>
       <div class="col-title">${isCompleted ? '<span class="completed-icon">✅</span>' : ''}${eventTitle}</div>
-      <div class="col-affaire">${affaireBadge}</div>
+      <div class="col-affaire">${affaireBadge}${reservationVehicleBadge}</div>
       <div class="col-location">${locationContent}</div>
     </div>
   `;

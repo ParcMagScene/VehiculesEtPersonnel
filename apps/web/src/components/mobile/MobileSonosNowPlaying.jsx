@@ -4,17 +4,13 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Disc, Music, Pause } from 'lucide-react';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useRef } from 'react';
 
 import { InlineAlert } from '@/design-system';
+import RadioLogo from '@/components/sonos/RadioLogo';
 
 function MobileSonosNowPlaying({ displayState, onNext, onPrevious }) {
   const touchStartX = useRef(null);
-  const [artFailed, setArtFailed] = useState(false);
-
-  useEffect(() => {
-    setArtFailed(false);
-  }, [displayState?.albumArtURI]);
 
   if (!displayState) return null;
 
@@ -51,19 +47,13 @@ function MobileSonosNowPlaying({ displayState, onNext, onPrevious }) {
         onTouchStart={handleTouchStartArt}
         onTouchEnd={handleTouchEndArt}
       >
-        {displayState.albumArtURI && !artFailed ? (
-          <img
-            src={displayState.albumArtURI}
-            alt="Album art"
-            loading="lazy"
-            className="mobile-sonos-art"
-            onError={() => setArtFailed(true)}
-          />
-        ) : (
-          <div className="mobile-sonos-art-placeholder">
-            <Music size={64} />
-          </div>
-        )}
+        <RadioLogo
+          src={displayState.albumArtURI}
+          alt="Album art"
+          className="mobile-sonos-art"
+          placeholderClassName="mobile-sonos-art-placeholder"
+          placeholder={<Music size={64} />}
+        />
       </div>
       <div className="mobile-sonos-title">{displayState.title}</div>
       <div className="mobile-sonos-artist">{displayState.artist}</div>

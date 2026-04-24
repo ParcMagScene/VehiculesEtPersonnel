@@ -1143,6 +1143,21 @@ function initializeDatabase() {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }
 
+  // Migration: PIN code 4 chiffres et flag is_team pour compte Equipe
+  try {
+    const userColsPinTeam = db.prepare('PRAGMA table_info(users)').all();
+    if (!userColsPinTeam.some((c) => c.name === 'pin_hash')) {
+      db.prepare('ALTER TABLE users ADD COLUMN pin_hash TEXT').run();
+      logger.info('✅ Colonne pin_hash ajoutée à users');
+    }
+    if (!userColsPinTeam.some((c) => c.name === 'is_team')) {
+      db.prepare('ALTER TABLE users ADD COLUMN is_team INTEGER DEFAULT 0').run();
+      logger.info('✅ Colonne is_team ajoutée à users');
+    }
+  } catch (_err) {
+    logger.info('Info: Migration pin_hash/is_team déjà appliquée');
+  }
+
   // Migration: ajouter is_admin dans authorized_emails (pour bases existantes)
   try {
     const authEmailCols = db.prepare('PRAGMA table_info(authorized_emails)').all();

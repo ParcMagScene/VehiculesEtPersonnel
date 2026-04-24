@@ -41,10 +41,10 @@ function formatDateISO(d) {
   return `${y}-${m}-${day}`;
 }
 
-/** Convertit des heures décimales en "Xh MM" */
-function fmtHM(decHours) {
-  if (!decHours) return '0h00';
-  const total = Math.round(decHours * 60);
+/** Convertit des minutes en "Xh MM" */
+function fmtHM(minutes) {
+  if (!minutes) return '0h00';
+  const total = Math.round(minutes);
   const h = Math.floor(total / 60);
   const m = total % 60;
   return `${h}h${String(m).padStart(2, '0')}`;
@@ -315,8 +315,14 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                 </thead>
                 <tbody>
                   {sheetsByPerson.map((pg) => {
+                    // Une personne en indispo/mission sur toutes ses fiches n'est pas en anomalie pour les non-renseignées
+                    const allSheetsHaveContext = pg.sheets.length > 0 && pg.sheets.every((sh) => {
+                      const c = sh.day_context || {};
+                      return c.has_unavailability || c.has_leave || c.has_mission || c.has_enterprise_presence;
+                    });
                     const hasWarning =
-                      pg.stats.not_done > 0 || pg.stats.unreported_am || pg.stats.unreported_pm;
+                      pg.stats.not_done > 0 ||
+                      (!allSheetsHaveContext && (pg.stats.unreported_am || pg.stats.unreported_pm));
                     const isExpanded = expandedPersons.has(pg.person_id);
                     const canExpand = mode !== 'jour' && pg.sheets.length > 1;
                     return (
@@ -348,12 +354,12 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                           <td>{pg.stats.not_done}</td>
                           <td>{fmtHM(pg.stats.time)}</td>
                           <td>
-                            {pg.stats.unreported_am && (
+                            {pg.stats.unreported_am && !allSheetsHaveContext && (
                               <span className="synthese-badge synthese-badge-unreported">
                                 AM non-renseignée
                               </span>
                             )}
-                            {pg.stats.unreported_pm && (
+                            {pg.stats.unreported_pm && !allSheetsHaveContext && (
                               <span className="synthese-badge synthese-badge-unreported">
                                 PM non-renseignée
                               </span>
@@ -363,10 +369,21 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                         {canExpand &&
                           isExpanded &&
                           pg.sheets.map((sh) => {
+                            const ctx = sh.day_context || {};
+                            const hasContext =
+                              ctx.has_unavailability ||
+                              ctx.has_leave ||
+                              ctx.has_mission ||
+                              ctx.has_enterprise_presence;
                             const shWarning =
                               sh.stats?.not_done > 0 ||
-                              sh.stats?.unreported_am ||
-                              sh.stats?.unreported_pm;
+                              (!hasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm));
+                            const availLabels = (ctx.availabilities || []).map(
+                              (a) => a.type_label || a.type,
+                            );
+                            const missionLabels = (ctx.missions || []).map(
+                              (m) => m.title || m.affaire || 'Mission',
+                            );
                             return (
                               <tr
                                 key={sh.id}
@@ -381,16 +398,29 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                                 <td>{sh.stats?.not_done ?? 0}</td>
                                 <td>{fmtHM(sh.stats?.time ?? 0)}</td>
                                 <td>
-                                  {sh.stats?.unreported_am && (
+                                  {sh.stats?.unreported_am && !hasContext && (
                                     <span className="synthese-badge synthese-badge-unreported">
                                       AM
                                     </span>
                                   )}
-                                  {sh.stats?.unreported_pm && (
+                                  {sh.stats?.unreported_pm && !hasContext && (
                                     <span className="synthese-badge synthese-badge-unreported">
                                       PM
                                     </span>
                                   )}
+                                  {availLabels.map((l, i) => (
+                                    <span key={i} className="synthese-badge synthese-badge-avail">
+                                      {l}
+                                    </span>
+                                  ))}
+                                  {missionLabels.map((l, i) => (
+                                    <span
+                                      key={i}
+                                      className="synthese-badge synthese-badge-mission"
+                                    >
+                                      {l}
+                                    </span>
+                                  ))}
                                 </td>
                               </tr>
                             );

@@ -117,7 +117,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   preview: {
-    // MODE PROD — proxy vers le backend PROD sur port 3002
+    // MODE PROD — proxy vers le backend PROD (HTTPS :3443)
     host: '0.0.0.0',
     port: 4173,
     allowedHosts: true,

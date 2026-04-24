@@ -68,3 +68,38 @@ export const accessRequestSchema = z.object({
 export const checkEmailSchema = z.object({
   email,
 });
+
+// ── Login par PIN ──
+export const loginPinSchema = z.object({
+  email,
+  pin: z
+    .string()
+    .length(4, 'Le code PIN doit contenir exactement 4 chiffres')
+    .regex(/^\d{4}$/, 'Le code PIN doit contenir uniquement des chiffres'),
+});
+
+// ── Définir / modifier le PIN ──
+export const setPinSchema = z.object({
+  pin: z
+    .string()
+    .length(4, 'Le code PIN doit contenir exactement 4 chiffres')
+    .regex(/^\d{4}$/, 'Le code PIN doit contenir uniquement des chiffres'),
+  // Pour les utilisateurs qui utilisent un mot de passe, confirmation requise
+  currentPassword: password.optional(),
+  currentPin: z
+    .string()
+    .length(4)
+    .regex(/^\d{4}$/)
+    .optional(),
+});
+
+// ── Auth personnel (compte Equipe → accès suivi) ──
+export const suiviPersonalAuthSchema = z.object({
+  personId: z.number().int().positive(),
+  pin: z
+    .string()
+    .length(4)
+    .regex(/^\d{4}$/)
+    .optional(),
+  password: password.optional(),
+});

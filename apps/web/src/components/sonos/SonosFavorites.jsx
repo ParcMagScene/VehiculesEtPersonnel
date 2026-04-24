@@ -5,6 +5,8 @@
 import { Music, Search, Star } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
+import RadioLogo from './RadioLogo';
+
 function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavorite, nowPlaying }) {
   const [search, setSearch] = useState('');
 
@@ -57,21 +59,13 @@ function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavori
               onClick={() => playFavorite(fav)}
               title={`Lire : ${fav.title}`}
             >
-              {fav.albumArtURI ? (
-                <img
-                  src={fav.albumArtURI}
-                  alt=""
-                  className="sonos-favs-art"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-              ) : (
-                <span className="sonos-favs-art sonos-favs-art-ph">
-                  <Music size={18} />
-                </span>
-              )}
+              <RadioLogo
+                src={fav.albumArtURI}
+                alt=""
+                className="sonos-favs-art"
+                placeholderClassName="sonos-favs-art sonos-favs-art-ph"
+                placeholder={<Music size={18} />}
+              />
               <div className="sonos-favs-meta">
                 <span className="sonos-favs-name">{fav.title}</span>
                 {fav.description && <span className="sonos-favs-desc">{fav.description}</span>}

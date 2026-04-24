@@ -152,6 +152,28 @@
 }
 
 .forgot-password-link:hover {
+  .forgot-password-link:hover {
+    color: var(--theme-primary-dark);
+    text-decoration: underline;
+  }
+
+  .login-mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text-secondary, #94a3b8);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px 0;
+    text-align: left;
+    transition: color 0.2s;
+    width: 100%;
+  }
+  .login-mode-toggle:hover {
+    color: var(--theme-primary);
+  }
   color: var(--theme-primary-dark);
   text-decoration: underline;
 }

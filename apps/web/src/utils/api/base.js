@@ -336,6 +336,37 @@ export class ApiClient {
     return data;
   }
 
+  async loginPin(email, pin) {
+    const data = await this.request('/auth/login-pin', {
+      method: 'POST',
+      body: JSON.stringify({ email, pin }),
+    });
+    this.setAuth(data.user);
+    return data;
+  }
+
+  async setPin(pin, currentPassword, currentPin) {
+    return this.request('/auth/me/pin', {
+      method: 'PUT',
+      body: JSON.stringify({ pin, currentPassword, currentPin }),
+    });
+  }
+
+  async deletePin() {
+    return this.request('/auth/me/pin', { method: 'DELETE' });
+  }
+
+  async getPinStatus() {
+    return this.request('/auth/me/pin-status');
+  }
+
+  async suiviPersonalAuth(personId, pin, password) {
+    return this.request('/suivi/personal-auth', {
+      method: 'POST',
+      body: JSON.stringify({ personId, pin, password }),
+    });
+  }
+
   async selfResetPassword(email, name) {
     return this.request('/auth/self-reset-password', {
       method: 'POST',

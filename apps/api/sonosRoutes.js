@@ -3,9 +3,13 @@
 // (Contrôle d'enceintes Sonos sur le réseau local via lib sonos npm)
 // ═══════════════════════════════════════════════════════════════
 
+import crypto from 'crypto';
 import { execFile } from 'child_process';
+import fs from 'fs/promises';
+import path from 'path';
 import rateLimit from 'express-rate-limit';
 import { promisify } from 'util';
+import { fileURLToPath } from 'url';
 
 import db from './database.js';
 import logger from './logger.js';
@@ -21,6 +25,8 @@ import {
 } from './schemas/sonos.js';
 
 const execFileAsync = promisify(execFile);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ── Validation IPv4 stricte ─────────────────────────────────────
 const IPV4_RE = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
@@ -104,6 +110,241 @@ const KNOWN_RADIO_LOGOS = {
 // ── Cache favicon radio ──
 const radioFaviconCache = new Map();
 
+// ── Sonos logo local cache (disk) ─────────────────────────────
+const SONOS_LOGO_CACHE_DIR = path.join(__dirname, '..', '..', 'public', 'sonos-logos');
+const SONOS_LOGO_TTL_MS = Math.max(
+  60_000,
+  Number(process.env.SONOS_LOGO_TTL_MS || 7 * 24 * 60 * 60 * 1000),
+);
+const SONOS_LOGO_SOURCE_TTL_MS = Math.max(
+  60_000,
+  Number(process.env.SONOS_LOGO_SOURCE_TTL_MS || 12 * 60 * 60 * 1000),
+);
+const SONOS_LOGO_MAX_BYTES = Math.max(
+  64 * 1024,
+  Number(process.env.SONOS_LOGO_MAX_BYTES || 2 * 1024 * 1024),
+);
+const SONOS_LOGO_FALLBACK_URL = process.env.SONOS_LOGO_FALLBACK_URL || '/radio-logos/franceinter.svg';
+
+const sonosLogoSources = new Map();
+const logoRefreshInFlight = new Map();
+const FAVORITES_LOGO_TTL_MS = Math.max(
+  60_000,
+  Number(process.env.SONOS_FAVORITES_LOGO_TTL_MS || 10 * 60 * 1000),
+);
+const favoritesRadioLogoCache = {
+  entries: [],
+  expiresAt: 0,
+};
+
+const IMAGE_EXT_BY_CONTENT_TYPE = {
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+  'image/svg+xml': '.svg',
+  'image/avif': '.avif',
+};
+
+function isBlockedHostname(hostname) {
+  const host = String(hostname || '').toLowerCase();
+  return (
+    host === 'localhost' ||
+    host === '0.0.0.0' ||
+    host === '::1' ||
+    host === '[::1]' ||
+    host.endsWith('.local')
+  );
+}
+
+function isPrivateOrLinkLocalIPv4(ip) {
+  if (!isValidIPv4(ip)) return false;
+  return (
+    ip.startsWith('10.') ||
+    ip.startsWith('192.168.') ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(ip) ||
+    /^169\.254\./.test(ip) ||
+    ip.startsWith('127.')
+  );
+}
+
+function normalizeLogoSourceUrl(raw) {
+  try {
+    const u = new URL(String(raw || '').trim());
+    if (!['http:', 'https:'].includes(u.protocol)) return null;
+    if (isBlockedHostname(u.hostname)) return null;
+    if (isPrivateOrLinkLocalIPv4(u.hostname)) return null;
+    u.hash = '';
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+function rememberSonosLogoSource(rawUrl) {
+  const normalized = normalizeLogoSourceUrl(rawUrl);
+  if (!normalized) return;
+  sonosLogoSources.set(normalized, Date.now());
+}
+
+function isAllowedSonosLogoSource(rawUrl) {
+  const normalized = normalizeLogoSourceUrl(rawUrl);
+  if (!normalized) return false;
+  const ts = sonosLogoSources.get(normalized);
+  if (!ts) return false;
+  if (Date.now() - ts > SONOS_LOGO_SOURCE_TTL_MS) {
+    sonosLogoSources.delete(normalized);
+    return false;
+  }
+  return true;
+}
+
+function cleanupExpiredLogoSources() {
+  const now = Date.now();
+  for (const [url, ts] of sonosLogoSources.entries()) {
+    if (now - ts > SONOS_LOGO_SOURCE_TTL_MS) sonosLogoSources.delete(url);
+  }
+}
+
+function hashLogoUrl(url) {
+  return crypto.createHash('sha256').update(url).digest('hex');
+}
+
+function metadataPathForHash(hash) {
+  return path.join(SONOS_LOGO_CACHE_DIR, `${hash}.json`);
+}
+
+function absoluteLogoPath(fileName) {
+  return path.join(SONOS_LOGO_CACHE_DIR, fileName);
+}
+
+function publicLogoUrl(fileName) {
+  return `/sonos-logos/${fileName}`;
+}
+
+async function ensureLogoCacheDir() {
+  await fs.mkdir(SONOS_LOGO_CACHE_DIR, { recursive: true });
+}
+
+async function readLogoMetadata(hash) {
+  try {
+    const p = metadataPathForHash(hash);
+    const raw = await fs.readFile(p, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!parsed?.fileName || !parsed?.updatedAt) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+async function writeLogoMetadata(hash, metadata) {
+  const p = metadataPathForHash(hash);
+  await fs.writeFile(p, JSON.stringify(metadata, null, 2), 'utf8');
+}
+
+function extFromContentType(contentType) {
+  const clean = String(contentType || '')
+    .split(';')[0]
+    .trim()
+    .toLowerCase();
+  return IMAGE_EXT_BY_CONTENT_TYPE[clean] || null;
+}
+
+async function fetchAndPersistLogo(sourceUrl, hash) {
+  const upstream = await withTimeout(
+    fetch(sourceUrl, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: { Accept: 'image/*,*/*;q=0.8' },
+    }),
+    7000,
+  );
+
+  if (!upstream.ok) {
+    throw new Error(`Logo upstream status ${upstream.status}`);
+  }
+
+  const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
+  if (!contentType.startsWith('image/')) {
+    throw new Error('Logo upstream non-image');
+  }
+
+  const ext = extFromContentType(contentType);
+  if (!ext) {
+    throw new Error(`Unsupported logo content-type: ${contentType}`);
+  }
+
+  const bytes = Buffer.from(await upstream.arrayBuffer());
+  if (!bytes.length || bytes.length > SONOS_LOGO_MAX_BYTES) {
+    throw new Error(`Logo size invalid (${bytes.length} bytes)`);
+  }
+
+  const fileName = `${hash}${ext}`;
+  const abs = absoluteLogoPath(fileName);
+  const tmp = `${abs}.tmp`;
+
+  await fs.writeFile(tmp, bytes);
+  await fs.rename(tmp, abs);
+
+  const metadata = {
+    sourceUrl,
+    fileName,
+    contentType: contentType.split(';')[0].trim().toLowerCase(),
+    updatedAt: Date.now(),
+  };
+  await writeLogoMetadata(hash, metadata);
+
+  return metadata;
+}
+
+async function refreshLogoInBackground(sourceUrl, hash) {
+  if (logoRefreshInFlight.has(hash)) return;
+  const p = fetchAndPersistLogo(sourceUrl, hash)
+    .catch((err) => {
+      logger.warn('[SonosLogo] Background refresh failed:', err?.message || err);
+    })
+    .finally(() => {
+      logoRefreshInFlight.delete(hash);
+    });
+  logoRefreshInFlight.set(hash, p);
+}
+
+async function resolveCachedLogoUrl(sourceUrl) {
+  await ensureLogoCacheDir();
+  cleanupExpiredLogoSources();
+
+  const hash = hashLogoUrl(sourceUrl);
+  const metadata = await readLogoMetadata(hash);
+
+  if (metadata) {
+    const abs = absoluteLogoPath(metadata.fileName);
+    try {
+      await fs.access(abs);
+      const age = Date.now() - Number(metadata.updatedAt || 0);
+      if (age <= SONOS_LOGO_TTL_MS) {
+        return { url: publicLogoUrl(metadata.fileName), stale: false, cached: true };
+      }
+      await refreshLogoInBackground(sourceUrl, hash);
+      return { url: publicLogoUrl(metadata.fileName), stale: true, cached: true };
+    } catch {
+      // metadata orpheline -> re-fetch
+    }
+  }
+
+  try {
+    const fresh = await fetchAndPersistLogo(sourceUrl, hash);
+    return { url: publicLogoUrl(fresh.fileName), stale: false, cached: false };
+  } catch (err) {
+    logger.warn('[SonosLogo] Initial fetch failed:', err?.message || err);
+    if (metadata?.fileName) {
+      return { url: publicLogoUrl(metadata.fileName), stale: true, cached: true };
+    }
+    return { url: SONOS_LOGO_FALLBACK_URL, stale: false, cached: false, fallback: true };
+  }
+}
+
 /**
  * Cherche un logo local connu en matchant uri et/ou titre (case-insensitive)
  * @returns {string|null} chemin local du logo ou null
@@ -114,6 +355,56 @@ function matchKnownRadioLogo(uri, title) {
     if (haystack.includes(keyword)) return logoPath;
   }
   return null;
+}
+
+function tokenizeRadioText(input) {
+  return String(input || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 5);
+}
+
+function hasRelevantTokenOverlap(trackText, referenceText) {
+  const trackTokens = new Set(tokenizeRadioText(trackText));
+  if (trackTokens.size === 0) return false;
+  for (const token of tokenizeRadioText(referenceText)) {
+    if (trackTokens.has(token)) return true;
+  }
+  return false;
+}
+
+async function resolveArtworkFromFavorites(device, track, coordinatorIP) {
+  if (!device || !track) return '';
+
+  try {
+    const now = Date.now();
+    if (favoritesRadioLogoCache.expiresAt <= now) {
+      const favs = await withTimeout(device.getFavorites(), 5000).catch(() => ({ items: [] }));
+      const items = favs?.items || [];
+      favoritesRadioLogoCache.entries = items
+        .map((item) => ({
+          uri: item?.uri || '',
+          title: item?.title || '',
+          albumArtURI: item?.albumArtURI || '',
+        }))
+        .filter((item) => item.albumArtURI);
+      favoritesRadioLogoCache.expiresAt = now + FAVORITES_LOGO_TTL_MS;
+    }
+
+    const trackText = `${track.uri || ''} ${track.title || ''}`;
+    for (const fav of favoritesRadioLogoCache.entries) {
+      const favText = `${fav.uri} ${fav.title}`;
+      if (!hasRelevantTokenOverlap(trackText, favText)) continue;
+      const art = toSonosArtworkUrl(fav.albumArtURI, coordinatorIP);
+      if (art) return art;
+    }
+  } catch {
+    // Silence: simple fallback path
+  }
+
+  return '';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -305,7 +596,7 @@ async function getRadioFavicon(streamUrl) {
 /**
  * Résout l'artwork pour un morceau/radio
  */
-async function resolveArtwork(track, coordinatorIP) {
+async function resolveArtwork(track, coordinatorIP, device = null) {
   let artUrl =
     track.albumArtURL ||
     (track.albumArtURI ? `http://${coordinatorIP}:1400${track.albumArtURI}` : '');
@@ -318,12 +609,30 @@ async function resolveArtwork(track, coordinatorIP) {
       track.uri.startsWith('aac:') ||
       track.uri.startsWith('x-rincon-stream:'));
 
-  if (isRadio) {
-    // 1) Essayer le matching local par URI + titre
-    const knownLogo = matchKnownRadioLogo(track.uri, track.title);
-    if (knownLogo) return knownLogo;
+  let finalUrl = toSonosArtworkUrl(artUrl, coordinatorIP);
 
-    // 2) Tenter le favicon ICY via le stream URL
+  if (isRadio && finalUrl) {
+    // Priorité à l'artwork fourni par Sonos pour coller à l'app officielle.
+    rememberSonosLogoSource(finalUrl);
+    return finalUrl;
+  }
+
+  if (isRadio) {
+    // 1) Si possible, récupérer la jaquette officielle depuis les favoris Sonos.
+    const favoritesArtwork = await resolveArtworkFromFavorites(device, track, coordinatorIP);
+    if (favoritesArtwork) {
+      rememberSonosLogoSource(favoritesArtwork);
+      return favoritesArtwork;
+    }
+
+    // 2) Essayer le matching local par URI + titre
+    const knownLogo = matchKnownRadioLogo(track.uri, track.title);
+    if (knownLogo) {
+      rememberSonosLogoSource(knownLogo);
+      return knownLogo;
+    }
+
+    // 3) Tenter le favicon ICY via le stream URL
     let streamUrl = track.uri;
     if (streamUrl.startsWith('x-rincon-mp3radio://')) {
       streamUrl = streamUrl.replace('x-rincon-mp3radio://', '');
@@ -346,7 +655,9 @@ async function resolveArtwork(track, coordinatorIP) {
     }
   }
 
-  return toSonosArtworkUrl(artUrl, coordinatorIP);
+  finalUrl = toSonosArtworkUrl(artUrl, coordinatorIP);
+  rememberSonosLogoSource(finalUrl);
+  return finalUrl;
 }
 
 /**
@@ -370,7 +681,7 @@ export async function getSonosNowPlaying() {
 
   if (!track) return { playing: false, state };
 
-  const artUrl = await resolveArtwork(track, coordinatorIP);
+  const artUrl = await resolveArtwork(track, coordinatorIP, device);
 
   // Centralisation du parsing radio : "Artiste - Titre" dans le champ title
   let title = track.title || '';
@@ -399,6 +710,42 @@ export async function getSonosNowPlaying() {
 // ══════════════════════════════════════════════════════════════
 
 export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
+  app.get('/api/sonos/logo', optionalTvToken, sonosReadLimiter, async (req, res) => {
+    try {
+      const rawUrl = String(req.query?.url || '').trim();
+      if (!rawUrl || rawUrl.length > 2048) {
+        return res.status(400).json({ success: false, error: 'url invalide' });
+      }
+
+      if (!isAllowedSonosLogoSource(rawUrl)) {
+        return res
+          .status(403)
+          .json({ success: false, error: 'URL non autorisee (source Sonos attendue)' });
+      }
+
+      const normalized = normalizeLogoSourceUrl(rawUrl);
+      if (!normalized) {
+        return res.status(400).json({ success: false, error: 'URL logo invalide' });
+      }
+
+      const resolved = await resolveCachedLogoUrl(normalized);
+      return res.json({
+        success: true,
+        url: resolved.url,
+        cached: Boolean(resolved.cached),
+        stale: Boolean(resolved.stale),
+        fallback: Boolean(resolved.fallback),
+      });
+    } catch (error) {
+      logger.warn('[SonosLogo] route error:', error?.message || error);
+      return res.status(500).json({
+        success: false,
+        error: 'Impossible de resoudre le logo',
+        url: SONOS_LOGO_FALLBACK_URL,
+      });
+    }
+  });
+
   app.get('/api/sonos/artwork', optionalTvToken, sonosReadLimiter, async (req, res) => {
     try {
       const src = String(req.query?.src || '').trim();
@@ -436,12 +783,25 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
           .json({ success: false, error: 'Artwork indisponible' });
       }
 
-      const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
+      const bytes = Buffer.from(await upstream.arrayBuffer());
+
+      // Sonos ne renvoie pas toujours un Content-Type — détecter depuis les magic bytes
+      let contentType = (upstream.headers.get('content-type') || '').toLowerCase().split(';')[0].trim();
       if (!contentType.startsWith('image/')) {
-        return res.status(415).json({ success: false, error: 'Format artwork invalide' });
+        // Magic bytes detection
+        if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+          contentType = 'image/jpeg';
+        } else if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+          contentType = 'image/png';
+        } else if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
+          contentType = 'image/gif';
+        } else if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+          contentType = 'image/webp';
+        } else {
+          return res.status(415).json({ success: false, error: 'Format artwork invalide' });
+        }
       }
 
-      const bytes = Buffer.from(await upstream.arrayBuffer());
       res.setHeader('Content-Type', contentType);
       res.setHeader('Cache-Control', 'public, max-age=60');
       return res.status(200).send(bytes);
@@ -816,6 +1176,10 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
           const title = f.title || '';
           let albumArtURI = f.albumArtURI || '';
 
+          if (albumArtURI) {
+            albumArtURI = toSonosArtworkUrl(albumArtURI, coordinatorIP);
+          }
+
           // Détection radio
           const isRadio =
             uri.startsWith('x-rincon-mp3radio://') ||
@@ -824,7 +1188,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
             uri.startsWith('aac:') ||
             uri.startsWith('x-rincon-stream:');
 
-          if (isRadio) {
+          if (isRadio && !albumArtURI) {
             // 1) Logo local connu (par URI + titre)
             const knownLogo = matchKnownRadioLogo(uri, title);
             if (knownLogo) {
@@ -850,10 +1214,9 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
                 }
               }
             }
-          } else if (albumArtURI) {
-            albumArtURI = toSonosArtworkUrl(albumArtURI, coordinatorIP);
           }
 
+          rememberSonosLogoSource(albumArtURI);
           return { title, uri, albumArtURI, description: f.description || '' };
         }),
       );
@@ -880,12 +1243,15 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       const stations = await device.getFavoritesRadioStations().catch(() => ({ items: [] }));
       const items = (stations?.items || []).map((s) => {
         let albumArtURI = s.albumArtURI || '';
-        const knownLogo = matchKnownRadioLogo(s.uri || '', s.title || '');
-        if (knownLogo) {
-          albumArtURI = knownLogo;
-        } else if (albumArtURI) {
+        if (albumArtURI) {
           albumArtURI = toSonosArtworkUrl(albumArtURI, coordinatorIP);
+        } else {
+          const knownLogo = matchKnownRadioLogo(s.uri || '', s.title || '');
+          if (knownLogo) {
+            albumArtURI = knownLogo;
+          }
         }
+        rememberSonosLogoSource(albumArtURI);
         return {
           title: s.title || '',
           uri: s.uri || '',

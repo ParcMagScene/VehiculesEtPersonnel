@@ -92,6 +92,33 @@ export function AuthProvider({ children }) {
     setCurrentUser(null);
   }, []);
 
+  const loginPin = useCallback(
+    async (email, pin) => {
+      const result = await api.loginPin(email, pin);
+      setIsAuthenticated(true);
+      setCurrentUser(result.user);
+
+      let prefs = {};
+      try {
+        prefs = await api.getPreferences();
+        userPrefsRef.current = {
+          notificationsEnabled: prefs.notificationsEnabled !== false,
+          soundEnabled: prefs.soundEnabled !== false,
+        };
+        setVolume((prefs.soundVolume ?? 70) / 100);
+        applyTabPrefs(prefs);
+        if (prefs.notificationsEnabled !== false) {
+          requestNotificationPermission();
+        }
+      } catch (e) {
+        /* silencieux */
+      }
+
+      return { ...result, prefs };
+    },
+    [applyTabPrefs],
+  );
+
   const updateUser = useCallback((updatedUser) => {
     setCurrentUser(updatedUser);
     api.user = updatedUser;
@@ -120,6 +147,7 @@ export function AuthProvider({ children }) {
       currentUser,
       isAuthLoading,
       login,
+      loginPin,
       logout,
       updateUser,
       tabPrefs,
@@ -131,6 +159,7 @@ export function AuthProvider({ children }) {
       currentUser,
       isAuthLoading,
       login,
+      loginPin,
       logout,
       updateUser,
       tabPrefs,

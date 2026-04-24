@@ -367,6 +367,7 @@ function buildSynthese(dates, personId) {
     FROM tracking_sheets ts
     JOIN persons p ON p.id = ts.person_id
     WHERE ts.date IN (${placeholders})
+      AND p.status = 'active'
   `;
   const params = [...dates];
   if (personId) {
@@ -419,19 +420,28 @@ function buildSynthese(dates, personId) {
     if (unreportedAm) unreportedParts.push('AM');
     if (unreportedPm) unreportedParts.push('PM');
 
-    if ((notDone > 0 && s.status !== 'draft') || unreportedParts.length > 0) {
+    // Enrichir avec le contexte avant de qualifier les anomalies
+    const enriched = enrichSheetWithDayContext({ ...s, person_id: s.person_id, date: s.date });
+    const ctx = enriched.day_context || {};
+    const hasContext = ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
+
+    // Les périodes non renseignées ne sont pas des anomalies si la personne est en indispo ou en mission
+    const anomalyUnreportedParts = hasContext ? [] : unreportedParts;
+
+    if ((notDone > 0 && s.status !== 'draft') || anomalyUnreportedParts.length > 0) {
       anomalies.push({
         date: s.date,
         person: `${s.first_name} ${s.last_name}`,
         person_id: s.person_id,
         not_done: notDone,
-        unreported_periods: unreportedParts,
+        unreported_periods: anomalyUnreportedParts,
       });
     }
 
     return {
       ...s,
       entries: sheetEntries,
+      day_context: ctx,
       stats: {
         total: sheetEntries.length,
         done,
@@ -451,7 +461,7 @@ function buildSynthese(dates, personId) {
       total_tasks: totalTasks,
       completed_tasks: completedTasks,
       completion_rate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
-      total_time: Math.round(totalTime * 10) / 10,
+      total_time: totalTime,
       anomalies,
     },
   };
@@ -462,9 +472,9 @@ function buildSynthese(dates, personId) {
 // ═══════════════════════════════════════
 
 /** Convertit des heures décimales en "Xh MM" (ex: 1.5 → "1h30", 0.25 → "0h15") */
-function decToHM(h) {
-  if (!h) return '0h00';
-  const total = Math.round(h * 60);
+function decToHM(minutes) {
+  if (!minutes) return '0h00';
+  const total = Math.round(minutes);
   const hours = Math.floor(total / 60);
   const mins = total % 60;
   return `${hours}h${String(mins).padStart(2, '0')}`;
@@ -957,9 +967,11 @@ function generateSynthesePdf(synthese, title, res) {
     const totTime = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.time || 0), 0);
     const totDone = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.done || 0), 0);
     const totTasks = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.total || 0), 0);
-    const hasWarning = pg.sheets.some(
-      (sh) => sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm,
-    );
+    const hasWarning = pg.sheets.some((sh) => {
+      const c = sh.day_context || {};
+      const hasCtx = c.has_unavailability || c.has_leave || c.has_mission || c.has_enterprise_presence;
+      return sh.stats?.not_done > 0 || (!hasCtx && (sh.stats?.unreported_am || sh.stats?.unreported_pm));
+    });
 
     ensureSpace(46 + pg.sheets.length * 14);
 
@@ -985,8 +997,11 @@ function generateSynthesePdf(synthese, title, res) {
     let odd = false;
     const sortedSheets = [...pg.sheets].sort((a, b) => a.date.localeCompare(b.date));
     for (const sh of sortedSheets) {
+      const shCtx = sh.day_context || {};
+      const shHasContext =
+        shCtx.has_unavailability || shCtx.has_leave || shCtx.has_mission || shCtx.has_enterprise_presence;
       const rowBg =
-        sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm
+        sh.stats?.not_done > 0 || (!shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm))
           ? '#fef2f2'
           : odd
             ? '#f8fafc'
@@ -998,17 +1013,28 @@ function generateSynthesePdf(synthese, title, res) {
       const amTime = amEntries.reduce((acc, e) => acc + (e.time_spent || 0), 0);
       const pmTime = pmEntries.reduce((acc, e) => acc + (e.time_spent || 0), 0);
 
-      const amCell = sh.stats?.unreported_am
+      const ctx = sh.day_context || {};
+      const hasContext =
+        ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
+
+      const amCell = sh.stats?.unreported_am && !hasContext
         ? '⚠ Non renseignée'
         : `${amEntries.length} tâche(s) — ${decToHM(amTime)}`;
-      const pmCell = sh.stats?.unreported_pm
+      const pmCell = sh.stats?.unreported_pm && !hasContext
         ? '⚠ Non renseignée'
         : `${pmEntries.length} tâche(s) — ${decToHM(pmTime)}`;
 
       const alertParts = [];
       if (sh.stats?.not_done > 0) alertParts.push(`${sh.stats.not_done} non faite(s)`);
-      if (sh.stats?.unreported_am) alertParts.push('AM non-renseignée');
-      if (sh.stats?.unreported_pm) alertParts.push('PM non-renseignée');
+      if (sh.stats?.unreported_am && !hasContext) alertParts.push('AM non-renseignée');
+      if (sh.stats?.unreported_pm && !hasContext) alertParts.push('PM non-renseignée');
+      // Contexte : indisponibilités + missions
+      for (const av of ctx.availabilities || []) {
+        alertParts.push(av.type_label || av.type);
+      }
+      for (const m of ctx.missions || []) {
+        alertParts.push(m.title || m.affaire || 'Mission');
+      }
 
       const rowVals = [
         sh.date,
@@ -1022,7 +1048,8 @@ function generateSynthesePdf(synthese, title, res) {
       ];
 
       doc.rect(LEFT, y, USABLE_W, 14).fillColor(rowBg).fill();
-      const textColor = sh.stats?.unreported_am || sh.stats?.unreported_pm ? '#991b1b' : '#111111';
+      const textColor =
+        !shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm) ? '#991b1b' : '#111111';
       doc.fillColor(textColor);
       let x = LEFT;
       for (let i = 0; i < rowVals.length; i++) {

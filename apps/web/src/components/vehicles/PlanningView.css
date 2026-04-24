@@ -444,6 +444,18 @@
   font-weight: 500;
 }
 
+.planning-enterprise {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.14);
+  border-radius: var(--radius-xs);
+  font-size: var(--font-xs);
+  color: var(--theme-info);
+  font-weight: 500;
+}
+
 .planning-cell-unavailable {
   background: var(--theme-danger-bg) !important;
 }

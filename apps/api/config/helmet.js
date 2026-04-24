@@ -1,6 +1,13 @@
 import helmet from 'helmet';
 
-const MAP_TILE_SOURCES = ['https://*.tile.openstreetmap.org', 'https://*.basemaps.cartocdn.com'];
+const MAP_TILE_SOURCES = [
+  // OSM tiles can be served from subdomains (a/b/c) and occasionally root host.
+  'https://*.tile.openstreetmap.org',
+  'https://tile.openstreetmap.org',
+  // Carto tiles can also vary between subdomains and root host.
+  'https://*.basemaps.cartocdn.com',
+  'https://basemaps.cartocdn.com',
+];
 const MAP_API_SOURCES = ['https://nominatim.openstreetmap.org', 'https://router.project-osrm.org'];
 
 /**

@@ -78,7 +78,27 @@ function PlanningView({
     (personId, day) => {
       const dayStr = format(day, 'yyyy-MM-dd');
       return personnelData.availabilities.filter((a) => {
-        return a.person_id === personId && a.start_date <= dayStr && a.end_date >= dayStr;
+        return (
+          a.person_id === personId &&
+          a.start_date <= dayStr &&
+          a.end_date >= dayStr &&
+          (a.type || '').toLowerCase() !== 'entreprise'
+        );
+      });
+    },
+    [personnelData.availabilities],
+  );
+
+  const getEnterprisePresenceForPersonDay = useCallback(
+    (personId, day) => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      return personnelData.availabilities.filter((a) => {
+        return (
+          a.person_id === personId &&
+          a.start_date <= dayStr &&
+          a.end_date >= dayStr &&
+          (a.type || '').toLowerCase() === 'entreprise'
+        );
       });
     },
     [personnelData.availabilities],
@@ -347,6 +367,7 @@ function PlanningView({
                   {weekDays.map((day) => {
                     const missions = getMissionsForPersonDay(person.id, day);
                     const unavailabilities = getUnavailabilitiesForPersonDay(person.id, day);
+                    const enterprisePresences = getEnterprisePresenceForPersonDay(person.id, day);
                     const isUnavailable = unavailabilities.length > 0;
 
                     return (
@@ -359,6 +380,13 @@ function PlanningView({
                           <div key={`ua-${i}`} className="planning-unavailability">
                             <Ban size={12} />
                             <span>{ua.reason || 'Indisponible'}</span>
+                          </div>
+                        ))}
+
+                        {enterprisePresences.map((ep, i) => (
+                          <div key={`ep-${i}`} className="planning-enterprise">
+                            <Briefcase size={12} />
+                            <span>{ep.reason || 'Présence entreprise'}</span>
                           </div>
                         ))}
 
@@ -390,11 +418,13 @@ function PlanningView({
                           </div>
                         ))}
 
-                        {missions.length === 0 && !isUnavailable && (
-                          <div className="planning-cell-empty planning-cell-available">
-                            <span className="available-dot"></span>
-                          </div>
-                        )}
+                        {missions.length === 0 &&
+                          !isUnavailable &&
+                          enterprisePresences.length === 0 && (
+                            <div className="planning-cell-empty planning-cell-available">
+                              <span className="available-dot"></span>
+                            </div>
+                          )}
                       </div>
                     );
                   })}

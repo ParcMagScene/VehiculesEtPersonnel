@@ -254,6 +254,21 @@
   font-weight: 500;
 }
 
+.mpers-enterprise-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-size: 0.78rem;
+}
+
+.mpers-enterprise-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--theme-info);
+  flex-shrink: 0;
+}
+
 /* ═══ VUE SEMAINE ═══ */
 .mpers-week-view {
   flex: 1;
@@ -863,6 +878,21 @@
   margin-top: var(--space-1);
 }
 
+.mpers-my-enterprise-card {
+  background: var(--theme-info-bg);
+  border-left: 3px solid var(--theme-info);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.mpers-my-enterprise-reason {
+  display: block;
+  font-weight: 600;
+  color: var(--theme-info-dark);
+  font-size: 0.95rem;
+}
+
 /* Aucune activité */
 .mpers-my-free {
   display: flex;
@@ -955,6 +985,20 @@
   border-left: 3px solid;
   border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   background: var(--theme-bg-page);
+}
+
+.mpers-my-week-enterprise {
+  font-size: var(--font-base);
+  color: var(--theme-info-dark);
+  padding: var(--space-1) var(--space-2);
+  border-left: 3px solid var(--theme-info);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  background: var(--theme-info-bg);
+}
+
+.mpers-cell-enterprise {
+  border-left-color: var(--theme-info) !important;
+  background: var(--theme-info-bg);
 }
 
 .mpers-my-week-free {

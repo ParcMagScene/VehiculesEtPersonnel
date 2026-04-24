@@ -122,6 +122,84 @@ function buildSearchQuery(baseTable, searchFields, req) {
   return { where, params, sortCol, sortOrder, limit: parseInt(limit), offset };
 }
 
+const ENTITY_TABLE_BY_TYPE = {
+  client: 'clients',
+  supplier: 'suppliers',
+  prestataire: 'prestataires',
+};
+
+function normalizeEntityName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/['’]/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(st|ste)\b/g, 'saint')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function canonicalizeEntityLink(aType, aId, bType, bId) {
+  const a = { type: aType, id: Number(aId) };
+  const b = { type: bType, id: Number(bId) };
+  if (a.type < b.type || (a.type === b.type && a.id < b.id)) return [a, b];
+  return [b, a];
+}
+
+function extractEmailParts(email) {
+  const e = String(email || '')
+    .trim()
+    .toLowerCase();
+  const at = e.indexOf('@');
+  if (at <= 0 || at >= e.length - 1) return null;
+  return {
+    local: e.slice(0, at).replace(/[^a-z0-9]/g, ''),
+    domain: e.slice(at + 1).replace(/^www\./, ''),
+  };
+}
+
+function extractDomain(value) {
+  const raw = String(value || '')
+    .trim()
+    .toLowerCase();
+  if (!raw) return null;
+  if (raw.includes('@')) return raw.split('@')[1]?.replace(/^www\./, '') || null;
+  try {
+    const url = raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`;
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
+function syncPrimaryContactEntityLinks(
+  contactId,
+  { client_id, supplier_id, prestataire_id },
+  userId,
+) {
+  const rows = [
+    ['client', client_id || null],
+    ['supplier', supplier_id || null],
+    ['prestataire', prestataire_id || null],
+  ];
+
+  for (const [entityType, entityId] of rows) {
+    // Remplacer le lien "primaire" de ce type par la valeur courante (sans toucher les liens auto).
+    db.prepare(
+      `DELETE FROM annuaire_contact_entity_links
+       WHERE contact_id = ? AND entity_type = ? AND source IN ('legacy_column', 'manual_primary')`,
+    ).run(contactId, entityType);
+
+    if (!entityId) continue;
+    db.prepare(
+      `INSERT OR IGNORE INTO annuaire_contact_entity_links
+       (contact_id, entity_type, entity_id, confidence, source, created_by, modified_by)
+       VALUES (?, ?, ?, 1.0, 'manual_primary', ?, ?)`,
+    ).run(contactId, entityType, entityId, userId || null, userId || null);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // CLIENTS (enrichi)
 // ═══════════════════════════════════════════════════════════════
@@ -902,6 +980,17 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
       const created = db
         .prepare('SELECT * FROM annuaire_contacts WHERE id = ?')
         .get(result.lastInsertRowid);
+
+      syncPrimaryContactEntityLinks(
+        result.lastInsertRowid,
+        {
+          client_id: client_id || null,
+          supplier_id: supplier_id || null,
+          prestataire_id: prestataire_id || null,
+        },
+        req.user.id,
+      );
+
       res.status(201).json(created);
     } catch (error) {
       logger.error('Annuaire contact create:', error);
@@ -951,6 +1040,16 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
         is_active !== undefined ? is_active : 1,
         req.user.id,
         req.params.id,
+      );
+
+      syncPrimaryContactEntityLinks(
+        Number(req.params.id),
+        {
+          client_id: client_id || null,
+          supplier_id: supplier_id || null,
+          prestataire_id: prestataire_id || null,
+        },
+        req.user.id,
       );
 
       const updated = db.prepare('SELECT * FROM annuaire_contacts WHERE id = ?').get(req.params.id);
@@ -1683,6 +1782,496 @@ export function setupAnnuaireMatchingRoutes(app, authenticateToken, requireAdmin
       res.json({ success: true, linked });
     } catch (error) {
       logger.error('Annuaire bulk-link-locations:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  /**
+   * GET /api/annuaire/matching-entities
+   * Propose des liaisons client/fournisseur/prestataire basées sur le nom normalisé.
+   */
+  app.get('/api/annuaire/matching-entities', authenticateToken, (req, res) => {
+    try {
+      const activeEntities = [
+        ...db
+          .prepare('SELECT id, name, city, code_libre FROM clients WHERE is_active = 1')
+          .all()
+          .map((e) => ({ ...e, entity_type: 'client' })),
+        ...db
+          .prepare('SELECT id, name, city, code_libre FROM suppliers WHERE is_active = 1')
+          .all()
+          .map((e) => ({ ...e, entity_type: 'supplier' })),
+        ...db
+          .prepare('SELECT id, name, city, code_libre FROM prestataires WHERE is_active = 1')
+          .all()
+          .map((e) => ({ ...e, entity_type: 'prestataire' })),
+      ];
+
+      const existingLinks = db
+        .prepare(
+          `SELECT entity_a_type, entity_a_id, entity_b_type, entity_b_id, status
+             FROM annuaire_entity_links
+            WHERE status != 'rejected'`,
+        )
+        .all();
+      const existingKey = new Set(
+        existingLinks.map(
+          (l) => `${l.entity_a_type}:${l.entity_a_id}|${l.entity_b_type}:${l.entity_b_id}`,
+        ),
+      );
+
+      const byName = new Map();
+      for (const entity of activeEntities) {
+        const normalized = normalizeEntityName(entity.name);
+        if (!normalized || normalized.length < 3) continue;
+        if (!byName.has(normalized)) byName.set(normalized, []);
+        byName.get(normalized).push({ ...entity, normalized_name: normalized });
+      }
+
+      const matches = [];
+      for (const [normalizedName, group] of byName.entries()) {
+        if (group.length < 2) continue;
+
+        for (let i = 0; i < group.length; i++) {
+          for (let j = i + 1; j < group.length; j++) {
+            const a = group[i];
+            const b = group[j];
+            if (a.entity_type === b.entity_type) continue;
+
+            const [left, right] = canonicalizeEntityLink(a.entity_type, a.id, b.entity_type, b.id);
+            const key = `${left.type}:${left.id}|${right.type}:${right.id}`;
+            if (existingKey.has(key)) continue;
+
+            const cityMatch =
+              String(a.city || '')
+                .trim()
+                .toLowerCase() &&
+              String(a.city || '')
+                .trim()
+                .toLowerCase() ===
+                String(b.city || '')
+                  .trim()
+                  .toLowerCase();
+
+            matches.push({
+              entity_a_type: left.type,
+              entity_a_id: left.id,
+              entity_a_name: left.id === a.id ? a.name : b.name,
+              entity_a_city: left.id === a.id ? a.city : b.city,
+              entity_b_type: right.type,
+              entity_b_id: right.id,
+              entity_b_name: right.id === b.id ? b.name : a.name,
+              entity_b_city: right.id === b.id ? b.city : a.city,
+              normalized_name: normalizedName,
+              match_reason: cityMatch ? 'exact_name_and_city' : 'exact_name',
+              confidence: cityMatch ? 1 : 0.86,
+            });
+          }
+        }
+      }
+
+      matches.sort(
+        (x, y) => y.confidence - x.confidence || x.normalized_name.localeCompare(y.normalized_name),
+      );
+      res.json({ matches });
+    } catch (error) {
+      logger.error('Annuaire matching-entities:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  /**
+   * GET /api/annuaire/entity-links
+   * Liste les liaisons existantes (confirmées / suggérées).
+   */
+  app.get('/api/annuaire/entity-links', authenticateToken, (req, res) => {
+    try {
+      const status = req.query.status || null;
+      const rows = status
+        ? db
+            .prepare(
+              `SELECT * FROM annuaire_entity_links
+               WHERE status = ?
+               ORDER BY created_at DESC, id DESC`,
+            )
+            .all(status)
+        : db
+            .prepare(
+              `SELECT * FROM annuaire_entity_links
+               ORDER BY created_at DESC, id DESC`,
+            )
+            .all();
+
+      const detailStmts = {
+        client: db.prepare('SELECT id, name, city, code_libre FROM clients WHERE id = ?'),
+        supplier: db.prepare('SELECT id, name, city, code_libre FROM suppliers WHERE id = ?'),
+        prestataire: db.prepare('SELECT id, name, city, code_libre FROM prestataires WHERE id = ?'),
+      };
+
+      const links = rows.map((row) => {
+        const a = detailStmts[row.entity_a_type]?.get(row.entity_a_id) || null;
+        const b = detailStmts[row.entity_b_type]?.get(row.entity_b_id) || null;
+        return {
+          ...row,
+          entity_a_name: a?.name || null,
+          entity_a_city: a?.city || null,
+          entity_a_code_libre: a?.code_libre || null,
+          entity_b_name: b?.name || null,
+          entity_b_city: b?.city || null,
+          entity_b_code_libre: b?.code_libre || null,
+        };
+      });
+
+      res.json({ links });
+    } catch (error) {
+      logger.error('Annuaire entity-links GET:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  /**
+   * POST /api/annuaire/entity-links
+   * Body: { entity_a_type, entity_a_id, entity_b_type, entity_b_id, relation_type?, confidence?, notes?, status? }
+   */
+  app.post('/api/annuaire/entity-links', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const {
+        entity_a_type,
+        entity_a_id,
+        entity_b_type,
+        entity_b_id,
+        relation_type,
+        confidence,
+        notes,
+        status,
+      } = req.body || {};
+
+      if (!ENTITY_TABLE_BY_TYPE[entity_a_type] || !ENTITY_TABLE_BY_TYPE[entity_b_type]) {
+        return res.status(400).json({ success: false, error: 'Type entité invalide' });
+      }
+      if (Number(entity_a_id) === Number(entity_b_id) && entity_a_type === entity_b_type) {
+        return res
+          .status(400)
+          .json({ success: false, error: 'Impossible de lier une entité à elle-même' });
+      }
+
+      const [left, right] = canonicalizeEntityLink(
+        entity_a_type,
+        entity_a_id,
+        entity_b_type,
+        entity_b_id,
+      );
+
+      const leftExists = db
+        .prepare(`SELECT id FROM ${ENTITY_TABLE_BY_TYPE[left.type]} WHERE id = ?`)
+        .get(left.id);
+      const rightExists = db
+        .prepare(`SELECT id FROM ${ENTITY_TABLE_BY_TYPE[right.type]} WHERE id = ?`)
+        .get(right.id);
+      if (!leftExists || !rightExists) {
+        return res.status(404).json({ success: false, error: 'Une des entités est introuvable' });
+      }
+
+      db.prepare(
+        `INSERT INTO annuaire_entity_links (
+          entity_a_type, entity_a_id, entity_b_type, entity_b_id,
+          relation_type, status, confidence, notes, created_by, modified_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(entity_a_type, entity_a_id, entity_b_type, entity_b_id)
+        DO UPDATE SET
+          relation_type = excluded.relation_type,
+          status = excluded.status,
+          confidence = excluded.confidence,
+          notes = excluded.notes,
+          modified_by = excluded.modified_by,
+          modified_at = CURRENT_TIMESTAMP`,
+      ).run(
+        left.type,
+        left.id,
+        right.type,
+        right.id,
+        relation_type || 'same_organization',
+        status || 'confirmed',
+        Number.isFinite(Number(confidence)) ? Number(confidence) : 1,
+        notes || null,
+        req.user.id,
+        req.user.id,
+      );
+
+      addToHistory(
+        'annuaire_entity_link',
+        `${left.type}:${left.id}|${right.type}:${right.id}`,
+        'linked_entities',
+        { left, right, relation_type: relation_type || 'same_organization' },
+        req.user.id,
+        req.user.name,
+      );
+
+      const saved = db
+        .prepare(
+          `SELECT * FROM annuaire_entity_links
+           WHERE entity_a_type = ? AND entity_a_id = ? AND entity_b_type = ? AND entity_b_id = ?`,
+        )
+        .get(left.type, left.id, right.type, right.id);
+
+      res.status(201).json({ success: true, link: saved });
+    } catch (error) {
+      logger.error('Annuaire entity-links POST:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  /**
+   * POST /api/annuaire/bulk-link-entities
+   * Body: { links: [{ entity_a_type, entity_a_id, entity_b_type, entity_b_id, relation_type?, confidence? }] }
+   */
+  app.post('/api/annuaire/bulk-link-entities', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const links = Array.isArray(req.body?.links) ? req.body.links : [];
+      if (!links.length) {
+        return res.status(400).json({ success: false, error: 'Le tableau links est requis' });
+      }
+
+      let linked = 0;
+      const tx = db.transaction(() => {
+        for (const link of links) {
+          const {
+            entity_a_type,
+            entity_a_id,
+            entity_b_type,
+            entity_b_id,
+            relation_type,
+            confidence,
+          } = link || {};
+          if (!ENTITY_TABLE_BY_TYPE[entity_a_type] || !ENTITY_TABLE_BY_TYPE[entity_b_type])
+            continue;
+          if (entity_a_type === entity_b_type && Number(entity_a_id) === Number(entity_b_id))
+            continue;
+
+          const [left, right] = canonicalizeEntityLink(
+            entity_a_type,
+            entity_a_id,
+            entity_b_type,
+            entity_b_id,
+          );
+
+          db.prepare(
+            `INSERT INTO annuaire_entity_links (
+              entity_a_type, entity_a_id, entity_b_type, entity_b_id,
+              relation_type, status, confidence, created_by, modified_by
+            ) VALUES (?, ?, ?, ?, ?, 'confirmed', ?, ?, ?)
+            ON CONFLICT(entity_a_type, entity_a_id, entity_b_type, entity_b_id)
+            DO UPDATE SET
+              relation_type = excluded.relation_type,
+              status = 'confirmed',
+              confidence = excluded.confidence,
+              modified_by = excluded.modified_by,
+              modified_at = CURRENT_TIMESTAMP`,
+          ).run(
+            left.type,
+            left.id,
+            right.type,
+            right.id,
+            relation_type || 'same_organization',
+            Number.isFinite(Number(confidence)) ? Number(confidence) : 1,
+            req.user.id,
+            req.user.id,
+          );
+          linked++;
+        }
+      });
+      tx();
+
+      res.json({ success: true, linked });
+    } catch (error) {
+      logger.error('Annuaire bulk-link-entities:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  /**
+   * GET /api/annuaire/matching-contact-entities
+   * Suggestions de rattachement contact -> client/supplier/prestataire via email (domaine + local-part).
+   */
+  app.get('/api/annuaire/matching-contact-entities', authenticateToken, (req, res) => {
+    try {
+      const contacts = db
+        .prepare(
+          `SELECT id, first_name, last_name, email, client_id, supplier_id, prestataire_id
+           FROM annuaire_contacts
+           WHERE is_active = 1 AND email LIKE '%@%'`,
+        )
+        .all();
+
+      const entitiesByType = {
+        client: db
+          .prepare('SELECT id, name, email, website FROM clients WHERE is_active = 1')
+          .all(),
+        supplier: db
+          .prepare('SELECT id, name, email, website FROM suppliers WHERE is_active = 1')
+          .all(),
+        prestataire: db
+          .prepare('SELECT id, name, email, website FROM prestataires WHERE is_active = 1')
+          .all(),
+      };
+
+      const prepared = Object.fromEntries(
+        Object.entries(entitiesByType).map(([type, rows]) => [
+          type,
+          rows.map((row) => {
+            const domains = new Set();
+            const d1 = extractDomain(row.email);
+            const d2 = extractDomain(row.website);
+            if (d1) domains.add(d1);
+            if (d2) domains.add(d2);
+            return {
+              ...row,
+              domains,
+              slug: normalizeEntityName(row.name).replace(/\s+/g, ''),
+            };
+          }),
+        ]),
+      );
+
+      const matches = [];
+      for (const contact of contacts) {
+        const emailParts = extractEmailParts(contact.email);
+        if (!emailParts) continue;
+        const domainNormalized = emailParts.domain.replace(/[^a-z0-9]/g, '');
+
+        for (const [entityType, idField] of [
+          ['client', 'client_id'],
+          ['supplier', 'supplier_id'],
+          ['prestataire', 'prestataire_id'],
+        ]) {
+          if (contact[idField]) continue;
+
+          const candidates = prepared[entityType]
+            .map((entity) => {
+              let score = 0;
+              if (entity.domains.has(emailParts.domain)) score += 10;
+              if (entity.slug && entity.slug.length >= 5) {
+                if (domainNormalized.includes(entity.slug)) score += 6;
+                if (emailParts.local.includes(entity.slug)) score += 4;
+              }
+              return { entity, score };
+            })
+            .filter((x) => x.score >= 6)
+            .sort((a, b) => b.score - a.score || a.entity.id - b.entity.id);
+
+          if (!candidates.length) continue;
+          if (candidates.length > 1 && candidates[0].score === candidates[1].score) continue;
+
+          const best = candidates[0];
+          matches.push({
+            contact_id: contact.id,
+            contact_name:
+              [contact.first_name, contact.last_name].filter(Boolean).join(' ').trim() ||
+              contact.last_name ||
+              'Contact',
+            contact_email: contact.email,
+            entity_type: entityType,
+            entity_id: best.entity.id,
+            entity_name: best.entity.name,
+            match_reason: best.score >= 10 ? 'email_domain_exact' : 'email_name_pattern',
+            confidence: best.score >= 10 ? 1 : 0.86,
+          });
+        }
+      }
+
+      res.json({ matches });
+    } catch (error) {
+      logger.error('Annuaire matching-contact-entities:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  /**
+   * POST /api/annuaire/bulk-link-contact-entities
+   * Body: { links: [{ contact_id, entity_type, entity_id, confidence?, notes? }] }
+   */
+  app.post(
+    '/api/annuaire/bulk-link-contact-entities',
+    authenticateToken,
+    requireAdmin,
+    (req, res) => {
+      try {
+        const links = Array.isArray(req.body?.links) ? req.body.links : [];
+        if (!links.length) {
+          return res.status(400).json({ success: false, error: 'Le tableau links est requis' });
+        }
+
+        let linked = 0;
+        const tx = db.transaction(() => {
+          for (const link of links) {
+            const { contact_id, entity_type, entity_id, confidence, notes } = link || {};
+            if (!contact_id || !ENTITY_TABLE_BY_TYPE[entity_type] || !entity_id) continue;
+
+            const contact = db
+              .prepare('SELECT id FROM annuaire_contacts WHERE id = ?')
+              .get(contact_id);
+            if (!contact) continue;
+            const entity = db
+              .prepare(`SELECT id FROM ${ENTITY_TABLE_BY_TYPE[entity_type]} WHERE id = ?`)
+              .get(entity_id);
+            if (!entity) continue;
+
+            db.prepare(
+              `INSERT INTO annuaire_contact_entity_links
+             (contact_id, entity_type, entity_id, confidence, source, notes, created_by, modified_by)
+             VALUES (?, ?, ?, ?, 'auto_email', ?, ?, ?)
+             ON CONFLICT(contact_id, entity_type, entity_id)
+             DO UPDATE SET
+               confidence = excluded.confidence,
+               notes = excluded.notes,
+               modified_by = excluded.modified_by,
+               modified_at = CURRENT_TIMESTAMP`,
+            ).run(
+              contact_id,
+              entity_type,
+              entity_id,
+              Number.isFinite(Number(confidence)) ? Number(confidence) : 1,
+              notes || null,
+              req.user.id,
+              req.user.id,
+            );
+
+            const legacyField = `${entity_type}_id`;
+            const current = db
+              .prepare(
+                `SELECT client_id, supplier_id, prestataire_id FROM annuaire_contacts WHERE id = ?`,
+              )
+              .get(contact_id);
+            if (current && !current[legacyField]) {
+              db.prepare(
+                `UPDATE annuaire_contacts SET ${legacyField} = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?`,
+              ).run(entity_id, contact_id);
+            }
+            linked++;
+          }
+        });
+        tx();
+
+        res.json({ success: true, linked });
+      } catch (error) {
+        logger.error('Annuaire bulk-link-contact-entities:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
+
+  // DELETE /api/annuaire/entity-links/:id
+  app.delete('/api/annuaire/entity-links/:id', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const deleted = db
+        .prepare('DELETE FROM annuaire_entity_links WHERE id = ?')
+        .run(req.params.id);
+      if (!deleted.changes) {
+        return res.status(404).json({ success: false, error: 'Liaison introuvable' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('Annuaire entity-links DELETE:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });

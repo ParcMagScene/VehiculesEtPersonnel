@@ -74,6 +74,20 @@ export function getLocationType(type) {
 }
 
 /**
+ * Classe CSS normalisée pour styler les labels/connecteurs selon la légende.
+ */
+export function getLocationTypeClass(type, { isCompanyLocation = false } = {}) {
+  if (isCompanyLocation) return 'siege';
+  const label = getLocationType(type).label || 'autre';
+  return label
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
  * Calcul de distance Haversine entre deux points (en mètres)
  */
 export function haversineDistance(lat1, lng1, lat2, lng2) {

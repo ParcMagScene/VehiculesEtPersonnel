@@ -393,25 +393,14 @@ const ManagementPanel = ({
 
   const handleSaveLocation = async (locationData) => {
     try {
-      if (locationToEdit) {
-        // Mise à jour
-        await api.updateLocation(locationToEdit.id, locationData);
-        const newList = locations.map((loc) =>
-          loc.id === locationToEdit.id ? { ...locationData, id: locationToEdit.id } : loc,
-        );
-        setLocations(newList);
-        saveToIndexedDB(STORES.locations, newList);
-      } else {
-        // Création
-        const createdLocation = await api.createLocation(locationData);
-        const newLocation = { ...locationData, id: createdLocation.id || Date.now() };
-        const newList = [...locations, newLocation];
-        setLocations(newList);
-        saveToIndexedDB(STORES.locations, newList);
-      }
-      // Ne PAS fermer le dialog - LocationDialog le gère lui-même avec message de succès
-      // setShowLocationDialog(false);
-      // setLocationToEdit(null);
+      // LocationDialog gère la persistance API; ici on synchronise uniquement l'état local
+      const savedLocation = locationData;
+      const isUpdate = locations.some((loc) => loc.id === savedLocation.id);
+      const newList = isUpdate
+        ? locations.map((loc) => (loc.id === savedLocation.id ? savedLocation : loc))
+        : [...locations, savedLocation];
+      setLocations(newList);
+      saveToIndexedDB(STORES.locations, newList);
     } catch (error) {
       console.error('❌ Erreur sauvegarde lieu:', error);
       toast.error(`Erreur lors de la sauvegarde: ${error.message}`);

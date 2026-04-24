@@ -3,9 +3,9 @@ import { z } from 'zod';
 // ── Entrée de fiche (ligne tâche) ──
 const trackingEntrySchema = z.object({
   id: z.string().optional(),
-  period: z.enum(['AM', 'PM']),
+  period: z.enum(['AM', 'PM', 'Full']),
   task: z.string().max(500).default(''),
-  time_spent: z.coerce.number().min(0).max(24).default(0),
+  time_spent: z.coerce.number().min(0).max(1440).default(0),
   comment: z.string().max(2000).default(''),
   completed: z.number().int().min(0).max(1).nullable().default(null),
   task_assignment_id: z.string().nullable().optional(),
@@ -22,10 +22,10 @@ export const sheetUpdateSchema = z.object({
 // ── Mise à jour d'une entrée individuelle ──
 export const entryPatchSchema = z.object({
   completed: z.number().int().min(0).max(1).nullable().optional(),
-  time_spent: z.coerce.number().min(0).max(24).optional(),
+  time_spent: z.coerce.number().min(0).max(1440).optional(),
   comment: z.string().max(2000).optional(),
   task: z.string().max(500).optional(),
-  period: z.enum(['AM', 'PM']).optional(),
+  period: z.enum(['AM', 'PM', 'Full']).optional(),
 });
 
 // ── Paramètres de synthèse ──

@@ -11,6 +11,7 @@ import {
   Eye,
   Filter,
   Globe,
+  Link2,
   Mail,
   MapPin,
   Phone,
@@ -43,6 +44,8 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
+import MatchingContactEntitiesModal from './MatchingContactEntitiesModal';
+import MatchingEntitiesModal from './MatchingEntitiesModal';
 import LocationsTab from './LocationsTab';
 import MatchingLocationsModal from './MatchingLocationsModal';
 
@@ -134,6 +137,8 @@ function AnnuairePanel({ currentUser }) {
   const [showContactsImport, setShowContactsImport] = useState(false);
   // Matching lieux
   const [showMatching, setShowMatching] = useState(false);
+  const [showEntityMatching, setShowEntityMatching] = useState(false);
+  const [showContactEntityMatching, setShowContactEntityMatching] = useState(false);
   const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
   const [scanningDuplicates, setScanningDuplicates] = useState(false);
   const [duplicateGroups, setDuplicateGroups] = useState([]);
@@ -640,12 +645,29 @@ function AnnuairePanel({ currentUser }) {
                 activeTab === 'suppliers' ||
                 activeTab === 'prestataires') &&
                 currentUser?.isAdmin && (
-                  <Tooltip content="Correspondances lieux ↔ entités" position="bottom">
-                    <Button variant="secondary" onClick={() => setShowMatching(true)}>
-                      <MapPin size={15} /> Lier lieux
-                    </Button>
-                  </Tooltip>
+                  <>
+                    <Tooltip content="Correspondances lieux ↔ entités" position="bottom">
+                      <Button variant="secondary" onClick={() => setShowMatching(true)}>
+                        <MapPin size={15} /> Lier lieux
+                      </Button>
+                    </Tooltip>
+                    <Tooltip
+                      content="Correspondances client ↔ fournisseur ↔ prestataire"
+                      position="bottom"
+                    >
+                      <Button variant="secondary" onClick={() => setShowEntityMatching(true)}>
+                        <Link2 size={15} /> Lier entités
+                      </Button>
+                    </Tooltip>
+                  </>
                 )}
+              {activeTab === 'contacts' && currentUser?.isAdmin && (
+                <Tooltip content="Correspondances contacts ↔ entités via email" position="bottom">
+                  <Button variant="secondary" onClick={() => setShowContactEntityMatching(true)}>
+                    <Link2 size={15} /> Lier contacts
+                  </Button>
+                </Tooltip>
+              )}
               <Button
                 variant="primary"
                 onClick={() => {
@@ -853,6 +875,24 @@ function AnnuairePanel({ currentUser }) {
           onClose={() => setShowMatching(false)}
           onLinked={(count) => {
             toast.success(`${count} entité(s) liée(s) à un lieu`);
+            setDataVersion((v) => v + 1);
+          }}
+        />
+      )}
+      {showEntityMatching && (
+        <MatchingEntitiesModal
+          onClose={() => setShowEntityMatching(false)}
+          onLinked={(count) => {
+            toast.success(`${count} liaison(s) entité créées`);
+            setDataVersion((v) => v + 1);
+          }}
+        />
+      )}
+      {showContactEntityMatching && (
+        <MatchingContactEntitiesModal
+          onClose={() => setShowContactEntityMatching(false)}
+          onLinked={(count) => {
+            toast.success(`${count} contact(s) lié(s) à une entité`);
             setDataVersion((v) => v + 1);
           }}
         />

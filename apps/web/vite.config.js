@@ -129,8 +129,10 @@ export default defineConfig(({ mode }) => ({
         "script-src 'self' https://accounts.google.com https://maps.googleapis.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
-        "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com",
-        "connect-src 'self' https://*.googleapis.com https://accounts.google.com",
+        // Tuiles OSM + Carto (subdomaines a/b/c ET domaine racine)
+        "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://basemaps.cartocdn.com",
+        // Nominatim (géocodage) + OSRM (routing)
+        "connect-src 'self' https://*.googleapis.com https://accounts.google.com https://nominatim.openstreetmap.org https://router.project-osrm.org",
         "frame-src 'self' blob: https://accounts.google.com",
         "object-src 'none'",
         "base-uri 'self'",

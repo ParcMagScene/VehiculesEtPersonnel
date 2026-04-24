@@ -135,6 +135,10 @@ function SuiviPanel({ currentUser, initialPersonId }) {
     [selectedDate],
   );
 
+  const handleGoToday = useCallback(() => {
+    setSelectedDate(formatDateISO(new Date()));
+  }, []);
+
   const handleSaveSheet = useCallback(
     async (data) => {
       if (!selectedPerson) return;
@@ -448,38 +452,50 @@ function SuiviPanel({ currentUser, initialPersonId }) {
           <main className="suivi-main">
             {/* Nav date */}
             <div className="suivi-date-nav">
-              <Button
-                variant="ghost"
-                iconOnly
-                className="suivi-nav-btn"
-                onClick={() => handleNavigateDay(-1)}
-                title="Jour précédent"
-                aria-label="Jour précédent"
-              >
-                <ChevronLeft size={18} />
-              </Button>
-              <div className="suivi-date-display">
-                <Calendar size={16} />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="suivi-date-input"
-                />
-                <span className="suivi-date-label">{formatDateFR(selectedDate)}</span>
-              </div>
-              <Button
-                variant="ghost"
-                iconOnly
-                className="suivi-nav-btn"
-                onClick={() => handleNavigateDay(1)}
-                title="Jour suivant"
-                aria-label="Jour suivant"
-              >
-                <ChevronRight size={18} />
-              </Button>
+              <div className="suivi-date-nav-group">
+                <Button
+                  variant="ghost"
+                  iconOnly
+                  className="suivi-nav-btn"
+                  onClick={() => handleNavigateDay(-1)}
+                  title="Jour précédent"
+                  aria-label="Jour précédent"
+                >
+                  <ChevronLeft size={18} />
+                </Button>
 
-              <div className="suivi-actions" />
+                <div className="suivi-date-display">
+                  <Calendar size={16} />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="suivi-date-input"
+                  />
+                  <span className="suivi-date-label">{formatDateFR(selectedDate)}</span>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  iconOnly
+                  className="suivi-nav-btn"
+                  onClick={() => handleNavigateDay(1)}
+                  title="Jour suivant"
+                  aria-label="Jour suivant"
+                >
+                  <ChevronRight size={18} />
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="suivi-btn-today"
+                  onClick={handleGoToday}
+                  title="Revenir à aujourd'hui"
+                >
+                  Aujourd'hui
+                </Button>
+              </div>
             </div>
 
             {error && <div className="suivi-error">{error}</div>}

@@ -3053,6 +3053,66 @@ function initializeDatabase() {
       'CREATE INDEX IF NOT EXISTS idx_contacts_prestataire ON annuaire_contacts(prestataire_id)',
     );
 
+    // --- Table de liaison inter-entités (client ↔ fournisseur ↔ prestataire) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_entity_links (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entity_a_type TEXT NOT NULL CHECK(entity_a_type IN ('client','supplier','prestataire')),
+        entity_a_id INTEGER NOT NULL,
+        entity_b_type TEXT NOT NULL CHECK(entity_b_type IN ('client','supplier','prestataire')),
+        entity_b_id INTEGER NOT NULL,
+        relation_type TEXT NOT NULL DEFAULT 'same_organization',
+        status TEXT NOT NULL DEFAULT 'confirmed' CHECK(status IN ('suggested','confirmed','rejected')),
+        confidence REAL DEFAULT 1.0,
+        notes TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        modified_by INTEGER,
+        modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL,
+        CHECK(NOT (entity_a_type = entity_b_type AND entity_a_id = entity_b_id)),
+        CHECK(entity_a_type < entity_b_type OR (entity_a_type = entity_b_type AND entity_a_id < entity_b_id)),
+        UNIQUE(entity_a_type, entity_a_id, entity_b_type, entity_b_id)
+      )
+    `);
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_entity_links_a ON annuaire_entity_links(entity_a_type, entity_a_id)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_entity_links_b ON annuaire_entity_links(entity_b_type, entity_b_id)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_entity_links_status ON annuaire_entity_links(status)',
+    );
+
+    // --- Table de liaison contacts ↔ entités (many-to-many) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_contact_entity_links (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        contact_id INTEGER NOT NULL,
+        entity_type TEXT NOT NULL CHECK(entity_type IN ('client','supplier','prestataire')),
+        entity_id INTEGER NOT NULL,
+        confidence REAL DEFAULT 1.0,
+        source TEXT DEFAULT 'manual',
+        notes TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        modified_by INTEGER,
+        modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (contact_id) REFERENCES annuaire_contacts(id) ON DELETE CASCADE,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL,
+        UNIQUE(contact_id, entity_type, entity_id)
+      )
+    `);
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_contact_entity_links_contact ON annuaire_contact_entity_links(contact_id)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_contact_entity_links_entity ON annuaire_contact_entity_links(entity_type, entity_id)',
+    );
+
     // Migration : ajouter code_libre sur annuaire_contacts (pour import CSV / déduplication)
     const contactCols = db.pragma('table_info(annuaire_contacts)').map((c) => c.name);
     if (!contactCols.includes('code_libre')) {
@@ -3066,6 +3126,26 @@ function initializeDatabase() {
     } catch (_) {
       /* ignored */
     }
+
+    // Seed initial des liaisons contact↔entité depuis les colonnes historiques
+    db.exec(`
+      INSERT OR IGNORE INTO annuaire_contact_entity_links (contact_id, entity_type, entity_id, confidence, source)
+      SELECT id, 'client', client_id, 1.0, 'legacy_column'
+      FROM annuaire_contacts
+      WHERE client_id IS NOT NULL
+    `);
+    db.exec(`
+      INSERT OR IGNORE INTO annuaire_contact_entity_links (contact_id, entity_type, entity_id, confidence, source)
+      SELECT id, 'supplier', supplier_id, 1.0, 'legacy_column'
+      FROM annuaire_contacts
+      WHERE supplier_id IS NOT NULL
+    `);
+    db.exec(`
+      INSERT OR IGNORE INTO annuaire_contact_entity_links (contact_id, entity_type, entity_id, confidence, source)
+      SELECT id, 'prestataire', prestataire_id, 1.0, 'legacy_column'
+      FROM annuaire_contacts
+      WHERE prestataire_id IS NOT NULL
+    `);
 
     logger.info('  ✅ Tables Annuaire (lookup + prestataires + contacts)');
 

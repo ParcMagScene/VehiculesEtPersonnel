@@ -134,13 +134,18 @@ function FicheSuivi({ sheet, onSave, saving }) {
     setDirty(true);
   }, []);
 
+  const handleMarkAllDone = useCallback(() => {
+    setEntries((prev) => prev.map((e) => ({ ...e, completed: 1 })));
+    setDirty(true);
+  }, []);
+
   const handleSave = useCallback(
     (status) => {
       const cleanEntries = entries.map((e, i) => ({
         id: e.id || undefined,
         period: e.period,
         task: e.task,
-        time_spent: parseFloat(e.time_spent) || 0,
+        time_spent: parseInt(e.time_spent, 10) || 0,
         comment: e.comment || '',
         completed: e.completed === 1 ? 1 : e.completed === 0 ? 0 : null,
         task_assignment_id: e.task_assignment_id || null,
@@ -166,8 +171,95 @@ function FicheSuivi({ sheet, onSave, saving }) {
 
   const amEntries = entries.filter((e) => e.period === 'AM');
   const pmEntries = entries.filter((e) => e.period === 'PM');
-  const totalTime = entries.reduce((s, e) => s + (parseFloat(e.time_spent) || 0), 0);
+  const TIME_OPTIONS = [
+    { value: 0, label: '—' },
+    { value: 10, label: '10 min' },
+    { value: 15, label: '15 min' },
+    { value: 20, label: '20 min' },
+    { value: 30, label: '30 min' },
+    { value: 40, label: '40 min' },
+    { value: 45, label: '45 min' },
+    { value: 60, label: '1 h' },
+    { value: 90, label: '1 h 30' },
+    { value: 120, label: '2 h' },
+    { value: 150, label: '2 h 30' },
+    { value: 180, label: '3 h' },
+    { value: 210, label: '3 h 30' },
+    { value: 240, label: '4 h' },
+    { value: 300, label: '5 h' },
+    { value: 360, label: '6 h' },
+    { value: 420, label: '7 h' },
+    { value: 480, label: '8 h' },
+  ];
+  const totalMinutes = entries.reduce((s, e) => s + (parseInt(e.time_spent, 10) || 0), 0);
+  const totalTimeLabel =
+    totalMinutes >= 60
+      ? `${Math.floor(totalMinutes / 60)}h${totalMinutes % 60 > 0 ? ` ${totalMinutes % 60}min` : ''}`
+      : `${totalMinutes} min`;
   const totalDone = entries.filter((e) => e.completed === 1).length;
+  const allDone = entries.length > 0 && totalDone === entries.length;
+  const dayContext = sheet?.day_context || {};
+  const dayAvailabilitiesRaw = Array.isArray(dayContext.availabilities)
+    ? dayContext.availabilities
+    : [];
+  const dayEnterprisePresence = dayAvailabilitiesRaw.filter((a) => a.type === 'entreprise');
+  const dayAvailabilities = dayAvailabilitiesRaw.filter((a) => a.type !== 'entreprise');
+  const dayMissions = Array.isArray(dayContext.missions) ? dayContext.missions : [];
+  const dayPlanningAffairesRaw = Array.isArray(dayContext.planning_affaires)
+    ? dayContext.planning_affaires
+    : [];
+  const entryAffaireNums = new Set(
+    entries.map((e) => (e.affaire_num || '').toString().trim().toUpperCase()).filter(Boolean),
+  );
+  const dayPlanningAffaires = [...dayPlanningAffairesRaw].sort((a, b) => {
+    const aNum = (a.affaire_num || '').toString().trim().toUpperCase();
+    const bNum = (b.affaire_num || '').toString().trim().toUpperCase();
+    const aMaterialized = aNum ? entryAffaireNums.has(aNum) : false;
+    const bMaterialized = bNum ? entryAffaireNums.has(bNum) : false;
+    if (aMaterialized !== bMaterialized) return aMaterialized ? 1 : -1;
+    return (a.affaire_label || a.affaire_num || '').localeCompare(
+      b.affaire_label || b.affaire_num || '',
+      'fr',
+      { sensitivity: 'base' },
+    );
+  });
+
+  const getAvailabilityStatusLabel = (status) => {
+    if (status === 'approved') return 'Approuvé';
+    if (status === 'pending') return 'En attente';
+    if (status === 'rejected') return 'Refusé';
+    return 'Statut inconnu';
+  };
+
+  const getAvailabilityStatusClass = (status) => {
+    if (status === 'approved') return 'fiche-context-status-approved';
+    if (status === 'pending') return 'fiche-context-status-pending';
+    if (status === 'rejected') return 'fiche-context-status-rejected';
+    return 'fiche-context-status-unknown';
+  };
+
+  const getMissionTypeClass = (mission) => {
+    const rawType = (mission.affaire_type || mission.affaire || '').toString().toLowerCase();
+    if (rawType.includes('prestation')) return 'fiche-mission-type-prestation';
+    if (rawType.includes('location')) return 'fiche-mission-type-location';
+    if (rawType.includes('vente')) return 'fiche-mission-type-vente';
+    if (rawType.includes('installation')) return 'fiche-mission-type-installation';
+    return 'fiche-mission-type-autre';
+  };
+
+  const getMissionStatusLabel = (status) => {
+    if (status === 'confirmed') return 'Confirmée';
+    if (status === 'draft') return 'Brouillon';
+    if (status === 'cancelled') return 'Annulée';
+    return status || 'Statut';
+  };
+
+  const getMissionStatusClass = (status) => {
+    if (status === 'confirmed') return 'fiche-mission-status-confirmed';
+    if (status === 'draft') return 'fiche-mission-status-draft';
+    if (status === 'cancelled') return 'fiche-mission-status-cancelled';
+    return 'fiche-mission-status-unknown';
+  };
 
   const renderEntryRow = (entry) => (
     <tr key={entry._key} className={`fiche-row ${entry.completed === 1 ? 'completed' : ''}`}>
@@ -190,16 +282,18 @@ function FicheSuivi({ sheet, onSave, saving }) {
         )}
       </td>
       <td className="fiche-col-time">
-        <input
-          type="number"
-          min="0"
-          max="24"
-          step="0.25"
-          value={entry.time_spent}
-          onChange={(e) => handleEntryChange(entry._key, 'time_spent', e.target.value)}
+        <select
+          value={parseInt(entry.time_spent, 10) || 0}
+          onChange={(e) => handleEntryChange(entry._key, 'time_spent', Number(e.target.value))}
           className="fiche-input fiche-input-time"
           disabled={isValidated}
-        />
+        >
+          {TIME_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       </td>
       <td className="fiche-col-comment">
         <input
@@ -245,6 +339,8 @@ function FicheSuivi({ sheet, onSave, saving }) {
 
   const renderSection = (label, sectionEntries, period) => {
     const existingTaskIds = new Set(entries.map((e) => e.task_assignment_id).filter(Boolean));
+    // Inclure toutes les tâches planifiées (y compris done/validated/effectuées),
+    // puis seulement exclure celles déjà ajoutées dans la fiche en cours.
     const availableTasks = planningTasks.filter(
       (t) =>
         (!t.period || t.period === period || t.period === 'FULL') && !existingTaskIds.has(t.id),
@@ -287,9 +383,35 @@ function FicheSuivi({ sheet, onSave, saving }) {
                           className="fiche-picker-item"
                           onClick={() => handlePickPlanningTask(t, period)}
                         >
-                          <span className="fiche-picker-title">{t.title}</span>
-                          {t.section && <span className="fiche-picker-section">{t.section}</span>}
-                          {t.time && <span className="fiche-picker-time">{t.time}</span>}
+                          <div className="fiche-picker-main">
+                            <span className="fiche-picker-title">
+                              {t.title || t.google_event_title || 'Tâche sans nom'}
+                            </span>
+                            <div className="fiche-picker-meta">
+                              {t.affaire_num && (
+                                <span
+                                  className={`fiche-picker-badge fiche-picker-badge--${(t.affaire_type || 'autre').toLowerCase().replace(/\s+/g, '-')}`}
+                                >
+                                  {t.affaire_type || 'Affaire'}
+                                </span>
+                              )}
+                              {t.affaire_num && (
+                                <span className="fiche-picker-affaire-num">#{t.affaire_num}</span>
+                              )}
+                              {(t.affaire_nom || t.affaire_titre) && (
+                                <span className="fiche-picker-affaire-name">
+                                  {t.affaire_nom || t.affaire_titre}
+                                </span>
+                              )}
+                              {t.affaire_client && (
+                                <span className="fiche-picker-client">{t.affaire_client}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="fiche-picker-right">
+                            {t.section && <span className="fiche-picker-section">{t.section}</span>}
+                            {t.time && <span className="fiche-picker-time">{t.time}</span>}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -306,7 +428,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
               <tr>
                 <th style={{ width: 30 }} />
                 <th>Tâche</th>
-                <th style={{ width: 70 }}>Temps (h)</th>
+                <th style={{ width: 90 }}>Temps</th>
                 <th>Commentaire</th>
                 <th style={{ width: 50 }}>Fait</th>
                 <th style={{ width: 40 }} />
@@ -323,6 +445,109 @@ function FicheSuivi({ sheet, onSave, saving }) {
 
   return (
     <div className="fiche-suivi">
+      {(dayAvailabilities.length > 0 ||
+        dayEnterprisePresence.length > 0 ||
+        dayMissions.length > 0 ||
+        dayPlanningAffaires.length > 0) && (
+        <div className="fiche-day-context">
+          <h4>Contexte du jour</h4>
+          <div className="fiche-context-grid">
+            {dayAvailabilities.length > 0 && (
+              <div className="fiche-context-card fiche-context-card-unavailability">
+                <div className="fiche-context-title">Congés / indisponibilités</div>
+                <ul className="fiche-context-list">
+                  {dayAvailabilities.map((a) => (
+                    <li key={`av-${a.id}`}>
+                      <span className="fiche-context-label">
+                        {a.type_label || a.type || 'Indisponible'}
+                      </span>
+                      {a.reason ? <span className="fiche-context-meta"> - {a.reason}</span> : null}
+                      <span
+                        className={`fiche-context-status ${getAvailabilityStatusClass(a.status)}`}
+                      >
+                        {getAvailabilityStatusLabel(a.status)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {dayEnterprisePresence.length > 0 && (
+              <div className="fiche-context-card fiche-context-card-mission">
+                <div className="fiche-context-title">Présence entreprise</div>
+                <ul className="fiche-context-list">
+                  {dayEnterprisePresence.map((a) => (
+                    <li key={`ep-${a.id}`}>
+                      <span className="fiche-context-label">{a.type_label || 'Entreprise'}</span>
+                      {a.reason ? <span className="fiche-context-meta"> - {a.reason}</span> : null}
+                      <span className="fiche-context-status fiche-context-status-approved">
+                        Présent
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {dayMissions.length > 0 && (
+              <div className="fiche-context-card fiche-context-card-mission">
+                <div className="fiche-context-title">Prestations / missions</div>
+                <ul className="fiche-context-list">
+                  {dayMissions.map((m) => (
+                    <li key={`ms-${m.id}`}>
+                      <span className={`fiche-context-badge ${getMissionTypeClass(m)}`}>
+                        {m.affaire_type || m.affaire || 'Mission'}
+                      </span>
+                      <span className="fiche-context-label">
+                        {m.title || m.affaire || `Mission #${m.id}`}
+                      </span>
+                      {m.client_name ? (
+                        <span className="fiche-context-meta"> - {m.client_name}</span>
+                      ) : null}
+                      <span className={`fiche-context-status ${getMissionStatusClass(m.status)}`}>
+                        {getMissionStatusLabel(m.status)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {dayPlanningAffaires.length > 0 && (
+              <div className="fiche-context-card fiche-context-card-mission">
+                <div className="fiche-context-title">Affectations planning</div>
+                <ul className="fiche-context-list">
+                  {dayPlanningAffaires.map((a) => (
+                    <li key={`pa-${a.affaire_num}`}>
+                      <span className={`fiche-context-badge ${getMissionTypeClass(a)}`}>
+                        {a.affaire_type || 'Affaire'}
+                      </span>
+                      <span className="fiche-context-label">
+                        {a.affaire_label || a.affaire_num}
+                      </span>
+                      {a.affaire_client ? (
+                        <span className="fiche-context-meta"> - {a.affaire_client}</span>
+                      ) : null}
+                      {a.affaire_num &&
+                      !entryAffaireNums.has(a.affaire_num.toString().trim().toUpperCase()) ? (
+                        <span className="fiche-context-status fiche-context-status-pending">
+                          À traiter
+                        </span>
+                      ) : (
+                        <span className="fiche-context-status fiche-context-status-approved">
+                          Déjà en tâches
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {renderSection('🌅 Matin (AM)', amEntries, 'AM')}
       {renderSection('🌇 Après-midi (PM)', pmEntries, 'PM')}
 
@@ -348,8 +573,19 @@ function FicheSuivi({ sheet, onSave, saving }) {
             {totalDone}/{entries.length} tâches effectuées
           </span>
           <span>—</span>
-          <span>{totalTime}h total</span>
+          <span>{totalTimeLabel} total</span>
           {saving && <Loader2 size={14} className="animate-spin" />}
+        </div>
+        <div className="fiche-footer-actions">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleMarkAllDone}
+            disabled={isValidated || entries.length === 0 || allDone}
+            title="Marquer toutes les tâches de la journée comme faites"
+          >
+            <Check size={14} /> Tout marquer fait
+          </Button>
         </div>
       </div>
     </div>

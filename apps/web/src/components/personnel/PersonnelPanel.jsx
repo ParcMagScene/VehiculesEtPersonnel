@@ -1717,6 +1717,7 @@ const PlanningTab = ({
             reason: avail.reason,
             status: avail.status || 'approved',
             period,
+            is_unavailability: (avail.type || 'unavailable').toLowerCase() !== 'entreprise',
           };
         }
       } catch {
@@ -2171,6 +2172,7 @@ const PlanningTab = ({
           const absenceKey = `${person.id}_${slotIndex}`;
           const absence = absenceSlots[absenceKey];
           const hasAbsence = !!absence;
+          const hasBlockingAbsence = !!absence && absence.is_unavailability !== false;
           const absenceColor = hasAbsence
             ? LEAVE_TYPE_COLORS[absence.type] || 'var(--theme-text-muted)'
             : null;
@@ -2182,14 +2184,14 @@ const PlanningTab = ({
             : '';
 
           // Absence partielle (AM/PM) ne bloque pas entièrement le slot
-          const isFullAbsence = hasAbsence && absence.period === 'FULL';
+          const isFullAbsence = hasBlockingAbsence && absence.period === 'FULL';
 
           const tasksHere = taskSlots[`${person.id}_${slotIndex}`] || [];
 
           return (
             <div
               key={slotIndex}
-              className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isHovered ? ' pp-cell-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}${hasAbsence ? ' pp-slot-absence' : ''}`}
+              className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isHovered ? ' pp-cell-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}${hasBlockingAbsence ? ' pp-slot-absence' : ''}`}
               onMouseDown={(e) =>
                 !isCovered && !isFullAbsence && handleSlotMouseDown(person, slotIndex, e)
               }
@@ -2214,7 +2216,11 @@ const PlanningTab = ({
                 }
                 e.stopPropagation();
                 // Si demi-journée absence AM, proposer PM, et inversement
-                const period = hasAbsence ? (absence.period === 'AM' ? 'PM' : 'AM') : undefined;
+                const period = hasBlockingAbsence
+                  ? absence.period === 'AM'
+                    ? 'PM'
+                    : 'AM'
+                  : undefined;
                 handleSlotClick(person, slot.day, slotIndex, period);
               }}
               data-emag-tooltip={

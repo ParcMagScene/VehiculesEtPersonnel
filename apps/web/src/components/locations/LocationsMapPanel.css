@@ -952,16 +952,34 @@
 
 .map-name-tooltip.leaflet-tooltip {
   background: rgba(255, 255, 255, 0.94);
-  border: 1px solid var(--theme-border, #e2e8f0);
+  border: 1.5px solid var(--map-tooltip-connector-color, var(--theme-border, #e2e8f0));
   border-radius: 6px;
   padding: 2px 7px;
   font-size: 0.68rem;
   font-weight: 600;
   color: var(--theme-text-primary, #1e293b);
   white-space: nowrap;
+  width: max-content;
+  max-width: none;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   pointer-events: none;
   position: relative;
+  --map-tooltip-connector-color: var(--theme-text-secondary, #64748b);
+}
+
+/* Neutraliser les marges Leaflet — le positionnement est entièrement
+   contrôlé par l'offset JS (DIR_OFFSETS) + la longueur du connecteur CSS */
+.map-name-tooltip.leaflet-tooltip-top {
+  margin-top: 0;
+}
+.map-name-tooltip.leaflet-tooltip-bottom {
+  margin-top: 0;
+}
+.map-name-tooltip.leaflet-tooltip-left {
+  margin-left: 0;
+}
+.map-name-tooltip.leaflet-tooltip-right {
+  margin-left: 0;
 }
 
 .map-name-tooltip.leaflet-tooltip::before {
@@ -972,41 +990,66 @@
   content: '';
   position: absolute;
   display: block;
-  background: var(--theme-text-secondary, #64748b);
+  background: var(--map-tooltip-connector-color);
   opacity: 0.92;
   z-index: 1;
 }
 
+/* Longueur = 12px == DIR_OFFSETS dans MapGeneral/MapLocal/MapDualPrintModal */
 .map-name-tooltip.leaflet-tooltip.leaflet-tooltip-top::after {
-  width: 1px;
-  height: 10px;
+  width: 2.5px;
+  height: 12px;
   left: 50%;
   transform: translateX(-50%);
   top: 100%;
 }
 
 .map-name-tooltip.leaflet-tooltip.leaflet-tooltip-bottom::after {
-  width: 1px;
-  height: 10px;
+  width: 2.5px;
+  height: 12px;
   left: 50%;
   transform: translateX(-50%);
   bottom: 100%;
 }
 
 .map-name-tooltip.leaflet-tooltip.leaflet-tooltip-left::after {
-  width: 10px;
-  height: 1px;
+  width: 12px;
+  height: 2.5px;
   left: 100%;
   top: 50%;
   transform: translateY(-50%);
 }
 
 .map-name-tooltip.leaflet-tooltip.leaflet-tooltip-right::after {
-  width: 10px;
-  height: 1px;
+  width: 12px;
+  height: 2.5px;
   right: 100%;
   top: 50%;
   transform: translateY(-50%);
+}
+
+.map-name-tooltip--depot.leaflet-tooltip {
+  --map-tooltip-connector-color: #22c55e;
+}
+
+.map-name-tooltip--salle-de-spectacle.leaflet-tooltip {
+  --map-tooltip-connector-color: #0ea5e9;
+}
+
+.map-name-tooltip--prestataire.leaflet-tooltip {
+  --map-tooltip-connector-color: #f59e0b;
+}
+
+.map-name-tooltip--garage.leaflet-tooltip {
+  --map-tooltip-connector-color: #ef4444;
+}
+
+.map-name-tooltip--autre.leaflet-tooltip {
+  --map-tooltip-connector-color: #94a3b8;
+}
+
+.map-name-tooltip--siege.leaflet-tooltip {
+  --map-tooltip-connector-color: #667eea;
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -14,7 +14,14 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 
-import { filterNearby, haversineDistance, MAG_SCENE, TILE_DARK, TILE_LIGHT } from './map-utils';
+import {
+  filterNearby,
+  getLocationTypeClass,
+  haversineDistance,
+  MAG_SCENE,
+  TILE_DARK,
+  TILE_LIGHT,
+} from './map-utils';
 import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapOffScreenIndicators from './MapOffScreenIndicators';
 import MapPopup from './MapPopup';
@@ -226,7 +233,7 @@ export default function MapLocal({
 
   // Directions alternées pour éviter le chevauchement des bulles
   const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
-  const DIR_OFFSETS = { top: [0, -11], right: [7, -1], bottom: [0, 9], left: [-7, -1] };
+  const DIR_OFFSETS = { top: [0, -12], right: [12, 0], bottom: [0, 12], left: [-12, 0] };
   const sortedNearby = useMemo(
     () => [...nearbyLocations].sort((a, b) => b.lat - a.lat),
     [nearbyLocations],
@@ -288,6 +295,8 @@ export default function MapLocal({
         zoom={mapZoom}
         className="emag-leaflet-map"
         style={{ width: '100%', height: '100%' }}
+        markerZoomAnimation={false}
+        zoomAnimation={false}
         scrollWheelZoom
         wheelPxPerZoomLevel={180}
         zoomSnap={0.1}
@@ -360,7 +369,12 @@ export default function MapLocal({
         </Marker>
 
         <Marker position={MAG_SCENE} icon={createHQIcon()}>
-          <Tooltip permanent direction="top" offset={[0, -12]} className="map-name-tooltip">
+          <Tooltip
+            permanent
+            direction="top"
+            offset={DIR_OFFSETS.top}
+            className="map-name-tooltip map-name-tooltip--siege"
+          >
             Mag Scène
           </Tooltip>
           <MapPopup
@@ -389,7 +403,7 @@ export default function MapLocal({
                   permanent
                   direction={dir}
                   offset={DIR_OFFSETS[dir]}
-                  className="map-name-tooltip"
+                  className={`map-name-tooltip map-name-tooltip--${getLocationTypeClass(loc.type, { isCompanyLocation: loc.isCompanyLocation })}`}
                 >
                   {loc.name}
                 </Tooltip>

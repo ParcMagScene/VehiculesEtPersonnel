@@ -171,5 +171,44 @@ export function registerAnnuaireMethods(ApiClient) {
         skipCamelCase: true,
       });
     },
+
+    // Matching entités client ↔ fournisseur ↔ prestataire
+    async getMatchingEntities() {
+      return this.request('/annuaire/matching-entities', { skipCamelCase: true });
+    },
+    async getAnnuaireEntityLinks(params = {}) {
+      const qs = new URLSearchParams(params).toString();
+      return this.request(`/annuaire/entity-links${qs ? '?' + qs : ''}`, { skipCamelCase: true });
+    },
+    async createAnnuaireEntityLink(data) {
+      return this.request('/annuaire/entity-links', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+    async bulkLinkEntities(links) {
+      return this.request('/annuaire/bulk-link-entities', {
+        method: 'POST',
+        body: JSON.stringify({ links }),
+        skipCamelCase: true,
+      });
+    },
+    async getMatchingContactEntities() {
+      return this.request('/annuaire/matching-contact-entities', { skipCamelCase: true });
+    },
+    async bulkLinkContactEntities(links) {
+      return this.request('/annuaire/bulk-link-contact-entities', {
+        method: 'POST',
+        body: JSON.stringify({ links }),
+        skipCamelCase: true,
+      });
+    },
+    async deleteAnnuaireEntityLink(id) {
+      return this.request(`/annuaire/entity-links/${id}`, {
+        method: 'DELETE',
+        skipCamelCase: true,
+      });
+    },
   });
 }

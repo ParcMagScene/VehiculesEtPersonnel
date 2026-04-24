@@ -189,15 +189,27 @@ function MobileSuivi({ currentUser }) {
             </select>
           </label>
           <label className="ms-field">
-            <span>Temps passé (minutes)</span>
-            <input
-              type="number"
-              value={addTime}
-              onChange={(e) => setAddTime(e.target.value)}
-              placeholder="Ex: 60"
-              min="0"
-              inputMode="numeric"
-            />
+            <span>Temps passé</span>
+            <select value={addTime} onChange={(e) => setAddTime(e.target.value)}>
+              <option value="">—</option>
+              <option value="10">10 min</option>
+              <option value="15">15 min</option>
+              <option value="20">20 min</option>
+              <option value="30">30 min</option>
+              <option value="40">40 min</option>
+              <option value="45">45 min</option>
+              <option value="60">1 h</option>
+              <option value="90">1 h 30</option>
+              <option value="120">2 h</option>
+              <option value="150">2 h 30</option>
+              <option value="180">3 h</option>
+              <option value="210">3 h 30</option>
+              <option value="240">4 h</option>
+              <option value="300">5 h</option>
+              <option value="360">6 h</option>
+              <option value="420">7 h</option>
+              <option value="480">8 h</option>
+            </select>
           </label>
           <label className="ms-field">
             <span>Commentaire</span>

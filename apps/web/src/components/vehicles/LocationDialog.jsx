@@ -404,11 +404,17 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
 
       // Appeler onSave pour mettre à jour le parent
       if (onSave) {
-        onSave(savedLocation);
+        await onSave(savedLocation);
       }
 
-      // Effacer le message après 3 secondes
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // En création, fermer immédiatement le modal et confirmer avec un toast
+      if (!location?.id) {
+        toast.success('Nouveau lieu ajouté avec succès');
+        onClose();
+      } else {
+        // Conserver le feedback inline en édition
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du lieu:', error);
       setError('Erreur lors de la sauvegarde du lieu : ' + error.message);

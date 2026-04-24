@@ -165,6 +165,24 @@ function MobilePersonnel({ onBack, currentUser }) {
     (personId, day) => {
       return planning.availabilities.filter((a) => {
         if ((a.personId || a.person_id) !== personId) return false;
+        if ((a.type || '').toLowerCase() === 'entreprise') return false;
+        try {
+          const aStart = startOfDay(parseISO(a.startDate || a.start_date));
+          const aEnd = startOfDay(parseISO(a.endDate || a.end_date));
+          return isWithinInterval(startOfDay(day), { start: aStart, end: aEnd });
+        } catch {
+          return false;
+        }
+      });
+    },
+    [planning.availabilities],
+  );
+
+  const getEnterpriseForPersonDay = useCallback(
+    (personId, day) => {
+      return planning.availabilities.filter((a) => {
+        if ((a.personId || a.person_id) !== personId) return false;
+        if ((a.type || '').toLowerCase() !== 'entreprise') return false;
         try {
           const aStart = startOfDay(parseISO(a.startDate || a.start_date));
           const aEnd = startOfDay(parseISO(a.endDate || a.end_date));
@@ -377,9 +395,11 @@ function MobilePersonnel({ onBack, currentUser }) {
           if (viewMode === 'day') {
             const missions = getMissionsForPersonDay(myPersonId, currentDate);
             const unavail = getUnavailForPersonDay(myPersonId, currentDate);
+            const enterprisePresence = getEnterpriseForPersonDay(myPersonId, currentDate);
             const tasks = getTasksForPersonDay(myPersonId, currentDate);
             const isUnavailable = unavail.length > 0;
-            const hasContent = missions.length > 0 || tasks.length > 0;
+            const hasContent =
+              missions.length > 0 || tasks.length > 0 || enterprisePresence.length > 0;
             return (
               <div className="mpers-my-planning">
                 {/* En-tête profil */}
@@ -405,6 +425,26 @@ function MobilePersonnel({ onBack, currentUser }) {
                       <div key={i} className="mpers-my-unavail-card">
                         <span className="mpers-my-unavail-reason">
                           {u.reason || 'Indisponible'}
+                        </span>
+                        {(u.startDate || u.start_date) && (
+                          <span className="mpers-my-unavail-dates">
+                            Du{' '}
+                            {format(parseISO(u.startDate || u.start_date), 'd MMM', { locale: fr })}{' '}
+                            au {format(parseISO(u.endDate || u.end_date), 'd MMM', { locale: fr })}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {enterprisePresence.length > 0 ? (
+                  <div className="mpers-my-section">
+                    <h4>Présence entreprise</h4>
+                    {enterprisePresence.map((u, i) => (
+                      <div key={i} className="mpers-my-enterprise-card">
+                        <span className="mpers-my-enterprise-reason">
+                          {u.reason || 'Présence entreprise'}
                         </span>
                         {(u.startDate || u.start_date) && (
                           <span className="mpers-my-unavail-dates">
@@ -505,9 +545,11 @@ function MobilePersonnel({ onBack, currentUser }) {
                 {weekDays.map((d) => {
                   const missions = getMissionsForPersonDay(myPersonId, d);
                   const unavail = getUnavailForPersonDay(myPersonId, d);
+                  const enterprisePresence = getEnterpriseForPersonDay(myPersonId, d);
                   const tasks = getTasksForPersonDay(myPersonId, d);
                   const isUnavailable = unavail.length > 0;
-                  const hasContent = missions.length > 0 || tasks.length > 0;
+                  const hasContent =
+                    missions.length > 0 || tasks.length > 0 || enterprisePresence.length > 0;
                   const isDayToday = isSameDay(d, new Date());
                   return (
                     <div
@@ -554,6 +596,11 @@ function MobilePersonnel({ onBack, currentUser }) {
                                 {ta.title || ta.affaire_num || 'Tâche'}
                               </div>
                             ))}
+                            {enterprisePresence.map((ep) => (
+                              <div key={ep.id} className="mpers-my-week-enterprise">
+                                {ep.reason || 'Entreprise'}
+                              </div>
+                            ))}
                           </>
                         ) : (
                           <div className="mpers-my-week-free">—</div>
@@ -579,6 +626,7 @@ function MobilePersonnel({ onBack, currentUser }) {
               const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
               const missions = getMissionsForPersonDay(p.id, currentDate);
               const unavail = getUnavailForPersonDay(p.id, currentDate);
+              const enterprisePresence = getEnterpriseForPersonDay(p.id, currentDate);
               const tasks = getTasksForPersonDay(p.id, currentDate);
               const isUnavailable = unavail.length > 0;
               return (
@@ -611,8 +659,14 @@ function MobilePersonnel({ onBack, currentUser }) {
                       <span className="mpers-unavail-tag">
                         {unavail[0].reason || 'Indisponible'}
                       </span>
-                    ) : missions.length > 0 || tasks.length > 0 ? (
+                    ) : missions.length > 0 || tasks.length > 0 || enterprisePresence.length > 0 ? (
                       <div className="mpers-day-missions">
+                        {enterprisePresence.map((ep) => (
+                          <div key={ep.id} className="mpers-enterprise-chip">
+                            <span className="mpers-enterprise-dot" />
+                            <span className="mpers-mission-title">{ep.reason || 'Entreprise'}</span>
+                          </div>
+                        ))}
                         {missions.map((m) => (
                           <div
                             key={m.id}
@@ -725,9 +779,11 @@ function MobilePersonnel({ onBack, currentUser }) {
                     {weekDays.map((d) => {
                       const missions = getMissionsForPersonDay(p.id, d);
                       const unavail = getUnavailForPersonDay(p.id, d);
+                      const enterprisePresence = getEnterpriseForPersonDay(p.id, d);
                       const tasks = getTasksForPersonDay(p.id, d);
                       const isUnavailable = unavail.length > 0;
-                      const hasContent = missions.length > 0 || tasks.length > 0;
+                      const hasContent =
+                        missions.length > 0 || tasks.length > 0 || enterprisePresence.length > 0;
                       return (
                         <div
                           key={d.toISOString()}
@@ -768,6 +824,16 @@ function MobilePersonnel({ onBack, currentUser }) {
                                 >
                                   <span className="mpers-cell-mission-title">
                                     {ta.title || ta.affaire_num || 'Tâche'}
+                                  </span>
+                                </div>
+                              ))}
+                              {enterprisePresence.map((ep) => (
+                                <div
+                                  key={ep.id}
+                                  className="mpers-cell-mission mpers-cell-enterprise"
+                                >
+                                  <span className="mpers-cell-mission-title">
+                                    {ep.reason || 'Entreprise'}
                                   </span>
                                 </div>
                               ))}

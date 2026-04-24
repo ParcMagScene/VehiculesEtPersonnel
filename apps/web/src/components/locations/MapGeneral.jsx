@@ -10,6 +10,7 @@ import {
   BOUNDS_PADDING,
   DEFAULT_ZOOM,
   filterGeoLocations,
+  getLocationTypeClass,
   MAG_SCENE,
   TILE_DARK,
   TILE_LIGHT,
@@ -21,7 +22,7 @@ import MapRouteControl from './MapRouteControl';
 import MapSearchControl from './MapSearchControl';
 
 const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
-const DIR_OFFSETS = { top: [0, -11], right: [7, -1], bottom: [0, 9], left: [-7, -1] };
+const DIR_OFFSETS = { top: [0, -12], right: [12, 0], bottom: [0, 12], left: [-12, 0] };
 
 function sameSet(a, b) {
   if (a === b) return true;
@@ -232,6 +233,8 @@ export default function MapGeneral({
           zoom={mapZoom}
           className="emag-leaflet-map"
           style={{ width: '100%', height: '100%' }}
+          markerZoomAnimation={false}
+          zoomAnimation={false}
           scrollWheelZoom
           wheelPxPerZoomLevel={180}
           zoomSnap={0.1}
@@ -265,7 +268,7 @@ export default function MapGeneral({
                     permanent
                     direction={dir}
                     offset={DIR_OFFSETS[dir]}
-                    className="map-name-tooltip"
+                    className={`map-name-tooltip map-name-tooltip--${getLocationTypeClass(loc.type, { isCompanyLocation: loc.isCompanyLocation })}`}
                   >
                     {loc.name}
                   </Tooltip>

@@ -2,6 +2,57 @@ import { cacheMiddleware, listCache } from './cache.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 
+function normalizeLocationText(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function normalizeLocationPayload(location) {
+  return {
+    name: normalizeLocationText(location?.name),
+    address: normalizeLocationText(location?.address),
+    type: normalizeLocationText(location?.type) || 'Salle de spectacle',
+    place_id: normalizeLocationText(location?.place_id),
+    lat: location?.lat ?? null,
+    lng: location?.lng ?? null,
+  };
+}
+
+function findExistingLocationDuplicate(location, excludedId = null) {
+  const normalized = normalizeLocationPayload(location);
+  if (!normalized.name) return null;
+
+  return db
+    .prepare(
+      `SELECT id
+         FROM locations
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))
+          AND LOWER(TRIM(COALESCE(type, 'Salle de spectacle'))) = LOWER(TRIM(?))
+          AND (? IS NULL OR id != ?)
+          AND (
+            (? != '' AND LOWER(TRIM(COALESCE(place_id, ''))) = LOWER(TRIM(?)))
+            OR (? != '' AND LOWER(TRIM(COALESCE(address, ''))) = LOWER(TRIM(?)))
+            OR (? IS NOT NULL AND ? IS NOT NULL AND lat = ? AND lng = ?)
+          )
+        LIMIT 1`,
+    )
+    .get(
+      normalized.name,
+      normalized.type,
+      excludedId,
+      excludedId,
+      normalized.place_id,
+      normalized.place_id,
+      normalized.address,
+      normalized.address,
+      normalized.lat,
+      normalized.lng,
+      normalized.lat,
+      normalized.lng,
+    );
+}
+
 // ============ CLIENTS (DEPRECATED — utiliser /api/annuaire/clients) ============
 // Ces routes legacy redirigent vers les endpoints annuaire pour compatibilité.
 // Elles seront supprimées dans une version future.
@@ -192,18 +243,11 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
 
   app.post('/api/locations', authenticateToken, (req, res) => {
     try {
-      const location = req.body;
+      const location = normalizeLocationPayload(req.body);
 
-      // Vérifier les doublons (même nom + même adresse)
-      const existing = db
-        .prepare(
-          'SELECT id FROM locations WHERE LOWER(name) = LOWER(?) AND LOWER(address) = LOWER(?)',
-        )
-        .get(location.name, location.address || '');
+      const existing = findExistingLocationDuplicate(location);
       if (existing) {
-        return res
-          .status(409)
-          .json({ success: false, error: 'Un lieu avec ce nom et cette adresse existe déjà' });
+        return res.status(409).json({ success: false, error: 'Un lieu équivalent existe déjà' });
       }
 
       const stmt = db.prepare(`
@@ -252,7 +296,12 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
 
   app.put('/api/locations/:id', authenticateToken, (req, res) => {
     try {
-      const location = req.body;
+      const location = normalizeLocationPayload(req.body);
+      const existing = findExistingLocationDuplicate(location, Number(req.params.id));
+      if (existing) {
+        return res.status(409).json({ success: false, error: 'Un lieu équivalent existe déjà' });
+      }
+
       const stmt = db.prepare(`
         UPDATE locations 
         SET name = ?, address = ?, lat = ?, lng = ?, place_id = ?, type = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP

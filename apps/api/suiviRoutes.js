@@ -117,6 +117,105 @@ function formatDateFR(dateStr) {
   });
 }
 
+const AVAILABILITY_TYPE_LABELS = {
+  unavailable: 'Indisponible',
+  conge_paye: 'Congé payé',
+  rtt: 'RTT',
+  maladie: 'Maladie',
+  sans_solde: 'Sans solde',
+  formation: 'Formation',
+  entreprise: 'Entreprise',
+  workshop: 'Workshop',
+  examen: 'Examen',
+  rdv: 'RDV',
+  repos: 'Jour de repos',
+  autre: 'Autre',
+};
+
+const LEAVE_TYPES = new Set(['conge_paye', 'rtt', 'maladie', 'sans_solde']);
+const NON_UNAVAILABILITY_TYPES = new Set(['entreprise']);
+
+function enrichSheetWithDayContext(fullSheet) {
+  if (!fullSheet?.person_id || !fullSheet?.date) return fullSheet;
+
+  const availabilities = db
+    .prepare(
+      `SELECT a.id, a.type, a.reason, a.status, a.start_date, a.end_date, a.start_period, a.end_period
+       FROM availabilities a
+       WHERE a.person_id = ?
+         AND a.status != 'rejected'
+         AND a.start_date <= ?
+         AND a.end_date >= ?
+       ORDER BY a.start_date ASC, a.id ASC`,
+    )
+    .all(fullSheet.person_id, fullSheet.date, fullSheet.date)
+    .map((a) => ({
+      ...a,
+      type_label: AVAILABILITY_TYPE_LABELS[a.type] || a.type,
+    }));
+
+  const missions = db
+    .prepare(
+      `SELECT m.id, m.title, m.affaire, m.client_name, m.location_name,
+              m.start_date, m.end_date, m.status,
+              ma.status AS assignment_status,
+              ma.position AS assignment_position,
+              a.type AS affaire_type
+       FROM missions m
+       JOIN mission_assignments ma ON ma.mission_id = m.id
+       LEFT JOIN affaires a ON a.numero_affaire = m.affaire
+       WHERE ma.person_id = ?
+         AND m.start_date <= ?
+         AND m.end_date >= ?
+         AND m.status != 'cancelled'
+       ORDER BY m.start_date ASC, m.start_time ASC, m.id ASC`,
+    )
+    .all(fullSheet.person_id, fullSheet.date, fullSheet.date);
+
+  const planningAffaires = db
+    .prepare(
+      `SELECT pa.entity_id AS affaire_num,
+              COALESCE(NULLIF(a.titre, ''), NULLIF(a.nom, ''), pa.entity_id) AS affaire_label,
+              a.type AS affaire_type,
+              a.client AS affaire_client
+       FROM planning_assignments pa
+       LEFT JOIN affaires a ON a.numero_affaire = pa.entity_id
+       WHERE pa.entity_type = 'affaire'
+         AND pa.person_id = ?
+         AND (
+           EXISTS (
+             SELECT 1 FROM task_assignments ta
+             WHERE ta.affaire_num = pa.entity_id
+               AND ta.date = ?
+               AND ta.deleted_at IS NULL
+           )
+           OR EXISTS (
+             SELECT 1 FROM missions m
+             WHERE m.affaire = pa.entity_id
+               AND m.start_date <= ?
+               AND m.end_date >= ?
+               AND m.status != 'cancelled'
+           )
+         )
+       ORDER BY pa.created_at ASC, pa.entity_id ASC`,
+    )
+    .all(fullSheet.person_id, fullSheet.date, fullSheet.date, fullSheet.date);
+
+  return {
+    ...fullSheet,
+    day_context: {
+      availabilities,
+      missions,
+      planning_affaires: planningAffaires,
+      has_unavailability: availabilities.some((a) => !NON_UNAVAILABILITY_TYPES.has(a.type)),
+      has_enterprise_presence: availabilities.some((a) => a.type === 'entreprise'),
+      has_leave: availabilities.some((a) => LEAVE_TYPES.has(a.type)),
+      has_mission: missions.length > 0,
+      has_planning_affaire: planningAffaires.length > 0,
+    },
+  };
+}
+
 function getWeekDates(weekStr) {
   // weekStr = "2026-W16"
   const [yearStr, weekPart] = weekStr.split('-W');
@@ -722,8 +821,11 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       const tasks = db
         .prepare(
           `SELECT ta.id, ta.title, ta.section, ta.period, ta.time, ta.end_time,
-                  ta.affaire_num, ta.notes, ta.status, ta.google_event_title
+                  ta.affaire_num, ta.notes, ta.status, ta.google_event_title,
+                  a.nom AS affaire_nom, a.titre AS affaire_titre,
+                  a.type AS affaire_type, a.client AS affaire_client
            FROM task_assignments ta
+           LEFT JOIN affaires a ON ta.affaire_num = a.numero_affaire
            WHERE ta.date = ? AND ta.deleted_at IS NULL
            ORDER BY ta.period ASC, ta.time ASC, ta.section ASC`,
         )
@@ -966,7 +1068,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
 
       const sheet = getOrCreateSheet(Number(personnelId), date, req.user.id);
       const full = getSheetWithEntries(sheet.id);
-      res.json(full);
+      res.json(enrichSheetWithDayContext(full));
     } catch (error) {
       logger.error('GET /api/suivi/:personnelId/:date error:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1063,7 +1165,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         replaceEntries(entries || []);
 
         const full = getSheetWithEntries(sheet.id);
-        res.json(full);
+        res.json(enrichSheetWithDayContext(full));
       } catch (error) {
         logger.error('POST /api/suivi/:personnelId/:date error:', error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });

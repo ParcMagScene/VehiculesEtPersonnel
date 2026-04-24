@@ -25,6 +25,7 @@ import {
   DEFAULT_ZOOM,
   filterGeoLocations,
   filterNearby,
+  getLocationTypeClass,
   haversineDistance,
   MAG_SCENE,
   TILE_LIGHT,
@@ -117,10 +118,10 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
 
   const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
   const DIR_OFFSETS = {
-    top: [0, -11],
-    right: [7, -1],
-    bottom: [0, 9],
-    left: [-7, -1],
+    top: [0, -12],
+    right: [12, 0],
+    bottom: [0, 12],
+    left: [-12, 0],
   };
 
   const sorted = useMemo(() => [...locations].sort((a, b) => b.lat - a.lat), [locations]);
@@ -200,7 +201,12 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
       {showHQ && (
         <Marker position={hqPosition} icon={createHQIcon()} zIndexOffset={1000}>
           {visibleLabelIds.has('__hq__') && (
-            <Tooltip permanent direction="top" offset={[0, -12]} className="map-name-tooltip">
+            <Tooltip
+              permanent
+              direction="top"
+              offset={DIR_OFFSETS.top}
+              className="map-name-tooltip map-name-tooltip--siege"
+            >
               Mag Scène
             </Tooltip>
           )}
@@ -219,7 +225,7 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
                 permanent
                 direction={dir}
                 offset={DIR_OFFSETS[dir]}
-                className="map-name-tooltip"
+                className={`map-name-tooltip map-name-tooltip--${getLocationTypeClass(loc.type, { isCompanyLocation: loc.isCompanyLocation })}`}
               >
                 {loc.name}
               </Tooltip>
@@ -566,6 +572,8 @@ export default function MapDualPrintModal({
               attributionControl={false}
               zoomSnap={0.1}
               zoomDelta={0.1}
+              markerZoomAnimation={false}
+              zoomAnimation={false}
             >
               <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
               <FitBounds locations={generalLocations} enabled={!hasInitialGeneralView} />
@@ -591,6 +599,8 @@ export default function MapDualPrintModal({
               attributionControl={false}
               zoomSnap={0.1}
               zoomDelta={0.1}
+              markerZoomAnimation={false}
+              zoomAnimation={false}
             >
               <TileLayer url={tile.url} attribution={tile.attribution} crossOrigin="anonymous" />
               <FitToRadius

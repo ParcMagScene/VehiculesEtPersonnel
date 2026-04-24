@@ -973,6 +973,53 @@
   cursor: pointer;
 }
 .fiche-recurring-edit {
+  /* Bouton reporter (postpone) */
+  .fiche-postpone-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    background: rgba(251, 191, 36, 0.12);
+    color: #f59e0b;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    margin-right: 2px;
+  }
+  .fiche-postpone-btn.active {
+    background: rgba(251, 191, 36, 0.25);
+    border-color: #f59e0b;
+  }
+
+  /* Ligne inline du formulaire de report */
+  .fiche-row-postpone td {
+    background: rgba(254, 249, 195, 0.18);
+    border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+    padding: 6px 8px;
+  }
+  .fiche-postpone-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .fiche-postpone-label {
+    font-size: 12px;
+    color: #92400e;
+    font-weight: 500;
+  }
+  .fiche-postpone-date,
+  .fiche-postpone-period {
+    font-size: 12px;
+    padding: 3px 6px;
+    border-radius: 4px;
+  }
+  .fiche-postpone-error {
+    font-size: 11px;
+    color: #ef4444;
+  }
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -1253,6 +1300,16 @@
   color: #60a5fa;
 }
 .synthese-badge-validated {
+  .synthese-badge-unreported {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(251, 191, 36, 0.2);
+    color: #d97706;
+    margin-left: 4px;
+  }
   background: rgba(34, 197, 94, 0.15);
   color: #4ade80;
 }

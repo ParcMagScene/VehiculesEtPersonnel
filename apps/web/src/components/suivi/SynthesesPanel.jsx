@@ -258,7 +258,14 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                 </thead>
                 <tbody>
                   {synthese.sheets.map((sh) => (
-                    <tr key={sh.id} className={sh.stats?.not_done > 0 ? 'row-warning' : 'row-ok'}>
+                    <tr
+                      key={sh.id}
+                      className={
+                        sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm
+                          ? 'row-warning'
+                          : 'row-ok'
+                      }
+                    >
                       <td>
                         {sh.first_name} {sh.last_name}
                       </td>
@@ -275,6 +282,16 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                               ? 'Soumise'
                               : 'Brouillon'}
                         </span>
+                        {sh.stats?.unreported_am && (
+                          <span className="synthese-badge synthese-badge-unreported">
+                            AM non-renseignée
+                          </span>
+                        )}
+                        {sh.stats?.unreported_pm && (
+                          <span className="synthese-badge synthese-badge-unreported">
+                            PM non-renseignée
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -294,7 +311,11 @@ function SynthesesPanel({ currentUser: _currentUser }) {
               <ul>
                 {s.anomalies.map((a, i) => (
                   <li key={i}>
-                    <strong>{a.person}</strong> ({a.date}) : {a.not_done} tâche(s) non effectuée(s)
+                    <strong>{a.person}</strong> ({a.date}) :{' '}
+                    {a.not_done > 0 && `${a.not_done} tâche(s) non effectuée(s)`}
+                    {a.not_done > 0 && a.unreported_periods?.length > 0 && ' — '}
+                    {a.unreported_periods?.length > 0 &&
+                      `Activité non renseignée : ${a.unreported_periods.join(', ')}`}
                   </li>
                 ))}
               </ul>

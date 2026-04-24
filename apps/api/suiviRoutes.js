@@ -197,6 +197,26 @@ function canManagePerson(person, user) {
   return user.is_admin === 1 || person.user_id === user.id;
 }
 
+// Retourne true si la période (AM/PM) est déjà passée
+function isPastPeriod(dateStr, period) {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  if (dateStr < today) return true;
+  if (dateStr === today && period === 'AM' && now.getHours() >= 12) return true;
+  return false;
+}
+
+// Retourne true si la fiche a un contexte d'occupation (congé, mission, présence entreprise)
+function hasOccupationContext(sheet) {
+  const ctx = sheet.day_context || {};
+  return !!(
+    ctx.has_unavailability ||
+    ctx.has_leave ||
+    ctx.has_mission ||
+    ctx.has_enterprise_presence
+  );
+}
+
 const AVAILABILITY_TYPE_LABELS = {
   unavailable: 'Indisponible',
   conge_paye: 'Congé payé',
@@ -391,19 +411,35 @@ function buildSynthese(dates, personId) {
     completedTasks += done;
     totalTime += time;
 
-    if (notDone > 0 && s.status !== 'draft') {
+    const amEntries = sheetEntries.filter((e) => e.period === 'AM');
+    const pmEntries = sheetEntries.filter((e) => e.period === 'PM');
+    const unreportedAm = amEntries.length === 0 && isPastPeriod(s.date, 'AM');
+    const unreportedPm = pmEntries.length === 0 && isPastPeriod(s.date, 'PM');
+    const unreportedParts = [];
+    if (unreportedAm) unreportedParts.push('AM');
+    if (unreportedPm) unreportedParts.push('PM');
+
+    if ((notDone > 0 && s.status !== 'draft') || unreportedParts.length > 0) {
       anomalies.push({
         date: s.date,
         person: `${s.first_name} ${s.last_name}`,
         person_id: s.person_id,
         not_done: notDone,
+        unreported_periods: unreportedParts,
       });
     }
 
     return {
       ...s,
       entries: sheetEntries,
-      stats: { total: sheetEntries.length, done, not_done: notDone, time },
+      stats: {
+        total: sheetEntries.length,
+        done,
+        not_done: notDone,
+        time,
+        unreported_am: unreportedAm,
+        unreported_pm: unreportedPm,
+      },
     };
   });
 
@@ -514,6 +550,22 @@ function drawPdfTableHeader(doc, y) {
     x += PDF_COL_WIDTHS[i];
   }
   return y + 20;
+}
+
+function drawPdfNonRenseigneeNotice(doc, y) {
+  const noticeH = 26;
+  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, noticeH).fillColor('#fef9c3').fill();
+  doc
+    .rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, noticeH)
+    .lineWidth(0.5)
+    .strokeColor('#fbbf24')
+    .stroke();
+  doc.fontSize(9).font('Helvetica-Oblique').fillColor('#92400e');
+  doc.text('Activite non-renseignee a ce jour pour cette periode', PDF_TABLE_LEFT + 8, y + 8, {
+    width: PDF_TABLE_WIDTH - 16,
+    lineBreak: false,
+  });
+  return y + noticeH;
 }
 
 function getPdfEntryRowHeight(doc, entry) {
@@ -685,6 +737,9 @@ function generateNormalSheetPdf(sheet, doc) {
   doc.moveDown(0.3);
   let y = drawPdfTableHeader(doc, doc.y);
   y = renderNormalEntries(doc, amEntries, y);
+  if (amEntries.length === 0 && isPastPeriod(sheet.date, 'AM') && !hasOccupationContext(sheet)) {
+    y = drawPdfNonRenseigneeNotice(doc, y);
+  }
 
   // Section Apres-midi
   if (y + 60 > 720) {
@@ -698,6 +753,9 @@ function generateNormalSheetPdf(sheet, doc) {
   doc.moveDown(0.3);
   y = drawPdfTableHeader(doc, doc.y);
   y = renderNormalEntries(doc, pmEntries, y);
+  if (pmEntries.length === 0 && isPastPeriod(sheet.date, 'PM') && !hasOccupationContext(sheet)) {
+    y = drawPdfNonRenseigneeNotice(doc, y);
+  }
 
   // Notes
   if (sheet.notes) {
@@ -716,7 +774,7 @@ function generateNormalSheetPdf(sheet, doc) {
 
 // ─── MODE IMPRESSION : Recto-verso, Matin/Apres-midi, lignes filigrane ───
 
-function renderPrintHalfDayPage(doc, sheet, entries, subtitle) {
+function renderPrintHalfDayPage(doc, sheet, entries, subtitle, period) {
   drawPdfHeader(doc, sheet, subtitle);
 
   let y = drawPdfTableHeader(doc, doc.y);
@@ -726,6 +784,15 @@ function renderPrintHalfDayPage(doc, sheet, entries, subtitle) {
     if (y + rowHeight > PDF_TABLE_BOTTOM) break;
     drawPdfEntryRow(doc, entries[i], i + 1, y, rowHeight);
     y += rowHeight;
+  }
+
+  if (
+    entries.length === 0 &&
+    period &&
+    isPastPeriod(sheet.date, period) &&
+    !hasOccupationContext(sheet)
+  ) {
+    y = drawPdfNonRenseigneeNotice(doc, y);
   }
 
   drawPdfWatermarkRows(doc, y, PDF_TABLE_BOTTOM);
@@ -783,11 +850,11 @@ function generateBatchPrintPdf(sheets, res) {
     const pmEntries = (sheet.entries || []).filter((e) => e.period === 'PM');
 
     // Recto: Matin
-    renderPrintHalfDayPage(doc, sheet, amEntries, 'MATIN (AM)');
+    renderPrintHalfDayPage(doc, sheet, amEntries, 'MATIN (AM)', 'AM');
 
     // Verso: Apres-midi
     doc.addPage();
-    renderPrintHalfDayPage(doc, sheet, pmEntries, 'APRES-MIDI (PM)');
+    renderPrintHalfDayPage(doc, sheet, pmEntries, 'APRES-MIDI (PM)', 'PM');
 
     if (sheet.notes) {
       doc.fontSize(8).font('Helvetica').fillColor('#475569');
@@ -862,8 +929,13 @@ function generateSynthesePdf(synthese, title, res) {
         : sheet.status === 'submitted'
           ? 'Soumise'
           : 'Brouillon';
-    const anomaly =
-      sheet.stats.not_done > 0 ? `${sheet.stats.not_done} tâche(s) non effectuée(s)` : '—';
+    const anomaly = (() => {
+      const parts = [];
+      if (sheet.stats.not_done > 0) parts.push(`${sheet.stats.not_done} non faite(s)`);
+      if (sheet.stats.unreported_am) parts.push('AM non-renseignee');
+      if (sheet.stats.unreported_pm) parts.push('PM non-renseignee');
+      return parts.length > 0 ? parts.join(' / ') : '—';
+    })();
 
     const values = [
       personName,
@@ -1366,7 +1438,74 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
 
   // ─────────────────────────────────────────────────
   // Routes avec paramètres dynamiques (après les statiques)
-  // ─────────────────────────────────────────────────
+
+  // ─── POST /api/suivi/entries/:entryId/postpone ─── Reporter une tâche récurrente
+  app.post('/api/suivi/entries/:entryId/postpone', authenticateToken, (req, res) => {
+    try {
+      const entryId = parseInt(req.params.entryId, 10);
+      const { target_date, target_period } = req.body;
+
+      if (!entryId || isNaN(entryId)) {
+        return res.status(400).json({ success: false, error: 'ID entrée invalide' });
+      }
+      if (!target_date || !/^\d{4}-\d{2}-\d{2}$/.test(target_date)) {
+        return res.status(400).json({ success: false, error: 'Date cible invalide (YYYY-MM-DD)' });
+      }
+      if (!target_period || !['AM', 'PM'].includes(target_period)) {
+        return res.status(400).json({ success: false, error: 'Période cible invalide (AM ou PM)' });
+      }
+
+      const entry = db.prepare('SELECT * FROM tracking_entries WHERE id = ?').get(entryId);
+      if (!entry) return res.status(404).json({ success: false, error: 'Entrée introuvable' });
+
+      const sheet = db.prepare('SELECT * FROM tracking_sheets WHERE id = ?').get(entry.sheet_id);
+      if (!sheet) return res.status(404).json({ success: false, error: 'Fiche introuvable' });
+
+      const personnel = db.prepare('SELECT * FROM personnel WHERE id = ?').get(sheet.person_id);
+      if (!canManagePerson(personnel, req.user)) {
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      }
+
+      // Récupérer ou créer la fiche cible
+      const targetSheet = getOrCreateSheet(sheet.person_id, target_date, req.user.id);
+      if (!targetSheet) {
+        return res
+          .status(500)
+          .json({ success: false, error: 'Impossible de créer la fiche cible' });
+      }
+
+      // Insérer la nouvelle entrée sur la fiche cible
+      const newComment = `Reporté depuis ${sheet.date} (${entry.period || target_period})${entry.comment ? ' — ' + entry.comment : ''}`;
+      const insertResult = db
+        .prepare(
+          `INSERT INTO tracking_entries (sheet_id, period, title, time_spent, comment, completed, recurring_task_id, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 0, NULL, datetime('now'), datetime('now'))`,
+        )
+        .run(targetSheet.id, target_period, entry.title, entry.time_spent || 0, newComment);
+
+      // Mettre à jour l'entrée originale pour indiquer le report
+      const updatedComment = `→ Reporté au ${target_date} (${target_period})${entry.comment ? ' — ' + entry.comment : ''}`;
+      db.prepare(
+        `UPDATE tracking_entries SET comment = ?, completed = 0, updated_at = datetime('now') WHERE id = ?`,
+      ).run(updatedComment, entryId);
+
+      // Mettre à jour modified_at de la fiche source
+      db.prepare(`UPDATE tracking_sheets SET modified_at = datetime('now') WHERE id = ?`).run(
+        sheet.id,
+      );
+
+      res.json({
+        success: true,
+        new_entry_id: insertResult.lastInsertRowid,
+        target_date,
+        target_period,
+        updated_comment: updatedComment,
+      });
+    } catch (err) {
+      console.error('Erreur route postpone entry:', err);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
 
   // ─── GET /api/suivi/:personnelId/:date ─── Récupérer ou créer la fiche du jour
   app.get('/api/suivi/:personnelId/:date', authenticateToken, (req, res) => {

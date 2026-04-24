@@ -99,6 +99,15 @@ export function registerSuiviMethods(ApiClient) {
       });
     },
 
+    // Reporter une entrée récurrente à une autre date
+    async postponeSuiviEntry(entryId, targetDate, targetPeriod) {
+      return this.request(`/suivi/entries/${entryId}/postpone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_date: targetDate, target_period: targetPeriod }),
+      });
+    },
+
     // Export PDF synthèses
     async exportSuiviSyntheseJourPdf(date) {
       return this.requestBlob(`/suivi/synthese/jour/${date}/pdf`);

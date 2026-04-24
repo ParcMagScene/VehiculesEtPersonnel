@@ -13,7 +13,7 @@ import {
   Square,
   Trash2,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import api from '../../utils/api';
 import Button from '../ui/Button';
@@ -53,7 +53,14 @@ function FicheSuivi({ sheet, onSave, saving }) {
     day_of_month: String(new Date().getDate()),
     default_time_spent: 0,
     default_comment: '',
+    period: 'AM',
   });
+  // Postpone state
+  const [postponeTarget, setPostponeTarget] = useState(null);
+  const [postponeDate, setPostponeDate] = useState('');
+  const [postponePeriod, setPostponePeriod] = useState('AM');
+  const [postponeSaving, setPostponeSaving] = useState(false);
+  const [postponeError, setPostponeError] = useState('');
 
   useEffect(() => {
     if (sheet) {
@@ -288,7 +295,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
     return 'fiche-mission-status-unknown';
   };
 
-  const resetRecurringForm = () => {
+  const resetRecurringForm = (defaultPeriod = 'AM') => {
     const now = new Date(sheet?.date ? `${sheet.date}T12:00:00` : Date.now());
     setRecurringForm({
       title: '',
@@ -297,6 +304,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
       day_of_month: String(now.getDate()),
       default_time_spent: 0,
       default_comment: '',
+      period: defaultPeriod,
     });
     setEditingRecurringId(null);
     setRecurringError('');
@@ -324,7 +332,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
     try {
       const payload = {
         title: recurringForm.title.trim(),
-        period,
+        period: recurringForm.period,
         recurrence: recurringForm.recurrence,
         day_of_week:
           recurringForm.recurrence === 'weekly' ? Number(recurringForm.day_of_week) : null,
@@ -382,6 +390,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
         r.day_of_month !== null && r.day_of_month !== undefined ? String(r.day_of_month) : '1',
       default_time_spent: r.default_time_spent ?? 0,
       default_comment: r.default_comment || '',
+      period: r.period || period || 'AM',
     });
     setEditingRecurringId(r.id);
     setRecurringError('');
@@ -399,6 +408,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
     try {
       const payload = {
         title: recurringForm.title.trim(),
+        period: recurringForm.period,
         recurrence: recurringForm.recurrence,
         day_of_week:
           recurringForm.recurrence === 'weekly' ? Number(recurringForm.day_of_week) : null,
@@ -418,6 +428,32 @@ function FicheSuivi({ sheet, onSave, saving }) {
     }
   };
 
+  const handlePostponeEntry = async () => {
+    if (!postponeTarget || !postponeDate) return;
+    setPostponeSaving(true);
+    setPostponeError('');
+    try {
+      const result = await api.postponeSuiviEntry(postponeTarget.id, postponeDate, postponePeriod);
+      setEntries((prev) =>
+        prev.map((e) =>
+          e._key === postponeTarget._key
+            ? {
+                ...e,
+                comment:
+                  result.updated_comment || `→ Reporté au ${postponeDate} (${postponePeriod})`,
+              }
+            : e,
+        ),
+      );
+      setPostponeTarget(null);
+      setDirty(false);
+    } catch (err) {
+      setPostponeError(err?.message || 'Erreur lors du report');
+    } finally {
+      setPostponeSaving(false);
+    }
+  };
+
   const formatRecurringLabel = (r) => {
     if (r.recurrence === 'daily') return 'Chaque jour';
     if (r.recurrence === 'weekly') {
@@ -428,86 +464,153 @@ function FicheSuivi({ sheet, onSave, saving }) {
     return r.recurrence;
   };
 
-  const renderEntryRow = (entry) => (
-    <tr key={entry._key} className={`fiche-row ${entry.completed === 1 ? 'completed' : ''}`}>
-      <td className="fiche-col-grip">
-        <GripVertical size={14} className="grip-icon" />
-      </td>
-      <td className="fiche-col-task">
-        <input
-          type="text"
-          value={entry.task}
-          onChange={(e) => handleEntryChange(entry._key, 'task', e.target.value)}
-          placeholder="Description de la tâche…"
-          className="fiche-input fiche-input-task"
-          disabled={isValidated}
-        />
-        {entry.task_assignment_id && (
-          <span className="fiche-tag-planned" title="Tâche planifiée">
-            📋
-          </span>
+  const renderEntryRow = (entry) => {
+    const isPostponing = postponeTarget?._key === entry._key;
+    return (
+      <Fragment key={entry._key}>
+        <tr className={`fiche-row ${entry.completed === 1 ? 'completed' : ''}`}>
+          <td className="fiche-col-grip">
+            <GripVertical size={14} className="grip-icon" />
+          </td>
+          <td className="fiche-col-task">
+            <input
+              type="text"
+              value={entry.task}
+              onChange={(e) => handleEntryChange(entry._key, 'task', e.target.value)}
+              placeholder="Description de la tâche…"
+              className="fiche-input fiche-input-task"
+              disabled={isValidated}
+            />
+            {entry.task_assignment_id && (
+              <span className="fiche-tag-planned" title="Tâche planifiée">
+                📋
+              </span>
+            )}
+          </td>
+          <td className="fiche-col-time">
+            <select
+              value={parseInt(entry.time_spent, 10) || 0}
+              onChange={(e) => handleEntryChange(entry._key, 'time_spent', Number(e.target.value))}
+              className="fiche-input fiche-input-time"
+              disabled={isValidated}
+            >
+              {TIME_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </td>
+          <td className="fiche-col-comment">
+            <input
+              type="text"
+              value={entry.comment || ''}
+              onChange={(e) => handleEntryChange(entry._key, 'comment', e.target.value)}
+              placeholder="Commentaire…"
+              className="fiche-input fiche-input-comment"
+              disabled={isValidated}
+            />
+          </td>
+          <td className="fiche-col-done">
+            <Button
+              variant="ghost"
+              size="xs"
+              iconOnly
+              className={`fiche-check-btn ${entry.completed === 1 ? 'checked' : ''}`}
+              onClick={() => handleToggleCompleted(entry._key)}
+              disabled={isValidated}
+              title={entry.completed === 1 ? 'Fait — cliquer pour annuler' : 'Marquer comme fait'}
+              aria-label={
+                entry.completed === 1 ? 'Fait — cliquer pour annuler' : 'Marquer comme fait'
+              }
+            >
+              {entry.completed === 1 ? <Check size={16} /> : <Square size={16} />}
+            </Button>
+          </td>
+          <td className="fiche-col-actions">
+            {!isValidated && entry.recurring_task_id && entry.id && (
+              <Button
+                variant="ghost"
+                size="xs"
+                iconOnly
+                className={`fiche-postpone-btn ${isPostponing ? 'active' : ''}`}
+                onClick={() => {
+                  if (isPostponing) {
+                    setPostponeTarget(null);
+                    return;
+                  }
+                  const tomorrow = new Date(
+                    `${sheet?.date || new Date().toISOString().split('T')[0]}T12:00:00`,
+                  );
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  setPostponeDate(tomorrow.toISOString().split('T')[0]);
+                  setPostponePeriod(entry.period || 'AM');
+                  setPostponeTarget(entry);
+                  setPostponeError('');
+                }}
+                title="Reporter cette tâche à une autre date"
+                aria-label="Reporter cette tâche"
+              >
+                ➔
+              </Button>
+            )}
+            {!isValidated && (
+              <Button
+                variant="ghost"
+                size="xs"
+                iconOnly
+                className="fiche-delete-btn"
+                onClick={() => handleRemoveEntry(entry._key)}
+                title="Supprimer"
+                aria-label="Supprimer l'entrée"
+              >
+                <Trash2 size={14} />
+              </Button>
+            )}
+          </td>
+        </tr>
+        {isPostponing && (
+          <tr className="fiche-row-postpone">
+            <td colSpan={6}>
+              <div className="fiche-postpone-form">
+                <span className="fiche-postpone-label">Reporter au :</span>
+                <input
+                  type="date"
+                  className="fiche-input fiche-postpone-date"
+                  value={postponeDate}
+                  onChange={(e) => setPostponeDate(e.target.value)}
+                />
+                <select
+                  className="fiche-input fiche-postpone-period"
+                  value={postponePeriod}
+                  onChange={(e) => setPostponePeriod(e.target.value)}
+                >
+                  <option value="AM">Matin (AM)</option>
+                  <option value="PM">Après-midi (PM)</option>
+                </select>
+                {postponeError && <span className="fiche-postpone-error">{postponeError}</span>}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handlePostponeEntry}
+                  disabled={postponeSaving || !postponeDate}
+                >
+                  {postponeSaving ? <Loader2 size={12} className="animate-spin" /> : null}
+                  Confirmer
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setPostponeTarget(null)}>
+                  Annuler
+                </Button>
+              </div>
+            </td>
+          </tr>
         )}
-      </td>
-      <td className="fiche-col-time">
-        <select
-          value={parseInt(entry.time_spent, 10) || 0}
-          onChange={(e) => handleEntryChange(entry._key, 'time_spent', Number(e.target.value))}
-          className="fiche-input fiche-input-time"
-          disabled={isValidated}
-        >
-          {TIME_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="fiche-col-comment">
-        <input
-          type="text"
-          value={entry.comment || ''}
-          onChange={(e) => handleEntryChange(entry._key, 'comment', e.target.value)}
-          placeholder="Commentaire…"
-          className="fiche-input fiche-input-comment"
-          disabled={isValidated}
-        />
-      </td>
-      <td className="fiche-col-done">
-        <Button
-          variant="ghost"
-          size="xs"
-          iconOnly
-          className={`fiche-check-btn ${entry.completed === 1 ? 'checked' : ''}`}
-          onClick={() => handleToggleCompleted(entry._key)}
-          disabled={isValidated}
-          title={entry.completed === 1 ? 'Fait — cliquer pour annuler' : 'Marquer comme fait'}
-          aria-label={entry.completed === 1 ? 'Fait — cliquer pour annuler' : 'Marquer comme fait'}
-        >
-          {entry.completed === 1 ? <Check size={16} /> : <Square size={16} />}
-        </Button>
-      </td>
-      <td className="fiche-col-actions">
-        {!isValidated && (
-          <Button
-            variant="ghost"
-            size="xs"
-            iconOnly
-            className="fiche-delete-btn"
-            onClick={() => handleRemoveEntry(entry._key)}
-            title="Supprimer"
-            aria-label="Supprimer l'entrée"
-          >
-            <Trash2 size={14} />
-          </Button>
-        )}
-      </td>
-    </tr>
-  );
+      </Fragment>
+    );
+  };
 
   const renderSection = (label, sectionEntries, period) => {
     const existingTaskIds = new Set(entries.map((e) => e.task_assignment_id).filter(Boolean));
-    // Inclure toutes les tâches planifiées (y compris done/validated/effectuées),
-    // puis seulement exclure celles déjà ajoutées dans la fiche en cours.
     const availableTasks = planningTasks.filter(
       (t) =>
         (!t.period || t.period === period || t.period === 'FULL') && !existingTaskIds.has(t.id),
@@ -593,14 +696,13 @@ function FicheSuivi({ sheet, onSave, saving }) {
                       setShowRecurringForm(null);
                       return;
                     }
-                    resetRecurringForm();
+                    resetRecurringForm(period);
                     setShowRecurringForm(period);
                   }}
                 >
                   ⟳ Récurrente
                   <ChevronDown size={12} />
                 </Button>
-
                 {showRecurringForm === period && (
                   <div className="fiche-recurring-dropdown">
                     <div className="fiche-recurring-row">
@@ -626,7 +728,6 @@ function FicheSuivi({ sheet, onSave, saving }) {
                         <option value="weekly">Hebdomadaire</option>
                         <option value="monthly">Mensuelle</option>
                       </select>
-
                       <select
                         className="fiche-recurring-input"
                         value={Number(recurringForm.default_time_spent) || 0}
@@ -643,8 +744,18 @@ function FicheSuivi({ sheet, onSave, saving }) {
                           </option>
                         ))}
                       </select>
+                      <select
+                        className="fiche-recurring-input"
+                        value={recurringForm.period}
+                        onChange={(e) =>
+                          setRecurringForm((prev) => ({ ...prev, period: e.target.value }))
+                        }
+                        title="Période de la tâche"
+                      >
+                        <option value="AM">Matin (AM)</option>
+                        <option value="PM">Après-midi (PM)</option>
+                      </select>
                     </div>
-
                     {recurringForm.recurrence === 'weekly' && (
                       <div className="fiche-recurring-row">
                         <select
@@ -664,7 +775,6 @@ function FicheSuivi({ sheet, onSave, saving }) {
                         </select>
                       </div>
                     )}
-
                     {recurringForm.recurrence === 'monthly' && (
                       <div className="fiche-recurring-row">
                         <input
@@ -679,7 +789,6 @@ function FicheSuivi({ sheet, onSave, saving }) {
                         />
                       </div>
                     )}
-
                     <div className="fiche-recurring-row">
                       <input
                         type="text"
@@ -691,11 +800,9 @@ function FicheSuivi({ sheet, onSave, saving }) {
                         }
                       />
                     </div>
-
                     {recurringError ? (
                       <div className="fiche-recurring-error">{recurringError}</div>
                     ) : null}
-
                     <div className="fiche-recurring-actions">
                       <Button
                         variant="secondary"
@@ -723,7 +830,6 @@ function FicheSuivi({ sheet, onSave, saving }) {
                         </Button>
                       )}
                     </div>
-
                     {recurringForPeriod.length > 0 && (
                       <ul className="fiche-recurring-list">
                         {recurringForPeriod.map((r) => (

@@ -257,7 +257,9 @@ function enrichSheetWithDayContext(fullSheet) {
       `SELECT pa.entity_id AS affaire_num,
               COALESCE(NULLIF(a.titre, ''), NULLIF(a.nom, ''), pa.entity_id) AS affaire_label,
               a.type AS affaire_type,
-              a.client AS affaire_client
+              a.client AS affaire_client,
+              a.date_debut,
+              a.date_fin
        FROM planning_assignments pa
        LEFT JOIN affaires a ON a.numero_affaire = pa.entity_id
        WHERE pa.entity_type = 'affaire'
@@ -276,10 +278,22 @@ function enrichSheetWithDayContext(fullSheet) {
                AND m.end_date >= ?
                AND m.status != 'cancelled'
            )
+           OR (
+             a.date_debut IS NOT NULL
+             AND a.date_debut <= ?
+             AND (a.date_fin IS NULL OR a.date_fin >= ?)
+           )
          )
        ORDER BY pa.created_at ASC, pa.entity_id ASC`,
     )
-    .all(fullSheet.person_id, fullSheet.date, fullSheet.date, fullSheet.date);
+    .all(
+      fullSheet.person_id,
+      fullSheet.date,
+      fullSheet.date,
+      fullSheet.date,
+      fullSheet.date,
+      fullSheet.date,
+    );
 
   return {
     ...fullSheet,

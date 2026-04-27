@@ -334,9 +334,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
     setTeamAuthLoading(true);
     try {
       const creds =
-        teamAuthMode === 'pin'
-          ? { pin: teamPinInput }
-          : { password: teamPasswordInput };
+        teamAuthMode === 'pin' ? { pin: teamPinInput } : { password: teamPasswordInput };
       await api.suiviPersonalAuth(teamSelectedPerson.id, creds.pin, creds.password);
       setSuiviPerson(teamSelectedPerson);
       setSelectedPerson(teamSelectedPerson);
@@ -411,7 +409,9 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                       maxLength={4}
                       pattern="\d{4}"
                       value={teamPinInput}
-                      onChange={(e) => setTeamPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      onChange={(e) =>
+                        setTeamPinInput(e.target.value.replace(/\D/g, '').slice(0, 4))
+                      }
                       placeholder="••••"
                       required
                       autoFocus

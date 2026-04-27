@@ -316,10 +316,17 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                 <tbody>
                   {sheetsByPerson.map((pg) => {
                     // Une personne en indispo/mission sur toutes ses fiches n'est pas en anomalie pour les non-renseignées
-                    const allSheetsHaveContext = pg.sheets.length > 0 && pg.sheets.every((sh) => {
-                      const c = sh.day_context || {};
-                      return c.has_unavailability || c.has_leave || c.has_mission || c.has_enterprise_presence;
-                    });
+                    const allSheetsHaveContext =
+                      pg.sheets.length > 0 &&
+                      pg.sheets.every((sh) => {
+                        const c = sh.day_context || {};
+                        return (
+                          c.has_unavailability ||
+                          c.has_leave ||
+                          c.has_mission ||
+                          c.has_enterprise_presence
+                        );
+                      });
                     const hasWarning =
                       pg.stats.not_done > 0 ||
                       (!allSheetsHaveContext && (pg.stats.unreported_am || pg.stats.unreported_pm));
@@ -395,7 +402,9 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                                 const hasDistinctLabel =
                                   label && label.toLowerCase() !== num.toLowerCase();
                                 const base = hasDistinctLabel ? `${num} (${label})` : num;
-                                return a.is_tournee ? `Affaire ${base} [Tournée]` : `Affaire ${base}`;
+                                return a.is_tournee
+                                  ? `Affaire ${base} [Tournée]`
+                                  : `Affaire ${base}`;
                               })
                               .filter(Boolean);
                             return (
@@ -428,10 +437,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                                     </span>
                                   ))}
                                   {missionLabels.map((l, i) => (
-                                    <span
-                                      key={i}
-                                      className="synthese-badge synthese-badge-mission"
-                                    >
+                                    <span key={i} className="synthese-badge synthese-badge-mission">
                                       {l}
                                     </span>
                                   ))}

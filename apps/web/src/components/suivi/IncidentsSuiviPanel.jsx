@@ -1,13 +1,6 @@
 import './IncidentsSuiviPanel.css';
 
-import {
-  Calendar,
-  ClipboardList,
-  Loader2,
-  Plus,
-  Save,
-  Trash2,
-} from 'lucide-react';
+import { Calendar, ClipboardList, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import api from '../../utils/api';
@@ -64,6 +57,9 @@ function makeEmptyIncident() {
     incident_type: 'vehicle_problem',
     description: '',
     reporter_person_id: '',
+    vehicle_id: '',
+    vehicle_name_snapshot: '',
+    linked_maintenance_id: null,
   };
 }
 
@@ -88,7 +84,9 @@ function buildFormFromTicket(ticket) {
     affaire_start_date: ticket.affaire_start_date || '',
     affaire_end_date: ticket.affaire_end_date || '',
     is_tournee: !!ticket.is_tournee,
-    linked_reservations: Array.isArray(ticket.linked_reservations) ? ticket.linked_reservations : [],
+    linked_reservations: Array.isArray(ticket.linked_reservations)
+      ? ticket.linked_reservations
+      : [],
     linked_personnel: Array.isArray(ticket.linked_personnel) ? ticket.linked_personnel : [],
     notes: ticket.notes || '',
     incidents:
@@ -100,6 +98,10 @@ function buildFormFromTicket(ticket) {
               i.reporter_person_id === null || i.reporter_person_id === undefined
                 ? ''
                 : String(i.reporter_person_id),
+            vehicle_id:
+              i.vehicle_id === null || i.vehicle_id === undefined ? '' : String(i.vehicle_id),
+            vehicle_name_snapshot: i.vehicle_name_snapshot || '',
+            linked_maintenance_id: i.linked_maintenance_id || null,
           }))
         : [makeEmptyIncident()],
   };
@@ -112,6 +114,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
   const [affaires, setAffaires] = useState([]);
   const [personnel, setPersonnel] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [loadingLists, setLoadingLists] = useState(false);
 
   const [selectedAffaireNum, setSelectedAffaireNum] = useState('');
@@ -131,11 +134,11 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   const [synthLoading, setSynthLoading] = useState(false);
   const [synthese, setSynthese] = useState(null);
 
-  const personnelById = useMemo(() => {
+  const vehicleById = useMemo(() => {
     const map = new Map();
-    for (const p of personnel) map.set(String(p.id), p);
+    for (const v of vehicles) map.set(String(v.id), v);
     return map;
-  }, [personnel]);
+  }, [vehicles]);
 
   const affaireOptions = useMemo(() => {
     const seen = new Set();
@@ -174,6 +177,32 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
     return options;
   }, [personnel]);
+
+  const vehicleOptions = useMemo(() => {
+    const seen = new Set();
+    const options = [];
+
+    for (const v of vehicles) {
+      const id = String(v.id ?? '').trim();
+      if (!id || seen.has(id)) continue;
+
+      const name = String(v.name || '').trim() || `Véhicule #${id}`;
+      const registration = String(v.registration || '').trim();
+      const type = String(v.type || '').trim();
+
+      const bits = [];
+      if (registration) bits.push(registration);
+      if (type) bits.push(type);
+
+      options.push({
+        id,
+        label: bits.length > 0 ? `${name} — ${bits.join(' · ')}` : name,
+      });
+      seen.add(id);
+    }
+
+    return options;
+  }, [vehicles]);
 
   const resetForm = useCallback(() => {
     setSelectedTicketId(null);
@@ -223,12 +252,14 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
     setLoadingLists(true);
     setError('');
     try {
-      const [affairesData, personnelData] = await Promise.all([
+      const [affairesData, personnelData, vehiclesData] = await Promise.all([
         api.getAffaires(),
         api.getSuiviPersonnel(),
+        api.getVehicles(),
       ]);
       setAffaires(Array.isArray(affairesData) ? affairesData : []);
       setPersonnel(Array.isArray(personnelData) ? personnelData : []);
+      setVehicles(Array.isArray(vehiclesData) ? vehiclesData : []);
     } catch (err) {
       setError(err?.message || 'Erreur chargement des données de référence');
     } finally {
@@ -278,7 +309,9 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
           affaire_start_date: base.affaire_start_date || '',
           affaire_end_date: base.affaire_end_date || '',
           is_tournee: !!base.is_tournee,
-          linked_reservations: Array.isArray(base.linked_reservations) ? base.linked_reservations : [],
+          linked_reservations: Array.isArray(base.linked_reservations)
+            ? base.linked_reservations
+            : [],
           linked_personnel: Array.isArray(base.linked_personnel) ? base.linked_personnel : [],
           notes: '',
           incidents: [makeEmptyIncident()],
@@ -313,7 +346,18 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   const handleIncidentChange = (idx, patch) => {
     setForm((prev) => ({
       ...prev,
-      incidents: prev.incidents.map((it, i) => (i === idx ? { ...it, ...patch } : it)),
+      incidents: prev.incidents.map((it, i) => {
+        if (i !== idx) return it;
+        const next = { ...it, ...patch };
+        if (Object.prototype.hasOwnProperty.call(patch, 'incident_type')) {
+          if (patch.incident_type !== 'vehicle_problem') {
+            next.vehicle_id = '';
+            next.vehicle_name_snapshot = '';
+            next.linked_maintenance_id = null;
+          }
+        }
+        return next;
+      }),
     }));
   };
 
@@ -324,7 +368,10 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   const removeIncident = (idx) => {
     setForm((prev) => ({
       ...prev,
-      incidents: prev.incidents.length === 1 ? [makeEmptyIncident()] : prev.incidents.filter((_, i) => i !== idx),
+      incidents:
+        prev.incidents.length === 1
+          ? [makeEmptyIncident()]
+          : prev.incidents.filter((_, i) => i !== idx),
     }));
   };
 
@@ -347,11 +394,30 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
       return;
     }
 
+    const incidentsWithDescription = form.incidents.filter(
+      (i) => String(i.description || '').trim().length > 0,
+    );
+
+    const missingVehicle = incidentsWithDescription.find(
+      (i) => i.incident_type === 'vehicle_problem' && !String(i.vehicle_id || '').trim(),
+    );
+    if (missingVehicle) {
+      setError('Sélectionnez un véhicule pour chaque incident de type "Problème sur véhicule"');
+      return;
+    }
+
     const incidentsPayload = form.incidents
       .map((i) => ({
         incident_type: i.incident_type,
         description: String(i.description || '').trim(),
         reporter_person_id: i.reporter_person_id ? Number(i.reporter_person_id) : null,
+        vehicle_id:
+          i.incident_type === 'vehicle_problem' && i.vehicle_id ? Number(i.vehicle_id) : null,
+        vehicle_name_snapshot:
+          i.incident_type === 'vehicle_problem' && i.vehicle_id
+            ? vehicleById.get(String(i.vehicle_id))?.name || i.vehicle_name_snapshot || ''
+            : '',
+        linked_maintenance_id: i.linked_maintenance_id || null,
       }))
       .filter((i) => i.description.length > 0);
 
@@ -461,26 +527,27 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
           )}
 
           {ticketMode === 'affaire' && (
-          <div className="si-prefill">
-            <div>
-              <strong>Numéro:</strong> {form.affaire_num || '—'}
+            <div className="si-prefill">
+              <div>
+                <strong>Numéro:</strong> {form.affaire_num || '—'}
+              </div>
+              <div>
+                <strong>Nom:</strong> {form.affaire_name || '—'}
+              </div>
+              <div>
+                <strong>Dates:</strong> {form.affaire_start_date || '—'} →{' '}
+                {form.affaire_end_date || '—'}
+              </div>
+              <div>
+                <strong>Tournée:</strong> {form.is_tournee ? 'Oui' : 'Non'}
+              </div>
+              <div>
+                <strong>Réservations liées:</strong> {form.linked_reservations.length}
+              </div>
+              <div>
+                <strong>Personnels liés:</strong> {form.linked_personnel.length}
+              </div>
             </div>
-            <div>
-              <strong>Nom:</strong> {form.affaire_name || '—'}
-            </div>
-            <div>
-              <strong>Dates:</strong> {form.affaire_start_date || '—'} → {form.affaire_end_date || '—'}
-            </div>
-            <div>
-              <strong>Tournée:</strong> {form.is_tournee ? 'Oui' : 'Non'}
-            </div>
-            <div>
-              <strong>Réservations liées:</strong> {form.linked_reservations.length}
-            </div>
-            <div>
-              <strong>Personnels liés:</strong> {form.linked_personnel.length}
-            </div>
-          </div>
           )}
 
           {form.linked_reservations.length > 0 && (
@@ -489,7 +556,8 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
               <ul>
                 {form.linked_reservations.slice(0, 10).map((r) => (
                   <li key={r.id}>
-                    {r.vehicle_name || r.vehicle_id || 'Véhicule'} — {r.start_date || '—'} → {r.end_date || '—'}
+                    {r.vehicle_name || r.vehicle_id || 'Véhicule'} — {r.start_date || '—'} →{' '}
+                    {r.end_date || '—'}
                     {r.is_tournee ? ' [Tournée]' : ''}
                   </li>
                 ))}
@@ -564,17 +632,52 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
                   onChange={(e) => handleIncidentChange(idx, { description: e.target.value })}
                   placeholder="Décrivez l'incident"
                 />
+
+                {inc.incident_type === 'vehicle_problem' && (
+                  <div className="si-incident-extra">
+                    <EntityCombobox
+                      value={String(inc.vehicle_id || '')}
+                      onChange={(value) => {
+                        const selected = vehicleById.get(String(value));
+                        handleIncidentChange(idx, {
+                          vehicle_id: value,
+                          vehicle_name_snapshot: selected?.name || '',
+                        });
+                      }}
+                      options={vehicleOptions}
+                      placeholder="— Choisir le véhicule concerné —"
+                      className="si-vehicle-combobox"
+                      disabled={loadingLists}
+                    />
+                    {inc.linked_maintenance_id ? (
+                      <div className="si-incident-help">
+                        Signalement panne lié: {inc.linked_maintenance_id}
+                      </div>
+                    ) : (
+                      <div className="si-incident-help">
+                        Un signalement de panne sera créé automatiquement à l'enregistrement.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
 
           <div className="si-actions">
             <Button variant="primary" onClick={handleSave} disabled={saving || !form.affaire_num}>
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Enregistrer ticket
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}{' '}
+              Enregistrer ticket
             </Button>
             {selectedTicketId && (
-              <Button variant="ghost" className="si-danger" onClick={handleDelete} disabled={deleting}>
-                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Supprimer ticket
+              <Button
+                variant="ghost"
+                className="si-danger"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}{' '}
+                Supprimer ticket
               </Button>
             )}
           </div>
@@ -643,7 +746,11 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
               <input type="week" value={synthWeek} onChange={(e) => setSynthWeek(e.target.value)} />
             )}
             {synthMode === 'mois' && (
-              <input type="month" value={synthMonth} onChange={(e) => setSynthMonth(e.target.value)} />
+              <input
+                type="month"
+                value={synthMonth}
+                onChange={(e) => setSynthMonth(e.target.value)}
+              />
             )}
             {synthMode === 'annee' && (
               <input

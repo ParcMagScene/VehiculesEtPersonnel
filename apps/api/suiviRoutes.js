@@ -330,7 +330,6 @@ function enrichSheetWithDayContext(fullSheet) {
       fullSheet.date,
     );
 
-
   const planningAffairesMap = new Map();
   for (const a of planningAffairesRaw) {
     const affaireNum = String(a.affaire_num || '').trim();
@@ -691,7 +690,8 @@ function buildSynthese(dates, personId) {
     // Enrichir avec le contexte avant de qualifier les anomalies
     const enriched = enrichSheetWithDayContext({ ...s, person_id: s.person_id, date: s.date });
     const ctx = enriched.day_context || {};
-    const hasContext = ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
+    const hasContext =
+      ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
 
     // Les périodes non renseignées ne sont pas des anomalies si la personne est en indispo ou en mission
     const anomalyUnreportedParts = hasContext ? [] : unreportedParts;
@@ -1237,8 +1237,11 @@ function generateSynthesePdf(synthese, title, res) {
     const totTasks = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.total || 0), 0);
     const hasWarning = pg.sheets.some((sh) => {
       const c = sh.day_context || {};
-      const hasCtx = c.has_unavailability || c.has_leave || c.has_mission || c.has_enterprise_presence;
-      return sh.stats?.not_done > 0 || (!hasCtx && (sh.stats?.unreported_am || sh.stats?.unreported_pm));
+      const hasCtx =
+        c.has_unavailability || c.has_leave || c.has_mission || c.has_enterprise_presence;
+      return (
+        sh.stats?.not_done > 0 || (!hasCtx && (sh.stats?.unreported_am || sh.stats?.unreported_pm))
+      );
     });
 
     ensureSpace(46 + pg.sheets.length * 14);
@@ -1267,9 +1270,13 @@ function generateSynthesePdf(synthese, title, res) {
     for (const sh of sortedSheets) {
       const shCtx = sh.day_context || {};
       const shHasContext =
-        shCtx.has_unavailability || shCtx.has_leave || shCtx.has_mission || shCtx.has_enterprise_presence;
+        shCtx.has_unavailability ||
+        shCtx.has_leave ||
+        shCtx.has_mission ||
+        shCtx.has_enterprise_presence;
       const rowBg =
-        sh.stats?.not_done > 0 || (!shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm))
+        sh.stats?.not_done > 0 ||
+        (!shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm))
           ? '#fef2f2'
           : odd
             ? '#f8fafc'
@@ -1285,12 +1292,14 @@ function generateSynthesePdf(synthese, title, res) {
       const hasContext =
         ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
 
-      const amCell = sh.stats?.unreported_am && !hasContext
-        ? '⚠ Non renseignée'
-        : `${amEntries.length} tâche(s) — ${decToHM(amTime)}`;
-      const pmCell = sh.stats?.unreported_pm && !hasContext
-        ? '⚠ Non renseignée'
-        : `${pmEntries.length} tâche(s) — ${decToHM(pmTime)}`;
+      const amCell =
+        sh.stats?.unreported_am && !hasContext
+          ? '⚠ Non renseignée'
+          : `${amEntries.length} tâche(s) — ${decToHM(amTime)}`;
+      const pmCell =
+        sh.stats?.unreported_pm && !hasContext
+          ? '⚠ Non renseignée'
+          : `${pmEntries.length} tâche(s) — ${decToHM(pmTime)}`;
 
       const alertParts = [];
       if (sh.stats?.not_done > 0) alertParts.push(`${sh.stats.not_done} non faite(s)`);
@@ -1326,7 +1335,9 @@ function generateSynthesePdf(synthese, title, res) {
 
       doc.rect(LEFT, y, USABLE_W, 14).fillColor(rowBg).fill();
       const textColor =
-        !shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm) ? '#991b1b' : '#111111';
+        !shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm)
+          ? '#991b1b'
+          : '#111111';
       doc.fillColor(textColor);
       let x = LEFT;
       for (let i = 0; i < rowVals.length; i++) {
@@ -1855,13 +1866,72 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
 
         db.prepare('DELETE FROM tracking_incident_entries WHERE ticket_id = ?').run(ticketId);
 
+        const createVehicleBreakdownReportIfNeeded = (item) => {
+          if (item.incident_type !== 'vehicle_problem') return item.linked_maintenance_id || null;
+
+          const vehicleId =
+            item.vehicle_id === null || item.vehicle_id === undefined
+              ? null
+              : Number(item.vehicle_id);
+
+          if (!vehicleId || !Number.isFinite(vehicleId)) return item.linked_maintenance_id || null;
+
+          const existingMaintenanceId = String(item.linked_maintenance_id || '').trim();
+          if (existingMaintenanceId) {
+            const existing = db
+              .prepare('SELECT id FROM maintenances WHERE id = ?')
+              .get(existingMaintenanceId);
+            if (existing?.id) return existing.id;
+          }
+
+          const vehicle = db.prepare('SELECT id, name FROM vehicles WHERE id = ?').get(vehicleId);
+          if (!vehicle?.id) return null;
+
+          const maintenanceId = crypto.randomUUID().replace(/-/g, '');
+          const reportDate = bounds.end;
+          const vehicleName =
+            String(item.vehicle_name_snapshot || '').trim() || String(vehicle.name || '').trim();
+          const reportDescription = String(item.description || '').trim();
+
+          db.prepare(
+            `INSERT INTO maintenances (id, vehicle_id, vehicle_name, type, status, date, end_date,
+                                       start_date_period, end_date_period,
+                                       description, garage_id, cost, mileage, notes, is_immobilized,
+                                       is_quick_report, technical_control_type, created_by, modified_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ).run(
+            maintenanceId,
+            vehicleId,
+            vehicleName,
+            'other',
+            'reported',
+            reportDate,
+            reportDate,
+            'AM',
+            'PM',
+            reportDescription,
+            null,
+            null,
+            null,
+            `Signalement créé automatiquement depuis incident suivi (${weekKey} / ${affaireNum})`,
+            0,
+            1,
+            null,
+            req.user.id,
+            req.user.id,
+          );
+
+          return maintenanceId;
+        };
+
         const insertIncident = db.prepare(
           `INSERT INTO tracking_incident_entries (
              id, ticket_id, incident_type, description,
              reporter_person_id, reporter_name_snapshot,
+             vehicle_id, vehicle_name_snapshot, linked_maintenance_id,
              created_by, modified_by
            )
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         );
 
         const addAll = db.transaction((items) => {
@@ -1877,6 +1947,14 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
                 .get(reporterId);
               reporterSnapshot = [p?.first_name, p?.last_name].filter(Boolean).join(' ').trim();
             }
+
+            const vehicleId =
+              item.vehicle_id === null || item.vehicle_id === undefined
+                ? null
+                : Number(item.vehicle_id);
+            const vehicleSnapshot = String(item.vehicle_name_snapshot || '').trim();
+            const linkedMaintenanceId = createVehicleBreakdownReportIfNeeded(item);
+
             insertIncident.run(
               crypto.randomUUID().replace(/-/g, ''),
               ticketId,
@@ -1884,6 +1962,9 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
               item.description || '',
               reporterId,
               reporterSnapshot,
+              Number.isFinite(vehicleId) ? vehicleId : null,
+              vehicleSnapshot,
+              linkedMaintenanceId,
               req.user.id,
               req.user.id,
             );

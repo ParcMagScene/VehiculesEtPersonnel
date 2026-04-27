@@ -79,7 +79,18 @@ export const maintenanceSchema = z
     type: str(100),
     description: optStr(5000),
     status: z
-      .enum(['scheduled', 'in_progress', 'completed', 'cancelled'])
+      .enum([
+        'scheduled',
+        'in_progress',
+        'IN_PROGRESS',
+        'completed',
+        'COMPLETED',
+        'cancelled',
+        'reported',
+        'pending',
+        'PENDING',
+        'rescheduled',
+      ])
       .optional()
       .default('scheduled'),
     scheduled_date: optDate,

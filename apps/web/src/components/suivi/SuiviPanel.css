@@ -1226,186 +1226,191 @@
 
 /* Summary cards */
 .syntheses-summary {
-    .syntheses-summary {
-      flex-direction: column;
-    }
+  .syntheses-summary {
+    flex-direction: column;
   }
+}
 
-  /* ─── Compte Equipe — Authentification ─── */
-  .suivi-team-auth {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-  }
-  .suivi-team-auth-card {
-    background: var(--bg-secondary, #1e293b);
-    border: 1px solid var(--border-color, #334155);
-    border-radius: 12px;
-    padding: 32px;
-    width: 100%;
-    max-width: 480px;
-  }
-  .suivi-team-auth-header {
-    text-align: center;
-    margin-bottom: 24px;
-  }
-  .suivi-team-auth-header svg {
-    color: var(--accent, #3b82f6);
-    margin-bottom: 12px;
-  }
-  .suivi-team-auth-header h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0 0 8px;
-    color: var(--text-primary, #e2e8f0);
-  }
-  .suivi-team-auth-header p {
-    font-size: 0.875rem;
-    color: var(--text-secondary, #94a3b8);
-    margin: 0;
-  }
-  .suivi-team-auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .suivi-team-person-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 220px;
-    overflow-y: auto;
-    border: 1px solid var(--border-color, #334155);
-    border-radius: 8px;
-    padding: 8px;
-  }
-  .suivi-team-person-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-radius: 6px;
-    background: transparent;
-    border: 1px solid transparent;
-    cursor: pointer;
-    color: var(--text-primary, #e2e8f0);
-    transition: background 0.15s, border-color 0.15s;
-    text-align: left;
-  }
-  .suivi-team-person-item:hover {
-    background: var(--bg-hover, #334155);
-  }
-  .suivi-team-person-item.selected {
-    background: var(--accent-subtle, rgba(59, 130, 246, 0.15));
-    border-color: var(--accent, #3b82f6);
-  }
-  .suivi-team-person-name {
-    font-weight: 500;
-    font-size: 0.9rem;
-  }
-  .suivi-team-auth-mode-toggle {
-    display: flex;
-    gap: 8px;
-  }
-  .suivi-auth-mode-btn {
-    flex: 1;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color, #334155);
-    background: transparent;
-    color: var(--text-secondary, #94a3b8);
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.15s;
-  }
-  .suivi-auth-mode-btn.active {
-    background: var(--accent-subtle, rgba(59, 130, 246, 0.15));
-    border-color: var(--accent, #3b82f6);
-    color: var(--accent, #3b82f6);
-  }
-  .suivi-team-auth-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .suivi-team-auth-field label {
-    font-size: 0.8rem;
-    color: var(--text-secondary, #94a3b8);
-    font-weight: 500;
-  }
-  .suivi-team-auth-field input {
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color, #334155);
-    background: var(--bg-primary, #0f172a);
-    color: var(--text-primary, #e2e8f0);
-    font-size: 1rem;
-    letter-spacing: 0.2em;
-  }
-  .suivi-team-auth-field input:focus {
-    outline: none;
-    border-color: var(--accent, #3b82f6);
-  }
-  .suivi-team-auth-error {
-    padding: 10px 14px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 8px;
-    color: #f87171;
-    font-size: 0.875rem;
-  }
-  .suivi-team-auth-submit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    background: var(--accent, #3b82f6);
-    color: white;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-  }
-  .suivi-team-auth-submit:hover:not(:disabled) {
-    opacity: 0.9;
-  }
-  .suivi-team-auth-submit:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+/* ─── Compte Equipe — Authentification ─── */
+.suivi-team-auth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+.suivi-team-auth-card {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 480px;
+}
+.suivi-team-auth-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.suivi-team-auth-header svg {
+  color: var(--accent, #3b82f6);
+  margin-bottom: 12px;
+}
+.suivi-team-auth-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--text-primary, #e2e8f0);
+}
+.suivi-team-auth-header p {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+}
+.suivi-team-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.suivi-team-person-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 8px;
+  padding: 8px;
+}
+.suivi-team-person-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--text-primary, #e2e8f0);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+  text-align: left;
+}
+.suivi-team-person-item:hover {
+  background: var(--bg-hover, #334155);
+}
+.suivi-team-person-item.selected {
+  background: var(--accent-subtle, rgba(59, 130, 246, 0.15));
+  border-color: var(--accent, #3b82f6);
+}
+.suivi-team-person-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+.suivi-team-auth-mode-toggle {
+  display: flex;
+  gap: 8px;
+}
+.suivi-auth-mode-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #334155);
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.15s;
+}
+.suivi-auth-mode-btn.active {
+  background: var(--accent-subtle, rgba(59, 130, 246, 0.15));
+  border-color: var(--accent, #3b82f6);
+  color: var(--accent, #3b82f6);
+}
+.suivi-team-auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.suivi-team-auth-field label {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #94a3b8);
+  font-weight: 500;
+}
+.suivi-team-auth-field input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #334155);
+  background: var(--bg-primary, #0f172a);
+  color: var(--text-primary, #e2e8f0);
+  font-size: 1rem;
+  letter-spacing: 0.2em;
+}
+.suivi-team-auth-field input:focus {
+  outline: none;
+  border-color: var(--accent, #3b82f6);
+}
+.suivi-team-auth-error {
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 0.875rem;
+}
+.suivi-team-auth-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent, #3b82f6);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.suivi-team-auth-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.suivi-team-auth-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  /* ─── Barre de session Equipe ─── */
-  .suivi-team-session-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 16px;
-    background: var(--accent-subtle, rgba(59, 130, 246, 0.1));
-    border-bottom: 1px solid var(--accent, #3b82f6);
-    font-size: 0.875rem;
-    color: var(--accent, #3b82f6);
-  }
-  .suivi-team-session-bar span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 500;
-  }
-  .suivi-team-quit-btn {
-    font-size: 0.8rem;
-    color: var(--text-secondary, #94a3b8);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+/* ─── Barre de session Equipe ─── */
+.suivi-team-session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  background: var(--accent-subtle, rgba(59, 130, 246, 0.1));
+  border-bottom: 1px solid var(--accent, #3b82f6);
+  font-size: 0.875rem;
+  color: var(--accent, #3b82f6);
+}
+.suivi-team-session-bar span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+.suivi-team-quit-btn {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #94a3b8);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.summary-cards {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
 }
+
 .summary-card {
   display: flex;
   align-items: center;

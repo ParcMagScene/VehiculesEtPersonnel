@@ -3546,6 +3546,9 @@ function initializeDatabase() {
         description TEXT NOT NULL DEFAULT '',
         reporter_person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
         reporter_name_snapshot TEXT DEFAULT '',
+        vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
+        vehicle_name_snapshot TEXT DEFAULT '',
+        linked_maintenance_id TEXT,
         created_by INTEGER REFERENCES users(id),
         created_at TEXT DEFAULT (datetime('now')),
         modified_by INTEGER REFERENCES users(id),
@@ -3572,12 +3575,21 @@ function initializeDatabase() {
       WHERE recurring_task_id IS NOT NULL;
     `);
 
+    try {
+      safeAddColumn('tracking_incident_entries', 'vehicle_id', 'INTEGER');
+      safeAddColumn('tracking_incident_entries', 'vehicle_name_snapshot', 'TEXT', "''");
+      safeAddColumn('tracking_incident_entries', 'linked_maintenance_id', 'TEXT');
+    } catch (migErr) {
+      logger.warn('⚠️ Migration tracking_incident_entries véhicule/signalement:', migErr.message);
+    }
+
     db.exec(`
       CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_week ON tracking_incident_tickets(week_key);
       CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_affaire ON tracking_incident_tickets(affaire_num);
       CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_start ON tracking_incident_tickets(period_start_date);
       CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_ticket ON tracking_incident_entries(ticket_id);
       CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_reporter ON tracking_incident_entries(reporter_person_id);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_vehicle ON tracking_incident_entries(vehicle_id);
     `);
 
     logger.info('  ✅ Module Suivi du Personnel initialisé');

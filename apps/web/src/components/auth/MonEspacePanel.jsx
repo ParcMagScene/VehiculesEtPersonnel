@@ -90,7 +90,10 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
   useEffect(() => {
     loadLeaves();
     loadBalance();
-    api.getPinStatus().then((d) => setHasPin(!!d.hasPin)).catch(() => {});
+    api
+      .getPinStatus()
+      .then((d) => setHasPin(!!d.hasPin))
+      .catch(() => {});
   }, [loadLeaves, loadBalance]);
 
   const handleSetPin = async (e) => {
@@ -107,7 +110,11 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
     }
     setPinLoading(true);
     try {
-      await api.setPin(newPin, hasPin ? undefined : pinCurrentPassword, hasPin ? pinCurrentPin : undefined);
+      await api.setPin(
+        newPin,
+        hasPin ? undefined : pinCurrentPassword,
+        hasPin ? pinCurrentPin : undefined,
+      );
       setHasPin(true);
       setPinSuccess('Code PIN enregistré avec succès');
       setNewPin('');
@@ -246,7 +253,6 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
 
         {/* ─── Contenu ─── */}
         <div className="mep-body">
-
           {/* ─── Section PIN ─── */}
           {activeSection === 'pin' && (
             <div className="mep-pin-section">
@@ -255,7 +261,8 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                 <div>
                   <strong>Code PIN de connexion</strong>
                   <p className="mep-pin-desc">
-                    Votre code PIN (4 chiffres) vous permet de vous connecter rapidement sans saisir votre mot de passe.
+                    Votre code PIN (4 chiffres) vous permet de vous connecter rapidement sans saisir
+                    votre mot de passe.
                   </p>
                 </div>
               </div>
@@ -291,7 +298,9 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                       inputMode="numeric"
                       maxLength={4}
                       value={pinCurrentPin}
-                      onChange={(e) => setPinCurrentPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                      onChange={(e) =>
+                        setPinCurrentPin(e.target.value.replace(/\D/g, '').slice(0, 4))
+                      }
                       placeholder="0000"
                       required
                       autoComplete="off"
@@ -318,7 +327,9 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                     inputMode="numeric"
                     maxLength={4}
                     value={newPinConfirm}
-                    onChange={(e) => setNewPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    onChange={(e) =>
+                      setNewPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))
+                    }
                     placeholder="0000"
                     required
                     autoComplete="off"
@@ -363,7 +374,9 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                   </div>
                   <div className="mep-balance-grid">
                     <div className="mep-balance-item">
-                      <span className="mep-balance-value accent">{balance.daysEntitled ?? '—'}</span>
+                      <span className="mep-balance-value accent">
+                        {balance.daysEntitled ?? '—'}
+                      </span>
                       <span className="mep-balance-label">Acquis</span>
                     </div>
                     <div className="mep-balance-item">
@@ -421,14 +434,18 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
               ) : filteredLeaves.length === 0 ? (
                 <EmptyState
                   icon={<CalendarOff size={32} />}
-                  title={filter === 'all' ? 'Aucune demande de congé' : 'Aucune demande avec ce filtre'}
+                  title={
+                    filter === 'all' ? 'Aucune demande de congé' : 'Aucune demande avec ce filtre'
+                  }
                 />
               ) : (
                 <div className="mep-list">
                   {filteredLeaves.map((leave) => {
                     const statusConf = STATUS_CONFIG[leave.status] || {};
                     const typeConf =
-                      LEAVE_TYPE_LABELS[leave.leaveType] || LEAVE_TYPE_LABELS[leave.leave_type] || {};
+                      LEAVE_TYPE_LABELS[leave.leaveType] ||
+                      LEAVE_TYPE_LABELS[leave.leave_type] ||
+                      {};
                     const isExpanded = expandedId === leave.id;
                     const isPdfLoading = pdfLoading === leave.id;
 

@@ -153,6 +153,16 @@
   gap: 6px;
 }
 
+.si-incident-extra {
+  display: grid;
+  gap: 4px;
+}
+
+.si-incident-help {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
 .si-incident-row-top {
   display: grid;
   grid-template-columns: 1fr 1fr auto;

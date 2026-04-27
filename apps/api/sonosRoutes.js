@@ -124,7 +124,8 @@ const SONOS_LOGO_MAX_BYTES = Math.max(
   64 * 1024,
   Number(process.env.SONOS_LOGO_MAX_BYTES || 2 * 1024 * 1024),
 );
-const SONOS_LOGO_FALLBACK_URL = process.env.SONOS_LOGO_FALLBACK_URL || '/radio-logos/franceinter.svg';
+const SONOS_LOGO_FALLBACK_URL =
+  process.env.SONOS_LOGO_FALLBACK_URL || '/radio-logos/franceinter.svg';
 
 const sonosLogoSources = new Map();
 const logoRefreshInFlight = new Map();
@@ -786,16 +787,29 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
       const bytes = Buffer.from(await upstream.arrayBuffer());
 
       // Sonos ne renvoie pas toujours un Content-Type — détecter depuis les magic bytes
-      let contentType = (upstream.headers.get('content-type') || '').toLowerCase().split(';')[0].trim();
+      let contentType = (upstream.headers.get('content-type') || '')
+        .toLowerCase()
+        .split(';')[0]
+        .trim();
       if (!contentType.startsWith('image/')) {
         // Magic bytes detection
         if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
           contentType = 'image/jpeg';
-        } else if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+        } else if (
+          bytes[0] === 0x89 &&
+          bytes[1] === 0x50 &&
+          bytes[2] === 0x4e &&
+          bytes[3] === 0x47
+        ) {
           contentType = 'image/png';
         } else if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) {
           contentType = 'image/gif';
-        } else if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+        } else if (
+          bytes[0] === 0x52 &&
+          bytes[1] === 0x49 &&
+          bytes[2] === 0x46 &&
+          bytes[3] === 0x46
+        ) {
           contentType = 'image/webp';
         } else {
           return res.status(415).json({ success: false, error: 'Format artwork invalide' });

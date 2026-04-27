@@ -21,14 +21,22 @@ async function resolveLogoUrl(src) {
   if (!/^https?:\/\//i.test(src)) return src;
 
   const cached = resolvedLogoCache.get(src);
-  if (cached && cached.expiresAt > Date.now() && cached.v === RESOLVED_LOGO_CACHE_VERSION) return cached.url;
+  if (cached && cached.expiresAt > Date.now() && cached.v === RESOLVED_LOGO_CACHE_VERSION)
+    return cached.url;
 
-  const res = await fetch(`/api/sonos/logo?url=${encodeURIComponent(src)}`, { method: 'GET', cache: 'no-cache' });
+  const res = await fetch(`/api/sonos/logo?url=${encodeURIComponent(src)}`, {
+    method: 'GET',
+    cache: 'no-cache',
+  });
   if (!res.ok) throw new Error(`Logo resolver failed (${res.status})`);
   const data = await res.json();
   const url = data?.url || '';
   if (url) {
-    resolvedLogoCache.set(src, { url, expiresAt: Date.now() + RESOLVED_LOGO_TTL_MS, v: RESOLVED_LOGO_CACHE_VERSION });
+    resolvedLogoCache.set(src, {
+      url,
+      expiresAt: Date.now() + RESOLVED_LOGO_TTL_MS,
+      v: RESOLVED_LOGO_CACHE_VERSION,
+    });
   }
   return url;
 }

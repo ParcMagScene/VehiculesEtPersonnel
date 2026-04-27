@@ -35,7 +35,10 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
 
   useEffect(() => {
     if (!isAdminMode) {
-      api.getPinStatus().then((d) => setHasPin(!!d.hasPin)).catch(() => {});
+      api
+        .getPinStatus()
+        .then((d) => setHasPin(!!d.hasPin))
+        .catch(() => {});
     }
   }, [isAdminMode]);
 
@@ -132,7 +135,11 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
     }
     setPinLoading(true);
     try {
-      await api.setPin(newPin, hasPin ? undefined : pinCurrentPassword, hasPin ? pinCurrentPin : undefined);
+      await api.setPin(
+        newPin,
+        hasPin ? undefined : pinCurrentPassword,
+        hasPin ? pinCurrentPin : undefined,
+      );
       setHasPin(true);
       setPinSuccess('Code PIN enregistré avec succès');
       setNewPin('');
@@ -305,7 +312,12 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
             </InlineAlert>
           )}
           {pinSuccess && (
-            <InlineAlert variant="success" dismissible onDismiss={() => setPinSuccess('')} style={{ marginBottom: 12 }}>
+            <InlineAlert
+              variant="success"
+              dismissible
+              onDismiss={() => setPinSuccess('')}
+              style={{ marginBottom: 12 }}
+            >
               {pinSuccess}
             </InlineAlert>
           )}
@@ -341,7 +353,9 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
               </div>
             )}
             <div className="profile-edit-field">
-              <label className="profile-edit-label">{hasPin ? 'Nouveau PIN' : 'Code PIN (4 chiffres)'}</label>
+              <label className="profile-edit-label">
+                {hasPin ? 'Nouveau PIN' : 'Code PIN (4 chiffres)'}
+              </label>
               <Input
                 type="text"
                 inputMode="numeric"
@@ -370,7 +384,11 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
             </div>
             <div className="profile-edit-pin-actions">
               <Button type="submit" variant="primary" disabled={pinLoading}>
-                {pinLoading ? <RefreshCw size={14} className="profile-edit-spin" /> : <Hash size={14} />}
+                {pinLoading ? (
+                  <RefreshCw size={14} className="profile-edit-spin" />
+                ) : (
+                  <Hash size={14} />
+                )}
                 {hasPin ? 'Modifier le PIN' : 'Définir le PIN'}
               </Button>
               {hasPin && (

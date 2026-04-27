@@ -312,6 +312,9 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                       const v = e.target.value.replace(/\D/g, '').slice(0, 4);
                       setPin(v);
                       setError('');
+                      if (v.length === 4) {
+                        setTimeout(() => e.target.form?.requestSubmit(), 0);
+                      }
                     }}
                     required
                     placeholder="*"

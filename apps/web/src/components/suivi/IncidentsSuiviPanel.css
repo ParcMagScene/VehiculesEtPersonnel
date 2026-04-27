@@ -69,6 +69,38 @@
   padding: 8px;
 }
 
+.si-mode-toggle {
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.3));
+  width: fit-content;
+}
+
+.si-mode-toggle button {
+  padding: 5px 16px;
+  font-size: 12px;
+  background: rgba(2, 6, 23, 0.45);
+  color: inherit;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.si-mode-toggle button:first-child {
+  border-right: 1px solid var(--theme-border, rgba(148, 163, 184, 0.3));
+}
+
+.si-mode-toggle button.active {
+  background: var(--theme-accent, #3b82f6);
+  color: #fff;
+}
+
+.si-context-select {
+  font-size: 13px;
+}
+
 .si-prefill {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

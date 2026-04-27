@@ -22,6 +22,24 @@ const INCIDENT_TYPE_OPTIONS = [
   { value: 'other', label: 'Autre incident' },
 ];
 
+const CONTEXT_OPTIONS = [
+  { value: 'transports', label: 'Transports' },
+  { value: 'depots', label: 'Dépôts' },
+  { value: 'relation_clientele', label: 'Relation clientèle' },
+  { value: 'relations_collaborateurs', label: 'Relations collaborateurs' },
+  { value: 'logistique', label: 'Logistique' },
+  { value: 'securite', label: 'Sécurité' },
+  { value: 'materiel', label: 'Matériel' },
+  { value: 'autre_contexte', label: 'Autre contexte' },
+];
+
+const CTX_PREFIX = 'CTX:';
+const isContextKey = (key) => String(key || '').startsWith(CTX_PREFIX);
+const getContextLabel = (key) => {
+  const type = String(key || '').slice(CTX_PREFIX.length);
+  return CONTEXT_OPTIONS.find((o) => o.value === type)?.label || type;
+};
+
 function getISOWeek(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -97,6 +115,8 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   const [loadingLists, setLoadingLists] = useState(false);
 
   const [selectedAffaireNum, setSelectedAffaireNum] = useState('');
+  const [ticketMode, setTicketMode] = useState('affaire'); // 'affaire' | 'contexte'
+  const [selectedContextType, setSelectedContextType] = useState(CONTEXT_OPTIONS[0].value);
   const [selectedTicketId, setSelectedTicketId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -163,7 +183,26 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   const clearEditorForNewTicket = useCallback(() => {
     setSelectedAffaireNum('');
     setSelectedTicketId(null);
+    setTicketMode('affaire');
+    setSelectedContextType(CONTEXT_OPTIONS[0].value);
     setForm(makeEmptyTicketForm());
+  }, []);
+
+  const handleTicketModeChange = useCallback((mode) => {
+    setTicketMode(mode);
+    if (mode === 'contexte') {
+      const ctxKey = CTX_PREFIX + CONTEXT_OPTIONS[0].value;
+      setSelectedContextType(CONTEXT_OPTIONS[0].value);
+      setSelectedAffaireNum(ctxKey);
+    } else {
+      setSelectedAffaireNum('');
+      setForm(makeEmptyTicketForm());
+    }
+  }, []);
+
+  const handleContextTypeChange = useCallback((value) => {
+    setSelectedContextType(value);
+    setSelectedAffaireNum(CTX_PREFIX + value);
   }, []);
 
   const loadWeekTickets = useCallback(async () => {
@@ -214,28 +253,17 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
     const existing = tickets.find((t) => t.affaire_num === selectedAffaireNum);
     if (existing) {
       setSelectedTicketId(existing.id);
+      setForm(buildFormFromTicket(existing));
+      return;
+    }
+
+    // Pour les tickets contexte (sans affaire), initialiser un formulaire vide
+    if (isContextKey(selectedAffaireNum)) {
+      setSelectedTicketId(null);
       setForm({
-        affaire_num: existing.affaire_num,
-        affaire_name: existing.affaire_name || existing.affaire_num,
-        affaire_start_date: existing.affaire_start_date || '',
-        affaire_end_date: existing.affaire_end_date || '',
-        is_tournee: !!existing.is_tournee,
-        linked_reservations: Array.isArray(existing.linked_reservations)
-          ? existing.linked_reservations
-          : [],
-        linked_personnel: Array.isArray(existing.linked_personnel) ? existing.linked_personnel : [],
-        notes: existing.notes || '',
-        incidents:
-          Array.isArray(existing.incidents) && existing.incidents.length > 0
-            ? existing.incidents.map((i) => ({
-                incident_type: i.incident_type || 'other',
-                description: i.description || '',
-                reporter_person_id:
-                  i.reporter_person_id === null || i.reporter_person_id === undefined
-                    ? ''
-                    : String(i.reporter_person_id),
-              }))
-            : [makeEmptyIncident()],
+        ...makeEmptyTicketForm(),
+        affaire_num: selectedAffaireNum,
+        affaire_name: getContextLabel(selectedAffaireNum),
       });
       return;
     }
@@ -302,6 +330,11 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
   const startEditingTicket = useCallback((ticket) => {
     if (!ticket) return;
+    const isCtx = isContextKey(ticket.affaire_num);
+    setTicketMode(isCtx ? 'contexte' : 'affaire');
+    if (isCtx) {
+      setSelectedContextType(String(ticket.affaire_num || '').slice(CTX_PREFIX.length));
+    }
     setSelectedAffaireNum(ticket.affaire_num || '');
     setSelectedTicketId(ticket.id || null);
     setForm(buildFormFromTicket(ticket));
@@ -310,7 +343,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
   const handleSave = async () => {
     if (!form.affaire_num) {
-      setError('Sélectionnez une affaire');
+      setError('Sélectionnez une affaire ou un contexte');
       return;
     }
 
@@ -379,17 +412,55 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
           </div>
 
           <div className="si-field-row">
-            <label>Affaire</label>
-            <EntityCombobox
-              value={selectedAffaireNum}
-              onChange={setSelectedAffaireNum}
-              options={affaireOptions}
-              placeholder="— Rechercher une affaire —"
-              className="si-affaire-combobox"
-              disabled={loadingLists}
-            />
+            <label>Type</label>
+            <div className="si-mode-toggle">
+              <button
+                type="button"
+                className={ticketMode === 'affaire' ? 'active' : ''}
+                onClick={() => handleTicketModeChange('affaire')}
+              >
+                Affaire
+              </button>
+              <button
+                type="button"
+                className={ticketMode === 'contexte' ? 'active' : ''}
+                onClick={() => handleTicketModeChange('contexte')}
+              >
+                Contexte
+              </button>
+            </div>
           </div>
 
+          {ticketMode === 'affaire' ? (
+            <div className="si-field-row">
+              <label>Affaire</label>
+              <EntityCombobox
+                value={selectedAffaireNum}
+                onChange={setSelectedAffaireNum}
+                options={affaireOptions}
+                placeholder="— Rechercher une affaire —"
+                className="si-affaire-combobox"
+                disabled={loadingLists}
+              />
+            </div>
+          ) : (
+            <div className="si-field-row">
+              <label>Contexte</label>
+              <select
+                value={selectedContextType}
+                onChange={(e) => handleContextTypeChange(e.target.value)}
+                className="si-context-select"
+              >
+                {CONTEXT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {ticketMode === 'affaire' && (
           <div className="si-prefill">
             <div>
               <strong>Numéro:</strong> {form.affaire_num || '—'}
@@ -410,6 +481,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
               <strong>Personnels liés:</strong> {form.linked_personnel.length}
             </div>
           </div>
+          )}
 
           {form.linked_reservations.length > 0 && (
             <div className="si-linked-block">
@@ -497,7 +569,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
           </div>
 
           <div className="si-actions">
-            <Button variant="primary" onClick={handleSave} disabled={saving || !selectedAffaireNum}>
+            <Button variant="primary" onClick={handleSave} disabled={saving || !form.affaire_num}>
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Enregistrer ticket
             </Button>
             {selectedTicketId && (
@@ -525,7 +597,9 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
                       onClick={() => startEditingTicket(t)}
                     >
                       <span>
-                        {t.affaire_num} — {t.affaire_name || t.affaire_num}
+                        {isContextKey(t.affaire_num)
+                          ? `[${getContextLabel(t.affaire_num)}]`
+                          : `${t.affaire_num} — ${t.affaire_name || t.affaire_num}`}
                       </span>
                       <span>{Array.isArray(t.incidents) ? t.incidents.length : 0} incident(s)</span>
                     </button>

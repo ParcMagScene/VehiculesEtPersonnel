@@ -42,6 +42,55 @@ export const syntheseMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/, 'Format YYYY-MM requis'),
 });
 
+export const syntheseYearSchema = z.object({
+  year: z.string().regex(/^\d{4}$/, 'Format YYYY requis'),
+});
+
+const incidentEntrySchema = z.object({
+  id: z.string().optional(),
+  incident_type: z.enum([
+    'vehicle_problem',
+    'equipment_problem',
+    'equipment_omission',
+    'equipment_error',
+    'other',
+  ]),
+  description: z.string().max(4000).default(''),
+  reporter_person_id: z.coerce.number().int().nullable().optional(),
+});
+
+export const incidentTicketUpsertSchema = z.object({
+  week_key: z.string().regex(/^\d{4}-W\d{2}$/, 'Format semaine invalide (YYYY-Wnn)'),
+  affaire_num: z.string().min(1).max(64),
+  affaire_name: z.string().max(255).optional(),
+  affaire_start_date: z.string().max(30).nullable().optional(),
+  affaire_end_date: z.string().max(30).nullable().optional(),
+  is_tournee: z.union([z.boolean(), z.literal(0), z.literal(1)]).optional(),
+  linked_reservations: z
+    .array(
+      z.object({
+        id: z.string(),
+        vehicle_name: z.string().optional().nullable(),
+        start_date: z.string().optional().nullable(),
+        end_date: z.string().optional().nullable(),
+        is_tournee: z.union([z.boolean(), z.literal(0), z.literal(1)]).optional(),
+      }),
+    )
+    .optional(),
+  linked_personnel: z
+    .array(
+      z.object({
+        id: z.coerce.number().int().optional().nullable(),
+        first_name: z.string().optional().nullable(),
+        last_name: z.string().optional().nullable(),
+        source: z.string().optional().nullable(),
+      }),
+    )
+    .optional(),
+  notes: z.string().max(5000).optional(),
+  incidents: z.array(incidentEntrySchema).max(300).default([]),
+});
+
 // ── Export PDF ──
 export const pdfExportSchema = z.object({
   type: z.enum(['sheet', 'day', 'week', 'month']).optional(),

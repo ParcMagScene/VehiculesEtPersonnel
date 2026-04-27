@@ -76,6 +76,38 @@ export function registerSuiviMethods(ApiClient) {
       return this.request(`/suivi/synthese/mois/${month}`, { skipCamelCase: true });
     },
 
+    // Incidents affaires (hebdo/mensuel/annuel)
+    async getSuiviIncidentAffaireBase(affaireNum) {
+      return this.request(`/suivi/incidents/affaire/${encodeURIComponent(affaireNum)}/base`, {
+        skipCamelCase: true,
+      });
+    },
+    async getSuiviIncidentTickets(weekKey) {
+      return this.request(`/suivi/incidents/tickets/${weekKey}`, { skipCamelCase: true });
+    },
+    async upsertSuiviIncidentTicket(payload) {
+      return this.request('/suivi/incidents/tickets', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        skipCamelCase: true,
+      });
+    },
+    async deleteSuiviIncidentTicket(ticketId) {
+      return this.request(`/suivi/incidents/tickets/${ticketId}`, {
+        method: 'DELETE',
+        skipCamelCase: true,
+      });
+    },
+    async getSuiviIncidentSyntheseSemaine(weekKey) {
+      return this.request(`/suivi/incidents/synthese/semaine/${weekKey}`, { skipCamelCase: true });
+    },
+    async getSuiviIncidentSyntheseMois(month) {
+      return this.request(`/suivi/incidents/synthese/mois/${month}`, { skipCamelCase: true });
+    },
+    async getSuiviIncidentSyntheseAnnee(year) {
+      return this.request(`/suivi/incidents/synthese/annee/${year}`, { skipCamelCase: true });
+    },
+
     // Export PDF individuel
     async exportSuiviSheetPdf(sheetId) {
       return this.requestBlob(`/suivi/${sheetId}/pdf`);

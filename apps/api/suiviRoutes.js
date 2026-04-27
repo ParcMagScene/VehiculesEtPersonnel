@@ -11,12 +11,14 @@ import logger from './logger.js';
 import { validate } from './schemas/imports.js';
 import {
   entryPatchSchema,
+  incidentTicketUpsertSchema,
   sheetUpdateSchema,
   suiviRecurringTaskCreateSchema,
   suiviRecurringTaskUpdateSchema,
   syntheseDateSchema,
   syntheseMonthSchema,
   syntheseWeekSchema,
+  syntheseYearSchema,
 } from './schemas/suivi.js';
 
 // ═══════════════════════════════════════
@@ -272,14 +274,25 @@ function enrichSheetWithDayContext(fullSheet) {
     )
     .all(fullSheet.person_id, fullSheet.date, fullSheet.date);
 
-  const planningAffaires = db
+  const planningAffairesRaw = db
     .prepare(
-      `SELECT pa.entity_id AS affaire_num,
+      `SELECT DISTINCT pa.entity_id AS affaire_num,
               COALESCE(NULLIF(a.titre, ''), NULLIF(a.nom, ''), pa.entity_id) AS affaire_label,
               a.type AS affaire_type,
               a.client AS affaire_client,
               a.date_debut,
-              a.date_fin
+              a.date_fin,
+              CASE
+                WHEN EXISTS (
+                  SELECT 1
+                  FROM reservations r
+                  WHERE r.affaire = pa.entity_id
+                    AND r.is_tournee = 1
+                    AND r.start_date <= ?
+                    AND r.end_date >= ?
+                ) THEN 1
+                ELSE 0
+              END AS is_tournee
        FROM planning_assignments pa
        LEFT JOIN affaires a ON a.numero_affaire = pa.entity_id
        WHERE pa.entity_type = 'affaire'
@@ -307,6 +320,8 @@ function enrichSheetWithDayContext(fullSheet) {
        ORDER BY pa.created_at ASC, pa.entity_id ASC`,
     )
     .all(
+      fullSheet.date,
+      fullSheet.date,
       fullSheet.person_id,
       fullSheet.date,
       fullSheet.date,
@@ -315,6 +330,33 @@ function enrichSheetWithDayContext(fullSheet) {
       fullSheet.date,
     );
 
+
+  const planningAffairesMap = new Map();
+  for (const a of planningAffairesRaw) {
+    const affaireNum = String(a.affaire_num || '').trim();
+    if (!affaireNum) continue;
+    const existing = planningAffairesMap.get(affaireNum);
+    if (!existing) {
+      planningAffairesMap.set(affaireNum, {
+        ...a,
+        affaire_num: affaireNum,
+        affaire_label: String(a.affaire_label || affaireNum).trim() || affaireNum,
+        is_tournee: Boolean(a.is_tournee),
+      });
+      continue;
+    }
+    if (
+      (!existing.affaire_label || existing.affaire_label === existing.affaire_num) &&
+      a.affaire_label
+    ) {
+      existing.affaire_label = String(a.affaire_label).trim() || existing.affaire_label;
+    }
+    if (!existing.affaire_client && a.affaire_client) existing.affaire_client = a.affaire_client;
+    if (!existing.affaire_type && a.affaire_type) existing.affaire_type = a.affaire_type;
+    existing.is_tournee = Boolean(existing.is_tournee || a.is_tournee);
+  }
+
+  const planningAffaires = Array.from(planningAffairesMap.values());
   return {
     ...fullSheet,
     day_context: {
@@ -358,6 +400,232 @@ function getMonthDates(monthStr) {
     dates.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
   }
   return dates;
+}
+
+function getWeekBounds(weekStr) {
+  const dates = getWeekDates(weekStr);
+  return {
+    start: dates[0],
+    end: dates[dates.length - 1],
+  };
+}
+
+function safeJsonParseArray(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function getAffaireIncidentBase(affaireNum) {
+  const affaire = db
+    .prepare(
+      `SELECT numero_affaire,
+              COALESCE(NULLIF(nom, ''), NULLIF(titre, ''), NULLIF(event_name, ''), numero_affaire) AS affaire_name,
+              date_debut,
+              date_fin
+       FROM affaires
+       WHERE numero_affaire = ?`,
+    )
+    .get(affaireNum);
+
+  if (!affaire) {
+    return {
+      affaire_num: affaireNum,
+      affaire_name: affaireNum,
+      affaire_start_date: null,
+      affaire_end_date: null,
+      linked_reservations: [],
+      linked_personnel: [],
+      is_tournee: false,
+    };
+  }
+
+  const reservations = db
+    .prepare(
+      `SELECT r.id,
+              r.vehicle_id,
+              v.name AS vehicle_name,
+              r.start_date,
+              r.end_date,
+              r.driver_name,
+              r.is_tournee
+       FROM reservations r
+       LEFT JOIN vehicles v ON v.id = r.vehicle_id
+       WHERE r.affaire = ?
+       ORDER BY r.start_date ASC, r.id ASC`,
+    )
+    .all(affaireNum)
+    .map((r) => ({
+      id: r.id,
+      vehicle_id: r.vehicle_id,
+      vehicle_name: r.vehicle_name || r.vehicle_id || '',
+      start_date: r.start_date,
+      end_date: r.end_date,
+      driver_name: r.driver_name || '',
+      is_tournee: Boolean(r.is_tournee),
+    }));
+
+  const linkedPersonnelMap = new Map();
+
+  const fromTasks = db
+    .prepare(
+      `SELECT DISTINCT p.id, p.first_name, p.last_name
+       FROM task_assignments ta
+       JOIN persons p ON p.id = ta.person_id
+       WHERE ta.affaire_num = ?
+         AND ta.deleted_at IS NULL`,
+    )
+    .all(affaireNum);
+  for (const p of fromTasks) {
+    linkedPersonnelMap.set(`person-${p.id}`, {
+      id: p.id,
+      first_name: p.first_name,
+      last_name: p.last_name,
+      source: 'planning_task',
+    });
+  }
+
+  const fromMissions = db
+    .prepare(
+      `SELECT DISTINCT p.id, p.first_name, p.last_name
+       FROM missions m
+       JOIN mission_assignments ma ON ma.mission_id = m.id
+       JOIN persons p ON p.id = ma.person_id
+       WHERE m.affaire = ?
+         AND m.status != 'cancelled'`,
+    )
+    .all(affaireNum);
+  for (const p of fromMissions) {
+    if (!linkedPersonnelMap.has(`person-${p.id}`)) {
+      linkedPersonnelMap.set(`person-${p.id}`, {
+        id: p.id,
+        first_name: p.first_name,
+        last_name: p.last_name,
+        source: 'mission',
+      });
+    }
+  }
+
+  for (const r of reservations) {
+    const rawName = String(r.driver_name || '').trim();
+    if (!rawName) continue;
+    const key = `driver-${rawName.toLowerCase()}`;
+    if (!linkedPersonnelMap.has(key)) {
+      const parts = rawName.split(/\s+/).filter(Boolean);
+      linkedPersonnelMap.set(key, {
+        id: null,
+        first_name: parts[0] || rawName,
+        last_name: parts.slice(1).join(' ') || '',
+        source: 'reservation_driver',
+      });
+    }
+  }
+
+  return {
+    affaire_num: affaire.numero_affaire,
+    affaire_name: affaire.affaire_name || affaire.numero_affaire,
+    affaire_start_date: affaire.date_debut || null,
+    affaire_end_date: affaire.date_fin || null,
+    linked_reservations: reservations,
+    linked_personnel: Array.from(linkedPersonnelMap.values()),
+    is_tournee: reservations.some((r) => r.is_tournee),
+  };
+}
+
+function computeIncidentSynthese(periodStart, periodEnd) {
+  const tickets = db
+    .prepare(
+      `SELECT *
+       FROM tracking_incident_tickets
+       WHERE period_start_date <= ?
+         AND period_end_date >= ?
+       ORDER BY week_key ASC, affaire_num ASC`,
+    )
+    .all(periodEnd, periodStart);
+
+  const ticketIds = tickets.map((t) => t.id);
+  let entries = [];
+  if (ticketIds.length > 0) {
+    const placeholders = ticketIds.map(() => '?').join(',');
+    entries = db
+      .prepare(
+        `SELECT ie.*, p.first_name, p.last_name
+         FROM tracking_incident_entries ie
+         LEFT JOIN persons p ON p.id = ie.reporter_person_id
+         WHERE ie.ticket_id IN (${placeholders})
+         ORDER BY ie.created_at ASC`,
+      )
+      .all(...ticketIds);
+  }
+
+  const entriesByTicket = new Map();
+  for (const e of entries) {
+    if (!entriesByTicket.has(e.ticket_id)) entriesByTicket.set(e.ticket_id, []);
+    entriesByTicket.get(e.ticket_id).push({
+      ...e,
+      reporter_name:
+        [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
+        e.reporter_name_snapshot ||
+        '',
+    });
+  }
+
+  const incidentTypeCounts = {};
+  const byAffaire = new Map();
+  const byWeek = new Map();
+
+  for (const t of tickets) {
+    const tEntries = entriesByTicket.get(t.id) || [];
+    for (const ie of tEntries) {
+      incidentTypeCounts[ie.incident_type] = (incidentTypeCounts[ie.incident_type] || 0) + 1;
+    }
+
+    const affaireKey = t.affaire_num;
+    if (!byAffaire.has(affaireKey)) {
+      byAffaire.set(affaireKey, {
+        affaire_num: t.affaire_num,
+        affaire_name: t.affaire_name || t.affaire_num,
+        tickets: 0,
+        incidents: 0,
+        weeks: new Set(),
+        is_tournee: false,
+      });
+    }
+    const a = byAffaire.get(affaireKey);
+    a.tickets += 1;
+    a.incidents += tEntries.length;
+    a.weeks.add(t.week_key);
+    a.is_tournee = a.is_tournee || t.is_tournee === 1;
+
+    if (!byWeek.has(t.week_key)) {
+      byWeek.set(t.week_key, {
+        week_key: t.week_key,
+        tickets: 0,
+        incidents: 0,
+      });
+    }
+    const w = byWeek.get(t.week_key);
+    w.tickets += 1;
+    w.incidents += tEntries.length;
+  }
+
+  return {
+    period: { start: periodStart, end: periodEnd },
+    summary: {
+      total_tickets: tickets.length,
+      total_incidents: entries.length,
+      affaires_count: byAffaire.size,
+      incident_type_counts: incidentTypeCounts,
+    },
+    by_affaire: Array.from(byAffaire.values())
+      .map((a) => ({ ...a, weeks: Array.from(a.weeks).sort() }))
+      .sort((x, y) => y.incidents - x.incidents || x.affaire_num.localeCompare(y.affaire_num)),
+    by_week: Array.from(byWeek.values()).sort((x, y) => x.week_key.localeCompare(y.week_key)),
+  };
 }
 
 function buildSynthese(dates, personId) {
@@ -1035,6 +1303,15 @@ function generateSynthesePdf(synthese, title, res) {
       for (const m of ctx.missions || []) {
         alertParts.push(m.title || m.affaire || 'Mission');
       }
+      const planningAffaires = Array.isArray(ctx.planning_affaires) ? ctx.planning_affaires : [];
+      for (const a of planningAffaires) {
+        const num = String(a.affaire_num || '').trim();
+        if (!num) continue;
+        const label = String(a.affaire_label || '').trim();
+        const hasDistinctLabel = label && label.toLowerCase() !== num.toLowerCase();
+        const base = hasDistinctLabel ? `${num} (${label})` : num;
+        alertParts.push(a.is_tournee ? `Affaire ${base} [Tournée]` : `Affaire ${base}`);
+      }
 
       const rowVals = [
         sh.date,
@@ -1408,6 +1685,316 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       }
     },
   );
+
+  // ─── GET /api/suivi/incidents/affaire/:affaireNum/base ─── Préremplissage ticket incident
+  app.get('/api/suivi/incidents/affaire/:affaireNum/base', authenticateToken, (req, res) => {
+    try {
+      const affaireNum = String(req.params.affaireNum || '').trim();
+      if (!affaireNum) {
+        return res.status(400).json({ success: false, error: 'Numéro affaire requis' });
+      }
+      const base = getAffaireIncidentBase(affaireNum);
+      res.json(base);
+    } catch (error) {
+      logger.error('GET /api/suivi/incidents/affaire/:affaireNum/base error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── GET /api/suivi/incidents/tickets/:week ─── Tickets incidents d'une semaine
+  app.get('/api/suivi/incidents/tickets/:week', authenticateToken, (req, res) => {
+    try {
+      const weekKey = String(req.params.week || '').trim();
+      if (!/^\d{4}-W\d{2}$/.test(weekKey)) {
+        return res
+          .status(400)
+          .json({ success: false, error: 'Format semaine invalide (YYYY-Wnn)' });
+      }
+
+      const tickets = db
+        .prepare(
+          `SELECT *
+           FROM tracking_incident_tickets
+           WHERE week_key = ?
+           ORDER BY affaire_num ASC`,
+        )
+        .all(weekKey)
+        .map((t) => ({
+          ...t,
+          is_tournee: Boolean(t.is_tournee),
+          linked_reservations: safeJsonParseArray(t.linked_reservations_json),
+          linked_personnel: safeJsonParseArray(t.linked_personnel_json),
+        }));
+
+      const ticketIds = tickets.map((t) => t.id);
+      let entries = [];
+      if (ticketIds.length > 0) {
+        const placeholders = ticketIds.map(() => '?').join(',');
+        entries = db
+          .prepare(
+            `SELECT ie.*, p.first_name, p.last_name
+             FROM tracking_incident_entries ie
+             LEFT JOIN persons p ON p.id = ie.reporter_person_id
+             WHERE ie.ticket_id IN (${placeholders})
+             ORDER BY ie.created_at ASC`,
+          )
+          .all(...ticketIds)
+          .map((e) => ({
+            ...e,
+            reporter_name:
+              [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
+              e.reporter_name_snapshot ||
+              '',
+          }));
+      }
+
+      const entriesByTicket = new Map();
+      for (const e of entries) {
+        if (!entriesByTicket.has(e.ticket_id)) entriesByTicket.set(e.ticket_id, []);
+        entriesByTicket.get(e.ticket_id).push(e);
+      }
+
+      const payload = tickets.map((t) => ({
+        ...t,
+        incidents: entriesByTicket.get(t.id) || [],
+      }));
+      res.json({ week_key: weekKey, tickets: payload });
+    } catch (error) {
+      logger.error('GET /api/suivi/incidents/tickets/:week error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── POST /api/suivi/incidents/tickets ─── Création/MàJ d'un ticket hebdomadaire
+  app.post(
+    '/api/suivi/incidents/tickets',
+    authenticateToken,
+    validate(incidentTicketUpsertSchema),
+    (req, res) => {
+      try {
+        const data = req.body;
+        const weekKey = String(data.week_key || '').trim();
+        const affaireNum = String(data.affaire_num || '').trim();
+        if (!weekKey || !affaireNum) {
+          return res.status(400).json({ success: false, error: 'week_key et affaire_num requis' });
+        }
+
+        const bounds = getWeekBounds(weekKey);
+        const existing = db
+          .prepare(
+            `SELECT *
+             FROM tracking_incident_tickets
+             WHERE week_key = ? AND affaire_num = ?`,
+          )
+          .get(weekKey, affaireNum);
+
+        const base = getAffaireIncidentBase(affaireNum);
+        const linkedReservations = Array.isArray(data.linked_reservations)
+          ? data.linked_reservations
+          : base.linked_reservations;
+        const linkedPersonnel = Array.isArray(data.linked_personnel)
+          ? data.linked_personnel
+          : base.linked_personnel;
+
+        const ticketId = existing?.id || crypto.randomUUID().replace(/-/g, '');
+
+        if (existing) {
+          db.prepare(
+            `UPDATE tracking_incident_tickets
+             SET period_start_date = ?,
+                 period_end_date = ?,
+                 affaire_name = ?,
+                 affaire_start_date = ?,
+                 affaire_end_date = ?,
+                 is_tournee = ?,
+                 linked_reservations_json = ?,
+                 linked_personnel_json = ?,
+                 notes = ?,
+                 modified_by = ?,
+                 modified_at = datetime('now')
+             WHERE id = ?`,
+          ).run(
+            bounds.start,
+            bounds.end,
+            data.affaire_name || base.affaire_name || affaireNum,
+            data.affaire_start_date ?? base.affaire_start_date,
+            data.affaire_end_date ?? base.affaire_end_date,
+            data.is_tournee === undefined ? (base.is_tournee ? 1 : 0) : data.is_tournee ? 1 : 0,
+            JSON.stringify(linkedReservations),
+            JSON.stringify(linkedPersonnel),
+            data.notes || '',
+            req.user.id,
+            ticketId,
+          );
+        } else {
+          db.prepare(
+            `INSERT INTO tracking_incident_tickets (
+               id, week_key, period_start_date, period_end_date,
+               affaire_num, affaire_name, affaire_start_date, affaire_end_date,
+               is_tournee, linked_reservations_json, linked_personnel_json, notes,
+               created_by, modified_by
+             )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ).run(
+            ticketId,
+            weekKey,
+            bounds.start,
+            bounds.end,
+            affaireNum,
+            data.affaire_name || base.affaire_name || affaireNum,
+            data.affaire_start_date ?? base.affaire_start_date,
+            data.affaire_end_date ?? base.affaire_end_date,
+            data.is_tournee === undefined ? (base.is_tournee ? 1 : 0) : data.is_tournee ? 1 : 0,
+            JSON.stringify(linkedReservations),
+            JSON.stringify(linkedPersonnel),
+            data.notes || '',
+            req.user.id,
+            req.user.id,
+          );
+        }
+
+        db.prepare('DELETE FROM tracking_incident_entries WHERE ticket_id = ?').run(ticketId);
+
+        const insertIncident = db.prepare(
+          `INSERT INTO tracking_incident_entries (
+             id, ticket_id, incident_type, description,
+             reporter_person_id, reporter_name_snapshot,
+             created_by, modified_by
+           )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        );
+
+        const addAll = db.transaction((items) => {
+          for (const item of items) {
+            const reporterId =
+              item.reporter_person_id === null || item.reporter_person_id === undefined
+                ? null
+                : Number(item.reporter_person_id);
+            let reporterSnapshot = '';
+            if (reporterId) {
+              const p = db
+                .prepare('SELECT first_name, last_name FROM persons WHERE id = ?')
+                .get(reporterId);
+              reporterSnapshot = [p?.first_name, p?.last_name].filter(Boolean).join(' ').trim();
+            }
+            insertIncident.run(
+              crypto.randomUUID().replace(/-/g, ''),
+              ticketId,
+              item.incident_type,
+              item.description || '',
+              reporterId,
+              reporterSnapshot,
+              req.user.id,
+              req.user.id,
+            );
+          }
+        });
+
+        addAll(Array.isArray(data.incidents) ? data.incidents : []);
+
+        const saved = db
+          .prepare('SELECT * FROM tracking_incident_tickets WHERE id = ?')
+          .get(ticketId);
+        const savedEntries = db
+          .prepare(
+            `SELECT ie.*, p.first_name, p.last_name
+             FROM tracking_incident_entries ie
+             LEFT JOIN persons p ON p.id = ie.reporter_person_id
+             WHERE ie.ticket_id = ?
+             ORDER BY ie.created_at ASC`,
+          )
+          .all(ticketId)
+          .map((e) => ({
+            ...e,
+            reporter_name:
+              [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
+              e.reporter_name_snapshot ||
+              '',
+          }));
+
+        res.json({
+          ...saved,
+          is_tournee: Boolean(saved.is_tournee),
+          linked_reservations: safeJsonParseArray(saved.linked_reservations_json),
+          linked_personnel: safeJsonParseArray(saved.linked_personnel_json),
+          incidents: savedEntries,
+        });
+      } catch (error) {
+        logger.error('POST /api/suivi/incidents/tickets error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
+
+  // ─── DELETE /api/suivi/incidents/tickets/:ticketId ─── Supprimer un ticket incident
+  app.delete('/api/suivi/incidents/tickets/:ticketId', authenticateToken, (req, res) => {
+    try {
+      const ticketId = String(req.params.ticketId || '').trim();
+      const existing = db
+        .prepare('SELECT id FROM tracking_incident_tickets WHERE id = ?')
+        .get(ticketId);
+      if (!existing) {
+        return res.status(404).json({ success: false, error: 'Ticket introuvable' });
+      }
+      db.prepare('DELETE FROM tracking_incident_tickets WHERE id = ?').run(ticketId);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('DELETE /api/suivi/incidents/tickets/:ticketId error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── GET /api/suivi/incidents/synthese/semaine/:week ─── Synthèse incidents hebdomadaire
+  app.get('/api/suivi/incidents/synthese/semaine/:week', authenticateToken, (req, res) => {
+    try {
+      const weekKey = String(req.params.week || '').trim();
+      if (!/^\d{4}-W\d{2}$/.test(weekKey)) {
+        return res
+          .status(400)
+          .json({ success: false, error: 'Format semaine invalide (YYYY-Wnn)' });
+      }
+      const bounds = getWeekBounds(weekKey);
+      const synthese = computeIncidentSynthese(bounds.start, bounds.end);
+      res.json({ ...synthese, period_key: weekKey, mode: 'semaine' });
+    } catch (error) {
+      logger.error('GET /api/suivi/incidents/synthese/semaine/:week error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── GET /api/suivi/incidents/synthese/mois/:month ─── Synthèse incidents mensuelle
+  app.get('/api/suivi/incidents/synthese/mois/:month', authenticateToken, (req, res) => {
+    try {
+      const month = String(req.params.month || '').trim();
+      if (!/^\d{4}-\d{2}$/.test(month)) {
+        return res.status(400).json({ success: false, error: 'Format mois invalide (YYYY-MM)' });
+      }
+      const dates = getMonthDates(month);
+      const synthese = computeIncidentSynthese(dates[0], dates[dates.length - 1]);
+      res.json({ ...synthese, period_key: month, mode: 'mois' });
+    } catch (error) {
+      logger.error('GET /api/suivi/incidents/synthese/mois/:month error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ─── GET /api/suivi/incidents/synthese/annee/:year ─── Synthèse incidents annuelle
+  app.get('/api/suivi/incidents/synthese/annee/:year', authenticateToken, (req, res) => {
+    try {
+      const year = String(req.params.year || '').trim();
+      const parsed = syntheseYearSchema.safeParse({ year });
+      if (!parsed.success) {
+        return res.status(400).json({ success: false, error: 'Format année invalide (YYYY)' });
+      }
+      const start = `${year}-01-01`;
+      const end = `${year}-12-31`;
+      const synthese = computeIncidentSynthese(start, end);
+      res.json({ ...synthese, period_key: year, mode: 'annee' });
+    } catch (error) {
+      logger.error('GET /api/suivi/incidents/synthese/annee/:year error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
 
   // ─── GET /api/suivi/synthese/jour/:date ─── Synthèse journalière
   app.get('/api/suivi/synthese/jour/:date', authenticateToken, (req, res) => {

@@ -384,6 +384,20 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                             const missionLabels = (ctx.missions || []).map(
                               (m) => m.title || m.affaire || 'Mission',
                             );
+                            const planningAffaires = Array.isArray(ctx.planning_affaires)
+                              ? ctx.planning_affaires
+                              : [];
+                            const planningAlertes = planningAffaires
+                              .map((a) => {
+                                const num = String(a.affaire_num || '').trim();
+                                if (!num) return null;
+                                const label = String(a.affaire_label || '').trim();
+                                const hasDistinctLabel =
+                                  label && label.toLowerCase() !== num.toLowerCase();
+                                const base = hasDistinctLabel ? `${num} (${label})` : num;
+                                return a.is_tournee ? `Affaire ${base} [Tournée]` : `Affaire ${base}`;
+                              })
+                              .filter(Boolean);
                             return (
                               <tr
                                 key={sh.id}
@@ -417,6 +431,14 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                                     <span
                                       key={i}
                                       className="synthese-badge synthese-badge-mission"
+                                    >
+                                      {l}
+                                    </span>
+                                  ))}
+                                  {planningAlertes.map((l, i) => (
+                                    <span
+                                      key={`aff-${i}`}
+                                      className="synthese-badge synthese-badge-info"
                                     >
                                       {l}
                                     </span>

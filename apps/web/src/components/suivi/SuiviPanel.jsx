@@ -6,6 +6,7 @@
 import './SuiviPanel.css';
 
 import {
+  AlertTriangle,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +25,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
 import FicheSuivi from './FicheSuivi';
+import IncidentsSuiviPanel from './IncidentsSuiviPanel';
 import SynthesesPanel from './SynthesesPanel';
 
 function formatDateISO(d) {
@@ -487,6 +489,14 @@ function SuiviPanel({ currentUser, initialPersonId }) {
           <FileText size={16} />
           Synthèses
         </Button>
+        <Button
+          variant="ghost"
+          className={`suivi-tab ${activeTab === 'incidents' ? 'active' : ''}`}
+          onClick={() => setActiveTab('incidents')}
+        >
+          <AlertTriangle size={16} />
+          Incidents
+        </Button>
       </div>
 
       {activeTab === 'fiches' && (
@@ -674,6 +684,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
       )}
 
       {activeTab === 'syntheses' && <SynthesesPanel currentUser={currentUser} />}
+      {activeTab === 'incidents' && <IncidentsSuiviPanel currentUser={currentUser} />}
     </div>
   );
 }

@@ -1517,6 +1517,16 @@
   color: #2dd4bf;
   margin-left: 4px;
 }
+.synthese-badge-info {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  margin-left: 4px;
+}
 
 /* Anomalies */
 .syntheses-anomalies {

@@ -3510,6 +3510,49 @@ function initializeDatabase() {
       )
     `);
 
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_incident_tickets (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        week_key TEXT NOT NULL,
+        period_start_date TEXT NOT NULL,
+        period_end_date TEXT NOT NULL,
+        affaire_num TEXT NOT NULL,
+        affaire_name TEXT DEFAULT '',
+        affaire_start_date TEXT,
+        affaire_end_date TEXT,
+        is_tournee INTEGER DEFAULT 0,
+        linked_reservations_json TEXT DEFAULT '[]',
+        linked_personnel_json TEXT DEFAULT '[]',
+        notes TEXT DEFAULT '',
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER REFERENCES users(id),
+        modified_at TEXT,
+        UNIQUE(week_key, affaire_num)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_incident_entries (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        ticket_id TEXT NOT NULL REFERENCES tracking_incident_tickets(id) ON DELETE CASCADE,
+        incident_type TEXT NOT NULL CHECK(incident_type IN (
+          'vehicle_problem',
+          'equipment_problem',
+          'equipment_omission',
+          'equipment_error',
+          'other'
+        )),
+        description TEXT NOT NULL DEFAULT '',
+        reporter_person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+        reporter_name_snapshot TEXT DEFAULT '',
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER REFERENCES users(id),
+        modified_at TEXT
+      )
+    `);
+
     try {
       const teCols = db.pragma('table_info(tracking_entries)').map((c) => c.name);
       if (!teCols.includes('recurring_task_id')) {
@@ -3527,6 +3570,14 @@ function initializeDatabase() {
       CREATE UNIQUE INDEX IF NOT EXISTS idx_tracking_entries_sheet_recurring_unique
       ON tracking_entries(sheet_id, recurring_task_id)
       WHERE recurring_task_id IS NOT NULL;
+    `);
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_week ON tracking_incident_tickets(week_key);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_affaire ON tracking_incident_tickets(affaire_num);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_start ON tracking_incident_tickets(period_start_date);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_ticket ON tracking_incident_entries(ticket_id);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_reporter ON tracking_incident_entries(reporter_person_id);
     `);
 
     logger.info('  ✅ Module Suivi du Personnel initialisé');

@@ -163,9 +163,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     setIsLoadingGoogle(true);
     setGoogleError(null);
     try {
-      // Vérifier si un token Google est disponible côté serveur
-      const tokenStatus = await api.getGoogleOAuthStatus();
-      if (!tokenStatus?.connected) {
+      // Vérifier si le Service Account Google est configuré côté serveur
+      const serviceStatus = await api.getCalendarServiceStatus();
+      if (!serviceStatus?.configured) {
         setGoogleAffaires([]);
         return;
       }

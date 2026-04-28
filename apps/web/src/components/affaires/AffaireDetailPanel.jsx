@@ -407,8 +407,8 @@ const AffaireDetailContent = ({
     const fetchEvents = async () => {
       setIsLoadingEvents(true);
       try {
-        const tokenStatus = await api.getGoogleOAuthStatus();
-        if (!tokenStatus?.connected) {
+        const serviceStatus = await api.getCalendarServiceStatus();
+        if (!serviceStatus?.configured) {
           setGoogleEvents([]);
           setIsLoadingEvents(false);
           return;

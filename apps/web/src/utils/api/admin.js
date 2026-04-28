@@ -85,18 +85,33 @@ export function registerAdminMethods(ApiClient) {
       });
     },
 
-    // Google OAuth2 v2 (Authorization Code Flow — backend-managed tokens)
+    // Google Calendar — Service Account (serveur uniquement, sans OAuth utilisateur)
     async getGoogleOAuthConfigured() {
-      return this.request('/google/configured');
+      const status = await this.request('/calendar/status');
+      return { configured: !!status?.configured };
     },
     async getGoogleOAuthStatus() {
-      return this.request('/google/status');
+      const status = await this.request('/calendar/status');
+      return {
+        connected: !!status?.configured,
+        configured: !!status?.configured,
+        mode: status?.mode,
+        serviceAccountEmail: status?.serviceAccountEmail,
+        calendarId: status?.calendarId,
+        canWrite: !!status?.canWrite,
+        scopes: status?.scopes || [],
+      };
     },
     async getGoogleOAuthUrl() {
-      return this.request('/google/auth');
+      throw new Error(
+        'Flux OAuth utilisateur supprimé: configuration via Service Account uniquement',
+      );
     },
     async disconnectGoogle() {
-      return this.request('/google/disconnect', { method: 'DELETE' });
+      throw new Error('Flux OAuth utilisateur supprimé: aucune déconnexion utilisateur nécessaire');
+    },
+    async getCalendarServiceStatus() {
+      return this.request('/calendar/status');
     },
     async getGoogleCalendarsV2() {
       return this.request('/google/calendars');
@@ -106,11 +121,11 @@ export function registerAdminMethods(ApiClient) {
     },
     async getGoogleEventsV2(params = {}) {
       const qs = new URLSearchParams(params).toString();
-      return this.request(`/google/events${qs ? '?' + qs : ''}`);
+      return this.request(`/calendar/events${qs ? '?' + qs : ''}`);
     },
     async getGoogleEventV2(eventId, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`);
+      return this.request(`/calendar/events/${encodeURIComponent(eventId)}${qs}`);
     },
     async createGoogleEventV2(eventData, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
@@ -133,9 +148,9 @@ export function registerAdminMethods(ApiClient) {
       });
     },
     async syncPullReservations(days = 90) {
-      return this.request(`/google/sync/pull-reservations?days=${encodeURIComponent(days)}`, {
-        method: 'POST',
-      });
+      throw new Error(
+        `Synchronisation pull désactivée en mode Service Account readonly (days=${days})`,
+      );
     },
 
     // Demandes d'accès

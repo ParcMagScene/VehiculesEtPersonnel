@@ -1,364 +1,154 @@
 // ═══════════════════════════════════════════════════════════════
-// googleRoutes.js — Routes Google OAuth2 Authorization Code Flow
-// Phase B : remplace le flux implicite GIS par un flux serveur sécurisé
+// googleRoutes.js — Intégration Google Calendar via Service Account
+// Flux serveur→Google, sans OAuth utilisateur ni popup frontend.
 // ═══════════════════════════════════════════════════════════════
 
-import crypto from 'crypto';
-
-import db from './database.js';
-import { pullReservationsFromGoogle } from './googleBidirectionalSync.js';
 import {
-  exchangeCode,
-  getAuthorizationUrl,
-  getConnectionStatus,
-  getValidAccessToken,
-  isGoogleOAuthConfigured,
-  revokeToken,
-  storeRefreshToken,
-  updateLastSync,
-} from './googleTokenManager.js';
+  getEventById,
+  getEvents,
+  getGoogleServiceAccountStatus,
+} from './GoogleCalendarServiceAccount.js';
 import logger from './logger.js';
-import { pullReservationsSchema } from './schemas/google.js';
-import { validate } from './schemas/imports.js';
 
-const GOOGLE_API_BASE = 'https://www.googleapis.com/calendar/v3';
-const GCAL_TIMEOUT_MS = 10000;
-const GCAL_MAX_RETRIES = 2;
-
-// Wrapper async pour garantir qu'une erreur non catchée renvoie 502
 const gcalRoute = (fn) => async (req, res) => {
   try {
     await fn(req, res);
   } catch (err) {
-    logger.error('Google route error:', err.message);
-    if (!res.headersSent)
-      res.status(502).json({
-        success: false,
-        error: 'google_unavailable',
-        message: 'Service Google Calendar indisponible',
-      });
+    const message = err?.message || 'Erreur Google Calendar';
+    logger.error('[GoogleServiceAccount] Route error:', message);
+
+    if (message.includes('Service Account non configuré')) {
+      return res.status(503).json({ success: false, error: 'google_not_configured', message });
+    }
+
+    if (message.includes('Requested entity was not found')) {
+      return res.status(404).json({ success: false, error: 'event_not_found', message });
+    }
+
+    if (!res.headersSent) {
+      return res
+        .status(502)
+        .json({
+          success: false,
+          error: 'google_unavailable',
+          message: 'Service Google indisponible',
+        });
+    }
   }
 };
 
-// ── Proxy vers Google Calendar API via access_token rafraîchi ──
-
-async function googleProxyV2(req, res, method, url, body) {
-  const token = await getValidAccessToken(req.user.id);
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      error: 'google_not_connected',
-      message: 'Compte Google non connecté — connectez-vous via Paramètres',
-    });
-  }
-
-  const headers = { Authorization: `Bearer ${token}` };
-  if (body) headers['Content-Type'] = 'application/json';
-
-  for (let attempt = 0; attempt <= GCAL_MAX_RETRIES; attempt++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), GCAL_TIMEOUT_MS);
-
-    try {
-      const response = await fetch(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-
-      if (!response.ok) {
-        if ([502, 503, 504].includes(response.status) && attempt < GCAL_MAX_RETRIES) continue;
-
-        const text = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(text);
-        } catch {
-          errorData = { message: text };
-        }
-
-        if (response.status === 401) {
-          // Token expiré malgré le refresh — forcer un nouveau refresh au prochain appel
-          return res.status(401).json({
-            success: false,
-            error: 'google_token_expired',
-            message: 'Session Google expirée — réessayez',
-          });
-        }
-
-        return res.status(response.status).json(errorData);
-      }
-
-      if (response.status === 204) return res.status(204).end();
-      const data = await response.json();
-      return res.json(data);
-    } catch (err) {
-      clearTimeout(timer);
-      if (err.name === 'AbortError' && attempt < GCAL_MAX_RETRIES) continue;
-      logger.error('Google Calendar proxy error:', err.message);
-      return res.status(502).json({
-        success: false,
-        error: 'google_proxy_error',
-        message: 'Erreur communication Google Calendar',
-      });
-    }
-  }
+function normalizeEventsQuery(query) {
+  return {
+    calendarId: query.calendarId,
+    timeMin: query.timeMin,
+    timeMax: query.timeMax,
+    singleEvents:
+      query.singleEvents === undefined
+        ? true
+        : String(query.singleEvents).toLowerCase() !== 'false',
+    maxResults: query.maxResults,
+    orderBy: query.orderBy,
+    q: query.q,
+    pageToken: query.pageToken,
+  };
 }
 
-function getCalendarId(req) {
-  const id =
-    req.query.calendarId ||
-    (() => {
-      const row = db.prepare("SELECT value FROM config WHERE key = 'google_calendar_id'").get();
-      return row?.value || 'primary';
-    })();
-  // Sanitize: calendarId must be a valid email or 'primary'
-  if (id !== 'primary' && !/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9.-]+$/.test(id)) {
-    return 'primary';
-  }
-  return id;
+function oauthRemovedResponse(res) {
+  return res.status(410).json({
+    success: false,
+    error: 'oauth_user_removed',
+    message:
+      'Le flux OAuth utilisateur a été retiré. La synchronisation utilise désormais un Service Account administrateur.',
+  });
 }
-
-// ── State CSRF (in-memory, TTL 10 min) ──
-const pendingStates = new Map();
-const STATE_TTL_MS = 10 * 60 * 1000;
-
-function cleanExpiredStates() {
-  const now = Date.now();
-  for (const [key, val] of pendingStates) {
-    if (now - val.createdAt > STATE_TTL_MS) pendingStates.delete(key);
-  }
-}
-
-// Nettoyage périodique automatique (toutes les 5 min)
-setInterval(cleanExpiredStates, 5 * 60 * 1000).unref();
-
-// Validation eventId (éviter l'injection de path)
-function validateEventId(req, res) {
-  const id = req.params.eventId;
-  if (!id || id.length > 1024 || /[/\\]/.test(id)) {
-    res
-      .status(400)
-      .json({ success: false, error: 'invalid_event_id', message: 'Event ID invalide' });
-    return false;
-  }
-  return true;
-}
-
-// ── Setup ──
 
 export function setupGoogleRoutes(app, authenticateToken) {
-  // ── B1: Initier le flux OAuth2 ──
-  // Redirige l'utilisateur vers Google pour autorisation
-  app.get('/api/google/auth', authenticateToken, (req, res) => {
-    if (!isGoogleOAuthConfigured()) {
-      return res.status(503).json({
-        success: false,
-        error: 'google_not_configured',
-        message: 'Module Google non configuré (variables .env manquantes)',
+  // ── Nouveau flux principal ──
+  app.get(
+    '/api/calendar/status',
+    authenticateToken,
+    gcalRoute(async (_req, res) => {
+      res.json(getGoogleServiceAccountStatus());
+    }),
+  );
+
+  app.get(
+    '/api/calendar/events',
+    authenticateToken,
+    gcalRoute(async (req, res) => {
+      const data = await getEvents(normalizeEventsQuery(req.query));
+      res.json(data);
+    }),
+  );
+
+  app.get(
+    '/api/calendar/events/:eventId',
+    authenticateToken,
+    gcalRoute(async (req, res) => {
+      const data = await getEventById({
+        eventId: req.params.eventId,
+        calendarId: req.query.calendarId,
       });
-    }
+      res.json(data);
+    }),
+  );
 
-    cleanExpiredStates();
-
-    // Générer un state CSRF lié au user
-    const state = crypto.randomBytes(32).toString('hex');
-    pendingStates.set(state, { userId: req.user.id, createdAt: Date.now() });
-
-    const url = getAuthorizationUrl(state);
-    logger.info(`[Google] Auth initié pour user ${req.user.id}`);
-    res.json({ url });
-  });
-
-  // ── B2: Callback OAuth2 ──
-  // Google redirige ici après consentement
-  app.get('/api/google/callback', async (req, res) => {
-    const { code, state, error } = req.query;
-
-    if (error) {
-      logger.warn(`[Google] Callback erreur: ${error}`);
-      return res.redirect('/?google_error=' + encodeURIComponent(error));
-    }
-
-    if (!code || !state) {
-      return res.redirect('/?google_error=missing_params');
-    }
-
-    cleanExpiredStates();
-
-    const pending = pendingStates.get(state);
-    if (!pending) {
-      logger.warn('[Google] Callback avec state invalide/expiré');
-      return res.redirect('/?google_error=invalid_state');
-    }
-    pendingStates.delete(state);
-
-    try {
-      const result = await exchangeCode(code);
-
-      if (!result.refresh_token) {
-        logger.error(
-          '[Google] Pas de refresh_token reçu — vérifiez access_type=offline et prompt=consent',
-        );
-        return res.redirect('/?google_error=no_refresh_token');
-      }
-
-      storeRefreshToken(
-        pending.userId,
-        result.refresh_token,
-        result.email,
-        'https://www.googleapis.com/auth/calendar',
-      );
-
-      logger.info(
-        `[Google] Connexion réussie pour user ${pending.userId} (${result.email || '?'})`,
-      );
-      res.redirect('/?google_connected=true');
-    } catch (err) {
-      logger.error('[Google] Échange code échoué:', err.message);
-      res.redirect('/?google_error=exchange_failed');
-    }
-  });
-
-  // ── B3: Statut de connexion ──
+  // ── Alias de compatibilité (lecture seule) ──
   app.get('/api/google/status', authenticateToken, (req, res) => {
-    const status = getConnectionStatus(req.user.id);
-    res.json(status);
+    const status = getGoogleServiceAccountStatus();
+    res.json({
+      connected: status.configured,
+      configured: status.configured,
+      mode: status.mode,
+      serviceAccountEmail: status.serviceAccountEmail,
+      calendarId: status.calendarId,
+      canWrite: status.canWrite,
+      scopes: status.scopes,
+    });
   });
 
-  // ── B4: Déconnexion Google ──
-  app.delete(
-    '/api/google/disconnect',
-    authenticateToken,
-    gcalRoute(async (req, res) => {
-      await revokeToken(req.user.id);
-      res.json({ success: true, message: 'Compte Google déconnecté' });
-    }),
-  );
-
-  // ── B3-bis: Vérifier si OAuth est configuré ──
-  app.get('/api/google/configured', authenticateToken, (req, res) => {
-    res.json({ configured: isGoogleOAuthConfigured() });
+  app.get('/api/google/configured', authenticateToken, (_req, res) => {
+    const status = getGoogleServiceAccountStatus();
+    res.json({ configured: status.configured });
   });
 
-  // ── B5: Proxy Google Calendar (via refresh_token) ──
-
-  // Liste des calendriers
-  app.get(
-    '/api/google/calendars',
-    authenticateToken,
-    gcalRoute(async (req, res) => {
-      await googleProxyV2(req, res, 'GET', `${GOOGLE_API_BASE}/users/me/calendarList`);
-    }),
-  );
-
-  // Ajouter un calendrier
-  app.post(
-    '/api/google/calendars',
-    authenticateToken,
-    gcalRoute(async (req, res) => {
-      await googleProxyV2(req, res, 'POST', `${GOOGLE_API_BASE}/users/me/calendarList`, req.body);
-    }),
-  );
-
-  // Lister les événements
   app.get(
     '/api/google/events',
     authenticateToken,
     gcalRoute(async (req, res) => {
-      const calendarId = getCalendarId(req);
-      const params = new URLSearchParams();
-      for (const key of [
-        'timeMin',
-        'timeMax',
-        'singleEvents',
-        'maxResults',
-        'orderBy',
-        'q',
-        'pageToken',
-        'syncToken',
-      ]) {
-        if (req.query[key]) params.set(key, req.query[key]);
-      }
-      const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`;
-      await googleProxyV2(req, res, 'GET', url);
-      updateLastSync(req.user.id);
+      const data = await getEvents(normalizeEventsQuery(req.query));
+      res.json(data);
     }),
   );
 
-  // Obtenir un événement
   app.get(
     '/api/google/events/:eventId',
     authenticateToken,
     gcalRoute(async (req, res) => {
-      if (!validateEventId(req, res)) return;
-      const calendarId = getCalendarId(req);
-      const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(req.params.eventId)}`;
-      await googleProxyV2(req, res, 'GET', url);
+      const data = await getEventById({
+        eventId: req.params.eventId,
+        calendarId: req.query.calendarId,
+      });
+      res.json(data);
     }),
   );
 
-  // Créer un événement
-  app.post(
-    '/api/google/events',
-    authenticateToken,
-    gcalRoute(async (req, res) => {
-      const calendarId = getCalendarId(req);
-      const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events`;
-      await googleProxyV2(req, res, 'POST', url, req.body);
-    }),
+  // ── Endpoints OAuth utilisateur supprimés ──
+  app.get('/api/google/auth', authenticateToken, (_req, res) => oauthRemovedResponse(res));
+  app.get('/api/google/callback', (_req, res) => oauthRemovedResponse(res));
+  app.delete('/api/google/disconnect', authenticateToken, (_req, res) => oauthRemovedResponse(res));
+  app.get('/api/google/calendars', authenticateToken, (_req, res) => oauthRemovedResponse(res));
+  app.post('/api/google/calendars', authenticateToken, (_req, res) => oauthRemovedResponse(res));
+  app.post('/api/google/events', authenticateToken, (_req, res) => oauthRemovedResponse(res));
+  app.patch('/api/google/events/:eventId', authenticateToken, (_req, res) =>
+    oauthRemovedResponse(res),
+  );
+  app.delete('/api/google/events/:eventId', authenticateToken, (_req, res) =>
+    oauthRemovedResponse(res),
+  );
+  app.post('/api/google/sync/pull-reservations', authenticateToken, (_req, res) =>
+    oauthRemovedResponse(res),
   );
 
-  // Mettre à jour un événement
-  app.patch(
-    '/api/google/events/:eventId',
-    authenticateToken,
-    gcalRoute(async (req, res) => {
-      if (!validateEventId(req, res)) return;
-      const calendarId = getCalendarId(req);
-      const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(req.params.eventId)}`;
-      await googleProxyV2(req, res, 'PATCH', url, req.body);
-    }),
-  );
-
-  // Supprimer un événement
-  app.delete(
-    '/api/google/events/:eventId',
-    authenticateToken,
-    gcalRoute(async (req, res) => {
-      if (!validateEventId(req, res)) return;
-      const calendarId = getCalendarId(req);
-      const url = `${GOOGLE_API_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(req.params.eventId)}`;
-      await googleProxyV2(req, res, 'DELETE', url);
-    }),
-  );
-
-  // ── Sync Pull : Google → eM@g (réconciliation bidirectionnelle) ──
-  // Réconcilie les réservations eM@g ayant un google_event_id avec les événements Google.
-  // Google gagne sur les dates si elles divergent.
-  app.post(
-    '/api/google/sync/pull-reservations',
-    authenticateToken,
-    validate(pullReservationsSchema),
-    gcalRoute(async (req, res) => {
-      const days = Math.max(
-        1,
-        Math.min(365, parseInt(req.query.days || req.body?.days || '90', 10)),
-      );
-      const result = await pullReservationsFromGoogle({ userId: req.user.id, days });
-      if (result.skipped) {
-        return res.status(503).json({
-          success: false,
-          error: result.reason,
-          message: 'Synchronisation pull indisponible',
-          details: result.details,
-        });
-      }
-      res.json(result);
-    }),
-  );
-
-  logger.info('[Google] Routes OAuth2 v2 montées (/api/google/*)');
+  logger.info('[Google] Routes Service Account montées (/api/calendar/* + alias /api/google/*)');
 }

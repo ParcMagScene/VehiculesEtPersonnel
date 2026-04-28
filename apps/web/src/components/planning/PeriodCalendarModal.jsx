@@ -75,16 +75,23 @@ const PeriodCalendarModal = ({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [rdvCategory, setRdvCategory] = useState('pro'); // 'pro' | 'perso'
-  const [syncGoogle, setSyncGoogle] = useState(true);
+  const [syncGoogle, setSyncGoogle] = useState(false);
   const [googleSynced, setGoogleSynced] = useState(false);
-  const [hasGoogleToken, setHasGoogleToken] = useState(true);
+  const [canWriteGoogle, setCanWriteGoogle] = useState(false);
 
   useEffect(() => {
     if (isRdv)
       api
-        .getGoogleOAuthStatus()
-        .then((s) => setHasGoogleToken(!!s?.connected))
-        .catch(() => setHasGoogleToken(false));
+        .getCalendarServiceStatus()
+        .then((s) => {
+          const writable = !!s?.configured && !!s?.canWrite;
+          setCanWriteGoogle(writable);
+          setSyncGoogle(writable);
+        })
+        .catch(() => {
+          setCanWriteGoogle(false);
+          setSyncGoogle(false);
+        });
   }, [isRdv]);
 
   const periodInfo = PERIOD_MENU_ITEMS.find((p) => p.type === periodType) || PERIOD_MENU_ITEMS[0];
@@ -185,8 +192,7 @@ const PeriodCalendarModal = ({
   // ═══ Google Calendar sync for RDV ═══
   const createGoogleCalendarEvent = async (dateStr, endDateStr) => {
     try {
-      const tokenStatus = await api.getGoogleOAuthStatus();
-      if (!tokenStatus?.connected) return null;
+      if (!canWriteGoogle) return null;
 
       const categoryLabel = rdvCategory === 'pro' ? '🏢 Pro' : '🏠 Perso';
       const summary = `${categoryLabel} — RDV ${person.firstName} ${person.lastName || ''}`.trim();
@@ -226,7 +232,7 @@ const PeriodCalendarModal = ({
 
       // Google Calendar sync for RDV
       let googleEventId = null;
-      if (isRdv && syncGoogle) {
+      if (isRdv && syncGoogle && canWriteGoogle) {
         googleEventId = await createGoogleCalendarEvent(dateStr, endDateStr);
         if (googleEventId) setGoogleSynced(true);
       }
@@ -412,13 +418,14 @@ const PeriodCalendarModal = ({
                   <label className="pcm-checkbox-label">
                     <Checkbox
                       checked={syncGoogle}
+                      disabled={!canWriteGoogle}
                       onChange={(e) => setSyncGoogle(e.target.checked)}
                     />
                     <CalendarPlus size={14} />
                     <span>Synchroniser Google Agenda</span>
                   </label>
-                  {!hasGoogleToken && syncGoogle && (
-                    <span className="pcm-google-warn">⚠ Non connecté à Google</span>
+                  {!canWriteGoogle && (
+                    <span className="pcm-google-warn">⚠ Service Account en lecture seule</span>
                   )}
                 </div>
               </>

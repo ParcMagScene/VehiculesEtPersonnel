@@ -362,6 +362,7 @@ setupSuiviRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Google Calendar OAuth2 v2 (Authorization Code Flow)
 app.use('/api/google', googleCalendarLimiter);
+app.use('/api/calendar', googleCalendarLimiter);
 setupGoogleRoutes(app, authenticateToken);
 
 // Debug endpoints

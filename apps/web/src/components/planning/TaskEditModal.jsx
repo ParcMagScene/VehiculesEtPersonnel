@@ -20,6 +20,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, EntityCombobox, Input, ModalLayout, Select, Textarea } from '@/design-system';
 
 import { useDirtyForm } from '../../hooks/useDirtyForm';
+import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import AddressAutocomplete from '../AddressAutocomplete';
@@ -72,6 +73,11 @@ const cleanCourseTitle = (title, section) => {
 
 function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const toast = useToast();
+  const { isFavorite, sortPersonsByFavorites } = usePersonnelFavorites();
+  const sortedPersons = useMemo(
+    () => sortPersonsByFavorites(persons || []),
+    [persons, sortPersonsByFavorites],
+  );
   const [saving, setSaving] = useState(false);
   const [affaires, setAffaires] = useState([]);
   const [affaireSearch, setAffaireSearch] = useState('');
@@ -290,7 +296,10 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
           <EntityCombobox
             value={form.personId}
             onChange={(val) => update('personId', val)}
-            options={persons.map((p) => ({ id: p.id, name: `${p.firstName} ${p.lastName}` }))}
+            options={sortedPersons.map((p) => ({
+              id: p.id,
+              name: `${isFavorite(p.id) ? '★ ' : ''}${p.firstName} ${p.lastName}`,
+            }))}
             placeholder="— Aucun —"
           />
         </div>

@@ -63,6 +63,7 @@ import {
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
@@ -1388,8 +1389,9 @@ const PlanningTab = ({
   const columnResizingRef = useRef(false);
   const [collapsedSections, setCollapsedSections] = useState({
     permanents: false,
-    nonPermanents: false,
-    inactifs: false,
+    favoris: false,
+    nonPermanents: true,
+    inactifs: true,
   });
   const [selectedPersonForDetails, setSelectedPersonForDetails] = useState(null);
   const clickTimerRef = useRef(null);
@@ -1435,24 +1437,7 @@ const PlanningTab = ({
   const [planningSearch, setPlanningSearch] = useState('');
   const [planningFilter, setPlanningFilter] = useState(''); // '', 'permanent', 'salarié', 'contractuel', 'stagiaire'
   const [sortByFavorites, setSortByFavorites] = useState(true);
-  const [favoriteIds, setFavoriteIds] = useState(() => {
-    try {
-      const saved = localStorage.getItem('personnel_favorites');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const toggleFavorite = useCallback((personId) => {
-    setFavoriteIds((prev) => {
-      const next = prev.includes(personId)
-        ? prev.filter((id) => id !== personId)
-        : [...prev, personId];
-      localStorage.setItem('personnel_favorites', JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const { isFavorite, toggleFavorite, sortPersonsByFavorites } = usePersonnelFavorites();
 
   // Navigation croisée depuis un autre module
   useEffect(() => {
@@ -1655,6 +1640,7 @@ const PlanningTab = ({
   // LEAVE_TYPE_COLORS : couleur de fond des cellules pour chaque type d'absence
   const LEAVE_TYPE_COLORS = {
     unavailable: 'var(--theme-text-muted)', // gris-bleu
+    absence: STATUS_COLORS.danger, // rouge absence
     conge_paye: '#60a5fa', // bleu
     rtt: '#a78bfa', // violet
     maladie: '#f87171', // rouge
@@ -1669,6 +1655,7 @@ const PlanningTab = ({
   };
   const LEAVE_TYPE_LABELS = {
     unavailable: 'Indisponible',
+    absence: 'Absence',
     conge_paye: 'CP',
     rtt: 'RTT',
     maladie: 'Maladie',
@@ -1861,16 +1848,21 @@ const PlanningTab = ({
       !(p.type === 'stagiaire' && enterpriseTraineeIds.has(p.id)),
   );
 
+  const favoriteNonPermanents = useMemo(
+    () => sortPersonsByFavorites(nonPermanentsRaw.filter((p) => isFavorite(p.id))),
+    [nonPermanentsRaw, isFavorite, sortPersonsByFavorites],
+  );
+
+  const nonPermanentsSource = useMemo(
+    () => nonPermanentsRaw.filter((p) => !isFavorite(p.id)),
+    [nonPermanentsRaw, isFavorite],
+  );
+
   // Tri : favoris en haut des non-permanents
   const nonPermanents = useMemo(() => {
-    if (!sortByFavorites) return nonPermanentsRaw;
-    return [...nonPermanentsRaw].sort((a, b) => {
-      const aFav = favoriteIds.includes(a.id) ? 0 : 1;
-      const bFav = favoriteIds.includes(b.id) ? 0 : 1;
-      if (aFav !== bFav) return aFav - bFav;
-      return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
-    });
-  }, [nonPermanentsRaw, favoriteIds, sortByFavorites]);
+    if (!sortByFavorites) return nonPermanentsSource;
+    return sortPersonsByFavorites(nonPermanentsSource);
+  }, [nonPermanentsSource, sortByFavorites, sortPersonsByFavorites]);
 
   // ═══ DRAG-TO-CREATE : cliquer-glisser sur cellules vides ═══
   const handleSlotMouseDown = (person, slotIndex, e) => {
@@ -2669,11 +2661,90 @@ const PlanningTab = ({
                         setContextMenu({ x: e.clientX, y: e.clientY, person });
                       }}
                     >
+                      <Button
+                        variant="ghost"
+                        className={`pp-fav-star${isFavorite(person.id) ? ' active' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(person.id);
+                        }}
+                        title={
+                          isFavorite(person.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'
+                        }
+                      >
+                        <Star size={12} fill={isFavorite(person.id) ? 'currentColor' : 'none'} />
+                      </Button>
                       <span className="pp-person-name">
                         {person.firstName} {person.lastName || ''}
                       </span>
                       <span className={`person-type-badge mini type-${person.type}`}>
                         {PERSON_TYPES.find((t) => t.value === person.type)?.label || person.type}
+                      </span>
+                    </div>
+                  ))}
+
+                {/* Section Favoris (non-permanents) */}
+                {favoriteNonPermanents.length > 0 && (
+                  <div className="pp-section-header">
+                    <span>Favoris</span>
+                    <Button
+                      variant="ghost"
+                      className="pp-section-toggle"
+                      onClick={() =>
+                        setCollapsedSections((prev) => ({
+                          ...prev,
+                          favoris: !prev.favoris,
+                        }))
+                      }
+                    >
+                      {collapsedSections.favoris ? '▼' : '▲'}
+                    </Button>
+                  </div>
+                )}
+                {!collapsedSections.favoris &&
+                  favoriteNonPermanents.map((person) => (
+                    <div
+                      key={person.id}
+                      className={`pp-person-cell u-cursor-pointer pp-person-favorite${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}`}
+                      onClick={() => {
+                        if (clickTimerRef.current) return;
+                        clickTimerRef.current = setTimeout(() => {
+                          clickTimerRef.current = null;
+                          setSelectedPersonForDetails(person);
+                        }, 250);
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        if (clickTimerRef.current) {
+                          clearTimeout(clickTimerRef.current);
+                          clickTimerRef.current = null;
+                        }
+                        onPersonEdit && onPersonEdit(person);
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenu({ x: e.clientX, y: e.clientY, person });
+                      }}
+                    >
+                      <Button
+                        variant="ghost"
+                        className="pp-fav-star active"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(person.id);
+                        }}
+                        title="Retirer des favoris"
+                      >
+                        <Star size={12} fill="currentColor" />
+                      </Button>
+                      <span className="pp-person-name">
+                        {person.firstName} {person.lastName || ''}
+                      </span>
+                      <span className={`person-type-badge mini type-${person.type}`}>
+                        {person.type === 'contractuel'
+                          ? CONTRACT_TYPES.find((c) => c.value === person.contractType)?.label ||
+                            'Contractuel'
+                          : PERSON_TYPES.find((t) => t.value === person.type)?.label || person.type}
                       </span>
                     </div>
                   ))}
@@ -2700,7 +2771,7 @@ const PlanningTab = ({
                   nonPermanents.map((person) => (
                     <div
                       key={person.id}
-                      className={`pp-person-cell u-cursor-pointer${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}${favoriteIds.includes(person.id) ? ' pp-person-favorite' : ''}`}
+                      className={`pp-person-cell u-cursor-pointer${hoveredSlot?.personId === person.id ? ' pp-row-hovered' : ''}${isFavorite(person.id) ? ' pp-person-favorite' : ''}`}
                       onClick={() => {
                         if (clickTimerRef.current) return;
                         clickTimerRef.current = setTimeout(() => {
@@ -2723,21 +2794,16 @@ const PlanningTab = ({
                     >
                       <Button
                         variant="ghost"
-                        className={`pp-fav-star${favoriteIds.includes(person.id) ? ' active' : ''}`}
+                        className={`pp-fav-star${isFavorite(person.id) ? ' active' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleFavorite(person.id);
                         }}
                         title={
-                          favoriteIds.includes(person.id)
-                            ? 'Retirer des favoris'
-                            : 'Ajouter aux favoris'
+                          isFavorite(person.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'
                         }
                       >
-                        <Star
-                          size={12}
-                          fill={favoriteIds.includes(person.id) ? 'currentColor' : 'none'}
-                        />
+                        <Star size={12} fill={isFavorite(person.id) ? 'currentColor' : 'none'} />
                       </Button>
                       <span className="pp-person-name">
                         {person.firstName} {person.lastName || ''}
@@ -2794,6 +2860,19 @@ const PlanningTab = ({
                         setContextMenu({ x: e.clientX, y: e.clientY, person });
                       }}
                     >
+                      <Button
+                        variant="ghost"
+                        className={`pp-fav-star${isFavorite(person.id) ? ' active' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(person.id);
+                        }}
+                        title={
+                          isFavorite(person.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'
+                        }
+                      >
+                        <Star size={12} fill={isFavorite(person.id) ? 'currentColor' : 'none'} />
+                      </Button>
                       <span className="pp-person-name">
                         {person.firstName} {person.lastName || ''}
                       </span>
@@ -2809,6 +2888,27 @@ const PlanningTab = ({
                 >
                   {/* Lignes Permanents */}
                   {!collapsedSections.permanents && permanents.map(renderPersonRow)}
+
+                  {/* Séparateur Contractuels dans la grille */}
+                  {favoriteNonPermanents.length > 0 && (
+                    <div className="pp-section-separator" style={{ gridColumn: '1 / -1' }}>
+                      <span>Favoris</span>
+                      <Button
+                        variant="ghost"
+                        className="pp-section-toggle"
+                        onClick={() =>
+                          setCollapsedSections((prev) => ({
+                            ...prev,
+                            favoris: !prev.favoris,
+                          }))
+                        }
+                      >
+                        {collapsedSections.favoris ? '▼' : '▲'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {!collapsedSections.favoris && favoriteNonPermanents.map(renderPersonRow)}
 
                   {/* Séparateur Contractuels dans la grille */}
                   {nonPermanents.length > 0 && (

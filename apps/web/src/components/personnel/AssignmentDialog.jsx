@@ -13,6 +13,7 @@ import {
   Plus,
   Save,
   Search,
+  Star,
   Trash2,
   User,
   Users,
@@ -34,6 +35,7 @@ import {
 } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 
@@ -398,6 +400,7 @@ const AssignmentDialog = ({
   const [showAddPersonDropdown, setShowAddPersonDropdown] = useState(false);
   const [addPersonSearch, setAddPersonSearch] = useState('');
   const addPersonContainerRef = useRef(null);
+  const { isFavorite, sortPersonsByFavorites } = usePersonnelFavorites();
 
   // Capturer l'état initial pour détecter les modifications
   const initialStateRef = useRef(null);
@@ -500,14 +503,17 @@ const AssignmentDialog = ({
   }, [selectedPersonId, person, allPersons]);
 
   const filteredPersons = useMemo(() => {
-    if (!personSearch.trim()) return allPersons;
-    const q = personSearch.toLowerCase();
-    return allPersons.filter(
-      (p) =>
-        `${p.firstName || ''} ${p.lastName || ''}`.toLowerCase().includes(q) ||
-        (p.type || '').toLowerCase().includes(q),
-    );
-  }, [allPersons, personSearch]);
+    let list = allPersons;
+    if (personSearch.trim()) {
+      const q = personSearch.toLowerCase();
+      list = allPersons.filter(
+        (p) =>
+          `${p.firstName || ''} ${p.lastName || ''}`.toLowerCase().includes(q) ||
+          (p.type || '').toLowerCase().includes(q),
+      );
+    }
+    return sortPersonsByFavorites(list);
+  }, [allPersons, personSearch, sortPersonsByFavorites]);
 
   // Multi-affectation : personnes supplémentaires résolues
   const additionalPersons = useMemo(() => {
@@ -526,8 +532,8 @@ const AssignmentDialog = ({
           (p.type || '').toLowerCase().includes(q),
       );
     }
-    return list;
-  }, [allPersons, person.id, additionalPersonIds, addPersonSearch]);
+    return sortPersonsByFavorites(list);
+  }, [allPersons, person.id, additionalPersonIds, addPersonSearch, sortPersonsByFavorites]);
 
   // Charger les affaires
   useEffect(() => {
@@ -866,6 +872,9 @@ const AssignmentDialog = ({
                           setPersonSearch('');
                         }}
                       >
+                        <span className={`asd-person-fav-icon${isFavorite(p.id) ? ' active' : ''}`}>
+                          <Star size={12} fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
+                        </span>
                         <span className="asd-person-opt-name">
                           {p.firstName} {p.lastName}
                         </span>
@@ -974,6 +983,11 @@ const AssignmentDialog = ({
                               setAddPersonSearch('');
                             }}
                           >
+                            <span
+                              className={`asd-person-fav-icon${isFavorite(p.id) ? ' active' : ''}`}
+                            >
+                              <Star size={12} fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
+                            </span>
                             <span className="asd-person-opt-name">
                               {p.firstName} {p.lastName}
                             </span>

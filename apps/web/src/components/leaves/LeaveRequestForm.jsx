@@ -32,6 +32,7 @@ import {
   Textarea,
 } from '@/design-system';
 
+import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import api from '../../utils/api';
 
 // ═══════════════════════════════════════
@@ -152,6 +153,7 @@ const LeaveRequestForm = ({
   onClose,
   onCreated,
 }) => {
+  const { getFavoriteDisplayName, sortPersonsByFavorites } = usePersonnelFavorites();
   // State du formulaire
   const [selectedPersonId, setSelectedPersonId] = useState(person?.id || '');
   const [leaveType, setLeaveType] = useState('conge_paye');
@@ -180,6 +182,10 @@ const LeaveRequestForm = ({
   const [error, setError] = useState('');
   const [warnings, setWarnings] = useState([]);
   const [showLegalInfo, setShowLegalInfo] = useState(false);
+  const sortedPersons = useMemo(
+    () => sortPersonsByFavorites(persons || []),
+    [persons, sortPersonsByFavorites],
+  );
 
   // Charger les types de congés au montage
   useEffect(() => {
@@ -437,9 +443,9 @@ const LeaveRequestForm = ({
                 required
               >
                 <option value="">— Sélectionner —</option>
-                {persons.map((p) => (
+                {sortedPersons.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.firstName || p.first_name} {p.lastName || p.last_name}
+                    {getFavoriteDisplayName(p)}
                   </option>
                 ))}
               </Select>

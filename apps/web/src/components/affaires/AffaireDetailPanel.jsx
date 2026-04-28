@@ -48,6 +48,7 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { AFFAIRE_TYPE_SECTIONS, AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import {
   AFFAIRE_STATUS_MAP,
@@ -255,6 +256,7 @@ const AffaireDetailContent = ({
   const [planningOpen, setPlanningOpen] = useState(false);
   const [annotatingBL, setAnnotatingBL] = useState(null); // bl import object en cours d'annotation
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { getFavoriteDisplayName, sortPersonsByFavorites } = usePersonnelFavorites();
   const fileInputRef = useRef(null);
   const feedbackTimerRef = useRef(null);
 
@@ -617,6 +619,11 @@ const AffaireDetailContent = ({
     }
     return Array.from(personMap.values());
   }, [linkedMissions]);
+
+  const sortedActionPersons = useMemo(
+    () => sortPersonsByFavorites(actionData.persons || []),
+    [actionData.persons, sortPersonsByFavorites],
+  );
 
   // ═══ BL imports liés à l'affaire ═══
   const [linkedBLImports, setLinkedBLImports] = useState([]);
@@ -2024,9 +2031,9 @@ const AffaireDetailContent = ({
                 className="inline-select"
               >
                 <option value="">— Choisir une personne —</option>
-                {actionData.persons.map((p) => (
+                {sortedActionPersons.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.firstName || p.first_name} {p.lastName || p.last_name}
+                    {getFavoriteDisplayName(p)}
                     {p.type ? ` (${p.type})` : ''}
                   </option>
                 ))}

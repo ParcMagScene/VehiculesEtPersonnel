@@ -166,6 +166,10 @@
   min-height: 0;
 }
 
+.suivi-group-favorites .suivi-group-header {
+  color: var(--btn-warning-text);
+}
+
 .suivi-group-body {
   overflow-y: auto;
   min-height: 0;
@@ -201,9 +205,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
   padding: 4px 8px 6px;
   border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   margin-bottom: 4px;
+}
+.suivi-batch-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .suivi-select-all {
   display: flex;
@@ -286,6 +298,28 @@
 .suivi-person-item.selected {
   background: var(--accent-bg, rgba(59, 130, 246, 0.15));
   color: var(--accent-color, #60a5fa);
+}
+
+.suivi-person-fav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--theme-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.suivi-person-fav:hover {
+  background: var(--surface-secondary);
+}
+
+.suivi-person-fav.active {
+  color: var(--btn-warning-text);
 }
 .suivi-person-check {
   width: 14px;
@@ -1302,6 +1336,19 @@
   background: var(--accent-subtle, rgba(59, 130, 246, 0.15));
   border-color: var(--accent, #3b82f6);
 }
+
+.suivi-team-person-fav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-text-muted);
+  flex-shrink: 0;
+}
+
+.suivi-team-person-fav.active {
+  color: var(--btn-warning-text);
+}
+
 .suivi-team-person-name {
   font-weight: 500;
   font-size: 0.9rem;
@@ -1565,7 +1612,7 @@
   }
   .suivi-sidebar {
     width: 100%;
-    max-height: 150px;
+    max-height: 120px;
     border-right: none;
     border-bottom: 1px solid var(--border-color, #334155);
   }
@@ -1574,6 +1621,28 @@
     flex-wrap: wrap;
     gap: 4px;
     overflow-x: auto;
+  }
+  .suivi-batch-bar {
+    gap: 6px;
+    padding: 4px 6px;
+    align-items: flex-start;
+  }
+  .suivi-batch-options {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 8px;
+  }
+  .suivi-batch-options .suivi-select-all:nth-child(1) {
+    grid-column: 1 / -1;
+  }
+  .suivi-select-all {
+    font-size: 9px;
+    gap: 4px;
+  }
+  .suivi-batch-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
   .suivi-date-nav {
     flex-wrap: wrap;

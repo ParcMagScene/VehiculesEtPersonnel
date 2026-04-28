@@ -17,11 +17,13 @@ import {
   LogOut,
   Loader2,
   Printer,
+  Star,
   UserCheck,
   Users,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
 import FicheSuivi from './FicheSuivi';
@@ -65,6 +67,8 @@ function SuiviPanel({ currentUser, initialPersonId }) {
   const [batchExporting, setBatchExporting] = useState(false);
   const [batchPrinting, setBatchPrinting] = useState(false);
   const [collapsedNonPermanents, setCollapsedNonPermanents] = useState(true);
+  const [collapsedFavorites, setCollapsedFavorites] = useState(false);
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
   // Compte Equipe : personne sélectionnée via PIN/MDP
   const isTeamAccount = !!currentUser?.isTeam;
   const [suiviPerson, setSuiviPerson] = useState(null); // personne authentifiée pour le suivi
@@ -81,18 +85,64 @@ function SuiviPanel({ currentUser, initialPersonId }) {
   const saveInFlightRef = useRef(false);
   const pendingSaveRef = useRef(null);
   const isAdmin = !!currentUser?.isAdmin;
+  const { isFavorite, toggleFavorite, sortPersonsByFavorites } = usePersonnelFavorites();
+
+  const personnelSource = useMemo(
+    () => (onlyFavorites ? personnel.filter((p) => isFavorite(p.id)) : personnel),
+    [personnel, onlyFavorites, isFavorite],
+  );
 
   // Groupes de personnel
   const permanents = useMemo(
-    () => personnel.filter((p) => ['permanent', 'apprenti', 'stagiaire'].includes(p.type)),
-    [personnel],
+    () =>
+      sortPersonsByFavorites(
+        personnelSource.filter((p) => ['permanent', 'apprenti', 'stagiaire'].includes(p.type)),
+      ),
+    [personnelSource, sortPersonsByFavorites],
+  );
+  const nonPermanentsAll = useMemo(
+    () =>
+      sortPersonsByFavorites(
+        personnelSource.filter((p) => !['permanent', 'apprenti', 'stagiaire'].includes(p.type)),
+      ),
+    [personnelSource, sortPersonsByFavorites],
+  );
+  const favorites = useMemo(
+    () => nonPermanentsAll.filter((p) => isFavorite(p.id)),
+    [nonPermanentsAll, isFavorite],
   );
   const nonPermanents = useMemo(
-    () => personnel.filter((p) => !['permanent', 'apprenti', 'stagiaire'].includes(p.type)),
-    [personnel],
+    () => nonPermanentsAll.filter((p) => !isFavorite(p.id)),
+    [nonPermanentsAll, isFavorite],
   );
 
+  const visibleKeys = useMemo(
+    () => personnelSource.map((p) => `${p.id}__${selectedDate}`),
+    [personnelSource, selectedDate],
+  );
+
+  const selectedVisibleCount = useMemo(() => {
+    let count = 0;
+    visibleKeys.forEach((k) => {
+      if (selectedSheetIds.has(k)) count += 1;
+    });
+    return count;
+  }, [visibleKeys, selectedSheetIds]);
+
   // Charger la liste du personnel
+  useEffect(() => {
+    if (!onlyFavorites) return;
+    setSelectedSheetIds((prev) => {
+      const next = new Set([...prev].filter((key) => isFavorite(Number(key.split('__')[0]))));
+      return next.size === prev.size ? prev : next;
+    });
+    if (selectedPerson && !isFavorite(selectedPerson.id)) {
+      const nextPerson =
+        sortPersonsByFavorites(personnel.filter((p) => isFavorite(p.id)))[0] || null;
+      setSelectedPerson(nextPerson);
+    }
+  }, [onlyFavorites, personnel, selectedPerson, isFavorite, sortPersonsByFavorites]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -206,6 +256,18 @@ function SuiviPanel({ currentUser, initialPersonId }) {
         key={p.id}
         className={`suivi-person-item ${selectedPerson?.id === p.id ? 'selected' : ''}`}
       >
+        <button
+          type="button"
+          className={`suivi-person-fav${isFavorite(p.id) ? ' active' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite(p.id);
+          }}
+          title={isFavorite(p.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          aria-label={isFavorite(p.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+        >
+          <Star size={12} fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
+        </button>
         <input
           type="checkbox"
           className="suivi-person-check"
@@ -228,16 +290,54 @@ function SuiviPanel({ currentUser, initialPersonId }) {
         </Button>
       </div>
     ),
-    [selectedPerson?.id, selectedSheetIds, selectedDate, handleToggleSelect],
+    [
+      selectedPerson?.id,
+      selectedSheetIds,
+      selectedDate,
+      handleToggleSelect,
+      isFavorite,
+      toggleFavorite,
+    ],
   );
 
   const handleSelectAll = useCallback(() => {
-    if (selectedSheetIds.size === personnel.length) {
-      setSelectedSheetIds(new Set());
-    } else {
-      setSelectedSheetIds(new Set(personnel.map((p) => `${p.id}__${selectedDate}`)));
-    }
-  }, [personnel, selectedDate, selectedSheetIds.size]);
+    setSelectedSheetIds((prev) => {
+      const next = new Set(prev);
+      const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every((k) => next.has(k));
+      if (allVisibleSelected) {
+        visibleKeys.forEach((k) => next.delete(k));
+      } else {
+        visibleKeys.forEach((k) => next.add(k));
+      }
+      return next;
+    });
+  }, [visibleKeys]);
+
+  const permanentKeys = useMemo(
+    () => permanents.map((p) => `${p.id}__${selectedDate}`),
+    [permanents, selectedDate],
+  );
+
+  const selectedPermanentsCount = useMemo(() => {
+    let count = 0;
+    permanentKeys.forEach((k) => {
+      if (selectedSheetIds.has(k)) count += 1;
+    });
+    return count;
+  }, [permanentKeys, selectedSheetIds]);
+
+  const handleToggleSelectPermanents = useCallback(() => {
+    setSelectedSheetIds((prev) => {
+      const next = new Set(prev);
+      const allSelected = permanentKeys.every((k) => next.has(k));
+      if (allSelected) {
+        permanentKeys.forEach((k) => next.delete(k));
+      } else {
+        permanentKeys.forEach((k) => next.add(k));
+      }
+      return next;
+    });
+  }, [permanentKeys]);
 
   // Résoudre les IDs de fiches à partir de la sélection
   const resolveSheetIds = useCallback(async () => {
@@ -296,12 +396,12 @@ function SuiviPanel({ currentUser, initialPersonId }) {
 
   const handleStartGroupResize = useCallback(
     (e) => {
-      if (collapsedNonPermanents || !personListRef.current) return;
+      if ((collapsedNonPermanents && collapsedFavorites) || !personListRef.current) return;
       e.preventDefault();
       resizeStartRef.current = { y: e.clientY, height: permanentsHeight };
       setIsResizingGroups(true);
     },
-    [collapsedNonPermanents, permanentsHeight],
+    [collapsedNonPermanents, collapsedFavorites, permanentsHeight],
   );
 
   useEffect(() => {
@@ -361,7 +461,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
           <form className="suivi-team-auth-form" onSubmit={handleTeamAuth}>
             {/* Sélection de la personne */}
             <div className="suivi-team-person-list">
-              {personnel.map((p) => (
+              {sortPersonsByFavorites(personnel).map((p) => (
                 <button
                   key={p.id}
                   type="button"
@@ -371,6 +471,9 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                     setTeamAuthError('');
                   }}
                 >
+                  <span className={`suivi-team-person-fav${isFavorite(p.id) ? ' active' : ''}`}>
+                    <Star size={12} fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
+                  </span>
                   <span className="suivi-team-person-name">
                     {p.first_name} {p.last_name}
                   </span>
@@ -508,20 +611,44 @@ function SuiviPanel({ currentUser, initialPersonId }) {
             </h3>
 
             <div className="suivi-person-list" ref={personListRef}>
-              {personnel.length === 0 ? (
-                <div className="suivi-person-empty">Aucun personnel trouvé</div>
+              {personnelSource.length === 0 ? (
+                <div className="suivi-person-empty">
+                  {onlyFavorites ? 'Aucun favori trouvé' : 'Aucun personnel trouvé'}
+                </div>
               ) : (
                 <>
                   {/* Sélectionner tout / PDF + Imprimer sélection */}
                   <div className="suivi-batch-bar">
-                    <label className="suivi-select-all" title="Tout sélectionner">
-                      <input
-                        type="checkbox"
-                        checked={selectedSheetIds.size === personnel.length && personnel.length > 0}
-                        onChange={handleSelectAll}
-                      />
-                      <span>Tout</span>
-                    </label>
+                    <div className="suivi-batch-options">
+                      <label className="suivi-select-all" title="Tout sélectionner">
+                        <input
+                          type="checkbox"
+                          checked={
+                            visibleKeys.length > 0 && selectedVisibleCount === visibleKeys.length
+                          }
+                          onChange={handleSelectAll}
+                        />
+                        <span>Tout</span>
+                      </label>
+                      <label className="suivi-select-all" title="Sélectionner tous les permanents">
+                        <input
+                          type="checkbox"
+                          checked={
+                            permanents.length > 0 && selectedPermanentsCount === permanents.length
+                          }
+                          onChange={handleToggleSelectPermanents}
+                        />
+                        <span>Tous permanents</span>
+                      </label>
+                      <label className="suivi-select-all" title="Afficher uniquement les favoris">
+                        <input
+                          type="checkbox"
+                          checked={onlyFavorites}
+                          onChange={(e) => setOnlyFavorites(e.target.checked)}
+                        />
+                        <span>Favoris seulement</span>
+                      </label>
+                    </div>
                     {selectedSheetIds.size > 0 && (
                       <div className="suivi-batch-actions">
                         <Button
@@ -573,8 +700,8 @@ function SuiviPanel({ currentUser, initialPersonId }) {
 
                     {/* Poignee horizontale */}
                     {permanents.length > 0 &&
-                      nonPermanents.length > 0 &&
-                      !collapsedNonPermanents && (
+                      (favorites.length > 0 || nonPermanents.length > 0) &&
+                      (!collapsedFavorites || !collapsedNonPermanents) && (
                         <div
                           className={`suivi-group-resizer ${isResizingGroups ? 'is-resizing' : ''}`}
                           onMouseDown={handleStartGroupResize}
@@ -583,6 +710,29 @@ function SuiviPanel({ currentUser, initialPersonId }) {
                           title="Redimensionner la section permanents"
                         />
                       )}
+
+                    {/* Groupe Favoris */}
+                    {favorites.length > 0 && (
+                      <div className="suivi-group suivi-group-favorites">
+                        <div
+                          className="suivi-group-header suivi-group-header-collapsible"
+                          onClick={() => setCollapsedFavorites((v) => !v)}
+                          role="button"
+                          tabIndex={0}
+                          title={collapsedFavorites ? 'Afficher' : 'Masquer'}
+                        >
+                          <span className="suivi-group-toggle-icon">
+                            {collapsedFavorites ? '▶' : '▼'}
+                          </span>
+                          Favoris ({favorites.length})
+                        </div>
+                        {!collapsedFavorites && (
+                          <div className="suivi-group-body">
+                            {favorites.map((p) => renderPersonItem(p))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Groupe Contractuels */}
                     {nonPermanents.length > 0 && (

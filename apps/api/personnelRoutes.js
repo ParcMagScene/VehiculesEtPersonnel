@@ -696,6 +696,7 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
 // Types de congés avec labels
 const LEAVE_TYPES = {
   unavailable: 'Indisponible',
+  absence: 'Absence',
   conge_paye: 'Congé payé',
   rtt: 'RTT',
   maladie: 'Maladie',
@@ -713,7 +714,7 @@ const LEAVE_TYPES = {
 const APPROVAL_REQUIRED_TYPES = ['conge_paye', 'rtt', 'maladie', 'sans_solde'];
 
 // Types auto-approuvés même pour les utilisateurs non-admin
-const AUTO_APPROVED_TYPES = ['formation', 'entreprise', 'workshop', 'examen', 'rdv'];
+const AUTO_APPROVED_TYPES = ['absence', 'formation', 'entreprise', 'workshop', 'examen', 'rdv'];
 
 export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/availabilities — Toutes les dispos (filtre optionnel par person_id, plage, status)
@@ -801,7 +802,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
       }
 
       // Déterminer le statut selon le type et la source
-      // Types auto-approuvés : formation, entreprise, workshop, examen, rdv → toujours approved
+      // Types auto-approuvés : absence, formation, entreprise, workshop, examen, rdv → toujours approved
       // Types nécessitant approbation : conge_paye, rtt, maladie, sans_solde → pending si source='request'
       const typeVal = a.type || 'unavailable';
       const isAutoApproved = AUTO_APPROVED_TYPES.includes(typeVal);

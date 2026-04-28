@@ -1,6 +1,7 @@
 import './PersonnelContextMenu.css';
 
 import {
+  Ban,
   Building2,
   Calendar,
   ClipboardCheck,
@@ -24,6 +25,14 @@ export const PERIOD_MENU_ITEMS = [
     color: STATUS_COLORS.danger,
     emoji: '🏖️',
     requiresApproval: true,
+  },
+  {
+    type: 'absence',
+    label: 'Absence',
+    icon: Ban,
+    color: STATUS_COLORS.danger,
+    emoji: '🚫',
+    requiresApproval: false,
   },
   {
     type: 'formation',

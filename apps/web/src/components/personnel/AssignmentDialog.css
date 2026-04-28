@@ -226,6 +226,17 @@
   font-weight: 600;
 }
 
+.asd-person-fav-icon {
+  color: var(--theme-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.asd-person-fav-icon.active {
+  color: var(--btn-warning-text);
+}
+
 .asd-person-opt-name {
   font-weight: 600;
   color: var(--text-body);

@@ -17,6 +17,7 @@ import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } fro
 
 import { STATUS } from '../../constants';
 import { PLANNING_SECTIONS } from '../../constants/colors';
+import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { safeParseDate } from '../../utils/dateUtils';
@@ -68,6 +69,11 @@ export default function AddTaskModal({
   loadVehiclesAndReservations,
 }) {
   const toast = useToast();
+  const { getFavoriteDisplayName, sortPersonsByFavorites } = usePersonnelFavorites();
+  const sortedPersons = useMemo(
+    () => sortPersonsByFavorites(persons || []),
+    [persons, sortPersonsByFavorites],
+  );
 
   // Form state
   const [section, setSection] = useState('manual');
@@ -570,9 +576,9 @@ export default function AddTaskModal({
             </label>
             <Select value={personId} onChange={(e) => setPersonId(e.target.value)}>
               <option value="">— Aucun —</option>
-              {persons.map((p) => (
+              {sortedPersons.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.firstName} {p.lastName}
+                  {getFavoriteDisplayName(p)}
                 </option>
               ))}
             </Select>

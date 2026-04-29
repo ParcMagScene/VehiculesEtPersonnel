@@ -1548,10 +1548,13 @@ export function setupSavTicketsRoutes(
           .prepare('SELECT id, reference, name, serial_number, uid FROM equipment LIMIT 10000')
           .all();
 
-        // Index exact par reference
+        // Index par référence (liste complète d'équipements)
         const equipByRef = {};
         for (const eq of allEquipment) {
-          if (eq.reference) equipByRef[eq.reference.trim().toUpperCase()] = eq;
+          if (!eq.reference) continue;
+          const ref = eq.reference.trim().toUpperCase();
+          if (!equipByRef[ref]) equipByRef[ref] = [];
+          equipByRef[ref].push(eq);
         }
 
         // Index par serial nettoyé (peut avoir plusieurs équipements)
@@ -1573,6 +1576,8 @@ export function setupSavTicketsRoutes(
         }
 
         // Matching intelligent : manual > UID EMAG > code_article+serial > code_article > serial seul
+        const hasSerial = (value) => !!(value && String(value).trim());
+
         const findEquipment = (row, rowIndex, parsed) => {
           // 1. Lien manuel prioritaire
           if (manualLinks && manualLinks[rowIndex] !== undefined) {
@@ -1593,14 +1598,25 @@ export function setupSavTicketsRoutes(
           // 3. Match par code article (reference)
           const code = (row.code_article || '').trim().toUpperCase();
           if (code && equipByRef[code]) {
+            const byRef = equipByRef[code];
             // Si on a aussi un serial, chercher celui avec le bon serial+reference
             if (parsed.serial && equipBySerial[parsed.serial]) {
               const candidate = equipBySerial[parsed.serial].find(
                 (e) => e.reference && e.reference.trim().toUpperCase() === code,
               );
               if (candidate) return candidate.id;
+
+              // Série fournie mais aucune correspondance DB : on laisse non lié
+              // pour forcer une validation manuelle (ou proposition de liaison dédiée).
+              return null;
             }
-            return equipByRef[code].id;
+
+            // Sans série fournie : fallback par référence
+            if (!parsed.serial && byRef.length > 0) {
+              // Prioriser un équipement sans numéro de série
+              const noSerialCandidate = byRef.find((e) => !hasSerial(e.serial_number));
+              return (noSerialCandidate || byRef[0]).id;
+            }
           }
 
           // 4. Match par serial nettoyé seul
@@ -1609,6 +1625,16 @@ export function setupSavTicketsRoutes(
           }
 
           return null;
+        };
+
+        // Suggestions de liaison pour lignes non matchées : même référence + équipement sans série
+        const findSuggestedEquipmentIds = (row) => {
+          const code = (row.code_article || '').trim().toUpperCase();
+          if (!code || !equipByRef[code]) return [];
+          return equipByRef[code]
+            .filter((eq) => !hasSerial(eq.serial_number))
+            .slice(0, 5)
+            .map((eq) => eq.id);
         };
 
         // Index des tickets existants pour détection de doublons
@@ -1667,6 +1693,7 @@ export function setupSavTicketsRoutes(
             matched++;
           } else {
             unmatched++;
+            const suggestedEquipmentIds = findSuggestedEquipmentIds(row);
             unmatchedItems.push({
               index: idx,
               intervention: row.intervention,
@@ -1677,6 +1704,7 @@ export function setupSavTicketsRoutes(
               fin: row.fin,
               cout: row.cout,
               statut: row.a,
+              suggestedEquipmentIds,
             });
           }
 
@@ -1747,6 +1775,33 @@ export function setupSavTicketsRoutes(
             (d.newStatus === 'resolved' || d.newStatus === 'closed'),
         ).length;
 
+        // Prévisualisation sync SAV : combien de tickets actifs importés seraient clôturés
+        // car absents du fichier courant.
+        const importedInterventions = new Set(
+          processed
+            .map((r) =>
+              String(r.intervention || '')
+                .trim()
+                .toUpperCase(),
+            )
+            .filter(Boolean),
+        );
+        const previewAutoClosedMissingItems = existingTickets
+          .filter(
+            (t) =>
+              ['open', 'in_progress', 'waiting_parts'].includes(t.status) &&
+              (t.import_code != null || (t.title || '').toUpperCase().startsWith('IN')),
+          )
+          .map((t) => {
+            const intMatch = (t.title || '').match(/^(IN\d+)/i);
+            return {
+              id: t.id,
+              title: t.title,
+              intervention: intMatch ? intMatch[1].toUpperCase() : null,
+            };
+          })
+          .filter((t) => t.intervention && !importedInterventions.has(t.intervention));
+
         if (mode === 'preview') {
           const statusCounts = {};
           for (const row of processed) {
@@ -1773,6 +1828,8 @@ export function setupSavTicketsRoutes(
             entries,
             exits,
             statusTransitions,
+            previewAutoClosedMissing: previewAutoClosedMissingItems.length,
+            previewAutoClosedMissingItems: previewAutoClosedMissingItems.slice(0, 20),
             existingTickets: existingTickets.length,
             equipmentList,
             sample: processed.slice(0, 10).map((r) => ({
@@ -1815,7 +1872,12 @@ export function setupSavTicketsRoutes(
           createdUnlinked = 0,
           skippedDuplicates = 0,
           updatedDuplicates = 0,
-          resolved = 0;
+          resolved = 0,
+          autoClosedMissing = 0;
+
+        const touchedEquipIds = new Set(
+          processed.filter((r) => r._equipmentId).map((r) => r._equipmentId),
+        );
 
         const importAll = db.transaction(() => {
           for (const row of processed) {
@@ -1871,15 +1933,61 @@ export function setupSavTicketsRoutes(
             if (row._equipmentId) createdLinked++;
             else createdUnlinked++;
           }
+
+          // Synchronisation fichier SAV : clôturer les tickets importés actifs
+          // absents du fichier courant (archive conservée via même equipment_id).
+          const importedInterventions = new Set(
+            processed
+              .map((r) =>
+                String(r.intervention || '')
+                  .trim()
+                  .toUpperCase(),
+              )
+              .filter(Boolean),
+          );
+          const activeImportedTickets = db
+            .prepare(
+              `
+              SELECT id, title, equipment_id
+              FROM sav_tickets
+              WHERE status IN ('open', 'in_progress', 'waiting_parts')
+              AND (import_code IS NOT NULL OR title LIKE 'IN%')
+            `,
+            )
+            .all();
+
+          const nowIsoDate = new Date().toISOString().split('T')[0];
+          for (const ticket of activeImportedTickets) {
+            const intMatch = (ticket.title || '').match(/^(IN\d+)/i);
+            const interventionKey = intMatch ? intMatch[1].toUpperCase() : null;
+            if (!interventionKey || importedInterventions.has(interventionKey)) continue;
+
+            db.prepare(
+              `
+                UPDATE sav_tickets
+                SET status = 'closed',
+                    resolved_at = COALESCE(resolved_at, ?),
+                    resolution = CASE
+                      WHEN resolution IS NULL OR TRIM(resolution) = ''
+                        THEN 'Clôture automatique: ticket absent du dernier import SAV.'
+                      ELSE resolution || '\nClôture automatique: ticket absent du dernier import SAV.'
+                    END,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+              `,
+            ).run(nowIsoDate, ticket.id);
+
+            autoClosedMissing++;
+
+            if (ticket.equipment_id) touchedEquipIds.add(ticket.equipment_id);
+          }
         });
 
         importAll();
 
         // Rafraîchir le statut de TOUS les équipements concernés
         // (maintenance pour les actifs, available/in_use pour les résolus)
-        const allEquipIds = [
-          ...new Set(processed.filter((r) => r._equipmentId).map((r) => r._equipmentId)),
-        ];
+        const allEquipIds = [...touchedEquipIds];
         for (const eqId of allEquipIds) {
           refreshEquipmentStatus(eqId);
         }
@@ -1895,6 +2003,7 @@ export function setupSavTicketsRoutes(
             skippedDuplicates,
             updatedDuplicates,
             resolved,
+            autoClosedMissing,
             total: data.length,
           },
           req.user.id,
@@ -1909,8 +2018,9 @@ export function setupSavTicketsRoutes(
           skippedDuplicates,
           updatedDuplicates,
           resolved,
+          autoClosedMissing,
           total: data.length,
-          message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${resolved > 0 ? `, ${resolved} sortie(s) SAV détectée(s)` : ''}${updatedDuplicates > 0 ? `, ${updatedDuplicates} mis à jour` : ''}${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}`,
+          message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${resolved > 0 ? `, ${resolved} sortie(s) SAV détectée(s)` : ''}${autoClosedMissing > 0 ? `, ${autoClosedMissing} ticket(s) clôturé(s) car absents du fichier` : ''}${updatedDuplicates > 0 ? `, ${updatedDuplicates} mis à jour` : ''}${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}`,
         });
       } catch (error) {
         logger.error('Erreur import CSV interventions:', error);

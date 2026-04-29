@@ -204,6 +204,18 @@ const SavImportModal = ({ onClose, onImportDone }) => {
       .slice(0, 30);
   }, [preview?.equipmentList, linkSearch]);
 
+  const suggestedEquipmentByIndex = useMemo(() => {
+    if (!preview?.unmatchedItems || !preview?.equipmentList) return {};
+    const equipmentById = new Map((preview.equipmentList || []).map((e) => [e.id, e]));
+    const map = {};
+    for (const item of preview.unmatchedItems) {
+      map[item.index] = (item.suggestedEquipmentIds || [])
+        .map((id) => equipmentById.get(id))
+        .filter(Boolean);
+    }
+    return map;
+  }, [preview?.unmatchedItems, preview?.equipmentList]);
+
   // Nombre d'interventions encore non liées (après liens manuels)
   const remainingUnlinked = useMemo(() => {
     if (!preview) return 0;
@@ -377,7 +389,22 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                     🔄 {preview.statusTransitions} intervention(s) à clôturer automatiquement
                   </span>
                 )}
+                {preview.previewAutoClosedMissing > 0 && (
+                  <span className="sav-import-flow-badge sav-flow-exit">
+                    📦 {preview.previewAutoClosedMissing} ticket(s) actif(s) absent(s) du fichier
+                    seront clôturés
+                  </span>
+                )}
               </div>
+              {preview.previewAutoClosedMissingItems?.length > 0 && (
+                <p className="sav-import-unmatched-desc" style={{ marginTop: 8 }}>
+                  Exemples:{' '}
+                  {preview.previewAutoClosedMissingItems
+                    .slice(0, 5)
+                    .map((t) => t.intervention || t.title)
+                    .join(', ')}
+                </p>
+              )}
             </div>
           )}
 
@@ -524,6 +551,10 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                 Ces interventions seront importées mais non liées à un équipement. Vous pouvez les
                 lier manuellement ci-dessous ou plus tard depuis l'onglet SAV.
               </p>
+              <p className="sav-import-unmatched-desc">
+                Si le N° de série est inconnu en base, une proposition est faite sur le même code
+                article avec un équipement sans N° de série.
+              </p>
               <div className="eq-import-table-wrap" style={{ maxHeight: 300 }}>
                 <Table className="eq-import-table">
                   <thead>
@@ -532,6 +563,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                       <th>Code</th>
                       <th>Article</th>
                       <th>N° Série</th>
+                      <th>Proposition</th>
                       <th>Équipement lié</th>
                     </tr>
                   </thead>
@@ -541,12 +573,34 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                       const linkedEquip = linked
                         ? preview.equipmentList?.find((e) => e.id === linked)
                         : null;
+                      const suggestedList = suggestedEquipmentByIndex[item.index] || [];
+                      const suggested = suggestedList[0] || null;
                       return (
                         <tr key={item.index}>
                           <td className="sav-import-mono">{item.intervention}</td>
                           <td>{item.code}</td>
                           <td className="eq-import-name-cell">{item.nom}</td>
                           <td className="sav-import-small">{item.serial}</td>
+                          <td>
+                            {suggested ? (
+                              <Button
+                                variant="ghost"
+                                size="xs"
+                                style={{ fontSize: 11, padding: '3px 8px' }}
+                                onClick={() => {
+                                  setManualLinks((prev) => ({
+                                    ...prev,
+                                    [item.index]: suggested.id,
+                                  }));
+                                }}
+                                title="Lier à la proposition"
+                              >
+                                Proposer: {suggested.name}
+                              </Button>
+                            ) : (
+                              <span className="sav-import-small">—</span>
+                            )}
+                          </td>
                           <td>
                             {linkedEquip ? (
                               <div className="sav-import-linked">
@@ -638,6 +692,25 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                       </span>
                     </div>
                   ))}
+                  {!linkSearch &&
+                    (suggestedEquipmentByIndex[linkingIndex] || [])
+                      .filter((eq) => !filteredEquipment.some((f) => f.id === eq.id))
+                      .map((eq) => (
+                        <div
+                          key={`suggested-${eq.id}`}
+                          className="sav-import-link-item"
+                          onClick={() => {
+                            setManualLinks((prev) => ({ ...prev, [linkingIndex]: eq.id }));
+                            setLinkingIndex(null);
+                          }}
+                        >
+                          <strong>{eq.name}</strong>
+                          <span className="sav-import-link-ref">
+                            Proposition • {eq.reference ? `Réf: ${eq.reference}` : ''}{' '}
+                            {eq.serial_number ? `S/N: ${eq.serial_number}` : 'S/N: non renseigné'}
+                          </span>
+                        </div>
+                      ))}
                   {filteredEquipment.length === 0 && (
                     <div className="sav-import-link-empty">
                       {linkSearch ? 'Aucun résultat' : 'Tapez pour chercher...'}
@@ -706,6 +779,14 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                   {result.resolved}
                 </span>
                 <span>📤 Sorties SAV détectées</span>
+              </div>
+            )}
+            {result.autoClosedMissing > 0 && (
+              <div className="eq-import-result-stat">
+                <span className="eq-import-result-value" style={{ color: STATUS_COLORS.warning }}>
+                  {result.autoClosedMissing}
+                </span>
+                <span>📦 Clôturés car absents du fichier</span>
               </div>
             )}
           </div>

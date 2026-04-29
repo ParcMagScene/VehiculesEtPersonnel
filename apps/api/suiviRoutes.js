@@ -757,7 +757,7 @@ const PDF_ROW_MIN_H = 22;
 const PDF_TEXT_PADDING_X = 4;
 const PDF_TEXT_PADDING_Y = 5;
 const PDF_TABLE_BOTTOM = 760;
-const PDF_WATERMARK_COLOR = '#e0e4e8';
+const PDF_WATERMARK_COLOR = '#b0b8c4';
 
 // ─── Helpers PDF communs ───
 
@@ -940,7 +940,7 @@ function drawPdfWatermarkRows(doc, startY, maxY) {
   let rowNum = 0;
   while (y + PDF_ROW_MIN_H <= maxY) {
     rowNum++;
-    doc.lineWidth(0.3).strokeColor(PDF_WATERMARK_COLOR);
+    doc.lineWidth(0.5).strokeColor(PDF_WATERMARK_COLOR);
     doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, PDF_ROW_MIN_H).stroke();
 
     let x = PDF_TABLE_LEFT;

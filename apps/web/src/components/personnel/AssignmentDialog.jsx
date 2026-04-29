@@ -813,9 +813,16 @@ const AssignmentDialog = ({
     if (affaire.dateDebut) {
       const aStartDate = affaire.dateDebut.split('T')[0];
       const aEndDate = affaire.dateFin ? affaire.dateFin.split('T')[0] : aStartDate;
-      // Ne changer les dates que si elles débordent de l'affaire
-      if (startDate < aStartDate) setStartDate(aStartDate);
-      if (endDate > aEndDate) setEndDate(aEndDate);
+      // Si l'affaire chevauche la période courante, ne clamp que ce qui déborde
+      // Sinon (hors-période), ramener les deux dates sur celles de l'affaire
+      const overlaps = aStartDate <= endDate && aEndDate >= startDate;
+      if (overlaps) {
+        if (startDate < aStartDate) setStartDate(aStartDate);
+        if (endDate > aEndDate) setEndDate(aEndDate);
+      } else {
+        setStartDate(aStartDate);
+        setEndDate(aEndDate);
+      }
     }
   };
 

@@ -128,9 +128,9 @@ function TaskPDFExportModal({
       groups[k] = [];
     });
 
-    // 1) Tâches manuelles (exclure uniquement les tâches terminées)
+    // 1) Tâches manuelles (exclure uniquement les tâches terminées, et filtrer sur la date du jour)
     (tasks || [])
-      .filter((t) => t.status !== STATUS.DONE)
+      .filter((t) => t.status !== STATUS.DONE && t.date === date)
       .forEach((t) => {
         const sec = normalizeSection(t.section || 'manual');
         const item = { uid: `task-${t.id}`, type: 'task', section: sec, data: t };
@@ -141,12 +141,14 @@ function TaskPDFExportModal({
 
     // 2) Affaires — exclues de l'export PDF (les tâches liées suffisent)
 
-    // 3) Événements d'affichage non liés à des tâches (exclure les terminés)
+    // 3) Événements d'affichage non liés à des tâches (exclure les terminés, filtrer sur la date du jour)
     const linkedEventIds = new Set(
-      (tasks || []).filter((t) => t.displayEventId).map((t) => t.displayEventId),
+      (tasks || [])
+        .filter((t) => t.date === date && (t.display_event_id || t.displayEventId))
+        .map((t) => t.display_event_id || t.displayEventId),
     );
     (displayEvents || [])
-      .filter((ev) => !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE)
+      .filter((ev) => ev.date === date && !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE)
       .forEach((ev) => {
         const sec = normalizeSection(mapEventToSection(ev));
         const item = { uid: `event-${ev.id}`, type: 'event', section: sec, data: ev };
@@ -197,7 +199,7 @@ function TaskPDFExportModal({
 
     const active = Object.keys(SECTIONS).filter((k) => (groups[k] || []).length > 0);
     return { allItems: dedupedItems, grouped: groups, activeSections: active };
-  }, [tasks, displayEvents, googleRdvEvents]);
+  }, [tasks, displayEvents, googleRdvEvents, date]);
 
   // Initialiser avec tout sélectionné (une seule fois)
   useEffect(() => {

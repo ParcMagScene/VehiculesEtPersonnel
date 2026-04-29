@@ -9,7 +9,37 @@ export function registerSuiviMethods(ApiClient) {
 
     // Récupérer (ou créer automatiquement) la fiche d'un jour
     async getSuiviSheet(personnelId, date) {
-      return this.request(`/suivi/${personnelId}/${date}`, { skipCamelCase: true });
+      // Coalescing + mini cache anti-rafale pour éviter les 429 sur appels identiques
+      if (!this._suiviSheetInFlight) this._suiviSheetInFlight = new Map();
+      if (!this._suiviSheetCache) this._suiviSheetCache = new Map();
+
+      const key = `${personnelId}:${date}`;
+      const now = Date.now();
+      const cached = this._suiviSheetCache.get(key);
+
+      // Retourne la dernière réponse très récente pour absorber les doubles montages/renders
+      if (cached && now - cached.ts < 2000) {
+        return cached.data;
+      }
+
+      const inFlight = this._suiviSheetInFlight.get(key);
+      if (inFlight) return inFlight;
+
+      const requestPromise = this.request(`/suivi/${personnelId}/${date}`, {
+        skipCamelCase: true,
+      })
+        .then((data) => {
+          this._suiviSheetCache.set(key, { data, ts: Date.now() });
+          return data;
+        })
+        .finally(() => {
+          if (this._suiviSheetInFlight.get(key) === requestPromise) {
+            this._suiviSheetInFlight.delete(key);
+          }
+        });
+
+      this._suiviSheetInFlight.set(key, requestPromise);
+      return requestPromise;
     },
 
     // Mise à jour complète (statut + notes + entrées)

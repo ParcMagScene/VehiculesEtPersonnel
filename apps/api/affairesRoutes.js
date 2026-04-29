@@ -18,10 +18,23 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
     cacheMiddleware(listCache, () => 'affaires', 30_000),
     (req, res) => {
       try {
+        // Pagination cursor-based optionnelle : ?cursor=<id>&limit=<n>
+        // Sans paramètres → comportement legacy (toutes les affaires, LIMIT 5000)
+        const limit = req.query.limit ? Math.min(parseInt(req.query.limit, 10) || 200, 500) : null;
+        const cursor = req.query.cursor ? parseInt(req.query.cursor, 10) : null;
+
         // 1. Affaires explicitement enregistrées en DB
-        const dbAffaires = db
-          .prepare('SELECT * FROM affaires ORDER BY date_debut DESC LIMIT 5000')
-          .all();
+        let dbAffaires;
+        if (limit !== null) {
+          const sql = cursor
+            ? 'SELECT * FROM affaires WHERE id > ? ORDER BY id ASC LIMIT ?'
+            : 'SELECT * FROM affaires ORDER BY date_debut DESC LIMIT ?';
+          dbAffaires = cursor ? db.prepare(sql).all(cursor, limit) : db.prepare(sql).all(limit);
+        } else {
+          dbAffaires = db
+            .prepare('SELECT * FROM affaires ORDER BY date_debut DESC LIMIT 5000')
+            .all();
+        }
 
         // [PERF Phase 4] Compteurs en batch — 3 requêtes au lieu de 3×N
         const resCounts = {};
@@ -180,7 +193,14 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
         // Trier par date_debut DESC
         enriched.sort((a, b) => (b.dateDebut || '').localeCompare(a.dateDebut || ''));
 
-        res.json(enriched);
+        // Répondre avec métadonnées de pagination si cursor-based
+        if (limit !== null) {
+          const nextCursor =
+            dbAffaires.length === limit ? (dbAffaires[dbAffaires.length - 1]?.id ?? null) : null;
+          res.json({ data: enriched, nextCursor, total: enriched.length, hasMore: !!nextCursor });
+        } else {
+          res.json(enriched);
+        }
       } catch (error) {
         logger.error('Erreur GET /api/affaires:', error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });

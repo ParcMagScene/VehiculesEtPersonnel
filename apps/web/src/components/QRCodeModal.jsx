@@ -1,6 +1,7 @@
 import './QRCodeModal.css';
 
 import { Download, Link as LinkIcon, Printer, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
 import { useEffect, useRef } from 'react';
 
 import { Button, ModalLayout } from '@/design-system';
@@ -14,23 +15,10 @@ function QRCodeModal({ onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const generateQRCode = () => {
+  const generateQRCode = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    const size = 300;
-    canvas.width = size;
-    canvas.height = size;
-
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(mobileUrl)}`;
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, size, size);
-    };
-    img.src = qrApiUrl;
+    await QRCode.toCanvas(canvas, mobileUrl, { width: 300, margin: 1 });
   };
 
   const handlePrint = () => {

@@ -13,7 +13,16 @@ import { loadFromIndexedDB } from '../../utils/indexedDB';
 import LocationsMapPanel from '../locations/LocationsMapPanel';
 import LocationDialog from '../vehicles/LocationDialog';
 
-const LOCATION_TYPES = ['Salle de spectacle', 'Prestataire', 'Dépôt', 'Garage', 'Autre'];
+const LOCATION_TYPES = [
+  'Salle de spectacle',
+  'Lycée',
+  'Ecole',
+  'Salle municipale',
+  'Prestataire',
+  'Dépôt',
+  'Garage',
+  'Autre',
+];
 
 function LocationsTab({ currentUser }) {
   const toast = useToast();

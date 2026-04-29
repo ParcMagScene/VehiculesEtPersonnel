@@ -57,6 +57,7 @@
   border-radius: var(--modal-header-border-radius, 16px 16px 0 0);
   gap: var(--space-3);
   flex-shrink: 0;
+  user-select: none;
 }
 
 .ui-modal-title {

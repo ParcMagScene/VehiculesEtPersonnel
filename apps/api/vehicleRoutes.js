@@ -1,7 +1,6 @@
 import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import db, { addToHistory, getHistory } from './database.js';
 import { alertMaintenanceCreated, alertReservationCreated } from './emailService.js';
-import { deleteReservationFromGoogle, syncReservationToGoogle } from './googleBidirectionalSync.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';
 import {
@@ -488,23 +487,7 @@ export function setupVehicleRoutes(
           isRental: !!(vehicleForPrice && vehicleForPrice.is_location),
         };
 
-        // Sync eM@g -> Google (best effort). N'empêche pas la création locale en cas d'échec.
-        try {
-          const syncResult = await syncReservationToGoogle({
-            reservation: createdReservation,
-            vehicleName: createdReservation.vehicle_name,
-            userId: req.user.id,
-          });
-
-          if (syncResult?.synced && syncResult?.action === 'created' && syncResult?.eventId) {
-            db.prepare(
-              'UPDATE reservations SET google_event_id = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
-            ).run(syncResult.eventId, req.user.id, createdReservation.id);
-            mappedReservation.googleEventId = syncResult.eventId;
-          }
-        } catch (syncErr) {
-          logger.warn('Sync Google réservation (create) échouée:', syncErr.message);
-        }
+        // [SA migration] Sync bidirectionnel OAuth supprimé — Google Calendar géré via Service Account (googleRoutes.js)
 
         // Alerte email aux admins
         alertReservationCreated(db, mappedReservation, req.user.name).catch((err) =>
@@ -602,21 +585,9 @@ export function setupVehicleRoutes(
             )
             .get(req.params.id);
 
-          if (updatedReservation) {
-            const syncResult = await syncReservationToGoogle({
-              reservation: updatedReservation,
-              vehicleName: updatedReservation.vehicle_name,
-              userId: req.user.id,
-            });
-
-            if (syncResult?.synced && syncResult?.action === 'created' && syncResult?.eventId) {
-              db.prepare(
-                'UPDATE reservations SET google_event_id = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
-              ).run(syncResult.eventId, req.user.id, req.params.id);
-            }
-          }
+          // [SA migration] Sync bidirectionnel OAuth supprimé — Google Calendar géré via Service Account (googleRoutes.js)
         } catch (syncErr) {
-          logger.warn('Sync Google réservation (update) échouée:', syncErr.message);
+          logger.warn('Sync Google réservation (update) ignorée:', syncErr.message);
         }
 
         invalidateEntity('reservations');
@@ -687,15 +658,7 @@ export function setupVehicleRoutes(
 
       addToHistory('reservation', req.params.id, 'deleted', null, req.user.id, req.user.name);
 
-      // Sync eM@g -> Google (best effort). N'empêche pas la suppression locale.
-      try {
-        await deleteReservationFromGoogle({
-          googleEventId: existing?.google_event_id,
-          userId: req.user.id,
-        });
-      } catch (syncErr) {
-        logger.warn('Sync Google réservation (delete) échouée:', syncErr.message);
-      }
+      // [SA migration] Sync bidirectionnel OAuth supprimé — Google Calendar géré via Service Account (googleRoutes.js)
 
       invalidateEntity('reservations');
       invalidateEntity('affaires');

@@ -436,9 +436,9 @@ const AffaireDetailContent = ({
     try {
       const promises = [];
       if (what === 'reservation') {
-        promises.push(api.getVehicles(), api.getClients(), api.getDrivers(), api.getLocations());
-        const [vehicles, clients, drivers, locations] = await Promise.all(promises);
-        setActionData((prev) => ({ ...prev, vehicles, clients, drivers, locations }));
+        promises.push(api.getVehicles(), api.getClients(), api.getLocations());
+        const [vehicles, clients, locations] = await Promise.all(promises);
+        setActionData((prev) => ({ ...prev, vehicles, clients, drivers: [], locations }));
       } else if (what === 'personnel') {
         const persons = await api.getPersons();
         setActionData((prev) => ({ ...prev, persons: Array.isArray(persons) ? persons : [] }));

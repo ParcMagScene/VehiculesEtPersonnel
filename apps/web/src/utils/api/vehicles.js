@@ -109,20 +109,6 @@ export function registerVehicleMethods(ApiClient) {
       return this.request(`/annuaire/clients/${id}`, { method: 'DELETE' });
     },
 
-    // Conducteurs
-    async getDrivers() {
-      return this.request('/drivers');
-    },
-    async createDriver(driver) {
-      return this.request('/drivers', { method: 'POST', body: JSON.stringify(driver) });
-    },
-    async updateDriver(id, driver) {
-      return this.request(`/drivers/${id}`, { method: 'PUT', body: JSON.stringify(driver) });
-    },
-    async deleteDriver(id) {
-      return this.request(`/drivers/${id}`, { method: 'DELETE' });
-    },
-
     // Lieux
     async getLocations() {
       return this.request('/locations');

@@ -224,6 +224,16 @@ const SKILL_CATEGORIES = [
   { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
 
+const PERMANENT_ACTIVE_TYPES = new Set(['permanent', 'stagiaire', 'apprenti']);
+
+const getPersonTypeLabel = (p) => {
+  const type = (p?.type || '').toLowerCase();
+  if (type === 'permanent') return 'Permanent';
+  if (type === 'stagiaire') return 'Stagiaire';
+  if (type === 'apprenti') return 'Apprenti';
+  return p?.contractType || p?.contract_type || 'Contractuel';
+};
+
 /**
  * AssignmentDialog — Dialog to create or edit a mission + assignment from a planning cell click
  *
@@ -484,6 +494,21 @@ const AssignmentDialog = ({
     loadPersons();
   }, []);
 
+  const eligiblePersons = useMemo(() => {
+    return (allPersons || []).filter((p) => {
+      const status = (p.status || '').toLowerCase();
+      const type = (p.type || '').toLowerCase();
+      const contractType = (p.contractType || p.contract_type || '').toLowerCase();
+      const showInPlanning = p.showInPlanning !== false && p.show_in_planning !== 0;
+      const isActive = !status || status === 'active';
+      const isPermanentFamily =
+        PERMANENT_ACTIVE_TYPES.has(type) ||
+        contractType === 'stagiaire' ||
+        contractType === 'apprenti';
+      return isActive && showInPlanning && isPermanentFamily;
+    });
+  }, [allPersons]);
+
   // Fermer le dropdown d'ajout de personnes au clic extérieur
   useEffect(() => {
     if (!showAddPersonDropdown) return;
@@ -499,41 +524,45 @@ const AssignmentDialog = ({
 
   const selectedPerson = useMemo(() => {
     if (selectedPersonId === person.id) return person;
-    return allPersons.find((p) => p.id === selectedPersonId) || person;
-  }, [selectedPersonId, person, allPersons]);
+    return eligiblePersons.find((p) => p.id === selectedPersonId) || person;
+  }, [selectedPersonId, person, eligiblePersons]);
 
   const filteredPersons = useMemo(() => {
-    let list = allPersons;
+    let list = eligiblePersons;
     if (personSearch.trim()) {
       const q = personSearch.toLowerCase();
-      list = allPersons.filter(
+      list = eligiblePersons.filter(
         (p) =>
           `${p.firstName || ''} ${p.lastName || ''}`.toLowerCase().includes(q) ||
-          (p.type || '').toLowerCase().includes(q),
+          (p.type || '').toLowerCase().includes(q) ||
+          (p.contractType || p.contract_type || '').toLowerCase().includes(q),
       );
     }
     return sortPersonsByFavorites(list);
-  }, [allPersons, personSearch, sortPersonsByFavorites]);
+  }, [eligiblePersons, personSearch, sortPersonsByFavorites]);
 
   // Multi-affectation : personnes supplémentaires résolues
   const additionalPersons = useMemo(() => {
-    return additionalPersonIds.map((id) => allPersons.find((p) => p.id === id)).filter(Boolean);
-  }, [additionalPersonIds, allPersons]);
+    return additionalPersonIds
+      .map((id) => eligiblePersons.find((p) => p.id === id))
+      .filter(Boolean);
+  }, [additionalPersonIds, eligiblePersons]);
 
   // Multi-affectation : liste filtrée pour ajout (exclure la personne principale et celles déjà ajoutées)
   const filteredAddPersons = useMemo(() => {
     const excludedIds = new Set([person.id, ...additionalPersonIds]);
-    let list = allPersons.filter((p) => !excludedIds.has(p.id));
+    let list = eligiblePersons.filter((p) => !excludedIds.has(p.id));
     if (addPersonSearch.trim()) {
       const q = addPersonSearch.toLowerCase();
       list = list.filter(
         (p) =>
           `${p.firstName || ''} ${p.lastName || ''}`.toLowerCase().includes(q) ||
-          (p.type || '').toLowerCase().includes(q),
+          (p.type || '').toLowerCase().includes(q) ||
+          (p.contractType || p.contract_type || '').toLowerCase().includes(q),
       );
     }
     return sortPersonsByFavorites(list);
-  }, [allPersons, person.id, additionalPersonIds, addPersonSearch, sortPersonsByFavorites]);
+  }, [eligiblePersons, person.id, additionalPersonIds, addPersonSearch, sortPersonsByFavorites]);
 
   // Charger les affaires
   useEffect(() => {
@@ -845,9 +874,7 @@ const AssignmentDialog = ({
                   {selectedPerson.firstName} {selectedPerson.lastName}
                 </span>
                 <span className={`asd-person-type type-${selectedPerson.type}`}>
-                  {selectedPerson.type === 'permanent'
-                    ? 'Permanent'
-                    : selectedPerson.contractType || 'Contractuel'}
+                  {getPersonTypeLabel(selectedPerson)}
                 </span>
                 <ChevronDown size={14} className="asd-person-chevron" />
               </div>
@@ -879,7 +906,7 @@ const AssignmentDialog = ({
                           {p.firstName} {p.lastName}
                         </span>
                         <span className={`asd-person-opt-type type-${p.type}`}>
-                          {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
+                          {getPersonTypeLabel(p)}
                         </span>
                         {p.id === selectedPersonId && <Check size={14} />}
                       </div>
@@ -895,7 +922,7 @@ const AssignmentDialog = ({
                   {person.firstName} {person.lastName}
                 </span>
                 <span className={`asd-person-type type-${person.type}`}>
-                  {person.type === 'permanent' ? 'Permanent' : person.contractType || 'Contractuel'}
+                  {getPersonTypeLabel(person)}
                 </span>
                 {person.skills?.length > 0 && (
                   <div className="asd-person-skills">
@@ -928,7 +955,7 @@ const AssignmentDialog = ({
                         {p.firstName} {p.lastName}
                       </span>
                       <span className={`asd-person-type type-${p.type}`}>
-                        {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
+                        {getPersonTypeLabel(p)}
                       </span>
                       <Button
                         variant="ghost"
@@ -992,7 +1019,7 @@ const AssignmentDialog = ({
                               {p.firstName} {p.lastName}
                             </span>
                             <span className={`asd-person-opt-type type-${p.type}`}>
-                              {p.type === 'permanent' ? 'Perm.' : p.contractType || 'Contr.'}
+                              {getPersonTypeLabel(p)}
                             </span>
                           </div>
                         ))

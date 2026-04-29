@@ -1157,6 +1157,19 @@
   border-color: var(--interactive-primary);
 }
 
+.task-planning-panel .btn-assign.has-assignment {
+  border-style: solid;
+  border-color: var(--theme-success-alt);
+  color: var(--theme-success-alt);
+  background: color-mix(in srgb, var(--theme-success-alt) 12%, transparent);
+}
+
+.task-planning-panel .btn-assign.has-assignment:hover {
+  border-color: var(--theme-success-dark);
+  color: var(--theme-success-dark);
+  background: color-mix(in srgb, var(--theme-success-alt) 20%, transparent);
+}
+
 .task-planning-panel .task-person.assigned {
   cursor: pointer;
   padding: 2px 8px;

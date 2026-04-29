@@ -191,6 +191,10 @@ const authenticateToken = createAuthenticateToken(JWT_SECRET);
 const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments');
 app.use('/attachments', authenticateToken, express.static(attachmentsPath, { maxAge: '1h' }));
 
+// [AUDIT Sprint 1] Catalogues fournisseurs PDF — protégés par authentification
+const cataloguesPath = path.join(__dirname, '..', '..', 'public', 'catalogues');
+app.use('/catalogues', authenticateToken, express.static(cataloguesPath, { maxAge: '1h' }));
+
 // Servir les BL/BP importés
 app.use(
   '/bl-imports',

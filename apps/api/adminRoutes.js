@@ -871,8 +871,6 @@ export function setupAdminRoutes(
         'UPDATE reservations SET modified_by = ? WHERE modified_by = ?',
         'UPDATE clients SET created_by = ? WHERE created_by = ?',
         'UPDATE clients SET modified_by = ? WHERE modified_by = ?',
-        'UPDATE drivers SET created_by = ? WHERE created_by = ?',
-        'UPDATE drivers SET modified_by = ? WHERE modified_by = ?',
         'UPDATE locations SET created_by = ? WHERE created_by = ?',
         'UPDATE locations SET modified_by = ? WHERE modified_by = ?',
         'UPDATE garages SET created_by = ? WHERE created_by = ?',

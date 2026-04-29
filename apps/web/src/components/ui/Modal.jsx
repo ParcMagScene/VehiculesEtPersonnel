@@ -80,7 +80,12 @@ function Modal({ open, onClose, size = 'md', className = '', children }) {
   const cls = ['ui-modal', `ui-modal--${size}`, className].filter(Boolean).join(' ');
 
   return createPortal(
-    <div className="ui-modal-overlay" ref={overlayRef} onMouseDown={handleOverlayClick}>
+    <div
+      className="ui-modal-overlay"
+      ref={overlayRef}
+      onMouseDown={handleOverlayClick}
+      onClick={handleOverlayClick}
+    >
       <div className={cls} role="dialog" aria-modal="true">
         {children}
       </div>

@@ -440,6 +440,13 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         ).run(photo, reference, req.params.id);
       }
 
+      // Propager la marque aux équipements ayant la même référence
+      if (resolved.brand && reference) {
+        db.prepare(
+          'UPDATE equipment SET brand = ?, brand_id = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
+        ).run(resolved.brand, resolved.brand_id ?? null, reference, req.params.id);
+      }
+
       addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
 
       res.json({ success: true });

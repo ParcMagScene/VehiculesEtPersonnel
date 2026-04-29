@@ -1,6 +1,8 @@
 import {
   Calendar,
   CheckCircle,
+  ChevronDown,
+  ChevronUp,
   DollarSign,
   Edit2,
   ExternalLink,
@@ -30,6 +32,26 @@ import { cleanName, SAV_PRIORITY, SAV_STATUS, SAV_TYPES } from './equipmentConst
 import { getCategoryHierarchy } from './equipmentUtils';
 
 // ═══ LISTE DES TICKETS SAV ═══
+const PRIORITY_ORDER = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+const SavSortIcon = ({ col, sortCol, sortDir }) => {
+  if (sortCol !== col) return <ChevronDown size={11} className="sort-icon" />;
+  return sortDir === 'asc' ? (
+    <ChevronUp size={11} className="sort-icon sort-icon-active" />
+  ) : (
+    <ChevronDown size={11} className="sort-icon sort-icon-active" />
+  );
+};
+
+const SavTh = ({ col, children, className, onSort, sortCol, sortDir }) => (
+  <th className={`eq-sort-th${className ? ' ' + className : ''}`} onClick={() => onSort(col)}>
+    <span className="sort-th-inner">
+      {children}
+      <SavSortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
+    </span>
+  </th>
+);
+
 const SavTicketsList = ({
   tickets,
   _equipment,
@@ -40,7 +62,79 @@ const SavTicketsList = ({
   onEdit,
   onDelete,
 }) => {
-  if (tickets.length === 0) {
+  const [sortCol, setSortCol] = useState('createdAt');
+  const [sortDir, setSortDir] = useState('desc');
+
+  const handleSort = (col) => {
+    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
+  };
+
+  const sorted = useMemo(() => {
+    const arr = [...tickets];
+    arr.sort((a, b) => {
+      let av, bv;
+      switch (sortCol) {
+        case 'priority':
+          av = PRIORITY_ORDER[a.priority] ?? 2;
+          bv = PRIORITY_ORDER[b.priority] ?? 2;
+          break;
+        case 'title':
+          av = a.title || '';
+          bv = b.title || '';
+          break;
+        case 'equipment':
+          av = a.equipmentName || a.importName || '';
+          bv = b.equipmentName || b.importName || '';
+          break;
+        case 'reference':
+          av = a.equipmentReference || a.importCode || '';
+          bv = b.equipmentReference || b.importCode || '';
+          break;
+        case 'uid':
+          av = a.equipmentUid || '';
+          bv = b.equipmentUid || '';
+          break;
+        case 'serial':
+          av = a.equipmentSerialNumber || a.importSerial || '';
+          bv = b.equipmentSerialNumber || b.importSerial || '';
+          break;
+        case 'type':
+          av = a.type || '';
+          bv = b.type || '';
+          break;
+        case 'status':
+          av = a.status || '';
+          bv = b.status || '';
+          break;
+        case 'createdAt':
+          av = a.createdAt || '';
+          bv = b.createdAt || '';
+          break;
+        case 'resolvedAt':
+          av = a.resolvedAt || '';
+          bv = b.resolvedAt || '';
+          break;
+        case 'cost':
+          av = a.cost ?? -1;
+          bv = b.cost ?? -1;
+          break;
+        default:
+          av = '';
+          bv = '';
+      }
+      if (typeof av === 'number' && typeof bv === 'number')
+        return sortDir === 'asc' ? av - bv : bv - av;
+      const cmp = String(av).localeCompare(String(bv), 'fr', { sensitivity: 'base' });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return arr;
+  }, [tickets, sortCol, sortDir]);
+
+  if (sorted.length === 0) {
     return (
       <EmptyState
         icon={<Wrench size={48} strokeWidth={1} />}
@@ -55,22 +149,80 @@ const SavTicketsList = ({
       <Table>
         <thead>
           <tr>
-            <th>Priorité</th>
-            <th>Titre</th>
-            <th>Matériel</th>
-            <th className="sav-col-ref">Réf.</th>
-            <th className="sav-col-uid">UID</th>
-            <th className="sav-col-serial">N° Série</th>
-            <th>Type</th>
-            <th>Statut</th>
-            <th className="sav-col-date">Début</th>
-            <th className="sav-col-date">Fin</th>
-            <th className="sav-col-cost">Coût</th>
+            <SavTh col="priority" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Priorité
+            </SavTh>
+            <SavTh col="title" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Titre
+            </SavTh>
+            <SavTh col="equipment" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Matériel
+            </SavTh>
+            <SavTh
+              col="reference"
+              className="sav-col-ref"
+              onSort={handleSort}
+              sortCol={sortCol}
+              sortDir={sortDir}
+            >
+              Réf.
+            </SavTh>
+            <SavTh
+              col="uid"
+              className="sav-col-uid"
+              onSort={handleSort}
+              sortCol={sortCol}
+              sortDir={sortDir}
+            >
+              UID
+            </SavTh>
+            <SavTh
+              col="serial"
+              className="sav-col-serial"
+              onSort={handleSort}
+              sortCol={sortCol}
+              sortDir={sortDir}
+            >
+              N° Série
+            </SavTh>
+            <SavTh col="type" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Type
+            </SavTh>
+            <SavTh col="status" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Statut
+            </SavTh>
+            <SavTh
+              col="createdAt"
+              className="sav-col-date"
+              onSort={handleSort}
+              sortCol={sortCol}
+              sortDir={sortDir}
+            >
+              Début
+            </SavTh>
+            <SavTh
+              col="resolvedAt"
+              className="sav-col-date"
+              onSort={handleSort}
+              sortCol={sortCol}
+              sortDir={sortDir}
+            >
+              Fin
+            </SavTh>
+            <SavTh
+              col="cost"
+              className="sav-col-cost"
+              onSort={handleSort}
+              sortCol={sortCol}
+              sortDir={sortDir}
+            >
+              Coût
+            </SavTh>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {tickets.map((t) => {
+          {sorted.map((t) => {
             const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
             const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
             return (

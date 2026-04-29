@@ -59,6 +59,7 @@ const getCategoryColor = (category) => {
 
 const LEAVE_TYPE_COLORS = {
   unavailable: 'var(--theme-text-muted)',
+  absence: STATUS_COLORS.danger,
   conge_paye: '#60a5fa',
   rtt: '#a78bfa',
   maladie: '#f87171',
@@ -76,6 +77,7 @@ const LEAVE_TYPE_LABELS = {
   formation: 'Formation',
   repos: 'Repos',
   autre: 'Autre',
+  absence: 'Absence',
 };
 const STATUS_LABELS = { pending: 'En attente', approved: 'Approuvé', rejected: 'Refusé' };
 const LEAVE_APPROVAL_COLORS = {

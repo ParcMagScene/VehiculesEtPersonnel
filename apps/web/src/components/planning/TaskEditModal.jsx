@@ -7,6 +7,7 @@ import {
   Clock,
   ExternalLink,
   FileText,
+  GitMerge,
   Link2,
   Loader,
   MapPin,
@@ -53,22 +54,42 @@ const SECTIONS = {
 // Sections aliasées vers "courses"
 const COURSE_SECTIONS = new Set(['courses', 'enlevement', 'retour', 'recuperation']);
 
-// Nettoyer le titre d'une tâche courses : retirer emoji + préfixe type (Livraison, Récupération, etc.)
-const cleanCourseTitle = (title, section) => {
-  if (!title || !COURSE_SECTIONS.has(section)) return title || '';
-  return (
-    title
-      // eslint-disable-next-line no-misleading-character-class
-      .replace(
-        /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
-        '',
-      )
-      .replace(
-        /^(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\s*—?\s*/i,
-        '',
-      )
-      .trim() || title
-  );
+// Initialise le titre dans la modale d'édition :
+// retire emoji + préfixe opérationnel + suffixe " — googleEventTitle" pour toutes les sections.
+const initTitle = (task) => {
+  const raw = task.title || '';
+  const googleTitle = task.googleEventTitle || task.google_event_title || '';
+
+  // 1. Retirer le préfixe emoji
+  // eslint-disable-next-line no-misleading-character-class
+  let t = raw
+    .replace(
+      /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
+      '',
+    )
+    .trim();
+
+  // 2. Retirer le label de section opérationnel
+  t = t
+    .replace(
+      /^(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour|Pr(?:e|é)paration|Preparation|Chargement|D(?:e|é)part|Installation|Montage|D(?:e|é)montage|Demontage|Intervention)\s*[—–\-:]?\s*/iu,
+      '',
+    )
+    .trim();
+
+  // 3. Retirer le suffixe " — googleEventTitle" si identique
+  if (googleTitle) {
+    const sep = ' — ';
+    const idx = t.indexOf(sep);
+    if (idx >= 0) {
+      const suffix = t.slice(idx + sep.length).trim();
+      if (suffix.toLowerCase() === googleTitle.trim().toLowerCase()) {
+        t = t.slice(0, idx).trim();
+      }
+    }
+  }
+
+  return t || raw;
 };
 
 function TaskEditModal({ task, persons = [], onSave, onClose }) {
@@ -84,8 +105,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const [affaireDropdownOpen, setAffaireDropdownOpen] = useState(false);
   const affaireRef = useRef(null);
 
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeSearch, setMergeSearch] = useState('');
+  const [mergeCandidates, setMergeCandidates] = useState([]);
+  const [mergeLoadingState, setMergeLoadingState] = useState(false);
+  const [merging, setMerging] = useState(false);
+
   const [form, setForm] = useState({
-    title: cleanCourseTitle(task.title, task.section) || '',
+    title: initTitle(task),
     date: task.date || '',
     period: task.period || 'AM',
     time: task.time || '',
@@ -121,8 +148,10 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
 
   // Sync if task changes
   useEffect(() => {
+    setMergeOpen(false);
+    setMergeCandidates([]);
     setForm({
-      title: cleanCourseTitle(task.title, task.section) || '',
+      title: initTitle(task),
       date: task.date || '',
       period: task.period || 'AM',
       time: task.time || '',
@@ -162,6 +191,36 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const openMerge = async () => {
+    setMergeOpen(true);
+    if (mergeCandidates.length > 0) return;
+    setMergeLoadingState(true);
+    try {
+      const data = await api.getTasks({ date: task.date });
+      setMergeCandidates(
+        (Array.isArray(data) ? data : data?.tasks || []).filter((t) => t.id !== task.id),
+      );
+    } catch {
+      setMergeCandidates([]);
+    } finally {
+      setMergeLoadingState(false);
+    }
+  };
+
+  const handleMerge = async (targetId) => {
+    setMerging(true);
+    try {
+      await api.mergeTasks(task.id, targetId);
+      toast.success('Tâches fusionnées');
+      onSave?.();
+      onClose();
+    } catch {
+      toast.error('Erreur lors de la fusion');
+    } finally {
+      setMerging(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -169,7 +228,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       const capitalizedTitle = form.title.trim();
       const finalTitle = capitalizedTitle
         ? capitalizedTitle.charAt(0).toUpperCase() + capitalizedTitle.slice(1)
-        : '';
+        : task.title;
       await api.updateTask(task.id, {
         title: finalTitle,
         date: form.date,
@@ -430,6 +489,75 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
             placeholder="Notes..."
             rows={3}
           />
+        </div>
+        {/* ── Fusion de tâches ── */}
+        <div className="tem-field full">
+          <div className="tem-merge-header">
+            <Button
+              variant="ghost"
+              type="button"
+              className="tem-merge-toggle"
+              onClick={mergeOpen ? () => setMergeOpen(false) : openMerge}
+            >
+              <GitMerge size={13} />
+              {mergeOpen ? 'Annuler la fusion' : 'Fusionner avec une autre tâche…'}
+            </Button>
+          </div>
+          {mergeOpen && (
+            <div className="tem-merge-panel">
+              <Input
+                type="text"
+                value={mergeSearch}
+                onChange={(e) => setMergeSearch(e.target.value)}
+                placeholder="Filtrer par titre ou affaire…"
+                className="tem-merge-search"
+              />
+              {mergeLoadingState ? (
+                <div className="tem-merge-loading">
+                  <Loader size={14} className="spin" /> Chargement…
+                </div>
+              ) : (
+                <div className="tem-merge-list">
+                  {mergeCandidates
+                    .filter((c) => {
+                      if (!mergeSearch.trim()) return true;
+                      const q = mergeSearch.toLowerCase();
+                      return (
+                        (c.title || '').toLowerCase().includes(q) ||
+                        (c.affaireNum || c.affaire_num || '').toLowerCase().includes(q)
+                      );
+                    })
+                    .slice(0, 20)
+                    .map((c) => (
+                      <div key={c.id} className="tem-merge-item">
+                        <span className="tem-merge-item-title">
+                          {c.affaireNum || c.affaire_num ? (
+                            <strong>{c.affaireNum || c.affaire_num} — </strong>
+                          ) : null}
+                          {initTitle(c)}
+                        </span>
+                        <span className="tem-merge-item-meta">
+                          {c.personFirstName || ''} {c.personLastName || ''} · {c.section || ''}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          type="button"
+                          className="tem-merge-btn"
+                          onClick={() => handleMerge(c.id)}
+                          disabled={merging}
+                        >
+                          {merging ? <Loader size={12} className="spin" /> : <GitMerge size={12} />}
+                          Fusionner
+                        </Button>
+                      </div>
+                    ))}
+                  {mergeCandidates.length === 0 && !mergeLoadingState && (
+                    <div className="tem-merge-empty">Aucune autre tâche pour cette date</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </ModalLayout>

@@ -949,4 +949,121 @@ export function runPostInitMigrations(db) {
   } catch (e) {
     logger.warn('⚠️ Migration show_in_planning:', e.message);
   }
+
+  // ═══ Sprint 2 — FK vehicles.assigned_to → persons(id) ═══
+  // Ajouter les FK manquantes sur vehicles (assigned_to + modified_by) via recreation de table
+  try {
+    const vehiclesFKList = db.pragma("foreign_key_list('vehicles')");
+    const hasAssignedToFK = vehiclesFKList.some(
+      (fk) => fk.from === 'assigned_to' && fk.table === 'persons',
+    );
+    if (!hasAssignedToFK) {
+      // Récupérer les colonnes actuelles pour construire le SELECT dynamiquement
+      const cols = db.pragma("table_info('vehicles')").map((c) => c.name);
+      const colList = cols.join(', ');
+      db.exec(`
+        PRAGMA foreign_keys = OFF;
+        BEGIN;
+        CREATE TABLE vehicles_new (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          type TEXT,
+          registration TEXT,
+          brand TEXT,
+          model TEXT,
+          color TEXT,
+          owner TEXT,
+          comment TEXT,
+          display_color TEXT,
+          photo TEXT,
+          order_index INTEGER DEFAULT 0,
+          is_location BOOLEAN DEFAULT 0,
+          created_by INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          modified_by INTEGER,
+          modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          kilometrage INTEGER DEFAULT 0,
+          controle_technique_type TEXT,
+          controle_technique_date TEXT,
+          controle_technique_deadline TEXT,
+          controles_techniques TEXT DEFAULT '[]',
+          category TEXT,
+          vin TEXT,
+          status TEXT DEFAULT 'available',
+          notes TEXT,
+          year INTEGER,
+          last_maintenance_date TEXT,
+          last_maintenance_km INTEGER,
+          mileage_history TEXT,
+          assigned_to INTEGER,
+          pupitre TEXT,
+          is_insured BOOLEAN DEFAULT 0,
+          insurance_company TEXT,
+          insurance_number TEXT,
+          insurance_expiry TEXT,
+          latitude REAL,
+          longitude REAL,
+          location_updated_at DATETIME,
+          daily_rate REAL DEFAULT 0,
+          weekly_rate REAL DEFAULT 0,
+          monthly_rate REAL DEFAULT 0,
+          FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+          FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL,
+          FOREIGN KEY (assigned_to) REFERENCES persons(id) ON DELETE SET NULL
+        );
+        INSERT INTO vehicles_new (${colList}) SELECT ${colList} FROM vehicles;
+        DROP TABLE vehicles;
+        ALTER TABLE vehicles_new RENAME TO vehicles;
+        CREATE INDEX IF NOT EXISTS idx_vehicles_type ON vehicles(type);
+        CREATE INDEX IF NOT EXISTS idx_vehicles_registration ON vehicles(registration);
+        CREATE INDEX IF NOT EXISTS idx_vehicles_assigned_to ON vehicles(assigned_to);
+        COMMIT;
+        PRAGMA foreign_keys = ON;
+      `);
+      logger.info('✅ Sprint 2: FK vehicles.assigned_to → persons(id) ajoutée');
+    }
+  } catch (e) {
+    logger.warn('⚠️ Migration Sprint 2 FK vehicles:', e.message);
+  }
+
+  // ═══ Sprint 2 — UNIQUE constraint persons.driver_id ═══
+  // Un chauffeur (drivers) ne peut être lié qu'à une seule personne
+  try {
+    const indexes = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_persons_driver_id_unique'",
+      )
+      .get();
+    if (!indexes) {
+      db.exec(
+        'CREATE UNIQUE INDEX idx_persons_driver_id_unique ON persons(driver_id) WHERE driver_id IS NOT NULL',
+      );
+      logger.info('✅ Sprint 2: UNIQUE INDEX idx_persons_driver_id_unique créé');
+    }
+  } catch (e) {
+    logger.warn('⚠️ Migration Sprint 2 UNIQUE persons.driver_id:', e.message);
+  }
+
+  // ═══ Sprint 4 — Index manquants : orders, order_items, quotes ═══
+  const sprint4Indexes = [
+    'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',
+    'CREATE INDEX IF NOT EXISTS idx_orders_affaire ON orders(affaire_id)',
+    'CREATE INDEX IF NOT EXISTS idx_orders_supplier ON orders(supplier_id)',
+    'CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)',
+    'CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)',
+    'CREATE INDEX IF NOT EXISTS idx_quotes_status ON quotes(status)',
+    'CREATE INDEX IF NOT EXISTS idx_quotes_affaire ON quotes(affaire_id)',
+    'CREATE INDEX IF NOT EXISTS idx_equipment_status ON equipment(status)',
+    'CREATE INDEX IF NOT EXISTS idx_equipment_category ON equipment(category_id)',
+  ];
+  let s4IdxOk = 0;
+  for (const sql of sprint4Indexes) {
+    try {
+      db.exec(sql);
+      s4IdxOk++;
+    } catch (_) {
+      /* colonne absente ou index déjà existant — ignoré */
+    }
+  }
+  logger.info(`✅ Sprint 4 Index: ${s4IdxOk}/${sprint4Indexes.length} créés/vérifiés`);
 } // fin runPostInitMigrations

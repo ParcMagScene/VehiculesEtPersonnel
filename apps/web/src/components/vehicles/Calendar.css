@@ -1050,13 +1050,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   width: fit-content;
-  max-width: 100%;
+  max-width: calc(100% - 0.5rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 3px;
   pointer-events: auto;
-  position: relative;
+  position: absolute;
+  bottom: 0.2rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: var(--z-dropdown);
 }
 

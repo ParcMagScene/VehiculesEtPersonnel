@@ -9,6 +9,7 @@ import {
   Square,
   Tag,
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
 import { useMemo, useState } from 'react';
 
@@ -111,9 +112,24 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
     return { labelW, labelH, cols, rows, perPage: cols * rows };
   };
 
-  const handlePrintBatch = () => {
+  const handlePrintBatch = async () => {
     const selected = equipment.filter((eq) => selectedIds.has(eq.id));
     if (selected.length === 0) return;
+
+    // Pré-générer les QR codes localement (pas d'appel externe)
+    const qrDataUrlMap = new Map(
+      await Promise.all(
+        selected.map(async (eq) => [
+          eq.id,
+          eq.uid
+            ? await QRCode.toDataURL(`${APP_BASE_URL}/#/mobile/equipment/${eq.uid}`, {
+                width: 200,
+                margin: 1,
+              })
+            : null,
+        ]),
+      ),
+    );
 
     const layout = calcLayout();
     const pages = [];
@@ -124,6 +140,7 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
       const labels = pageItems
         .map((eq) => {
           const qrUrl = eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : null;
+          const qrDataUrl = qrDataUrlMap.get(eq.id);
           return (
             '<div class="batch-label" style="width:' +
             layout.labelW +
@@ -145,11 +162,7 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
                 '</b></div>'
               : '') +
             '</div>' +
-            (qrUrl
-              ? '<div class="batch-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' +
-                encodeURIComponent(qrUrl) +
-                '" alt="QR" /></div>'
-              : '') +
+            (qrUrl ? '<div class="batch-qr"><img src="' + qrDataUrl + '" alt="QR" /></div>' : '') +
             '</div>' +
             '</div>'
           );

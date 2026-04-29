@@ -474,6 +474,9 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                   required
                 >
                   <option value="Salle de spectacle">Salle de spectacle</option>
+                  <option value="Lycée">Lycée</option>
+                  <option value="Ecole">Ecole</option>
+                  <option value="Salle municipale">Salle municipale</option>
                   <option value="Prestataire">Prestataire</option>
                   <option value="Dépôt">Dépôt</option>
                   <option value="Garage">Garage</option>

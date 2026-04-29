@@ -52,11 +52,9 @@ function MobileApp({ onSwitchToDesktop }) {
   const [reservations, setReservations] = useState([]);
   const [maintenances, setMaintenances] = useState([]);
   const [clients, setClients] = useState([]);
-  const [drivers, setDrivers] = useState([]);
   const [garages, setGarages] = useState([]);
   const [auxLoaded, setAuxLoaded] = useState({
     clients: false,
-    drivers: false,
     garages: false,
   });
   const [auxDataLoading, setAuxDataLoading] = useState(false);
@@ -139,17 +137,11 @@ function MobileApp({ onSwitchToDesktop }) {
 
   // Charger les référentiels à la demande (écrans planning/réservation/maintenance)
   const loadAuxiliaryParcData = useCallback(
-    async ({
-      includeClients = false,
-      includeDrivers = false,
-      includeGarages = false,
-      force = false,
-    } = {}) => {
+    async ({ includeClients = false, includeGarages = false, force = false } = {}) => {
       const needClients = includeClients && (force || !auxLoaded.clients);
-      const needDrivers = includeDrivers && (force || !auxLoaded.drivers);
       const needGarages = includeGarages && (force || !auxLoaded.garages);
 
-      if (!needClients && !needDrivers && !needGarages) return;
+      if (!needClients && !needGarages) return;
 
       setAuxDataLoading(true);
       try {
@@ -158,13 +150,6 @@ function MobileApp({ onSwitchToDesktop }) {
           tasks.push(
             api.getClients().then((data) => {
               setClients(data);
-            }),
-          );
-        }
-        if (needDrivers) {
-          tasks.push(
-            api.getDrivers().then((data) => {
-              setDrivers(data);
             }),
           );
         }
@@ -180,7 +165,6 @@ function MobileApp({ onSwitchToDesktop }) {
 
         setAuxLoaded((prev) => ({
           clients: prev.clients || needClients,
-          drivers: prev.drivers || needDrivers,
           garages: prev.garages || needGarages,
         }));
       } catch (error) {
@@ -201,7 +185,6 @@ function MobileApp({ onSwitchToDesktop }) {
       loadCoreParcData(),
       loadAuxiliaryParcData({
         includeClients: true,
-        includeDrivers: true,
         includeGarages: true,
         force: true,
       }),
@@ -217,7 +200,7 @@ function MobileApp({ onSwitchToDesktop }) {
     if (!isAuthenticated || isLoading) return;
 
     if (currentScreen === 'planning' || currentScreen === 'reservations') {
-      loadAuxiliaryParcData({ includeClients: true, includeDrivers: true });
+      loadAuxiliaryParcData({ includeClients: true });
       return;
     }
 
@@ -261,8 +244,8 @@ function MobileApp({ onSwitchToDesktop }) {
     maintenanceFormRef.current?.openForm();
   };
 
-  const planningDepsReady = auxLoaded.clients && auxLoaded.drivers;
-  const reservationsDepsReady = auxLoaded.clients && auxLoaded.drivers;
+  const planningDepsReady = auxLoaded.clients;
+  const reservationsDepsReady = auxLoaded.clients;
   const maintenancesDepsReady = auxLoaded.garages;
 
   if (isLoading) {
@@ -431,7 +414,7 @@ function MobileApp({ onSwitchToDesktop }) {
                 currentDate={new Date()}
                 onClose={() => setCurrentScreen('parc-dashboard')}
                 clients={clients}
-                drivers={drivers}
+                drivers={[]}
                 onRefresh={loadParcData}
               />
             </Suspense>
@@ -461,7 +444,7 @@ function MobileApp({ onSwitchToDesktop }) {
                 vehicles={vehicles}
                 reservations={reservations}
                 clients={clients}
-                drivers={drivers}
+                drivers={[]}
                 currentUser={currentUser}
                 onReservationCreated={handleReservationCreated}
                 onBack={() => setCurrentScreen('parc-dashboard')}

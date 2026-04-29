@@ -1,12 +1,11 @@
 // Gestion de la base de données IndexedDB
 
 const DB_NAME = 'ReservationVehicules';
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 const STORES = {
   vehicles: 'vehicles',
   reservations: 'reservations',
   clients: 'clients',
-  drivers: 'drivers',
   locations: 'locations',
   calendarConfig: 'calendarConfig',
   garages: 'garages',
@@ -32,6 +31,11 @@ const openDB = () => {
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
+
+      // Supprimer le store 'drivers' supprimé en v8 (drivers intégrés dans persons)
+      if (db.objectStoreNames.contains('drivers')) {
+        db.deleteObjectStore('drivers');
+      }
 
       // Créer les object stores si ils n'existent pas
       Object.values(STORES).forEach((storeName) => {

@@ -55,8 +55,6 @@ const ManagementPanel = ({
   setReservations,
   clients,
   setClients,
-  drivers,
-  setDrivers,
   locations,
   setLocations,
   _calendarConfig,
@@ -236,8 +234,6 @@ const ManagementPanel = ({
         return vehicles;
       case 'clients':
         return clients;
-      case 'drivers':
-        return drivers;
       case 'locations': {
         // Ajouter le siège comme premier lieu si une adresse est configurée
         if (companyAddress) {
@@ -264,9 +260,6 @@ const ManagementPanel = ({
         break;
       case 'clients':
         setClients(newList);
-        break;
-      case 'drivers':
-        setDrivers(newList);
         break;
       case 'locations':
         setLocations(newList);
@@ -338,12 +331,6 @@ const ManagementPanel = ({
         const newList = [...currentList, clientWithId];
         setClients(newList);
         saveToIndexedDB(STORES.clients, newList);
-      } else if (activeTab === 'drivers') {
-        const createdDriver = await api.createDriver(itemToAdd);
-        const driverWithId = { ...itemToAdd, id: createdDriver.id || itemToAdd.id };
-        const newList = [...currentList, driverWithId];
-        setDrivers(newList);
-        saveToIndexedDB(STORES.drivers, newList);
       } else if (activeTab === 'locations') {
         const createdLocation = await api.createLocation(itemToAdd);
         const locationWithId = { ...itemToAdd, id: createdLocation.id || itemToAdd.id };
@@ -468,10 +455,6 @@ const ManagementPanel = ({
         await api.updateClient(editingItem.id, editingItem);
         setClients(newList);
         saveToIndexedDB(STORES.clients, newList);
-      } else if (activeTab === 'drivers') {
-        await api.updateDriver(editingItem.id, editingItem);
-        setDrivers(newList);
-        saveToIndexedDB(STORES.drivers, newList);
       } else if (activeTab === 'locations') {
         await api.updateLocation(editingItem.id, editingItem);
         setLocations(newList);
@@ -506,10 +489,6 @@ const ManagementPanel = ({
             await api.deleteClient(id);
             setClients(newList);
             saveToIndexedDB(STORES.clients, newList);
-          } else if (activeTab === 'drivers') {
-            await api.deleteDriver(id);
-            setDrivers(newList);
-            saveToIndexedDB(STORES.drivers, newList);
           } else if (activeTab === 'locations') {
             await api.deleteLocation(id);
             setLocations(newList);
@@ -545,8 +524,6 @@ const ManagementPanel = ({
     } else {
       if (activeTab === 'clients') {
         setClients(currentList);
-      } else if (activeTab === 'drivers') {
-        setDrivers(currentList);
       } else if (activeTab === 'locations') {
         setLocations(currentList);
       } else if (activeTab === 'garages') {
@@ -577,8 +554,6 @@ const ManagementPanel = ({
     } else {
       if (activeTab === 'clients') {
         setClients(currentList);
-      } else if (activeTab === 'drivers') {
-        setDrivers(currentList);
       } else if (activeTab === 'locations') {
         setLocations(currentList);
       }
@@ -652,7 +627,6 @@ const ManagementPanel = ({
         'vehicles',
         'reservations',
         'clients',
-        'drivers',
         'locations',
         'maintenances',
         'calendarConfig',
@@ -704,7 +678,6 @@ const ManagementPanel = ({
       if (backupData.vehicles) setVehicles(backupData.vehicles);
       if (backupData.reservations) setReservations(backupData.reservations);
       if (backupData.clients) setClients(backupData.clients);
-      if (backupData.drivers) setDrivers(backupData.drivers);
       if (backupData.locations) setLocations(backupData.locations);
       if (backupData.maintenances) setMaintenances(backupData.maintenances);
       if (backupData.calendarConfig) setCalendarConfig(backupData.calendarConfig);
@@ -854,9 +827,7 @@ const ManagementPanel = ({
                       ? 'un véhicule'
                       : activeTab === 'clients'
                         ? 'un client'
-                        : activeTab === 'drivers'
-                          ? 'un conducteur'
-                          : 'un lieu'}
+                        : 'un lieu'}
                   </h3>
                   <div className="u-flex-center u-gap-1">
                     {activeTab === 'locations' && (
@@ -905,7 +876,7 @@ const ManagementPanel = ({
                   <div className="add-form">
                     <Input
                       type="text"
-                      placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : 'lieu'}`}
+                      placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : 'lieu'}`}
                       value={newItem.name}
                       onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                       onKeyPress={(e) => e.key === 'Enter' && handleAdd()}

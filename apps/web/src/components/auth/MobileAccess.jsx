@@ -1,8 +1,9 @@
 import './MobileAccess.css';
 
 import { Check, Copy, Link as LinkIcon, Printer, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { Button, Input } from '@/design-system';
 
@@ -23,35 +24,12 @@ const MOBILE_FEATURES = [
 ];
 
 function MobileAccess() {
-  const canvasRef = useRef(null);
   const [copied, setCopied] = useState(false);
   const [posterCount, setPosterCount] = useState(1);
   const [posterFormat, setPosterFormat] = useState('A4');
 
   // URL de l'interface mobile
   const mobileUrl = `${window.location.origin}/#/mobile`;
-
-  // Générer le QR code au chargement
-  useEffect(() => {
-    generateQRCode();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const generateQRCode = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const size = 200;
-    canvas.width = size;
-    canvas.height = size;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(mobileUrl)}`;
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, size, size);
-    };
-    img.src = qrApiUrl;
-  };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(mobileUrl).then(() => {
@@ -61,7 +39,7 @@ function MobileAccess() {
   };
 
   // ─── Impression affichette ───
-  const handlePrintPoster = () => {
+  const handlePrintPoster = async () => {
     const isLandscape = posterFormat === 'A4-paysage';
     const pageSize = isLandscape ? 'A4 landscape' : posterFormat === 'A5' ? 'A5' : 'A4';
     const qrSize = posterFormat === 'A5' ? 120 : 180;
@@ -76,7 +54,7 @@ function MobileAccess() {
         `<div class="feat"><span class="feat-icon">${f.icon}</span><div><strong>${f.label}</strong><span class="feat-desc">${f.desc}</span></div></div>`,
     ).join('');
 
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(mobileUrl)}`;
+    const qrUrl = await QRCode.toDataURL(mobileUrl, { width: 400, margin: 1 });
 
     const posters = [];
     for (let i = 0; i < posterCount; i++) {

@@ -713,7 +713,7 @@ function AppContent() {
                         }}
                         onOpenMaintenance={setSelectedVehicleForMaintenance}
                         clients={data.clients}
-                        drivers={data.drivers}
+                        drivers={[]}
                         persons={data.persons}
                       />
                     </Suspense>
@@ -736,7 +736,7 @@ function AppContent() {
                             onScroll={handleCalendarScroll}
                             onDeleteReservation={data.deleteReservation}
                             clients={data.clients}
-                            drivers={data.drivers}
+                            drivers={[]}
                             persons={data.persons}
                             locations={data.locations}
                             users={data.users}
@@ -944,8 +944,6 @@ function AppContent() {
                       setReservations={data.setReservations}
                       clients={data.clients}
                       setClients={data.setClients}
-                      drivers={data.drivers}
-                      setDrivers={data.setDrivers}
                       locations={data.locations}
                       setLocations={data.setLocations}
                       calendarConfig={data.calendarConfig}
@@ -978,8 +976,6 @@ function AppContent() {
                       setReservations={data.setReservations}
                       clients={data.clients}
                       setClients={data.setClients}
-                      drivers={data.drivers}
-                      setDrivers={data.setDrivers}
                       locations={data.locations}
                       setLocations={data.setLocations}
                       calendarConfig={data.calendarConfig}

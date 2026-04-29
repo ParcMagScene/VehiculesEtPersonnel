@@ -1,4 +1,5 @@
-import { Eye, MapPin, Package, Star } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, MapPin, Package, Star } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 import { EmptyState, Table, Tooltip } from '@/design-system';
 
@@ -6,6 +7,24 @@ import { ACCENT_COLORS } from '../../constants/colors';
 import { resolveGenericImage } from '../../utils/genericImages';
 import { cleanName, EQUIPMENT_STATUS } from './equipmentConstants';
 import { findZone, getCategoryHierarchy, matchPhotoToEquipment } from './equipmentUtils';
+
+const SortIcon = ({ col, sortCol, sortDir }) => {
+  if (sortCol !== col) return <ChevronDown size={11} className="sort-icon" />;
+  return sortDir === 'asc' ? (
+    <ChevronUp size={11} className="sort-icon sort-icon-active" />
+  ) : (
+    <ChevronDown size={11} className="sort-icon sort-icon-active" />
+  );
+};
+
+const Th = ({ col, children, className, onSort, sortCol, sortDir }) => (
+  <th className={`eq-sort-th${className ? ' ' + className : ''}`} onClick={() => onSort(col)}>
+    <span className="sort-th-inner">
+      {children}
+      <SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
+    </span>
+  </th>
+);
 
 const EquipmentGrid = ({
   equipment,
@@ -22,7 +41,71 @@ const EquipmentGrid = ({
   onOpenDepotMap,
   categories,
 }) => {
-  if (equipment.length === 0) {
+  const [sortCol, setSortCol] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+
+  const handleSort = (col) => {
+    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
+  };
+
+  const sorted = useMemo(() => {
+    const arr = [...equipment];
+    arr.sort((a, b) => {
+      let av, bv;
+      switch (sortCol) {
+        case 'name':
+          av = a.name || '';
+          bv = b.name || '';
+          break;
+        case 'uid':
+          av = a.uid || '';
+          bv = b.uid || '';
+          break;
+        case 'reference':
+          av = a.reference || '';
+          bv = b.reference || '';
+          break;
+        case 'categoryName':
+          av = a.categoryName || '';
+          bv = b.categoryName || '';
+          break;
+        case 'brand':
+          av = a.brand_canonical || a.brand || '';
+          bv = b.brand_canonical || b.brand || '';
+          break;
+        case 'serialNumber':
+          av = a.serialNumber || a.serial_number || '';
+          bv = b.serialNumber || b.serial_number || '';
+          break;
+        case 'stockQuantity':
+          av = a.stockQuantity ?? 1;
+          bv = b.stockQuantity ?? 1;
+          break;
+        case 'zone':
+          av = a.location_zone || a.locationZone || '';
+          bv = b.location_zone || b.locationZone || '';
+          break;
+        case 'status':
+          av = a.status || '';
+          bv = b.status || '';
+          break;
+        default:
+          av = '';
+          bv = '';
+      }
+      if (typeof av === 'number' && typeof bv === 'number')
+        return sortDir === 'asc' ? av - bv : bv - av;
+      const cmp = String(av).localeCompare(String(bv), 'fr', { sensitivity: 'base' });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return arr;
+  }, [equipment, sortCol, sortDir]);
+
+  if (sorted.length === 0) {
     return (
       <EmptyState
         icon={<Package size={48} strokeWidth={1} />}
@@ -38,19 +121,37 @@ const EquipmentGrid = ({
         <thead>
           <tr>
             <th className="eq-table-th-check"></th>
-            <th>Nom</th>
-            <th>UID</th>
-            <th>Référence</th>
-            <th>Catégorie</th>
-            <th>Marque</th>
-            <th>N° Série</th>
-            <th>Qté</th>
-            <th>Zone</th>
-            <th>Statut</th>
+            <Th col="name" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Nom
+            </Th>
+            <Th col="uid" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              UID
+            </Th>
+            <Th col="reference" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Référence
+            </Th>
+            <Th col="categoryName" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Catégorie
+            </Th>
+            <Th col="brand" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Marque
+            </Th>
+            <Th col="serialNumber" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              N° Série
+            </Th>
+            <Th col="stockQuantity" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Qté
+            </Th>
+            <Th col="zone" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Zone
+            </Th>
+            <Th col="status" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Statut
+            </Th>
           </tr>
         </thead>
         <tbody>
-          {equipment.map((eq) => {
+          {sorted.map((eq) => {
             const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
             const photo = matchPhotoToEquipment(photosList, eq);
             const hierarchy = categories ? getCategoryHierarchy(eq, categories) : null;

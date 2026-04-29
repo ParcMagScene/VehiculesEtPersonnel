@@ -16,7 +16,6 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [clients, setClients] = useState([]);
-  const [drivers, setDrivers] = useState([]);
   const [locations, setLocations] = useState([]);
   const [users, setUsers] = useState([]);
   const [persons, setPersons] = useState([]);
@@ -33,7 +32,6 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       setVehicles([]);
       setReservations([]);
       setClients([]);
-      setDrivers([]);
       setLocations([]);
       setGarages([]);
       setMaintenances([]);
@@ -51,7 +49,6 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
           api.getVehicles(),
           api.getReservations(),
           api.getClients(),
-          api.getDrivers(),
           api.getLocations(),
           api.getGarages(),
           api.getMaintenances(),
@@ -65,7 +62,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         const failed = results.filter((r) => r.status === 'rejected');
 
         if (failed.length > 0) {
-          logger.warn(`${failed.length}/10 endpoints échoués au chargement initial`);
+          logger.warn(`${failed.length}/9 endpoints échoués au chargement initial`);
           // Note: les erreurs 401 sont déjà gérées par api.request() (refresh + retry ou clearAuth + reload).
           // On ne déclenche PAS onAuthError ici pour éviter un double-logout (qui supprime la session en DB
           // pendant que d'autres requêtes tentent encore un refresh).
@@ -74,14 +71,13 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         setVehicles((get(0) || []).sort((a, b) => (a.order || 0) - (b.order || 0)));
         setReservations(get(1));
         setClients(get(2));
-        setDrivers(get(3));
-        setLocations(get(4));
-        setGarages(get(5));
-        setMaintenances(get(6));
-        setUsers(get(8));
-        setPersons(get(9) || []);
+        setLocations(get(3));
+        setGarages(get(4));
+        setMaintenances(get(5));
+        setUsers(get(7));
+        setPersons(get(8) || []);
 
-        const configData = get(7, null);
+        const configData = get(6, null);
         if (configData?.value) {
           try {
             setCalendarConfig(JSON.parse(configData.value));
@@ -108,7 +104,6 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       saveToIndexedDB(STORES.vehicles, vehicles);
       saveToIndexedDB(STORES.reservations, reservations);
       saveToIndexedDB(STORES.clients, clients);
-      saveToIndexedDB(STORES.drivers, drivers);
       saveToIndexedDB(STORES.locations, locations);
       if (calendarConfig?.apiKey || calendarConfig?.calendarId) {
         saveToIndexedDB(STORES.calendarConfig, calendarConfig);
@@ -121,7 +116,6 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
     vehicles,
     reservations,
     clients,
-    drivers,
     locations,
     calendarConfig,
     garages,
@@ -451,8 +445,6 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       setReservations,
       clients,
       setClients,
-      drivers,
-      setDrivers,
       locations,
       setLocations,
       users,
@@ -479,7 +471,6 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       vehicles,
       reservations,
       clients,
-      drivers,
       locations,
       users,
       persons,

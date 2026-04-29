@@ -102,6 +102,12 @@ export function registerPlanningMethods(ApiClient) {
     async toggleTaskVisibility(id) {
       return this.request(`/planning/tasks/${id}/toggle-visible`, { method: 'PATCH' });
     },
+    async mergeTasks(id, targetId) {
+      return this.request(`/planning/tasks/${id}/merge`, {
+        method: 'POST',
+        body: JSON.stringify({ targetId }),
+      });
+    },
     async createDisplayEventsBatch(events) {
       const results = [];
       for (const ev of events) {

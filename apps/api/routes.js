@@ -143,82 +143,13 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
   });
 }
 
-// ============ CONDUCTEURS ============
+// ============ CONDUCTEURS (DEPRECATED — Phase 6+: table supprimée) ============
+// Les conducteurs sont désormais gérés via la table persons (license_types, skills Conduite*)
+// GET /api/drivers retourne un tableau vide pour compatibilité ascendante
 
-export function setupDriversRoutes(app, authenticateToken, requireAdmin) {
-  app.get(
-    '/api/drivers',
-    authenticateToken,
-    cacheMiddleware(listCache, () => 'drivers', 60_000),
-    (req, res) => {
-      try {
-        const stmt = db.prepare('SELECT * FROM drivers');
-        const drivers = stmt.all();
-        res.json(drivers);
-      } catch (error) {
-        logger.error(error);
-        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-      }
-    },
-  );
-
-  app.post('/api/drivers', authenticateToken, (req, res) => {
-    try {
-      const driver = req.body;
-      const stmt = db.prepare(`
-        INSERT INTO drivers (name, license_number, phone, created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?)
-      `);
-
-      const result = stmt.run(
-        driver.name,
-        driver.license_number,
-        driver.phone,
-        req.user.id,
-        req.user.id,
-      );
-
-      addToHistory('driver', result.lastInsertRowid, 'created', driver, req.user.id, req.user.name);
-
-      res.json({ success: true, id: result.lastInsertRowid });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
-
-  app.put('/api/drivers/:id', authenticateToken, (req, res) => {
-    try {
-      const driver = req.body;
-      const stmt = db.prepare(`
-        UPDATE drivers 
-        SET name = ?, license_number = ?, phone = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `);
-
-      stmt.run(driver.name, driver.license_number, driver.phone, req.user.id, req.params.id);
-
-      addToHistory('driver', req.params.id, 'updated', driver, req.user.id, req.user.name);
-
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
-
-  app.delete('/api/drivers/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const stmt = db.prepare('DELETE FROM drivers WHERE id = ?');
-      stmt.run(req.params.id);
-
-      addToHistory('driver', req.params.id, 'deleted', null, req.user.id, req.user.name);
-
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
+export function setupDriversRoutes(app, authenticateToken) {
+  app.get('/api/drivers', authenticateToken, (_req, res) => {
+    res.json([]);
   });
 }
 

@@ -9,6 +9,11 @@ const MAP_TILE_SOURCES = [
   'https://basemaps.cartocdn.com',
 ];
 const MAP_API_SOURCES = ['https://nominatim.openstreetmap.org', 'https://router.project-osrm.org'];
+const GOOGLE_SOURCES = [
+  'https://*.googleapis.com',
+  'https://*.gstatic.com',
+  'https://accounts.google.com',
+];
 
 /**
  * Configuration Helmet — headers de sécurité HTTP
@@ -26,9 +31,21 @@ export const helmetMiddleware = helmet({
         'https://cdn.jsdelivr.net',
       ],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'data:'],
-      imgSrc: ["'self'", 'data:', 'blob:', ...MAP_TILE_SOURCES],
-      connectSrc: ["'self'", ...MAP_API_SOURCES],
-      frameSrc: ["'self'", 'blob:'],
+      imgSrc: [
+        "'self'",
+        'data:',
+        'blob:',
+        ...MAP_TILE_SOURCES,
+        'https://*.googleapis.com',
+        'https://*.gstatic.com',
+      ],
+      connectSrc: [
+        "'self'",
+        ...MAP_API_SOURCES,
+        'https://*.googleapis.com',
+        'https://accounts.google.com',
+      ],
+      frameSrc: ["'self'", 'blob:', 'https://accounts.google.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],

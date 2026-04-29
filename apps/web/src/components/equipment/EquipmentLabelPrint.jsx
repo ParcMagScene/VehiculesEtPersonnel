@@ -1,6 +1,7 @@
 import './EquipmentLabelPrint.css';
 
 import { Download, Printer, Tag } from 'lucide-react';
+import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRef, useState } from 'react';
 
@@ -122,9 +123,10 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
     else handleExportRaster(exportFormat);
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const labels = [];
     const qrSize = Math.round(format.height - 4);
+    const qrDataUrl = qrUrl ? await QRCode.toDataURL(qrUrl, { width: 200, margin: 1 }) : null;
 
     for (let i = 0; i < quantity; i++) {
       labels.push(
@@ -149,11 +151,7 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
             : '') +
           '</div>' +
           '<div class="label-qr">' +
-          (qrUrl
-            ? '<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' +
-              encodeURIComponent(qrUrl) +
-              '" alt="QR" />'
-            : '') +
+          (qrUrl ? '<img src="' + qrDataUrl + '" alt="QR" />' : '') +
           '</div>' +
           '</div>' +
           '</div>',

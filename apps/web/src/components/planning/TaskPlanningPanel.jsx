@@ -381,7 +381,12 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   }, [tasks]);
 
   const linkedEventIds = useMemo(
-    () => new Set(tasks.filter((t) => t.displayEventId).map((t) => t.displayEventId)),
+    () =>
+      new Set(
+        tasks
+          .filter((t) => t.display_event_id || t.displayEventId)
+          .map((t) => t.display_event_id || t.displayEventId),
+      ),
     [tasks],
   );
   const unlinkedEvents = useMemo(

@@ -1,3 +1,5 @@
+import QRCode from 'qrcode';
+
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { formatDateSimple, safeDate } from '../../utils/formatUtils';
@@ -45,7 +47,7 @@ const EQUIPMENT_STATUS = {
   retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 
-export function printEquipmentSheet(eq, photosList = [], logosList = []) {
+export async function printEquipmentSheet(eq, photosList = [], logosList = []) {
   if (!eq) return;
 
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
@@ -83,6 +85,8 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
   const tickets = eq.savTickets || [];
 
   const today = formatDateSimple(new Date().toISOString());
+
+  const qrDataUrl = qrUrl ? await QRCode.toDataURL(qrUrl, { width: 120, margin: 1 }) : null;
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -154,7 +158,7 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
       qrUrl
         ? `
     <div class="sheet-qr">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrUrl)}" width="120" height="120" alt="QR Code" />
+      <img src="${qrDataUrl}" width="120" height="120" alt="QR Code" />
       <span>${esc(eq.uid || '')}</span>
     </div>`
         : ''

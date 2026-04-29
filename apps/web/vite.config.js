@@ -77,7 +77,7 @@ export default defineConfig(({ mode }) => ({
     // Supprimer console.log et debugger en production
     minify: 'esbuild',
     target: 'es2020',
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 500,
     // Source maps pour le debugging production
     sourcemap: false, // [AUDIT FIX] Désactivé en production pour ne pas exposer le code source
     rollupOptions: {
@@ -112,8 +112,10 @@ export default defineConfig(({ mode }) => ({
       },
       '/tv-client': {
         target: 'http://localhost:3003',
-        changeOrigin: true
-      }
+        changeOrigin: true      },
+      '/catalogues': {
+        target: 'http://localhost:3003',
+        changeOrigin: true      }
     }
   },
   preview: {
@@ -148,8 +150,11 @@ export default defineConfig(({ mode }) => ({
       '/tv-client': {
         target: 'https://localhost:3443',
         changeOrigin: true,
-        secure: false
-      }
+        secure: false      },
+      '/catalogues': {
+        target: 'https://localhost:3443',
+        changeOrigin: true,
+        secure: false      }
     }
   },
   optimizeDeps: {

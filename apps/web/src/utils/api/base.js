@@ -62,6 +62,7 @@ export class ApiClient {
     // [AUDIT Phase 3] Le token JWT est désormais dans un cookie httpOnly (inaccessible au JS)
     // On ne stocke que les infos utilisateur pour l'affichage
     this.user = JSON.parse(localStorage.getItem('auth_user') || 'null');
+    this.hasAuthHint = localStorage.getItem('auth_hint') === '1';
     // Migration: nettoyer l'ancien token si présent
     localStorage.removeItem('auth_token');
     // Récupération async depuis IndexedDB si localStorage vidé
@@ -89,7 +90,13 @@ export class ApiClient {
       /* silencieux */
     }
 
-    // 2. Si toujours pas d'user, tenter un refresh silencieux (le cookie httpOnly peut encore être valide)
+    // 2. Si toujours pas d'user, tenter un refresh silencieux uniquement si une session existait deja
+    // (evite un 401 attendu au demarrage pour les visiteurs non connectes)
+    if (!this.hasAuthHint) {
+      return;
+    }
+
+    // Le cookie httpOnly peut encore etre valide
     try {
       const refreshed = await this._tryRefreshToken();
       if (refreshed) {
@@ -112,14 +119,18 @@ export class ApiClient {
 
   setAuth(user) {
     this.user = user;
+    this.hasAuthHint = true;
     localStorage.setItem('auth_user', JSON.stringify(user));
+    localStorage.setItem('auth_hint', '1');
     saveAuthToIDB(user).catch(() => {});
   }
 
   clearAuth() {
     console.warn('[Auth] clearAuth() appelé —', new Error().stack?.split('\n')[2]?.trim());
     this.user = null;
+    this.hasAuthHint = false;
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_hint');
     localStorage.removeItem('auth_token'); // nettoyage migration
     // [AUDIT FIX MED-F4] Vider tous les stores IndexedDB (PII)
     clearAllIndexedDB().catch(() => {});
@@ -147,6 +158,11 @@ export class ApiClient {
             console.warn(
               `[Auth] Refresh échoué: HTTP ${response.status} (tentative ${attempt + 1})`,
             );
+            if (response.status === 401 || response.status === 403) {
+              // Session non recuperable: eviter de retenter a chaque chargement
+              this.hasAuthHint = false;
+              localStorage.removeItem('auth_hint');
+            }
             return false;
           }
           const data = await response.json();

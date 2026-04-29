@@ -24,6 +24,8 @@ export const MultiAssignWidget = React.memo(function MultiAssignWidget({
   const key = `${entityType}:${entityId}`;
   const assignments = assignmentsByEntity.get(key) || [];
   const isOpen = assigningEntity === key;
+  const hasAssignments = assignments.length > 0;
+  const isTask = entityType === 'task';
 
   return (
     <div className="event-assign-container">
@@ -45,7 +47,7 @@ export const MultiAssignWidget = React.memo(function MultiAssignWidget({
             variant="primary"
             size="sm"
             iconOnly
-            className="btn-assign"
+            className={`btn-assign ${isTask && hasAssignments ? 'has-assignment' : ''}`}
             onClick={() => setAssigningEntity(isOpen ? null : key)}
             aria-label="Affecter"
           >

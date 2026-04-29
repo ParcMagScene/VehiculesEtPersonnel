@@ -610,10 +610,24 @@ function FicheSuivi({ sheet, onSave, saving }) {
   };
 
   const renderSection = (label, sectionEntries, period) => {
-    const existingTaskIds = new Set(entries.map((e) => e.task_assignment_id).filter(Boolean));
+    // On n'exclut que les tâches non-complétées déjà dans la fiche
+    // Les tâches déjà effectuées (completed=1) restent proposables
+    const existingIncompleteTaskIds = new Set(
+      entries
+        .filter((e) => e.completed !== 1)
+        .map((e) => e.task_assignment_id)
+        .filter(Boolean),
+    );
+    const alreadyDoneTaskIds = new Set(
+      entries
+        .filter((e) => e.completed === 1)
+        .map((e) => e.task_assignment_id)
+        .filter(Boolean),
+    );
     const availableTasks = planningTasks.filter(
       (t) =>
-        (!t.period || t.period === period || t.period === 'FULL') && !existingTaskIds.has(t.id),
+        (!t.period || t.period === period || t.period === 'FULL') &&
+        !existingIncompleteTaskIds.has(t.id),
     );
     const recurringForPeriod = recurringTasks.filter((r) => r.period === period && r.active === 1);
 
@@ -654,6 +668,9 @@ function FicheSuivi({ sheet, onSave, saving }) {
                           <div className="fiche-picker-main">
                             <span className="fiche-picker-title">
                               {t.title || t.google_event_title || 'Tâche sans nom'}
+                              {alreadyDoneTaskIds.has(t.id) && (
+                                <span className="fiche-picker-done-badge">✓ Déjà effectuée</span>
+                              )}
                             </span>
                             <div className="fiche-picker-meta">
                               {t.affaire_num && (

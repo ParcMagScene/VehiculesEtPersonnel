@@ -348,6 +348,18 @@
 .orders-table tr.clickable-row:hover {
   background: var(--theme-bg-page);
 }
+.orders-table tr.row-new-highlight {
+  background: color-mix(in srgb, var(--theme-success, #22c55e) 12%, transparent);
+  animation: rowHighlightFade 4s ease-out forwards;
+}
+@keyframes rowHighlightFade {
+  0% {
+    background: color-mix(in srgb, var(--theme-success, #22c55e) 20%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
 .orders-table .ref-cell {
   font-weight: 600;
   white-space: nowrap;

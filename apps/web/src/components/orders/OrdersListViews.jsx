@@ -193,7 +193,7 @@ export const EnhancedSuppliersList = React.memo(
                 key={supplier.id}
                 onClick={() => onClick?.(supplier)}
                 onDoubleClick={() => onDoubleClick?.(supplier)}
-                className={`clickable-row${selectedId === supplier.id ? ' selected' : ''}`}
+                className={`clickable-row${selectedId === supplier.id ? ' selected' : ''}${supplier._new ? ' row-new-highlight' : ''}`}
               >
                 <td className="ref-cell">
                   <Building2 size={14} /> {supplier.name}

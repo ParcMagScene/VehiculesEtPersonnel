@@ -89,6 +89,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   const [showArchivedSuppliers, setShowArchivedSuppliers] = useState(false);
   const [selectedSupplierPanel, setSelectedSupplierPanel] = useState(null);
   const [supplierDetailData, setSupplierDetailData] = useState(null);
+  const [newSupplierId, setNewSupplierId] = useState(null);
 
   const [completionAlerts, setCompletionAlerts] = useState([]);
 
@@ -156,6 +157,16 @@ function OrdersPanel({ currentUser, isMobile }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, statusFilter, activeTab, showArchivedSuppliers]);
 
+  // Rafraîchissement silencieux des fournisseurs (sans spinner) après création/modification
+  const refreshSuppliersOnly = useCallback(async () => {
+    try {
+      const fresh = await api.getSuppliersWithOrders(showArchivedSuppliers);
+      setSuppliersWithOrders(fresh);
+    } catch {
+      // silencieux
+    }
+  }, [showArchivedSuppliers]);
+
   const filteredSuppliersWithOrders = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
     const list = term
@@ -168,12 +179,16 @@ function OrdersPanel({ currentUser, isMobile }) {
         )
       : [...suppliersWithOrders];
     // Trier : nb commandes DESC, puis created_at DESC (nouveaux en tête de leur groupe)
-    return list.sort(
-      (a, b) =>
-        (b.active_order_count || 0) - (a.active_order_count || 0) ||
-        new Date(b.created_at || 0) - new Date(a.created_at || 0),
-    );
-  }, [suppliersWithOrders, searchTerm]);
+    // newSupplierId persiste même après loadData() pour garder le highlight en tête
+    return list
+      .map((s) => (newSupplierId && s.id === newSupplierId ? { ...s, _new: true } : s))
+      .sort(
+        (a, b) =>
+          (b._new ? 1 : 0) - (a._new ? 1 : 0) ||
+          (b.active_order_count || 0) - (a.active_order_count || 0) ||
+          new Date(b.created_at || 0) - new Date(a.created_at || 0),
+      );
+  }, [suppliersWithOrders, searchTerm, newSupplierId]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -183,6 +198,13 @@ function OrdersPanel({ currentUser, isMobile }) {
       if (abortRef.current) abortRef.current.abort();
     };
   }, [loadData]);
+
+  // Scroll en tête de liste après création d'un fournisseur
+  useEffect(() => {
+    if (!newSupplierId) return;
+    const wrapper = document.querySelector('.orders-table-wrapper');
+    if (wrapper) wrapper.scrollTop = 0;
+  }, [newSupplierId]);
 
   // ═══ Handlers Commandes ═══
   const handleSaveOrder = async (data) => {
@@ -311,6 +333,23 @@ function OrdersPanel({ currentUser, isMobile }) {
       const saved = editingSupplier
         ? await api.updateSupplier(editingSupplier.id, data)
         : await api.createSupplier(data);
+      if (!editingSupplier && saved?.id) {
+        // Mise à jour optimiste immédiate + flag persistant après loadData()
+        setSuppliersWithOrders((prev) => [
+          {
+            ...saved,
+            active_order_count: 0,
+            total_ht: 0,
+            order_statuses: null,
+            catalog_count: 0,
+            _new: true,
+          },
+          ...prev,
+        ]);
+        setNewSupplierId(saved.id);
+        // Effacer le highlight après 6 secondes
+        setTimeout(() => setNewSupplierId(null), 6000);
+      }
       toast.success(
         editingSupplier
           ? 'Fournisseur mis à jour'
@@ -318,7 +357,8 @@ function OrdersPanel({ currentUser, isMobile }) {
       );
       setShowSupplierForm(false);
       setEditingSupplier(null);
-      loadData();
+      // Rafraîchissement silencieux : pas de spinner, l'update optimiste reste visible
+      refreshSuppliersOnly();
     } catch (error) {
       toast.error('Erreur: ' + error.message);
     }

@@ -26,13 +26,11 @@ const gcalRoute = (fn) => async (req, res) => {
     }
 
     if (!res.headersSent) {
-      return res
-        .status(502)
-        .json({
-          success: false,
-          error: 'google_unavailable',
-          message: 'Service Google indisponible',
-        });
+      return res.status(502).json({
+        success: false,
+        error: 'google_unavailable',
+        message: 'Service Google indisponible',
+      });
     }
   }
 };

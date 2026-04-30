@@ -72,6 +72,7 @@ function ViewportSync({ onViewChange }) {
 
 function RefreshMapOnRender({ deps = [] }) {
   const map = useMap();
+  const depsKey = useMemo(() => JSON.stringify(deps), [deps]);
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => map.invalidateSize());
@@ -80,7 +81,7 @@ function RefreshMapOnRender({ deps = [] }) {
       cancelAnimationFrame(raf);
       clearTimeout(timer);
     };
-  }, [map, ...deps]);
+  }, [map, depsKey]);
 
   return null;
 }
@@ -94,10 +95,6 @@ function LabelCollisionManager({ locations, getDirection, offsets, onChange }) {
     zoomend: () => setRevision((r) => r + 1),
     resize: () => setRevision((r) => r + 1),
   });
-
-  useEffect(() => {
-    setRevision((r) => r + 1);
-  }, [locations.length]);
 
   useEffect(() => {
     const bounds = map.getBounds();
@@ -156,11 +153,10 @@ export default function MapGeneral({
   onViewChange,
 }) {
   const mapRef = useRef(null);
-  const initialViewRef = useRef(initialView);
+  const [bootView] = useState(() => initialView);
   const [ready, setReady] = useState(false);
   const geoLocations = useMemo(() => filterGeoLocations(locations), [locations]);
   const tile = darkMode ? TILE_DARK : TILE_LIGHT;
-  const bootView = initialViewRef.current;
   const hasInitialView = Boolean(bootView?.center && Number.isFinite(bootView?.zoom));
   const mapCenter = hasInitialView ? bootView.center : MAG_SCENE;
   const mapZoom = hasInitialView ? bootView.zoom : DEFAULT_ZOOM;

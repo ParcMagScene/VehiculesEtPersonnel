@@ -31,6 +31,8 @@ import MapSearchControl from './MapSearchControl';
 const RADIUS_PRESETS = [2, 5, 10, 25, 50, 100];
 const MIN_RADIUS = 500;
 const MAX_RADIUS = 100000;
+const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
+const DIR_OFFSETS = { top: [0, -12], right: [12, 0], bottom: [0, 12], left: [-12, 0] };
 
 function destinationEast([lat, lng], distanceMeters) {
   const earthRadius = 6371000;
@@ -108,10 +110,6 @@ function LabelCollisionManager({ locations, getDirection, offsets, onChange }) {
   });
 
   useEffect(() => {
-    setRevision((r) => r + 1);
-  }, [locations.length]);
-
-  useEffect(() => {
     const bounds = map.getBounds();
     const size = map.getSize();
     const occupied = [];
@@ -162,6 +160,7 @@ function LabelCollisionManager({ locations, getDirection, offsets, onChange }) {
 
 function RefreshMapOnRender({ deps = [] }) {
   const map = useMap();
+  const depsKey = useMemo(() => JSON.stringify(deps), [deps]);
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => map.invalidateSize());
@@ -170,7 +169,7 @@ function RefreshMapOnRender({ deps = [] }) {
       cancelAnimationFrame(raf);
       clearTimeout(timer);
     };
-  }, [map, ...deps]);
+  }, [map, depsKey]);
 
   return null;
 }
@@ -186,8 +185,7 @@ export default function MapLocal({
   onZoneChange,
 }) {
   const mapRef = useRef(null);
-  const initialViewRef = useRef(initialView);
-  const bootView = initialViewRef.current;
+  const [bootView] = useState(() => initialView);
   const hasInitialView = Boolean(bootView?.center && Number.isFinite(bootView?.zoom));
   const mapCenter = hasInitialView ? bootView.center : zoneCenter;
   const mapZoom = hasInitialView ? bootView.zoom : 12;
@@ -232,8 +230,6 @@ export default function MapLocal({
   );
 
   // Directions alternées pour éviter le chevauchement des bulles
-  const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
-  const DIR_OFFSETS = { top: [0, -12], right: [12, 0], bottom: [0, 12], left: [-12, 0] };
   const sortedNearby = useMemo(
     () => [...nearbyLocations].sort((a, b) => b.lat - a.lat),
     [nearbyLocations],
@@ -245,11 +241,11 @@ export default function MapLocal({
       dirs[loc.id] = DIRECTIONS[i % DIRECTIONS.length];
     });
     return dirs;
-  }, [sortedNearby, DIRECTIONS]);
+  }, [sortedNearby]);
 
   const resolveDirection = useMemo(
     () => (loc, i) => labelDirections[loc.id] || DIRECTIONS[i % DIRECTIONS.length],
-    [labelDirections, DIRECTIONS],
+    [labelDirections],
   );
 
   const formatRadius = (r) => {

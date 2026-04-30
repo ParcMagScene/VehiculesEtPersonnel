@@ -141,26 +141,37 @@ function AppContent() {
     startModuleTransition(() => _setActiveModule(mod));
   }, []);
 
+  const ALLOWED_MODULES = new Set([
+    'vehicles',
+    'equipment',
+    'affaires',
+    'orders',
+    'stock',
+    'planning',
+    'annuaire',
+    'lieux',
+    'video',
+    'sonos',
+  ]);
+
+  // Restore module on load: URL param > localStorage > default
   useEffect(() => {
     if (!isAuthenticated) return;
     const params = new URLSearchParams(window.location.search);
-    const startupModule = params.get('module');
-    const allowedModules = new Set([
-      'vehicles',
-      'equipment',
-      'affaires',
-      'orders',
-      'stock',
-      'planning',
-      'annuaire',
-      'lieux',
-      'video',
-      'sonos',
-    ]);
-    if (startupModule && allowedModules.has(startupModule)) {
+    const startupModule = params.get('module') || localStorage.getItem('emag_last_module');
+    if (startupModule && ALLOWED_MODULES.has(startupModule)) {
       setActiveModule(startupModule);
     }
-  }, [isAuthenticated, setActiveModule]);
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync module → URL (?module=xxx) + localStorage so F5/refresh stays on same module
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('module', activeModule);
+    window.history.replaceState(null, '', url.toString());
+    localStorage.setItem('emag_last_module', activeModule);
+  }, [activeModule, isAuthenticated]);
   const [showManagement, setShowManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showEquipmentManagement, setShowEquipmentManagement] = useState(false);

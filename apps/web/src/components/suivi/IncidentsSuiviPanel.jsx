@@ -36,10 +36,11 @@ const getContextLabel = (key) => {
 function getISOWeek(date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
+  // Ramène au jeudi de la semaine ISO (référence standard)
   d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
-  const firstThursday = new Date(d.getFullYear(), 0, 4);
-  const week = 1 + Math.round(((d.getTime() - firstThursday.getTime()) / 86400000 - 3) / 7);
-  return `${d.getFullYear()}-W${String(week).padStart(2, '0')}`;
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
 }
 
 function formatMonthISO(date) {

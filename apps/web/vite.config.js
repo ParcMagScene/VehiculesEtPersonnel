@@ -1,5 +1,5 @@
 import react from '@vitejs/plugin-react'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { defineConfig } from 'vite'
 
@@ -31,6 +31,32 @@ function staleAssetReload() {
   }
 }
 
+// Plugin : SPA fallback — sert index.html pour toute route sans extension (support F5)
+function spaFallback() {
+  return {
+    name: 'spa-fallback',
+    configurePreviewServer(server) {
+      // Retourner une fonction = middleware post-statique (s'exécute si aucun fichier trouvé)
+      return () => {
+        server.middlewares.use((req, res, next) => {
+          const url = (req.url || '/').split('?')[0];
+          // Laisser passer les ressources avec extension (.js, .css, .png…)
+          if (/\.[a-z0-9]+$/i.test(url)) return next();
+          const indexPath = join(import.meta.dirname, 'dist', 'index.html');
+          if (existsSync(indexPath)) {
+            res.writeHead(200, {
+              'Content-Type': 'text/html; charset=utf-8',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            });
+            return res.end(readFileSync(indexPath));
+          }
+          next();
+        });
+      };
+    },
+  };
+}
+
 // Plugin : headers de cache intelligents (HTML = no-cache, assets hashés = immutable)
 function smartCacheHeaders() {
   return {
@@ -57,7 +83,7 @@ function smartCacheHeaders() {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), staleAssetReload(), smartCacheHeaders()],
+  plugins: [react(), staleAssetReload(), smartCacheHeaders(), spaFallback()],
   // Le dossier public est à la racine du monorepo
   publicDir: '../../public',
   test: {

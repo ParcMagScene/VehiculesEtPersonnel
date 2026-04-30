@@ -580,7 +580,15 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                           <td className="sav-import-mono">{item.intervention}</td>
                           <td>{item.code}</td>
                           <td className="eq-import-name-cell">{item.nom}</td>
-                          <td className="sav-import-small">{item.serial}</td>
+                          <td className="sav-import-small">
+                            {/^EMAG-\d{5}$/i.test((item.serial || '').trim()) ? (
+                              <span style={{ color: 'var(--theme-info)', fontWeight: 600 }}>
+                                {item.serial}
+                              </span>
+                            ) : (
+                              item.serial || '—'
+                            )}
+                          </td>
                           <td>
                             {suggested ? (
                               <Button
@@ -597,6 +605,14 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                               >
                                 Proposer: {suggested.name}
                               </Button>
+                            ) : item.parsedUid ? (
+                              <span
+                                className="sav-import-small"
+                                style={{ color: 'var(--theme-warning)', fontStyle: 'italic' }}
+                                title={`UID ${item.parsedUid} non trouvé en base`}
+                              >
+                                UID inconnu
+                              </span>
                             ) : (
                               <span className="sav-import-small">—</span>
                             )}

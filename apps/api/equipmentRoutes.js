@@ -1589,6 +1589,12 @@ export function setupSavTicketsRoutes(
             return equipByUid[parsed.uid].id;
           }
 
+          // 2b. Fallback : si l'UID EMAG est dans le champ série mais que l'équipement
+          // a son serial_number = "EMAG-XXXXX" (uid auto-généré différent)
+          if (parsed.uid && equipBySerial[parsed.uid]) {
+            return equipBySerial[parsed.uid][0].id;
+          }
+
           // Si le champ série contient un UID EMAG mais qu'on ne l'a pas trouvé,
           // ne PAS fallback sur code_article (ce serait un autre équipement)
           if (parsed.uid) {
@@ -1627,8 +1633,16 @@ export function setupSavTicketsRoutes(
           return null;
         };
 
-        // Suggestions de liaison pour lignes non matchées : même référence + équipement sans série
-        const findSuggestedEquipmentIds = (row) => {
+        // Suggestions de liaison pour lignes non matchées
+        const findSuggestedEquipmentIds = (row, parsed) => {
+          // Si serial est un UID EMAG, chercher l'équipement correspondant comme suggestion
+          if (parsed && parsed.uid) {
+            const byUid = equipByUid[parsed.uid];
+            if (byUid) return [byUid.id];
+            const bySerial = equipBySerial[parsed.uid];
+            if (bySerial && bySerial.length > 0) return [bySerial[0].id];
+            return []; // UID EMAG inconnu, pas de suggestion possible
+          }
           const code = (row.code_article || '').trim().toUpperCase();
           if (!code || !equipByRef[code]) return [];
           return equipByRef[code]
@@ -1693,7 +1707,7 @@ export function setupSavTicketsRoutes(
             matched++;
           } else {
             unmatched++;
-            const suggestedEquipmentIds = findSuggestedEquipmentIds(row);
+            const suggestedEquipmentIds = findSuggestedEquipmentIds(row, parsed);
             unmatchedItems.push({
               index: idx,
               intervention: row.intervention,
@@ -1704,6 +1718,7 @@ export function setupSavTicketsRoutes(
               fin: row.fin,
               cout: row.cout,
               statut: row.a,
+              parsedUid: parsed.uid,
               suggestedEquipmentIds,
             });
           }

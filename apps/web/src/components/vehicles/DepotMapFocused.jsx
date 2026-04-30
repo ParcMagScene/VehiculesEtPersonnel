@@ -62,7 +62,12 @@ export default function DepotMapFocused({ zones, focusZoneId, focusEquipmentName
     return zones.zones.filter((z) => z.floor === activeFloor);
   }, [zones, activeFloor]);
 
-  const bounds = useMemo(() => computeZonesBounds(floorZones, BOUNDS_PADDING), [floorZones]);
+  const visibleZones = useMemo(() => {
+    if (floorZones.length > 0) return floorZones;
+    return zones?.zones || [];
+  }, [floorZones, zones]);
+
+  const bounds = useMemo(() => computeZonesBounds(visibleZones, BOUNDS_PADDING), [visibleZones]);
 
   const viewBox = useMemo(() => {
     const w = bounds.w / zoom;
@@ -161,8 +166,8 @@ export default function DepotMapFocused({ zones, focusZoneId, focusEquipmentName
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   const focusedZone = useMemo(
-    () => findZoneFlexible(floorZones, focusZoneId),
-    [floorZones, focusZoneId],
+    () => findZoneFlexible(visibleZones, focusZoneId),
+    [visibleZones, focusZoneId],
   );
 
   return (
@@ -272,7 +277,7 @@ export default function DepotMapFocused({ zones, focusZoneId, focusEquipmentName
           ))}
 
           {/* Zones — lecture seule */}
-          {floorZones.map((zone) => {
+          {visibleZones.map((zone) => {
             const { x, y, width, height } = zone.bbox;
             const isHighlighted = focusedZone?.id === zone.id;
             const opacity = isHighlighted ? 1 : 0.45;

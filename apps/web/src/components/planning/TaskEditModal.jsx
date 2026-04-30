@@ -206,14 +206,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   }, [task]);
 
   useEffect(() => {
-    const raf = window.requestAnimationFrame(() => {
+    const timer = setTimeout(() => {
       const el = titleInputRef.current;
       if (!el || titleAutoSelectDoneRef.current) return;
       el.focus();
       el.select();
       titleAutoSelectDoneRef.current = true;
-    });
-    return () => window.cancelAnimationFrame(raf);
+    }, 50);
+    return () => clearTimeout(timer);
   }, [task?.id]);
 
   const { isDirty: _isDirty, guardClose } = useDirtyForm(form);
@@ -370,8 +370,9 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
             onChange={(e) => update('title', e.target.value)}
             onFocus={(e) => {
               if (titleAutoSelectDoneRef.current) return;
-              e.target.select();
               titleAutoSelectDoneRef.current = true;
+              const target = e.target;
+              setTimeout(() => target.select(), 0);
             }}
             onBlur={(e) => {
               const v = e.target.value.trim();

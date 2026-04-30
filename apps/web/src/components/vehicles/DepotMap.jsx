@@ -24,6 +24,42 @@ const ZOOM_STEP = 0.3;
 const DEFAULT_BOUNDS_PADDING = 25;
 const COMPACT_FOCUS_BOUNDS_PADDING = 220;
 
+function getZoneTextPolicy(zone, { isFocusedCompactMode, isHighlighted }) {
+  const { width, height } = zone.bbox;
+
+  if (!isFocusedCompactMode) {
+    return {
+      primaryText: zone.label,
+      secondaryText: zone.id,
+      codesText: (zone.codes || []).join(' · '),
+      primaryFontSize: 13,
+      secondaryFontSize: 10,
+      showCodes: true,
+    };
+  }
+
+  if (isHighlighted) {
+    return {
+      primaryText: null,
+      secondaryText: null,
+      codesText: '',
+      primaryFontSize: 12,
+      secondaryFontSize: 10,
+      showCodes: false,
+    };
+  }
+
+  const useShortLabel = width < 120 || height < 58;
+  return {
+    primaryText: useShortLabel ? zone.id : zone.label || zone.id,
+    secondaryText: null,
+    codesText: '',
+    primaryFontSize: useShortLabel ? 11 : 12,
+    secondaryFontSize: 10,
+    showCodes: false,
+  };
+}
+
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1")
 function findZoneFlexible(zoneList, zoneId) {
   if (!zoneList || !zoneId) return null;
@@ -52,6 +88,7 @@ export default function DepotMap({
   onZonesUpdated,
 }) {
   const { currentUser } = useAuth();
+  const isFocusedCompactMode = compact && Boolean(focusZoneId);
   const [showEditor, setShowEditor] = useState(false);
   const [activeFloor, setActiveFloor] = useState('RDC');
   const [hoveredZone, setHoveredZone] = useState(null);
@@ -507,6 +544,7 @@ export default function DepotMap({
             const isHighlighted = highlightedZone === zone.id;
             const hasSearchResult = searchResults && searchResults[zone.id] > 0;
             const isSearchDimmed = searchResults && !hasSearchResult;
+            const textPolicy = getZoneTextPolicy(zone, { isFocusedCompactMode, isHighlighted });
 
             let opacity = isSelected ? 1 : isHovered ? 0.85 : 0.6;
             if (isHighlighted) opacity = 1;
@@ -587,36 +625,39 @@ export default function DepotMap({
                   <rect x={x} y={y} width={width} height={height} rx="6" {...zoneShapeProps} />
                 )}
 
-                {/* Zone label */}
-                <text
-                  x={x + width / 2}
-                  y={y + height / 2 - 8}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill={zone.textColor || '#ffffff'}
-                  fontSize="13"
-                  fontWeight="600"
-                  className="depot-zone-label u-pointer-events-none"
-                >
-                  {zone.label}
-                </text>
+                {/* Zone texts */}
+                {textPolicy.primaryText && (
+                  <text
+                    x={x + width / 2}
+                    y={y + height / 2 - (textPolicy.secondaryText ? 8 : 0)}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={zone.textColor || '#ffffff'}
+                    fontSize={textPolicy.primaryFontSize}
+                    fontWeight="600"
+                    className="depot-zone-label u-pointer-events-none"
+                  >
+                    {textPolicy.primaryText}
+                  </text>
+                )}
 
-                {/* Zone ID */}
-                <text
-                  x={x + width / 2}
-                  y={y + height / 2 + 10}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill={zone.textColor || '#ffffff'}
-                  fontSize="10"
-                  opacity="0.7"
-                  className="u-pointer-events-none"
-                >
-                  {zone.id}
-                </text>
+                {textPolicy.secondaryText && (
+                  <text
+                    x={x + width / 2}
+                    y={y + height / 2 + 10}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={zone.textColor || '#ffffff'}
+                    fontSize={textPolicy.secondaryFontSize}
+                    opacity="0.7"
+                    className="u-pointer-events-none"
+                  >
+                    {textPolicy.secondaryText}
+                  </text>
+                )}
 
                 {/* Counter badge */}
-                {count > 0 && (
+                {!isFocusedCompactMode && count > 0 && (
                   <>
                     <rect
                       x={x + width - 32}
@@ -671,18 +712,20 @@ export default function DepotMap({
                 )}
 
                 {/* Codes indicator */}
-                <text
-                  x={x + width / 2}
-                  y={y + height - 12}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill={zone.textColor || '#ffffff'}
-                  fontSize="9"
-                  opacity="0.5"
-                  className="u-pointer-events-none"
-                >
-                  {(zone.codes || []).join(' · ')}
-                </text>
+                {textPolicy.showCodes && textPolicy.codesText && (
+                  <text
+                    x={x + width / 2}
+                    y={y + height - 12}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill={zone.textColor || '#ffffff'}
+                    fontSize="9"
+                    opacity="0.5"
+                    className="u-pointer-events-none"
+                  >
+                    {textPolicy.codesText}
+                  </text>
+                )}
               </g>
             );
           })}

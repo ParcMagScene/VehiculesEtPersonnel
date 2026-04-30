@@ -50,6 +50,56 @@ const formatFloorLabel = (floor) => {
   return String(floor).trim();
 };
 
+const DEPOT_BADGE_PALETTE = [
+  { bg: 'rgba(59, 130, 246, 0.18)', border: 'rgba(59, 130, 246, 0.30)', text: '#1d4ed8' },
+  { bg: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.30)', text: '#047857' },
+  { bg: 'rgba(249, 115, 22, 0.18)', border: 'rgba(249, 115, 22, 0.30)', text: '#c2410c' },
+  { bg: 'rgba(139, 92, 246, 0.18)', border: 'rgba(139, 92, 246, 0.30)', text: '#6d28d9' },
+  { bg: 'rgba(236, 72, 153, 0.18)', border: 'rgba(236, 72, 153, 0.30)', text: '#be185d' },
+  { bg: 'rgba(234, 179, 8, 0.18)', border: 'rgba(234, 179, 8, 0.30)', text: '#a16207' },
+  { bg: 'rgba(6, 182, 212, 0.18)', border: 'rgba(6, 182, 212, 0.30)', text: '#0f766e' },
+];
+
+const FLOOR_BADGE_COLORS = {
+  RDC: { bg: 'rgba(14, 165, 233, 0.14)', border: 'rgba(14, 165, 233, 0.26)', text: '#0369a1' },
+  Mezzanine: {
+    bg: 'rgba(99, 102, 241, 0.14)',
+    border: 'rgba(99, 102, 241, 0.26)',
+    text: '#4338ca',
+  },
+};
+
+const hashString = (value) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+const getDepotBadgeStyle = (label) => {
+  const palette = DEPOT_BADGE_PALETTE[hashString(label) % DEPOT_BADGE_PALETTE.length];
+  return {
+    background: palette.bg,
+    borderColor: palette.border,
+    color: palette.text,
+  };
+};
+
+const getFloorBadgeStyle = (label) => {
+  const palette = FLOOR_BADGE_COLORS[label] || {
+    bg: 'rgba(100, 116, 139, 0.14)',
+    border: 'rgba(100, 116, 139, 0.24)',
+    text: '#475569',
+  };
+
+  return {
+    background: palette.bg,
+    borderColor: palette.border,
+    color: palette.text,
+  };
+};
+
 const resolveEquipmentLocation = (eq, depotZones, allDepotZones) => {
   const zoneId = eq.location_zone || eq.locationZone || '';
   const depotId = eq.location_depot || eq.locationDepot || '';
@@ -278,9 +328,19 @@ const EquipmentGrid = ({
                     '—'
                   ) : (
                     <div className="eq-depot-badges">
-                      <span className="eq-depot-badge">{location.depotLabel}</span>
+                      <span
+                        className="eq-depot-badge"
+                        style={getDepotBadgeStyle(location.depotLabel)}
+                      >
+                        {location.depotLabel}
+                      </span>
                       {location.floorLabel && (
-                        <span className="eq-depot-floor-badge">{location.floorLabel}</span>
+                        <span
+                          className="eq-depot-floor-badge"
+                          style={getFloorBadgeStyle(location.floorLabel)}
+                        >
+                          {location.floorLabel}
+                        </span>
                       )}
                     </div>
                   )}

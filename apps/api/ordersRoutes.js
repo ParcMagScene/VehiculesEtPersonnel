@@ -1881,15 +1881,13 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       const suppliers = db
         .prepare(
           `
-        SELECT s.*, 
+        SELECT s.*,
           COUNT(DISTINCT o.id) as active_order_count,
           COALESCE(SUM(o.total_ht), 0) as total_ht,
           GROUP_CONCAT(DISTINCT o.status) as order_statuses,
           (SELECT COUNT(*) FROM catalog_imports ci WHERE ci.supplier_id = s.id) as catalog_count
         FROM suppliers s
         LEFT JOIN orders o ON o.supplier_id = s.id ${statusFilter}
-        WHERE EXISTS (SELECT 1 FROM orders o2 WHERE o2.supplier_id = s.id ${statusFilter})
-           OR EXISTS (SELECT 1 FROM catalog_imports ci WHERE ci.supplier_id = s.id)
         GROUP BY s.id
         ORDER BY active_order_count DESC, s.name ASC
       `,

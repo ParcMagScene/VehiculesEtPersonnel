@@ -14,7 +14,7 @@ import {
   Download,
   Loader2,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
@@ -119,6 +119,10 @@ function SynthesesPanel({ currentUser: _currentUser }) {
   };
 
   const s = synthese?.summary;
+  const incidentSummary = synthese?.incidents?.summary || null;
+  const incidentByAffaire = Array.isArray(synthese?.incidents?.by_affaire)
+    ? synthese.incidents.by_affaire
+    : [];
 
   // Groupement par personne (agrégation des stats)
   const sheetsByPerson = useMemo(() => {
@@ -295,6 +299,20 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                   <span className="summary-label">Temps total</span>
                 </div>
               </div>
+              <div className="summary-card">
+                <AlertTriangle size={20} />
+                <div>
+                  <span className="summary-value">{incidentSummary?.total_tickets || 0}</span>
+                  <span className="summary-label">Tickets incidents</span>
+                </div>
+              </div>
+              <div className="summary-card">
+                <AlertTriangle size={20} />
+                <div>
+                  <span className="summary-value">{incidentSummary?.total_incidents || 0}</span>
+                  <span className="summary-label">Incidents déclarés</span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -333,9 +351,8 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                     const isExpanded = expandedPersons.has(pg.person_id);
                     const canExpand = mode !== 'jour' && pg.sheets.length > 1;
                     return (
-                      <>
+                      <Fragment key={pg.person_id}>
                         <tr
-                          key={pg.person_id}
                           className={hasWarning ? 'row-warning' : 'row-ok'}
                           style={canExpand ? { cursor: 'pointer' } : undefined}
                           onClick={canExpand ? () => togglePerson(pg.person_id) : undefined}
@@ -453,7 +470,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                               </tr>
                             );
                           })}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>
@@ -477,6 +494,23 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                     {a.not_done > 0 && a.unreported_periods?.length > 0 && ' — '}
                     {a.unreported_periods?.length > 0 &&
                       `Activité non renseignée : ${a.unreported_periods.join(', ')}`}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Incidents par affaire (periode en cours) */}
+          {incidentByAffaire.length > 0 && (
+            <div className="syntheses-anomalies">
+              <h4>
+                <AlertTriangle size={16} /> Tickets incidents par affaire
+              </h4>
+              <ul>
+                {incidentByAffaire.slice(0, 10).map((a) => (
+                  <li key={a.affaire_num}>
+                    <strong>{a.affaire_name || a.affaire_num}</strong> : {a.tickets} ticket(s),{' '}
+                    {a.incidents} incident(s)
                   </li>
                 ))}
               </ul>

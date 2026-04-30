@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    SuiviPanel — Module Suivi du Personnel Permanent
-   Onglets : Fiches quotidiennes | Synthèses
+  Onglets : Fiches quotidiennes | Incidents | Synthèses
    ═══════════════════════════════════════════════════════════════ */
 
 import './SuiviPanel.css';
@@ -588,19 +588,19 @@ function SuiviPanel({ currentUser, initialPersonId }) {
         </Button>
         <Button
           variant="ghost"
-          className={`suivi-tab ${activeTab === 'syntheses' ? 'active' : ''}`}
-          onClick={() => setActiveTab('syntheses')}
-        >
-          <FileText size={16} />
-          Synthèses
-        </Button>
-        <Button
-          variant="ghost"
           className={`suivi-tab ${activeTab === 'incidents' ? 'active' : ''}`}
           onClick={() => setActiveTab('incidents')}
         >
           <AlertTriangle size={16} />
           Incidents
+        </Button>
+        <Button
+          variant="ghost"
+          className={`suivi-tab ${activeTab === 'syntheses' ? 'active' : ''}`}
+          onClick={() => setActiveTab('syntheses')}
+        >
+          <FileText size={16} />
+          Synthèses
         </Button>
       </div>
 

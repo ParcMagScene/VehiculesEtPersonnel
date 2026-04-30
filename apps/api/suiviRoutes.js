@@ -2085,6 +2085,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ success: false, error: 'Format date invalide' });
       }
       const synthese = buildSynthese([date]);
+      synthese.incidents = computeIncidentSynthese(date, date);
       res.json(synthese);
     } catch (error) {
       logger.error('GET /api/suivi/synthese/jour/:date error:', error);
@@ -2103,6 +2104,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       }
       const dates = getWeekDates(week);
       const synthese = buildSynthese(dates);
+      synthese.incidents = computeIncidentSynthese(dates[0], dates[dates.length - 1]);
       res.json(synthese);
     } catch (error) {
       logger.error('GET /api/suivi/synthese/semaine/:week error:', error);
@@ -2119,6 +2121,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       }
       const dates = getMonthDates(month);
       const synthese = buildSynthese(dates);
+      synthese.incidents = computeIncidentSynthese(dates[0], dates[dates.length - 1]);
       res.json(synthese);
     } catch (error) {
       logger.error('GET /api/suivi/synthese/mois/:month error:', error);

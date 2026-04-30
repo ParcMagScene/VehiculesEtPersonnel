@@ -13,6 +13,28 @@ class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    const errorMessage = String(error?.message || error || '');
+    const isLikelyLazyChunkMismatch =
+      errorMessage.includes('Minified React error #306') ||
+      errorMessage.includes('Lazy element type must resolve') ||
+      errorMessage.includes('Failed to fetch dynamically imported module');
+
+    if (isLikelyLazyChunkMismatch) {
+      const reloadGuardKey = 'lazy_chunk_autoreload_once';
+      const alreadyRetried = sessionStorage.getItem(reloadGuardKey) === '1';
+
+      if (!alreadyRetried) {
+        sessionStorage.setItem(reloadGuardKey, '1');
+        const target = `${window.location.pathname}?v=${Date.now()}${window.location.hash || ''}`;
+        window.location.replace(target);
+        return;
+      }
+    } else {
+      // Réinitialiser le garde-fou si l'erreur n'est pas liée aux chunks/lazy imports.
+      sessionStorage.removeItem('lazy_chunk_autoreload_once');
+    }
+
     this.setState({
       error: error,
       errorInfo: errorInfo,

@@ -21,7 +21,8 @@ const DepotMapEditor = lazy(() => import('./DepotMapEditor'));
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.3;
-const FOCUS_OVERVIEW_ZOOM = 0.8;
+const DEFAULT_BOUNDS_PADDING = 25;
+const COMPACT_FOCUS_BOUNDS_PADDING = 220;
 
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1")
 function findZoneFlexible(zoneList, zoneId) {
@@ -110,8 +111,8 @@ export default function DepotMap({
       const zone = findZoneFlexible(zones.zones, focusZoneId);
       if (zone) {
         if (zone.floor) setActiveFloor(zone.floor);
-        // Vue d'ensemble plus large que le zoom neutre pour l'ouverture depuis Equipements
-        setZoom(compact ? FOCUS_OVERVIEW_ZOOM : 1);
+        // Vue d'ensemble normale : c'est le cadrage qui s'élargit, pas le zoom applicatif
+        setZoom(1);
         setPan({ x: 0, y: 0 });
         setHighlightedZone(zone.id);
       }
@@ -135,7 +136,12 @@ export default function DepotMap({
   }, [zones, activeFloor]);
 
   // Bounding box auto-fit sur les zones de l'étage actif
-  const bounds = useMemo(() => computeZonesBounds(floorZones, 25), [floorZones]);
+  const boundsPadding =
+    compact && focusZoneId ? COMPACT_FOCUS_BOUNDS_PADDING : DEFAULT_BOUNDS_PADDING;
+  const bounds = useMemo(
+    () => computeZonesBounds(floorZones, boundsPadding),
+    [floorZones, boundsPadding],
+  );
 
   // Construire une map des stats par zone
   const statsMap = useMemo(() => {

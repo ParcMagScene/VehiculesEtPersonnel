@@ -35,7 +35,8 @@ export const PlanningTaskRow = React.memo(
     const taskEventType = task.eventType || task.event_type || '';
     const isDone = task.status === STATUS.DONE;
     const isProgress = task.status === 'in_progress';
-    const isGoogle = sourceType === 'google_event';
+    const isGoogle =
+      sourceType === 'google_event' || (!!googleEventTitle && (task.sourceId || task.source_id));
     const isHidden = task.visible === 0;
     const affaireNum =
       task.affaireNum || extractAffaireNum(task.title) || extractAffaireNum(googleEventTitle);
@@ -161,7 +162,7 @@ export const PlanningTaskRow = React.memo(
     }
     const cleanEventNorm = cleanEventTitle.toLowerCase().replace(/\s+/g, '');
     const displayTitleNorm = displayTitle.toLowerCase().replace(/\s+/g, '');
-    const showSubtitle = isGoogle
+    const showSubtitle = googleEventTitle
       ? false
       : cleanEventTitle &&
         cleanEventNorm !== displayTitleNorm &&

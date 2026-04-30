@@ -15,6 +15,7 @@ import {
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 const SupplierCatalogPanel = lazy(() => import('./SupplierCatalogPanel'));
+const ExternalProductsPanel = lazy(() => import('./ExternalProductsPanel'));
 import './OrdersPanel.css';
 
 import { Button, Checkbox, SearchBar, Select } from '@/design-system';
@@ -563,6 +564,16 @@ function OrdersPanel({ currentUser, isMobile }) {
             >
               <BookOpen size={16} /> Catalogue
             </Button>
+            <Button
+              variant="ghost"
+              className={`orders-tab ${activeTab === 'eshop' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('eshop');
+                setStatusFilter('');
+              }}
+            >
+              <ShoppingCart size={16} /> E-shops
+            </Button>
           </>
         )}
         {!isSimpleUser && activeTab !== 'catalog' && stats && (
@@ -596,7 +607,15 @@ function OrdersPanel({ currentUser, isMobile }) {
         </Suspense>
       )}
 
-      {activeTab !== 'catalog' && activeTab !== 'tracking' && (
+      {activeTab === 'eshop' && (
+        <Suspense
+          fallback={<div className="orders-loading">Chargement des produits e-shop...</div>}
+        >
+          <ExternalProductsPanel currentUser={currentUser} />
+        </Suspense>
+      )}
+
+      {activeTab !== 'catalog' && activeTab !== 'eshop' && activeTab !== 'tracking' && (
         <div className="orders-toolbar">
           <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher..." />
           {activeTab === 'requests' && (

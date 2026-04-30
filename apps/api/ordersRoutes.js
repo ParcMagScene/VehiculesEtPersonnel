@@ -64,11 +64,25 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
   // Créer un fournisseur
   app.post('/api/suppliers', authenticateToken, (req, res) => {
     try {
-      const { name, contact_name, email, phone, address, notes } = req.body;
+      const {
+        name,
+        contact_name,
+        email,
+        phone,
+        address,
+        notes,
+        website,
+        shipping_flat_rate,
+        shipping_free_threshold,
+        shipping_notes,
+      } = req.body;
       if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
       const result = db
         .prepare(
-          'INSERT INTO suppliers (name, contact_name, email, phone, address, notes) VALUES (?, ?, ?, ?, ?, ?)',
+          `INSERT INTO suppliers
+            (name, contact_name, email, phone, address, notes, website,
+             shipping_flat_rate, shipping_free_threshold, shipping_notes)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(
           name,
@@ -77,6 +91,10 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
           phone || null,
           address || null,
           notes || null,
+          website || null,
+          shipping_flat_rate != null ? Number(shipping_flat_rate) : null,
+          shipping_free_threshold != null ? Number(shipping_free_threshold) : null,
+          shipping_notes || null,
         );
       const supplier = db
         .prepare('SELECT * FROM suppliers WHERE id = ?')
@@ -91,9 +109,24 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
   // Modifier un fournisseur
   app.put('/api/suppliers/:id', authenticateToken, (req, res) => {
     try {
-      const { name, contact_name, email, phone, address, notes } = req.body;
+      const {
+        name,
+        contact_name,
+        email,
+        phone,
+        address,
+        notes,
+        website,
+        shipping_flat_rate,
+        shipping_free_threshold,
+        shipping_notes,
+      } = req.body;
       db.prepare(
-        'UPDATE suppliers SET name = ?, contact_name = ?, email = ?, phone = ?, address = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        `UPDATE suppliers SET
+          name = ?, contact_name = ?, email = ?, phone = ?, address = ?, notes = ?,
+          website = ?, shipping_flat_rate = ?, shipping_free_threshold = ?, shipping_notes = ?,
+          updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
       ).run(
         name,
         contact_name || null,
@@ -101,6 +134,10 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
         phone || null,
         address || null,
         notes || null,
+        website || null,
+        shipping_flat_rate != null ? Number(shipping_flat_rate) : null,
+        shipping_free_threshold != null ? Number(shipping_free_threshold) : null,
+        shipping_notes || null,
         req.params.id,
       );
       const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(req.params.id);

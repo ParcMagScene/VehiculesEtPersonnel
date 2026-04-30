@@ -1044,6 +1044,85 @@ export function runPostInitMigrations(db) {
     logger.warn('⚠️ Migration Sprint 2 UNIQUE persons.driver_id:', e.message);
   }
 
+  // ═══ Module E-shops — Produits externes multi-fournisseurs ═══
+  try {
+    // Ajouter champs expédition sur suppliers
+    const supplierCols = db
+      .prepare('PRAGMA table_info(suppliers)')
+      .all()
+      .map((c) => c.name);
+    if (!supplierCols.includes('shipping_flat_rate')) {
+      db.prepare('ALTER TABLE suppliers ADD COLUMN shipping_flat_rate REAL').run();
+      logger.info('✅ Migration: suppliers.shipping_flat_rate ajouté');
+    }
+    if (!supplierCols.includes('shipping_free_threshold')) {
+      db.prepare('ALTER TABLE suppliers ADD COLUMN shipping_free_threshold REAL').run();
+      logger.info('✅ Migration: suppliers.shipping_free_threshold ajouté');
+    }
+    if (!supplierCols.includes('shipping_notes')) {
+      db.prepare('ALTER TABLE suppliers ADD COLUMN shipping_notes TEXT').run();
+      logger.info('✅ Migration: suppliers.shipping_notes ajouté');
+    }
+    if (!supplierCols.includes('website')) {
+      db.prepare('ALTER TABLE suppliers ADD COLUMN website TEXT').run();
+      logger.info('✅ Migration: suppliers.website ajouté');
+    }
+
+    // Ajouter external_url sur supplier_articles
+    const artCols = db
+      .prepare('PRAGMA table_info(supplier_articles)')
+      .all()
+      .map((c) => c.name);
+    if (!artCols.includes('external_url')) {
+      db.prepare('ALTER TABLE supplier_articles ADD COLUMN external_url TEXT').run();
+      logger.info('✅ Migration: supplier_articles.external_url ajouté');
+    }
+
+    // Table produits externes (catalogue e-shop)
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS external_products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT,
+        image_url TEXT,
+        notes TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+      )
+    `);
+
+    // Table liaisons produit ↔ fournisseur avec prix et politique de port
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS external_product_suppliers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        supplier_id INTEGER,
+        supplier_name TEXT NOT NULL,
+        supplier_ref TEXT,
+        price_ht REAL,
+        external_url TEXT,
+        shipping_policy TEXT DEFAULT 'flat',
+        shipping_flat_rate REAL,
+        shipping_free_threshold REAL,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES external_products(id) ON DELETE CASCADE,
+        FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+      )
+    `);
+
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_ext_product_suppliers ON external_product_suppliers(product_id)',
+    );
+    logger.info('✅ Migration: module external_products créé');
+  } catch (e) {
+    logger.warn('⚠️ Migration external_products:', e.message);
+  }
+
   // ═══ Sprint 4 — Index manquants : orders, order_items, quotes ═══
   const sprint4Indexes = [
     'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',

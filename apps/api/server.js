@@ -114,6 +114,7 @@ import {
 import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
+import { setupEshopRoutes } from './eshopRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
 
@@ -313,6 +314,9 @@ setupReservationEquipmentRoutes(app, authenticateToken);
 
 // Routes Articles Fournisseurs (import catalogues PDF)
 setupSupplierCatalogRoutes(app, authenticateToken, requireCatalogAccess);
+
+// Routes Module E-shops (produits externes multi-fournisseurs)
+setupEshopRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Module Stock & Pièces
 setupStockCategoriesRoutes(app, authenticateToken, requireAdmin);

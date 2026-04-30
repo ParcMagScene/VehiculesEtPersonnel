@@ -262,5 +262,73 @@ export function registerOrdersMethods(ApiClient) {
         skipCamelCase: true,
       });
     },
+
+    // ─── Module E-shops ───────────────────────────────────────
+    async getExternalProducts(params = {}) {
+      const q = new URLSearchParams();
+      if (params.search) q.set('search', params.search);
+      if (params.category) q.set('category', params.category);
+      if (params.limit) q.set('limit', params.limit);
+      if (params.offset) q.set('offset', params.offset);
+      const qs = q.toString();
+      return this.request(`/external-products${qs ? '?' + qs : ''}`, { skipCamelCase: true });
+    },
+    async getExternalProduct(id) {
+      return this.request(`/external-products/${id}`, { skipCamelCase: true });
+    },
+    async createExternalProduct(data) {
+      return this.request('/external-products', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+    async updateExternalProduct(id, data) {
+      return this.request(`/external-products/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+    async deleteExternalProduct(id) {
+      return this.request(`/external-products/${id}`, { method: 'DELETE', skipCamelCase: true });
+    },
+    async compareExternalProduct(id) {
+      return this.request(`/external-products/${id}/compare`, { skipCamelCase: true });
+    },
+    async addExternalProductSupplier(data) {
+      return this.request('/external-product-suppliers', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+    async updateExternalProductSupplier(id, data) {
+      return this.request(`/external-product-suppliers/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+    async deleteExternalProductSupplier(id) {
+      return this.request(`/external-product-suppliers/${id}`, {
+        method: 'DELETE',
+        skipCamelCase: true,
+      });
+    },
+    async generateEshopQuotePdf(title, items) {
+      const token = localStorage.getItem('token');
+      const base = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${base}/api/external-products/quote-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title, items }),
+      });
+      if (!response.ok) throw new Error('Erreur génération PDF');
+      return response.blob();
+    },
   });
 }

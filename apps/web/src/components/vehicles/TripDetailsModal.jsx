@@ -266,51 +266,6 @@ const TripDetailsModal = ({
       });
   }, [googleMapsApiKey]);
 
-  // Initialiser l'autocomplétion Google Maps pour les champs de pause
-  useEffect(() => {
-    if (!isGoogleMapsLoaded || !window.google?.maps?.places?.Autocomplete) return;
-
-    pauses.forEach((pause) => {
-      const inputElement = document.getElementById(`pause-location-${pause.id}`);
-      if (!inputElement) return;
-
-      // Vérifier si l'autocomplétion n'est pas déjà initialisée
-      if (inputElement.hasAttribute('data-autocomplete-initialized')) return;
-
-      // Options de configuration pour prioriser les lieux proches
-      const autocompleteOptions = {
-        componentRestrictions: { country: 'fr' },
-        fields: ['formatted_address', 'geometry', 'name'],
-      };
-
-      // Si on a la position de l'utilisateur, prioriser les résultats autour
-      if (userLocation) {
-        autocompleteOptions.locationBias = {
-          center: userLocation,
-          radius: 50000, // 50km autour
-        };
-      }
-
-      const autocomplete = new window.google.maps.places.Autocomplete(
-        inputElement,
-        autocompleteOptions,
-      );
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.formatted_address) {
-          updatePause(pause.id, 'location', place.formatted_address);
-          // Marquer cette pause comme ayant une location validée
-          setPausesWithValidatedLocation((prev) => new Set(prev).add(pause.id));
-          // Sauvegarder dans l'historique
-          saveLocationToHistory(place.formatted_address);
-        }
-      });
-
-      inputElement.setAttribute('data-autocomplete-initialized', 'true');
-    });
-  }, [isGoogleMapsLoaded, pauses, userLocation]);
-
   // Calculer automatiquement la durée ALLER quand les conditions changent
   useEffect(() => {
     if (
@@ -352,53 +307,6 @@ const TripDetailsModal = ({
     pauses,
     pausesWithValidatedLocation,
   ]);
-
-  // Initialiser l'autocomplétion Google Maps sur les champs principaux
-  useEffect(() => {
-    if (!isGoogleMapsLoaded || !window.google?.maps?.places?.Autocomplete) return;
-
-    const fieldsToAutocomplete = [
-      'departureLocation',
-      'arrivalLocation',
-      'returnDepartureLocation',
-      'returnArrivalLocation',
-    ];
-
-    fieldsToAutocomplete.forEach((fieldName) => {
-      const inputElement = document.querySelector(`input[name="${fieldName}"]`);
-      if (!inputElement || inputElement.hasAttribute('data-autocomplete-initialized')) return;
-
-      const autocompleteOptions = {
-        componentRestrictions: { country: 'fr' },
-        fields: ['formatted_address', 'geometry', 'name'],
-      };
-
-      if (userLocation) {
-        autocompleteOptions.locationBias = {
-          center: userLocation,
-          radius: 50000,
-        };
-      }
-
-      const autocomplete = new window.google.maps.places.Autocomplete(
-        inputElement,
-        autocompleteOptions,
-      );
-
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place.formatted_address) {
-          setFormData((prev) => ({
-            ...prev,
-            [fieldName]: place.formatted_address,
-          }));
-          saveLocationToHistory(place.formatted_address);
-        }
-      });
-
-      inputElement.setAttribute('data-autocomplete-initialized', 'true');
-    });
-  }, [isGoogleMapsLoaded, userLocation]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

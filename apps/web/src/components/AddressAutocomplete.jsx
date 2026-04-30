@@ -1,28 +1,15 @@
 import './AddressAutocomplete.css';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { TIMING } from '../constants';
 import api from '../utils/api';
 import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../utils/googleMapsLoader';
 
 /**
- * Composant réutilisable d'autocomplétion d'adresse via Google Maps Places API
- *
- * Props:
- * - value: string - valeur actuelle
- * - onChange: (value: string) => void - callback appelé avec la nouvelle valeur
- * - placeholder: string - placeholder de l'input
- * - id: string - id de l'input
- * - name: string - name de l'input
- * - required: boolean - champ obligatoire
- * - className: string - classes CSS additionnelles
- * - disabled: boolean - désactivé
- * - country: string|string[] - restriction pays (défaut: ['fr', 're'])
- * - onPlaceSelect: (place) => void - callback optionnel avec le place complet
- * - as: 'input'|'textarea' - type d'élément (défaut: 'input')
- * - rows: number - nombre de lignes pour textarea
- * - list: string - datalist id for fallback
+ * Composant reutilisable d'autocompletion d'adresse via Google Places API moderne.
+ * - Utilise AutocompleteSuggestion (nouvelle API) au lieu de l'ancienne classe Autocomplete.
+ * - Fallback gracieux: l'input reste pleinement editable meme sans API.
  */
 export default function AddressAutocomplete({
   value,
@@ -41,74 +28,152 @@ export default function AddressAutocomplete({
   children,
 }) {
   const inputRef = useRef(null);
-  const autocompleteInstanceRef = useRef(null);
-  const isInitializedRef = useRef(false);
+  const requestTimerRef = useRef(null);
+  const predictionByLabelRef = useRef(new Map());
+  const datalistIdRef = useRef(
+    list || `address-autocomplete-${Math.random().toString(36).slice(2, 10)}`,
+  );
 
-  const initAutocomplete = useCallback(async () => {
-    if (isInitializedRef.current || !inputRef.current) return;
+  const [placesReady, setPlacesReady] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
 
+  const ensurePlacesApi = useCallback(async () => {
     try {
-      // Charger Google Maps si nécessaire
       if (!isGoogleMapsLoaded()) {
         const configData = await api.getGoogleMapsApiKey();
-        const apiKey = configData.value;
-        if (!apiKey) return;
+        const apiKey = configData?.value;
+        if (!apiKey) return false;
         await loadGoogleMapsAPI(apiKey);
       }
 
-      if (!window.google?.maps?.places) return;
-      if (!inputRef.current) return;
-
-      const countries = Array.isArray(country) ? country : [country];
-
-      // API Autocomplete classique — stable et compatible avec notre input React
-      // Note: PlaceAutocompleteElement crée son propre input (inputElement read-only)
-      // et ne peut pas s'intégrer dans un composant React contrôlé existant.
-      // L'Autocomplete classique reste supporté avec bugfixes garantis par Google.
-      if (window.google.maps.places.Autocomplete) {
-        const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-          componentRestrictions: { country: countries },
-          fields: ['formatted_address', 'geometry', 'name'],
-        });
-
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place.formatted_address) {
-            onChange(place.formatted_address);
-            if (onPlaceSelect) onPlaceSelect(place);
-          } else if (place.name) {
-            onChange(place.name);
-            if (onPlaceSelect) onPlaceSelect(place);
-          }
-        });
-
-        autocompleteInstanceRef.current = autocomplete;
-        isInitializedRef.current = true;
+      if (!window.google?.maps) return false;
+      if (!window.google.maps.places?.AutocompleteSuggestion && window.google.maps.importLibrary) {
+        await window.google.maps.importLibrary('places');
       }
+
+      return Boolean(window.google.maps.places?.AutocompleteSuggestion);
     } catch (error) {
       console.error('Erreur init autocomplete adresse:', error);
+      return false;
     }
-  }, [country, onChange, onPlaceSelect]);
+  }, []);
+
+  const getPredictionLabel = useCallback((prediction) => {
+    if (!prediction) return '';
+    if (typeof prediction.text?.toString === 'function') return prediction.text.toString();
+    if (typeof prediction.text?.text === 'string') return prediction.text.text;
+    if (typeof prediction.mainText?.text === 'string') return prediction.mainText.text;
+    if (typeof prediction.description === 'string') return prediction.description;
+    return '';
+  }, []);
+
+  const fetchSuggestions = useCallback(
+    async (query) => {
+      if (!placesReady || !query || query.length < 3 || as !== 'input') {
+        predictionByLabelRef.current.clear();
+        setSuggestions([]);
+        return;
+      }
+
+      try {
+        const regions = Array.isArray(country) ? country : [country];
+        const request = {
+          input: query,
+          language: 'fr',
+          includedRegionCodes: regions,
+        };
+
+        const { AutocompleteSuggestion } = window.google.maps.places;
+        const { suggestions: raw = [] } =
+          await AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        const nextMap = new Map();
+        const nextLabels = [];
+
+        raw.forEach((item) => {
+          const prediction = item?.placePrediction;
+          const label = getPredictionLabel(prediction);
+          if (!label || nextMap.has(label)) return;
+          nextMap.set(label, prediction);
+          nextLabels.push(label);
+        });
+
+        predictionByLabelRef.current = nextMap;
+        setSuggestions(nextLabels.slice(0, 8));
+      } catch (error) {
+        console.warn('Autocomplete suggestions indisponibles:', error?.message || error);
+      }
+    },
+    [as, country, getPredictionLabel, placesReady],
+  );
 
   useEffect(() => {
-    // Petit délai pour que le DOM soit prêt
-    const timer = setTimeout(initAutocomplete, TIMING.DOUBLE_CLICK);
-    return () => clearTimeout(timer);
-  }, [initAutocomplete]);
+    const timer = setTimeout(async () => {
+      const ready = await ensurePlacesApi();
+      setPlacesReady(ready);
+    }, TIMING.DOUBLE_CLICK);
 
-  // Cleanup
+    return () => clearTimeout(timer);
+  }, [ensurePlacesApi]);
+
   useEffect(() => {
     return () => {
-      if (autocompleteInstanceRef.current) {
-        window.google?.maps?.event?.clearInstanceListeners?.(autocompleteInstanceRef.current);
-      }
-      autocompleteInstanceRef.current = null;
-      isInitializedRef.current = false;
+      if (requestTimerRef.current) clearTimeout(requestTimerRef.current);
+      predictionByLabelRef.current.clear();
     };
   }, []);
 
-  const handleChange = (e) => {
-    onChange(e.target.value);
+  const tryEmitPlaceDetails = useCallback(
+    async (label) => {
+      if (!onPlaceSelect) return;
+      const prediction = predictionByLabelRef.current.get(label);
+      if (!prediction || typeof prediction.toPlace !== 'function') return;
+
+      try {
+        const place = prediction.toPlace();
+        await place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] });
+
+        const payload = {
+          name: place.displayName || null,
+          formatted_address: place.formattedAddress || label,
+          geometry:
+            place.location &&
+            typeof place.location.lat === 'function' &&
+            typeof place.location.lng === 'function'
+              ? {
+                  location: {
+                    lat: () => place.location.lat(),
+                    lng: () => place.location.lng(),
+                  },
+                }
+              : null,
+        };
+
+        onPlaceSelect(payload);
+
+        if (payload.formatted_address && payload.formatted_address !== label) {
+          onChange(payload.formatted_address);
+        }
+      } catch (error) {
+        console.warn('Impossible de charger les details du lieu:', error?.message || error);
+      }
+    },
+    [onChange, onPlaceSelect],
+  );
+
+  const handleChange = async (e) => {
+    const nextValue = e.target.value;
+    onChange(nextValue);
+
+    if (requestTimerRef.current) clearTimeout(requestTimerRef.current);
+    requestTimerRef.current = setTimeout(() => {
+      fetchSuggestions(nextValue);
+    }, 180);
+
+    // Si l'utilisateur choisit une suggestion (datalist), on enrichit eventuellement le lieu.
+    if (predictionByLabelRef.current.has(nextValue)) {
+      await tryEmitPlaceDetails(nextValue);
+    }
   };
 
   const Tag = as === 'textarea' ? 'textarea' : 'input';
@@ -133,11 +198,21 @@ export default function AddressAutocomplete({
   if (list) {
     // eslint-disable-next-line react-hooks/refs
     tagProps.list = list;
+  } else if (as === 'input') {
+    // eslint-disable-next-line react-hooks/refs
+    tagProps.list = datalistIdRef.current;
   }
 
   return (
     <div className="address-autocomplete-wrapper">
       <Tag {...tagProps} />
+      {as === 'input' && !list && suggestions.length > 0 && (
+        <datalist id={datalistIdRef.current}>
+          {suggestions.map((item) => (
+            <option key={item} value={item} />
+          ))}
+        </datalist>
+      )}
       {children}
     </div>
   );

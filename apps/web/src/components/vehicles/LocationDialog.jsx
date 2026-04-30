@@ -98,12 +98,8 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           return;
         }
 
-        // Vérifier que toutes les classes nécessaires sont disponibles
-        if (
-          !window.google.maps.Marker ||
-          !window.google.maps.places ||
-          !window.google.maps.places.Autocomplete
-        ) {
+        // Vérifier que les classes nécessaires sont disponibles
+        if (!window.google.maps.Marker || !window.google.maps.places) {
           console.error('❌ Classes Google Maps non disponibles');
           setError('Erreur de chargement de Google Maps. Veuillez recharger la page.');
           return;
@@ -158,8 +154,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           });
         }
 
-        // === API PLACES : Autocomplete classique (fonctionne partout) ===
-        // Attendre que le DOM soit prêt avec un setTimeout
+        // === API PLACES : AutocompleteSuggestion (nouvelle API) ===
         setTimeout(() => {
           if (!addressAutocompleteContainerRef.current) {
             console.error('❌ Conteneur autocomplete non trouvé dans le DOM');
@@ -172,7 +167,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           }
 
           try {
-            // Vérifier si un input existe déjà
+            // Créer ou réutiliser l'input
             let input = addressAutocompleteContainerRef.current.querySelector(
               '#address-autocomplete-input',
             );
@@ -188,62 +183,112 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
               addressAutocompleteContainerRef.current.appendChild(input);
             }
 
-            const autocomplete = new window.google.maps.places.Autocomplete(input, {
-              componentRestrictions: { country: 'fr' },
-              fields: ['name', 'formatted_address', 'geometry', 'place_id'],
-            });
+            const DATALIST_ID = 'location-dialog-address-datalist';
+            let datalist = document.getElementById(DATALIST_ID);
+            if (!datalist) {
+              datalist = document.createElement('datalist');
+              datalist.id = DATALIST_ID;
+              document.body.appendChild(datalist);
+            }
+            input.setAttribute('list', DATALIST_ID);
 
-            autocomplete.addListener('place_changed', () => {
-              const place = autocomplete.getPlace();
+            const predictionMap = new Map();
 
-              if (!place.geometry || !place.geometry.location) {
-                console.error('Pas de localisation pour ce lieu');
+            const fetchSuggestions = async (query) => {
+              if (!query || query.length < 3) {
+                datalist.innerHTML = '';
+                predictionMap.clear();
                 return;
               }
-
-              const lat = place.geometry.location.lat();
-              const lng = place.geometry.location.lng();
-
-              setFormData((prev) => ({
-                ...prev,
-                address: place.formatted_address,
-                lat: lat,
-                lng: lng,
-                placeId: place.place_id,
-              }));
-
-              // Mettre à jour la carte
-              if (mapInstanceRef.current) {
-                mapInstanceRef.current.setCenter({ lat, lng });
-                mapInstanceRef.current.setZoom(15);
-              }
-
-              // Mettre à jour le marqueur
-              if (markerRef.current) {
-                markerRef.current.setPosition({ lat, lng });
-              } else if (mapInstanceRef.current) {
-                const marker = new window.google.maps.Marker({
-                  position: { lat, lng },
-                  map: mapInstanceRef.current,
-                  draggable: true,
-                  title: place.name,
+              try {
+                if (
+                  !window.google.maps.places.AutocompleteSuggestion &&
+                  window.google.maps.importLibrary
+                ) {
+                  await window.google.maps.importLibrary('places');
+                }
+                const { AutocompleteSuggestion } = window.google.maps.places;
+                const { suggestions = [] } =
+                  await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+                    input: query,
+                    language: 'fr',
+                    includedRegionCodes: ['fr'],
+                  });
+                datalist.innerHTML = '';
+                predictionMap.clear();
+                suggestions.slice(0, 8).forEach(({ placePrediction }) => {
+                  const label =
+                    placePrediction.text?.toString?.() || placePrediction.text?.text || '';
+                  if (!label) return;
+                  predictionMap.set(label, placePrediction);
+                  const opt = document.createElement('option');
+                  opt.value = label;
+                  datalist.appendChild(opt);
                 });
-
-                marker.addListener('dragend', (event) => {
-                  const newLat = event.latLng.lat();
-                  const newLng = event.latLng.lng();
-                  setFormData((prev) => ({
-                    ...prev,
-                    lat: newLat,
-                    lng: newLng,
-                  }));
-                  reverseGeocode(newLat, newLng);
-                });
-
-                markerRef.current = marker;
+              } catch (e) {
+                console.warn('Suggestions adresse indisponibles:', e?.message);
               }
+            };
 
-              logger.log('📍 Lieu sélectionné:', place.formatted_address);
+            const applyPlaceSelection = async (label) => {
+              const prediction = predictionMap.get(label);
+              if (!prediction) return;
+              try {
+                const place = prediction.toPlace();
+                await place.fetchFields({
+                  fields: ['formattedAddress', 'location', 'id', 'displayName'],
+                });
+                const lat = place.location.lat();
+                const lng = place.location.lng();
+
+                setFormData((prev) => ({
+                  ...prev,
+                  address: place.formattedAddress,
+                  lat,
+                  lng,
+                  placeId: place.id,
+                }));
+
+                if (mapInstanceRef.current) {
+                  mapInstanceRef.current.setCenter({ lat, lng });
+                  mapInstanceRef.current.setZoom(15);
+                }
+
+                if (markerRef.current) {
+                  markerRef.current.setPosition({ lat, lng });
+                } else if (mapInstanceRef.current) {
+                  const marker = new window.google.maps.Marker({
+                    position: { lat, lng },
+                    map: mapInstanceRef.current,
+                    draggable: true,
+                    title: place.displayName || label,
+                  });
+
+                  marker.addListener('dragend', (event) => {
+                    const newLat = event.latLng.lat();
+                    const newLng = event.latLng.lng();
+                    setFormData((prev) => ({ ...prev, lat: newLat, lng: newLng }));
+                    reverseGeocode(newLat, newLng);
+                  });
+
+                  markerRef.current = marker;
+                }
+
+                logger.log('📍 Lieu sélectionné:', place.formattedAddress);
+              } catch (e) {
+                console.warn('Impossible de récupérer les détails du lieu:', e?.message);
+              }
+            };
+
+            let debounceTimer;
+            input.addEventListener('input', (e) => {
+              clearTimeout(debounceTimer);
+              const val = e.target.value;
+              if (predictionMap.has(val)) {
+                applyPlaceSelection(val);
+              } else {
+                debounceTimer = setTimeout(() => fetchSuggestions(val), 300);
+              }
             });
 
             logger.log('✅ Autocomplete initialisé avec succès');
@@ -251,7 +296,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
             console.error("❌ Erreur lors de l'initialisation de l'autocomplétion:", error);
             setError("Erreur lors de l'initialisation de l'autocomplétion");
           }
-        }, 500); // Délai de 500ms pour attendre que le DOM soit monté
+        }, 500);
       })
       .catch((error) => {
         console.error('❌ Erreur chargement Google Maps:', error);

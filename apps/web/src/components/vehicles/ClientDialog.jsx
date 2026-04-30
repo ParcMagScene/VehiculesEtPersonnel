@@ -97,12 +97,8 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           return;
         }
 
-        // Vérifier que toutes les classes nécessaires sont disponibles
-        if (
-          !window.google.maps.Marker ||
-          !window.google.maps.places ||
-          !window.google.maps.places.Autocomplete
-        ) {
+        // Vérifier que les classes nécessaires sont disponibles
+        if (!window.google.maps.Marker || !window.google.maps.places) {
           console.error('❌ Classes Google Maps non disponibles');
           setError('Erreur de chargement de Google Maps. Veuillez recharger la page.');
           return;
@@ -154,67 +150,109 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
           });
         }
 
-        // Configurer l'autocomplétion
+        // Configurer l'autocomplétion (nouvelle API Places)
         if (inputRef.current) {
-          const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-            componentRestrictions: { country: 'fr' },
-            fields: ['formatted_address', 'geometry', 'name', 'place_id'],
-          });
+          const DATALIST_ID = 'client-dialog-address-datalist';
+          let datalist = document.getElementById(DATALIST_ID);
+          if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = DATALIST_ID;
+            document.body.appendChild(datalist);
+          }
+          inputRef.current.setAttribute('list', DATALIST_ID);
 
-          autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
+          const predictionMap = new Map();
 
-            if (!place.geometry) {
-              console.error('Pas de géométrie pour ce lieu');
+          const fetchSuggestions = async (query) => {
+            if (!query || query.length < 3) {
+              datalist.innerHTML = '';
+              predictionMap.clear();
               return;
             }
-
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-
-            setFormData((prev) => ({
-              ...prev,
-              address: place.formatted_address,
-              lat: lat,
-              lng: lng,
-              placeId: place.place_id,
-            }));
-
-            // Mettre à jour la carte et le marqueur
-            map.setCenter({ lat, lng });
-            map.setZoom(15);
-
-            if (markerRef.current) {
-              markerRef.current.setPosition({ lat, lng });
-            } else {
-              const marker = new window.google.maps.Marker({
-                position: { lat, lng },
-                map: map,
-                draggable: true,
-                title: formData.name,
+            try {
+              if (
+                !window.google.maps.places.AutocompleteSuggestion &&
+                window.google.maps.importLibrary
+              ) {
+                await window.google.maps.importLibrary('places');
+              }
+              const { AutocompleteSuggestion } = window.google.maps.places;
+              const { suggestions = [] } =
+                await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+                  input: query,
+                  language: 'fr',
+                  includedRegionCodes: ['fr'],
+                });
+              datalist.innerHTML = '';
+              predictionMap.clear();
+              suggestions.slice(0, 8).forEach(({ placePrediction }) => {
+                const label =
+                  placePrediction.text?.toString?.() || placePrediction.text?.text || '';
+                if (!label) return;
+                predictionMap.set(label, placePrediction);
+                const opt = document.createElement('option');
+                opt.value = label;
+                datalist.appendChild(opt);
               });
-
-              markerRef.current = marker;
-
-              marker.addListener('dragend', (event) => {
-                const newLat = event.latLng.lat();
-                const newLng = event.latLng.lng();
-                setFormData((prev) => ({
-                  ...prev,
-                  lat: newLat,
-                  lng: newLng,
-                }));
-                reverseGeocode(newLat, newLng);
-              });
+            } catch (e) {
+              console.warn('Suggestions adresse indisponibles:', e?.message);
             }
+          };
 
-            // Calculer la distance si on a l'adresse de l'entreprise
-            if (companyAddress && lat && lng) {
-              calculateRoute(companyAddress, { lat, lng });
+          const applyPlaceSelection = async (label) => {
+            const prediction = predictionMap.get(label);
+            if (!prediction) return;
+            try {
+              const place = prediction.toPlace();
+              await place.fetchFields({ fields: ['formattedAddress', 'location', 'id'] });
+              const lat = place.location.lat();
+              const lng = place.location.lng();
+              setFormData((prev) => ({
+                ...prev,
+                address: place.formattedAddress,
+                lat,
+                lng,
+                placeId: place.id,
+              }));
+              map.setCenter({ lat, lng });
+              map.setZoom(15);
+              if (markerRef.current) {
+                markerRef.current.setPosition({ lat, lng });
+              } else {
+                const marker = new window.google.maps.Marker({
+                  position: { lat, lng },
+                  map,
+                  draggable: true,
+                  title: formData.name,
+                });
+                markerRef.current = marker;
+                marker.addListener('dragend', (event) => {
+                  const newLat = event.latLng.lat();
+                  const newLng = event.latLng.lng();
+                  setFormData((prev) => ({ ...prev, lat: newLat, lng: newLng }));
+                  reverseGeocode(newLat, newLng);
+                });
+              }
+              if (companyAddress && lat && lng) {
+                calculateRoute(companyAddress, { lat, lng });
+              }
+            } catch (e) {
+              console.warn('Impossible de récupérer les détails du lieu:', e?.message);
+            }
+          };
+
+          let debounceTimer;
+          inputRef.current.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            const val = e.target.value;
+            if (predictionMap.has(val)) {
+              applyPlaceSelection(val);
+            } else {
+              debounceTimer = setTimeout(() => fetchSuggestions(val), 300);
             }
           });
 
-          autocompleteRef.current = autocomplete;
+          autocompleteRef.current = null;
         }
 
         // Calculer la distance initiale si les données sont complètes

@@ -157,12 +157,19 @@ function SynthesesPanel({ currentUser: _currentUser }) {
       if (sh.stats?.unreported_am) entry.stats.unreported_am = true;
       if (sh.stats?.unreported_pm) entry.stats.unreported_pm = true;
     }
-    const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
-    const all = Array.from(map.values()).sort((a, b) =>
+    return Array.from(map.values()).sort((a, b) =>
       `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`),
     );
-    return onlyPermanents ? all.filter((pg) => PERMANENT_TYPES.includes(pg.person_type)) : all;
-  }, [synthese, onlyPermanents]);
+  }, [synthese]);
+
+  const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
+  const filteredPersons = useMemo(
+    () =>
+      onlyPermanents
+        ? sheetsByPerson.filter((pg) => PERMANENT_TYPES.includes(pg.person_type))
+        : sheetsByPerson,
+    [sheetsByPerson, onlyPermanents],
+  );
 
   const togglePerson = (personId) => {
     setExpandedPersons((prev) => {
@@ -259,7 +266,14 @@ function SynthesesPanel({ currentUser: _currentUser }) {
               checked={onlyPermanents}
               onChange={(e) => setOnlyPermanents(e.target.checked)}
             />
-            <span>Permanents uniquement</span>
+            <span>
+              Permanents uniquement
+              {onlyPermanents && sheetsByPerson.length > 0 && (
+                <em style={{ fontStyle: 'normal', opacity: 0.7, marginLeft: 4 }}>
+                  ({filteredPersons.length}/{sheetsByPerson.length})
+                </em>
+              )}
+            </span>
           </label>
 
           <Button
@@ -333,7 +347,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
           )}
 
           {/* Tableau par Personnel */}
-          {sheetsByPerson.length > 0 ? (
+          {filteredPersons.length > 0 ? (
             <div className="syntheses-table-wrap">
               <table className="syntheses-table">
                 <thead>
@@ -348,7 +362,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {sheetsByPerson.map((pg) => {
+                  {filteredPersons.map((pg) => {
                     // Une personne en indispo/mission sur toutes ses fiches n'est pas en anomalie pour les non-renseignées
                     const allSheetsHaveContext =
                       pg.sheets.length > 0 &&
@@ -517,6 +531,17 @@ function SynthesesPanel({ currentUser: _currentUser }) {
           )}
 
           {/* Incidents par affaire (periode en cours) */}
+          {incidentSummary && incidentSummary.total_tickets === 0 && (
+            <div className="syntheses-anomalies" style={{ opacity: 0.6 }}>
+              <h4>
+                <AlertTriangle size={16} /> Tickets incidents — aucun pour cette période
+              </h4>
+              <p style={{ margin: 0, fontSize: '0.82rem' }}>
+                Les incidents sont saisis par semaine. Consultez la semaine concernée ou la vue
+                Mois.
+              </p>
+            </div>
+          )}
           {incidentByAffaire.length > 0 && (
             <div className="syntheses-anomalies">
               <h4>

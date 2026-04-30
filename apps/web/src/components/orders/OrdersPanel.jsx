@@ -12,7 +12,7 @@ import {
   Plus,
   ShoppingCart,
 } from 'lucide-react';
-import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const SupplierCatalogPanel = lazy(() =>
   import('./SupplierCatalogPanel').then((m) => ({
@@ -155,6 +155,25 @@ function OrdersPanel({ currentUser, isMobile }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, statusFilter, activeTab, showArchivedSuppliers]);
+
+  const filteredSuppliersWithOrders = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    const list = term
+      ? suppliersWithOrders.filter(
+          (s) =>
+            s.name?.toLowerCase().includes(term) ||
+            s.contact_name?.toLowerCase().includes(term) ||
+            s.email?.toLowerCase().includes(term) ||
+            s.phone?.toLowerCase().includes(term),
+        )
+      : [...suppliersWithOrders];
+    // Trier : nb commandes DESC, puis created_at DESC (nouveaux en tête de leur groupe)
+    return list.sort(
+      (a, b) =>
+        (b.active_order_count || 0) - (a.active_order_count || 0) ||
+        new Date(b.created_at || 0) - new Date(a.created_at || 0),
+    );
+  }, [suppliersWithOrders, searchTerm]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -753,7 +772,7 @@ function OrdersPanel({ currentUser, isMobile }) {
                 )}
                 {activeTab === 'suppliers' && (
                   <EnhancedSuppliersList
-                    suppliers={activeTab === 'suppliers' ? suppliersWithOrders : suppliers}
+                    suppliers={activeTab === 'suppliers' ? filteredSuppliersWithOrders : suppliers}
                     onEdit={(s) => {
                       setEditingSupplier(s);
                       setShowSupplierForm(true);

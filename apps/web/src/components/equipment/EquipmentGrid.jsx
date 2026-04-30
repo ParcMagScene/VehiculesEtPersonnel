@@ -256,11 +256,16 @@ const EquipmentGrid = ({
                 <td className="eq-table-serial">{eq.serialNumber || '—'}</td>
                 <td className="eq-table-qty">{eq.stockQuantity || 1}</td>
                 <td className="eq-table-depot">
-                  {location.depotLabel === '—'
-                    ? '—'
-                    : location.floorLabel
-                      ? `${location.depotLabel} · ${location.floorLabel}`
-                      : location.depotLabel}
+                  {location.depotLabel === '—' ? (
+                    '—'
+                  ) : (
+                    <div className="eq-depot-badges">
+                      <span className="eq-depot-badge">{location.depotLabel}</span>
+                      {location.floorLabel && (
+                        <span className="eq-depot-floor-badge">{location.floorLabel}</span>
+                      )}
+                    </div>
+                  )}
                 </td>
                 <td>
                   {(() => {

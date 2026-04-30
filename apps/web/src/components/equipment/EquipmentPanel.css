@@ -908,6 +908,41 @@
   font-weight: 500;
 }
 
+.eq-table-depot {
+  white-space: nowrap;
+}
+
+.eq-depot-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.eq-depot-badge,
+.eq-depot-floor-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.eq-depot-badge {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(14, 165, 233, 0.24));
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  color: var(--theme-info-dark, #1d4ed8);
+}
+
+.eq-depot-floor-badge {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: var(--theme-secondary-dark, #4338ca);
+}
+
 .eq-table-status {
   font-weight: 600;
   font-size: var(--font-sm);

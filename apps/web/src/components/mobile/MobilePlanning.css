@@ -30,6 +30,7 @@
   background: var(--theme-bg-tertiary);
   border: none;
   border-radius: var(--radius-md);
+  color: var(--theme-text-primary);
   width: 36px;
   height: 36px;
   display: flex;

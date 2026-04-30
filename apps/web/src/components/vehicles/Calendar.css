@@ -71,7 +71,7 @@
   border-radius: var(--radius-sm);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-text-subtle);
+  color: var(--theme-text-primary);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -142,7 +142,7 @@
 [data-theme='dark'] .cal-nav-btn {
   background: var(--theme-bg-tertiary);
   border-color: var(--theme-border);
-  color: var(--theme-text-secondary);
+  color: var(--theme-text-primary);
 }
 
 [data-theme='dark'] .cal-nav-btn:hover {

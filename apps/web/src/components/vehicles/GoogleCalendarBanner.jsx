@@ -71,6 +71,7 @@ function GoogleCalendarBanner({
 
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const widthSyncFrameRef = useRef(null);
+  const lastWidthSyncAtRef = useRef(0);
   const lastGridColumnsRef = useRef('');
   const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
   const [eventFormEvent, setEventFormEvent] = useState(null);
@@ -207,6 +208,8 @@ function GoogleCalendarBanner({
 
   // Synchroniser les largeurs avec le calendrier principal (ou le planning personnel)
   useEffect(() => {
+    const MIN_WIDTH_SYNC_INTERVAL_MS = 120;
+
     const applyWidths = () => {
       // Chercher la grille principale : Calendar (.calendar-grid) ou PersonnelPanel (.pp-grid)
       const calendarGrid =
@@ -228,6 +231,14 @@ function GoogleCalendarBanner({
     };
 
     const scheduleWidthSync = () => {
+      if (document.hidden) return;
+
+      const now = Date.now();
+      if (now - lastWidthSyncAtRef.current < MIN_WIDTH_SYNC_INTERVAL_MS) {
+        return;
+      }
+      lastWidthSyncAtRef.current = now;
+
       if (widthSyncFrameRef.current) {
         cancelAnimationFrame(widthSyncFrameRef.current);
       }
@@ -266,7 +277,7 @@ function GoogleCalendarBanner({
       if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener('resize', scheduleWidthSync);
     };
-  }, [view, currentDate, events.length]);
+  }, [view, currentDate]);
 
   // Synchroniser le scroll entre le calendrier et le banner
   useEffect(() => {

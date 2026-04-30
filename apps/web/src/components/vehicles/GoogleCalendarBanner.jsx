@@ -72,6 +72,7 @@ function GoogleCalendarBanner({
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const widthSyncFrameRef = useRef(null);
   const lastWidthSyncAtRef = useRef(0);
+  const scrollSyncFrameRef = useRef(null);
   const lastGridColumnsRef = useRef('');
   const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
   const [eventFormEvent, setEventFormEvent] = useState(null);
@@ -209,12 +210,22 @@ function GoogleCalendarBanner({
   // Synchroniser les largeurs avec le calendrier principal (ou le planning personnel)
   useEffect(() => {
     const MIN_WIDTH_SYNC_INTERVAL_MS = 120;
+    let calendarGridEl = null;
+    let bannerGridEl = null;
+
+    const resolveGridEls = () => {
+      if (!calendarGridEl || !calendarGridEl.isConnected) {
+        calendarGridEl =
+          document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+      }
+      if (!bannerGridEl || !bannerGridEl.isConnected) {
+        bannerGridEl = document.querySelector('.banner-grid');
+      }
+      return { calendarGrid: calendarGridEl, bannerGrid: bannerGridEl };
+    };
 
     const applyWidths = () => {
-      // Chercher la grille principale : Calendar (.calendar-grid) ou PersonnelPanel (.pp-grid)
-      const calendarGrid =
-        document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
-      const bannerGrid = document.querySelector('.banner-grid');
+      const { calendarGrid, bannerGrid } = resolveGridEls();
 
       if (calendarGrid && bannerGrid) {
         // Copier les colonnes calculées du calendrier pour toutes les vues
@@ -255,8 +266,7 @@ function GoogleCalendarBanner({
     const timer2 = setTimeout(scheduleWidthSync, 150);
 
     // Observer les changements de taille du calendrier ou du planning personnel
-    const calendarGrid =
-      document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+    const { calendarGrid } = resolveGridEls();
     let resizeObserver;
 
     if (calendarGrid) {
@@ -282,6 +292,8 @@ function GoogleCalendarBanner({
   // Synchroniser le scroll entre le calendrier et le banner
   useEffect(() => {
     let cleanupFn = null;
+    let retryTimer = null;
+    let sourceRef = null;
 
     const attachScrollListeners = () => {
       // Chercher la zone de scroll principale : Calendar ou PersonnelPanel
@@ -291,34 +303,47 @@ function GoogleCalendarBanner({
       const bannerScrollArea = document.querySelector('.banner-scroll-area');
 
       if (!calendarScrollArea || !bannerScrollArea) {
-        setTimeout(attachScrollListeners, 50);
+        retryTimer = setTimeout(attachScrollListeners, 80);
         return;
       }
 
-      let isScrolling = false;
+      const scheduleScrollSync = () => {
+        if (document.hidden) return;
+        if (scrollSyncFrameRef.current) return;
+        scrollSyncFrameRef.current = requestAnimationFrame(() => {
+          scrollSyncFrameRef.current = null;
+          if (sourceRef === 'calendar') {
+            const nextLeft = calendarScrollArea.scrollLeft;
+            if (bannerScrollArea.scrollLeft !== nextLeft) {
+              bannerScrollArea.scrollLeft = nextLeft;
+            }
+            return;
+          }
+          if (sourceRef === 'banner') {
+            const nextLeft = bannerScrollArea.scrollLeft;
+            if (calendarScrollArea.scrollLeft !== nextLeft) {
+              calendarScrollArea.scrollLeft = nextLeft;
+            }
+          }
+        });
+      };
 
       const handleCalendarScroll = () => {
-        if (!isScrolling) {
-          isScrolling = true;
-          bannerScrollArea.scrollLeft = calendarScrollArea.scrollLeft;
-          requestAnimationFrame(() => {
-            isScrolling = false;
-          });
-        }
+        sourceRef = 'calendar';
+        scheduleScrollSync();
       };
 
       const handleBannerScroll = () => {
-        if (!isScrolling) {
-          isScrolling = true;
-          calendarScrollArea.scrollLeft = bannerScrollArea.scrollLeft;
-          requestAnimationFrame(() => {
-            isScrolling = false;
-          });
-        }
+        sourceRef = 'banner';
+        scheduleScrollSync();
       };
 
       calendarScrollArea.addEventListener('scroll', handleCalendarScroll, { passive: true });
       bannerScrollArea.addEventListener('scroll', handleBannerScroll, { passive: true });
+
+      // Aligner immédiatement après l'attache (sans attendre un scroll utilisateur)
+      sourceRef = 'calendar';
+      scheduleScrollSync();
 
       cleanupFn = () => {
         calendarScrollArea.removeEventListener('scroll', handleCalendarScroll);
@@ -329,10 +354,15 @@ function GoogleCalendarBanner({
     const timer = setTimeout(attachScrollListeners, 100);
 
     return () => {
+      if (retryTimer) clearTimeout(retryTimer);
       clearTimeout(timer);
+      if (scrollSyncFrameRef.current) {
+        cancelAnimationFrame(scrollSyncFrameRef.current);
+        scrollSyncFrameRef.current = null;
+      }
       if (cleanupFn) cleanupFn();
     };
-  }, [events.length, view]);
+  }, [view]);
 
   // Centrer sur la date actuelle quand elle change (synchroniser avec le calendrier principal ou personnel)
   useEffect(() => {

@@ -155,10 +155,12 @@ function SuiviPanel({ currentUser, initialPersonId }) {
             (currentUser &&
               data.find(
                 (p) =>
-                  p.id === currentUser.person_id ||
-                  (currentUser.first_name &&
-                    p.first_name?.toLowerCase() === currentUser.first_name.toLowerCase() &&
-                    p.last_name?.toLowerCase() === currentUser.last_name?.toLowerCase()),
+                  (p.user_id != null && p.user_id === currentUser.id) ||
+                  (currentUser.name &&
+                    (`${p.first_name} ${p.last_name}`.toLowerCase() ===
+                      currentUser.name.toLowerCase() ||
+                      `${p.last_name} ${p.first_name}`.toLowerCase() ===
+                        currentUser.name.toLowerCase())),
               ));
           const firstMatch = userMatch || data.find((p) => p.type === 'permanent') || data[0];
           setSelectedPerson(firstMatch);

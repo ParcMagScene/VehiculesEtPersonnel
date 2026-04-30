@@ -1411,7 +1411,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
     try {
       const persons = db
         .prepare(
-          `SELECT p.id, p.first_name, p.last_name, p.type, p.status,
+          `SELECT p.id, p.first_name, p.last_name, p.type, p.status, p.user_id,
                   COUNT(ts.id) AS total_sheets,
                   SUM(CASE WHEN ts.status = 'validated' THEN 1 ELSE 0 END) AS validated_sheets
            FROM persons p

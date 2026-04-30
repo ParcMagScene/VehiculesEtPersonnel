@@ -32,6 +32,24 @@ const getDepotsList = (depotZones, allDepotZones) => {
   return [];
 };
 
+const formatDepotLabel = (depotName, depotId) => {
+  if (!depotName) return depotId ? `D${depotId}` : '—';
+
+  return depotName
+    .replace(/^entreprise\s*[—-]\s*/i, '')
+    .replace(/^entreprise\s+/i, '')
+    .trim();
+};
+
+const formatFloorLabel = (floor) => {
+  if (!floor) return '';
+
+  const normalized = String(floor).trim().toUpperCase();
+  if (normalized === 'MEZZ') return 'Mezzanine';
+  if (normalized === 'RDC') return 'RDC';
+  return String(floor).trim();
+};
+
 const resolveEquipmentLocation = (eq, depotZones, allDepotZones) => {
   const zoneId = eq.location_zone || eq.locationZone || '';
   const depotId = eq.location_depot || eq.locationDepot || '';
@@ -57,8 +75,8 @@ const resolveEquipmentLocation = (eq, depotZones, allDepotZones) => {
     }
   }
 
-  const depotLabel = matchedDepot?.name || (depotId ? `D${depotId}` : '—');
-  const floorLabel = floor || matchedZone?.floor || '';
+  const depotLabel = formatDepotLabel(matchedDepot?.name, depotId);
+  const floorLabel = formatFloorLabel(floor || matchedZone?.floor || '');
 
   return {
     zoneId,

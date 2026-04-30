@@ -109,13 +109,10 @@ export default function DepotMap({
       const zone = findZoneFlexible(zones.zones, focusZoneId);
       if (zone) {
         if (zone.floor) setActiveFloor(zone.floor);
-        // Animated zoom to zone with delay for rendering
-        setTimeout(() => {
-          const { x, y, width, height } = zone.bbox;
-          const centerX = x + width / 2 - (bounds.x + bounds.w / 2);
-          const centerY = y + height / 2 - (bounds.y + bounds.h / 2);
-          animateToZone(2.5, { x: -centerX, y: -centerY });
-        }, 150);
+        // Vue d'ensemble : pas de zoom, juste surligner la zone
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+        setHighlightedZone(zone.id);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

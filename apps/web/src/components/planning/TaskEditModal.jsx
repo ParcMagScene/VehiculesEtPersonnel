@@ -95,6 +95,8 @@ const initTitle = (task) => {
 function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const toast = useToast();
   const { isFavorite, sortPersonsByFavorites } = usePersonnelFavorites();
+  const titleInputRef = useRef(null);
+  const titleAutoSelectDoneRef = useRef(false);
   const sortedPersons = useMemo(
     () => sortPersonsByFavorites(persons || []),
     [persons, sortPersonsByFavorites],
@@ -150,6 +152,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   useEffect(() => {
     setMergeOpen(false);
     setMergeCandidates([]);
+    titleAutoSelectDoneRef.current = false;
     setForm({
       title: initTitle(task),
       date: task.date || '',
@@ -164,6 +167,17 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       locationAddress: task.locationAddress || task.location_address || '',
     });
   }, [task]);
+
+  useEffect(() => {
+    const raf = window.requestAnimationFrame(() => {
+      const el = titleInputRef.current;
+      if (!el || titleAutoSelectDoneRef.current) return;
+      el.focus();
+      el.select();
+      titleAutoSelectDoneRef.current = true;
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [task?.id]);
 
   const { isDirty: _isDirty, guardClose } = useDirtyForm(form);
   const safeClose = guardClose(onClose);
@@ -296,9 +310,15 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
             <FileText size={13} /> Titre
           </label>
           <Input
+            ref={titleInputRef}
             type="text"
             value={form.title}
             onChange={(e) => update('title', e.target.value)}
+            onFocus={(e) => {
+              if (titleAutoSelectDoneRef.current) return;
+              e.target.select();
+              titleAutoSelectDoneRef.current = true;
+            }}
             onBlur={(e) => {
               const v = e.target.value.trim();
               if (v) update('title', v.charAt(0).toUpperCase() + v.slice(1));

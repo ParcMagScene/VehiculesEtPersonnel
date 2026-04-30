@@ -1270,6 +1270,18 @@
   align-items: center;
   gap: 8px;
 }
+.syntheses-filter-permanents {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.syntheses-filter-permanents input[type='checkbox'] {
+  cursor: pointer;
+}
 
 /* Summary cards */
 .syntheses-summary {

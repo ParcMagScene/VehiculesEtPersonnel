@@ -59,6 +59,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedPersons, setExpandedPersons] = useState(new Set());
+  const [onlyPermanents, setOnlyPermanents] = useState(false);
 
   const fetchSynthese = useCallback(async () => {
     setLoading(true);
@@ -135,6 +136,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
           person_id: sh.person_id,
           first_name: sh.first_name,
           last_name: sh.last_name,
+          person_type: sh.person_type || '',
           sheets: [],
           stats: {
             total: 0,
@@ -155,10 +157,12 @@ function SynthesesPanel({ currentUser: _currentUser }) {
       if (sh.stats?.unreported_am) entry.stats.unreported_am = true;
       if (sh.stats?.unreported_pm) entry.stats.unreported_pm = true;
     }
-    return Array.from(map.values()).sort((a, b) =>
+    const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
+    const all = Array.from(map.values()).sort((a, b) =>
       `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`),
     );
-  }, [synthese]);
+    return onlyPermanents ? all.filter((pg) => PERMANENT_TYPES.includes(pg.person_type)) : all;
+  }, [synthese, onlyPermanents]);
 
   const togglePerson = (personId) => {
     setExpandedPersons((prev) => {
@@ -245,6 +249,18 @@ function SynthesesPanel({ currentUser: _currentUser }) {
           >
             <ChevronRight size={18} />
           </Button>
+
+          <label
+            className="suivi-select-all syntheses-filter-permanents"
+            title="Afficher uniquement les permanents, apprentis et stagiaires"
+          >
+            <input
+              type="checkbox"
+              checked={onlyPermanents}
+              onChange={(e) => setOnlyPermanents(e.target.checked)}
+            />
+            <span>Permanents uniquement</span>
+          </label>
 
           <Button
             variant="secondary"

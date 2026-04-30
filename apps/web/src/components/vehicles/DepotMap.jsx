@@ -448,6 +448,7 @@ export default function DepotMap({
         <svg
           ref={svgRef}
           viewBox={viewBox}
+          preserveAspectRatio="xMidYMid meet"
           className={`depot-map-svg ${isPanning ? 'panning' : ''}`}
           aria-label={`Plan ${activeFloor}`}
           onMouseDown={handleMouseDown}

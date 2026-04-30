@@ -26,6 +26,49 @@ const Th = ({ col, children, className, onSort, sortCol, sortDir }) => (
   </th>
 );
 
+const getDepotsList = (depotZones, allDepotZones) => {
+  if (allDepotZones?.depots?.length) return allDepotZones.depots;
+  if (depotZones) return [depotZones];
+  return [];
+};
+
+const resolveEquipmentLocation = (eq, depotZones, allDepotZones) => {
+  const zoneId = eq.location_zone || eq.locationZone || '';
+  const depotId = eq.location_depot || eq.locationDepot || '';
+  const floor = eq.location_floor || eq.locationFloor || '';
+  const depots = getDepotsList(depotZones, allDepotZones);
+
+  let matchedDepot = null;
+  let matchedZone = null;
+
+  if (depotId) {
+    matchedDepot = depots.find((depot) => String(depot.id) === String(depotId)) || null;
+    if (matchedDepot && zoneId) matchedZone = findZone(matchedDepot.zones, zoneId);
+  }
+
+  if (!matchedZone && zoneId) {
+    for (const depot of depots) {
+      const zone = findZone(depot.zones, zoneId);
+      if (zone) {
+        matchedDepot = depot;
+        matchedZone = zone;
+        break;
+      }
+    }
+  }
+
+  const depotLabel = matchedDepot?.name || (depotId ? `D${depotId}` : '—');
+  const floorLabel = floor || matchedZone?.floor || '';
+
+  return {
+    zoneId,
+    zone: matchedZone,
+    depotLabel,
+    floorLabel,
+    depotSortKey: `${depotLabel} ${floorLabel}`.trim(),
+  };
+};
+
 const EquipmentGrid = ({
   equipment,
   depotZones,
@@ -85,6 +128,10 @@ const EquipmentGrid = ({
           av = a.stockQuantity ?? 1;
           bv = b.stockQuantity ?? 1;
           break;
+        case 'depot':
+          av = resolveEquipmentLocation(a, depotZones, allDepotZones).depotSortKey;
+          bv = resolveEquipmentLocation(b, depotZones, allDepotZones).depotSortKey;
+          break;
         case 'zone':
           av = a.location_zone || a.locationZone || '';
           bv = b.location_zone || b.locationZone || '';
@@ -103,7 +150,7 @@ const EquipmentGrid = ({
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return arr;
-  }, [equipment, sortCol, sortDir]);
+  }, [equipment, sortCol, sortDir, depotZones, allDepotZones]);
 
   if (sorted.length === 0) {
     return (
@@ -142,6 +189,9 @@ const EquipmentGrid = ({
             <Th col="stockQuantity" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
               Qté
             </Th>
+            <Th col="depot" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              Dépôt
+            </Th>
             <Th col="zone" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
               Zone
             </Th>
@@ -158,6 +208,8 @@ const EquipmentGrid = ({
             const genericImg = !photo ? resolveGenericImage(eq, hierarchy) : null;
             const isFav = favoriteIds.has(eq.id);
             const isWatch = watchIds.has(eq.id);
+            const location = resolveEquipmentLocation(eq, depotZones, allDepotZones);
+
             return (
               <tr
                 key={eq.id}
@@ -203,19 +255,20 @@ const EquipmentGrid = ({
                 <td>{eq.brand_canonical || eq.brand || '—'}</td>
                 <td className="eq-table-serial">{eq.serialNumber || '—'}</td>
                 <td className="eq-table-qty">{eq.stockQuantity || 1}</td>
+                <td className="eq-table-depot">
+                  {location.depotLabel === '—'
+                    ? '—'
+                    : location.floorLabel
+                      ? `${location.depotLabel} · ${location.floorLabel}`
+                      : location.depotLabel}
+                </td>
                 <td>
                   {(() => {
-                    const zoneId = eq.location_zone || eq.locationZone;
+                    const zoneId = location.zoneId;
                     if (zoneId) {
-                      let z = null;
-                      if (depotZones?.zones) z = findZone(depotZones.zones, zoneId);
-                      if (!z && allDepotZones?.depots) {
-                        for (const depot of allDepotZones.depots) {
-                          z = findZone(depot.zones, zoneId);
-                          if (z) break;
-                        }
-                      }
-                      if (z)
+                      const z = location.zone;
+
+                      if (z) {
                         return (
                           <Tooltip content="Voir sur le plan" position="bottom">
                             <span
@@ -238,6 +291,8 @@ const EquipmentGrid = ({
                             </span>
                           </Tooltip>
                         );
+                      }
+
                       return (
                         <Tooltip content="Voir sur le plan" position="bottom">
                           <span
@@ -259,6 +314,7 @@ const EquipmentGrid = ({
                         </Tooltip>
                       );
                     }
+
                     return eq.location || '—';
                   })()}
                 </td>

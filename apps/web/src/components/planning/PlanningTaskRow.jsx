@@ -30,23 +30,26 @@ export const PlanningTaskRow = React.memo(
     selectedDate,
     renderMultiAssign,
   }) => {
+    const sourceType = task.sourceType || task.source_type || '';
+    const googleEventTitle = task.googleEventTitle || task.google_event_title || '';
+    const taskEventType = task.eventType || task.event_type || '';
     const isDone = task.status === STATUS.DONE;
     const isProgress = task.status === 'in_progress';
-    const isGoogle = task.sourceType === 'google_event';
+    const isGoogle = sourceType === 'google_event';
     const isHidden = task.visible === 0;
     const affaireNum =
-      task.affaireNum || extractAffaireNum(task.title) || extractAffaireNum(task.googleEventTitle);
+      task.affaireNum || extractAffaireNum(task.title) || extractAffaireNum(googleEventTitle);
     const taskSection = normalizeSection(task.section || 'manual');
     const sectionInfo = SECTIONS[taskSection];
 
     // --- Nettoyage du titre pour éviter les doublons ---
     let displayTitle = task.title;
     // 1. Retirer le suffixe " — eventSummary" (tâches Google: "emoji Label — Summary")
-    if (task.googleEventTitle) {
+    if (googleEventTitle) {
       const dashIdx = displayTitle.indexOf(' — ');
       if (dashIdx >= 0) {
         const suffix = displayTitle.slice(dashIdx + 3).trim();
-        if (suffix.toLowerCase() === task.googleEventTitle.trim().toLowerCase()) {
+        if (suffix.toLowerCase() === googleEventTitle.trim().toLowerCase()) {
           displayTitle = displayTitle.slice(0, dashIdx).trim();
         }
       }
@@ -65,7 +68,7 @@ export const PlanningTaskRow = React.memo(
         )
         .trim();
       if (!displayTitle) {
-        displayTitle = task.googleEventTitle || task.notes || '';
+        displayTitle = googleEventTitle || task.notes || '';
       }
     }
 
@@ -85,8 +88,8 @@ export const PlanningTaskRow = React.memo(
       };
       if (SECTION_COURSE_TYPE[task.section]) {
         courseType = SECTION_COURSE_TYPE[task.section];
-      } else if (task.eventType && EVENT_COURSE_TYPE[task.eventType]) {
-        courseType = EVENT_COURSE_TYPE[task.eventType];
+      } else if (taskEventType && EVENT_COURSE_TYPE[taskEventType]) {
+        courseType = EVENT_COURSE_TYPE[taskEventType];
       } else {
         // eslint-disable-next-line no-misleading-character-class
         const courseMatch = displayTitle.match(
@@ -119,7 +122,7 @@ export const PlanningTaskRow = React.memo(
           )
           .trim();
         if (!displayTitle) {
-          displayTitle = task.googleEventTitle || task.notes || '';
+          displayTitle = googleEventTitle || task.notes || '';
         }
       }
     }
@@ -149,7 +152,7 @@ export const PlanningTaskRow = React.memo(
     }
 
     // --- Nettoyage du sous-titre (googleEventTitle) ---
-    let cleanEventTitle = stripAffaireNum(task.googleEventTitle || '');
+    let cleanEventTitle = stripAffaireNum(googleEventTitle || '');
     if (isGenericTitle && linkedAffaire) {
       const affaireTitre = linkedAffaire.titre || linkedAffaire.eventName || '';
       if (affaireTitre && affaireTitre.toLowerCase() !== displayTitle.toLowerCase()) {
@@ -159,7 +162,7 @@ export const PlanningTaskRow = React.memo(
     const cleanEventNorm = cleanEventTitle.toLowerCase().replace(/\s+/g, '');
     const displayTitleNorm = displayTitle.toLowerCase().replace(/\s+/g, '');
     const showSubtitle = isGoogle
-      ? cleanEventTitle && isGenericTitle && cleanEventNorm !== displayTitleNorm
+      ? false
       : cleanEventTitle &&
         cleanEventNorm !== displayTitleNorm &&
         !displayTitleNorm.includes(cleanEventNorm);
@@ -177,7 +180,7 @@ export const PlanningTaskRow = React.memo(
       montage: 'montage',
       demontage: 'demontage',
     };
-    const showEventType = task.eventType && SECTION_EVENT_TYPES[taskSection] !== task.eventType;
+    const showEventType = taskEventType && SECTION_EVENT_TYPES[taskSection] !== taskEventType;
 
     // Combiner titre + sous-titre
     const fullTitle = showSubtitle ? `${displayTitle} — ${cleanEventTitle}` : displayTitle;
@@ -221,7 +224,7 @@ export const PlanningTaskRow = React.memo(
           className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`}
           title={[
             fullTitle,
-            showEventType && task.eventType,
+            showEventType && taskEventType,
             (task.locationAddress || task.eventLocation || linkedAffaire?.location) &&
               '📍 ' + (task.locationAddress || task.eventLocation || linkedAffaire?.location),
             task.notes && '📝 ' + task.notes,

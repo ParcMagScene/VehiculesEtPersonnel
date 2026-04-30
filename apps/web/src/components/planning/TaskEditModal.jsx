@@ -131,6 +131,7 @@ const initTitle = (task) => {
 function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const toast = useToast();
   const { isFavorite, sortPersonsByFavorites } = usePersonnelFavorites();
+  const sourceType = task.sourceType || task.source_type || '';
   const titleInputRef = useRef(null);
   const titleAutoSelectDoneRef = useRef(false);
   const sortedPersons = useMemo(
@@ -282,7 +283,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
 
       // Pour les tâches Google "courses", on préserve le préfixe opérationnel
       // afin que le badge (Livraison/Enlèvement/Retour/Récupération) reste stable.
-      if (task.sourceType === 'google_event' && COURSE_SECTIONS.has(form.section)) {
+      if (sourceType === 'google_event' && COURSE_SECTIONS.has(form.section)) {
         const courseType = detectCourseType(task);
         const prefix = courseType ? COURSE_PREFIXES[courseType] : null;
         if (prefix && finalTitle) {
@@ -351,7 +352,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     >
       {/* Badges info */}
       <div className="tem-badges">
-        {task.sourceType === 'google_event' && <span className="tem-badge google">G</span>}
+        {sourceType === 'google_event' && <span className="tem-badge google">G</span>}
         <span className="tem-badge section">{SECTIONS[form.section] || form.section}</span>
       </div>
 

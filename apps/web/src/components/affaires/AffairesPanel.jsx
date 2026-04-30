@@ -1125,33 +1125,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
               <PackagePlus size={14} /> Import BL/BP
             </Button>
           </Tooltip>
-          <Tooltip content="Analyse batch des BL PDF" position="bottom">
-            <Button
-              variant="ghost"
-              className="affaires-tb-bl-import-btn u-gap-1"
-              onClick={() => setShowBatchAnalysis(true)}
-            >
-              <BarChart2 size={14} /> Analyse batch
-            </Button>
-          </Tooltip>
-          <Tooltip content="Afficher le tableau de bord KPIs" position="bottom">
-            <Button
-              variant="ghost"
-              className={`affaires-tb-bl-import-btn u-gap-1${showDashboard ? ' active' : ''}`}
-              onClick={() => setShowDashboard((v) => !v)}
-            >
-              <TrendingUp size={14} /> KPIs
-            </Button>
-          </Tooltip>
 
           <Divider orientation="vertical" />
 
-          <div className="affaires-count-box">
-            <span className="affaires-count-number">{filteredAffaires.length}</span>
-            <span className="affaires-count-label">
-              affaire{filteredAffaires.length !== 1 ? 's' : ''}
-            </span>
-          </div>
           <span
             className="affaires-tb-count"
             title={`${filteredAffaires.length} affaire(s) affichée(s) sur ${enrichedAffaires.length} total`}

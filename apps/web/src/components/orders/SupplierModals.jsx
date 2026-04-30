@@ -61,14 +61,21 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
     shipping_free_threshold: supplier?.shipping_free_threshold ?? '',
     shipping_notes: supplier?.shipping_notes || '',
   });
+  const [saving, setSaving] = useState(false);
 
-  const save = () => {
-    onSave({
-      ...form,
-      shipping_flat_rate: form.shipping_flat_rate !== '' ? Number(form.shipping_flat_rate) : null,
-      shipping_free_threshold:
-        form.shipping_free_threshold !== '' ? Number(form.shipping_free_threshold) : null,
-    });
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onSave({
+        ...form,
+        shipping_flat_rate: form.shipping_flat_rate !== '' ? Number(form.shipping_flat_rate) : null,
+        shipping_free_threshold:
+          form.shipping_free_threshold !== '' ? Number(form.shipping_free_threshold) : null,
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -171,8 +178,15 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
         <Button variant="ghost" onClick={onClose}>
           Annuler
         </Button>
-        <Button variant="primary" onClick={save} disabled={!form.name.trim()}>
-          <Check size={16} /> {supplier ? 'Enregistrer' : 'Créer'}
+        <Button variant="primary" onClick={save} disabled={!form.name.trim() || saving}>
+          <Check size={16} />{' '}
+          {saving
+            ? supplier
+              ? 'Enregistrement…'
+              : 'Création…'
+            : supplier
+              ? 'Enregistrer'
+              : 'Créer'}
         </Button>
       </ModalFooter>
     </Modal>

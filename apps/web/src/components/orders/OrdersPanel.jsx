@@ -289,8 +289,14 @@ function OrdersPanel({ currentUser, isMobile }) {
   // ═══ Handlers Fournisseurs ═══
   const handleSaveSupplier = async (data) => {
     try {
-      if (editingSupplier) await api.updateSupplier(editingSupplier.id, data);
-      else await api.createSupplier(data);
+      const saved = editingSupplier
+        ? await api.updateSupplier(editingSupplier.id, data)
+        : await api.createSupplier(data);
+      toast.success(
+        editingSupplier
+          ? 'Fournisseur mis à jour'
+          : `Fournisseur « ${saved?.name || data.name} » créé`,
+      );
       setShowSupplierForm(false);
       setEditingSupplier(null);
       loadData();

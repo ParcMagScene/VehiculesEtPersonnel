@@ -40,6 +40,7 @@ import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import SavImportModal from '../affaires/SavImportModal';
 import DepotMap from '../vehicles/DepotMap';
+import DepotMapFocused from '../vehicles/DepotMapFocused';
 import MaintenanceReportModal from '../vehicles/MaintenanceReportModal';
 import CategoryCascadeFilter from './CategoryCascadeFilter';
 import EquipmentBatchLabels from './EquipmentBatchLabels';
@@ -1000,15 +1001,10 @@ const EquipmentPanel = ({
           className="eq-depot-map-modal"
         >
           <div className="eq-depot-map-modal-body">
-            <DepotMap
+            <DepotMapFocused
               zones={modalDepotData}
-              stats={locationStats}
-              selectedZone={depotMapModalZone.zoneId}
               focusZoneId={depotMapModalZone.zoneId}
               focusEquipmentName={depotMapModalZone.equipmentName}
-              onZoneSelect={(_zoneId) => {}}
-              onZoneFilter={() => {}}
-              compact={true}
             />
           </div>
         </ModalLayout>

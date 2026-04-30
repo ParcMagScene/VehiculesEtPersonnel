@@ -115,6 +115,7 @@ import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupEshopRoutes } from './eshopRoutes.js';
+import { startEshopCatalogAutoSync } from './eshopCatalogSync.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
 
@@ -436,6 +437,7 @@ if (hasSSL) {
     setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
     cleanExpiredSessions();
     setInterval(cleanExpiredSessions, 30 * 60 * 1000);
+    startEshopCatalogAutoSync();
   });
 
   // HTTP → HTTPS redirect (port 3002 redirige vers HTTPS)
@@ -459,6 +461,7 @@ if (hasSSL) {
     setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
     cleanExpiredSessions();
     setInterval(cleanExpiredSessions, 30 * 60 * 1000);
+    startEshopCatalogAutoSync();
   });
 }
 

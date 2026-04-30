@@ -39,6 +39,7 @@ import { useTheme } from './hooks/useTheme';
 import { ToastProvider } from './hooks/useToast';
 import { useVSCodeTheme } from './hooks/useVSCodeTheme';
 import api from './utils/api';
+import { getApiNetworkStatus, subscribeApiNetworkStatus } from './utils/api/base';
 
 const ToastContainer = lazy(() => import('./components/ToastContainer'));
 const PresetDetachedView = lazy(() => import('./components/video/PresetDetachedView'));
@@ -174,6 +175,7 @@ function AppContent() {
   const [quickReservationSlot, setQuickReservationSlot] = useState(null);
   const [quickAssignmentSlot, setQuickAssignmentSlot] = useState(null);
   const [hoveredEventId, setHoveredEventId] = useState(null);
+  const [apiNetworkStatus, setApiNetworkStatus] = useState(() => getApiNetworkStatus());
   const [reservationToEdit, setReservationToEdit] = useState(null);
   const [selectedVehicleForMaintenance, setSelectedVehicleForMaintenance] = useState(null);
   const [maintenanceToEdit, setMaintenanceToEdit] = useState(null);
@@ -186,6 +188,12 @@ function AppContent() {
   const [globalAffaireDialog, setGlobalAffaireDialog] = useState(null);
   const openEventDetailsModalRef = useRef(null);
   const sonosDetachedWindowRef = useRef(null);
+
+  useEffect(() => {
+    return subscribeApiNetworkStatus((status) => {
+      setApiNetworkStatus(status);
+    });
+  }, []);
 
   const handleDetachSonos = useCallback(() => {
     const sonosUrl = `${window.location.origin}${window.location.pathname}?module=sonos&detached=1`;
@@ -653,6 +661,15 @@ function AppContent() {
             <a href="#main-content" className="skip-link">
               Aller au contenu principal
             </a>
+            {apiNetworkStatus.unavailable && (
+              <div className="api-offline-banner" role="status" aria-live="polite">
+                <strong>Service local indisponible.</strong>
+                <span>
+                  Les requêtes automatiques sont ralenties temporairement pour éviter les erreurs en
+                  cascade.
+                </span>
+              </div>
+            )}
             <Header
               view={view}
               setView={setView}

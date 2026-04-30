@@ -26,6 +26,7 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useGoogleSync } from '../../hooks/useGoogleSync';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { isApiCoolingDown } from '../../utils/api/base';
 import { capitalizeText } from '../../utils/dateUtils';
 import EventDetailsModal from '../planning/EventDetailsModal';
 
@@ -158,6 +159,7 @@ function GoogleCalendarBanner({
   // Charger la configuration Google Service Account
   useEffect(() => {
     const loadGoogleStatus = async () => {
+      if (isApiCoolingDown()) return;
       try {
         const [statusData, calendarIdData] = await Promise.all([
           api.getCalendarServiceStatus(),
@@ -179,6 +181,7 @@ function GoogleCalendarBanner({
   // Charger l'index des affaires ayant des pièces jointes
   useEffect(() => {
     const loadAttachmentsIndex = async () => {
+      if (isApiCoolingDown()) return;
       try {
         const data = await api.getAttachmentsIndex();
         setAffairesWithAttachments(data.affaires || []);

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import api from '../utils/api';
+import { isApiCoolingDown } from '../utils/api/base';
 
 // Intervalle de rafraîchissement : toutes les 4 heures
 const REFRESH_INTERVAL = 4 * 60 * 60 * 1000;
@@ -26,6 +27,9 @@ export function useSilentRefresh(isAuthenticated, updateUser) {
     let intervalId;
 
     async function doRefresh() {
+      if (isApiCoolingDown()) {
+        return;
+      }
       try {
         // Utilise _tryRefreshToken (fetch direct, pas api.request)
         // pour ne JAMAIS déclencher clearAuth/reload depuis le refresh silencieux

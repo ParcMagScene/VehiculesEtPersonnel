@@ -3,6 +3,122 @@
 
 import { clearAllIndexedDB, loadAuthFromIDB, saveAuthToIDB } from '../indexedDB.js';
 
+const NETWORK_BACKOFF_BASE_MS = 2000;
+const NETWORK_BACKOFF_MAX_MS = 60000;
+const NETWORK_NOTICE_MIN_INTERVAL_MS = 15000;
+
+const networkStatusListeners = new Set();
+const networkState = {
+  unavailable: false,
+  consecutiveFailures: 0,
+  backoffMs: 0,
+  retryAt: 0,
+  outageStartedAt: null,
+  lastError: '',
+  lastNoticeAt: 0,
+};
+
+export function getApiNetworkStatus() {
+  return {
+    unavailable: networkState.unavailable,
+    consecutiveFailures: networkState.consecutiveFailures,
+    backoffMs: networkState.backoffMs,
+    retryAt: networkState.retryAt,
+    retryInMs: Math.max(0, networkState.retryAt - Date.now()),
+    outageStartedAt: networkState.outageStartedAt,
+    lastError: networkState.lastError,
+  };
+}
+
+export function subscribeApiNetworkStatus(listener) {
+  networkStatusListeners.add(listener);
+  listener(getApiNetworkStatus());
+  return () => networkStatusListeners.delete(listener);
+}
+
+export function isApiCoolingDown() {
+  return networkState.unavailable && Date.now() < networkState.retryAt;
+}
+
+function emitNetworkStatus() {
+  const snapshot = getApiNetworkStatus();
+  networkStatusListeners.forEach((listener) => {
+    try {
+      listener(snapshot);
+    } catch {
+      // silencieux
+    }
+  });
+}
+
+function markNetworkFailure(message = 'Service indisponible') {
+  const now = Date.now();
+  networkState.consecutiveFailures += 1;
+  networkState.backoffMs = Math.min(
+    NETWORK_BACKOFF_MAX_MS,
+    NETWORK_BACKOFF_BASE_MS * 2 ** (networkState.consecutiveFailures - 1),
+  );
+  networkState.retryAt = now + networkState.backoffMs;
+  networkState.lastError = message;
+  if (!networkState.unavailable) {
+    networkState.outageStartedAt = now;
+  }
+  networkState.unavailable = true;
+
+  if (
+    now - networkState.lastNoticeAt >=
+    Math.max(NETWORK_NOTICE_MIN_INTERVAL_MS, networkState.backoffMs)
+  ) {
+    const retrySec = Math.ceil(networkState.backoffMs / 1000);
+    console.warn(
+      `[API] Service local indisponible (${message}). Backoff ${retrySec}s avant nouvelle tentative.`,
+    );
+    networkState.lastNoticeAt = now;
+  }
+
+  emitNetworkStatus();
+}
+
+function markNetworkSuccess() {
+  if (!networkState.unavailable && networkState.consecutiveFailures === 0) {
+    return;
+  }
+
+  const hadOutage = networkState.unavailable;
+  networkState.unavailable = false;
+  networkState.consecutiveFailures = 0;
+  networkState.backoffMs = 0;
+  networkState.retryAt = 0;
+  networkState.outageStartedAt = null;
+  networkState.lastError = '';
+  networkState.lastNoticeAt = 0;
+
+  if (hadOutage) {
+    console.warn('[API] Service local de nouveau disponible');
+  }
+
+  emitNetworkStatus();
+}
+
+function shouldShortCircuitRequest(endpoint, options = {}) {
+  if (!isApiCoolingDown()) return false;
+  const method = (options.method || 'GET').toUpperCase();
+  // Évite le bruit des sondes périodiques pendant la fenêtre de backoff.
+  return method === 'GET' || endpoint === '/auth/refresh';
+}
+
+function createServiceUnavailableError() {
+  const retryInMs = Math.max(0, networkState.retryAt - Date.now());
+  const retrySec = Math.ceil(retryInMs / 1000);
+  const error = new Error(
+    `Service local indisponible. Nouvelle tentative automatique dans ${retrySec}s.`,
+  );
+  error.isNetworkError = true;
+  error.isServiceUnavailable = true;
+  error.retryAfterMs = retryInMs;
+  return error;
+}
+
 export const getApiUrl = () => {
   const port = window.location.port;
 
@@ -143,6 +259,10 @@ export class ApiClient {
    * @returns {Promise<boolean>} true si le refresh a réussi
    */
   async _tryRefreshToken() {
+    if (isApiCoolingDown()) {
+      return false;
+    }
+
     // Si un refresh est déjà en cours, attendre son résultat
     if (this._refreshPromise) return this._refreshPromise;
 
@@ -155,6 +275,7 @@ export class ApiClient {
             credentials: 'include',
           });
           if (!response.ok) {
+            markNetworkSuccess();
             console.warn(
               `[Auth] Refresh échoué: HTTP ${response.status} (tentative ${attempt + 1})`,
             );
@@ -165,6 +286,7 @@ export class ApiClient {
             }
             return false;
           }
+          markNetworkSuccess();
           const data = await response.json();
           if (data?.user) {
             this.setAuth(data.user);
@@ -174,6 +296,7 @@ export class ApiClient {
           console.warn('[Auth] Refresh: réponse OK mais pas de user dans la réponse');
           return false;
         } catch (err) {
+          markNetworkFailure(err?.name === 'AbortError' ? 'délai dépassé' : 'erreur réseau');
           // Erreur réseau : retry 1 fois après 2s (le serveur redémarre peut-être)
           console.warn(`[Auth] Refresh erreur réseau (tentative ${attempt + 1}):`, err.message);
           if (attempt === 0) {
@@ -215,6 +338,10 @@ export class ApiClient {
   }
 
   async request(endpoint, options = {}, _isRetry = false) {
+    if (shouldShortCircuitRequest(endpoint, options)) {
+      throw createServiceUnavailableError();
+    }
+
     const skipCamelCase = options.skipCamelCase;
     if (skipCamelCase) delete options.skipCamelCase;
 
@@ -235,16 +362,17 @@ export class ApiClient {
         credentials: 'include', // [AUDIT Phase 3] Envoie le cookie httpOnly automatiquement
         signal: controller.signal,
       });
+      markNetworkSuccess();
     } catch (networkError) {
       clearTimeout(timeoutId);
+      markNetworkFailure(networkError?.name === 'AbortError' ? 'délai dépassé' : 'erreur réseau');
       if (networkError.name === 'AbortError') {
-        const error = new Error('Délai dépassé — le serveur ne répond pas');
+        const error = createServiceUnavailableError();
+        error.message = 'Service local indisponible (délai dépassé)';
         error.isTimeoutError = true;
         throw error;
       }
-      const error = new Error('Erreur réseau — vérifiez votre connexion');
-      error.isNetworkError = true;
-      throw error;
+      throw createServiceUnavailableError();
     }
     clearTimeout(timeoutId);
 
@@ -453,6 +581,10 @@ export class ApiClient {
    * Centralise credentials, timeout 60s et gestion 401/403.
    */
   async requestFormData(endpoint, formData, options = {}, _isRetry = false) {
+    if (shouldShortCircuitRequest(endpoint, options)) {
+      throw createServiceUnavailableError();
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
     let response;
@@ -464,16 +596,17 @@ export class ApiClient {
         signal: controller.signal,
         ...options,
       });
+      markNetworkSuccess();
     } catch (err) {
       clearTimeout(timeoutId);
+      markNetworkFailure(err?.name === 'AbortError' ? 'délai dépassé' : 'erreur réseau');
       if (err.name === 'AbortError') {
-        const error = new Error('Upload — délai dépassé (60s)');
+        const error = createServiceUnavailableError();
+        error.message = 'Upload impossible — service local indisponible (délai dépassé)';
         error.isTimeoutError = true;
         throw error;
       }
-      const error = new Error('Erreur réseau — vérifiez votre connexion');
-      error.isNetworkError = true;
-      throw error;
+      throw createServiceUnavailableError();
     }
     clearTimeout(timeoutId);
     if (!_isRetry) {
@@ -493,6 +626,10 @@ export class ApiClient {
    * @returns {Promise<Blob>}
    */
   async requestBlob(endpoint, options = {}, _isRetry = false) {
+    if (shouldShortCircuitRequest(endpoint, options)) {
+      throw createServiceUnavailableError();
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
     let response;
@@ -502,16 +639,17 @@ export class ApiClient {
         signal: controller.signal,
         ...options,
       });
+      markNetworkSuccess();
     } catch (err) {
       clearTimeout(timeoutId);
+      markNetworkFailure(err?.name === 'AbortError' ? 'délai dépassé' : 'erreur réseau');
       if (err.name === 'AbortError') {
-        const error = new Error('Téléchargement — délai dépassé (30s)');
+        const error = createServiceUnavailableError();
+        error.message = 'Téléchargement impossible — service local indisponible (délai dépassé)';
         error.isTimeoutError = true;
         throw error;
       }
-      const error = new Error('Erreur réseau — vérifiez votre connexion');
-      error.isNetworkError = true;
-      throw error;
+      throw createServiceUnavailableError();
     }
     clearTimeout(timeoutId);
     if (!_isRetry) {

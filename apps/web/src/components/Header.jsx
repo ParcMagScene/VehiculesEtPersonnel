@@ -22,6 +22,7 @@ import { Button, Tooltip } from '@/design-system';
 import { STATUS } from '../constants';
 import { useToast } from '../hooks/useToast';
 import api from '../utils/api';
+import { isApiCoolingDown } from '../utils/api/base';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import HeaderActions from './header/HeaderActions';
 import HeaderNotifications from './header/HeaderNotifications';
@@ -73,6 +74,7 @@ const Header = ({
   useEffect(() => {
     const loadPendingRequestsCounts = async () => {
       if (currentUser?.isAdmin) {
+        if (isApiCoolingDown()) return;
         try {
           const data = await api.getPendingRequestsCount();
           setPendingRequestsCounts(data);
@@ -91,6 +93,7 @@ const Header = ({
   useEffect(() => {
     const loadPendingReservations = async () => {
       if (currentUser?.isAdmin) {
+        if (isApiCoolingDown()) return;
         try {
           const data = await api.getPendingReservationRequests();
           setPendingReservationRequests(data);
@@ -106,6 +109,7 @@ const Header = ({
   useEffect(() => {
     const loadPendingRequests = async () => {
       if (currentUser?.isAdmin) {
+        if (isApiCoolingDown()) return;
         try {
           const data = await api.getPendingAccessRequestsCount();
           setPendingAccessRequests(data.count || 0);

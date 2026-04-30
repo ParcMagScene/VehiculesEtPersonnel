@@ -21,6 +21,7 @@ const DepotMapEditor = lazy(() => import('./DepotMapEditor'));
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 0.3;
+const FOCUS_OVERVIEW_ZOOM = 0.8;
 
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1")
 function findZoneFlexible(zoneList, zoneId) {
@@ -109,8 +110,8 @@ export default function DepotMap({
       const zone = findZoneFlexible(zones.zones, focusZoneId);
       if (zone) {
         if (zone.floor) setActiveFloor(zone.floor);
-        // Vue d'ensemble : pas de zoom, juste surligner la zone
-        setZoom(1);
+        // Vue d'ensemble plus large que le zoom neutre pour l'ouverture depuis Equipements
+        setZoom(compact ? FOCUS_OVERVIEW_ZOOM : 1);
         setPan({ x: 0, y: 0 });
         setHighlightedZone(zone.id);
       }

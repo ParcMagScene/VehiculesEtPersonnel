@@ -364,7 +364,7 @@ function CompareView({ product, entries, bestId, onAddToQuote }) {
 }
 
 // ─── Panel principal ──────────────────────────────────────────────────────────
-export default function ExternalProductsPanel({ currentUser }) {
+export function ExternalProductsPanel({ currentUser }) {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
@@ -407,7 +407,7 @@ export default function ExternalProductsPanel({ currentUser }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.orders.getExternalProducts({
+      const data = await api.getExternalProducts({
         search: search || undefined,
         category: categoryFilter || undefined,
       });
@@ -427,7 +427,7 @@ export default function ExternalProductsPanel({ currentUser }) {
 
   // Charger les fournisseurs globaux une seule fois
   useEffect(() => {
-    api.orders
+    api
       .getSuppliers()
       .then(setSuppliers)
       .catch(() => {});
@@ -439,7 +439,7 @@ export default function ExternalProductsPanel({ currentUser }) {
     setCompareData(null);
     setCompareLoading(true);
     try {
-      const data = await api.orders.compareExternalProduct(product.id);
+      const data = await api.compareExternalProduct(product.id);
       setCompareData(data);
     } catch (_) {}
     setCompareLoading(false);
@@ -450,10 +450,10 @@ export default function ExternalProductsPanel({ currentUser }) {
     setFormLoading(true);
     try {
       if (editProduct?.id) {
-        await api.orders.updateExternalProduct(editProduct.id, form);
+        await api.updateExternalProduct(editProduct.id, form);
         toast.success('Produit mis à jour');
       } else {
-        await api.orders.createExternalProduct(form);
+        await api.createExternalProduct(form);
         toast.success('Produit créé');
       }
       setShowProductForm(false);
@@ -475,7 +475,7 @@ export default function ExternalProductsPanel({ currentUser }) {
     });
     if (!ok) return;
     try {
-      await api.orders.deleteExternalProduct(product.id);
+      await api.deleteExternalProduct(product.id);
       toast.success('Produit supprimé');
       if (selected?.id === product.id) setSelected(null);
       load();
@@ -489,17 +489,17 @@ export default function ExternalProductsPanel({ currentUser }) {
     setSupplierFormLoading(true);
     try {
       if (editSupplier?.id) {
-        await api.orders.updateExternalProductSupplier(editSupplier.id, form);
+        await api.updateExternalProductSupplier(editSupplier.id, form);
         toast.success('Fournisseur mis à jour');
       } else {
-        await api.orders.addExternalProductSupplier({ ...form, product_id: selected.id });
+        await api.addExternalProductSupplier({ ...form, product_id: selected.id });
         toast.success('Fournisseur ajouté');
       }
       setShowSupplierForm(false);
       setEditSupplier(null);
       // Refresh la comparaison
       if (selected) {
-        const data = await api.orders.compareExternalProduct(selected.id);
+        const data = await api.compareExternalProduct(selected.id);
         setCompareData(data);
       }
     } catch (e) {
@@ -518,10 +518,10 @@ export default function ExternalProductsPanel({ currentUser }) {
     });
     if (!ok) return;
     try {
-      await api.orders.deleteExternalProductSupplier(entry.id);
+      await api.deleteExternalProductSupplier(entry.id);
       toast.success('Fournisseur retiré');
       if (selected) {
-        const data = await api.orders.compareExternalProduct(selected.id);
+        const data = await api.compareExternalProduct(selected.id);
         setCompareData(data);
       }
     } catch (e) {
@@ -550,7 +550,7 @@ export default function ExternalProductsPanel({ currentUser }) {
     if (quoteItems.length === 0) return;
     setQuoteLoading(true);
     try {
-      const blob = await api.orders.generateEshopQuotePdf('Devis interne e-shops', quoteItems);
+      const blob = await api.generateEshopQuotePdf('Devis interne e-shops', quoteItems);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -914,3 +914,5 @@ export default function ExternalProductsPanel({ currentUser }) {
     </div>
   );
 }
+
+export default ExternalProductsPanel;

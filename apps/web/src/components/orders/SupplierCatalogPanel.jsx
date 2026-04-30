@@ -45,7 +45,7 @@ import CatalogSettingsPanel from './CatalogSettingsPanel';
 
 const PAGE_SIZE = 50;
 
-export default function SupplierCatalogPanel({ currentUser }) {
+export function SupplierCatalogPanel({ currentUser }) {
   const toast = useToast();
 
   // ── State principal ──
@@ -610,6 +610,8 @@ export default function SupplierCatalogPanel({ currentUser }) {
     </div>
   );
 }
+
+export default SupplierCatalogPanel;
 
 // ═══════════════════════════════════════════════════════════
 // MODAL D'IMPORT PDF

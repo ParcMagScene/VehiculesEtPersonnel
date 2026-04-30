@@ -56,7 +56,20 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
     phone: supplier?.phone || '',
     address: supplier?.address || '',
     notes: supplier?.notes || '',
+    website: supplier?.website || '',
+    shipping_flat_rate: supplier?.shipping_flat_rate ?? '',
+    shipping_free_threshold: supplier?.shipping_free_threshold ?? '',
+    shipping_notes: supplier?.shipping_notes || '',
   });
+
+  const save = () => {
+    onSave({
+      ...form,
+      shipping_flat_rate: form.shipping_flat_rate !== '' ? Number(form.shipping_flat_rate) : null,
+      shipping_free_threshold:
+        form.shipping_free_threshold !== '' ? Number(form.shipping_free_threshold) : null,
+    });
+  };
 
   return (
     <Modal open={true} onClose={onClose} size="md" className="supplier-form-modal">
@@ -105,6 +118,46 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
             />
           </div>
           <div className="form-field full-width">
+            <label>Site web e-shop</label>
+            <Input
+              type="url"
+              value={form.website}
+              onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+              placeholder="https://..."
+            />
+          </div>
+          <div className="form-field">
+            <label>Port forfait (EUR)</label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.shipping_flat_rate}
+              onChange={(e) => setForm((f) => ({ ...f, shipping_flat_rate: e.target.value }))}
+              placeholder="ex: 6.90"
+            />
+          </div>
+          <div className="form-field">
+            <label>Seuil franco (EUR)</label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.shipping_free_threshold}
+              onChange={(e) => setForm((f) => ({ ...f, shipping_free_threshold: e.target.value }))}
+              placeholder="ex: 150"
+            />
+          </div>
+          <div className="form-field full-width">
+            <label>Notes livraison/port</label>
+            <Textarea
+              value={form.shipping_notes}
+              onChange={(e) => setForm((f) => ({ ...f, shipping_notes: e.target.value }))}
+              rows={2}
+              placeholder="Ex: expédition 24/48h, franco hors volumineux..."
+            />
+          </div>
+          <div className="form-field full-width">
             <label>Notes</label>
             <Textarea
               value={form.notes}
@@ -118,7 +171,7 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
         <Button variant="ghost" onClick={onClose}>
           Annuler
         </Button>
-        <Button variant="primary" onClick={() => onSave(form)} disabled={!form.name.trim()}>
+        <Button variant="primary" onClick={save} disabled={!form.name.trim()}>
           <Check size={16} /> {supplier ? 'Enregistrer' : 'Créer'}
         </Button>
       </ModalFooter>

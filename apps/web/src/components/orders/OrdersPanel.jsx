@@ -14,8 +14,16 @@ import {
 } from 'lucide-react';
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
-const SupplierCatalogPanel = lazy(() => import('./SupplierCatalogPanel'));
-const ExternalProductsPanel = lazy(() => import('./ExternalProductsPanel'));
+const SupplierCatalogPanel = lazy(() =>
+  import('./SupplierCatalogPanel').then((m) => ({
+    default: m.default || m.SupplierCatalogPanel,
+  })),
+);
+const ExternalProductsPanel = lazy(() =>
+  import('./ExternalProductsPanel').then((m) => ({
+    default: m.default || m.ExternalProductsPanel,
+  })),
+);
 import './OrdersPanel.css';
 
 import { Button, Checkbox, SearchBar, Select } from '@/design-system';

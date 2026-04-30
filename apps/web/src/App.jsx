@@ -52,7 +52,11 @@ const MaintenanceDialog = lazy(() => import('./components/vehicles/MaintenanceDi
 const VehicleMaintenanceModal = lazy(() => import('./components/vehicles/VehicleMaintenanceModal'));
 const AffairesPanel = lazy(() => import('./components/affaires/AffairesPanel'));
 const EquipmentPanel = lazy(() => import('./components/equipment/EquipmentPanel'));
-const OrdersPanel = lazy(() => import('./components/orders/OrdersPanel'));
+const OrdersPanel = lazy(() =>
+  import('./components/orders/OrdersPanel').then((m) => ({
+    default: m.default || m.OrdersPanel,
+  })),
+);
 const StockPanel = lazy(() => import('./components/orders/StockPanel'));
 const InventoryPanel = lazy(() => import('./components/inventory/InventoryPanel'));
 const PlanningPanel = lazy(() => import('./components/planning/PlanningPanel'));

@@ -158,10 +158,11 @@ export const PlanningTaskRow = React.memo(
     }
     const cleanEventNorm = cleanEventTitle.toLowerCase().replace(/\s+/g, '');
     const displayTitleNorm = displayTitle.toLowerCase().replace(/\s+/g, '');
-    const showSubtitle =
-      cleanEventTitle &&
-      cleanEventNorm !== displayTitleNorm &&
-      !displayTitleNorm.includes(cleanEventNorm);
+    const showSubtitle = isGoogle
+      ? cleanEventTitle && isGenericTitle && cleanEventNorm !== displayTitleNorm
+      : cleanEventTitle &&
+        cleanEventNorm !== displayTitleNorm &&
+        !displayTitleNorm.includes(cleanEventNorm);
 
     // Masquer l'eventType quand il est redondant avec le nom de la section
     const SECTION_EVENT_TYPES = {

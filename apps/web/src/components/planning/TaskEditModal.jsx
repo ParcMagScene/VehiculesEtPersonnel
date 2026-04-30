@@ -54,6 +54,42 @@ const SECTIONS = {
 // Sections aliasées vers "courses"
 const COURSE_SECTIONS = new Set(['courses', 'enlevement', 'retour', 'recuperation']);
 
+const COURSE_PREFIXES = {
+  livraison: '🚚 Livraison',
+  enlevement: '📦 Enlèvement',
+  retour: '↩️ Retour',
+  recuperation: '📥 Récupération',
+};
+
+const detectCourseType = (task) => {
+  const bySection = {
+    enlevement: 'enlevement',
+    retour: 'retour',
+    recuperation: 'recuperation',
+  };
+  if (bySection[task.section]) return bySection[task.section];
+
+  const evType = task.eventType || task.event_type;
+  if (evType && COURSE_PREFIXES[evType]) return evType;
+
+  const raw = task.title || '';
+  const match = raw.match(
+    /^(?:[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*)?(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\b/iu,
+  );
+  if (!match) return null;
+  const normalized = match[1]
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const map = {
+    livraison: 'livraison',
+    recuperation: 'recuperation',
+    enlevement: 'enlevement',
+    retour: 'retour',
+  };
+  return map[normalized] || null;
+};
+
 // Initialise le titre dans la modale d'édition :
 // retire emoji + préfixe opérationnel + suffixe " — googleEventTitle" pour toutes les sections.
 const initTitle = (task) => {
@@ -240,9 +276,26 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     try {
       // Auto-capitaliser la première lettre du titre
       const capitalizedTitle = form.title.trim();
-      const finalTitle = capitalizedTitle
+      let finalTitle = capitalizedTitle
         ? capitalizedTitle.charAt(0).toUpperCase() + capitalizedTitle.slice(1)
         : task.title;
+
+      // Pour les tâches Google "courses", on préserve le préfixe opérationnel
+      // afin que le badge (Livraison/Enlèvement/Retour/Récupération) reste stable.
+      if (task.sourceType === 'google_event' && COURSE_SECTIONS.has(form.section)) {
+        const courseType = detectCourseType(task);
+        const prefix = courseType ? COURSE_PREFIXES[courseType] : null;
+        if (prefix && finalTitle) {
+          const cleanedTitle = finalTitle
+            .replace(
+              /^(?:[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*)?(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\s*[—–\-:]?\s*/iu,
+              '',
+            )
+            .trim();
+          finalTitle = cleanedTitle ? `${prefix} — ${cleanedTitle}` : prefix;
+        }
+      }
+
       await api.updateTask(task.id, {
         title: finalTitle,
         date: form.date,

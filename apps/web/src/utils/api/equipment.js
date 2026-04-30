@@ -100,10 +100,18 @@ export function registerEquipmentMethods(ApiClient) {
       manualLinks = null,
       skipDuplicates = false,
       updateDuplicates = false,
+      serialUpdates = null,
     ) {
       return this.request('/sav-tickets/import-csv', {
         method: 'POST',
-        body: JSON.stringify({ data, mode, manualLinks, skipDuplicates, updateDuplicates }),
+        body: JSON.stringify({
+          data,
+          mode,
+          manualLinks,
+          skipDuplicates,
+          updateDuplicates,
+          serialUpdates,
+        }),
       });
     },
     async removeSavDuplicates() {

@@ -69,6 +69,7 @@ export const savImportSchema = z.object({
     .max(10000),
   mode: z.enum(['preview', 'import']),
   manualLinks: z.record(z.string(), z.number()).nullish(),
+  serialUpdates: z.record(z.string(), z.string()).nullish(),
   skipDuplicates: z.boolean().optional(),
   updateDuplicates: z.boolean().optional(),
 });

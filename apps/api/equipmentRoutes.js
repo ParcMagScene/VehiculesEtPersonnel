@@ -1866,7 +1866,30 @@ export function setupSavTicketsRoutes(
         }
 
         // Mode import réel — créer les nouveaux, mettre à jour les doublons
-        const { skipDuplicates, updateDuplicates } = req.body;
+        const { skipDuplicates, updateDuplicates, serialUpdates } = req.body;
+
+        // Appliquer les mises à jour de numéro de série (uniquement si l'équipement n'en a pas)
+        let serializedCount = 0;
+        if (serialUpdates && typeof serialUpdates === 'object') {
+          const updateSerial = db.prepare(
+            `UPDATE equipment SET serial_number = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND (serial_number IS NULL OR serial_number = '')`,
+          );
+          const syncUid = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
+          for (const [equipIdStr, serial] of Object.entries(serialUpdates)) {
+            const equipId = parseInt(equipIdStr, 10);
+            if (!equipId || !serial || !serial.trim()) continue;
+            const r = updateSerial.run(serial.trim(), equipId);
+            if (r.changes > 0) {
+              serializedCount++;
+              const emagMatch = serial.match(/EMAG-\d{5}/i);
+              if (emagMatch) {
+                syncUid.run(emagMatch[0].toUpperCase(), equipId);
+              }
+            }
+          }
+        }
+
         const insertTicket = db.prepare(`
         INSERT INTO sav_tickets (equipment_id, type, priority, status, title, description, cost, import_code, import_serial, import_name, created_at, resolved_at, updated_at)
         VALUES (?, 'reparation', 'medium', ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -2035,7 +2058,8 @@ export function setupSavTicketsRoutes(
           resolved,
           autoClosedMissing,
           total: data.length,
-          message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${resolved > 0 ? `, ${resolved} sortie(s) SAV détectée(s)` : ''}${autoClosedMissing > 0 ? `, ${autoClosedMissing} ticket(s) clôturé(s) car absents du fichier` : ''}${updatedDuplicates > 0 ? `, ${updatedDuplicates} mis à jour` : ''}${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}`,
+          serializedCount,
+          message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${resolved > 0 ? `, ${resolved} sortie(s) SAV détectée(s)` : ''}${autoClosedMissing > 0 ? `, ${autoClosedMissing} ticket(s) clôturé(s) car absents du fichier` : ''}${updatedDuplicates > 0 ? `, ${updatedDuplicates} mis à jour` : ''}${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}${serializedCount > 0 ? `, ${serializedCount} N° série injecté(s)` : ''}`,
         });
       } catch (error) {
         logger.error('Erreur import CSV interventions:', error);

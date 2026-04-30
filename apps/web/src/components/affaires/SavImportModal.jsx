@@ -117,6 +117,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [manualLinks, setManualLinks] = useState({}); // { rowIndex: equipmentId }
+  const [pendingSerialUpdates, setPendingSerialUpdates] = useState({}); // { equipmentId: serial }
   const [linkSearch, setLinkSearch] = useState('');
   const [linkingIndex, setLinkingIndex] = useState(null); // index de l'intervention en cours de liaison
   const [duplicateAction, setDuplicateAction] = useState('update'); // 'update' | 'skip' | 'create'
@@ -178,6 +179,7 @@ const SavImportModal = ({ onClose, onImportDone }) => {
         Object.keys(manualLinks).length > 0 ? manualLinks : null,
         duplicateAction === 'skip',
         duplicateAction === 'update',
+        Object.keys(pendingSerialUpdates).length > 0 ? pendingSerialUpdates : null,
       );
       setResult(result);
       setStep('done');
@@ -600,6 +602,13 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                                     ...prev,
                                     [item.index]: suggested.id,
                                   }));
+                                  // Injecter le serial si l'équipement n'en a pas
+                                  if (item.serial && !suggested.serial_number) {
+                                    setPendingSerialUpdates((prev) => ({
+                                      ...prev,
+                                      [suggested.id]: item.serial,
+                                    }));
+                                  }
                                 }}
                                 title="Lier à la proposition"
                               >
@@ -622,6 +631,19 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                               <div className="sav-import-linked">
                                 <span className="sav-import-linked-name">
                                   ✅ {linkedEquip.name}
+                                  {pendingSerialUpdates[linked] && (
+                                    <span
+                                      style={{
+                                        marginLeft: 6,
+                                        fontSize: 10,
+                                        color: 'var(--theme-info)',
+                                        fontWeight: 600,
+                                      }}
+                                      title={`N° série à injecter : ${pendingSerialUpdates[linked]}`}
+                                    >
+                                      ⚙️ S/N
+                                    </span>
+                                  )}
                                 </span>
                                 <Button
                                   variant="ghost"
@@ -630,6 +652,12 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                                     const next = { ...manualLinks };
                                     delete next[item.index];
                                     setManualLinks(next);
+                                    // Retirer la mise à jour de série associée
+                                    setPendingSerialUpdates((prev) => {
+                                      const n = { ...prev };
+                                      delete n[linked];
+                                      return n;
+                                    });
                                   }}
                                   title="Retirer le lien"
                                 >
@@ -697,7 +725,12 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                       key={eq.id}
                       className="sav-import-link-item"
                       onClick={() => {
+                        const item = preview.unmatchedItems?.find((u) => u.index === linkingIndex);
                         setManualLinks((prev) => ({ ...prev, [linkingIndex]: eq.id }));
+                        // Injecter le serial si l'équipement n'en a pas
+                        if (item?.serial && !eq.serial_number) {
+                          setPendingSerialUpdates((prev) => ({ ...prev, [eq.id]: item.serial }));
+                        }
                         setLinkingIndex(null);
                       }}
                     >
@@ -716,7 +749,16 @@ const SavImportModal = ({ onClose, onImportDone }) => {
                           key={`suggested-${eq.id}`}
                           className="sav-import-link-item"
                           onClick={() => {
+                            const item = preview.unmatchedItems?.find(
+                              (u) => u.index === linkingIndex,
+                            );
                             setManualLinks((prev) => ({ ...prev, [linkingIndex]: eq.id }));
+                            if (item?.serial && !eq.serial_number) {
+                              setPendingSerialUpdates((prev) => ({
+                                ...prev,
+                                [eq.id]: item.serial,
+                              }));
+                            }
                             setLinkingIndex(null);
                           }}
                         >

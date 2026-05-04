@@ -16,6 +16,10 @@
   animation: ui-modal-fade-in var(--duration-fast) var(--ease-out);
 }
 
+.ui-modal-overlay--no-blur {
+  backdrop-filter: none;
+}
+
 /* ── Container ── */
 .ui-modal {
   background: var(--theme-bg-card);

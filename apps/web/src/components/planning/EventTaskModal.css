@@ -230,11 +230,19 @@
   padding: 5px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-default);
-  background: var(--surface-secondary);
+  /* Évite le rendu translucide de la liste native dans le modal */
+  background: var(--surface-primary);
   color: var(--text-body);
   font-size: 0.82rem;
   outline: none;
   transition: border-color 0.15s;
+}
+
+/* Force un fond opaque pour la popup native des options */
+.etm-field select option,
+.etm-field select optgroup {
+  background-color: var(--surface-primary);
+  color: var(--text-body);
 }
 
 .etm-field input:focus,

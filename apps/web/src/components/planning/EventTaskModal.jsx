@@ -344,7 +344,13 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
   };
 
   return (
-    <Modal open onClose={onClose} size="lg" className="etm-modal no-drag-resize">
+    <Modal
+      open
+      onClose={onClose}
+      size="lg"
+      className="etm-modal no-drag-resize"
+      disableBackdropBlur
+    >
       <ModalHeader icon={<Calendar size={18} />} onClose={onClose}>
         <span className="etm-header-title">Définir les tâches</span>
         <span className="etm-event-title">{eventInfo.summary}</span>

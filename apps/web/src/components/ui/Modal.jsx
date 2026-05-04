@@ -8,7 +8,15 @@ import { createPortal } from 'react-dom';
  * Modal — Wrapper réutilisable pour tous les modaux de l'application.
  * Gère : portail, overlay, tailles, fermeture Escape / backdrop, focus trap, scroll lock.
  */
-function Modal({ open, onClose, size = 'md', className = '', children }) {
+function Modal({
+  open,
+  onClose,
+  size = 'md',
+  className = '',
+  overlayClassName = '',
+  disableBackdropBlur = false,
+  children,
+}) {
   const overlayRef = useRef(null);
   const previousFocus = useRef(null);
 
@@ -79,9 +87,17 @@ function Modal({ open, onClose, size = 'md', className = '', children }) {
 
   const cls = ['ui-modal', `ui-modal--${size}`, className].filter(Boolean).join(' ');
 
+  const overlayCls = [
+    'ui-modal-overlay',
+    disableBackdropBlur && 'ui-modal-overlay--no-blur',
+    overlayClassName,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return createPortal(
     <div
-      className="ui-modal-overlay"
+      className={overlayCls}
       ref={overlayRef}
       onMouseDown={handleOverlayClick}
       onClick={handleOverlayClick}

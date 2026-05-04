@@ -629,14 +629,17 @@ function computeIncidentSynthese(periodStart, periodEnd) {
 
 function buildSynthese(dates, personId) {
   const placeholders = dates.map(() => '?').join(',');
+  const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
+  const personTypePlaceholders = PERMANENT_TYPES.map(() => '?').join(',');
   let query = `
     SELECT ts.*, p.first_name, p.last_name, p.type AS person_type
     FROM tracking_sheets ts
     JOIN persons p ON p.id = ts.person_id
     WHERE ts.date IN (${placeholders})
       AND p.status = 'active'
+      AND p.type IN (${personTypePlaceholders})
   `;
-  const params = [...dates];
+  const params = [...dates, ...PERMANENT_TYPES];
   if (personId) {
     query += ' AND ts.person_id = ?';
     params.push(personId);
@@ -1383,6 +1386,64 @@ function generateSynthesePdf(synthese, title, res) {
         parts.push(`Activité non renseignée : ${a.unreported_periods.join(', ')}`);
       doc.text(`• ${a.person} (${a.date}) : ${parts.join(' — ')}`, LEFT + 10, y);
       y += 12;
+    }
+  }
+
+  // ─── Synthèse incidents (même période) ───
+  const incidentSummary = synthese.incidents?.summary || null;
+  const incidentByAffaire = Array.isArray(synthese.incidents?.by_affaire)
+    ? synthese.incidents.by_affaire
+    : [];
+  const incidentPeriod = synthese.incidents?.period || null;
+
+  ensureSpace(44);
+  y += 10;
+  doc.rect(LEFT, y, USABLE_W, 16).fillColor('#0f766e').fill();
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff');
+  doc.text('INCIDENTS (période de la synthèse)', LEFT + 6, y + 3);
+  y += 18;
+
+  const periodText = incidentPeriod
+    ? `${incidentPeriod.start} → ${incidentPeriod.end}`
+    : 'Période inconnue';
+  doc.font('Helvetica').fontSize(8).fillColor('#134e4a');
+  doc.text(
+    `${periodText}  |  Tickets : ${incidentSummary?.total_tickets || 0}  |  Incidents : ${incidentSummary?.total_incidents || 0}  |  Affaires : ${incidentSummary?.affaires_count || 0}`,
+    LEFT,
+    y,
+    { width: USABLE_W },
+  );
+  y += 14;
+
+  if (incidentByAffaire.length === 0) {
+    ensureSpace(16);
+    doc.font('Helvetica-Oblique').fontSize(8).fillColor('#64748b');
+    doc.text('Aucun ticket incident sur cette période.', LEFT + 6, y);
+    y += 12;
+  } else {
+    const incidentRows = incidentByAffaire.slice(0, 14);
+    ensureSpace(16 + incidentRows.length * 12);
+    doc.font('Helvetica').fontSize(8).fillColor('#1f2937');
+    for (const it of incidentRows) {
+      const affaireLabel =
+        it.affaire_name && it.affaire_name !== it.affaire_num
+          ? `${it.affaire_num} (${it.affaire_name})`
+          : it.affaire_num;
+      doc.text(
+        `• ${affaireLabel} : ${it.tickets} ticket(s), ${it.incidents} incident(s)`,
+        LEFT + 6,
+        y,
+      );
+      y += 12;
+    }
+    if (incidentByAffaire.length > incidentRows.length) {
+      doc.font('Helvetica-Oblique').fontSize(7).fillColor('#64748b');
+      doc.text(
+        `... ${incidentByAffaire.length - incidentRows.length} affaire(s) supplémentaire(s) non affichée(s)`,
+        LEFT + 6,
+        y,
+      );
+      y += 10;
     }
   }
 
@@ -2134,6 +2195,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { date } = req.params;
       const synthese = buildSynthese([date]);
+      synthese.incidents = computeIncidentSynthese(date, date);
       generateSynthesePdf(synthese, `jour-${date}`, res);
     } catch (error) {
       logger.error('GET /api/suivi/synthese/jour/:date/pdf error:', error);
@@ -2149,6 +2211,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       const { week } = req.params;
       const dates = getWeekDates(week);
       const synthese = buildSynthese(dates);
+      synthese.incidents = computeIncidentSynthese(dates[0], dates[dates.length - 1]);
       generateSynthesePdf(synthese, `semaine-${week}`, res);
     } catch (error) {
       logger.error('GET /api/suivi/synthese/semaine/:week/pdf error:', error);
@@ -2164,6 +2227,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       const { month } = req.params;
       const dates = getMonthDates(month);
       const synthese = buildSynthese(dates);
+      synthese.incidents = computeIncidentSynthese(dates[0], dates[dates.length - 1]);
       generateSynthesePdf(synthese, `mois-${month}`, res);
     } catch (error) {
       logger.error('GET /api/suivi/synthese/mois/:month/pdf error:', error);

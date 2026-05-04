@@ -179,7 +179,11 @@ function TVScreenMini({ state = {} }) {
         </span>
         <span className="tv-mini-evt-loc">
           {iconFile ? (
-            <img src={`/api/display/gifs/${iconFile}`} alt="" className="tv-mini-evt-icon" />
+            <img
+              src={`/api/display/gifs/${iconFile}`}
+              alt={task.sectionLabel || 'Section'}
+              className="tv-mini-evt-icon"
+            />
           ) : (
             task.sectionLabel || ''
           )}

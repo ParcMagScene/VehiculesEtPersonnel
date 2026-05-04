@@ -16,7 +16,7 @@ import { randomBytes } from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import multer from 'multer';
-import { basename, dirname, extname, join, resolve } from 'path';
+import { basename, dirname, extname, join, resolve, sep } from 'path';
 import { fileURLToPath } from 'url';
 
 import db from './database.js';
@@ -1517,8 +1517,19 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const configFile = join(displayDataDir, 'sneaky-photo.json');
       const config = readJsonFile(configFile, null);
       if (config && config.filename) {
-        const filePath = join(sneakyDir, config.filename);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        // [SEC PHASE 1] basename + resolve startsWith pour bloquer toute tentative
+        // de suppression hors de sneakyDir même depuis un compte admin compromis.
+        const safeName = basename(String(config.filename));
+        if (safeName && safeName !== '.' && safeName !== '..') {
+          const filePath = resolve(sneakyDir, safeName);
+          const baseResolved = resolve(sneakyDir);
+          if (
+            (filePath === baseResolved || filePath.startsWith(baseResolved + sep)) &&
+            fs.existsSync(filePath)
+          ) {
+            fs.unlinkSync(filePath);
+          }
+        }
       }
       writeJsonFile(configFile, { active: false });
       logAction(null, 'sneaky_photo_disabled', {}, _req.user?.id);
@@ -1938,7 +1949,11 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // ═══════════════════════════════════════════════════════════════
 
   // GET /api/display/tv-public-state — État complet pour l'écran TV (authentifié par token TV)
+  // [PERF Sprint 2] Cache-Control: no-cache → le navigateur revalide systématiquement
+  // mais peut servir le body en cache si l'ETag correspond (Express envoie 304 sans body
+  // si req.fresh, économisant CPU sérialisation + bande passante quand l'état n'a pas bougé).
   app.get('/api/display/tv-public-state', optionalTvToken, async (_req, res) => {
+    res.set('Cache-Control', 'no-cache');
     try {
       // Config apparence
       const configRows = db.prepare('SELECT key, value FROM display_config').all();
@@ -2641,8 +2656,20 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     try {
       const config = readJsonFile(join(displayDataDir, 'sneaky-photo.json'), null);
       if (config && config.active && config.filename) {
-        const filePath = join(sneakyDir, config.filename);
-        if (fs.existsSync(filePath)) return res.sendFile(filePath);
+        // [SEC PHASE 1] Defense in depth contre path traversal :
+        // basename() + resolve()-startsWith. Le filename vient d'un JSON
+        // potentiellement modifiable hors de l'API.
+        const safeName = basename(String(config.filename));
+        if (safeName && safeName !== '.' && safeName !== '..') {
+          const filePath = resolve(sneakyDir, safeName);
+          const baseResolved = resolve(sneakyDir);
+          if (
+            (filePath === baseResolved || filePath.startsWith(baseResolved + sep)) &&
+            fs.existsSync(filePath)
+          ) {
+            return res.sendFile(filePath);
+          }
+        }
       }
       res.status(404).json({ success: false, error: 'Aucune photo active' });
     } catch (_error) {

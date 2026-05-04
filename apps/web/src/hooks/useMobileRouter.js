@@ -1,48 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 
-// ═══ Mapping écran ↔ chemin hash ═══
-const ROUTES = {
-  home: '/mobile',
-  'parc-dashboard': '/mobile/parc',
-  planning: '/mobile/planning',
-  reservations: '/mobile/reservations',
-  maintenances: '/mobile/maintenances',
-  availability: '/mobile/availability',
-  affaires: '/mobile/affaires',
-  tasks: '/mobile/tasks',
-  personnel: '/mobile/personnel',
-  messaging: '/mobile/messaging',
-  equipment: '/mobile/equipment',
-  sav: '/mobile/sav',
-  'equipment-qr': '/mobile/equipment-qr',
-  orders: '/mobile/orders',
-  leaves: '/mobile/leaves',
-  inventory: '/mobile/inventory',
-  location: '/mobile/location',
-  sonos: '/mobile/sonos',
-  suivi: '/mobile/suivi',
-  'dashboard-admin': '/mobile/dashboard-admin',
-};
-
-const REVERSE = Object.fromEntries(Object.entries(ROUTES).map(([s, p]) => [p, s]));
-
-// Hiérarchie parentale pour goBack (ce qui n'est pas listé → home)
-const BACK_TARGET = {
-  planning: 'parc-dashboard',
-  reservations: 'parc-dashboard',
-  maintenances: 'parc-dashboard',
-  availability: 'parc-dashboard',
-  'equipment-qr': 'equipment',
-  suivi: 'home',
-  'dashboard-admin': 'home',
-};
+import {
+  MOBILE_ACTIVE_TAB_KEY as ACTIVE_TAB_STORAGE_KEY,
+  MOBILE_BACK_TARGET as BACK_TARGET,
+  MOBILE_QR_PATTERN,
+  MOBILE_REVERSE_ROUTES as REVERSE,
+  MOBILE_ROUTES as ROUTES,
+  MOBILE_TAB_SCREENS as TAB_SCREENS,
+} from '../router/routes.config';
 
 /**
  * Parse le hash courant pour déterminer l'écran mobile actif.
  * Gère le pattern QR : #/mobile/equipment/EMAG-XXXXX
  */
 function parseHash(hash) {
-  const qrMatch = hash.match(/#\/mobile\/equipment\/(EMAG-\d+)/i);
+  const qrMatch = hash.match(MOBILE_QR_PATTERN);
   if (qrMatch) return { screen: 'qr-landing', qrUid: qrMatch[1] };
 
   const path = hash.replace(/^#/, '') || '/mobile';
@@ -58,11 +30,27 @@ function parseHash(hash) {
  */
 export default function useMobileRouter() {
   const [state, setState] = useState(() => {
-    if (!window.location.hash.startsWith('#/mobile')) {
-      window.history.replaceState(null, '', '#/mobile');
-      return { screen: 'home', qrUid: null };
+    // 1. Si une URL hash spécifique est présente (autre que la racine), elle gagne
+    const hash = window.location.hash;
+    if (hash.startsWith('#/mobile/') || hash === '#/mobile') {
+      const parsed = parseHash(hash);
+      // 2. Si on est sur la racine et qu'un onglet est mémorisé, le restaurer
+      if (parsed.screen === 'home' && hash === '#/mobile') {
+        try {
+          const saved = window.localStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
+          if (saved && TAB_SCREENS.has(saved) && saved !== 'home') {
+            const path = ROUTES[saved];
+            window.history.replaceState(null, '', '#' + path);
+            return { screen: saved, qrUid: null };
+          }
+        } catch {
+          /* localStorage indisponible — ignore */
+        }
+      }
+      return parsed;
     }
-    return parseHash(window.location.hash);
+    window.history.replaceState(null, '', '#/mobile');
+    return { screen: 'home', qrUid: null };
   });
 
   useEffect(() => {
@@ -70,6 +58,17 @@ export default function useMobileRouter() {
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+
+  // Persiste le dernier onglet principal visité
+  useEffect(() => {
+    if (TAB_SCREENS.has(state.screen)) {
+      try {
+        window.localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, state.screen);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [state.screen]);
 
   /** Navigue vers un écran (pousse dans l'historique navigateur) */
   const navigate = useCallback((screen) => {
@@ -89,5 +88,10 @@ export default function useMobileRouter() {
   return { currentScreen: state.screen, qrUid: state.qrUid, navigate, goBack };
 }
 
-/** Routes exportées pour les tests */
-export { BACK_TARGET, ROUTES };
+/** Routes exportées pour les tests (ré-export depuis routes.config). */
+export {
+  MOBILE_ACTIVE_TAB_KEY as ACTIVE_TAB_STORAGE_KEY,
+  MOBILE_BACK_TARGET as BACK_TARGET,
+  MOBILE_ROUTES as ROUTES,
+  MOBILE_TAB_SCREENS as TAB_SCREENS,
+} from '../router/routes.config';

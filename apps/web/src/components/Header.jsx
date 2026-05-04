@@ -1,26 +1,14 @@
 import './Header.css';
 
 import { format } from 'date-fns';
-import {
-  Boxes,
-  Briefcase,
-  Building2,
-  HelpCircle,
-  MapPin,
-  Moon,
-  Package,
-  Radio,
-  ShoppingCart,
-  Sun,
-  Truck,
-  Video,
-} from 'lucide-react';
+import { HelpCircle, Moon, Sun } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../constants';
 import { useToast } from '../hooks/useToast';
+import { DESKTOP_MODULES } from '../router/routes.config';
 import api from '../utils/api';
 import { isApiCoolingDown } from '../utils/api/base';
 import { getPeriodTimestamp } from '../utils/dateUtils';
@@ -70,22 +58,28 @@ const Header = ({
   });
   const [pendingReservationRequests, setPendingReservationRequests] = useState([]);
 
-  // Charger les demandes en attente (interventions + réservations) pour le badge admin
+  // [PERF Sprint 2] Fusion de deux setInterval(30s) en un seul, avec Promise.all
+  // pour grouper les requêtes (compteur demandes interventions/réservations + compteur
+  // demandes d'accès admin). Évite un timer redondant et déclenche les 2 fetch en parallèle.
   useEffect(() => {
-    const loadPendingRequestsCounts = async () => {
-      if (currentUser?.isAdmin) {
-        if (isApiCoolingDown()) return;
-        try {
-          const data = await api.getPendingRequestsCount();
-          setPendingRequestsCounts(data);
-        } catch {
-          // Silencieux : valeurs initiales conservées (badge = 0)
-        }
+    const loadAdminBadges = async () => {
+      if (!currentUser?.isAdmin) return;
+      if (isApiCoolingDown()) return;
+      const [countsRes, accessRes] = await Promise.allSettled([
+        api.getPendingRequestsCount(),
+        api.getPendingAccessRequestsCount(),
+      ]);
+      if (countsRes.status === 'fulfilled' && countsRes.value) {
+        setPendingRequestsCounts(countsRes.value);
       }
+      if (accessRes.status === 'fulfilled' && accessRes.value) {
+        setPendingAccessRequests(accessRes.value.count || 0);
+      }
+      // Erreurs silencieuses : valeurs initiales conservées (badges = 0)
     };
 
-    loadPendingRequestsCounts();
-    const interval = setInterval(loadPendingRequestsCounts, 30000);
+    loadAdminBadges();
+    const interval = setInterval(loadAdminBadges, 30000);
     return () => clearInterval(interval);
   }, [currentUser, maintenances]);
 
@@ -104,25 +98,6 @@ const Header = ({
     };
     loadPendingReservations();
   }, [showRequestsPopup, showNotificationsPopup, currentUser]);
-
-  // Charger le nombre de demandes d'accès en attente (pour admins uniquement)
-  useEffect(() => {
-    const loadPendingRequests = async () => {
-      if (currentUser?.isAdmin) {
-        if (isApiCoolingDown()) return;
-        try {
-          const data = await api.getPendingAccessRequestsCount();
-          setPendingAccessRequests(data.count || 0);
-        } catch {
-          // Silencieux : compteur à 0 conservé
-        }
-      }
-    };
-
-    loadPendingRequests();
-    const interval = setInterval(loadPendingRequests, 30000);
-    return () => clearInterval(interval);
-  }, [currentUser]);
 
   // Fonction pour détecter les conflits entre une intervention et les réservations
   const getMaintenanceConflicts = (maintenance) => {
@@ -272,17 +247,9 @@ const Header = ({
             </div>
             <div className="module-tabs" role="tablist" aria-label="Module principal">
               {(() => {
-                const allTabs = [
-                  { id: 'vehicles', label: 'Parc', icon: Truck },
-                  { id: 'equipment', label: 'Équipements', icon: Package },
-                  { id: 'affaires', label: 'Affaires', icon: Briefcase },
-                  { id: 'orders', label: 'Commandes', icon: ShoppingCart },
-                  { id: 'stock', label: 'Stocks', icon: Boxes },
-                  { id: 'planning', label: 'Planning', icon: Radio },
-                  { id: 'annuaire', label: 'Annuaire', icon: Building2 },
-                  { id: 'lieux', label: 'Lieux', icon: MapPin },
-                  { id: 'video', label: 'Vidéo', icon: Video },
-                ];
+                // [Sprint B] Source unique : routes.config.js (évite la dérive entre Header,
+                // UserPreferencesModal et la validation URL).
+                const allTabs = DESKTOP_MODULES;
                 const hiddenTabs = tabPrefs.hiddenTabs || [];
                 const tabOrder = tabPrefs.tabOrder || allTabs.map((t) => t.id);
                 const orderedTabs = tabOrder

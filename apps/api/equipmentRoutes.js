@@ -9,6 +9,7 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
+  statSync,
   unlinkSync,
   writeFileSync,
 } from 'fs';
@@ -44,20 +45,32 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
   });
 
   // GET /api/equipment-categories/tree — hiérarchie complète
+  // [PERF Sprint 3] Construction O(n) via Map<parent_id, children[]> au lieu de
+  // 2 .filter() imbriqués (O(n²) sur n catégories : ~150 actuellement, mais croissance).
   app.get('/api/equipment-categories/tree', authenticateToken, (req, res) => {
     try {
       const all = db.prepare('SELECT * FROM equipment_categories ORDER BY name').all();
-      const families = all.filter((c) => c.level === 'family');
-      const subfamilies = all.filter((c) => c.level === 'subfamily');
-      const categories = all.filter((c) => c.level === 'category');
 
+      // Index 1 passe : parent_id -> liste d'enfants
+      const byParent = new Map();
+      for (const c of all) {
+        const k = c.parent_id == null ? '__root__' : c.parent_id;
+        let bucket = byParent.get(k);
+        if (!bucket) {
+          bucket = [];
+          byParent.set(k, bucket);
+        }
+        bucket.push(c);
+      }
+
+      const families = all.filter((c) => c.level === 'family');
       const tree = families.map((f) => ({
         ...f,
-        children: subfamilies
-          .filter((sf) => sf.parent_id === f.id)
+        children: (byParent.get(f.id) || [])
+          .filter((sf) => sf.level === 'subfamily')
           .map((sf) => ({
             ...sf,
-            children: categories.filter((cat) => cat.parent_id === sf.id),
+            children: (byParent.get(sf.id) || []).filter((cat) => cat.level === 'category'),
           })),
       }));
       res.json(tree);
@@ -165,9 +178,9 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       }
       if (search) {
         sql +=
-          ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ? OR e.location LIKE ? OR e.location_zone LIKE ?)';
+          ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ? OR e.location LIKE ? OR e.location_zone LIKE ? OR e.numero_mag LIKE ?)';
         const like = `%${search}%`;
-        params.push(like, like, like, like, like);
+        params.push(like, like, like, like, like, like);
       }
 
       sql += ' ORDER BY e.name';
@@ -302,6 +315,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         photo,
         brand,
         stock_quantity,
+        numero_mag,
       } = req.body;
       if (!name) return res.status(400).json({ success: false, error: 'Nom requis' });
 
@@ -311,8 +325,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       const result = db
         .prepare(
           `
-        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, brand_id, stock_quantity, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, brand_id, stock_quantity, numero_mag, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
         )
         .run(
@@ -334,6 +348,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           resolved.brand,
           resolved.brand_id,
           stock_quantity || 1,
+          numero_mag || null,
           req.user.id,
         );
 
@@ -384,6 +399,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         photo,
         brand,
         stock_quantity,
+        numero_mag,
       } = req.body;
 
       // Normaliser la marque → brand_id
@@ -391,7 +407,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
       db.prepare(
         `
-        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, brand_id = ?, stock_quantity = ?, updated_at = CURRENT_TIMESTAMP
+        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, brand_id = ?, stock_quantity = ?, numero_mag = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
       ).run(
@@ -413,6 +429,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         resolved.brand,
         resolved.brand_id,
         stock_quantity,
+        numero_mag || null,
         req.params.id,
       );
 
@@ -865,7 +882,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           LIMIT 1
         `);
           const updateEquip = db.prepare(`
-          UPDATE equipment SET name = ?, category_id = ?, brand = ?, stock_quantity = ?, location = ?, modified_at = CURRENT_TIMESTAMP
+          UPDATE equipment SET name = ?, category_id = ?, brand = ?, stock_quantity = ?, location = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `);
 
@@ -2609,11 +2626,25 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     return join(__dirname, '..', '..', 'public', filename);
   };
 
+  // [PERF Sprint 2] Cache des fichiers zones par chemin + mtime.
+  // Évite readFileSync + JSON.parse à chaque requête (zones JSON ~10-50 Ko, lus très souvent).
+  // Invalidation auto par mtime → le PUT qui réécrit le fichier est détecté sans hook explicite.
+  const _zonesCache = new Map(); // path -> { mtimeMs, data }
+  const loadZonesCached = (filename) => {
+    const fullPath = resolveZonesPath(filename);
+    const stat = statSync(fullPath);
+    const cached = _zonesCache.get(fullPath);
+    if (cached && cached.mtimeMs === stat.mtimeMs) return cached.data;
+    const data = JSON.parse(readFileSync(fullPath, 'utf-8'));
+    _zonesCache.set(fullPath, { mtimeMs: stat.mtimeMs, data });
+    return data;
+  };
+
   // ═══ GET /api/equipment-all-depot-zones — Toutes les zones des deux dépôts ═══
   app.get('/api/equipment-all-depot-zones', authenticateToken, (req, res) => {
     try {
-      const depot1 = JSON.parse(readFileSync(resolveZonesPath('depot-zones.json'), 'utf-8'));
-      const depot2 = JSON.parse(readFileSync(resolveZonesPath('depot2-zones.json'), 'utf-8'));
+      const depot1 = loadZonesCached('depot-zones.json');
+      const depot2 = loadZonesCached('depot2-zones.json');
       res.json({
         depots: [
           { id: '1', ...depot1 },
@@ -2632,8 +2663,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     try {
       const depotId = parseInt(req.query.depot, 10) || 1;
       const filename = depotId === 2 ? 'depot2-zones.json' : 'depot-zones.json';
-      const zonesPath = resolveZonesPath(filename);
-      const data = JSON.parse(readFileSync(zonesPath, 'utf-8'));
+      const data = loadZonesCached(filename);
       res.json(data);
     } catch (error) {
       logger.error('GET /api/equipment-depot-zones error:', error);

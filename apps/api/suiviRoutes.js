@@ -1096,16 +1096,31 @@ function generateNormalSheetPdf(sheet, doc) {
   drawPdfFooter(doc, allEntries, 'Total');
 }
 
-// ─── MODE IMPRESSION : Recto-verso, Matin/Apres-midi, lignes filigrane ───
+// ─── MODE IMPRESSION : recto unique, Matin (haut) + Apres-midi (bas), lignes filigrane ───
 
-function renderPrintHalfDayPage(doc, sheet, entries, subtitle, period) {
-  drawPdfHeader(doc, sheet, subtitle);
+/**
+ * Rend une demi-section (Matin ou Apres-midi) bornee verticalement entre [top, bottom].
+ * Inclut: sous-titre, en-tete de tableau, lignes saisies, lignes filigrane et mini-total.
+ */
+function renderPrintHalfSection(doc, sheet, entries, label, period, top, bottom) {
+  // Sous-titre de section centre
+  doc.fontSize(11).font('Helvetica-Bold').fillColor('#334155');
+  doc.text(label, PDF_TABLE_LEFT, top, {
+    width: PDF_TABLE_WIDTH,
+    align: 'center',
+    lineBreak: false,
+  });
 
-  let y = drawPdfTableHeader(doc, doc.y);
+  let y = top + 16;
+  y = drawPdfTableHeader(doc, y);
+
+  // Reserver une bande basse pour le mini-total de la section
+  const FOOTER_RESERVE = 14;
+  const entriesBottom = bottom - FOOTER_RESERVE;
 
   for (let i = 0; i < entries.length; i++) {
     const rowHeight = getPdfEntryRowHeight(doc, entries[i]);
-    if (y + rowHeight > PDF_TABLE_BOTTOM) break;
+    if (y + rowHeight > entriesBottom) break;
     drawPdfEntryRow(doc, entries[i], i + 1, y, rowHeight);
     y += rowHeight;
   }
@@ -1119,11 +1134,107 @@ function renderPrintHalfDayPage(doc, sheet, entries, subtitle, period) {
     y = drawPdfNonRenseigneeNotice(doc, y);
   }
 
-  drawPdfWatermarkRows(doc, y, PDF_TABLE_BOTTOM);
-  drawPdfFooter(doc, entries, subtitle);
+  drawPdfWatermarkRows(doc, y, entriesBottom);
+
+  // Mini-total de section
+  const totalTime = entries.reduce((s, e) => s + (e.time_spent || 0), 0);
+  const totalDone = entries.filter((e) => e.completed === 1).length;
+  doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e3a5f');
+  doc.text(
+    `${label} — ${totalDone}/${entries.length} effectuee(s) — ${decToHM(totalTime)}`,
+    PDF_TABLE_LEFT,
+    bottom - 11,
+    {
+      width: PDF_TABLE_WIDTH,
+      align: 'left',
+      lineBreak: false,
+    },
+  );
+}
+
+/**
+ * Rend une fiche complete sur une seule page : header partage, page coupee
+ * en deux dans la hauteur (Matin en haut, Apres-midi en bas), separateur horizontal,
+ * puis pied de page partage (signature + generation).
+ */
+function renderPrintFullDayPage(doc, sheet) {
+  drawPdfHeader(doc, sheet, null);
+
+  const startY = doc.y;
+  const FOOTER_TOP = 758; // au-dessus de la zone signature/genere
+  const SECTION_GAP = 10;
+  const totalArea = FOOTER_TOP - startY;
+  const halfHeight = (totalArea - SECTION_GAP) / 2;
+  const topSectionBottom = startY + halfHeight;
+  const bottomSectionTop = topSectionBottom + SECTION_GAP;
+  const bottomSectionBottom = FOOTER_TOP;
+
+  const amEntries = (sheet.entries || []).filter((e) => e.period === 'AM');
+  const pmEntries = (sheet.entries || []).filter((e) => e.period === 'PM');
+
+  // Section haute : Matin
+  renderPrintHalfSection(doc, sheet, amEntries, 'MATIN (AM)', 'AM', startY, topSectionBottom);
+
+  // Separateur horizontal (trait pointille pour suggerer le pli/decoupe)
+  const sepY = topSectionBottom + SECTION_GAP / 2;
+  doc.save();
+  doc
+    .lineWidth(0.8)
+    .strokeColor('#94a3b8')
+    .dash(4, { space: 3 })
+    .moveTo(PDF_TABLE_LEFT, sepY)
+    .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, sepY)
+    .stroke();
+  doc.undash();
+  doc.restore();
+
+  // Section basse : Apres-midi
+  renderPrintHalfSection(
+    doc,
+    sheet,
+    pmEntries,
+    'APRES-MIDI (PM)',
+    'PM',
+    bottomSectionTop,
+    bottomSectionBottom,
+  );
+
+  // Pied de page partage (signature + horodatage)
+  doc.fontSize(8).font('Helvetica').fillColor('#475569');
+  doc.text('Signature / Visa :', PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.55, 765, {
+    width: PDF_TABLE_WIDTH * 0.45,
+    align: 'right',
+    lineBreak: false,
+  });
+  doc
+    .lineWidth(0.5)
+    .strokeColor('#94a3b8')
+    .moveTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.7, 780)
+    .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, 780)
+    .stroke();
+
+  doc.fontSize(6).font('Helvetica').fillColor('#999999');
+  doc.text(`Genere par eM@g -- ${new Date().toLocaleString('fr-FR')}`, PDF_TABLE_LEFT, 792, {
+    align: 'center',
+    width: PDF_TABLE_WIDTH,
+    lineBreak: false,
+  });
 }
 
 // ─── Fonctions de generation finales ───
+
+// [SEC PHASE 1] Sanitize une valeur dynamique pour Content-Disposition.
+// Bloque l'injection CRLF / quote-break + path traversal dans le filename.
+function safePdfFilename(value) {
+  return (
+    String(value ?? '')
+      .replace(/[\r\n"\\/]/g, '_') // CR, LF, quotes, slashes
+      .replace(/[^\w\s\-().]/g, '_') // tout caractère non sûr
+      .trim()
+      .replace(/\s+/g, '_')
+      .substring(0, 80) || 'export'
+  );
+}
 
 /**
  * PDF normal individuel (AM+PM ensemble, pas de filigrane)
@@ -1131,9 +1242,12 @@ function renderPrintHalfDayPage(doc, sheet, entries, subtitle, period) {
 function generateSheetPdf(sheet, res) {
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
   res.setHeader('Content-Type', 'application/pdf');
+  const safeName = safePdfFilename(sheet.person?.last_name || 'personnel');
+  const safeDate = safePdfFilename(sheet.date);
+  const fname = `fiche-suivi-${safeName}-${safeDate}.pdf`;
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="fiche-suivi-${sheet.person?.last_name || 'personnel'}-${sheet.date}.pdf"`,
+    `attachment; filename="${fname}"; filename*=UTF-8''${encodeURIComponent(fname)}`,
   );
   doc.pipe(res);
   generateNormalSheetPdf(sheet, doc);
@@ -1158,7 +1272,8 @@ function generateBatchPdf(sheets, res) {
 }
 
 /**
- * PDF impression recto-verso multi-fiches (Recto=Matin, Verso=Apres-midi, lignes filigrane)
+ * PDF impression multi-fiches : une seule page (recto) par fiche,
+ * coupee en deux dans la hauteur (Matin haut / Apres-midi bas), lignes filigrane.
  */
 function generateBatchPrintPdf(sheets, res) {
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
@@ -1170,19 +1285,15 @@ function generateBatchPrintPdf(sheets, res) {
     const sheet = sheets[s];
     if (s > 0) doc.addPage();
 
-    const amEntries = (sheet.entries || []).filter((e) => e.period === 'AM');
-    const pmEntries = (sheet.entries || []).filter((e) => e.period === 'PM');
-
-    // Recto: Matin
-    renderPrintHalfDayPage(doc, sheet, amEntries, 'MATIN (AM)', 'AM');
-
-    // Verso: Apres-midi
-    doc.addPage();
-    renderPrintHalfDayPage(doc, sheet, pmEntries, 'APRES-MIDI (PM)', 'PM');
+    renderPrintFullDayPage(doc, sheet);
 
     if (sheet.notes) {
       doc.fontSize(8).font('Helvetica').fillColor('#475569');
-      doc.text(`Notes : ${sheet.notes}`, PDF_TABLE_LEFT, 740, { width: PDF_TABLE_WIDTH });
+      doc.text(`Notes : ${sheet.notes}`, PDF_TABLE_LEFT, 770, {
+        width: PDF_TABLE_WIDTH * 0.5,
+        lineBreak: false,
+        ellipsis: true,
+      });
     }
   }
 
@@ -1192,7 +1303,11 @@ function generateBatchPrintPdf(sheets, res) {
 function generateSynthesePdf(synthese, title, res) {
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="synthese-${title}.pdf"`);
+  const fname = `synthese-${safePdfFilename(title)}.pdf`;
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${fname}"; filename*=UTF-8''${encodeURIComponent(fname)}`,
+  );
   doc.pipe(res);
 
   const LEFT = 30;

@@ -15,6 +15,7 @@ import MobileHome from './MobileHome';
 import MobileLogin from './MobileLogin';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileQRLanding from './MobileQRLanding';
+import MobileTabBar from './MobileTabBar';
 
 const MobilePlanning = lazy(() => import('./MobilePlanning'));
 const MobileAvailability = lazy(() => import('./MobileAvailability'));
@@ -600,6 +601,17 @@ function MobileApp({ onSwitchToDesktop }) {
           <span>{msgToast}</span>
         </div>
       )}
+
+      {/* Barre d'onglets fixe en bas */}
+      <MobileTabBar
+        currentScreen={currentScreen}
+        onNavigate={(screen) => {
+          setShowUserMenu(false);
+          navigate(screen);
+        }}
+        onOpenProfile={() => setShowUserMenu(true)}
+        profileActive={showUserMenu}
+      />
     </div>
   );
 }

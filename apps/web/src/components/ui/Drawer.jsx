@@ -80,7 +80,7 @@ function Drawer({
       className={`ui-drawer-backdrop ${animating ? 'ui-drawer-backdrop--visible' : ''}`}
       onMouseDown={overlay ? handleOverlayClick : undefined}
     >
-      <aside className={cls} ref={panelRef} style={style} role="complementary">
+      <aside className={cls} ref={panelRef} style={style}>
         {title && (
           <div className="ui-drawer-header">
             <div className="ui-drawer-title">

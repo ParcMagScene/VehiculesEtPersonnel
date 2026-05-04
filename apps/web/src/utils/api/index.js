@@ -6,6 +6,7 @@ import { ApiClient, getApiUrl } from './base.js';
 import { registerDisplayMethods } from './display.js';
 import { registerEquipmentMethods } from './equipment.js';
 import { registerInventoryMethods } from './inventory.js';
+import { registerLocmatImportMethods } from './locmatImport.js';
 import { registerLeavesMethods } from './leaves.js';
 import { registerMailingMethods } from './mailing.js';
 import { registerMessagingMethods } from './messaging.js';
@@ -34,6 +35,7 @@ registerAnnuaireMethods(ApiClient);
 registerDisplayMethods(ApiClient);
 registerSonosMethods(ApiClient);
 registerInventoryMethods(ApiClient);
+registerLocmatImportMethods(ApiClient);
 registerVideoMethods(ApiClient);
 registerSuiviMethods(ApiClient);
 

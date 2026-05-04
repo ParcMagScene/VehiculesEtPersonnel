@@ -38,6 +38,15 @@ import { useSilentRefresh } from './hooks/useSilentRefresh';
 import { useTheme } from './hooks/useTheme';
 import { ToastProvider } from './hooks/useToast';
 import { useVSCodeTheme } from './hooks/useVSCodeTheme';
+import { useSearchParamState } from './router/RouterCompat';
+import {
+  ALLOWED_MODULES,
+  CALENDAR_VIEWS,
+  DEFAULT_CALENDAR_VIEW,
+  DEFAULT_MODULE,
+  DEFAULT_STOCK_SUBTAB,
+  STOCK_SUBTABS,
+} from './router/routes.config';
 import api from './utils/api';
 import { getApiNetworkStatus, subscribeApiNetworkStatus } from './utils/api/base';
 
@@ -126,51 +135,58 @@ function AppContent() {
 
   // ═══ UI State ═══
   const [isMobile, setIsMobile] = useState(() => detectMobile());
-  const [view, setView] = useState('week');
+  // [Sprint B] view calendrier persistée dans URL (?view=week|month|day)
+  const [view, setView] = useSearchParamState('view', DEFAULT_CALENDAR_VIEW, {
+    allowed: CALENDAR_VIEWS,
+  });
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [activeModule, _setActiveModule] = useState('vehicles');
+  // [Sprint B] activeModule = URL search param ?module=xxx (source de vérité)
+  // - refresh F5 → module restauré gratuitement
+  // - replace history (clic d'onglet ne pollue pas le bouton "Précédent")
+  // - fallback localStorage uniquement au TOUT premier chargement (cf. effet plus bas)
+  const [activeModule, _setActiveModule] = useSearchParamState('module', DEFAULT_MODULE, {
+    allowed: ALLOWED_MODULES,
+  });
   const [, startModuleTransition] = useTransition();
-  const setActiveModule = useCallback((mod) => {
-    // Fermer les panneaux véhicules à chaque changement de module
-    setVehicleForDialog(null);
-    setSelectedVehicleForDetails(null);
-    setSelectedVehicleForMaintenance(null);
-    setSelectedVehicleForKilometrageControl(null);
-    setMaintenanceToEdit(null);
-    setMaintenanceActionType(null);
-    startModuleTransition(() => _setActiveModule(mod));
-  }, []);
+  const setActiveModule = useCallback(
+    (mod) => {
+      // Fermer les panneaux véhicules à chaque changement de module
+      setVehicleForDialog(null);
+      setSelectedVehicleForDetails(null);
+      setSelectedVehicleForMaintenance(null);
+      setSelectedVehicleForKilometrageControl(null);
+      setMaintenanceToEdit(null);
+      setMaintenanceActionType(null);
+      startModuleTransition(() => _setActiveModule(mod));
+    },
+    [_setActiveModule],
+  );
 
-  const ALLOWED_MODULES = new Set([
-    'vehicles',
-    'equipment',
-    'affaires',
-    'orders',
-    'stock',
-    'planning',
-    'annuaire',
-    'lieux',
-    'video',
-    'sonos',
-  ]);
-
-  // Restore module on load: URL param > localStorage > default
+  // [Sprint B] Restauration unique au tout premier chargement :
+  // si l'URL n'a PAS de ?module= mais que localStorage en a un, on le réapplique.
+  // Ensuite l'URL devient l'unique source de vérité.
+  const restoredFromStorageRef = useRef(false);
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || restoredFromStorageRef.current) return;
+    restoredFromStorageRef.current = true;
     const params = new URLSearchParams(window.location.search);
-    const startupModule = params.get('module') || localStorage.getItem('emag_last_module');
-    if (startupModule && ALLOWED_MODULES.has(startupModule)) {
-      setActiveModule(startupModule);
+    if (!params.get('module')) {
+      const stored = localStorage.getItem('emag_last_module');
+      if (stored && ALLOWED_MODULES.has(stored) && stored !== DEFAULT_MODULE) {
+        _setActiveModule(stored);
+      }
     }
-  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, _setActiveModule]);
 
-  // Sync module → URL (?module=xxx) + localStorage so F5/refresh stays on same module
+  // [Sprint B] Miroir localStorage (utile si l'utilisateur ouvre un nouvel onglet
+  // depuis un bookmark sans search param). N'est PLUS la source de vérité.
   useEffect(() => {
     if (!isAuthenticated) return;
-    const url = new URL(window.location.href);
-    url.searchParams.set('module', activeModule);
-    window.history.replaceState(null, '', url.toString());
-    localStorage.setItem('emag_last_module', activeModule);
+    try {
+      localStorage.setItem('emag_last_module', activeModule);
+    } catch {
+      /* quota / private mode : ignoré */
+    }
   }, [activeModule, isAuthenticated]);
   const [showManagement, setShowManagement] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -179,7 +195,10 @@ function AppContent() {
   const [showMailing, setShowMailing] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [stockSubTab, setStockSubTab] = useState('vente');
+  // [Sprint B] sous-onglet Stock persisté dans URL (?tab=vente|sav|inventory)
+  const [stockSubTab, setStockSubTab] = useSearchParamState('tab', DEFAULT_STOCK_SUBTAB, {
+    allowed: STOCK_SUBTABS,
+  });
   const [showStockManagement, setShowStockManagement] = useState(false);
   const [personnelRefreshKey, setPersonnelRefreshKey] = useState(0);
   const [navigateToPersonId, setNavigateToPersonId] = useState(null);
@@ -250,14 +269,16 @@ function AppContent() {
   });
 
   // ═══ Mobile detection ═══
+  // [Sprint C] Le hashchange listener a été retiré : `detectMobile()` se base
+  // d'abord sur `pathname === '/mobile'` ou `hash startsWith '#/mobile'`, mais
+  // ces deux valeurs ne changent qu'au premier chargement (hashchange déclenché
+  // par useMobileRouter) ou sur resize. Le matchMedia couvre déjà le cas
+  // viewport, l'effet ci-dessous (qui pose le hash si isMobile) couvre le reste.
   useEffect(() => {
-    const handleHashChange = () => setIsMobile(detectMobile());
     const mql = window.matchMedia('(max-width: 768px)');
     const handleResize = () => setIsMobile(detectMobile());
-    window.addEventListener('hashchange', handleHashChange);
     mql.addEventListener('change', handleResize);
     return () => {
-      window.removeEventListener('hashchange', handleHashChange);
       mql.removeEventListener('change', handleResize);
     };
   }, []);
@@ -296,11 +317,7 @@ function AppContent() {
         setShowManagement(false);
         setShowSettings(false);
       },
-      mod_catalog: () => {
-        setActiveModule('catalog');
-        setShowManagement(false);
-        setShowSettings(false);
-      }, // Catalogue Fournisseurs
+      // [Sprint A] Raccourci `mod_catalog` supprimé — module orphelin (cf. audit nav).
       open_messaging: () => setShowMessaging((v) => !v),
       open_help: () => setShowHelp((v) => !v),
       open_preferences: () => setShowPreferences(true),
@@ -396,7 +413,7 @@ function AppContent() {
       if (prefs.defaultView) setView(prefs.defaultView);
       return result;
     },
-    [login, setActiveModule],
+    [login, setActiveModule, setView],
   );
 
   const handleLoginPin = useCallback(
@@ -411,7 +428,7 @@ function AppContent() {
       if (prefs.defaultView) setView(prefs.defaultView);
       return result;
     },
-    [loginPin, setActiveModule],
+    [loginPin, setActiveModule, setView],
   );
 
   // ═══ Navigation croisée entre modules ═══

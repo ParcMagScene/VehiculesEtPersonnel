@@ -171,6 +171,7 @@ export async function printEquipmentSheet(eq, photosList = [], logosList = []) {
       ${eq.reference ? `<div class="sheet-field"><span class="label">Référence</span><span class="value">${esc(eq.reference)}</span></div>` : ''}
       ${eq.uid ? `<div class="sheet-field"><span class="label">UID</span><span class="value" style="font-family: monospace">${esc(eq.uid)}</span></div>` : ''}
       ${eq.serialNumber || eq.serial_number ? `<div class="sheet-field"><span class="label">N° de série</span><span class="value">${esc(eq.serialNumber || eq.serial_number)}</span></div>` : ''}
+      ${eq.numeroMag || eq.numero_mag ? `<div class="sheet-field"><span class="label">N° MAG</span><span class="value">${esc(eq.numeroMag || eq.numero_mag)}</span></div>` : ''}
       ${eq.brand ? `<div class="sheet-field"><span class="label">Marque</span><span class="value">${esc(eq.brand)}</span></div>` : ''}
       ${eq.location ? `<div class="sheet-field"><span class="label">Localisation</span><span class="value">${esc(eq.location)}</span></div>` : ''}
       ${(eq.stockQuantity || eq.stock_quantity) > 1 ? `<div class="sheet-field"><span class="label">Quantité</span><span class="value">${eq.stockQuantity || eq.stock_quantity}</span></div>` : ''}

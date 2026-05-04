@@ -8,6 +8,7 @@ import { Button, Dialog, FormField, Input, Modal, ModalBody, ModalHeader } from 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import api from '../../utils/api';
 import {
   isGoogleMapsLoaded as checkGoogleMapsLoaded,
@@ -74,6 +75,8 @@ const TripDetailsModal = ({
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const initialFormDataRef = useRef(JSON.stringify(formData));
+  // [Sprint D] Prévient F5 / fermeture onglet pendant édition
+  useUnsavedChangesGuard(JSON.stringify(formData) !== initialFormDataRef.current);
 
   const handleSafeClose = () => {
     if (JSON.stringify(formData) !== initialFormDataRef.current) {

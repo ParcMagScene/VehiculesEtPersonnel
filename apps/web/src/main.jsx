@@ -9,8 +9,10 @@ import './index.css';
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 
 import App from './App.jsx';
+import { ScrollToTopOnModuleChange } from './router/RouterCompat.jsx';
 
 // A11y: Allow keyboard activation (Enter/Space) on elements with role="button"
 document.addEventListener('keydown', (e) => {
@@ -27,6 +29,12 @@ window.addEventListener('unhandledrejection', (event) => {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    {/* [Sprint A] BrowserRouter posé à la racine — fondation non-cassante.
+        App.jsx continue de gérer activeModule en state, mais peut désormais
+        utiliser useSearchParams/useNavigate dans les sprints suivants. */}
+    <BrowserRouter>
+      <ScrollToTopOnModuleChange />
+      <App />
+    </BrowserRouter>
   </React.StrictMode>,
 );

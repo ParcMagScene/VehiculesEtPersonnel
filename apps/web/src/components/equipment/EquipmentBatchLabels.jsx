@@ -149,7 +149,7 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
             'mm;">' +
             '<div class="batch-label-inner">' +
             (showLogo
-              ? '<div class="batch-logo"><img src="/Logos/logo_Noir_Transp.png" alt="" /></div>'
+              ? '<div class="batch-logo"><img src="/Logos/logo_Noir_Transp.png" alt="Logo eM@g" /></div>'
               : '') +
             '<div class="batch-info">' +
             '<div class="batch-ref">' +
@@ -473,7 +473,7 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
                           {showLogo && (
                             <img
                               src="/Logos/logo_Noir_Transp.png"
-                              alt=""
+                              alt="Logo eM@g"
                               className="ebl-mini-logo"
                             />
                           )}

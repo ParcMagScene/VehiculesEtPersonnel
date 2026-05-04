@@ -43,14 +43,35 @@ db.pragma('wal_autocheckpoint = 1000');
 // [PHASE 4] Timeout 5s si la DB est verrouillée par un autre writer
 db.pragma('busy_timeout = 5000');
 
+// [PERF Sprint 1] Tuning supplémentaires :
+// - cache_size négatif = en KiB (ici 50 Mo de cache pages)
+// - temp_store en mémoire pour les sorts/temp B-trees
+// - mmap_size : I/O memory-mapped (jusqu'à ~30 Mo) pour accélérer les lectures
+db.pragma('cache_size = -50000');
+db.pragma('temp_store = MEMORY');
+db.pragma('mmap_size = 30000000');
+
 // Créer les tables
 // [AUDIT FIX P1-12] Les clauses ON DELETE des FOREIGN KEY ne s'appliquent qu'aux nouvelles bases.
 // Pour les bases existantes, SQLite ne permet pas de modifier les FK via ALTER TABLE.
 function initializeDatabase() {
   // [AUDIT FIX P0-5] Helper pour migrations ALTER TABLE idempotentes
+  // [SEC PHASE 2] Whitelist stricte des identifiants pour bloquer toute injection
+  // même si un appelant interne passait une chaîne non-littérale.
   function safeAddColumn(table, column, type, defaultVal) {
+    const ID_RE = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+    if (!ID_RE.test(table) || !ID_RE.test(column)) {
+      throw new Error(`safeAddColumn: identifiant invalide (table=${table}, column=${column})`);
+    }
+    // Type SQLite restreint aux mots-clés standards (incl. composites courants)
+    const TYPE_RE =
+      /^(INTEGER|TEXT|REAL|BLOB|NUMERIC|BOOLEAN|DATETIME|DATE)(\s+(NOT\s+NULL|UNIQUE))?$/i;
+    if (!TYPE_RE.test(String(type).trim())) {
+      throw new Error(`safeAddColumn: type invalide (${type})`);
+    }
     const cols = db.pragma(`table_info(${table})`).map((c) => c.name);
     if (!cols.includes(column)) {
+      // defaultVal reste interpolé mais cantonné aux migrations internes (pas d'input externe)
       const defClause = defaultVal !== undefined ? ` DEFAULT ${defaultVal}` : '';
       db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${defClause}`);
       logger.info(`  ✅ Migration: ${table}.${column} ajouté`);

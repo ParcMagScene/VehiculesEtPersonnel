@@ -11,6 +11,7 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
     'prettier',
   ],
   parserOptions: {
@@ -44,6 +45,27 @@ module.exports = {
     // Import sorting automatique
     'simple-import-sort/imports': 'warn',
     'simple-import-sort/exports': 'warn',
+    // ─── A11Y ─────────────────────────────────────────────────────────
+    // Mode permissif au démarrage : tout en `warn` pour ne pas bloquer
+    // le build pendant la résorption du backlog.
+    'jsx-a11y/alt-text': 'warn',
+    'jsx-a11y/anchor-has-content': 'warn',
+    'jsx-a11y/anchor-is-valid': 'warn',
+    'jsx-a11y/aria-props': 'error',
+    'jsx-a11y/aria-proptypes': 'error',
+    'jsx-a11y/aria-unsupported-elements': 'error',
+    'jsx-a11y/click-events-have-key-events': 'warn',
+    'jsx-a11y/heading-has-content': 'warn',
+    'jsx-a11y/img-redundant-alt': 'warn',
+    'jsx-a11y/interactive-supports-focus': 'warn',
+    'jsx-a11y/label-has-associated-control': 'warn',
+    'jsx-a11y/no-autofocus': 'off', // utilisé volontairement dans modales
+    'jsx-a11y/no-noninteractive-element-interactions': 'warn',
+    'jsx-a11y/no-static-element-interactions': 'warn',
+    'jsx-a11y/role-has-required-aria-props': 'error',
+    'jsx-a11y/role-supports-aria-props': 'warn',
+    // Vidéos = flux NVR / aperçus, pas de pistes de sous-titres applicables
+    'jsx-a11y/media-has-caption': 'off',
   },
   ignorePatterns: ['dist/', 'node_modules/', 'public/', '_archive/'],
 };

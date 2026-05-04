@@ -1,12 +1,23 @@
 import './Modal.css';
 
 import { X } from 'lucide-react';
-import { useCallback, useEffect, useRef } from 'react';
+import { createContext, useCallback, useContext, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
+
+/**
+ * Contexte interne — partage l'id du titre généré par <Modal> avec
+ * <ModalHeader> pour que `aria-labelledby` du dialog pointe vers le <h3>.
+ */
+const ModalTitleIdContext = createContext(null);
 
 /**
  * Modal — Wrapper réutilisable pour tous les modaux de l'application.
  * Gère : portail, overlay, tailles, fermeture Escape / backdrop, focus trap, scroll lock.
+ *
+ * Accessibilité :
+ * - role="dialog" + aria-modal="true"
+ * - aria-labelledby auto-câblé via <ModalHeader> (recommandé)
+ * - sinon, passer `ariaLabel` ou `ariaLabelledBy` en prop
  */
 function Modal({
   open,
@@ -15,10 +26,14 @@ function Modal({
   className = '',
   overlayClassName = '',
   disableBackdropBlur = false,
+  ariaLabel,
+  ariaLabelledBy,
   children,
 }) {
   const overlayRef = useRef(null);
   const previousFocus = useRef(null);
+  const generatedTitleId = useId();
+  const titleId = ariaLabelledBy || generatedTitleId;
 
   /* ── Lock body scroll + restore focus ── */
   useEffect(() => {
@@ -102,8 +117,14 @@ function Modal({
       onMouseDown={handleOverlayClick}
       onClick={handleOverlayClick}
     >
-      <div className={cls} role="dialog" aria-modal="true">
-        {children}
+      <div
+        className={cls}
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabel || undefined}
+        aria-labelledby={!ariaLabel ? titleId : undefined}
+      >
+        <ModalTitleIdContext.Provider value={titleId}>{children}</ModalTitleIdContext.Provider>
       </div>
     </div>,
     document.body,
@@ -114,11 +135,12 @@ function Modal({
 
 function ModalHeader({ icon, children, onClose, className = '', style, rightContent = null }) {
   const cls = ['ui-modal-header', className].filter(Boolean).join(' ');
+  const titleId = useContext(ModalTitleIdContext);
   return (
     <div className={cls} style={style}>
       <div className="ui-modal-title">
         {icon && <span className="ui-modal-icon">{icon}</span>}
-        <h3>{children}</h3>
+        <h3 id={titleId || undefined}>{children}</h3>
       </div>
       <div className="ui-modal-header-actions">
         {rightContent}

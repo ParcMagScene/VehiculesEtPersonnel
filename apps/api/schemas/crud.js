@@ -60,6 +60,7 @@ export const equipmentSchema = z
     location: optStr(255),
     stock_quantity: z.coerce.number().int().nonnegative().optional().default(1),
     uid: optStr(50),
+    numero_mag: optStr(100),
     photo: optStr(1000),
     weight: optNum,
     dimensions: optStr(255),

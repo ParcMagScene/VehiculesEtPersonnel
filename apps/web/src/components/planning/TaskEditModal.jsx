@@ -140,6 +140,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   );
   const [saving, setSaving] = useState(false);
   const [affaires, setAffaires] = useState([]);
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [affaireSearch, setAffaireSearch] = useState('');
   const [affaireDropdownOpen, setAffaireDropdownOpen] = useState(false);
   const affaireRef = useRef(null);
@@ -172,6 +173,35 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         setAffaires(Array.isArray(data) ? data : []);
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    api
+      .getLocations()
+      .then((data) => {
+        const rows = Array.isArray(data) ? data : [];
+        const values = [];
+        const seen = new Set();
+
+        const push = (raw) => {
+          const v = String(raw || '').trim();
+          const key = v.toLowerCase();
+          if (!v || seen.has(key)) return;
+          seen.add(key);
+          values.push(v);
+        };
+
+        rows.forEach((loc) => {
+          // Priorité: les lieux nommés de la DB, puis leurs adresses.
+          push(loc?.name);
+          push(loc?.address);
+        });
+
+        setLocationSuggestions(values);
+      })
+      .catch(() => {
+        setLocationSuggestions([]);
+      });
   }, []);
 
   // Fermer le dropdown si clic extérieur
@@ -528,6 +558,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                 onChange={(value) => update('locationAddress', value)}
                 placeholder="Adresse ou lieu de la course…"
                 className="tem-location-input"
+                prioritySuggestions={locationSuggestions}
               />
               {form.locationAddress.trim() && (
                 <a

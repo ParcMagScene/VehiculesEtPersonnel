@@ -88,6 +88,7 @@ const EquipmentFormModal = ({
     brand: eq?.brand || '',
     stock_quantity: eq?.stockQuantity || eq?.stock_quantity || 1,
     photo: eq?.photo || '',
+    numero_mag: eq?.numeroMag || eq?.numero_mag || '',
   });
 
   const _currentSubfamilies = useMemo(() => {
@@ -209,9 +210,14 @@ const EquipmentFormModal = ({
                 onClick={() => setShowPhotoPicker(!showPhotoPicker)}
               >
                 {currentPhotoUrl ? (
-                  <img src={currentPhotoUrl} alt="" loading="lazy" />
+                  <img src={currentPhotoUrl} alt="Photo de l'équipement" loading="lazy" />
                 ) : genericImageUrl ? (
-                  <img src={genericImageUrl} alt="" loading="lazy" className="eq-generic-preview" />
+                  <img
+                    src={genericImageUrl}
+                    alt="Image générique de la catégorie"
+                    loading="lazy"
+                    className="eq-generic-preview"
+                  />
                 ) : (
                   <span className="eq-photo-picker-icon">{defaultIcon}</span>
                 )}
@@ -351,6 +357,15 @@ const EquipmentFormModal = ({
               type="text"
               value={form.serial_number}
               onChange={(e) => setForm({ ...form, serial_number: e.target.value })}
+            />
+          </div>
+          <div className="eq-form-field">
+            <label>Numéro MAG</label>
+            <Input
+              type="text"
+              value={form.numero_mag}
+              onChange={(e) => setForm({ ...form, numero_mag: e.target.value })}
+              placeholder="N° libre interne (ex: MAG-042)"
             />
           </div>
           <div className="eq-form-field">

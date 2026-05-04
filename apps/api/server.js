@@ -21,6 +21,7 @@ if (isDev) {
 
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import crypto from 'crypto';
 import express from 'express';
 import fs from 'fs';
 import http from 'http';
@@ -79,6 +80,8 @@ import {
 import { errorHandler } from './middleware/errorHandler.js';
 import { httpLogger } from './middleware/httpLogger.js';
 import { xssSanitize } from './middleware/sanitize.js';
+import { csrfOriginCheck } from './middleware/csrfOriginCheck.js';
+import { logSecurityEvent } from './securityLog.js';
 import {
   setupMaterialRequestsRoutes,
   setupOrdersRoutes,
@@ -104,6 +107,7 @@ import {
   setupLocationsRoutes,
 } from './routes.js';
 import { setupSonosRoutes } from './sonosRoutes.js';
+import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
 import {
   setupStockCategoriesRoutes,
   setupStockImportRoutes,
@@ -125,7 +129,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.set('trust proxy', 1); // [AUDIT] Nécessaire pour rate limiter derrière reverse proxy
 const PORT = process.env.PORT || 3002;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// [SEC PHASE 1] JWT_SECRET : plus de fallback inline vers une valeur connue.
+// - Prod : exit si manquant/faible/par défaut.
+// - Dev  : génération d'un secret éphémère fort en mémoire (les tokens déjà
+//   émis seront invalidés au restart — acceptable en dev).
+let JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRY_DAYS = parseInt(process.env.JWT_EXPIRY_DAYS || '7', 10);
 
 const KNOWN_DEFAULT_SECRETS = [
@@ -136,15 +144,20 @@ const KNOWN_DEFAULT_SECRETS = [
   'changeme',
 ];
 
-if (KNOWN_DEFAULT_SECRETS.includes(JWT_SECRET) || JWT_SECRET.length < 32) {
+const _jwtSecretMissing =
+  !JWT_SECRET || KNOWN_DEFAULT_SECRETS.includes(JWT_SECRET) || JWT_SECRET.length < 32;
+
+if (_jwtSecretMissing) {
   if (process.env.NODE_ENV === 'production') {
     logger.error(
-      '❌ FATAL: JWT_SECRET par défaut ou trop court (<32 chars) interdit en production. Définissez JWT_SECRET dans .env',
+      '❌ FATAL: JWT_SECRET manquant, par défaut, ou trop court (<32 chars) interdit en production. Définissez JWT_SECRET dans .env',
     );
     process.exit(1);
   }
+  // Dev : secret éphémère cryptographiquement fort (jamais basé sur une valeur publique connue)
+  JWT_SECRET = crypto.randomBytes(48).toString('hex');
   logger.warn(
-    "⚠️  ATTENTION: JWT_SECRET par défaut ou trop court ! Générez un secret d'au moins 32 caractères.",
+    '⚠️  JWT_SECRET manquant/faible en dev — secret éphémère généré pour cette session uniquement (les tokens existants seront invalidés au restart). Définissez JWT_SECRET dans apps/api/.env pour persister.',
   );
 }
 
@@ -156,6 +169,9 @@ app.use(cookieParser());
 // [AUDIT FIX H3] Limite body JSON réduite (les imports volumineux utilisent multer)
 app.use(express.json({ limit: '1mb' }));
 app.use(xssSanitize);
+// [SEC PHASE 1] Protection CSRF par vérification d'Origin/Referer sur les
+// requêtes mutantes porteuses d'un cookie d'auth. Doit être après cookieParser.
+app.use(csrfOriginCheck);
 app.use(httpLogger);
 
 // Rate limiting
@@ -172,10 +188,38 @@ app.get('/api/health', (req, res) => {
   }
 });
 
+// [SEC PHASE 3] Endpoint de réception des rapports CSP (Report-Only).
+// Accepte les deux formats : application/csp-report (legacy) et application/json.
+// Pas de PII collectée ici, juste la directive violée + l'URL bloquée.
+app.post(
+  '/api/security/csp-report',
+  express.json({ type: ['application/csp-report', 'application/json'], limit: '32kb' }),
+  (req, res) => {
+    try {
+      const report = req.body?.['csp-report'] || req.body || {};
+      logSecurityEvent('csp.report', {
+        ip: req.ip,
+        documentUri: report['document-uri'],
+        blockedUri: report['blocked-uri'],
+        violatedDirective: report['violated-directive'] || report['effective-directive'],
+        sourceFile: report['source-file'],
+        lineNumber: report['line-number'],
+      });
+    } catch {
+      /* ignore */
+    }
+    res.status(204).end();
+  },
+);
+
 // Rate limiters auth
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+// [SEC PHASE 2] Bruteforce PIN : limite stricte (PIN = 4 chiffres, brute trivial sans rate-limit)
+app.use('/api/auth/login-pin', authLimiter);
+// [SEC PHASE 2] Auth personnelle (PIN/password vérifié côté serveur) sur /suivi/personal-auth
+app.use('/api/suivi/personal-auth', authLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
 app.use('/api/auth/forgot-password', sensitiveEndpointLimiter);
 app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
@@ -258,6 +302,10 @@ app.use(
 app.get('/tv', (_req, res) => res.redirect('/tv-client/index.html'));
 
 // ── Compat port 3001 : ancien client calendar-dashboard ──
+// [SEC PHASE 1] Whitelist + basename() + resolve()-startsWith en defense in depth
+// pour bloquer tout path traversal même si Express ne normalise pas req.path.
+const TV_LEGACY_WHITELIST = new Set(['styles.css', 'main.js', 'manifest.json']);
+const _tvClientDirResolved = path.resolve(tvClientDir);
 app.use((req, res, next) => {
   const port = req.socket.localPort;
   if (port === 3001 && req.path === '/') {
@@ -266,9 +314,18 @@ app.use((req, res, next) => {
     res.set('Expires', '0');
     return res.sendFile(path.join(tvClientDir, 'index.html'));
   }
-  if (port === 3001 && ['styles.css', 'main.js', 'manifest.json'].includes(req.path.slice(1))) {
-    const filePath = path.join(tvClientDir, req.path.slice(1));
-    if (fs.existsSync(filePath)) return res.sendFile(filePath);
+  if (port === 3001) {
+    const requested = path.basename(req.path); // strip ../ et chemins
+    if (TV_LEGACY_WHITELIST.has(requested)) {
+      const filePath = path.resolve(tvClientDir, requested);
+      // Garde-fou : le chemin résolu doit rester sous tvClientDir
+      if (
+        filePath.startsWith(_tvClientDirResolved + path.sep) ||
+        filePath === _tvClientDirResolved
+      ) {
+        if (fs.existsSync(filePath)) return res.sendFile(filePath);
+      }
+    }
   }
   next();
 });
@@ -324,6 +381,7 @@ setupStockCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupStockItemsRoutes(app, authenticateToken, requireAdmin);
 setupStockMovementsRoutes(app, authenticateToken, requireAdmin);
 setupStockImportRoutes(app, authenticateToken, requireAdmin);
+setupLocmatImportRoutes(app, authenticateToken, requireAdmin);
 setupStockStatsRoutes(app, authenticateToken);
 
 // Routes Module Planning (Affichage dynamique + Planification + Import BL)

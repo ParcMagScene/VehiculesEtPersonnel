@@ -192,7 +192,14 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
     <div className="login-overlay">
       <div className="login-container">
         <div className="login-header">
-          <img src="/Logos/LogoEmag.png" alt="eM@g Scene" className="login-logo" />
+          <img
+            src="/Logos/LogoEmag.png"
+            alt="eM@g Scene"
+            className="login-logo"
+            width="2500"
+            height="2000"
+            decoding="async"
+          />
           <p>Connexion a votre espace</p>
         </div>
 

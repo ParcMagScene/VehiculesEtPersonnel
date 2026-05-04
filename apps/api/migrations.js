@@ -9,7 +9,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
+import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
+import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
@@ -793,6 +795,10 @@ export function runPostInitMigrations(db) {
   // ═══ Module Inventaire Unifié ═══
   runInventoryMigrations(db);
 
+  // ═══ Import intelligent Locmat (Locations + Serialise) ═══
+  runLocmatImportMigrations(db);
+  runEquipmentNumeroMagMigration(db);
+
   // ═══ Module Surveillance Vidéo ═══
   runVideoMigrations(db);
 
@@ -1145,4 +1151,34 @@ export function runPostInitMigrations(db) {
     }
   }
   logger.info(`✅ Sprint 4 Index: ${s4IdxOk}/${sprint4Indexes.length} créés/vérifiés`);
+
+  // ═══ PERF Sprint 1 — Index complémentaires identifiés par audit perf ═══
+  // Idempotents (IF NOT EXISTS), créés uniquement si la table/colonne existe.
+  const perfSprint1Indexes = [
+    // dynamic_display_events : composite (affaire_id, date DESC) pour les requêtes
+    // "WHERE affaire_id = ? ORDER BY date DESC" du planning.
+    'CREATE INDEX IF NOT EXISTS idx_dde_affaire_date ON dynamic_display_events(affaire_id, date DESC)',
+    // supplier_articles : filtres par supplier_id et par brand (texte) côté catalogue.
+    'CREATE INDEX IF NOT EXISTS idx_supplier_articles_supplier ON supplier_articles(supplier_id)',
+    'CREATE INDEX IF NOT EXISTS idx_supplier_articles_brand ON supplier_articles(brand)',
+    // modification_history : lookup par entité (entity_type, entity_id) + tri timestamp DESC.
+    'CREATE INDEX IF NOT EXISTS idx_modhist_entity ON modification_history(entity_type, entity_id)',
+    'CREATE INDEX IF NOT EXISTS idx_modhist_timestamp ON modification_history(timestamp DESC)',
+  ];
+  let perfIdxOk = 0;
+  for (const sql of perfSprint1Indexes) {
+    try {
+      db.exec(sql);
+      perfIdxOk++;
+    } catch (_) {
+      /* colonne absente ou index déjà existant — ignoré */
+    }
+  }
+  logger.info(`✅ Perf Sprint 1 Index: ${perfIdxOk}/${perfSprint1Indexes.length} créés/vérifiés`);
+  // ANALYZE après ajout d'index pour rafraîchir les stats du planner.
+  try {
+    db.exec('ANALYZE');
+  } catch (e) {
+    logger.warn('ANALYZE post-perf-indexes:', e.message);
+  }
 } // fin runPostInitMigrations

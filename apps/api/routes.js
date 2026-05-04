@@ -54,19 +54,43 @@ function findExistingLocationDuplicate(location, excludedId = null) {
 }
 
 // ============ CLIENTS (DEPRECATED — utiliser /api/annuaire/clients) ============
-// Ces routes legacy redirigent vers les endpoints annuaire pour compatibilité.
-// Elles seront supprimées dans une version future.
+// GET → conservé en lecture seule + headers Deprecation (sera supprimé)
+// POST/PUT/DELETE → 410 Gone (aucun consommateur runtime côté apps)
 
-export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
+const CLIENTS_SUNSET = 'Wed, 31 Dec 2025 23:59:59 GMT';
+
+function setDeprecationHeaders(res, replacement) {
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Sunset', CLIENTS_SUNSET);
+  if (replacement) res.setHeader('Link', `<${replacement}>; rel="successor-version"`);
+}
+
+function gone(replacement) {
+  return (req, res) => {
+    setDeprecationHeaders(res, replacement);
+    logger.warn(
+      `⛔ ${req.method} ${req.originalUrl} (legacy) → 410 Gone — utiliser ${replacement}`,
+    );
+    res.status(410).json({
+      success: false,
+      error: 'Endpoint supprimé',
+      code: 'DEPRECATED_ENDPOINT',
+      replacement,
+    });
+  };
+}
+
+export function setupClientsRoutes(app, authenticateToken, _requireAdmin) {
   app.get(
     '/api/clients',
     authenticateToken,
     cacheMiddleware(listCache, () => 'clients', 60_000),
     (req, res) => {
+      setDeprecationHeaders(res, '/api/annuaire/clients');
+      logger.warn('⚠️  GET /api/clients (legacy) — migrer vers /api/annuaire/clients');
       try {
         const stmt = db.prepare('SELECT * FROM clients WHERE is_active = 1 OR is_active IS NULL');
-        const clients = stmt.all();
-        res.json(clients);
+        res.json(stmt.all());
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -74,81 +98,18 @@ export function setupClientsRoutes(app, authenticateToken, requireAdmin) {
     },
   );
 
-  // POST/PUT/DELETE: redirigent vers annuaire pour garantir la cohérence des données
-  app.post('/api/clients', authenticateToken, (req, res) => {
-    logger.warn('⚠️  POST /api/clients (legacy) appelé — migrer vers /api/annuaire/clients');
-    try {
-      const client = req.body;
-      const stmt = db.prepare(`
-        INSERT INTO clients (name, email, phone, address, created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
-      const result = stmt.run(
-        client.name,
-        client.email,
-        client.phone,
-        client.address,
-        req.user.id,
-        req.user.id,
-      );
-
-      addToHistory('client', result.lastInsertRowid, 'created', client, req.user.id, req.user.name);
-
-      res.json({ success: true, id: result.lastInsertRowid });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
-
-  app.put('/api/clients/:id', authenticateToken, (req, res) => {
-    logger.warn(
-      `⚠️  PUT /api/clients/${req.params.id} (legacy) appelé — migrer vers /api/annuaire/clients`,
-    );
-    try {
-      const client = req.body;
-      const stmt = db.prepare(`
-        UPDATE clients 
-        SET name = ?, email = ?, phone = ?, address = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `);
-
-      stmt.run(client.name, client.email, client.phone, client.address, req.user.id, req.params.id);
-
-      addToHistory('client', req.params.id, 'updated', client, req.user.id, req.user.name);
-
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
-
-  app.delete('/api/clients/:id', authenticateToken, requireAdmin, (req, res) => {
-    logger.warn(
-      `⚠️  DELETE /api/clients/${req.params.id} (legacy) appelé — migrer vers /api/annuaire/clients`,
-    );
-    try {
-      const stmt = db.prepare('DELETE FROM clients WHERE id = ?');
-      stmt.run(req.params.id);
-
-      addToHistory('client', req.params.id, 'deleted', null, req.user.id, req.user.name);
-
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+  app.post('/api/clients', authenticateToken, gone('/api/annuaire/clients'));
+  app.put('/api/clients/:id', authenticateToken, gone('/api/annuaire/clients/:id'));
+  app.delete('/api/clients/:id', authenticateToken, gone('/api/annuaire/clients/:id'));
 }
 
-// ============ CONDUCTEURS (DEPRECATED — Phase 6+: table supprimée) ============
-// Les conducteurs sont désormais gérés via la table persons (license_types, skills Conduite*)
-// GET /api/drivers retourne un tableau vide pour compatibilité ascendante
+// ============ CONDUCTEURS (DEPRECATED — table supprimée Phase 6+) ============
+// Gérés via table persons (license_types, skills Conduite*).
+// GET /api/drivers conservé en compat (retourne []) avec headers Deprecation.
 
 export function setupDriversRoutes(app, authenticateToken) {
   app.get('/api/drivers', authenticateToken, (_req, res) => {
+    setDeprecationHeaders(res, '/api/annuaire/persons?role=driver');
     res.json([]);
   });
 }

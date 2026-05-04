@@ -724,7 +724,8 @@
   gap: 4px;
 }
 
-.stock-detail-field label {
+.stock-detail-field label,
+.stock-detail-field .stock-detail-label {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1115,7 +1116,8 @@
   grid-column: 1 / -1;
 }
 
-.stock-form-field label {
+.stock-form-field label,
+.stock-form-field .stock-form-group-label {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--theme-text-subtle);

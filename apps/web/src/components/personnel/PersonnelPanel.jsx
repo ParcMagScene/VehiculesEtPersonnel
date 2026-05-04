@@ -704,15 +704,15 @@ const PersonsTab = ({
     return { total, active, permanent, nonPermanent, inactive };
   }, [persons]);
 
-  const openEdit = (person) => {
+  const openEdit = useCallback((person) => {
     setEditingPerson(person);
     setShowFormModal(true);
-  };
+  }, []);
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     setEditingPerson(null);
     setShowFormModal(true);
-  };
+  }, []);
 
   // Ouvrir automatiquement la fiche si une personne est demandée par le parent
   useEffect(() => {
@@ -739,25 +739,28 @@ const PersonsTab = ({
     }
   };
 
-  const handleDelete = (id) => {
-    confirm({
-      title: 'Supprimer cette personne',
-      message: 'Supprimer cette personne ?',
-      variant: 'danger',
-      confirmLabel: 'Supprimer',
-      onConfirm: async () => {
-        try {
-          await api.deletePerson(id);
-          setPersons((prev) => prev.filter((p) => p.id !== id));
-          if (selectedPerson?.id === id) setSelectedPerson(null);
-        } catch (err) {
-          toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
-        }
-      },
-    });
-  };
+  const handleDelete = useCallback(
+    (id) => {
+      confirm({
+        title: 'Supprimer cette personne',
+        message: 'Supprimer cette personne ?',
+        variant: 'danger',
+        confirmLabel: 'Supprimer',
+        onConfirm: async () => {
+          try {
+            await api.deletePerson(id);
+            setPersons((prev) => prev.filter((p) => p.id !== id));
+            if (selectedPerson?.id === id) setSelectedPerson(null);
+          } catch (err) {
+            toast.error('Erreur : ' + (err.message || 'Impossible de supprimer'));
+          }
+        },
+      });
+    },
+    [confirm, selectedPerson, toast],
+  );
 
-  const getTypeBadge = (person) => {
+  const getTypeBadge = useCallback((person) => {
     const t = person.type;
     if (t === 'permanent') return { label: 'Permanent', cls: 'type-permanent' };
     if (t === 'salarié') return { label: 'Salarié', cls: 'type-salarie' };
@@ -771,7 +774,18 @@ const PersonsTab = ({
       return { label: sub, cls: 'type-contractuel' };
     }
     return { label: t, cls: '' };
-  };
+  }, []);
+
+  // [PERF Sprint 4] Mémorisation des sous-listes permanents/non-permanents :
+  // évite 2 .filter() supplémentaires à chaque render (en plus de filteredPersons).
+  const permanentsList = useMemo(
+    () => filteredPersons.filter((p) => PERMANENT_TYPES.includes(p.type)),
+    [filteredPersons],
+  );
+  const nonPermanentsList = useMemo(
+    () => filteredPersons.filter((p) => NON_PERMANENT_TYPES.includes(p.type)),
+    [filteredPersons],
+  );
 
   return (
     <div className="personnel-tab-content">
@@ -906,12 +920,6 @@ const PersonsTab = ({
                 </thead>
                 <tbody>
                   {(() => {
-                    const permanentsList = filteredPersons.filter((p) =>
-                      PERMANENT_TYPES.includes(p.type),
-                    );
-                    const nonPermanentsList = filteredPersons.filter((p) =>
-                      NON_PERMANENT_TYPES.includes(p.type),
-                    );
                     const renderRow = (person) => {
                       const badge = getTypeBadge(person);
                       let postes = [];

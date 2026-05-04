@@ -38,6 +38,7 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import api from '../../utils/api';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
 
@@ -123,6 +124,8 @@ function MaintenanceDialog({
   const [initialFormData, setInitialFormData] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  // [Sprint D] Prévient F5 / fermeture onglet pendant édition
+  useUnsavedChangesGuard(hasChanges);
 
   // Fermeture sécurisée avec avertissement si modifications
   const handleSafeClose = () => {

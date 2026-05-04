@@ -26,6 +26,7 @@ export default function AddressAutocomplete({
   rows,
   list,
   children,
+  prioritySuggestions = [],
 }) {
   const inputRef = useRef(null);
   const requestTimerRef = useRef(null);
@@ -36,6 +37,22 @@ export default function AddressAutocomplete({
 
   const [placesReady, setPlacesReady] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+
+  const getPrioritySuggestions = useCallback(
+    (query) => {
+      const q = String(query || '')
+        .trim()
+        .toLowerCase();
+      const all = Array.isArray(prioritySuggestions) ? prioritySuggestions : [];
+      const cleaned = all
+        .map((s) => String(s || '').trim())
+        .filter(Boolean)
+        .filter((s, i, arr) => arr.indexOf(s) === i);
+      if (!q) return cleaned.slice(0, 8);
+      return cleaned.filter((s) => s.toLowerCase().includes(q)).slice(0, 8);
+    },
+    [prioritySuggestions],
+  );
 
   const ensurePlacesApi = useCallback(async () => {
     try {
@@ -69,9 +86,11 @@ export default function AddressAutocomplete({
 
   const fetchSuggestions = useCallback(
     async (query) => {
+      const local = getPrioritySuggestions(query);
+
       if (!placesReady || !query || query.length < 3 || as !== 'input') {
         predictionByLabelRef.current.clear();
-        setSuggestions([]);
+        setSuggestions(local);
         return;
       }
 
@@ -99,12 +118,20 @@ export default function AddressAutocomplete({
         });
 
         predictionByLabelRef.current = nextMap;
-        setSuggestions(nextLabels.slice(0, 8));
+
+        // Priorité aux lieux enregistrés en DB, puis Google Places.
+        const merged = [...local];
+        for (const label of nextLabels) {
+          if (!merged.includes(label)) merged.push(label);
+          if (merged.length >= 12) break;
+        }
+        setSuggestions(merged);
       } catch (error) {
         console.warn('Autocomplete suggestions indisponibles:', error?.message || error);
+        setSuggestions(local);
       }
     },
-    [as, country, getPredictionLabel, placesReady],
+    [as, country, getPredictionLabel, getPrioritySuggestions, placesReady],
   );
 
   useEffect(() => {

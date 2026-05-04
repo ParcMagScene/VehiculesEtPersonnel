@@ -12,10 +12,13 @@ import {
   Folder,
   HardDrive,
   Link as LinkIcon,
+  Link2,
   MapPin,
   Pencil,
   Plus,
+  Search,
   Trash2,
+  Unlink,
   X,
 } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
@@ -58,6 +61,9 @@ function EventDetailsModal({
   const [uploading, setUploading] = useState(false);
   const [editingDriveLink, setEditingDriveLink] = useState(null); // { reservationId, index, url, label } (index = -1 pour nouveau)
   const [savingDriveLink, setSavingDriveLink] = useState(false);
+  const [linkPickerOpen, setLinkPickerOpen] = useState(false);
+  const [linkPickerSearch, setLinkPickerSearch] = useState('');
+  const [linkingReservationId, setLinkingReservationId] = useState(null);
 
   // Parser les liens Drive (rétrocompatible avec ancien format string simple)
   const parseDriveLinks = (reservation) => {
@@ -227,6 +233,83 @@ function EventDetailsModal({
       onRequestEditReservation(reservation.id);
     }
   };
+
+  // ─── Lier une réservation existante à cet évènement Google ───
+  const handleLinkExistingReservation = async (reservationId) => {
+    if (!event?.id || !reservationId) return;
+    setLinkingReservationId(reservationId);
+    try {
+      await api.patchReservation(reservationId, { google_event_id: event.id });
+      const target = (reservations || []).find((r) => r.id === reservationId);
+      if (target) {
+        setLinkedReservations((prev) =>
+          prev.find((r) => r.id === reservationId)
+            ? prev
+            : [...prev, { ...target, googleEventId: event.id }],
+        );
+      }
+      setLinkPickerOpen(false);
+      setLinkPickerSearch('');
+      toast.success('Réservation liée à l\u2019évènement');
+      if (onReservationsRefresh) onReservationsRefresh();
+    } catch (error) {
+      console.error('Erreur liaison réservation:', error);
+      toast.error('Erreur lors de la liaison');
+    } finally {
+      setLinkingReservationId(null);
+    }
+  };
+
+  const handleUnlinkReservation = (reservationId) => {
+    if (!reservationId) return;
+    confirm({
+      title: 'Détacher la réservation',
+      message: 'Détacher cette réservation de l\u2019évènement Google ?',
+      variant: 'warning',
+      confirmLabel: 'Détacher',
+      onConfirm: async () => {
+        setLinkingReservationId(reservationId);
+        try {
+          await api.patchReservation(reservationId, { google_event_id: '' });
+          setLinkedReservations((prev) => prev.filter((r) => r.id !== reservationId));
+          toast.success('Réservation détachée');
+          if (onReservationsRefresh) onReservationsRefresh();
+        } catch (error) {
+          console.error('Erreur détachement réservation:', error);
+          toast.error('Erreur lors du détachement');
+        } finally {
+          setLinkingReservationId(null);
+        }
+      },
+    });
+  };
+
+  // Réservations sélectionnables : non déjà liées à cet évènement, filtrées par recherche.
+  const linkableReservations = (() => {
+    if (!event) return [];
+    const linkedIds = new Set(linkedReservations.map((r) => r.id));
+    const q = linkPickerSearch.trim().toLowerCase();
+    return (reservations || [])
+      .filter((r) => !linkedIds.has(r.id))
+      .filter((r) => {
+        if (!q) return true;
+        return [
+          r.vehicleName,
+          r.prestationName,
+          r.clientName,
+          r.driverName,
+          r.locationName,
+          r.affaire,
+          r.notes,
+          r.startDate,
+          r.endDate,
+        ]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(q));
+      })
+      .sort((a, b) => String(b.startDate || '').localeCompare(String(a.startDate || '')))
+      .slice(0, 30);
+  })();
 
   const handleStartEditDriveLink = (reservationId, index, currentLink) => {
     setEditingDriveLink({
@@ -489,19 +572,95 @@ function EventDetailsModal({
               count={linkedReservations.length}
               actions={
                 currentUser?.isAdmin && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="btn-add-reservation"
-                    onClick={actionHandler}
-                    title={actionLabel}
-                  >
-                    <Plus size={16} />
-                    {actionLabel}
-                  </Button>
+                  <div className="section-actions">
+                    {!isPersonnelMode && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="btn-link-reservation"
+                        onClick={() => setLinkPickerOpen((v) => !v)}
+                        title="Lier une réservation existante"
+                      >
+                        <Link2 size={16} />
+                        {linkPickerOpen ? 'Annuler' : 'Lier existante'}
+                      </Button>
+                    )}
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="btn-add-reservation"
+                      onClick={actionHandler}
+                      title={actionLabel}
+                    >
+                      <Plus size={16} />
+                      {actionLabel}
+                    </Button>
+                  </div>
                 )
               }
             />
+
+            {linkPickerOpen && currentUser?.isAdmin && (
+              <div className="link-reservation-picker">
+                <div className="link-reservation-search">
+                  <Search size={14} />
+                  <Input
+                    type="text"
+                    value={linkPickerSearch}
+                    onChange={(e) => setLinkPickerSearch(e.target.value)}
+                    placeholder="Rechercher une réservation (véhicule, client, affaire, date…)"
+                    autoFocus
+                  />
+                </div>
+                {linkableReservations.length === 0 ? (
+                  <div className="empty-state">
+                    <p>Aucune réservation à proposer</p>
+                  </div>
+                ) : (
+                  <div className="link-reservation-list">
+                    {linkableReservations.map((r) => {
+                      const alreadyLinkedElsewhere =
+                        r.googleEventId && r.googleEventId !== event.id;
+                      return (
+                        <Button
+                          key={r.id}
+                          variant="ghost"
+                          type="button"
+                          className="link-reservation-item"
+                          onClick={() => handleLinkExistingReservation(r.id)}
+                          disabled={linkingReservationId === r.id}
+                          title={
+                            alreadyLinkedElsewhere
+                              ? 'Déjà liée à un autre évènement Google — sera réassociée'
+                              : 'Lier cette réservation à l\u2019évènement'
+                          }
+                        >
+                          <div className="link-reservation-item-main">
+                            <span className="link-reservation-item-vehicle">
+                              {r.vehicleName || r.prestationName || r.clientName || r.vehicleId}
+                            </span>
+                            <span className="link-reservation-item-meta">
+                              {r.clientName || ''}
+                              {r.driverName ? ` • ${r.driverName}` : ''}
+                              {r.locationName ? ` • ${r.locationName}` : ''}
+                            </span>
+                            <span className="link-reservation-item-dates">
+                              {r.startDate} ({r.startPeriod}) → {r.endDate} ({r.endPeriod})
+                              {r.affaire ? ` • ${r.affaire}` : ''}
+                            </span>
+                          </div>
+                          {alreadyLinkedElsewhere && (
+                            <span className="link-reservation-item-badge" title={r.googleEventId}>
+                              déjà liée
+                            </span>
+                          )}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {linkedReservations.length === 0 ? (
               <div className="empty-state">
@@ -528,14 +687,27 @@ function EventDetailsModal({
                         ({reservation.endPeriod})
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      className="btn-edit-reservation"
-                      onClick={() => handleEditReservation(reservation)}
-                      title={currentUser?.isAdmin ? 'Modifier' : 'Voir'}
-                    >
-                      <Edit size={16} />
-                    </Button>
+                    <div className="reservation-actions">
+                      <Button
+                        variant="ghost"
+                        className="btn-edit-reservation"
+                        onClick={() => handleEditReservation(reservation)}
+                        title={currentUser?.isAdmin ? 'Modifier' : 'Voir'}
+                      >
+                        <Edit size={16} />
+                      </Button>
+                      {currentUser?.isAdmin && (
+                        <Button
+                          variant="ghost"
+                          className="btn-unlink-reservation"
+                          onClick={() => handleUnlinkReservation(reservation.id)}
+                          disabled={linkingReservationId === reservation.id}
+                          title="Détacher de l’évènement Google"
+                        >
+                          <Unlink size={16} />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

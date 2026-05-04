@@ -13,9 +13,10 @@ if (process.env.NODE_ENV === 'development') {
     'http://127.0.0.1:5175',
   );
 }
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || fallbackOrigins.join(','))
+export const allowedOrigins = (process.env.ALLOWED_ORIGINS || fallbackOrigins.join(','))
   .split(',')
-  .map((s) => s.trim());
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 logger.info('🌐 Origines CORS autorisées:', allowedOrigins);
 

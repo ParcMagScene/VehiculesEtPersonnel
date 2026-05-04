@@ -8,6 +8,165 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Locmat — Détections additionnelles** : doublons stricts dans `Serialise.csv`, collisions intra-CSV (même serial sur 2 codes), collisions DB cross-équipement, suppressions (refs en DB absentes des CSV). Trois nouveaux onglets dans `LocmatImportModal` : **Suppressions**, **Doublons**, **Collisions** (consultatifs, n'écrivent rien automatiquement). Schéma `locmatConfirmSchema` étendu (`missingProducts`, `duplicates`, `collisions`). 4 tests supplémentaires (13/13 ✅).
+- **Équipements — `Numéro MAG`** : nouvelle propriété libre par équipement, visible dans le formulaire, le détail (dialog + volet), la grille (colonne triable) et la fiche imprimable. Migration idempotente `apps/api/migrations/equipment-numero-mag-v1.js` ajoutant `equipment.numero_mag TEXT` + `idx_equipment_numero_mag`. Recherche serveur étendue (`e.numero_mag LIKE ?`). Schéma Zod et routes `POST/PUT /api/equipment` mis à jour.
+
+---
+
+## [2.8.0] — 2026-05-04
+
+### Added — Module Import intelligent Locmat (Locations.csv + Serialise.csv) → Equipement
+
+Nouveau module d'import différentiel reliant les exports Locmat à la table
+`equipment` / `equipment_serials` (parc matériel inventoriel). Aucune écriture
+sans validation utilisateur, suppression soft-only des numéros de série,
+génération d'UID + QR Code par référence créée.
+
+- **Migration** `apps/api/migrations/locmat-import-v1.js` (idempotente) :
+  - `equipment` ← colonnes `qrcode`, `is_serialized` + index unique partiel `idx_equipment_uid_unique` (la colonne `uid` existait déjà)
+  - Nouvelle table `equipment_serials (id, equipment_id, serial, status='active'|'removed', source, notes, created_at, removed_at)`
+  - Nouvelle table `import_logs (type, source, summary, details, user_id, user_name, created_at)`
+  - Cleanup best-effort des colonnes/tables ajoutées par erreur sur `stock_items` (v1 initiale)
+- **Service backend** `apps/api/services/locmatImport.js` (logique pure testée) :
+  `normalizeLocationRow`, `normalizeSerialRow`, `diffWithDatabase`
+- **Routes API** `apps/api/locmatImportRoutes.js` (admin only) :
+  - `POST /api/import/locmat/preview` — calcule le diff (read-only)
+  - `POST /api/import/locmat/confirm` — applique sous transaction (UID + QR
+    générés pour les nouveautés, quantités ajustées, serials soft-removed)
+  - `GET  /api/import/locmat/logs[/{id}]` — historique + détail
+- **Schémas Zod** `locmatPreviewSchema`, `locmatConfirmSchema`
+- **Client API** `apps/web/src/utils/api/locmatImport.js` :
+  `previewLocmatImport`, `confirmLocmatImport`, `getLocmatImportLogs`,
+  `getLocmatImportLogDetail`
+- **UI** `apps/web/src/components/equipment/import/LocmatImportModal.jsx` (lazy) :
+  parsing CSV client (PapaParse) → preview multi-onglets (nouveaux équipements /
+  modifiés / quantités / nouveaux N° série / N° série retirés / erreurs) →
+  validation + téléchargement rapport JSON. Bouton "Import intelligent Locmat"
+  ajouté dans `EquipmentPanel` → onglet *Gestion → Imports*.
+- **Tests** `tests/locmat-import.test.js` (7/7 ✅)
+- **Dépendance** `papaparse@^5` (front)
+
+### Garanties (cf. cahier des charges §8)
+
+- Aucune écriture avant validation utilisateur (étape preview obligatoire)
+- Suppression de numéro de série = soft (`status = 'removed'`, `removed_at` daté)
+- Aucun UID régénéré pour une référence existante
+- Aucun impact sur les modules existants (Catalogue, Commandes, Stock, TV client,
+  SAV) — extensions uniquement, pas de breaking change
+
+
+
+### Added — Sprint accessibilité (a11y) WCAG 2.1 AA
+
+Première passe d'audit et corrections accessibilité, posant les fondations
+pour un suivi pérenne via ESLint.
+
+#### L1 — Reduced motion + skip link
+- Classes globales `.a11y-skip-link`, `.sr-only` dans `apps/web/src/App.css`
+- `@media (prefers-reduced-motion: reduce)` neutralise animations/transitions
+
+#### L2 — Alt text sur images critiques
+- `TVScreenMini.jsx` : alt dynamique basé sur `task.sectionLabel`
+- `EquipmentFormModal.jsx` : alt photo + image générique catégorie
+- `EquipmentBatchLabels.jsx` : alt logo (template HTML + JSX)
+
+#### L3 — Modal `aria-labelledby` automatique
+- Refonte `Modal.jsx` avec `useId()` + contexte interne
+- `ModalHeader > h3` reçoit automatiquement l'`id` partagé
+- Nouvelles props `ariaLabel` / `ariaLabelledBy`
+
+#### L4 — FormField `aria-describedby` + `aria-invalid`
+- Refonte `FormField.jsx` : `useId()` + `Children.map` + `cloneElement`
+- Le premier enfant valide reçoit auto `aria-describedby` + `aria-invalid`
+- Span d'erreur porte `role="alert"`
+
+#### L5 — Labels associés StockPanel
+- `StockPanel.jsx` : 35 → 0 warnings `label-has-associated-control`
+- 20 champs : `<label htmlFor>` + `id` injectés (codemod)
+- 9 zones lecture-seule : `<label>` → `<span class="stock-detail-label">`
+- 6 groupes de boutons : `<span class="stock-form-group-label">`
+
+#### L6 — eslint-plugin-jsx-a11y
+- Plugin installé en dev (`eslint-plugin-jsx-a11y`)
+- `apps/web/.eslintrc.cjs` étendu avec `plugin:jsx-a11y/recommended`
+- Posture permissive : `warn` par défaut, `error` strict pour `aria-props`,
+  `aria-proptypes`, `aria-unsupported-elements`, `role-has-required-aria-props`
+- Désactivés : `no-autofocus` (modales), `media-has-caption` (flux NVR live)
+- 4 erreurs initiales corrigées (`MapSearchControl.jsx`, `Drawer.jsx`)
+
+### Documentation
+- Nouveau guide [docs/02-Securite/A11Y.md](docs/02-Securite/A11Y.md)
+
+### Tests
+- 530 tests Vitest verts après refonte FormField + Modal
+
+### Métriques
+- Erreurs `jsx-a11y` : 4 → 0
+- Warnings a11y globaux : 730 → 693 (chantier itératif pour la suite)
+
+---
+
+## [2.7.0] — 2026-05-04
+
+### Added — Refonte navigation (Sprints A → D)
+
+Migration de la navigation desktop vers React Router 6 + URL = source de vérité,
+unification des tables de routes desktop/mobile, garde formulaires anti-perte.
+
+#### Sprint A — Fondation
+- Ajout `react-router-dom@6.30.3` + `<BrowserRouter>` racine
+- Suppression du module mort `catalog` (raccourci, `VALID_TABS`, préférences)
+- Nouveau hook `ScrollToTopOnModuleChange` (skip mobile)
+
+#### Sprint B — Routes desktop
+- Nouveau fichier [`apps/web/src/router/routes.config.js`](apps/web/src/router/routes.config.js) — table unique
+  des modules desktop (`DESKTOP_MODULES`, `ALLOWED_MODULES`, `STOCK_SUBTABS`,
+  `CALENDAR_VIEWS`)
+- Nouveau hook `useSearchParamState(key, default, { allowed, replace })` —
+  remplace `useState` + sync `window.history.replaceState` manuelle
+- `?module=`, `?tab=`, `?view=` deviennent la source de vérité (F5 sûr)
+- Header consomme `DESKTOP_MODULES` (plus de liste hardcodée inline)
+- `localStorage.emag_last_module` rétrogradé à fallback nouvel onglet
+
+#### Sprint C — Routes mobile (consolidation)
+- `MOBILE_ROUTES`, `MOBILE_TAB_SCREENS`, `MOBILE_BACK_TARGET`,
+  `MOBILE_QR_PATTERN`, `MOBILE_ACTIVE_TAB_KEY` migrés dans `routes.config.js`
+- `useMobileRouter` consomme la table centrale (back-compat des exports nommés
+  préservée pour les tests)
+- Pattern QR `EMAG-XXXXX` documenté et importable par les scripts d'étiquettes
+- Listener `hashchange` redondant retiré dans `App.jsx` (matchMedia suffit)
+- Hash router conservé : QR codes physiques imprimés non cassés
+
+#### Sprint D — Garde + tests + doc
+- Nouveau hook [`useUnsavedChangesGuard`](apps/web/src/hooks/useUnsavedChangesGuard.js)
+  (listener `beforeunload`) branché sur `UserPreferencesModal`,
+  `MaintenanceDialog`, `TripDetailsModal`
+- 7 tests Vitest sur `useSearchParamState`
+  (validation hostile, setter, updater, propreté URL)
+- Documentation centralisée [`docs/01-Architecture/NAVIGATION.md`](docs/01-Architecture/NAVIGATION.md)
+- PWA volontairement non réactivée (cf. `public/sw-cleanup.js`)
+
+### Changed
+- `apps/web/src/main.jsx` — racine wrappée dans `<BrowserRouter>`
+- `apps/web/src/App.jsx` — `activeModule` / `view` / `stockSubTab` migrés vers
+  `useSearchParamState`
+- `apps/web/src/components/Header.jsx` — `module-tabs` consomme `DESKTOP_MODULES`
+
+### Removed
+- Module `catalog` (mort) : raccourci clavier, `VALID_TABS`, option préférences
+- Liste de modules hardcodée inline dans `Header.jsx`
+- Listener `hashchange` desktop redondant
+
+### Tests
+- 13 tests `useMobileRouter` (préexistants, toujours verts)
+- 7 nouveaux tests `useSearchParamState`
+- 0 régression ESLint introduite
+
+---
+
 ## [2.6.0] — 2026-04-13
 
 ### Added — GUI Sonos complète (Desktop + Mobile)

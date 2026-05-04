@@ -19,7 +19,7 @@ import {
   Upload,
   Wrench,
 } from 'lucide-react';
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 
 import {
   Button,
@@ -50,6 +50,7 @@ import { EquipmentDetailDialog, EquipmentSlidePanel } from './EquipmentDetail';
 import EquipmentFormModal from './EquipmentFormModal';
 import EquipmentGrid from './EquipmentGrid';
 import EquipmentImportModal from './EquipmentImportModal';
+const LocmatImportModal = lazy(() => import('./import/LocmatImportModal.jsx'));
 import EquipmentLabelPrint from './EquipmentLabelPrint';
 import EquipmentMediaManager from './EquipmentMediaManager';
 import {
@@ -73,6 +74,7 @@ const EquipmentPanel = ({
 }) => {
   const toast = useToast();
   const [exportFamilyId, setExportFamilyId] = React.useState('');
+  const [showLocmatImport, setShowLocmatImport] = React.useState(false);
   const {
     // Data
     equipment,
@@ -782,6 +784,18 @@ const EquipmentPanel = ({
         <EquipmentImportModal onClose={() => setShowImportModal(false)} onImportDone={loadData} />
       )}
 
+      {showLocmatImport && (
+        <Suspense fallback={null}>
+          <LocmatImportModal
+            onClose={() => setShowLocmatImport(false)}
+            onDone={() => {
+              setShowLocmatImport(false);
+              loadData();
+            }}
+          />
+        </Suspense>
+      )}
+
       {showSavImportModal && (
         <SavImportModal onClose={() => setShowSavImportModal(false)} onImportDone={loadData} />
       )}
@@ -858,6 +872,19 @@ const EquipmentPanel = ({
                     >
                       <Upload size={16} /> Importer un fichier CSV
                     </Button>
+                    <div className="u-mt-2">
+                      <Button
+                        variant="primary"
+                        className="eq-mgmt-import-btn"
+                        onClick={() => {
+                          onCloseManagement();
+                          setShowLocmatImport(true);
+                        }}
+                        title="Import intelligent Locmat (Locations.csv + Serialise.csv) avec aperçu, UID + QR Code par référence et soft-removal des numéros de série"
+                      >
+                        <Upload size={16} /> Import intelligent Locmat
+                      </Button>
+                    </div>
                     <div className="u-mt-2">
                       <Select
                         className="eq-filter"

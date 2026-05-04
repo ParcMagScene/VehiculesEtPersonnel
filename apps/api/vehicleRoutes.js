@@ -1,5 +1,6 @@
 import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import db, { addToHistory, getHistory } from './database.js';
+import { reservationsDao } from './dao/reservations.dao.js';
 import { alertMaintenanceCreated, alertReservationCreated } from './emailService.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';
@@ -322,49 +323,8 @@ export function setupVehicleRoutes(
     cacheMiddleware(listCache, () => 'reservations', 30_000),
     (req, res) => {
       try {
-        const stmt = db.prepare(`
-      SELECT r.*, v.name as vehicle_name, v.type as vehicle_type, v.registration as immatriculation,
-             v.is_location as vehicle_is_location
-      FROM reservations r
-      LEFT JOIN vehicles v ON r.vehicle_id = v.id
-    `);
-        const reservations = stmt.all();
-
-        // Mapper snake_case vers camelCase
-        const mappedReservations = reservations.map((r) => ({
-          id: r.id,
-          vehicleId: r.vehicle_id,
-          vehicleName: r.vehicle_name || '',
-          vehicleType: r.vehicle_type || '',
-          immatriculation: r.immatriculation || '',
-          clientName: r.client_name,
-          driverName: r.driver_name,
-          locationName: r.location_name,
-          prestationName: r.prestation_name,
-          date: r.start_date,
-          startDate: r.start_date,
-          period: r.start_period,
-          startPeriod: r.start_period,
-          endDate: r.end_date,
-          endPeriod: r.end_period,
-          status: r.status,
-          comment: r.comment,
-          affaire: r.affaire,
-          googleEventId: r.google_event_id,
-          isTournee: r.is_tournee === 1,
-          linkedEventIds: r.linked_event_ids ? JSON.parse(r.linked_event_ids) : null,
-          notes: r.notes,
-          googleDriveLink: r.google_drive_link || '',
-          googleDriveLinks: parseDriveLinks(r.google_drive_link),
-          rentalPrice: r.rental_price,
-          isRental: r.vehicle_is_location === 1,
-          createdBy: r.created_by,
-          modifiedBy: r.modified_by,
-          createdAt: r.created_at,
-          modifiedAt: r.modified_at,
-        }));
-
-        res.json(mappedReservations);
+        // Phase 1 — DAO : remplace la requête SQL inline + mapping manuel
+        res.json(reservationsDao.listMapped());
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -604,9 +564,50 @@ export function setupVehicleRoutes(
   // Mise à jour partielle d'une réservation (liens Google Drive)
   app.patch('/api/reservations/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const { google_drive_links, google_drive_link } = req.body;
+      const { google_drive_links, google_drive_link, google_event_id } = req.body;
 
-      // Support nouveau format (tableau) ou ancien format (string)
+      // Cas 1 : association/desassociation a un evenement Google
+      if (google_event_id !== undefined) {
+        const value = google_event_id ? String(google_event_id) : '';
+        const existing = db
+          .prepare('SELECT linked_event_ids FROM reservations WHERE id = ?')
+          .get(req.params.id);
+        if (!existing) {
+          return res.status(404).json({ success: false, error: 'Réservation introuvable' });
+        }
+        let linkedIds = [];
+        try {
+          linkedIds = existing.linked_event_ids ? JSON.parse(existing.linked_event_ids) : [];
+          if (!Array.isArray(linkedIds)) linkedIds = [];
+        } catch {
+          linkedIds = [];
+        }
+        if (value) {
+          if (!linkedIds.includes(value)) linkedIds.push(value);
+        } else {
+          // Désassociation : on vide aussi linked_event_ids (cas réservation simple)
+          linkedIds = [];
+        }
+        const linkedJson = linkedIds.length > 0 ? JSON.stringify(linkedIds) : null;
+        const stmt = db.prepare(`
+          UPDATE reservations
+          SET google_event_id = ?, linked_event_ids = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `);
+        stmt.run(value, linkedJson, req.user.id, req.params.id);
+        addToHistory(
+          'reservation',
+          req.params.id,
+          'updated',
+          { google_event_id: value || null, linked_event_ids: linkedIds },
+          req.user.id,
+          req.user.name,
+        );
+        invalidateEntity('reservations');
+        return res.json({ success: true, googleEventId: value, linkedEventIds: linkedIds });
+      }
+
+      // Cas 2 : liens Google Drive (existant)
       let linksToStore;
       if (google_drive_links !== undefined) {
         // Nouveau format : tableau de {url, label}
@@ -622,7 +623,7 @@ export function setupVehicleRoutes(
       } else {
         return res.status(400).json({
           success: false,
-          error: 'Champ manquant (google_drive_links ou google_drive_link)',
+          error: 'Champ manquant (google_drive_links, google_drive_link ou google_event_id)',
         });
       }
 

@@ -55,6 +55,7 @@ import DepotMap from '../vehicles/DepotMap';
 import LocationSelector from '../vehicles/LocationSelector';
 
 // ═══ Constantes ═══
+
 const MOVEMENT_TYPES = {
   in: { label: 'Entrée', color: STATUS_COLORS.success, icon: '📥', Icon: ArrowDownCircle },
   out: { label: 'Sortie', color: STATUS_COLORS.danger, icon: '📤', Icon: ArrowUpCircle },
@@ -992,9 +993,9 @@ function ItemDetailView({
 
           <div className="stock-detail-grid">
             <div className="stock-detail-field">
-              <label>
+              <span className="stock-detail-label">
                 <TagIcon size={14} /> Catégorie
-              </label>
+              </span>
               <span>
                 {item.category_name ? (
                   <span
@@ -1017,9 +1018,9 @@ function ItemDetailView({
               </span>
             </div>
             <div className="stock-detail-field">
-              <label>
+              <span className="stock-detail-label">
                 <Package size={14} /> Quantité
-              </label>
+              </span>
               <span className={`stock-qty-big ${isOut ? 'rupture' : isLow ? 'low' : 'ok'}`}>
                 {item.quantity} {item.unit}
                 {isLow && !isOut && (
@@ -1035,37 +1036,37 @@ function ItemDetailView({
               </span>
             </div>
             <div className="stock-detail-field">
-              <label>
+              <span className="stock-detail-label">
                 <AlertTriangle size={14} /> Seuil alerte
-              </label>
+              </span>
               <span>
                 {item.min_quantity > 0 ? `${item.min_quantity} ${item.unit}` : 'Non défini'}
               </span>
             </div>
             <div className="stock-detail-field">
-              <label>
+              <span className="stock-detail-label">
                 <Euro size={14} /> P.U. Achat
-              </label>
+              </span>
               <span>{formatCurrency(item.unit_price)}</span>
             </div>
             <div className="stock-detail-field">
-              <label>
+              <span className="stock-detail-label">
                 <Euro size={14} /> P.U. Vente
-              </label>
+              </span>
               <span>{formatCurrency(item.sell_price)}</span>
             </div>
             <div className="stock-detail-field">
-              <label>
+              <span className="stock-detail-label">
                 <Euro size={14} /> Valeur stock
-              </label>
+              </span>
               <span className="stock-value-total">
                 {formatCurrency(item.quantity * item.unit_price)}
               </span>
             </div>
             <div className="stock-detail-field">
-              <label>
+              <span className="stock-detail-label">
                 <MapPin size={14} /> Emplacement
-              </label>
+              </span>
               <span>
                 {item.location_zone ? (
                   <>
@@ -1090,9 +1091,9 @@ function ItemDetailView({
               </span>
             </div>
             <div className="stock-detail-field">
-              <label>
+              <span className="stock-detail-label">
                 <Hash size={14} /> Fournisseur
-              </label>
+              </span>
               <span>{item.supplier_name || '—'}</span>
             </div>
           </div>
@@ -1120,7 +1121,7 @@ function ItemDetailView({
 
           {item.notes && (
             <div className="stock-detail-notes">
-              <label>Notes</label>
+              <span className="stock-detail-label">Notes</span>
               <p>{item.notes}</p>
             </div>
           )}
@@ -1314,8 +1315,9 @@ function ItemFormModal({
       <form id="stock-item-form" onSubmit={handleSubmit} className="stock-modal-form">
         <div className="stock-form-row">
           <div className="stock-form-field">
-            <label>Référence</label>
+            <label htmlFor="stock-reference">Référence</label>
             <Input
+              id="stock-reference"
               type="text"
               value={form.reference}
               onChange={(e) => handleChange('reference', e.target.value)}
@@ -1323,8 +1325,9 @@ function ItemFormModal({
             />
           </div>
           <div className="stock-form-field full">
-            <label>Nom *</label>
+            <label htmlFor="stock-nom">Nom *</label>
             <Input
+              id="stock-nom"
               type="text"
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
@@ -1333,8 +1336,9 @@ function ItemFormModal({
           </div>
         </div>
         <div className="stock-form-field">
-          <label>Description</label>
+          <label htmlFor="stock-description">Description</label>
           <Textarea
+            id="stock-description"
             value={form.description}
             onChange={(e) => handleChange('description', e.target.value)}
             rows={2}
@@ -1342,8 +1346,9 @@ function ItemFormModal({
         </div>
         <div className="stock-form-row">
           <div className="stock-form-field">
-            <label>Catégorie</label>
+            <label htmlFor="stock-categorie">Catégorie</label>
             <EntityCombobox
+              id="stock-categorie"
               value={form.category_id}
               onChange={(val) => handleChange('category_id', val)}
               options={categories.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
@@ -1351,8 +1356,12 @@ function ItemFormModal({
             />
           </div>
           <div className="stock-form-field">
-            <label>Unité</label>
-            <Select value={form.unit} onChange={(e) => handleChange('unit', e.target.value)}>
+            <label htmlFor="stock-unite">Unité</label>
+            <Select
+              id="stock-unite"
+              value={form.unit}
+              onChange={(e) => handleChange('unit', e.target.value)}
+            >
               {UNITS.map((u) => (
                 <option key={u} value={u}>
                   {u}
@@ -1361,8 +1370,9 @@ function ItemFormModal({
             </Select>
           </div>
           <div className="stock-form-field">
-            <label>Fournisseur</label>
+            <label htmlFor="stock-fournisseur">Fournisseur</label>
             <EntityCombobox
+              id="stock-fournisseur"
               value={form.supplier_id}
               onChange={(val) => handleChange('supplier_id', val)}
               options={suppliers}
@@ -1372,8 +1382,9 @@ function ItemFormModal({
         </div>
         <div className="stock-form-row">
           <div className="stock-form-field">
-            <label>P.U. Achat (€)</label>
+            <label htmlFor="stock-p-u-achat">P.U. Achat (€)</label>
             <Input
+              id="stock-p-u-achat"
               type="number"
               step="0.01"
               min="0"
@@ -1382,8 +1393,9 @@ function ItemFormModal({
             />
           </div>
           <div className="stock-form-field">
-            <label>P.U. Vente (€)</label>
+            <label htmlFor="stock-p-u-vente">P.U. Vente (€)</label>
             <Input
+              id="stock-p-u-vente"
               type="number"
               step="0.01"
               min="0"
@@ -1392,8 +1404,9 @@ function ItemFormModal({
             />
           </div>
           <div className="stock-form-field">
-            <label>Quantité</label>
+            <label htmlFor="stock-quantite">Quantité</label>
             <Input
+              id="stock-quantite"
               type="number"
               step="0.01"
               min="0"
@@ -1402,8 +1415,9 @@ function ItemFormModal({
             />
           </div>
           <div className="stock-form-field">
-            <label>Seuil alerte</label>
+            <label htmlFor="stock-seuil-alerte">Seuil alerte</label>
             <Input
+              id="stock-seuil-alerte"
               type="number"
               step="0.01"
               min="0"
@@ -1484,8 +1498,9 @@ function ItemFormModal({
           </div>
         ) : (
           <div className="stock-form-field">
-            <label>Emplacement</label>
+            <label htmlFor="stock-emplacement">Emplacement</label>
             <Input
+              id="stock-emplacement"
               type="text"
               value={form.location}
               onChange={(e) => handleChange('location', e.target.value)}
@@ -1494,8 +1509,9 @@ function ItemFormModal({
           </div>
         )}
         <div className="stock-form-field">
-          <label>Notes</label>
+          <label htmlFor="stock-notes">Notes</label>
           <Textarea
+            id="stock-notes"
             value={form.notes}
             onChange={(e) => handleChange('notes', e.target.value)}
             rows={2}
@@ -1547,8 +1563,9 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
     >
       <form id="category-form" onSubmit={handleSubmit} className="stock-modal-form">
         <div className="stock-form-field">
-          <label>Nom *</label>
+          <label htmlFor="stock-nom-2">Nom *</label>
           <Input
+            id="stock-nom-2"
             type="text"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -1556,16 +1573,18 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
           />
         </div>
         <div className="stock-form-field">
-          <label>Description</label>
+          <label htmlFor="stock-description-2">Description</label>
           <Input
+            id="stock-description-2"
             type="text"
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           />
         </div>
         <div className="stock-form-field">
-          <label>Parent</label>
+          <label htmlFor="stock-parent">Parent</label>
           <EntityCombobox
+            id="stock-parent"
             value={form.parent_id}
             onChange={(val) => setForm((f) => ({ ...f, parent_id: val }))}
             options={parentOptions.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
@@ -1573,7 +1592,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
           />
         </div>
         <div className="stock-form-field">
-          <label>Icône</label>
+          <span className="stock-form-group-label">Icône</span>
           <div className="stock-icon-picker">
             {CATEGORY_ICONS.map((icon) => (
               <Button
@@ -1589,7 +1608,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
           </div>
         </div>
         <div className="stock-form-field">
-          <label>Couleur</label>
+          <span className="stock-form-group-label">Couleur</span>
           <div className="stock-color-picker">
             {CATEGORY_COLORS.map((color) => (
               <Button
@@ -1654,8 +1673,9 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
     >
       <form id="movement-form" onSubmit={handleSubmit} className="stock-modal-form">
         <div className="stock-form-field">
-          <label>Article *</label>
+          <label htmlFor="stock-article">Article *</label>
           <Select
+            id="stock-article"
             value={form.stock_item_id}
             onChange={(e) => setForm((f) => ({ ...f, stock_item_id: e.target.value }))}
             required
@@ -1669,7 +1689,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
           </Select>
         </div>
         <div className="stock-form-field">
-          <label>Type de mouvement</label>
+          <span className="stock-form-group-label">Type de mouvement</span>
           <div className="stock-movement-types">
             {Object.entries(MOVEMENT_TYPES).map(([key, mt]) => (
               <Button
@@ -1687,8 +1707,9 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
         </div>
         <div className="stock-form-row">
           <div className="stock-form-field">
-            <label>Quantité *</label>
+            <label htmlFor="stock-quantite-2">Quantité *</label>
             <Input
+              id="stock-quantite-2"
               type="number"
               step="0.01"
               min="0.01"
@@ -1699,7 +1720,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
           </div>
           {selectedItem && (
             <div className="stock-form-field">
-              <label>Stock actuel</label>
+              <span className="stock-form-group-label">Stock actuel</span>
               <div className="stock-current-qty">
                 {selectedItem.quantity} {selectedItem.unit}
                 {form.quantity && (
@@ -1718,8 +1739,9 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
           )}
         </div>
         <div className="stock-form-field">
-          <label>Motif / Raison</label>
+          <label htmlFor="stock-motif-raison">Motif / Raison</label>
           <Input
+            id="stock-motif-raison"
             type="text"
             value={form.reason}
             onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
@@ -1727,8 +1749,9 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
           />
         </div>
         <div className="stock-form-field">
-          <label>Référence (BL, facture...)</label>
+          <label htmlFor="stock-reference-bl-facture">Référence (BL, facture...)</label>
           <Input
+            id="stock-reference-bl-facture"
             type="text"
             value={form.reference}
             onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
@@ -2089,8 +2112,13 @@ function ImportStockModal({ onDone, onClose }) {
             </p>
 
             <div className="stock-form-field">
-              <label>Fichier PDF ou CSV</label>
-              <input type="file" accept=".pdf,.csv,.tsv,.txt" onChange={handleFileChange} />
+              <label htmlFor="stock-import-file">Fichier PDF ou CSV</label>
+              <input
+                id="stock-import-file"
+                type="file"
+                accept=".pdf,.csv,.tsv,.txt"
+                onChange={handleFileChange}
+              />
               {file && (
                 <small>
                   {file.name} — {(file.size / 1024).toFixed(1)} Ko
@@ -2100,8 +2128,9 @@ function ImportStockModal({ onDone, onClose }) {
 
             {!isPDF && (
               <div className="stock-form-field">
-                <label>Ou coller les données (CSV)</label>
+                <label htmlFor="stock-ou-coller-les-donnees-csv">Ou coller les données (CSV)</label>
                 <Textarea
+                  id="stock-ou-coller-les-donnees-csv"
                   rows={8}
                   value={pasteText}
                   onChange={(e) => {
@@ -2118,7 +2147,7 @@ function ImportStockModal({ onDone, onClose }) {
             )}
 
             <div className="stock-form-field">
-              <label>Mode d'import</label>
+              <span className="stock-form-group-label">Mode d'import</span>
               <div className="u-flex u-gap-3">
                 <label className="u-flex-center u-gap-1 u-cursor-pointer">
                   <input

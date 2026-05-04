@@ -3,10 +3,11 @@
 import logger from '../logger.js';
 
 export class AppError extends Error {
-  constructor(message, statusCode = 500, code = 'INTERNAL_ERROR') {
+  constructor(message, statusCode = 500, code = 'INTERNAL_ERROR', details = null) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -14,7 +15,9 @@ export function errorHandler(err, req, res, _next) {
   // Erreur métier (AppError)
   if (err instanceof AppError) {
     logger.warn(`[${err.code}] ${req.method} ${req.originalUrl}: ${err.message}`);
-    return res.status(err.statusCode).json({ success: false, error: err.message, code: err.code });
+    const payload = { success: false, error: err.message, code: err.code };
+    if (err.details) payload.details = err.details;
+    return res.status(err.statusCode).json(payload);
   }
 
   // Erreur SQLite (better-sqlite3)

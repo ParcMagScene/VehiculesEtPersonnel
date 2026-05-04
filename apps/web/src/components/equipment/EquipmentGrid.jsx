@@ -192,6 +192,10 @@ const EquipmentGrid = ({
           av = a.serialNumber || a.serial_number || '';
           bv = b.serialNumber || b.serial_number || '';
           break;
+        case 'numeroMag':
+          av = a.numeroMag || a.numero_mag || '';
+          bv = b.numeroMag || b.numero_mag || '';
+          break;
         case 'stockQuantity':
           av = a.stockQuantity ?? 1;
           bv = b.stockQuantity ?? 1;
@@ -253,6 +257,9 @@ const EquipmentGrid = ({
             </Th>
             <Th col="serialNumber" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
               N° Série
+            </Th>
+            <Th col="numeroMag" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+              N° MAG
             </Th>
             <Th col="stockQuantity" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
               Qté
@@ -322,6 +329,7 @@ const EquipmentGrid = ({
                 </td>
                 <td>{eq.brand_canonical || eq.brand || '—'}</td>
                 <td className="eq-table-serial">{eq.serialNumber || '—'}</td>
+                <td className="eq-table-mag">{eq.numeroMag || eq.numero_mag || '—'}</td>
                 <td className="eq-table-qty">{eq.stockQuantity || 1}</td>
                 <td className="eq-table-depot">
                   {location.depotLabel === '—' ? (

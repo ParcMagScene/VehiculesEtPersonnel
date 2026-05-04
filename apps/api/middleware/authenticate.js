@@ -37,7 +37,7 @@ export function createAuthenticateToken(JWT_SECRET) {
 
       const session = db
         .prepare(
-          "SELECT 1 FROM active_sessions WHERE token_hash = ? AND expires_at > datetime('now')",
+          "SELECT last_activity, expires_at FROM active_sessions WHERE token_hash = ? AND expires_at > datetime('now')",
         )
         .get(tokenHash);
       if (!session) {
@@ -45,6 +45,32 @@ export function createAuthenticateToken(JWT_SECRET) {
           `🔒 Session expirée/révoquée pour user ${user.id} sur ${req.method} ${req.path} (hash prefix: ${tokenHash.substring(0, 8)}…)`,
         );
         return res.status(401).json({ error: 'Session expirée ou révoquée' });
+      }
+
+      // [SEC PHASE 3] Idle timeout : invalide les sessions inactives.
+      // Configurable via SESSION_IDLE_TIMEOUT_HOURS (défaut 24h en prod, désactivé en dev).
+      const idleHours = parseInt(
+        process.env.SESSION_IDLE_TIMEOUT_HOURS ||
+          (process.env.NODE_ENV === 'production' ? '24' : '0'),
+        10,
+      );
+      if (idleHours > 0 && session.last_activity) {
+        const lastActivityMs = Date.parse(session.last_activity + 'Z');
+        if (Number.isFinite(lastActivityMs)) {
+          const idleMs = Date.now() - lastActivityMs;
+          if (idleMs > idleHours * 3600 * 1000) {
+            logger.warn(
+              `🕒 Session inactive >${idleHours}h révoquée pour user ${user.id} (idle=${Math.round(idleMs / 60000)}min)`,
+            );
+            try {
+              db.prepare('DELETE FROM active_sessions WHERE token_hash = ?').run(tokenHash);
+            } catch {
+              /* silencieux */
+            }
+            authCache.delete?.(tokenHash);
+            return res.status(401).json({ error: 'Session expirée par inactivité' });
+          }
+        }
       }
 
       // Vérifier si le compte est bloqué

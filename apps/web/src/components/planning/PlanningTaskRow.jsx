@@ -264,21 +264,6 @@ export const PlanningTaskRow = React.memo(
               <Truck size={11} /> {task.reservation_vehicle_name}
             </span>
           )}
-          {task.locationAddress && (
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.locationAddress)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="task-location-badge"
-              title={`📍 ${task.locationAddress}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MapPin size={11} />{' '}
-              {task.locationAddress.length > 30
-                ? task.locationAddress.slice(0, 30) + '…'
-                : task.locationAddress}
-            </a>
-          )}
           {displayNom}
           {task.notes && <span className="task-notes-inline">({task.notes})</span>}
         </span>
@@ -287,6 +272,22 @@ export const PlanningTaskRow = React.memo(
           {displayClient}
         </span>
         <span className="ev-col ev-col-spacer" />
+
+        {task.locationAddress && (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.locationAddress)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ev-col task-location-badge ev-col-location"
+            title={`📍 ${task.locationAddress}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MapPin size={11} />{' '}
+            {task.locationAddress.length > 30
+              ? task.locationAddress.slice(0, 30) + '…'
+              : task.locationAddress}
+          </a>
+        )}
 
         <span className="ev-col ev-col-time">
           {task.time ? (

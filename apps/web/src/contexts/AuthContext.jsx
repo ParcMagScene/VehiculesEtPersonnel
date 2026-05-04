@@ -19,7 +19,6 @@ const VALID_TABS = [
   'affaires',
   'equipment',
   'orders',
-  'catalog',
   'stock',
   'planning',
 ];
@@ -122,7 +121,20 @@ export function AuthProvider({ children }) {
   const updateUser = useCallback((updatedUser) => {
     setCurrentUser(updatedUser);
     api.user = updatedUser;
-    localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+    // [PERF Sprint 1] Persistance localStorage hors du chemin critique
+    // (JSON.stringify + setItem = synchrone, peut bloquer ~1-5ms le main thread).
+    const persist = () => {
+      try {
+        localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      } catch (_) {
+        /* quota exceeded ou storage indisponible — ignor\u00e9 */
+      }
+    };
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(persist, { timeout: 1000 });
+    } else {
+      setTimeout(persist, 0);
+    }
   }, []);
 
   // Mise à jour des préférences depuis UserPreferencesModal

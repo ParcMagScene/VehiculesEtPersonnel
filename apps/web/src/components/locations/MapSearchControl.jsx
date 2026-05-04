@@ -154,6 +154,7 @@ export default function MapSearchControl({ locations }) {
               key={r.id}
               className="map-search-result-item"
               role="option"
+              aria-selected={false}
               onClick={() => handleSelect(r)}
             >
               {r.type === 'local' ? (

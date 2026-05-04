@@ -101,6 +101,8 @@
 .mobile-content {
   flex: 1;
   padding: 0;
+  /* Réserve l'espace pour la TabBar fixe (≈ 60px + safe-area) */
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
 }
 
@@ -128,7 +130,7 @@
 /* Toast notification mobile */
 .mobile-msg-toast {
   position: fixed;
-  bottom: 20px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   left: 16px;
   right: 16px;
   background: linear-gradient(135deg, var(--theme-purple-accent), var(--theme-primary-dark));

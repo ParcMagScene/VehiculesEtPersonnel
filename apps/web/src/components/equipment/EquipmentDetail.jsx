@@ -188,6 +188,14 @@ const EquipmentDetailContent = ({
             <span className="eq-field-value">{eq.serialNumber || eq.serial_number}</span>
           </div>
         )}
+        {(eq.numeroMag || eq.numero_mag) && (
+          <div className="eq-detail-field">
+            <span className="eq-field-label">
+              <Hash size={14} /> N° MAG
+            </span>
+            <span className="eq-field-value">{eq.numeroMag || eq.numero_mag}</span>
+          </div>
+        )}
         {eq.brand && (
           <div className="eq-detail-field">
             <span className="eq-field-label">🏭 Marque</span>

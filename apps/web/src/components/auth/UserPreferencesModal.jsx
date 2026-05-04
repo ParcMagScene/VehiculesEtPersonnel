@@ -2,7 +2,6 @@ import './UserPreferencesModal.css';
 
 import {
   Bell,
-  BookOpen,
   Boxes,
   Briefcase,
   Check,
@@ -39,6 +38,7 @@ import {
 } from '@/design-system';
 
 import { useDirtyForm } from '../../hooks/useDirtyForm';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { PALETTES } from '../../hooks/useTheme';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -57,7 +57,6 @@ const ALL_MODULES = [
   { id: 'affaires', label: 'Affaires', icon: Briefcase },
   { id: 'equipment', label: 'Équipements', icon: Package },
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
-  { id: 'catalog', label: 'Catalogue', icon: BookOpen },
   { id: 'stock', label: 'Stock', icon: Boxes },
   { id: 'planning', label: 'Planning', icon: Radio },
 ];
@@ -94,6 +93,8 @@ const UserPreferencesModal = ({
   const [saved, setSaved] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const { isDirty, resetDirty } = useDirtyForm(prefs);
+  // [Sprint D] Prévient F5 / fermeture onglet pendant édition
+  useUnsavedChangesGuard(isDirty);
   const needsResetRef = useRef(false);
 
   const handleSafeClose = () => {
@@ -218,7 +219,6 @@ const UserPreferencesModal = ({
               <option value="affaires">Affaires</option>
               <option value="equipment">Équipements</option>
               <option value="orders">Commandes</option>
-              <option value="catalog">Catalogue</option>
               <option value="stock">Stock</option>
               <option value="planning">Planning</option>
             </Select>

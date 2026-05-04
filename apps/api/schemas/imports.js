@@ -186,6 +186,106 @@ export const stockImportSchema = z.object({
   mode: z.enum(['upsert', 'insert']).optional().default('upsert'),
 });
 
+// ── Locmat Import (Locations.csv + Serialise.csv) ──
+const locationLineSchema = z
+  .object({
+    code: str(100),
+    name: optStr(255),
+    description: optStr(2000).nullable(),
+    category: optStr(100).nullable(),
+    quantity: z.coerce.number().nonnegative().default(0),
+    price: z.coerce.number().nonnegative().default(0),
+    value: z.coerce.number().nonnegative().default(0),
+    barcode: optStr(100).nullable(),
+    location: optStr(255).nullable(),
+    isSerialized: z.boolean().optional().default(false),
+  })
+  .passthrough();
+
+const serialLineSchema = z
+  .object({
+    code: optStr(100),
+    serial: str(100),
+    name: optStr(255).nullable(),
+  })
+  .passthrough();
+
+export const locmatPreviewSchema = z.object({
+  locations: z.array(locationLineSchema).max(50000).default([]),
+  serials: z.array(serialLineSchema).max(100000).default([]),
+  source: optStr(255).optional(),
+});
+
+export const locmatConfirmSchema = z.object({
+  source: optStr(255).optional(),
+  newProducts: z.array(locationLineSchema).default([]),
+  updatedProducts: z
+    .array(
+      z.object({
+        id: z.coerce.number().int().positive(),
+        code: str(100),
+        name: optStr(255).optional(),
+        diffs: z.record(z.string(), z.any()),
+      }),
+    )
+    .default([]),
+  quantityChanges: z
+    .array(
+      z.object({
+        id: z.coerce.number().int().positive(),
+        code: str(100),
+        name: optStr(255).optional(),
+        from: z.coerce.number(),
+        to: z.coerce.number().nonnegative(),
+        delta: z.coerce.number().optional(),
+        reason: optStr(50).optional(),
+      }),
+    )
+    .default([]),
+  serializationChanges: z
+    .array(
+      z.object({
+        id: z.coerce.number().int().positive(),
+        code: str(100),
+        name: optStr(255).optional(),
+        from: z.boolean().optional(),
+        to: z.boolean().optional(),
+        serialCount: z.coerce.number().int().nonnegative().optional(),
+      }),
+    )
+    .default([]),
+  newSerials: z
+    .array(
+      z.object({
+        equipmentId: z.coerce.number().int().positive().optional(),
+        code: str(100),
+        serial: str(100),
+        productExisting: z.boolean().optional(),
+      }),
+    )
+    .default([]),
+  removedSerials: z
+    .array(
+      z.object({
+        equipmentId: z.coerce.number().int().positive(),
+        code: str(100),
+        serial: str(100),
+      }),
+    )
+    .default([]),
+  // Champs de signalement (advisory) : retournés par le preview, renvoyés tels quels
+  // pour traçabilité dans import_logs. Aucune écriture automatique côté serveur.
+  missingProducts: z.array(z.any()).optional().default([]),
+  duplicates: z
+    .object({
+      locations: z.array(z.any()).optional().default([]),
+      serials: z.array(z.any()).optional().default([]),
+    })
+    .partial()
+    .optional(),
+  collisions: z.array(z.any()).optional().default([]),
+});
+
 // ── Middleware factory de validation Zod ──
 export function validate(schema) {
   return (req, res, next) => {

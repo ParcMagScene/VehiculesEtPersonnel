@@ -358,7 +358,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                     <th>Fait</th>
                     <th>Non fait</th>
                     <th>Temps</th>
-                    <th>Alertes</th>
+                    <th>Contexte</th>
                   </tr>
                 </thead>
                 <tbody>

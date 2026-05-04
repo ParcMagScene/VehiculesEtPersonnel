@@ -1223,9 +1223,9 @@ function generateSynthesePdf(synthese, title, res) {
   );
 
   // ─── Colonnes tableau journalier ───
-  // Date | AM | PM | Total | Fait | Non fait | Temps | Alertes
+  // Date | AM | PM | Total | Fait | Non fait | Temps | Contexte
   const COL = [90, 115, 115, 55, 50, 58, 65, 234];
-  const COL_HEADS = ['Date', 'AM', 'PM', 'Total', 'Fait', 'Non fait', 'Temps', 'Alertes'];
+  const COL_HEADS = ['Date', 'AM', 'PM', 'Total', 'Fait', 'Non fait', 'Temps', 'Contexte'];
 
   let y = doc.y;
 
@@ -1407,6 +1407,10 @@ function generateSynthesePdf(synthese, title, res) {
   }
 
   // ─── Synthèse incidents (même période) ───
+  // Démarre toujours sur une nouvelle page pour une lecture claire.
+  doc.addPage();
+  y = 30;
+
   const incidentSummary = synthese.incidents?.summary || null;
   const incidentByAffaire = Array.isArray(synthese.incidents?.by_affaire)
     ? synthese.incidents.by_affaire

@@ -1419,9 +1419,17 @@ function generateSynthesePdf(synthese, title, res) {
     ? synthese.incidents.detailed_tickets
     : [];
   const incidentPeriod = synthese.incidents?.period || null;
+  const INCIDENT_TYPE_LABELS = {
+    vehicle_problem: 'Problème sur véhicule',
+    equipment_problem: 'Problème sur équipement',
+    equipment_omission: 'Oubli équipement',
+    equipment_error: 'Erreur équipement',
+    other: 'Autre incident',
+  };
   const formatIncidentType = (type) => {
     const raw = String(type || 'incident').trim();
     if (!raw) return 'Incident';
+    if (INCIDENT_TYPE_LABELS[raw]) return INCIDENT_TYPE_LABELS[raw];
     const normalized = raw.replace(/_/g, ' ');
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
@@ -1451,15 +1459,35 @@ function generateSynthesePdf(synthese, title, res) {
   );
   y += 14;
 
+  const drawIncidentsSummaryHeader = (continuation = false) => {
+    ensureSpace(24);
+    doc.rect(LEFT, y, USABLE_W, 14).fillColor('#0f766e').fill();
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
+    doc.text(
+      continuation
+        ? 'INCIDENTS (période de la synthèse) — SUITE'
+        : 'INCIDENTS (période de la synthèse) — PAR AFFAIRE',
+      LEFT + 6,
+      y + 3,
+    );
+    y += 16;
+  };
+
+  drawIncidentsSummaryHeader(false);
+
   if (incidentByAffaire.length === 0) {
     ensureSpace(16);
     doc.font('Helvetica-Oblique').fontSize(8).fillColor('#64748b');
     doc.text('Aucun ticket incident sur cette période.', LEFT + 6, y);
     y += 12;
   } else {
-    ensureSpace(16 + incidentByAffaire.length * 12);
     doc.font('Helvetica').fontSize(8).fillColor('#1f2937');
     for (const it of incidentByAffaire) {
+      if (y + 12 > FOOTER_Y) {
+        doc.addPage();
+        y = 30;
+        drawIncidentsSummaryHeader(true);
+      }
       const affaireLabel =
         it.affaire_name && it.affaire_name !== it.affaire_num
           ? `${it.affaire_num} (${it.affaire_name})`

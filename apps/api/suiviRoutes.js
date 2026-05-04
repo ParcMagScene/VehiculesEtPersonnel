@@ -576,9 +576,25 @@ function computeIncidentSynthese(periodStart, periodEnd) {
   const incidentTypeCounts = {};
   const byAffaire = new Map();
   const byWeek = new Map();
+  const detailedTickets = [];
 
   for (const t of tickets) {
     const tEntries = entriesByTicket.get(t.id) || [];
+    detailedTickets.push({
+      ticket_id: t.id,
+      week_key: t.week_key,
+      affaire_num: t.affaire_num,
+      affaire_name: t.affaire_name || t.affaire_num,
+      notes: t.notes || '',
+      incidents: tEntries.map((ie) => ({
+        incident_type: ie.incident_type || '',
+        description: ie.description || '',
+        reporter_name: ie.reporter_name || '',
+        vehicle_name_snapshot: ie.vehicle_name_snapshot || '',
+        created_at: ie.created_at || null,
+      })),
+    });
+
     for (const ie of tEntries) {
       incidentTypeCounts[ie.incident_type] = (incidentTypeCounts[ie.incident_type] || 0) + 1;
     }
@@ -624,6 +640,7 @@ function computeIncidentSynthese(periodStart, periodEnd) {
       .map((a) => ({ ...a, weeks: Array.from(a.weeks).sort() }))
       .sort((x, y) => y.incidents - x.incidents || x.affaire_num.localeCompare(y.affaire_num)),
     by_week: Array.from(byWeek.values()).sort((x, y) => x.week_key.localeCompare(y.week_key)),
+    detailed_tickets: detailedTickets,
   };
 }
 
@@ -1394,7 +1411,22 @@ function generateSynthesePdf(synthese, title, res) {
   const incidentByAffaire = Array.isArray(synthese.incidents?.by_affaire)
     ? synthese.incidents.by_affaire
     : [];
+  const incidentDetailedTickets = Array.isArray(synthese.incidents?.detailed_tickets)
+    ? synthese.incidents.detailed_tickets
+    : [];
   const incidentPeriod = synthese.incidents?.period || null;
+  const formatIncidentType = (type) => {
+    const raw = String(type || 'incident').trim();
+    if (!raw) return 'Incident';
+    const normalized = raw.replace(/_/g, ' ');
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+  };
+  const writeWrappedText = (text, x, width, font = 'Helvetica', size = 7, color = '#0f172a') => {
+    doc.font(font).fontSize(size).fillColor(color);
+    const h = doc.heightOfString(text, { width });
+    doc.text(text, x, y, { width });
+    y += h + 2;
+  };
 
   ensureSpace(44);
   y += 10;
@@ -1444,6 +1476,82 @@ function generateSynthesePdf(synthese, title, res) {
         y,
       );
       y += 10;
+    }
+  }
+
+  // ─── Détail du contenu des incidents ───
+  if (incidentDetailedTickets.length > 0) {
+    ensureSpace(22);
+    y += 2;
+    doc.rect(LEFT, y, USABLE_W, 14).fillColor('#0f172a').fill();
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
+    doc.text('DÉTAIL DU CONTENU DES INCIDENTS', LEFT + 6, y + 3);
+    y += 16;
+
+    const visibleTickets = incidentDetailedTickets.slice(0, 10);
+    for (const ticket of visibleTickets) {
+      const affaireLabel =
+        ticket.affaire_name && ticket.affaire_name !== ticket.affaire_num
+          ? `${ticket.affaire_num} (${ticket.affaire_name})`
+          : ticket.affaire_num;
+      const ticketHeader = `Ticket ${ticket.week_key} — ${affaireLabel}`;
+
+      ensureSpace(22);
+      writeWrappedText(ticketHeader, LEFT + 6, USABLE_W - 12, 'Helvetica-Bold', 8, '#0f172a');
+
+      if (ticket.notes) {
+        writeWrappedText(
+          `Note ticket: ${ticket.notes}`,
+          LEFT + 12,
+          USABLE_W - 18,
+          'Helvetica-Oblique',
+          7,
+          '#334155',
+        );
+      }
+
+      if (!ticket.incidents || ticket.incidents.length === 0) {
+        writeWrappedText('• Aucun incident détaillé sur ce ticket', LEFT + 12, USABLE_W - 18);
+      } else {
+        const visibleIncidents = ticket.incidents.slice(0, 6);
+        for (const incident of visibleIncidents) {
+          const meta = [];
+          if (incident.reporter_name) meta.push(`déclarant: ${incident.reporter_name}`);
+          if (incident.vehicle_name_snapshot)
+            meta.push(`véhicule: ${incident.vehicle_name_snapshot}`);
+
+          const content = String(incident.description || '').trim() || 'Sans description';
+          const line = `• [${formatIncidentType(incident.incident_type)}] ${content}${meta.length ? ` (${meta.join(', ')})` : ''}`;
+
+          ensureSpace(16);
+          writeWrappedText(line, LEFT + 12, USABLE_W - 18, 'Helvetica', 7, '#1f2937');
+        }
+
+        if (ticket.incidents.length > visibleIncidents.length) {
+          writeWrappedText(
+            `... ${ticket.incidents.length - visibleIncidents.length} incident(s) supplémentaire(s)`,
+            LEFT + 12,
+            USABLE_W - 18,
+            'Helvetica-Oblique',
+            7,
+            '#64748b',
+          );
+        }
+      }
+
+      y += 3;
+    }
+
+    if (incidentDetailedTickets.length > 10) {
+      ensureSpace(12);
+      writeWrappedText(
+        `... ${incidentDetailedTickets.length - 10} ticket(s) supplémentaire(s) non affiché(s)`,
+        LEFT + 6,
+        USABLE_W - 12,
+        'Helvetica-Oblique',
+        7,
+        '#64748b',
+      );
     }
   }
 

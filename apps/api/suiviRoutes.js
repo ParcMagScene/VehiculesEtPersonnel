@@ -1453,10 +1453,9 @@ function generateSynthesePdf(synthese, title, res) {
     doc.text('Aucun ticket incident sur cette période.', LEFT + 6, y);
     y += 12;
   } else {
-    const incidentRows = incidentByAffaire.slice(0, 14);
-    ensureSpace(16 + incidentRows.length * 12);
+    ensureSpace(16 + incidentByAffaire.length * 12);
     doc.font('Helvetica').fontSize(8).fillColor('#1f2937');
-    for (const it of incidentRows) {
+    for (const it of incidentByAffaire) {
       const affaireLabel =
         it.affaire_name && it.affaire_name !== it.affaire_num
           ? `${it.affaire_num} (${it.affaire_name})`
@@ -1468,35 +1467,41 @@ function generateSynthesePdf(synthese, title, res) {
       );
       y += 12;
     }
-    if (incidentByAffaire.length > incidentRows.length) {
-      doc.font('Helvetica-Oblique').fontSize(7).fillColor('#64748b');
-      doc.text(
-        `... ${incidentByAffaire.length - incidentRows.length} affaire(s) supplémentaire(s) non affichée(s)`,
-        LEFT + 6,
-        y,
-      );
-      y += 10;
-    }
   }
 
   // ─── Détail du contenu des incidents ───
   if (incidentDetailedTickets.length > 0) {
+    const drawIncidentDetailsHeader = (continuation = false) => {
+      ensureSpace(22);
+      if (continuation) y += 2;
+      doc.rect(LEFT, y, USABLE_W, 14).fillColor('#0f172a').fill();
+      doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
+      doc.text(
+        continuation
+          ? 'DÉTAIL DU CONTENU DES INCIDENTS (SUITE)'
+          : 'DÉTAIL DU CONTENU DES INCIDENTS',
+        LEFT + 6,
+        y + 3,
+      );
+      y += 16;
+    };
+
     ensureSpace(22);
     y += 2;
-    doc.rect(LEFT, y, USABLE_W, 14).fillColor('#0f172a').fill();
-    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
-    doc.text('DÉTAIL DU CONTENU DES INCIDENTS', LEFT + 6, y + 3);
-    y += 16;
+    drawIncidentDetailsHeader(false);
 
-    const visibleTickets = incidentDetailedTickets.slice(0, 10);
-    for (const ticket of visibleTickets) {
+    for (const ticket of incidentDetailedTickets) {
       const affaireLabel =
         ticket.affaire_name && ticket.affaire_name !== ticket.affaire_num
           ? `${ticket.affaire_num} (${ticket.affaire_name})`
           : ticket.affaire_num;
       const ticketHeader = `Ticket ${ticket.week_key} — ${affaireLabel}`;
 
-      ensureSpace(22);
+      if (y + 22 > FOOTER_Y) {
+        doc.addPage();
+        y = 30;
+        drawIncidentDetailsHeader(true);
+      }
       writeWrappedText(ticketHeader, LEFT + 6, USABLE_W - 12, 'Helvetica-Bold', 8, '#0f172a');
 
       if (ticket.notes) {
@@ -1513,8 +1518,7 @@ function generateSynthesePdf(synthese, title, res) {
       if (!ticket.incidents || ticket.incidents.length === 0) {
         writeWrappedText('• Aucun incident détaillé sur ce ticket', LEFT + 12, USABLE_W - 18);
       } else {
-        const visibleIncidents = ticket.incidents.slice(0, 6);
-        for (const incident of visibleIncidents) {
+        for (const incident of ticket.incidents) {
           const meta = [];
           if (incident.reporter_name) meta.push(`déclarant: ${incident.reporter_name}`);
           if (incident.vehicle_name_snapshot)
@@ -1526,32 +1530,9 @@ function generateSynthesePdf(synthese, title, res) {
           ensureSpace(16);
           writeWrappedText(line, LEFT + 12, USABLE_W - 18, 'Helvetica', 7, '#1f2937');
         }
-
-        if (ticket.incidents.length > visibleIncidents.length) {
-          writeWrappedText(
-            `... ${ticket.incidents.length - visibleIncidents.length} incident(s) supplémentaire(s)`,
-            LEFT + 12,
-            USABLE_W - 18,
-            'Helvetica-Oblique',
-            7,
-            '#64748b',
-          );
-        }
       }
 
       y += 3;
-    }
-
-    if (incidentDetailedTickets.length > 10) {
-      ensureSpace(12);
-      writeWrappedText(
-        `... ${incidentDetailedTickets.length - 10} ticket(s) supplémentaire(s) non affiché(s)`,
-        LEFT + 6,
-        USABLE_W - 12,
-        'Helvetica-Oblique',
-        7,
-        '#64748b',
-      );
     }
   }
 

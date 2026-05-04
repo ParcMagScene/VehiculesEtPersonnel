@@ -438,6 +438,11 @@ export default function LocmatImportModal({ onDone, onClose }) {
               <li>
                 N° série retirés : <strong>{result.serialsRemoved}</strong>
               </li>
+              {result.serialsSkippedCollision > 0 && (
+                <li>
+                  N° série ignorés (collision) : <strong>{result.serialsSkippedCollision}</strong>
+                </li>
+              )}
               {result.errors?.length > 0 && (
                 <li style={{ color: 'var(--color-danger, #c62828)' }}>
                   Erreurs : <strong>{result.errors.length}</strong>

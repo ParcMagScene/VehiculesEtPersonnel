@@ -178,6 +178,9 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         const findSerial = db.prepare(
           'SELECT id, status FROM equipment_serials WHERE equipment_id = ? AND serial = ?',
         );
+        const findSerialGlobal = db.prepare(
+          "SELECT id, equipment_id FROM equipment_serials WHERE serial = ? AND status = 'active' LIMIT 1",
+        );
         const reactivateSerial = db.prepare(
           "UPDATE equipment_serials SET status = 'active', removed_at = NULL WHERE id = ?",
         );
@@ -196,6 +199,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           serialsAdded: 0,
           serialsRemoved: 0,
           serialsReactivated: 0,
+          serialsSkippedCollision: 0,
           errors: [],
         };
 
@@ -287,6 +291,16 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
                   result.serialsReactivated++;
                 }
               } else {
+                // Vérifier qu'aucun autre équipement n'a déjà ce serial actif
+                // (l'index UNIQUE partiel sur serial WHERE status='active' ferait sinon crasher l'INSERT)
+                const conflict = findSerialGlobal.get(s.serial);
+                if (conflict && conflict.equipment_id !== equipmentId) {
+                  result.serialsSkippedCollision++;
+                  result.errors.push(
+                    `Serial ${s.serial} (code ${s.code}): déjà actif sur équipement #${conflict.equipment_id} — ignoré`,
+                  );
+                  continue;
+                }
                 insertSerial.run(equipmentId, s.serial);
                 result.serialsAdded++;
               }

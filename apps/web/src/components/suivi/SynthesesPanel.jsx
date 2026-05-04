@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   SynthesesPanel — Synthèses journalière / hebdo / mensuelle
+  SynthesesPanel — Synthèses hebdo / mensuelle / annuelle
    Tableaux récapitulatifs + export PDF
    ═══════════════════════════════════════════════════════════════ */
 
@@ -34,13 +34,6 @@ function formatMonthISO(d) {
   return `${y}-${m}`;
 }
 
-function formatDateISO(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 /** Convertit des minutes en "Xh MM" */
 function fmtHM(minutes) {
   if (!minutes) return '0h00';
@@ -51,10 +44,10 @@ function fmtHM(minutes) {
 }
 
 function SynthesesPanel({ currentUser: _currentUser }) {
-  const [mode, setMode] = useState('jour');
-  const [dateJour, setDateJour] = useState(formatDateISO(new Date()));
+  const [mode, setMode] = useState('semaine');
   const [semaine, setSemaine] = useState(getISOWeek(new Date()));
   const [mois, setMois] = useState(formatMonthISO(new Date()));
+  const [annee, setAnnee] = useState(String(new Date().getFullYear()));
   const [synthese, setSynthese] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -66,26 +59,20 @@ function SynthesesPanel({ currentUser: _currentUser }) {
     setError(null);
     try {
       let data;
-      if (mode === 'jour') data = await api.getSuiviSyntheseJour(dateJour);
-      else if (mode === 'semaine') data = await api.getSuiviSyntheseSemaine(semaine);
-      else data = await api.getSuiviSyntheseMois(mois);
+      if (mode === 'semaine') data = await api.getSuiviSyntheseSemaine(semaine);
+      else if (mode === 'mois') data = await api.getSuiviSyntheseMois(mois);
+      else data = await api.getSuiviSyntheseAnnee(annee);
       setSynthese(data);
     } catch {
       setError('Erreur chargement synthèse');
     } finally {
       setLoading(false);
     }
-  }, [mode, dateJour, semaine, mois]);
+  }, [mode, semaine, mois, annee]);
 
   useEffect(() => {
     fetchSynthese();
   }, [fetchSynthese]);
-
-  const handleNavigateDay = (delta) => {
-    const d = new Date(dateJour + 'T00:00:00');
-    d.setDate(d.getDate() + delta);
-    setDateJour(formatDateISO(d));
-  };
 
   const handleNavigateWeek = (delta) => {
     const [y, wPart] = semaine.split('-W');
@@ -102,16 +89,23 @@ function SynthesesPanel({ currentUser: _currentUser }) {
     setMois(formatMonthISO(d));
   };
 
+  const handleNavigateYear = (delta) => {
+    const parsed = Number(annee);
+    if (!Number.isFinite(parsed)) return;
+    setAnnee(String(parsed + delta));
+  };
+
   const handleExportPdf = async () => {
     try {
       let blob;
-      if (mode === 'jour') blob = await api.exportSuiviSyntheseJourPdf(dateJour);
-      else if (mode === 'semaine') blob = await api.exportSuiviSyntheseSemainePdf(semaine);
-      else blob = await api.exportSuiviSyntheseMoisPdf(mois);
+      if (mode === 'semaine') blob = await api.exportSuiviSyntheseSemainePdf(semaine);
+      else if (mode === 'mois') blob = await api.exportSuiviSyntheseMoisPdf(mois);
+      else blob = await api.exportSuiviSyntheseAnneePdf(annee);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `synthese-${mode}-${mode === 'jour' ? dateJour : mode === 'semaine' ? semaine : mois}.pdf`;
+      const period = mode === 'semaine' ? semaine : mode === 'mois' ? mois : annee;
+      a.download = `synthese-${mode}-${period}.pdf`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch {
@@ -185,14 +179,14 @@ function SynthesesPanel({ currentUser: _currentUser }) {
       {/* Mode selector */}
       <div className="syntheses-controls">
         <div className="syntheses-mode-tabs">
-          {['jour', 'semaine', 'mois'].map((m) => (
+          {['semaine', 'mois', 'annee'].map((m) => (
             <Button
               key={m}
               variant="ghost"
               className={`suivi-tab ${mode === m ? 'active' : ''}`}
               onClick={() => setMode(m)}
             >
-              {m === 'jour' ? 'Jour' : m === 'semaine' ? 'Semaine' : 'Mois'}
+              {m === 'semaine' ? 'Semaine' : m === 'mois' ? 'Mois' : 'Année'}
             </Button>
           ))}
         </div>
@@ -205,29 +199,32 @@ function SynthesesPanel({ currentUser: _currentUser }) {
             title="Période précédente"
             aria-label="Période précédente"
             onClick={() =>
-              mode === 'jour'
-                ? handleNavigateDay(-1)
-                : mode === 'semaine'
-                  ? handleNavigateWeek(-1)
-                  : handleNavigateMonth(-1)
+              mode === 'semaine'
+                ? handleNavigateWeek(-1)
+                : mode === 'mois'
+                  ? handleNavigateMonth(-1)
+                  : handleNavigateYear(-1)
             }
           >
             <ChevronLeft size={18} />
           </Button>
 
-          {mode === 'jour' && (
-            <input
-              type="date"
-              value={dateJour}
-              onChange={(e) => setDateJour(e.target.value)}
-              className="suivi-date-input"
-            />
-          )}
           {mode === 'semaine' && (
             <input
               type="week"
               value={semaine}
               onChange={(e) => setSemaine(e.target.value)}
+              className="suivi-date-input"
+            />
+          )}
+          {mode === 'annee' && (
+            <input
+              type="number"
+              min="2000"
+              max="2100"
+              step="1"
+              value={annee}
+              onChange={(e) => setAnnee(e.target.value)}
               className="suivi-date-input"
             />
           )}
@@ -247,11 +244,11 @@ function SynthesesPanel({ currentUser: _currentUser }) {
             title="Période suivante"
             aria-label="Période suivante"
             onClick={() =>
-              mode === 'jour'
-                ? handleNavigateDay(1)
-                : mode === 'semaine'
-                  ? handleNavigateWeek(1)
-                  : handleNavigateMonth(1)
+              mode === 'semaine'
+                ? handleNavigateWeek(1)
+                : mode === 'mois'
+                  ? handleNavigateMonth(1)
+                  : handleNavigateYear(1)
             }
           >
             <ChevronRight size={18} />
@@ -353,7 +350,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                 <thead>
                   <tr>
                     <th>Personnel</th>
-                    {mode !== 'jour' && <th style={{ width: 28 }} />}
+                    <th style={{ width: 28 }} />
                     <th>Total</th>
                     <th>Fait</th>
                     <th>Non fait</th>
@@ -379,7 +376,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                       pg.stats.not_done > 0 ||
                       (!allSheetsHaveContext && (pg.stats.unreported_am || pg.stats.unreported_pm));
                     const isExpanded = expandedPersons.has(pg.person_id);
-                    const canExpand = mode !== 'jour' && pg.sheets.length > 1;
+                    const canExpand = pg.sheets.length > 1;
                     return (
                       <Fragment key={pg.person_id}>
                         <tr
@@ -392,17 +389,15 @@ function SynthesesPanel({ currentUser: _currentUser }) {
                               {pg.first_name} {pg.last_name}
                             </strong>
                           </td>
-                          {mode !== 'jour' && (
-                            <td style={{ textAlign: 'center', opacity: 0.5 }}>
-                              {canExpand ? (
-                                isExpanded ? (
-                                  <ChevronUp size={14} />
-                                ) : (
-                                  <ChevronDown size={14} />
-                                )
-                              ) : null}
-                            </td>
-                          )}
+                          <td style={{ textAlign: 'center', opacity: 0.5 }}>
+                            {canExpand ? (
+                              isExpanded ? (
+                                <ChevronUp size={14} />
+                              ) : (
+                                <ChevronDown size={14} />
+                              )
+                            ) : null}
+                          </td>
                           <td>{pg.stats.total}</td>
                           <td>{pg.stats.done}</td>
                           <td>{pg.stats.not_done}</td>
@@ -538,7 +533,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
               </h4>
               <p style={{ margin: 0, fontSize: '0.82rem' }}>
                 Les incidents sont saisis par semaine. Consultez la semaine concernée ou la vue
-                Mois.
+                Mois/Année.
               </p>
             </div>
           )}

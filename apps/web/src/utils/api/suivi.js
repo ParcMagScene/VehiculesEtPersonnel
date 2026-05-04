@@ -105,6 +105,9 @@ export function registerSuiviMethods(ApiClient) {
     async getSuiviSyntheseMois(month) {
       return this.request(`/suivi/synthese/mois/${month}`, { skipCamelCase: true });
     },
+    async getSuiviSyntheseAnnee(year) {
+      return this.request(`/suivi/synthese/annee/${year}`, { skipCamelCase: true });
+    },
 
     // Incidents affaires (hebdo/mensuel/annuel)
     async getSuiviIncidentAffaireBase(affaireNum) {
@@ -179,6 +182,9 @@ export function registerSuiviMethods(ApiClient) {
     },
     async exportSuiviSyntheseMoisPdf(month) {
       return this.requestBlob(`/suivi/synthese/mois/${month}/pdf`);
+    },
+    async exportSuiviSyntheseAnneePdf(year) {
+      return this.requestBlob(`/suivi/synthese/annee/${year}/pdf`);
     },
   });
 }

@@ -401,6 +401,18 @@ function getMonthDates(monthStr) {
   return dates;
 }
 
+function getYearDates(yearStr) {
+  const year = Number(yearStr);
+  const dates = [];
+  for (let month = 1; month <= 12; month++) {
+    const lastDay = new Date(year, month, 0).getDate();
+    for (let day = 1; day <= lastDay; day++) {
+      dates.push(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+    }
+  }
+  return dates;
+}
+
 function getWeekBounds(weekStr) {
   const dates = getWeekDates(weekStr);
   return {
@@ -2311,6 +2323,24 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // ─── GET /api/suivi/synthese/annee/:year ─── Synthèse annuelle
+  app.get('/api/suivi/synthese/annee/:year', authenticateToken, (req, res) => {
+    try {
+      const year = String(req.params.year || '').trim();
+      const parsed = syntheseYearSchema.safeParse({ year });
+      if (!parsed.success) {
+        return res.status(400).json({ success: false, error: 'Format année invalide (YYYY)' });
+      }
+      const dates = getYearDates(year);
+      const synthese = buildSynthese(dates);
+      synthese.incidents = computeIncidentSynthese(dates[0], dates[dates.length - 1]);
+      res.json(synthese);
+    } catch (error) {
+      logger.error('GET /api/suivi/synthese/annee/:year error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // ─── GET /api/suivi/synthese/jour/:date/pdf ─── PDF synthèse journalière
   app.get('/api/suivi/synthese/jour/:date/pdf', authenticateToken, (req, res) => {
     try {
@@ -2352,6 +2382,26 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       generateSynthesePdf(synthese, `mois-${month}`, res);
     } catch (error) {
       logger.error('GET /api/suivi/synthese/mois/:month/pdf error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: 'Erreur génération PDF' });
+      }
+    }
+  });
+
+  // ─── GET /api/suivi/synthese/annee/:year/pdf ─── PDF synthèse annuelle
+  app.get('/api/suivi/synthese/annee/:year/pdf', authenticateToken, (req, res) => {
+    try {
+      const year = String(req.params.year || '').trim();
+      const parsed = syntheseYearSchema.safeParse({ year });
+      if (!parsed.success) {
+        return res.status(400).json({ success: false, error: 'Format année invalide (YYYY)' });
+      }
+      const dates = getYearDates(year);
+      const synthese = buildSynthese(dates);
+      synthese.incidents = computeIncidentSynthese(dates[0], dates[dates.length - 1]);
+      generateSynthesePdf(synthese, `annee-${year}`, res);
+    } catch (error) {
+      logger.error('GET /api/suivi/synthese/annee/:year/pdf error:', error);
       if (!res.headersSent) {
         res.status(500).json({ success: false, error: 'Erreur génération PDF' });
       }

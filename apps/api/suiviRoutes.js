@@ -1448,8 +1448,8 @@ function generateSynthesePdf(synthese, title, res) {
   y += 18;
 
   const periodText = incidentPeriod
-    ? `${incidentPeriod.start} → ${incidentPeriod.end}`
-    : 'Période inconnue';
+    ? `${incidentPeriod.start} -> ${incidentPeriod.end}`
+    : 'Periode inconnue';
   doc.font('Helvetica').fontSize(8).fillColor('#134e4a');
   doc.text(
     `${periodText}  |  Tickets : ${incidentSummary?.total_tickets || 0}  |  Incidents : ${incidentSummary?.total_incidents || 0}  |  Affaires : ${incidentSummary?.affaires_count || 0}`,
@@ -1465,8 +1465,8 @@ function generateSynthesePdf(synthese, title, res) {
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
     doc.text(
       continuation
-        ? 'INCIDENTS (période de la synthèse) — SUITE'
-        : 'INCIDENTS (période de la synthèse) — PAR AFFAIRE',
+        ? 'INCIDENTS (periode de la synthese) - SUITE'
+        : 'INCIDENTS (periode de la synthese) - PAR AFFAIRE',
       LEFT + 6,
       y + 3,
     );
@@ -1493,7 +1493,7 @@ function generateSynthesePdf(synthese, title, res) {
           ? `${it.affaire_num} (${it.affaire_name})`
           : it.affaire_num;
       doc.text(
-        `• ${affaireLabel} : ${it.tickets} ticket(s), ${it.incidents} incident(s)`,
+        `- ${affaireLabel} : ${it.tickets} ticket(s), ${it.incidents} incident(s)`,
         LEFT + 6,
         y,
       );
@@ -1510,8 +1510,8 @@ function generateSynthesePdf(synthese, title, res) {
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
       doc.text(
         continuation
-          ? 'DÉTAIL DU CONTENU DES INCIDENTS (SUITE)'
-          : 'DÉTAIL DU CONTENU DES INCIDENTS',
+          ? 'DETAIL DU CONTENU DES INCIDENTS (SUITE)'
+          : 'DETAIL DU CONTENU DES INCIDENTS',
         LEFT + 6,
         y + 3,
       );
@@ -1527,7 +1527,7 @@ function generateSynthesePdf(synthese, title, res) {
         ticket.affaire_name && ticket.affaire_name !== ticket.affaire_num
           ? `${ticket.affaire_num} (${ticket.affaire_name})`
           : ticket.affaire_num;
-      const ticketHeader = `Ticket ${ticket.week_key} — ${affaireLabel}`;
+      const ticketHeader = `Ticket ${ticket.week_key} - ${affaireLabel}`;
 
       if (y + 22 > FOOTER_Y) {
         doc.addPage();
@@ -1548,16 +1548,16 @@ function generateSynthesePdf(synthese, title, res) {
       }
 
       if (!ticket.incidents || ticket.incidents.length === 0) {
-        writeWrappedText('• Aucun incident détaillé sur ce ticket', LEFT + 12, USABLE_W - 18);
+        writeWrappedText('- Aucun incident detaille sur ce ticket', LEFT + 12, USABLE_W - 18);
       } else {
         for (const incident of ticket.incidents) {
           const meta = [];
           if (incident.reporter_name) meta.push(`déclarant: ${incident.reporter_name}`);
           if (incident.vehicle_name_snapshot)
-            meta.push(`véhicule: ${incident.vehicle_name_snapshot}`);
+            meta.push(`vehicule: ${incident.vehicle_name_snapshot}`);
 
           const content = String(incident.description || '').trim() || 'Sans description';
-          const line = `• [${formatIncidentType(incident.incident_type)}] ${content}${meta.length ? ` (${meta.join(', ')})` : ''}`;
+          const line = `- [${formatIncidentType(incident.incident_type)}] ${content}${meta.length ? ` (${meta.join(', ')})` : ''}`;
 
           ensureSpace(16);
           writeWrappedText(line, LEFT + 12, USABLE_W - 18, 'Helvetica', 7, '#1f2937');

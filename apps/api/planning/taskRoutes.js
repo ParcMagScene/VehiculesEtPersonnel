@@ -9,6 +9,7 @@ import db from '../database.js';
 import logger from '../logger.js';
 import { validate } from '../schemas/imports.js';
 import { taskBatchSchema, taskCreateSchema, taskUpdateSchema } from '../schemas/planning.js';
+import { safeContentDispositionName } from '../utils/safeFilename.js';
 
 // Validation dates/heures (copie locale depuis planningRoutes.js)
 const DATE_RE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
@@ -533,7 +534,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         },
       });
 
-      const filename = `fiche-${date}.pdf`;
+      const filename = safeContentDispositionName(`fiche-${date}.pdf`, 'fiche.pdf');
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       doc.pipe(res);

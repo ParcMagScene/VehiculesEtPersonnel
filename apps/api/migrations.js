@@ -606,6 +606,15 @@ export function runPostInitMigrations(db) {
     ];
     for (const col of missingCols) {
       if (!vCols.includes(col.name)) {
+        // [SEC] Defense en profondeur : col vient d'un tableau hardcode juste
+        // au-dessus, mais on valide quand meme l'identifiant et le type pour
+        // empecher toute injection si le tableau evolue plus tard.
+        if (!/^[a-z_][a-z0-9_]*$/i.test(col.name)) {
+          throw new Error(`Migration vehicles: nom de colonne invalide ${col.name}`);
+        }
+        if (!/^[A-Za-z0-9_'\s()-]+$/.test(col.def)) {
+          throw new Error(`Migration vehicles: definition invalide pour ${col.name}`);
+        }
         db.exec(`ALTER TABLE vehicles ADD COLUMN ${col.name} ${col.def}`);
         logger.info(`  ✅ Migration: vehicles.${col.name} ajouté`);
       }

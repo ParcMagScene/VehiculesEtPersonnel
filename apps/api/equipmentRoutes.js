@@ -23,6 +23,7 @@ import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
 import logger from './logger.js';
 import { equipmentSchema } from './schemas/crud.js';
+import { safeContentDispositionName } from './utils/safeFilename.js';
 import { equipmentImportSchema, validate } from './schemas/imports.js';
 import { getNextUid } from './services/uidCounter.js';
 
@@ -1706,7 +1707,10 @@ export function setupSavTicketsRoutes(
         margins: { top: 25, bottom: 20, left: 20, right: 20 },
         info: { Title: `Rapport Maintenance - ${start} au ${end}`, Author: 'eM@g' },
       });
-      const filename = `rapport-maintenance-${start}-${end}.pdf`;
+      const filename = safeContentDispositionName(
+        `rapport-maintenance-${start}-${end}.pdf`,
+        'rapport-maintenance.pdf',
+      );
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       doc.pipe(res);

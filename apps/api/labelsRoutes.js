@@ -22,6 +22,7 @@ import {
   LIGHTBURN_LAYOUT,
 } from './services/lightburnLabelGenerator.js';
 import { buildEquipmentQrPayload } from './services/qrcodeGenerator.js';
+import { safeContentDispositionName } from './utils/safeFilename.js';
 
 // Validation simple du format mag_number : 1 lettre + 2 ou 3 chiffres,
 // ou null/empty pour effacer. Tolérant aux espaces autour.
@@ -206,7 +207,10 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
       }
 
       const svg = await buildPlateSvg(items);
-      const filename = String(req.body?.filename || 'plaque-etiquettes-200x200.svg');
+      const filename = safeContentDispositionName(
+        req.body?.filename,
+        'plaque-etiquettes-200x200.svg',
+      );
       res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(svg);
@@ -300,7 +304,10 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
       const opts = labelH ? { labelH } : {};
       const svg = buildLightburnPlateSvg(items, opts);
 
-      const filename = String(req.body?.filename || 'lightburn-plaque-200x200.svg');
+      const filename = safeContentDispositionName(
+        req.body?.filename,
+        'lightburn-plaque-200x200.svg',
+      );
       res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(svg);

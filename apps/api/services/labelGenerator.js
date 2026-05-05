@@ -214,6 +214,13 @@ async function buildLabelInner(item, labelW, labelH) {
       fs = Math.max(minFs, fs - 0.1);
       lines = wrap(t, fs);
     }
+    // Garantit qu'aucune ligne ne dépasse maxW à la taille `fs` retenue
+    // (ex. mot non-séparé par espace plus large que prévu après wrap).
+    const maxLineW = () => Math.max(...lines.map((l) => widthAt(l, fs)));
+    while (maxLineW() > maxW + 0.01 && fs > minFs) {
+      fs = Math.max(minFs, fs - 0.1);
+      lines = wrap(t, fs);
+    }
     if (lines.length > maxLines) {
       // tronque proprement avec ellipsis sur la dernière ligne autorisée
       lines = lines.slice(0, maxLines);
@@ -222,12 +229,21 @@ async function buildLabelInner(item, labelW, labelH) {
       lines[maxLines - 1] =
         last.length > maxChars - 1 ? last.slice(0, maxChars - 1) + '…' : last + '…';
     }
+    // Filet de sécurité final : à fs minimum, si une ligne déborde encore,
+    // on la tronque avec ellipsis.
+    if (maxLineW() > maxW + 0.01) {
+      const maxChars = Math.max(3, Math.floor(maxW / (charRatio * fs)));
+      lines = lines.map((l) =>
+        widthAt(l, fs) > maxW + 0.01 ? l.slice(0, Math.max(1, maxChars - 1)) + '…' : l,
+      );
+    }
     return { lines, fs };
   }
 
   // ─── Composition verticale ─────────────────────────────────────────
-  // Haut  : Référence (1 à 2 lignes, serif gras)
-  // Bas   : UID puis S/N (sans-serif), MAG en option à côté de S/N
+  // Haut    : Référence (1 à 2 lignes, serif gras)
+  // Milieu  : N° MAG (très gros, centré H + V entre ref et bas) — optionnel
+  // Bas     : UID puis S/N préfixé "SN: " (sans-serif)
   const ref = String(item.reference || '').trim();
   const uid = String(item.uid || '').trim();
   const serial = String(item.serial || '').trim();
@@ -239,12 +255,19 @@ async function buildLabelInner(item, labelW, labelH) {
   const uidFit = uid
     ? fitText(uid, textW, VAL_BASE, VAL_MIN, CHAR_RATIO_SANS, 1)
     : { lines: [], fs: VAL_BASE };
-  // S/N : on retire le préfixe "S/N: " pour économiser la largeur, mais on garde
-  // le contenu lisible. MAG (si présent) suffixe entre crochets.
-  const snText = serial + (mag ? `  [${mag}]` : '');
+  // S/N : préfixe "SN: " sur la 1re ligne (le préfixe ne se réinjecte pas
+  // sur les lignes wrappées). MAG n'est plus suffixé ici (bloc dédié au milieu).
+  const snText = serial ? `SN: ${serial}` : '';
   const snFit = serial
     ? fitText(snText, textW, VAL_BASE, VAL_MIN, CHAR_RATIO_SANS, 2)
     : { lines: [], fs: VAL_BASE };
+  // MAG : police nettement plus grosse, 1 ligne max, centré horizontalement
+  // dans la zone texte. Échelle calibrée pour rester lisible même sur 3 chars.
+  const MAG_BASE = 6.5; // mm
+  const MAG_MIN = 3.5;
+  const magFit = mag
+    ? fitText(mag, textW, MAG_BASE, MAG_MIN, CHAR_RATIO_SANS, 1)
+    : { lines: [], fs: MAG_BASE };
 
   // Calcul positions
   const TOP_PAD = LABEL_PADDING + 0.4;
@@ -256,6 +279,8 @@ async function buildLabelInner(item, labelW, labelH) {
     const y = TOP_PAD + refFit.fs * 0.85 + i * refLH;
     return { line, y, fs: refFit.fs };
   });
+  const refBlockBottom =
+    refLines.length > 0 ? refLines[refLines.length - 1].y + refFit.fs * 0.15 : TOP_PAD;
 
   // Bloc bas (S/N puis UID au-dessus, collés en bas)
   const valLH = VAL_BASE * LH_RATIO;
@@ -265,6 +290,7 @@ async function buildLabelInner(item, labelW, labelH) {
   const bottomH = uidFit.lines.length * uidLH + snFit.lines.length * snLH;
   // y baseline de la 1re ligne du bloc bas
   let curY = labelH - BOT_PAD - bottomH + uidFit.fs * 0.85;
+  const bottomBlockTop = curY - uidFit.fs * 0.85;
   const uidLines = uidFit.lines.map((line) => {
     const y = curY;
     curY += uidLH;
@@ -282,15 +308,34 @@ async function buildLabelInner(item, labelW, labelH) {
     return { line, y, fs: snFit.fs };
   });
 
-  const renderLine = ({ line, y, fs }, family, weight) => {
+  // Bloc milieu (MAG) — centré V entre refBlockBottom et bottomBlockTop
+  const magLines = [];
+  if (magFit.lines.length > 0) {
+    const slot = bottomBlockTop - refBlockBottom;
+    // baseline = milieu vertical du slot (approximation : centré sur cap-height)
+    const cy = refBlockBottom + slot / 2 + magFit.fs * 0.35;
+    magLines.push({ line: magFit.lines[0], y: cy, fs: magFit.fs });
+  }
+
+  // Filet de sécurité : on contraint systématiquement la largeur réelle de
+  // chaque ligne à `min(estW, textW)`. Si la police installée s'avère plus
+  // large que `charRatio` le prévoit (ex. fallback DejaVu Serif vs Georgia),
+  // le moteur SVG comprime les glyphes/espaces pour tenir → aucun débord.
+  const renderLine = ({ line, y, fs }, family, weight, charRatio, anchor = 'start', cx = null) => {
     const safe = xmlEscape(line);
-    return `<text x="${textX.toFixed(3)}" y="${y.toFixed(3)}" font-family="${family}" font-size="${fs.toFixed(2)}" font-weight="${weight}" fill="#000000">${safe}</text>`;
+    if (!line) return '';
+    const estW = line.length * charRatio * fs;
+    const targetW = Math.min(estW, textW);
+    const xPos = anchor === 'middle' ? (cx ?? textX + textW / 2) : textX;
+    const anchorAttr = anchor === 'middle' ? ` text-anchor="middle"` : '';
+    return `<text x="${xPos.toFixed(3)}" y="${y.toFixed(3)}" font-family="${family}" font-size="${fs.toFixed(2)}" font-weight="${weight}" fill="#000000"${anchorAttr} textLength="${targetW.toFixed(3)}" lengthAdjust="spacingAndGlyphs">${safe}</text>`;
   };
 
   const textSvg = [
-    ...refLines.map((l) => renderLine(l, REF_FONT_FAMILY, 700)),
-    ...uidLines.map((l) => renderLine(l, FONT_FAMILY, 600)),
-    ...snLines.map((l) => renderLine(l, FONT_FAMILY, 500)),
+    ...refLines.map((l) => renderLine(l, REF_FONT_FAMILY, 700, CHAR_RATIO_SERIF)),
+    ...magLines.map((l) => renderLine(l, FONT_FAMILY, 800, CHAR_RATIO_SANS, 'middle')),
+    ...uidLines.map((l) => renderLine(l, FONT_FAMILY, 600, CHAR_RATIO_SANS)),
+    ...snLines.map((l) => renderLine(l, FONT_FAMILY, 500, CHAR_RATIO_SANS)),
   ].join('');
 
   // (suppression de l'ancien bloc unique sized/textY)

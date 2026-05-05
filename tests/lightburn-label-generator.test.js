@@ -71,15 +71,21 @@ test('LightBurn — Plaque 200×200 mm 4×8 = 32 étiquettes', () => {
   assert.ok(svg.includes('width="200mm"'));
   assert.ok(svg.includes('height="200mm"'));
 
-  // 32 calques de chaque type (renommés QR_IMAGE_0 .. _31)
+  // EXACTEMENT 3 calques globaux pour toute la plaque (pas 32 × 3 = 96).
   const qrLayers = (svg.match(/inkscape:label="QR_IMAGE"/g) || []).length;
   const textLayers = (svg.match(/inkscape:label="TEXT_FILL"/g) || []).length;
   const frameLayers = (svg.match(/inkscape:label="FRAME_LINE"/g) || []).length;
-  assert.equal(qrLayers, 32);
-  assert.equal(textLayers, 32);
-  assert.equal(frameLayers, 32);
+  assert.equal(qrLayers, 1, 'plaque doit avoir 1 seul calque QR_IMAGE global');
+  assert.equal(textLayers, 1, 'plaque doit avoir 1 seul calque TEXT_FILL global');
+  assert.equal(frameLayers, 1, 'plaque doit avoir 1 seul calque FRAME_LINE global');
 
-  // Positions : marge 5mm + (50+1)*col → première colonne x=5
+  // Mais 32 éléments dans chaque calque (1 par étiquette).
+  const rectCount = (svg.match(/<rect /g) || []).length;
+  const imageCount = (svg.match(/<image /g) || []).length;
+  assert.equal(rectCount, 32, '32 cadres rect attendus');
+  assert.equal(imageCount, 32, '32 images QR attendues');
+
+  // Positions : marge 5mm + (50+1)*col → première étiquette x=5
   assert.ok(svg.includes('translate(5.000,5.000)'));
   // Dernière étiquette : col=3, row=7 → x=5+3*51=158, y=5+7*26=187
   assert.ok(svg.includes('translate(158.000,187.000)'));

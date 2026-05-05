@@ -197,44 +197,36 @@ export function buildQrLogoPng(qrValue, opts = {}) {
 }
 
 /**
- * Génère le contenu interne (3 calques) d'une étiquette LightBurn.
- * À insérer dans un <g transform="translate(x,y)"> dans la plaque,
- * ou comme racine de buildLightburnLabelSvg().
- *
- * Layout : QR 25×25 mm à gauche, texte à droite, cadre 0.1 mm autour.
+ * Génère les fragments des 3 calques pour UNE étiquette, sans wrappers
+ * `<g id="…" inkscape:label="…">`. Utile pour consolider toutes les étiquettes
+ * d'une plaque dans 3 calques globaux uniques.
  *
  * @param {object} item   { uid, serial, magNumber, qrPayload }
  * @param {number} labelW mm
  * @param {number} labelH mm
- * @returns {string} SVG fragment (3 groupes nommés)
+ * @returns {{ qrImage:string, textFill:string, frameLine:string }}
+ *          Chaque champ est un fragment SVG sans wrapper de calque ; pour la
+ *          plaque on les enveloppera dans un `<g transform="translate(x,y)">`.
  */
-export function buildLightburnLabelInner(item, labelW = LB_LABEL_W, labelH = LB_LABEL_H) {
-  const qrSize = Math.min(LB_QR_SIZE, labelH); // QR carré, hauteur max = labelH
+export function buildLightburnLabelLayerFragments(item, labelW = LB_LABEL_W, labelH = LB_LABEL_H) {
+  const qrSize = Math.min(LB_QR_SIZE, labelH);
   const qrX = 0;
   const qrY = (labelH - qrSize) / 2;
 
-  // Texte à droite du QR.
-  const textX = qrSize + 2; // 2 mm de marge entre QR et texte
+  const textX = qrSize + 2;
   const textW = labelW - textX - 1;
 
   const uid = String(item.uid || '').trim();
   const serial = String(item.serial || '').trim();
   const mag = String(item.magNumber || '').trim();
 
-  // Police sans-serif uniquement (DejaVu Sans = Liberation Sans clone, dispo
-  // par défaut sur Linux/Inkscape/LightBurn). Pour LightBurn, on garde du
-  // texte (pas de paths) — la conversion en paths se fera via "Convert to
-  // Path" dans LightBurn si l'opérateur le souhaite.
   const FONT = "'Liberation Sans', 'DejaVu Sans', Arial, Helvetica, sans-serif";
   const FS_UID_BASE = 2.8;
   const FS_SN_BASE = 2.5;
   const FS_MAG_BASE = 4.5;
   const FS_MIN = 1.6;
-  const CHAR_RATIO = 0.6; // un peu généreux pour bold + fallback DejaVu Sans
+  const CHAR_RATIO = 0.6;
 
-  // Auto-shrink : on réduit la taille de police pour tenir dans textW
-  // sans dépendre de textLength (que rsvg / LightBurn peuvent ignorer).
-  // Renvoie un fragment <text> avec textLength en backup.
   const renderText = (str, y, fsBase, weight = 400) => {
     if (!str) return { svg: '', fs: 0 };
     const estW = str.length * CHAR_RATIO * fsBase;
@@ -245,14 +237,10 @@ export function buildLightburnLabelInner(item, labelW = LB_LABEL_W, labelH = LB_
     return { svg, fs };
   };
 
-  // Pré-calcul des tailles effectives pour positionner les baselines.
   const uidStr = uid ? `UID: ${uid}` : '';
   const snStr = serial ? `SN: ${serial}` : '';
   const magStr = mag ? `MAG: ${mag}` : '';
 
-  // Disposition verticale (baselines en mm depuis le haut) :
-  //   bloc haut  : UID puis SN (collés en haut)
-  //   bloc bas   : MAG (gros, collé en bas)
   const TOP_PAD = 3.5;
   const LH = 1.4;
   const uidR = renderText(uidStr, TOP_PAD, FS_UID_BASE, 600);
@@ -261,29 +249,44 @@ export function buildLightburnLabelInner(item, labelW = LB_LABEL_W, labelH = LB_
   const magBaselineY = labelH - 2;
   const magR = renderText(magStr, magBaselineY, FS_MAG_BASE, 700);
 
-  const textParts = [uidR.svg, snR.svg, magR.svg].filter(Boolean).join('\n      ');
+  const textFill = [uidR.svg, snR.svg, magR.svg].filter(Boolean).join('\n      ');
 
-  // PNG QR + logo (data URI).
   const pngDataUri = buildQrLogoPng(item.qrPayload || item.uid || item.serial || '');
+  const qrImage = `<image href="data:image/png;base64,${pngDataUri.split(',')[1]}" x="${qrX.toFixed(3)}" y="${qrY.toFixed(3)}" width="${qrSize}" height="${qrSize}" preserveAspectRatio="none"/>`;
 
-  // Cadre : 0.1 mm stroke, fill none. Inset = stroke/2 pour rester à l'intérieur.
   const STROKE = 0.1;
   const inset = STROKE / 2;
   const frameW = labelW - STROKE;
   const frameH = labelH - STROKE;
+  const frameLine = `<rect x="${inset.toFixed(3)}" y="${inset.toFixed(3)}" width="${frameW.toFixed(3)}" height="${frameH.toFixed(3)}"/>`;
+
+  return { qrImage, textFill, frameLine };
+}
+
+/**
+ * Génère le contenu interne (3 calques) d'une étiquette LightBurn — variante
+ * "preview unitaire" qui produit les 3 wrappers de calque pour visualisation
+ * isolée d'une seule étiquette.
+ *
+ * Pour la plaque, utiliser `buildLightburnLabelLayerFragments` afin de
+ * consolider 1 seul `QR_IMAGE` / `TEXT_FILL` / `FRAME_LINE` global.
+ */
+export function buildLightburnLabelInner(item, labelW = LB_LABEL_W, labelH = LB_LABEL_H) {
+  const STROKE = 0.1;
+  const { qrImage, textFill, frameLine } = buildLightburnLabelLayerFragments(item, labelW, labelH);
 
   return `
     <!-- CALQUE 1 : QR + logo (image raster, mode IMAGE LightBurn) -->
     <g id="QR_IMAGE" inkscape:label="QR_IMAGE" inkscape:groupmode="layer" style="image-rendering:pixelated">
-      <image href="data:image/png;base64,${pngDataUri.split(',')[1]}" x="${qrX.toFixed(3)}" y="${qrY.toFixed(3)}" width="${qrSize}" height="${qrSize}" preserveAspectRatio="none"/>
+      ${qrImage}
     </g>
     <!-- CALQUE 2 : Texte (mode FILL LightBurn) -->
     <g id="TEXT_FILL" inkscape:label="TEXT_FILL" inkscape:groupmode="layer" fill="#000000" stroke="none">
-      ${textParts}
+      ${textFill}
     </g>
     <!-- CALQUE 3 : Cadre (mode LINE LightBurn) -->
     <g id="FRAME_LINE" inkscape:label="FRAME_LINE" inkscape:groupmode="layer" fill="none" stroke="#000000" stroke-width="${STROKE}">
-      <rect x="${inset.toFixed(3)}" y="${inset.toFixed(3)}" width="${frameW.toFixed(3)}" height="${frameH.toFixed(3)}"/>
+      ${frameLine}
     </g>`;
 }
 
@@ -306,9 +309,12 @@ export function buildLightburnLabelSvg(item, opts = {}) {
 
 /**
  * SVG plaque 200×200 mm — jusqu'à 32 étiquettes (4×8).
- * Chaque étiquette est un <g> indépendant contenant les 3 calques internes
- * (QR_IMAGE / TEXT_FILL / FRAME_LINE) suffixés par son index pour rester
- * sélectionnable individuellement dans LightBurn.
+ *
+ * STRUCTURE PLAQUE : exactement 3 calques globaux (pas 32×3 = 96).
+ * Tous les QR de toutes les étiquettes vivent dans UN SEUL `<g id="QR_IMAGE">`,
+ * tous les textes dans UN SEUL `<g id="TEXT_FILL">`, tous les cadres dans UN
+ * SEUL `<g id="FRAME_LINE">`. Chaque élément est positionné via son propre
+ * `transform="translate(x,y)"`. LightBurn voit donc 3 couches gravure.
  *
  * @param {Array<{uid?, serial?, magNumber?, qrPayload?}>} items max 32
  * @param {object} [opts]
@@ -326,23 +332,27 @@ export function buildLightburnPlateSvg(items, opts = {}) {
   const max = cols * rows;
   const slots = items.slice(0, max);
 
-  const groups = [];
+  const qrParts = [];
+  const textParts = [];
+  const frameParts = [];
+
   for (let i = 0; i < slots.length; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
     const x = margin + col * (labelW + colGap);
     const y = margin + row * (labelH + rowGap);
-    // On suffixe les ids de calques internes par l'index pour unicité,
-    // mais on garde un id de groupe parent global identifiable.
-    const inner = buildLightburnLabelInner(slots[i], labelW, labelH).replace(
-      /id="(QR_IMAGE|TEXT_FILL|FRAME_LINE)"/g,
-      `id="$1_${i}"`,
+    const t = `translate(${x.toFixed(3)},${y.toFixed(3)})`;
+    const { qrImage, textFill, frameLine } = buildLightburnLabelLayerFragments(
+      slots[i],
+      labelW,
+      labelH,
     );
-    groups.push(
-      `<g transform="translate(${x.toFixed(3)},${y.toFixed(3)})" data-label-index="${i}">${inner}</g>`,
-    );
+    qrParts.push(`<g transform="${t}" data-label-index="${i}">${qrImage}</g>`);
+    textParts.push(`<g transform="${t}" data-label-index="${i}">${textFill}</g>`);
+    frameParts.push(`<g transform="${t}" data-label-index="${i}">${frameLine}</g>`);
   }
 
+  const STROKE = 0.1;
   const plateW = opts.plateW ?? LB_PLATE_W;
   const plateH = opts.plateH ?? LB_PLATE_H;
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -352,7 +362,18 @@ export function buildLightburnPlateSvg(items, opts = {}) {
      width="${plateW}mm" height="${plateH}mm"
      viewBox="0 0 ${plateW} ${plateH}">
   <!-- LightBurn plate ${plateW}x${plateH} mm — ${cols}x${rows} = ${cols * rows} labels (${labelW}x${labelH} mm) -->
-  ${groups.join('\n  ')}
+  <!-- CALQUE 1 GLOBAL : tous les QR + logos (mode IMAGE LightBurn) -->
+  <g id="QR_IMAGE" inkscape:label="QR_IMAGE" inkscape:groupmode="layer" style="image-rendering:pixelated">
+    ${qrParts.join('\n    ')}
+  </g>
+  <!-- CALQUE 2 GLOBAL : tous les textes (mode FILL LightBurn) -->
+  <g id="TEXT_FILL" inkscape:label="TEXT_FILL" inkscape:groupmode="layer" fill="#000000" stroke="none">
+    ${textParts.join('\n    ')}
+  </g>
+  <!-- CALQUE 3 GLOBAL : tous les cadres (mode LINE LightBurn) -->
+  <g id="FRAME_LINE" inkscape:label="FRAME_LINE" inkscape:groupmode="layer" fill="none" stroke="#000000" stroke-width="${STROKE}">
+    ${frameParts.join('\n    ')}
+  </g>
 </svg>`;
 }
 

@@ -38,12 +38,20 @@ test('LightBurn — SVG étiquette unitaire', () => {
   assert.ok(!svg.includes('opacity'), 'no opacity');
   assert.ok(!/transparent/i.test(svg), 'no transparent');
 
-  // Couleurs strictes
+  // Couleurs strictes : 4 couleurs autorisées
+  //   #000000 (QR raster + tag calque QR_IMAGE = C00 LightBurn → IMAGE)
+  //   #FFFFFF (QR raster blanc gravé)
+  //   #FF0000 (tag calque TEXT_FILL = C02 LightBurn → FILL)
+  //   #0000FF (tag calque FRAME_LINE = C01 LightBurn → LINE)
+  const ALLOWED = ['#000000', '#FFFFFF', '#FF0000', '#0000FF'];
   const colorMatches = svg.match(/#[0-9A-Fa-f]{6}/g) || [];
   for (const c of colorMatches) {
-    const up = c.toUpperCase();
-    assert.ok(['#000000', '#FFFFFF'].includes(up), `Color ${c} must be #000000 or #FFFFFF`);
+    assert.ok(ALLOWED.includes(c.toUpperCase()), `Color ${c} must be in ${ALLOWED.join(',')}`);
   }
+  // Vérifie les 3 calques avec leurs 3 couleurs distinctes
+  assert.ok(/id="QR_IMAGE"[^>]*style="image-rendering:pixelated"/.test(svg), 'QR_IMAGE layer present');
+  assert.ok(/id="TEXT_FILL"[^>]*fill="#FF0000"/.test(svg), 'TEXT_FILL layer must use #FF0000 (C02)');
+  assert.ok(/id="FRAME_LINE"[^>]*stroke="#0000FF"/.test(svg), 'FRAME_LINE layer must use #0000FF (C01)');
 
   // Image PNG raster + pixelated
   assert.ok(svg.includes('image-rendering:pixelated'));

@@ -677,12 +677,23 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           return res.status(400).json({ success: false, error: 'Données CSV vides' });
         }
 
+        // Filtre : ignorer les équipements en zone "Hors stock" (matériel déclassé)
+        const isHorsStock = (zone) => {
+          if (!zone) return false;
+          const z = String(zone)
+            .trim()
+            .toLowerCase()
+            .replace(/[\s_-]+/g, '');
+          return z === 'horsstock';
+        };
+
         // Collecter les familles, sous-familles, catégories uniques du CSV
         const familiesSet = new Map();
         const subfamiliesSet = new Map();
         const categoriesSet = new Map();
 
         for (const row of data) {
+          if (isHorsStock(row.zone)) continue;
           if (row.famille && row.famille.trim()) {
             const normalizedFamily = row.famille.trim();
             familiesSet.set(normalizedFamily.toUpperCase(), normalizedFamily);
@@ -747,11 +758,16 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
           let toCreate = 0,
             toUpdate = 0,
-            toSkip = 0;
+            toSkip = 0,
+            toSkipHorsStock = 0;
           const collisions = [];
 
           for (let i = 0; i < data.length; i++) {
             const row = data[i];
+            if (isHorsStock(row.zone)) {
+              toSkipHorsStock++;
+              continue;
+            }
             const nom = (row.nom || '').trim();
             if (!nom) {
               toSkip++;
@@ -787,6 +803,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
             toCreate,
             toUpdate,
             toSkip,
+            toSkipHorsStock,
             collisions,
             families: [...familiesSet.values()],
             subfamilies: [...subfamiliesSet.values()].map((v) => v.name),
@@ -817,6 +834,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         let created = 0,
           updated = 0,
           skipped = 0,
+          skippedHorsStock = 0,
           familiesCreated = 0,
           subfamiliesCreated = 0,
           categoriesCreated = 0;
@@ -886,6 +904,10 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         `);
 
           for (const row of data) {
+            if (isHorsStock(row.zone)) {
+              skippedHorsStock++;
+              continue;
+            }
             const nom = (row.nom || '').trim();
             if (!nom) {
               skipped++;
@@ -973,6 +995,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
             created,
             updated,
             skipped,
+            skippedHorsStock,
             familiesCreated,
             subfamiliesCreated,
             categoriesCreated,
@@ -987,10 +1010,11 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           created,
           updated,
           skipped,
+          skippedHorsStock,
           familiesCreated,
           subfamiliesCreated,
           categoriesCreated,
-          message: `Import terminé : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s), ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
+          message: `Import terminé : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s)${skippedHorsStock ? `, ${skippedHorsStock} hors stock ignoré(s)` : ''}, ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
         });
       } catch (error) {
         logger.error('Erreur import CSV:', error);

@@ -406,6 +406,64 @@ export async function alertMaintenanceCreated(db, maintenance, vehicleName, crea
   });
 }
 
+// ═══════════════════════════════════════
+// Contrôles Périodiques (équipements + véhicules)
+// ═══════════════════════════════════════
+
+const CONTROL_REMINDER_LABELS = {
+  REMINDER_30: { label: 'dans 30 jours', color: '#3b82f6', icon: '🗓️' },
+  REMINDER_7: { label: 'dans 7 jours', color: '#f59e0b', icon: '⏰' },
+  REMINDER_1: { label: 'demain', color: '#f97316', icon: '⚠️' },
+  LATE: { label: 'en retard', color: '#dc2626', icon: '🚨' },
+  MISSED: { label: 'manqué', color: '#7f1d1d', icon: '❌' },
+};
+
+/**
+ * Alerte contrôle périodique (rappel / retard / manqué).
+ * @param {*} db
+ * @param {{id, type_name, type_code, entity_type, entity_id, entity_name, next_due_date,
+ *          assigned_email, assigned_name}} control
+ * @param {'REMINDER_30'|'REMINDER_7'|'REMINDER_1'|'LATE'|'MISSED'} kind
+ * @returns {Promise<boolean>}
+ */
+export async function alertControlePeriodique(db, control, kind) {
+  const config = db.prepare('SELECT alert_controles FROM email_config WHERE id = 1').get();
+  if (!config || config.alert_controles === 0) return false;
+
+  const meta = CONTROL_REMINDER_LABELS[kind] || CONTROL_REMINDER_LABELS.REMINDER_7;
+  const recipients = new Set();
+  if (control.assigned_email) recipients.add(control.assigned_email);
+  // Toujours en copie aux admins pour les retards / manqués
+  if (kind === 'LATE' || kind === 'MISSED') {
+    for (const a of getAdminEmails(db)) recipients.add(a);
+  }
+  if (recipients.size === 0) return false;
+
+  const subject = `${meta.icon} Contrôle ${meta.label} — ${control.type_name} · ${control.entity_name || control.entity_id}`;
+  const ok = await sendEmail({
+    to: Array.from(recipients).join(','),
+    subject,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: ${meta.color}; padding: 20px; border-radius: 12px 12px 0 0;">
+          <h2 style="color: white; margin: 0;">${meta.icon} Contrôle ${meta.label}</h2>
+        </div>
+        <div style="background: #f8fafc; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0;">
+          <p><strong>Type :</strong> ${escapeHtml(control.type_name)} (${escapeHtml(control.type_code)})</p>
+          <p><strong>${control.entity_type === 'vehicle' ? 'Véhicule' : 'Équipement'} :</strong> ${escapeHtml(control.entity_name || control.entity_id)}</p>
+          <p><strong>Échéance :</strong> ${escapeHtml(control.next_due_date)}</p>
+          ${control.assigned_name ? `<p><strong>Responsable :</strong> ${escapeHtml(control.assigned_name)}</p>` : ''}
+          ${control.notes ? `<p><strong>Notes :</strong> ${escapeHtml(control.notes)}</p>` : ''}
+          <p style="color: #64748b; font-size: 12px; margin-top: 16px;">
+            Connectez-vous à eM@g pour effectuer ou planifier ce contrôle.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+  return ok;
+}
+
 export default {
   initEmailTransporter,
   getTransporter: () => ({ transporter, emailConfig }),
@@ -417,4 +475,5 @@ export default {
   alertLeaveDecision,
   alertSavTicketCreated,
   alertMaintenanceCreated,
+  alertControlePeriodique,
 };

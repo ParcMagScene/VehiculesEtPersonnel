@@ -124,6 +124,8 @@ import { setupEshopRoutes } from './eshopRoutes.js';
 import { startEshopCatalogAutoSync } from './eshopCatalogSync.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
+import { setupControlesPeriodiquesRoutes } from './controlesPeriodiquesRoutes.js';
+import { startControlesScheduler } from './services/controlesScheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -417,6 +419,7 @@ setupVehicleRoutes(
   requireMaintenanceAccess,
   requireNotReadOnly,
 );
+setupControlesPeriodiquesRoutes(app, authenticateToken, requireAdmin);
 setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS });
 setupTOTPRoutes(app, authenticateToken, requireAdmin);
 setupAffairesRoutes(app, authenticateToken, requireAdmin);
@@ -501,6 +504,7 @@ if (hasSSL) {
     cleanExpiredSessions();
     setInterval(cleanExpiredSessions, 30 * 60 * 1000);
     startEshopCatalogAutoSync();
+    startControlesScheduler(db);
   });
 
   // HTTP → HTTPS redirect (port 3002 redirige vers HTTPS)
@@ -525,6 +529,7 @@ if (hasSSL) {
     cleanExpiredSessions();
     setInterval(cleanExpiredSessions, 30 * 60 * 1000);
     startEshopCatalogAutoSync();
+    startControlesScheduler(db);
   });
 }
 

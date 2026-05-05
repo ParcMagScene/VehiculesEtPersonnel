@@ -1,6 +1,15 @@
 import './MobileEquipmentQR.css';
 
-import { AlertTriangle, ArrowLeft, FileText, Home, Loader, Settings, Wrench } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  FileText,
+  Home,
+  Loader,
+  Settings,
+  ShieldCheck,
+  Wrench,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button, InlineAlert, Input, Select, Spinner, Textarea } from '@/design-system';
@@ -9,6 +18,7 @@ import { EQUIPMENT_STATUS, STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import MobileControlsScreen from './MobileControlsScreen';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
 // URL: /#/mobile/equipment/EMAG-XXXXX
@@ -499,6 +509,18 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
     );
   }
 
+  // ═══ CONTRÔLES PÉRIODIQUES ═══
+  if (screen === 'controles') {
+    return (
+      <MobileControlsScreen
+        entityType="equipment"
+        entityId={String(equipment.id)}
+        entityLabel={`${equipment.name} — ${equipment.uid}`}
+        onBack={() => setScreen('menu')}
+      />
+    );
+  }
+
   // ═══ MENU PRINCIPAL ═══
   return (
     <div className="m-eq-qr">
@@ -597,6 +619,18 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
             </div>
           </Button>
         )}
+
+        <Button
+          variant="ghost"
+          className="m-eq-qr-menu-btn controles"
+          onClick={() => setScreen('controles')}
+        >
+          <ShieldCheck size={24} />
+          <div>
+            <strong>Contrôles périodiques</strong>
+            <span>Voir et effectuer les contrôles planifiés</span>
+          </div>
+        </Button>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { registerAdminMethods } from './admin.js';
 import { registerAffairesMethods } from './affaires.js';
 import { registerAnnuaireMethods } from './annuaire.js';
 import { ApiClient, getApiUrl } from './base.js';
+import { registerControlesMethods } from './controles.js';
 import { registerDisplayMethods } from './display.js';
 import { registerEquipmentMethods } from './equipment.js';
 import { registerInventoryMethods } from './inventory.js';
@@ -40,6 +41,7 @@ registerLocmatImportMethods(ApiClient);
 registerLabelsMethods(ApiClient);
 registerVideoMethods(ApiClient);
 registerSuiviMethods(ApiClient);
+registerControlesMethods(ApiClient);
 
 // Singleton
 export const api = new ApiClient();

@@ -76,6 +76,7 @@ const AnnuairePanel = lazy(() => import('./components/annuaire/AnnuairePanel'));
 const LocationsTab = lazy(() => import('./components/annuaire/LocationsTab'));
 const VideoPanel = lazy(() => import('./components/video/VideoPanel'));
 const SonosPanel = lazy(() => import('./components/sonos/SonosPanel'));
+const ControlsDashboard = lazy(() => import('./components/controles/ControlsDashboard'));
 const AffaireDetailDialog = lazy(() =>
   import('./components/affaires/AffaireDetailPanel').then((m) => ({
     default: m.AffaireDetailDialog,
@@ -977,6 +978,16 @@ function AppContent() {
                 <ErrorBoundary moduleName="Sonos">
                   <Suspense fallback={<LoadingOverlay label="Chargement du module Sonos..." />}>
                     <SonosPanel currentUser={currentUser} />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+
+              {activeModule === 'controles' && (
+                <ErrorBoundary moduleName="Contrôles">
+                  <Suspense
+                    fallback={<LoadingOverlay label="Chargement des contrôles périodiques..." />}
+                  >
+                    <ControlsDashboard user={currentUser} />
                   </Suspense>
                 </ErrorBoundary>
               )}

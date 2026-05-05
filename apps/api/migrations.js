@@ -16,6 +16,7 @@ import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serial
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
+import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
 import { runVideoMigrations } from './migrations/video-v1.js';
@@ -797,6 +798,9 @@ export function runPostInitMigrations(db) {
 
   // ═══ Module Inventaire Unifié ═══
   runInventoryMigrations(db);
+
+  // ═══ Module Contrôles Périodiques (équipements + véhicules) ═══
+  runControlesPeriodiquesMigrations(db);
 
   // ═══ Import intelligent Locmat (Locations + Serialise) ═══
   runLocmatImportMigrations(db);

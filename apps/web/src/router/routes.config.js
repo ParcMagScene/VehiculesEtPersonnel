@@ -16,6 +16,7 @@ import {
   MapPin,
   Package,
   Radio,
+  ShieldCheck,
   ShoppingCart,
   Truck,
   Video,
@@ -38,6 +39,7 @@ export const DESKTOP_MODULES = [
   { id: 'annuaire', label: 'Annuaire', icon: Building2 },
   { id: 'lieux', label: 'Lieux', icon: MapPin },
   { id: 'video', label: 'Vidéo', icon: Video },
+  { id: 'controles', label: 'Contrôles', icon: ShieldCheck },
 ];
 
 /**

@@ -41,7 +41,7 @@ export const LB_ROWS = 8;
 export const LB_LABEL_W = 50; // mm
 export const LB_LABEL_H = 25; // mm  (utiliser 33.33 pour spec alternative)
 export const LB_QR_SIZE = 25; // mm  (QR carré, prend toute la hauteur étiquette)
-export const LB_QR_QUIET_MM = 2.5; // mm — quiet zone à l'intérieur du PNG QR
+export const LB_QR_QUIET_MM = 1.0; // mm — quiet zone à l'intérieur du PNG QR
 
 // Résolution PNG : 600 DPI ⇒ 25mm × 23.622 px/mm ≈ 590 px. On force 600 px
 // pour avoir un multiple confortable et un rendu net en pixelated.
@@ -90,13 +90,13 @@ function xmlEscape(s) {
  * @param {object} [opts]
  * @param {number} [opts.sizePx] Côté du PNG (px). Défaut 600.
  * @param {number} [opts.quietRatio] Quiet zone en fraction du PNG. Défaut 0.10.
- * @param {number} [opts.logoRatio]  Côté du carré logo en fraction du PNG. Défaut 0.22.
+ * @param {number} [opts.logoRatio]  Côté du carré logo en fraction du PNG. Défaut 0.28.
  * @returns {string} data URI `data:image/png;base64,…`
  */
 export function buildQrLogoPng(qrValue, opts = {}) {
   const sizePx = Math.max(64, Math.floor(opts.sizePx ?? LB_PNG_PX));
   const quietRatio = opts.quietRatio ?? LB_QR_QUIET_MM / LB_QR_SIZE; // 2.5/25 = 0.10
-  const logoRatio = opts.logoRatio ?? 0.22;
+  const logoRatio = opts.logoRatio ?? 0.28;
 
   // 1) Génération matrice QR (ECC H pour tolérer le masque logo central).
   const qr = QRCode.create(String(qrValue || ' '), { errorCorrectionLevel: 'H' });
@@ -141,25 +141,28 @@ export function buildQrLogoPng(qrValue, opts = {}) {
     }
   }
 
-  // 5) Overlay logo (carré central noir + motif logo en blanc).
+  // 5) Overlay logo (carré central blanc plus grand que le logo + motif logo en noir).
   const logo = loadLogo();
   const logoPx = Math.floor(sizePx * logoRatio);
-  const lx = Math.floor((sizePx - logoPx) / 2);
-  const ly = Math.floor((sizePx - logoPx) / 2);
+  // Le fond blanc est agrandi de ~25% pour encadrer clairement le logo
+  // (sinon le motif sombre se confond avec les modules QR adjacents).
+  const bgPx = Math.floor(logoPx * 1.25);
+  const bx = Math.floor((sizePx - bgPx) / 2);
+  const by = Math.floor((sizePx - bgPx) / 2);
 
-  // 5a) Remplir d'abord le carré central en NOIR (efface les modules QR sous-jacents).
-  for (let y = ly; y < ly + logoPx; y++) {
+  // 5a) Remplir d'abord le carré central en BLANC (efface les modules QR sous-jacents).
+  for (let y = by; y < by + bgPx; y++) {
     const rowOff = y * sizePx * 4;
-    for (let x = lx; x < lx + logoPx; x++) {
+    for (let x = bx; x < bx + bgPx; x++) {
       const i = rowOff + x * 4;
-      buf[i] = 0;
-      buf[i + 1] = 0;
-      buf[i + 2] = 0;
+      buf[i] = 255;
+      buf[i + 1] = 255;
+      buf[i + 2] = 255;
       buf[i + 3] = 255;
     }
   }
 
-  // 5b) Dessiner le logo binarisé+inversé en BLANC sur ce carré noir.
+  // 5b) Dessiner le logo binarisé en NOIR sur ce carré blanc.
   if (logo) {
     // Préserve le ratio du logo dans le carré disponible.
     const aspect = logo.width / logo.height;
@@ -170,7 +173,7 @@ export function buildQrLogoPng(qrValue, opts = {}) {
     const dx = Math.floor((sizePx - drawW) / 2);
     const dy = Math.floor((sizePx - drawH) / 2);
 
-    // Nearest-neighbor + binarisation (luminance < 128 = pixel "logo" → blanc gravé).
+    // Nearest-neighbor + binarisation (luminance < 128 = pixel "logo" → noir).
     for (let y = 0; y < drawH; y++) {
       const sy = Math.min(logo.height - 1, Math.floor((y * logo.height) / drawH));
       const dstRow = (dy + y) * sizePx * 4;
@@ -182,17 +185,17 @@ export function buildQrLogoPng(qrValue, opts = {}) {
         const g = logo.data[si + 1];
         const b = logo.data[si + 2];
         const a = logo.data[si + 3];
-        if (a < 128) continue; // pixel transparent → garde fond noir
+        if (a < 128) continue; // pixel transparent → garde fond blanc
         const lum = (r * 299 + g * 587 + b * 114) / 1000;
         if (lum < 128) {
-          // pixel sombre du logo source → on l'AFFICHE en blanc (= gravé)
+          // pixel sombre du logo source → on l'AFFICHE en noir
           const di = dstRow + (dx + x) * 4;
-          buf[di] = 255;
-          buf[di + 1] = 255;
-          buf[di + 2] = 255;
+          buf[di] = 0;
+          buf[di + 1] = 0;
+          buf[di + 2] = 0;
           buf[di + 3] = 255;
         }
-        // sinon (pixel clair du logo) → reste noir (fond du carré)
+        // sinon (pixel clair du logo) → reste blanc (fond du carré)
       }
     }
   }
@@ -219,44 +222,66 @@ export function buildLightburnLabelLayerFragments(item, labelW = LB_LABEL_W, lab
   const qrX = 0;
   const qrY = (labelH - qrSize) / 2;
 
-  const textX = qrSize + 2;
+  const textX = qrSize + 1;
   const textW = labelW - textX - 1;
 
   const uid = String(item.uid || '').trim();
   const serial = String(item.serial || '').trim();
   const mag = String(item.magNumber || '').trim();
+  const ref = String(item.reference || '').trim();
 
   const FONT = "'Liberation Sans', 'DejaVu Sans', Arial, Helvetica, sans-serif";
+  const FS_REF_BASE = 3.2;
+  const FS_MAG_BASE = 6.5;
   const FS_UID_BASE = 2.8;
   const FS_SN_BASE = 2.5;
-  const FS_MAG_BASE = 4.5;
-  const FS_MIN = 1.6;
+  const FS_MIN = 1.4;
   const CHAR_RATIO = 0.6;
 
-  const renderText = (str, y, fsBase, weight = 400) => {
+  // x="left" + anchor "start" par défaut. Pour MAG, on passe anchor="middle"
+  // et x = labelW/2 pour centrer horizontalement sur toute la largeur.
+  const renderText = (str, y, fsBase, weight = 400, opts = {}) => {
     if (!str) return { svg: '', fs: 0 };
+    const maxW = opts.maxW ?? textW;
+    const x = opts.x ?? textX;
+    const anchor = opts.anchor ?? 'start';
     const estW = str.length * CHAR_RATIO * fsBase;
     let fs = fsBase;
-    if (estW > textW) fs = Math.max(FS_MIN, textW / (str.length * CHAR_RATIO));
-    const targetW = Math.min(str.length * CHAR_RATIO * fs, textW);
-    const svg = `<text x="${textX.toFixed(3)}" y="${y.toFixed(3)}" font-family="${FONT}" font-size="${fs.toFixed(2)}" font-weight="${weight}" fill="#000000" textLength="${targetW.toFixed(3)}" lengthAdjust="spacingAndGlyphs">${xmlEscape(str)}</text>`;
+    if (estW > maxW) fs = Math.max(FS_MIN, maxW / (str.length * CHAR_RATIO));
+    const targetW = Math.min(str.length * CHAR_RATIO * fs, maxW);
+    const svg = `<text x="${x.toFixed(3)}" y="${y.toFixed(3)}" font-family="${FONT}" font-size="${fs.toFixed(2)}" font-weight="${weight}" fill="#000000" text-anchor="${anchor}" textLength="${targetW.toFixed(3)}" lengthAdjust="spacingAndGlyphs">${xmlEscape(str)}</text>`;
     return { svg, fs };
   };
 
-  const uidStr = uid ? `UID: ${uid}` : '';
-  const snStr = serial ? `SN: ${serial}` : '';
-  const magStr = mag ? `MAG: ${mag}` : '';
+  // Layout : REF en haut, SN en bas, UID juste au-dessus de SN, MAG centré
+  // horizontalement sur toute la largeur, verticalement entre REF et UID.
+  const LH = 1.3;
+  const PAD_V = LB_QR_QUIET_MM; // 2.5 mm — comme la quiet zone du QR
 
-  const TOP_PAD = 3.5;
-  const LH = 1.4;
-  const uidR = renderText(uidStr, TOP_PAD, FS_UID_BASE, 600);
-  const snBaselineY = TOP_PAD + (uidR.fs || FS_UID_BASE) + LH * 0.5;
+  // SN en bas
+  const snStr = serial ? `SN: ${serial}` : '';
+  const snBaselineY = labelH - PAD_V - FS_SN_BASE * 0.2;
   const snR = renderText(snStr, snBaselineY, FS_SN_BASE, 400);
-  const magBaselineY = labelH - 2;
-  const magR = renderText(magStr, magBaselineY, FS_MAG_BASE, 700);
+
+  // UID juste au-dessus de SN
+  const uidBaselineY = snBaselineY - (snR.fs || FS_SN_BASE) - LH * 0.3;
+  const uidR = renderText(uid, uidBaselineY, FS_UID_BASE, 600);
+
+  // REF en haut
+  const refBaselineY = PAD_V + FS_REF_BASE * 0.8;
+  const refR = renderText(ref, refBaselineY, FS_REF_BASE, 700);
+
+  // MAG centré horizontalement dans la zone texte (entre QR et bord droit),
+  // verticalement entre REF et UID.
+  const magBaselineY = (refBaselineY + uidBaselineY) / 2 + FS_MAG_BASE * 0.35;
+  const magR = renderText(mag, magBaselineY, FS_MAG_BASE, 700, {
+    x: textX + textW / 2,
+    anchor: 'middle',
+    maxW: textW,
+  });
 
   // Texte en ROUGE (#FF0000 = C02 LightBurn → mode FILL)
-  const textFill = [uidR.svg, snR.svg, magR.svg]
+  const textFill = [refR.svg, magR.svg, uidR.svg, snR.svg]
     .filter(Boolean)
     .join('\n      ')
     .replace(/fill="#000000"/g, 'fill="#FF0000"');

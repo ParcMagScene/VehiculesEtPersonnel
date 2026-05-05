@@ -290,6 +290,7 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
           const unitUid = r.serial_uid || r.equipment_uid || '';
           const qrUid = r.equipment_uid || unitUid;
           return {
+            reference: r.equipment_reference || '',
             uid: unitUid,
             serial,
             magNumber: mag,

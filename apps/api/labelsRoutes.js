@@ -16,6 +16,7 @@
 import db from './database.js';
 import logger from './logger.js';
 import { buildLabelSvg, buildPlateSvg, computeLayout } from './services/labelGenerator.js';
+import { buildEquipmentQrPayload } from './services/qrcodeGenerator.js';
 
 // Validation simple du format mag_number : 1 lettre + 2 ou 3 chiffres,
 // ou null/empty pour effacer. Tolérant aux espaces autour.
@@ -181,15 +182,17 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
               serial = det.serial;
             }
           }
-          // UID affiché et encodé dans le QR : celui du SERIAL (unique par unité),
-          // sinon fallback sur celui de l'équipement référence.
+          // UID affiché : celui du SERIAL (unique par unité), sinon fallback equipment.
+          // QR payload : URL absolue vers la fiche mobile de l'ÉQUIPEMENT (cohérence
+          // avec EquipmentDetail / EquipmentLabelPrint / EquipmentBatchLabels).
           const unitUid = r.serial_uid || r.equipment_uid || '';
+          const qrUid = r.equipment_uid || unitUid;
           return {
             reference: r.equipment_reference || '',
             uid: unitUid,
             serial,
             magNumber: mag,
-            qrPayload: unitUid || serial || '',
+            qrPayload: qrUid ? buildEquipmentQrPayload(qrUid) : '',
           };
         });
 
@@ -212,12 +215,17 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
   // Body : { uid?, serial?, magNumber? } → SVG d'une étiquette (preview).
   app.post('/api/labels/generate-one', authenticateToken, async (req, res) => {
     try {
+      const uid = String(req.body?.uid || '').trim();
+      const serial = String(req.body?.serial || '').trim();
+      // QR payload : URL absolue vers la fiche mobile (même format que les autres
+      // surfaces). Si le client fournit explicitement qrPayload, on respecte sa valeur.
+      const explicitPayload = String(req.body?.qrPayload || '').trim();
+      const qrPayload = explicitPayload || (uid ? buildEquipmentQrPayload(uid) : serial) || ' ';
       const item = {
-        uid: String(req.body?.uid || '').trim(),
-        serial: String(req.body?.serial || '').trim(),
+        uid,
+        serial,
         magNumber: String(req.body?.magNumber || '').trim(),
-        qrPayload:
-          String(req.body?.qrPayload || req.body?.uid || req.body?.serial || '').trim() || ' ',
+        qrPayload,
       };
       const svg = await buildLabelSvg(item);
       res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');

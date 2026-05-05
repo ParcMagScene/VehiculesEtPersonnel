@@ -7,6 +7,7 @@ import { registerDisplayMethods } from './display.js';
 import { registerEquipmentMethods } from './equipment.js';
 import { registerInventoryMethods } from './inventory.js';
 import { registerLocmatImportMethods } from './locmatImport.js';
+import { registerLabelsMethods } from './labels.js';
 import { registerLeavesMethods } from './leaves.js';
 import { registerMailingMethods } from './mailing.js';
 import { registerMessagingMethods } from './messaging.js';
@@ -36,6 +37,7 @@ registerDisplayMethods(ApiClient);
 registerSonosMethods(ApiClient);
 registerInventoryMethods(ApiClient);
 registerLocmatImportMethods(ApiClient);
+registerLabelsMethods(ApiClient);
 registerVideoMethods(ApiClient);
 registerSuiviMethods(ApiClient);
 

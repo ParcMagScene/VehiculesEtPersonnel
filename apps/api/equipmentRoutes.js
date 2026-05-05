@@ -24,6 +24,7 @@ import { alertSavTicketCreated } from './emailService.js';
 import logger from './logger.js';
 import { equipmentSchema } from './schemas/crud.js';
 import { equipmentImportSchema, savImportSchema, validate } from './schemas/imports.js';
+import { getNextUid } from './services/uidCounter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -352,11 +353,9 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           req.user.id,
         );
 
-      // Générer l'UID unique basé sur l'ID (ou synchroniser avec le serial si c'est un EMAG)
+      // Générer l'UID unique (ou synchroniser avec le serial si c'est un EMAG)
       const emagMatch = serial_number && serial_number.match(/EMAG-\d{5}/i);
-      const uid = emagMatch
-        ? emagMatch[0].toUpperCase()
-        : 'EMAG-' + String(result.lastInsertRowid).padStart(5, '0');
+      const uid = emagMatch ? emagMatch[0].toUpperCase() : getNextUid(db);
       db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, result.lastInsertRowid);
 
       addToHistory(
@@ -446,7 +445,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       // S'assurer que le uid n'est jamais vide
       const currentEquip = db.prepare('SELECT uid FROM equipment WHERE id = ?').get(req.params.id);
       if (!currentEquip?.uid) {
-        const autoUid = 'EMAG-' + String(req.params.id).padStart(5, '0');
+        const autoUid = getNextUid(db);
         db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(autoUid, req.params.id);
       }
 
@@ -534,7 +533,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
       // Cas qty = 1 : attribution simple d'un UID sans duplication
       if (qty <= 1) {
-        const uid = 'EMAG-' + String(original.id).padStart(5, '0');
+        const uid = getNextUid(db);
         db.prepare(
           'UPDATE equipment SET uid = ?, stock_quantity = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         ).run(uid, original.id);
@@ -605,7 +604,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           );
 
           const newId = result.lastInsertRowid;
-          const uid = 'EMAG-' + String(newId).padStart(5, '0');
+          const uid = getNextUid(db);
           updateUidStmt.run(uid, newId);
 
           created.push({ id: newId, uid, name });
@@ -932,7 +931,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
                 .get(existing.id);
               if (!existUid?.uid) {
                 db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
-                  'EMAG-' + String(existing.id).padStart(5, '0'),
+                  getNextUid(db),
                   existing.id,
                 );
               }
@@ -951,9 +950,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
               // Générer UID (ou synchroniser avec serial EMAG)
               const newId = insResult.lastInsertRowid;
               const emagMatch = serialNumber && serialNumber.match(/EMAG-\d{5}/i);
-              const uid = emagMatch
-                ? emagMatch[0].toUpperCase()
-                : 'EMAG-' + String(newId).padStart(5, '0');
+              const uid = emagMatch ? emagMatch[0].toUpperCase() : getNextUid(db);
               db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, newId);
               if (resolved.brand_id) {
                 db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(

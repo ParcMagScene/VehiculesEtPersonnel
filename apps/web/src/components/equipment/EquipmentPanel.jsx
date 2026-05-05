@@ -18,6 +18,7 @@ import {
   Tag,
   Upload,
   Wrench,
+  Zap,
 } from 'lucide-react';
 import React, { lazy, Suspense } from 'react';
 
@@ -50,6 +51,7 @@ import { EquipmentDetailDialog, EquipmentSlidePanel } from './EquipmentDetail';
 import EquipmentFormModal from './EquipmentFormModal';
 import EquipmentGrid from './EquipmentGrid';
 import EquipmentImportModal from './EquipmentImportModal';
+import LabelsPrintPanel from './LabelsPrintPanel';
 const LocmatImportModal = lazy(() => import('./import/LocmatImportModal.jsx'));
 import EquipmentLabelPrint from './EquipmentLabelPrint';
 import EquipmentMediaManager from './EquipmentMediaManager';
@@ -832,6 +834,12 @@ const EquipmentPanel = ({
                   color: ACCENT_COLORS.violet,
                 },
                 { id: 'labels', label: 'Étiquettes', icon: Printer, color: ACCENT_COLORS.orange },
+                {
+                  id: 'laser',
+                  label: 'Étiquettes laser',
+                  icon: Zap,
+                  color: ACCENT_COLORS.orange,
+                },
                 { id: 'stats', label: 'Statistiques', icon: Hash, color: STATUS_COLORS.success },
                 { id: 'media', label: 'Médias', icon: ImageIcon, color: ACCENT_COLORS.pink },
               ].map((tab) => (
@@ -960,6 +968,13 @@ const EquipmentPanel = ({
                     equipment={equipment}
                     onPrintSingle={(eq) => setLabelPrintEquipment(eq)}
                   />
+                </div>
+              )}
+
+              {/* Onglet Étiquettes laser (LightBurn) */}
+              {mgmtTab === 'laser' && (
+                <div className="eq-management-section">
+                  <LabelsPrintPanel />
                 </div>
               )}
 

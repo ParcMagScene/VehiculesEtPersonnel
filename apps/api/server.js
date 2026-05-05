@@ -108,6 +108,7 @@ import {
 } from './routes.js';
 import { setupSonosRoutes } from './sonosRoutes.js';
 import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
+import { setupLabelsRoutes } from './labelsRoutes.js';
 import {
   setupStockCategoriesRoutes,
   setupStockImportRoutes,
@@ -382,6 +383,7 @@ setupStockItemsRoutes(app, authenticateToken, requireAdmin);
 setupStockMovementsRoutes(app, authenticateToken, requireAdmin);
 setupStockImportRoutes(app, authenticateToken, requireAdmin);
 setupLocmatImportRoutes(app, authenticateToken, requireAdmin);
+setupLabelsRoutes(app, authenticateToken, requireAdmin);
 setupStockStatsRoutes(app, authenticateToken);
 
 // Routes Module Planning (Affichage dynamique + Planification + Import BL)

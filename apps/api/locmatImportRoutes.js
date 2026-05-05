@@ -16,14 +16,13 @@
 //   • Pas de génération d'UID pour une référence existante
 // ═══════════════════════════════════════════════════════════════
 
-import { randomUUID } from 'crypto';
-
 import QRCode from 'qrcode';
 
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { locmatConfirmSchema, locmatPreviewSchema, validate } from './schemas/imports.js';
 import { diffWithDatabase } from './services/locmatImport.js';
+import { getNextUid } from './services/uidCounter.js';
 
 // ─── Helpers DB ───
 // On retourne les colonnes equipment renommées avec les clés génériques
@@ -137,17 +136,11 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           collisions = [],
         } = req.body;
 
-        // 1) Pré-générer UID + QR Code pour les newProducts (await hors transaction)
+        // 1) Pré-générer placeholder pour les newProducts (UID sera attribué
+        // après INSERT pour respecter le format EMAG-XXXXX basé sur l'id).
         const productsWithIds = [];
         for (const p of newProducts) {
-          const uid = randomUUID();
-          let qrcode = null;
-          try {
-            qrcode = await QRCode.toDataURL(uid, { errorCorrectionLevel: 'M', margin: 1 });
-          } catch (e) {
-            logger.warn(`QR generation failed for ${p.code}: ${e.message}`);
-          }
-          productsWithIds.push({ ...p, uid, qrcode });
+          productsWithIds.push({ ...p, uid: null, qrcode: null });
         }
 
         const insertEquip = db.prepare(`
@@ -156,6 +149,8 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
              location, status, uid, qrcode, is_serialized, created_by)
           VALUES (?, ?, ?, ?, ?, ?, 'available', ?, ?, ?, ?)
         `);
+        const updateEquipUid = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
+        const updateSerialUid = db.prepare('UPDATE equipment_serials SET uid = ? WHERE id = ?');
         const updateEquip = db.prepare(`
           UPDATE equipment SET
             name           = COALESCE(?, name),
@@ -204,6 +199,8 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         };
 
         const newProductIdByCode = new Map(); // code → new id
+        const newEquipmentIds = []; // pour générer UID/QR après INSERT
+        const newSerialIds = []; // pour générer UID après INSERT
 
         const apply = db.transaction(() => {
           // ── A. nouveaux produits ──
@@ -216,13 +213,16 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
                 p.price || 0,
                 p.quantity || 0,
                 p.location || null,
-                p.uid,
-                p.qrcode,
+                null, // uid attribué juste après
+                null, // qrcode généré après transaction (await)
                 p.isSerialized ? 1 : 0,
                 req.user.id,
               );
               const newId = insRes.lastInsertRowid;
+              const uid = getNextUid(db);
+              updateEquipUid.run(uid, newId);
               newProductIdByCode.set(p.code.toUpperCase(), newId);
+              newEquipmentIds.push({ id: newId, uid });
               result.createdProducts++;
             } catch (e) {
               result.errors.push(`Création ${p.code}: ${e.message}`);
@@ -302,6 +302,17 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
                   continue;
                 }
                 insertSerial.run(equipmentId, s.serial);
+                // Récupérer l'id du serial créé pour lui attribuer un UID EMAG-XXXXX
+                const created = db
+                  .prepare(
+                    "SELECT id FROM equipment_serials WHERE equipment_id = ? AND serial = ? AND status = 'active' ORDER BY id DESC LIMIT 1",
+                  )
+                  .get(equipmentId, s.serial);
+                if (created?.id) {
+                  const sUid = getNextUid(db);
+                  updateSerialUid.run(sUid, created.id);
+                  newSerialIds.push({ id: created.id, uid: sUid });
+                }
                 result.serialsAdded++;
               }
             } catch (e) {
@@ -357,6 +368,20 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         });
 
         apply();
+
+        // Génération asynchrone des QR Codes pour les nouveaux équipements
+        // (basée sur l'UID EMAG-XXXXX final, hors transaction).
+        if (newEquipmentIds.length > 0) {
+          const updateQr = db.prepare('UPDATE equipment SET qrcode = ? WHERE id = ?');
+          for (const { id, uid } of newEquipmentIds) {
+            try {
+              const qr = await QRCode.toDataURL(uid, { errorCorrectionLevel: 'M', margin: 1 });
+              updateQr.run(qr, id);
+            } catch (e) {
+              logger.warn(`QR generation failed for equipment #${id} (${uid}): ${e.message}`);
+            }
+          }
+        }
 
         addToHistory('locmat_import', null, 'import', result, req.user.id, req.user.name);
         logger.info(

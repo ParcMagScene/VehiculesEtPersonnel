@@ -10,6 +10,9 @@ import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
 import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
+import { runEquipmentSerialsMagNumberMigration } from './migrations/equipment-serials-mag-number-v1.js';
+import { runEquipmentSerialsUidMigration } from './migrations/equipment-serials-uid-v1.js';
+import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serials-uid-v2.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
@@ -798,6 +801,9 @@ export function runPostInitMigrations(db) {
   // ═══ Import intelligent Locmat (Locations + Serialise) ═══
   runLocmatImportMigrations(db);
   runEquipmentNumeroMagMigration(db);
+  runEquipmentSerialsMagNumberMigration(db);
+  runEquipmentSerialsUidMigration(db);
+  runEquipmentSerialsUidV2Migration(db);
 
   // ═══ Module Surveillance Vidéo ═══
   runVideoMigrations(db);

@@ -137,7 +137,16 @@ const EquipmentDetailContent = ({
           )}
           {showQR && qrUrl && (
             <div className="eq-qr-block">
-              <QRCodeSVG value={qrUrl} size={compact ? 120 : 180} level="M" includeMargin />
+              {eq.qrcode ? (
+                <img
+                  src={eq.qrcode}
+                  alt={`QR ${eq.uid}`}
+                  width={compact ? 120 : 180}
+                  height={compact ? 120 : 180}
+                />
+              ) : (
+                <QRCodeSVG value={qrUrl} size={compact ? 120 : 180} level="M" includeMargin />
+              )}
               <span className="eq-qr-url">{qrUrl}</span>
             </div>
           )}

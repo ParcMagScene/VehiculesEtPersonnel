@@ -32,4 +32,8 @@ export const SAV_TYPES = {
 
 export const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
-export const APP_BASE_URL = window.location.origin;
+// URL publique de l'application pour les payloads QR (mobile).
+// Priorité: VITE_PUBLIC_URL (build) > domaine prod par défaut.
+// On n'utilise PAS window.location.origin afin que les QR générés en dev/LAN
+// pointent quand même vers l'URL publique (Caddy + Let's Encrypt).
+export const APP_BASE_URL = import.meta.env.VITE_PUBLIC_URL || 'https://magsav.duckdns.org';

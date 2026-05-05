@@ -16,12 +16,11 @@
 //   • Pas de génération d'UID pour une référence existante
 // ═══════════════════════════════════════════════════════════════
 
-import QRCode from 'qrcode';
-
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { locmatConfirmSchema, locmatPreviewSchema, validate } from './schemas/imports.js';
 import { diffWithDatabase } from './services/locmatImport.js';
+import { buildEquipmentQrPayload, generateQrDataUrl } from './services/qrcodeGenerator.js';
 import { getNextUid } from './services/uidCounter.js';
 
 // ─── Helpers DB ───
@@ -375,7 +374,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           const updateQr = db.prepare('UPDATE equipment SET qrcode = ? WHERE id = ?');
           for (const { id, uid } of newEquipmentIds) {
             try {
-              const qr = await QRCode.toDataURL(uid, { errorCorrectionLevel: 'M', margin: 1 });
+              const qr = generateQrDataUrl(buildEquipmentQrPayload(uid));
               updateQr.run(qr, id);
             } catch (e) {
               logger.warn(`QR generation failed for equipment #${id} (${uid}): ${e.message}`);

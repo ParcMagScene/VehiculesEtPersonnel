@@ -29,6 +29,14 @@ const inputStyle = {
   borderRadius: 4,
   fontSize: 13,
 };
+// Styles partagés table historique (extraits de 6+ inline styles dupliqués)
+const histThStyle = {
+  padding: '6px 8px',
+  background: '#f8fafc',
+  textAlign: 'left',
+  borderBottom: '1px solid #e5e7eb',
+};
+const histTdStyle = { padding: '4px 8px', borderBottom: '1px solid #f1f5f9' };
 
 export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
   const [data, setData] = useState(null);
@@ -91,14 +99,14 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
 
   if (loading) {
     return (
-      <div style={{ padding: 32, textAlign: 'center' }}>
+      <div className="u-p-8 u-text-center">
         <Spinner /> Chargement du ticket…
       </div>
     );
   }
   if (!data) {
     return (
-      <div style={{ padding: 16 }}>
+      <div className="u-p-4">
         <InlineAlert type="error">{error || 'Ticket introuvable'}</InlineAlert>
         <Button onClick={onClose}>Fermer</Button>
       </div>
@@ -108,18 +116,11 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
   const { ticket, history, statusLabels } = data;
 
   return (
-    <div style={{ padding: 16 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 12,
-        }}
-      >
+    <div className="u-p-4">
+      <div className="u-flex-between u-mb-3">
         <h3 style={{ margin: 0 }}>
           Ticket SAV #{ticket.id}{' '}
-          <small style={{ color: '#64748b', fontWeight: 400 }}>
+          <small className="u-text-secondary" style={{ fontWeight: 400 }}>
             {ticket.locmat_code ? `· ${ticket.locmat_code}` : ''}
           </small>
         </h3>
@@ -130,6 +131,7 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
 
       {/* Infos en lecture seule */}
       <div
+        className="u-mb-4"
         style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
@@ -138,7 +140,6 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
           background: '#f8fafc',
           borderRadius: 6,
           fontSize: 12,
-          marginBottom: 16,
         }}
       >
         <div>
@@ -146,7 +147,7 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
           <br />
           {ticket.equipment_name || '—'}
           {ticket.equipment_reference && (
-            <small style={{ color: '#64748b' }}> · {ticket.equipment_reference}</small>
+            <small className="u-text-secondary"> · {ticket.equipment_reference}</small>
           )}
         </div>
         <div>
@@ -222,12 +223,12 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
       </div>
 
       {error && (
-        <div style={{ marginBottom: 12 }}>
+        <div className="u-mb-3">
           <InlineAlert type="error">{error}</InlineAlert>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 24 }}>
+      <div className="u-flex u-gap-2 u-justify-end" style={{ marginBottom: 24 }}>
         <Button variant="primary" onClick={handleSave} disabled={saving}>
           {saving ? <Spinner size="sm" /> : 'Enregistrer'}
         </Button>
@@ -235,95 +236,33 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
 
       {/* Historique */}
       <h4 style={{ margin: '16px 0 8px 0' }}>Historique ({history.length})</h4>
-      <div
-        style={{ maxHeight: 300, overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}
-      >
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+      <div className="u-overflow-auto u-border u-radius-md" style={{ maxHeight: 300 }}>
+        <table className="u-table-base" style={{ fontSize: 12 }}>
           <thead>
             <tr>
-              <th
-                style={{
-                  padding: '6px 8px',
-                  background: '#f8fafc',
-                  textAlign: 'left',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
-                Date
-              </th>
-              <th
-                style={{
-                  padding: '6px 8px',
-                  background: '#f8fafc',
-                  textAlign: 'left',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
-                Champ
-              </th>
-              <th
-                style={{
-                  padding: '6px 8px',
-                  background: '#f8fafc',
-                  textAlign: 'left',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
-                Avant
-              </th>
-              <th
-                style={{
-                  padding: '6px 8px',
-                  background: '#f8fafc',
-                  textAlign: 'left',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
-                Après
-              </th>
-              <th
-                style={{
-                  padding: '6px 8px',
-                  background: '#f8fafc',
-                  textAlign: 'left',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
-                Source
-              </th>
-              <th
-                style={{
-                  padding: '6px 8px',
-                  background: '#f8fafc',
-                  textAlign: 'left',
-                  borderBottom: '1px solid #e5e7eb',
-                }}
-              >
-                Par
-              </th>
+              <th style={histThStyle}>Date</th>
+              <th style={histThStyle}>Champ</th>
+              <th style={histThStyle}>Avant</th>
+              <th style={histThStyle}>Après</th>
+              <th style={histThStyle}>Source</th>
+              <th style={histThStyle}>Par</th>
             </tr>
           </thead>
           <tbody>
             {history.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ padding: 16, textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={6} className="u-p-4 u-text-center u-text-muted">
                   Aucune modification enregistrée.
                 </td>
               </tr>
             )}
             {history.map((h) => (
               <tr key={h.id}>
-                <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>
-                  {new Date(h.timestamp).toLocaleString('fr-FR')}
-                </td>
-                <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>{h.field}</td>
-                <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>
-                  {h.old_value || '—'}
-                </td>
-                <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>
-                  {h.new_value || '—'}
-                </td>
-                <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>
+                <td style={histTdStyle}>{new Date(h.timestamp).toLocaleString('fr-FR')}</td>
+                <td style={histTdStyle}>{h.field}</td>
+                <td style={histTdStyle}>{h.old_value || '—'}</td>
+                <td style={histTdStyle}>{h.new_value || '—'}</td>
+                <td style={histTdStyle}>
                   <span
                     style={{
                       padding: '1px 5px',
@@ -335,7 +274,7 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
                     {h.source}
                   </span>
                 </td>
-                <td style={{ padding: '4px 8px', borderBottom: '1px solid #f1f5f9' }}>
+                <td style={histTdStyle}>
                   {h.user_name || (h.import_id ? `import #${h.import_id}` : '—')}
                 </td>
               </tr>

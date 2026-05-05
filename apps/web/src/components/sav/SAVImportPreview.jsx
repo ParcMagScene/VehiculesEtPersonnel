@@ -104,17 +104,17 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
 
   if (confirmResult) {
     return (
-      <div style={{ padding: 24, textAlign: 'center' }}>
+      <div className="u-text-center u-p-6">
         <CheckCircle size={48} color="#16a34a" />
         <h3>Import #{confirmResult.importId} appliqué</h3>
-        <p style={{ color: '#475569' }}>
+        <p className="u-text-secondary">
           Créés : <strong>{confirmResult.counts.created}</strong> · Màj :{' '}
           <strong>{confirmResult.counts.updated}</strong> · Clôturés :{' '}
           <strong>{confirmResult.counts.closed}</strong> · Collisions résolues :{' '}
           <strong>{confirmResult.counts.collisions_resolved}</strong> · Ignorés :{' '}
           <strong>{confirmResult.counts.skipped}</strong>
         </p>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+        <div className="u-flex u-gap-2 u-justify-center u-mt-4">
           <Button variant="secondary" onClick={downloadPdf}>
             <Download size={14} /> Télécharger le rapport PDF
           </Button>
@@ -127,17 +127,17 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
   }
 
   return (
-    <div style={{ padding: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div className="u-p-4">
+      <div className="u-flex-between">
         <h3 style={{ margin: 0 }}>Aperçu de l'import — {file?.name || 'CSV'}</h3>
-        <span style={{ color: '#64748b', fontSize: 12 }}>
+        <span className="u-text-secondary u-font-xs">
           {counts.total} ligne{counts.total > 1 ? 's' : ''} traitée{counts.total > 1 ? 's' : ''} •{' '}
           {new Date(importedAt).toLocaleString('fr-FR')}
         </span>
       </div>
 
       {/* Onglets + compteurs */}
-      <div style={{ display: 'flex', gap: 4, margin: '16px 0', flexWrap: 'wrap' }}>
+      <div className="u-flex u-gap-1 u-flex-wrap" style={{ margin: '16px 0' }}>
         {TABS.map((t) => {
           const count = (preview[t.key] || []).length;
           const active = tab === t.key;
@@ -164,7 +164,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
       </div>
 
       {/* Options décisions */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 12, fontSize: 13 }}>
+      <div className="u-flex u-gap-4 u-mb-3" style={{ fontSize: 13 }}>
         <label>
           <input
             type="checkbox"
@@ -192,15 +192,13 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
       </div>
 
       {/* Tableau onglet courant */}
-      <div
-        style={{ maxHeight: 380, overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: 6 }}
-      >
+      <div className="u-overflow-auto u-border u-radius-md" style={{ maxHeight: 380 }}>
         {items.length === 0 ? (
-          <div style={{ padding: 32, textAlign: 'center', color: '#94a3b8' }}>
+          <div className="u-p-8 u-text-center u-text-muted">
             Aucun élément dans cette catégorie.
           </div>
         ) : tab === 'errors' ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="u-table-base">
             <thead>
               <tr>
                 <th style={th}>Ligne</th>
@@ -217,7 +215,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
             </tbody>
           </table>
         ) : tab === 'closedTickets' ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="u-table-base">
             <thead>
               <tr>
                 <th style={th}>Ticket #</th>
@@ -242,7 +240,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
             </tbody>
           </table>
         ) : tab === 'collisions' ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="u-table-base">
             <thead>
               <tr>
                 <th style={th}>Ticket #</th>
@@ -278,7 +276,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
             </tbody>
           </table>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="u-table-base">
             <thead>
               <tr>
                 <th style={th}>LocMat</th>
@@ -299,14 +297,14 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
                   <td style={td}>{r.serial_number || r.uid || '—'}</td>
                   <td style={td}>
                     {r.equipment_name ? (
-                      <span style={{ color: '#16a34a' }}>
+                      <span className="u-text-success">
                         ✓ {r.equipment_name}
-                        <small style={{ color: '#94a3b8', marginLeft: 4 }}>
+                        <small className="u-text-muted" style={{ marginLeft: 4 }}>
                           ({r.equipment_match})
                         </small>
                       </span>
                     ) : (
-                      <span style={{ color: '#dc2626' }}>
+                      <span className="u-text-danger">
                         <XCircle size={12} style={{ verticalAlign: 'middle' }} /> non lié
                       </span>
                     )}
@@ -325,7 +323,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
       </div>
 
       {confirmError && (
-        <div style={{ marginTop: 12 }}>
+        <div className="u-mt-3">
           <InlineAlert type="error">{confirmError}</InlineAlert>
         </div>
       )}

@@ -406,3 +406,42 @@
 .u-font-mono {
   font-family: var(--font-family-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 }
+
+/* ─── Borders ─────────────────────────────────────────── */
+.u-border {
+  border: 1px solid var(--theme-border);
+}
+.u-border-top {
+  border-top: 1px solid var(--theme-border);
+}
+.u-border-bottom {
+  border-bottom: 1px solid var(--theme-border);
+}
+.u-border-light {
+  border: 1px solid var(--theme-border-light);
+}
+
+/* ─── Radius ──────────────────────────────────────────── */
+.u-radius-sm {
+  border-radius: var(--radius-sm);
+}
+.u-radius-md {
+  border-radius: var(--radius-md);
+}
+.u-radius-lg {
+  border-radius: var(--radius-lg);
+}
+
+/* ─── Tables ──────────────────────────────────────────── */
+.u-table-base {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ─── Overflow ────────────────────────────────────────── */
+.u-overflow-auto {
+  overflow: auto;
+}
+.u-overflow-y-auto {
+  overflow-y: auto;
+}

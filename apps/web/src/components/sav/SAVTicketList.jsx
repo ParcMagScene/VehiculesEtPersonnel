@@ -61,10 +61,10 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
   };
 
   return (
-    <div style={{ padding: 16 }}>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', marginBottom: 12 }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: 12, color: '#475569' }}>Recherche</label>
+    <div className="u-p-4">
+      <div className="u-flex u-gap-6 u-mb-3" style={{ alignItems: 'flex-end' }}>
+        <div className="u-flex-1">
+          <label className="u-font-xs u-text-secondary">Recherche</label>
           <input
             type="text"
             value={q}
@@ -106,12 +106,10 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
         })}
       </div>
 
-      {error && <div style={{ color: '#dc2626', marginBottom: 8 }}>{error}</div>}
+      {error && <div className="u-text-danger u-mb-2">{error}</div>}
 
-      <div
-        style={{ border: '1px solid #e5e7eb', borderRadius: 6, overflow: 'auto', maxHeight: 600 }}
-      >
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="u-border u-radius-md u-overflow-auto" style={{ maxHeight: 600 }}>
+        <table className="u-table-base">
           <thead>
             <tr>
               <th style={th}>Ticket</th>
@@ -135,7 +133,7 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
             )}
             {!loading && tickets.length === 0 && (
               <tr>
-                <td style={{ ...td, textAlign: 'center', color: '#94a3b8' }} colSpan={9}>
+                <td className="u-text-center u-text-muted" style={td} colSpan={9}>
                   Aucun ticket.
                 </td>
               </tr>
@@ -145,12 +143,12 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
                 <tr
                   key={t.id}
                   onClick={() => onSelect && onSelect(t.id)}
-                  style={{ cursor: 'pointer' }}
+                  className="u-cursor-pointer"
                 >
                   <td style={td}>#{t.id}</td>
                   <td style={td}>{t.locmat_code || '—'}</td>
                   <td style={td}>
-                    {t.equipment_name || <span style={{ color: '#dc2626' }}>non lié</span>}
+                    {t.equipment_name || <span className="u-text-danger">non lié</span>}
                   </td>
                   <td style={td}>{t.serial_number || t.uid || '—'}</td>
                   <td style={td}>
@@ -170,7 +168,7 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
                   <td style={td}>{t.closed_at ? t.closed_at.slice(0, 10) : '—'}</td>
                   <td style={td}>{t.cost != null ? Number(t.cost).toFixed(2) + ' €' : '—'}</td>
                   <td style={td}>
-                    <small style={{ color: '#64748b' }}>{t.last_modified_source || 'emag'}</small>
+                    <small className="u-text-secondary">{t.last_modified_source || 'emag'}</small>
                   </td>
                 </tr>
               ))}

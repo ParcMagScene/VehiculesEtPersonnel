@@ -117,20 +117,20 @@ export default function MatchingEntitiesModal({ onClose, onLinked }) {
       }
     >
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 32 }}>
+        <div className="u-text-center u-p-8">
           <Spinner /> Analyse en cours...
         </div>
       ) : matches.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-secondary)' }}>
+        <div className="u-text-center u-p-8 u-text-secondary">
           <Network size={32} style={{ marginBottom: 8, opacity: 0.4 }} />
           <p>Aucune correspondance trouvée.</p>
-          <p style={{ fontSize: '0.85rem' }}>
+          <p className="u-font-sm">
             Aucune correspondance de nom entre clients, fournisseurs et prestataires.
           </p>
         </div>
       ) : (
         <>
-          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="u-flex-center u-gap-3 u-mb-3">
             <Checkbox
               checked={selected.size === matches.length}
               onChange={toggleAll}
@@ -142,8 +142,8 @@ export default function MatchingEntitiesModal({ onClose, onLinked }) {
               </Button>
             )}
           </div>
-          <div className="matching-table-wrapper" style={{ maxHeight: 450, overflowY: 'auto' }}>
-            <table className="matching-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="matching-table-wrapper u-overflow-y-auto" style={{ maxHeight: 450 }}>
+            <table className="matching-table u-table-base">
               <thead>
                 <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--border-color)' }}>
                   <th style={{ width: 40, padding: '8px 4px' }}></th>

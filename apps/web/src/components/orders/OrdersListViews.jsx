@@ -260,16 +260,16 @@ export const MyLinkedOrdersList = React.memo(({ orders, loading }) => {
   if (loading) return <div className="orders-loading">Chargement...</div>;
   if (!orders.length)
     return (
-      <div className="orders-empty" style={{ padding: '2rem 1rem' }}>
+      <div className="orders-empty u-p-8">
         <Package size={32} />
         <p>Aucune commande en cours liée à vos demandes</p>
-        <p className="u-text-muted u-mt-2" style={{ fontSize: '0.8rem' }}>
+        <p className="u-text-muted u-mt-2 u-font-sm">
           Les commandes créées à partir de vos demandes apparaîtront ici
         </p>
       </div>
     );
   return (
-    <div className="u-flex-col u-gap-3" style={{ padding: '0.5rem' }}>
+    <div className="u-flex-col u-gap-3 u-p-2">
       {orders.map((order) => {
         const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
         const completion =
@@ -360,7 +360,7 @@ export const MaterialRequestsList = React.memo(
     // Mode carte mobile pour utilisateurs simples
     if (isSimpleUser) {
       return (
-        <div className="u-flex-col" style={{ padding: '0.5rem', gap: '0.6rem' }}>
+        <div className="u-flex-col u-p-2" style={{ gap: '0.6rem' }}>
           {requests.map((req) => {
             const status = REQUEST_STATUS[req.status] || REQUEST_STATUS.pending;
             const priority = REQUEST_PRIORITY[req.priority] || REQUEST_PRIORITY.normal;

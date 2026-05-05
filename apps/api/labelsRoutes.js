@@ -16,6 +16,11 @@
 import db from './database.js';
 import logger from './logger.js';
 import { buildLabelSvg, buildPlateSvg, computeLayout } from './services/labelGenerator.js';
+import {
+  buildLightburnLabelSvg,
+  buildLightburnPlateSvg,
+  LIGHTBURN_LAYOUT,
+} from './services/lightburnLabelGenerator.js';
 import { buildEquipmentQrPayload } from './services/qrcodeGenerator.js';
 
 // Validation simple du format mag_number : 1 lettre + 2 ou 3 chiffres,
@@ -233,6 +238,98 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
     } catch (e) {
       logger.error('POST /api/labels/generate-one:', e.message);
       res.status(500).json({ error: 'Erreur de génération', detail: e.message });
+    }
+  });
+
+  // ═══ LightBurn (mode strict 3 calques pour gravure alu anodisé noir) ═══
+  // Même payload que /api/labels/generate (serialIds[]) mais sortie SVG
+  // structurée en 3 groupes nommés QR_IMAGE / TEXT_FILL / FRAME_LINE,
+  // QR + logo en PNG raster fusionné. Cf. apps/api/services/LIGHTBURN-LABELS.md.
+  app.post('/api/labels/lightburn/plate', authenticateToken, async (req, res) => {
+    try {
+      const ids = Array.isArray(req.body?.serialIds) ? req.body.serialIds.map(Number) : [];
+      if (ids.length === 0) return res.status(400).json({ error: 'Aucun serial sélectionné' });
+      const max = LIGHTBURN_LAYOUT.COLS * LIGHTBURN_LAYOUT.ROWS;
+      if (ids.length > max) {
+        return res.status(400).json({
+          error: 'Sélection trop grande',
+          detail: `Maximum ${max} étiquettes par plaque LightBurn (reçu : ${ids.length})`,
+        });
+      }
+
+      const placeholders = ids.map(() => '?').join(',');
+      const rows = db
+        .prepare(
+          `SELECT s.id, s.serial, s.mag_number, s.uid AS serial_uid,
+                  e.uid AS equipment_uid, e.name AS equipment_name,
+                  e.reference AS equipment_reference
+           FROM equipment_serials s
+           INNER JOIN equipment e ON e.id = s.equipment_id
+           WHERE s.id IN (${placeholders})`,
+        )
+        .all(...ids);
+      const byId = new Map(rows.map((r) => [r.id, r]));
+
+      const items = ids
+        .map((id) => byId.get(id))
+        .filter(Boolean)
+        .map((r) => {
+          let mag = r.mag_number || '';
+          let serial = r.serial || '';
+          if (!mag) {
+            const det = detectMagFromSerial(serial);
+            if (det.mag) {
+              mag = det.mag;
+              serial = det.serial;
+            }
+          }
+          const unitUid = r.serial_uid || r.equipment_uid || '';
+          const qrUid = r.equipment_uid || unitUid;
+          return {
+            uid: unitUid,
+            serial,
+            magNumber: mag,
+            qrPayload: qrUid ? buildEquipmentQrPayload(qrUid) : '',
+          };
+        });
+
+      if (items.length === 0) return res.status(404).json({ error: 'Aucun serial valide trouvé' });
+
+      // Optionnel : labelH alternatif (33.33 mm) pour plaque 4 colonnes × 6 lignes
+      const labelH = Number(req.body?.labelH) > 0 ? Number(req.body.labelH) : undefined;
+      const opts = labelH ? { labelH } : {};
+      const svg = buildLightburnPlateSvg(items, opts);
+
+      const filename = String(req.body?.filename || 'lightburn-plaque-200x200.svg');
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(svg);
+    } catch (e) {
+      logger.error('POST /api/labels/lightburn/plate:', e.message);
+      res.status(500).json({ error: 'Erreur de génération LightBurn', detail: e.message });
+    }
+  });
+
+  // POST /api/labels/lightburn/one — preview d'une étiquette LightBurn unique.
+  app.post('/api/labels/lightburn/one', authenticateToken, async (req, res) => {
+    try {
+      const uid = String(req.body?.uid || '').trim();
+      const serial = String(req.body?.serial || '').trim();
+      const explicitPayload = String(req.body?.qrPayload || '').trim();
+      const qrPayload = explicitPayload || (uid ? buildEquipmentQrPayload(uid) : serial) || ' ';
+      const item = {
+        uid,
+        serial,
+        magNumber: String(req.body?.magNumber || '').trim(),
+        qrPayload,
+      };
+      const labelH = Number(req.body?.labelH) > 0 ? Number(req.body.labelH) : undefined;
+      const svg = buildLightburnLabelSvg(item, labelH ? { labelH } : {});
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      res.send(svg);
+    } catch (e) {
+      logger.error('POST /api/labels/lightburn/one:', e.message);
+      res.status(500).json({ error: 'Erreur de génération LightBurn', detail: e.message });
     }
   });
 

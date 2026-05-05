@@ -37,7 +37,9 @@ export function registerLabelsMethods(ApiClient) {
      */
     async generateLabelsPlate(serialIds, filename = 'plaque-etiquettes-200x200.svg') {
       const apiUrl = getApiUrl();
-      const res = await fetch(`${apiUrl}/labels/generate`, {
+      // Route LightBurn stricte : 3 calques (QR_IMAGE / TEXT_FILL / FRAME_LINE)
+      // avec PNG QR+logo MagScene fusionné. Cf. apps/api/services/LIGHTBURN-LABELS.md.
+      const res = await fetch(`${apiUrl}/labels/lightburn/plate`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

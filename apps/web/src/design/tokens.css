@@ -87,6 +87,22 @@
   --toolbar-height: 56px;
   --header-height: 64px;
 
+  /* ─── Breakpoints (référence canonique) ───────────────
+     À utiliser dans toute nouvelle media query :
+       @media (min-width: 600px)  → tablette portrait
+       @media (min-width: 900px)  → tablette landscape
+       @media (min-width: 1200px) → desktop
+       @media (min-width: 1600px) → large desktop
+     Note : CSS ne permet pas var() dans @media ; ces tokens
+     servent de référence documentaire et pour usages JS. */
+  --bp-sm: 600px;
+  --bp-md: 900px;
+  --bp-lg: 1200px;
+  --bp-xl: 1600px;
+
+  /* ─── Cible tactile minimale (WCAG 2.5.5 / Apple HIG) ─ */
+  --tap-min: 44px;
+
   /* ─── Modals ────────────────────────────────────────── */
   --modal-width-sm: 400px;
   --modal-width-md: 600px;

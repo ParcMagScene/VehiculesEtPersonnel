@@ -1831,9 +1831,14 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   });
 
   // GET /api/equipment/by-uid/:uid — Lookup par UID (pour QR codes)
+  // Accepte 2 formats d'UID :
+  //   - equipment.uid           → équipement non sérialisé (1 UID = 1 référence)
+  //   - equipment_serials.uid   → unité physique d'un équipement sérialisé
+  //                                (renvoie l'équipement parent + infos serial)
   app.get('/api/equipment/by-uid/:uid', authenticateToken, (req, res) => {
     try {
-      const eq = db
+      const uid = req.params.uid;
+      let eq = db
         .prepare(
           `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
@@ -1842,9 +1847,43 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
         WHERE e.uid = ?
       `,
         )
-        .get(req.params.uid);
+        .get(uid);
+
+      // Fallback : UID d'unité sérialisée → résoudre vers l'équipement parent
+      let matchedSerial = null;
+      if (!eq) {
+        matchedSerial = db
+          .prepare(
+            `SELECT id, equipment_id, serial, mag_number, uid, status
+             FROM equipment_serials WHERE uid = ?`,
+          )
+          .get(uid);
+        if (matchedSerial) {
+          eq = db
+            .prepare(
+              `
+            SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
+            FROM equipment e
+            LEFT JOIN equipment_categories ec ON e.category_id = ec.id
+            WHERE e.id = ?
+          `,
+            )
+            .get(matchedSerial.equipment_id);
+        }
+      }
 
       if (!eq) return res.status(404).json({ success: false, error: 'Équipement non trouvé' });
+
+      if (matchedSerial) {
+        // Expose les infos de l'unité physique scannée pour que la fiche mobile
+        // puisse afficher l'UID sérialisé (et non celui du modèle).
+        eq.scanned_uid = matchedSerial.uid;
+        eq.scanned_serial = matchedSerial.serial;
+        eq.scanned_mag_number = matchedSerial.mag_number;
+        eq.scanned_serial_id = matchedSerial.id;
+      } else {
+        eq.scanned_uid = eq.uid;
+      }
 
       eq.assignments = db
         .prepare(

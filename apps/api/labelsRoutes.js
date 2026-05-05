@@ -188,14 +188,13 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
               serial = det.serial;
             }
           }
-          // UID affiché : celui du SERIAL (unique par unité), sinon fallback equipment.
-          // QR payload : URL absolue vers la fiche mobile de l'ÉQUIPEMENT (cohérence
-          // avec EquipmentDetail / EquipmentLabelPrint / EquipmentBatchLabels).
-          const unitUid = r.serial_uid || r.equipment_uid || '';
-          const qrUid = r.equipment_uid || unitUid;
+          // UID unique de l'unité physique : serial_uid si équipement sérialisé,
+          // sinon equipment_uid (équipements non sérialisés = 1 UID par référence).
+          // Le même UID est gravé sur l'étiquette ET encodé dans le QR.
+          const qrUid = r.serial_uid || r.equipment_uid || '';
           return {
             reference: r.equipment_reference || '',
-            uid: unitUid,
+            uid: qrUid,
             serial,
             magNumber: mag,
             qrPayload: qrUid ? buildEquipmentQrPayload(qrUid) : '',
@@ -287,11 +286,12 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
               serial = det.serial;
             }
           }
-          const unitUid = r.serial_uid || r.equipment_uid || '';
-          const qrUid = r.equipment_uid || unitUid;
+          // UID unique de l'unité physique : serial_uid si sérialisé, sinon equipment_uid.
+          // Même UID gravé sur l'étiquette ET encodé dans le QR.
+          const qrUid = r.serial_uid || r.equipment_uid || '';
           return {
             reference: r.equipment_reference || '',
-            uid: unitUid,
+            uid: qrUid,
             serial,
             magNumber: mag,
             qrPayload: qrUid ? buildEquipmentQrPayload(qrUid) : '',

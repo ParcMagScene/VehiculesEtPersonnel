@@ -4,12 +4,18 @@
 // Générateur SVG strictement compatible LightBurn pour gravure sur
 // aluminium anodisé noir.
 //
-//   • 3 calques nommés (Inkscape labels) :
-//       1. QR_IMAGE   → uniquement <image> PNG (QR + logo fusionnés)
-//       2. TEXT_FILL  → uniquement <text> noir (UID, S/N, MAG)
-//       3. FRAME_LINE → uniquement <rect> stroke noir (cadre)
+//   • 3 calques nommés (Inkscape labels) ET 3 COULEURS LightBurn distinctes :
+//       1. QR_IMAGE   → <image> PNG  (couleur tag #000000 = C00 → mode IMAGE)
+//       2. TEXT_FILL  → <text> rouge (couleur tag #FF0000 = C02 → mode FILL)
+//       3. FRAME_LINE → <rect> bleu  (couleur tag #0000FF = C01 → mode LINE)
+//   ⚠ LightBurn assigne les modes (Image / Fill / Line) en se basant sur la
+//      COULEUR du calque, pas sur l'id ni l'inkscape:label. Trois couleurs
+//      différentes ⇒ trois calques séparés dans LightBurn, chacun avec son
+//      propre mode et ses propres paramètres laser.
 //   • Aucune transparence, aucun filtre, aucun masque, aucun clipPath.
-//   • Couleurs : strictement #000000 et #FFFFFF.
+//   • PNG QR+logo : strictement #000000 / #FFFFFF (gravure réelle).
+//   • Couleurs SVG vectorielles (#FF0000, #0000FF) = uniquement tags de calque
+//      LightBurn, jamais gravées (le laser utilise les paramètres du calque).
 //   • QR + logo : PNG raster (via pngjs) embarqué en base64.
 //   • Plaque : 200×200 mm — 4 col × 8 lignes = 32 étiquettes 50×25 mm.
 //   • Marges externes : 0 mm. Espacement : 0 mm (étiquettes jointives, option B).
@@ -249,7 +255,11 @@ export function buildLightburnLabelLayerFragments(item, labelW = LB_LABEL_W, lab
   const magBaselineY = labelH - 2;
   const magR = renderText(magStr, magBaselineY, FS_MAG_BASE, 700);
 
-  const textFill = [uidR.svg, snR.svg, magR.svg].filter(Boolean).join('\n      ');
+  // Texte en ROUGE (#FF0000 = C02 LightBurn → mode FILL)
+  const textFill = [uidR.svg, snR.svg, magR.svg]
+    .filter(Boolean)
+    .join('\n      ')
+    .replace(/fill="#000000"/g, 'fill="#FF0000"');
 
   const pngDataUri = buildQrLogoPng(item.qrPayload || item.uid || item.serial || '');
   const qrImage = `<image href="data:image/png;base64,${pngDataUri.split(',')[1]}" x="${qrX.toFixed(3)}" y="${qrY.toFixed(3)}" width="${qrSize}" height="${qrSize}" preserveAspectRatio="none"/>`;
@@ -280,12 +290,12 @@ export function buildLightburnLabelInner(item, labelW = LB_LABEL_W, labelH = LB_
     <g id="QR_IMAGE" inkscape:label="QR_IMAGE" inkscape:groupmode="layer" style="image-rendering:pixelated">
       ${qrImage}
     </g>
-    <!-- CALQUE 2 : Texte (mode FILL LightBurn) -->
-    <g id="TEXT_FILL" inkscape:label="TEXT_FILL" inkscape:groupmode="layer" fill="#000000" stroke="none">
+    <!-- CALQUE 2 : Texte (LightBurn C02 #FF0000 → mode FILL) -->
+    <g id="TEXT_FILL" inkscape:label="TEXT_FILL" inkscape:groupmode="layer" fill="#FF0000" stroke="none">
       ${textFill}
     </g>
-    <!-- CALQUE 3 : Cadre (mode LINE LightBurn) -->
-    <g id="FRAME_LINE" inkscape:label="FRAME_LINE" inkscape:groupmode="layer" fill="none" stroke="#000000" stroke-width="${STROKE}">
+    <!-- CALQUE 3 : Cadre (LightBurn C01 #0000FF → mode LINE) -->
+    <g id="FRAME_LINE" inkscape:label="FRAME_LINE" inkscape:groupmode="layer" fill="none" stroke="#0000FF" stroke-width="${STROKE}">
       ${frameLine}
     </g>`;
 }
@@ -366,12 +376,12 @@ export function buildLightburnPlateSvg(items, opts = {}) {
   <g id="QR_IMAGE" inkscape:label="QR_IMAGE" inkscape:groupmode="layer" style="image-rendering:pixelated">
     ${qrParts.join('\n    ')}
   </g>
-  <!-- CALQUE 2 GLOBAL : tous les textes (mode FILL LightBurn) -->
-  <g id="TEXT_FILL" inkscape:label="TEXT_FILL" inkscape:groupmode="layer" fill="#000000" stroke="none">
+  <!-- CALQUE 2 GLOBAL : tous les textes (LightBurn C02 #FF0000 → mode FILL) -->
+  <g id="TEXT_FILL" inkscape:label="TEXT_FILL" inkscape:groupmode="layer" fill="#FF0000" stroke="none">
     ${textParts.join('\n    ')}
   </g>
-  <!-- CALQUE 3 GLOBAL : tous les cadres (mode LINE LightBurn) -->
-  <g id="FRAME_LINE" inkscape:label="FRAME_LINE" inkscape:groupmode="layer" fill="none" stroke="#000000" stroke-width="${STROKE}">
+  <!-- CALQUE 3 GLOBAL : tous les cadres (LightBurn C01 #0000FF → mode LINE) -->
+  <g id="FRAME_LINE" inkscape:label="FRAME_LINE" inkscape:groupmode="layer" fill="none" stroke="#0000FF" stroke-width="${STROKE}">
     ${frameParts.join('\n    ')}
   </g>
 </svg>`;

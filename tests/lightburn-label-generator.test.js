@@ -85,8 +85,8 @@ test('LightBurn — Plaque 200×200 mm 4×8 = 32 étiquettes', () => {
   assert.equal(rectCount, 32, '32 cadres rect attendus');
   assert.equal(imageCount, 32, '32 images QR attendues');
 
-  // Positions : marge 5mm + (50+1)*col → première étiquette x=5
-  assert.ok(svg.includes('translate(5.000,5.000)'));
-  // Dernière étiquette : col=3, row=7 → x=5+3*51=158, y=5+7*26=187
-  assert.ok(svg.includes('translate(158.000,187.000)'));
+  // Option B : marge 0 + gap 0 → première étiquette x=0,y=0
+  assert.ok(svg.includes('translate(0.000,0.000)'));
+  // Dernière étiquette : col=3, row=7 → x=3*50=150, y=7*25=175
+  assert.ok(svg.includes('translate(150.000,175.000)'));
 });

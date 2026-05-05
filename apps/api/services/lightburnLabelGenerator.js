@@ -12,7 +12,7 @@
 //   • Couleurs : strictement #000000 et #FFFFFF.
 //   • QR + logo : PNG raster (via pngjs) embarqué en base64.
 //   • Plaque : 200×200 mm — 4 col × 8 lignes = 32 étiquettes 50×25 mm.
-//   • Marges externes : 5 mm. Espacement : 1 mm.
+//   • Marges externes : 0 mm. Espacement : 0 mm (étiquettes jointives, option B).
 //
 // ⚠  Sur anodisé noir : noir = couche conservée, blanc = laser grave.
 //    Donc QR noir/blanc = lecture correcte (jamais inversé).
@@ -27,9 +27,9 @@ import { fileURLToPath } from 'node:url';
 // ─── Constantes LightBurn ───────────────────────────────────────────
 export const LB_PLATE_W = 200; // mm
 export const LB_PLATE_H = 200; // mm
-export const LB_PLATE_MARGIN = 5; // mm
-export const LB_COL_GAP = 1; // mm
-export const LB_ROW_GAP = 1; // mm
+export const LB_PLATE_MARGIN = 0; // mm — option B : étiquettes jointives, pas de découpe
+export const LB_COL_GAP = 0; // mm
+export const LB_ROW_GAP = 0; // mm
 export const LB_COLS = 4;
 export const LB_ROWS = 8;
 export const LB_LABEL_W = 50; // mm

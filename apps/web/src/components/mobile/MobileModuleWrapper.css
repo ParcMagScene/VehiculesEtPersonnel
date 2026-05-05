@@ -1,0 +1,380 @@
+/* ══════════════════════════════════════════════════════════
+   MobileModuleWrapper — Styles wrapper modules desktop + overrides
+   Utilisé par MobileEquipment, MobileInventory, MobileOrders…
+   ══════════════════════════════════════════════════════════ */
+
+/* Wrapper mobile pour modules desktop */
+.mobile-module-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.mobile-module-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--theme-bg-card);
+  border-bottom: 1px solid var(--theme-border);
+  flex-shrink: 0;
+}
+
+.mobile-module-header h2 {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--theme-text-primary);
+  margin: 0;
+}
+
+.mobile-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: var(--theme-border-light);
+  border-radius: var(--radius-md-lg);
+  color: var(--theme-text-subtle);
+  cursor: pointer;
+}
+
+.mobile-module-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.mobile-module-content .equipment-panel,
+.mobile-module-content .orders-panel {
+  min-height: auto;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+
+.mobile-module-content .eq-content-wrapper {
+  border: none;
+}
+
+/* ─── Supprimer toutes les marges entre conteneurs ─── */
+.mobile-module-content .eq-content {
+  padding: 0;
+}
+
+.mobile-module-content .eq-table-wrap {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+/* Table mobile : afficher uniquement le nom */
+.mobile-module-content .eq-table thead {
+  display: none;
+}
+
+.mobile-module-content .eq-table-row td {
+  display: none;
+}
+
+.mobile-module-content .eq-table-row td.eq-table-name {
+  display: table-cell;
+  width: 100%;
+  padding: var(--space-3) 14px;
+  font-size: var(--font-base);
+  font-weight: 500;
+}
+
+.mobile-module-content .eq-detail {
+  gap: 0;
+}
+
+.mobile-module-content .eq-detail-hero,
+.mobile-module-content .eq-detail-card,
+.mobile-module-content .eq-detail-hierarchy,
+.mobile-module-content .eq-detail-notes {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+/* Photos centrées dans la fiche détail */
+.mobile-module-content .eq-detail-hero {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.mobile-module-content .eq-detail-photo {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.mobile-module-content .eq-detail-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-module-content .eq-detail-identity {
+  align-items: center;
+  width: 100%;
+}
+
+.mobile-module-content .eq-tickets-table {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.mobile-module-content .orders-toolbar {
+  margin-bottom: 0;
+  padding: var(--space-1-5) var(--space-2);
+}
+
+.mobile-module-content .orders-tabs {
+  padding: var(--space-1-5) var(--space-2);
+}
+
+.mobile-module-content .orders-panel {
+  max-width: none;
+}
+
+.mobile-module-content .orders-table {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.mobile-module-content .eq-stats-row {
+  display: none;
+}
+
+.mobile-module-content .eq-tabs {
+  display: none;
+}
+
+.mobile-module-content .eq-btn-add:not(.eq-mobile-sav-request),
+.mobile-module-content [title='Plan du dépôt'] {
+  display: none;
+}
+
+/* Import SAV / Rapport / PDF SAV / +Ticket — masqués sur mobile */
+.mobile-module-content [title='Importer interventions SAV'],
+.mobile-module-content [title='Rapport maintenance matériel'],
+.mobile-module-content [title='Exporter PDF du matériel en SAV'],
+.mobile-module-content .eq-btn-add:not(.eq-mobile-sav-request) {
+  display: none;
+}
+
+/* Bouton Demande SAV mobile — style adapté */
+.mobile-module-content .eq-mobile-sav-request {
+  display: flex !important;
+  width: 100%;
+  justify-content: center;
+  padding: var(--space-2-5) var(--space-4);
+  font-size: var(--font-base);
+  border-radius: var(--radius-md);
+}
+
+/* ─── Toolbar mobile : pleine largeur, empilée ─── */
+.mobile-module-content .eq-toolbar {
+  padding: var(--space-1-5) 0;
+  gap: var(--space-1-5);
+  border-bottom: none;
+}
+
+.mobile-module-content .eq-toolbar-top {
+  display: none;
+}
+
+.mobile-module-content .eq-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  width: 100%;
+  padding: 0 var(--space-2);
+}
+
+/* Search — même style que les filtres */
+.mobile-module-content .eq-search {
+  width: 100%;
+  padding: var(--space-2) var(--space-2-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-card);
+}
+
+.mobile-module-content .eq-search input {
+  width: 100%;
+  font-size: var(--font-base);
+}
+
+/* Filtre cascade — 50% */
+.mobile-module-content .eq-cascade-filter {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-module-content .eq-cascade-btn {
+  width: 100%;
+  padding: var(--space-2) var(--space-2-5);
+  font-size: var(--font-base);
+  border-radius: var(--radius-sm);
+  justify-content: space-between;
+}
+
+/* Menu cascade L1 : pleine largeur, sous le bouton */
+.mobile-module-content .eq-cascade-menu.eq-cascade-l1 {
+  position: relative;
+  top: auto;
+  left: auto;
+  margin-top: var(--space-1);
+  width: 100%;
+  max-height: 50vh;
+  border-radius: var(--radius-md);
+}
+
+/* L2 / L3 : inline (plus de flyout latéral) */
+.mobile-module-content .eq-cascade-menu.eq-cascade-l2,
+.mobile-module-content .eq-cascade-menu.eq-cascade-l3 {
+  position: relative;
+  top: auto;
+  left: auto;
+  margin-left: 0;
+  border: none;
+  box-shadow: none;
+  padding-left: var(--space-3);
+  min-width: auto;
+  width: 100%;
+}
+
+.mobile-module-content .eq-cascade-item {
+  padding: var(--space-2-5) var(--space-3);
+  font-size: var(--font-base);
+}
+
+/* Flèche rotation accordion mobile */
+.mobile-module-content .eq-cascade-sub-arrow {
+  transition: transform 0.2s ease;
+}
+.mobile-module-content .eq-cascade-sub-arrow.eq-cascade-expanded {
+  transform: rotate(90deg);
+}
+
+/* Zone filter — 50% à côté du cascade */
+.mobile-module-content .eq-zone-filter {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-2-5);
+  font-size: var(--font-base);
+  border-radius: var(--radius-sm);
+}
+
+/* SAV status filter pleine largeur */
+.mobile-module-content .eq-filter {
+  width: 100%;
+  padding: var(--space-2) var(--space-2-5);
+  font-size: var(--font-base);
+  border-radius: var(--radius-sm);
+}
+
+/* ─── Dialog détail plein écran sur mobile ─── */
+.mobile-module-content .eq-dialog-overlay {
+  padding-top: 0;
+  align-items: stretch;
+}
+
+.mobile-module-content .eq-dialog {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  height: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.mobile-module-content .eq-dialog-header {
+  border-radius: 0;
+  padding: 14px var(--space-4);
+}
+
+.mobile-module-content .eq-dialog-body {
+  padding: 0;
+}
+
+.mobile-module-content .eq-dialog-body .eq-detail {
+  gap: 0;
+}
+
+.mobile-module-content .eq-dialog-body .eq-detail-hero,
+.mobile-module-content .eq-dialog-body .eq-detail-card,
+.mobile-module-content .eq-dialog-body .eq-detail-hierarchy,
+.mobile-module-content .eq-dialog-body .eq-detail-notes,
+.mobile-module-content .eq-dialog-body .eq-detail-section {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.mobile-module-content .eq-dialog-actions {
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid var(--theme-border);
+  padding: var(--space-3) var(--space-4);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mobile-module-content .eq-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0;
+  border: none;
+}
+
+.mobile-module-content .eq-actions-group + .eq-actions-group {
+  padding-left: 0;
+  padding-top: 0;
+  border-left: none;
+  border-top: none;
+}
+
+.mobile-module-content .eq-dialog-actions .eq-btn-primary,
+.mobile-module-content .eq-dialog-actions .eq-btn-secondary,
+.mobile-module-content .eq-dialog-actions .eq-btn-danger {
+  width: 100%;
+  justify-content: center;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-base);
+  border-radius: var(--radius-md-lg);
+}
+
+.mobile-module-content .eq-dialog-actions > .eq-btn-danger {
+  margin-left: 0;
+}
+
+/* Masquer slide panel sur mobile */
+.mobile-module-content .eq-slide-panel {
+  display: none;
+}
+
+.mobile-module-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--theme-text-secondary);
+  font-size: 0.95rem;
+}

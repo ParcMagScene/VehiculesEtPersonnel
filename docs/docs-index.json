@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-04-07",
+  "generated": "2026-04-20",
   "sections": {
     "api": {
       "path": "docs/api/",
@@ -19,17 +19,21 @@
         "docs/api/annuaire.md",
         "docs/api/video.md",
         "docs/api/display.md",
+        "docs/api/sonos.md",
+        "docs/api/suivi.md",
         "docs/api/attachments.md",
         "docs/api/supplier-catalog.md",
         "docs/api/inventory.md",
-        "docs/api/mailing.md"
+        "docs/api/mailing.md",
+        "docs/api/google.md",
+        "docs/api/totp.md"
       ]
     },
-    "database": {
-      "path": "docs/database/",
-      "index": "docs/database/README.md",
+    "architecture": {
+      "path": "docs/01-Architecture/",
       "files": [
-        "docs/database/SCHEMA.md"
+        "docs/01-Architecture/ARCHITECTURE.md",
+        "docs/01-Architecture/SCHEMA_DB.md"
       ]
     },
     "workflows": {
@@ -54,8 +58,8 @@
       ]
     }
   },
-  "totalFiles": 28,
-  "totalEndpoints": 243,
-  "totalTables": 87,
-  "totalModules": 16
+  "totalFiles": 94,
+  "totalEndpoints": 457,
+  "totalTables": 86,
+  "totalModules": 20
 }

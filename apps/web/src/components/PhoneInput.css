@@ -23,7 +23,9 @@
   font-size: var(--font-base);
   height: 100%;
   white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
 .phone-prefix-btn:hover {
@@ -62,7 +64,9 @@
   padding: 8px 12px;
   font-size: var(--font-base);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .phone-local-input:focus {
@@ -145,61 +149,61 @@
 }
 
 /* ===== Dark Mode ===== */
-[data-theme="dark"] .phone-prefix-btn {
+[data-theme='dark'] .phone-prefix-btn {
   background: var(--theme-bg-card);
   border-color: var(--theme-border);
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .phone-prefix-btn:hover {
+[data-theme='dark'] .phone-prefix-btn:hover {
   background: var(--theme-bg-tertiary);
   border-color: var(--theme-border-medium);
 }
 
-[data-theme="dark"] .phone-prefix-code {
+[data-theme='dark'] .phone-prefix-code {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .phone-local-input {
+[data-theme='dark'] .phone-local-input {
   background: var(--theme-bg-card);
   border-color: var(--theme-border);
   color: var(--theme-text-primary);
 }
 
-[data-theme="dark"] .phone-local-input:focus {
+[data-theme='dark'] .phone-local-input:focus {
   border-color: var(--primary, var(--theme-indigo));
   box-shadow: var(--focus-ring);
 }
 
-[data-theme="dark"] .phone-dropdown {
+[data-theme='dark'] .phone-dropdown {
   background: var(--theme-bg-card);
   border-color: var(--theme-border);
   box-shadow: 0 10px 25px var(--overlay-light);
 }
 
-[data-theme="dark"] .phone-dropdown-search {
+[data-theme='dark'] .phone-dropdown-search {
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
   border-bottom-color: var(--theme-border);
 }
 
-[data-theme="dark"] .phone-dropdown-item {
+[data-theme='dark'] .phone-dropdown-item {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .phone-dropdown-item:hover {
+[data-theme='dark'] .phone-dropdown-item:hover {
   background: var(--theme-bg-hover);
 }
 
-[data-theme="dark"] .phone-dropdown-item.active {
+[data-theme='dark'] .phone-dropdown-item.active {
   background: var(--theme-primary-dark);
 }
 
-[data-theme="dark"] .phone-dropdown-label {
+[data-theme='dark'] .phone-dropdown-label {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .phone-dropdown-code {
+[data-theme='dark'] .phone-dropdown-code {
   color: var(--theme-text-muted);
 }
 
@@ -209,16 +213,16 @@
     font-size: var(--font-xs);
     min-width: 28px;
   }
-  
+
   .phone-prefix-btn {
     padding: 6px 6px 6px 8px;
   }
-  
+
   .phone-local-input {
     font-size: var(--font-base);
     padding: 6px 10px;
   }
-  
+
   .phone-dropdown {
     min-width: 200px;
   }

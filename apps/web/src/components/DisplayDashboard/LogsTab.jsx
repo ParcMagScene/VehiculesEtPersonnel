@@ -1,9 +1,11 @@
 // LogsTab — Consultation des logs d'activité des écrans
-import { useState, useEffect, useCallback, memo } from 'react';
 import { Activity, ChevronLeft, ChevronRight } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, EmptyState, Table } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, EmptyState, Table } from '@/design-system';
 
 const PAGE_SIZE = 50;
 
@@ -55,7 +57,11 @@ function LogsTab({ refreshKey }) {
 
   if (logs.length === 0) {
     return (
-      <EmptyState icon={<Activity size={48} strokeWidth={1} />} title="Aucun log" description="L'historique des actions apparaîtra ici." />
+      <EmptyState
+        icon={<Activity size={48} strokeWidth={1} />}
+        title="Aucun log"
+        description="L'historique des actions apparaîtra ici."
+      />
     );
   }
 
@@ -72,23 +78,32 @@ function LogsTab({ refreshKey }) {
           </tr>
         </thead>
         <tbody>
-          {logs.map(log => {
+          {logs.map((log) => {
             let details = {};
-            try { details = JSON.parse(log.details || '{}'); } catch { /* ignore */ }
+            try {
+              details = JSON.parse(log.details || '{}');
+            } catch {
+              /* ignore */
+            }
 
             return (
               <tr key={log.id}>
                 <td className="log-date">
                   {new Date(log.created_at).toLocaleString('fr-FR', {
-                    day: '2-digit', month: '2-digit', year: '2-digit',
-                    hour: '2-digit', minute: '2-digit',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
                   })}
                 </td>
                 <td className="log-action">{ACTION_LABELS[log.action] || log.action}</td>
                 <td>{log.user_name || '—'}</td>
                 <td>{log.screen_name || '—'}</td>
                 <td className="log-details">
-                  {details.name || details.filename || details.title || details.count != null ? `(${details.count} items)` : ''}
+                  {details.name || details.filename || details.title || details.count != null
+                    ? `(${details.count} items)`
+                    : ''}
                 </td>
               </tr>
             );
@@ -98,11 +113,17 @@ function LogsTab({ refreshKey }) {
 
       {totalPages > 1 && (
         <div className="logs-pagination">
-          <Button variant="ghost" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+          <Button variant="ghost" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
             <ChevronLeft size={14} /> Précédent
           </Button>
-          <span>Page {page + 1} / {totalPages}</span>
-          <Button variant="ghost" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+          <span>
+            Page {page + 1} / {totalPages}
+          </span>
+          <Button
+            variant="ghost"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage((p) => p + 1)}
+          >
             Suivant <ChevronRight size={14} />
           </Button>
         </div>

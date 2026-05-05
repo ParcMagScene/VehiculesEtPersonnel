@@ -108,7 +108,7 @@
   font-weight: 600;
   color: var(--theme-text-primary, var(--theme-text-dark));
 }
-.rp-period-filter input[type="date"] {
+.rp-period-filter input[type='date'] {
   padding: 5px 8px;
   border: 1px solid var(--theme-border, var(--theme-border));
   border-radius: var(--radius-sm);
@@ -184,7 +184,9 @@
   animation: rp-spin 1s linear infinite;
 }
 @keyframes rp-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Section */
@@ -345,9 +347,20 @@
   font-size: 0.7rem;
   font-weight: 600;
 }
-.rp-status.completed, .rp-status.done { background: var(--btn-success-bg); color: var(--theme-success-text); }
-.rp-status.pending, .rp-status.scheduled { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
-.rp-status.reported { background: var(--theme-danger-bg); color: var(--theme-danger-text); }
+.rp-status.completed,
+.rp-status.done {
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
+}
+.rp-status.pending,
+.rp-status.scheduled {
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
+}
+.rp-status.reported {
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+}
 
 /* Extra stats */
 .rp-extra-stats {

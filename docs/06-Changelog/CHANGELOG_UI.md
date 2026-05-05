@@ -5,6 +5,31 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.3.0] — 2026-04-11
+
+### Added
+- `GoogleCalendarConfig.jsx` : section « Synchronisation bidirectionnelle » avec bouton « Réconcilier depuis Google » et badges résultat (updated/orphaned/errors)
+- `GoogleCalendarConfig.css` : styles `.btn-pull-sync`, `.pull-result`, `.pull-stat`, `.pull-stat--warn/muted/error`
+- `admin.js` : méthode `syncPullReservations(days)` pour l'API client
+
+### Changed
+- `GoogleCalendarBanner.jsx` : session Google persistante via `localStorage` (clé `emag_google_state`) — initialisation instantanée, plus de flash au chargement
+- `GoogleCalendarConfig.jsx` : nettoyage `localStorage` lors de la révocation OAuth
+
+---
+
+## [2.2.1] — 2026-04-10
+
+### Fixed
+- `useAppData.js` : normalisation payload `updateReservation` (`startDate/startPeriod` depuis `date/period`) pour supprimer les `400 Données invalides` côté production.
+- `DepotMap.jsx` : suppression de l'attribut `className` dupliqué sur un élément `<g>` (warning build).
+- `ManagementPanel.css` : suppression d'une accolade fermante en trop (erreur CSS minification `Unexpected "}"`).
+
+### Changed
+- Édition réservation côté UI alignée sur le backend : autorisée pour utilisateurs non `read_only` (et non uniquement admins).
+
+---
+
 ## [2.2.0] — 2026-04-08
 
 ### Added

@@ -4,8 +4,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--theme-overlay);
-  backdrop-filter: blur(4px);  isolation: isolate;  display: flex;
+  background: var(--surface-overlay);
+  backdrop-filter: blur(4px);
+  isolation: isolate;
+  display: flex;
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
@@ -14,7 +16,7 @@
 }
 
 .event-details-modal {
-  background: var(--theme-bg-page);
+  background: var(--surface-page);
   border-radius: var(--radius-xl);
   max-width: 900px;
   width: 100%;
@@ -96,18 +98,18 @@
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-track {
-  background: var(--theme-border-light);
+  background: var(--border-subtle);
   border-radius: var(--radius-xs);
   margin: 8px 0;
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb {
-  background: var(--theme-bg-muted);
+  background: var(--surface-tertiary);
   border-radius: var(--radius-xs);
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-text-muted);
+  background: var(--text-subtle);
 }
 
 /* Sections */
@@ -126,7 +128,7 @@ section h3 {
   margin: 0 0 16px 0;
   font-size: var(--font-lg);
   font-weight: 600;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .section-header {
@@ -160,7 +162,7 @@ section h3 {
 .event-details-modal .info-item label {
   font-size: var(--font-2xs);
   font-weight: 600;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -171,14 +173,14 @@ section h3 {
 .event-details-modal .info-item span,
 .event-details-modal .info-item p {
   font-size: var(--font-base);
-  color: var(--theme-text-dark);
+  color: var(--text-body);
 }
 
 .event-details-modal .event-description {
   margin: 0;
   padding: 12px;
-  background: var(--theme-bg-secondary);
-  border-left: 3px solid var(--theme-primary);
+  background: var(--surface-secondary);
+  border-left: 3px solid var(--interactive-primary);
   border-radius: var(--radius-xs);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -191,19 +193,116 @@ section h3 {
   gap: 12px;
 }
 
+/* ============ Picker : lier une r\u00e9servation existante ============ */
+.event-details-modal .link-reservation-picker {
+  margin: 8px 0 12px;
+  padding: 10px;
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-details-modal .link-reservation-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.event-details-modal .link-reservation-search input {
+  flex: 1;
+}
+
+.event-details-modal .link-reservation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.event-details-modal .link-reservation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.event-details-modal .link-reservation-item:hover:not(:disabled) {
+  border-color: var(--interactive-primary);
+  background: var(--accent-tint-alt);
+}
+
+.event-details-modal .link-reservation-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.event-details-modal .link-reservation-item-vehicle {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-heading);
+}
+
+.event-details-modal .link-reservation-item-meta,
+.event-details-modal .link-reservation-item-dates {
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+.event-details-modal .link-reservation-item-dates {
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.event-details-modal .link-reservation-item-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--theme-warning-bg, #fef3c7);
+  color: var(--theme-warning-text, #92400e);
+  white-space: nowrap;
+}
+
+.event-details-modal .reservation-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.event-details-modal .btn-unlink-reservation {
+  color: var(--text-subtle);
+}
+
+.event-details-modal .btn-unlink-reservation:hover:not(:disabled) {
+  color: var(--theme-danger, #dc2626);
+}
+
 .event-details-modal .reservation-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: var(--theme-bg-secondary);
-  border: 2px solid var(--theme-border-medium);
+  background: var(--surface-secondary);
+  border: 2px solid var(--border-default);
   border-radius: var(--radius-md);
   transition: all 0.2s;
 }
 
 .event-details-modal .reservation-card:hover {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   box-shadow: 0 2px 8px var(--accent-tint-alt);
 }
 
@@ -217,17 +316,17 @@ section h3 {
 .event-details-modal .reservation-vehicle {
   font-weight: 700;
   font-size: 15px;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .reservation-details {
   font-size: var(--font-base);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
 }
 
 .event-details-modal .reservation-dates {
   font-size: var(--font-base);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
@@ -256,7 +355,7 @@ section h3 {
   cursor: pointer;
   transition: var(--btn-transition);
   background: var(--theme-primary-light);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .btn-add-drive-link:hover {
@@ -286,11 +385,11 @@ section h3 {
 .event-details-modal .drive-link-edit-form .drive-link-input {
   flex: 1;
   border: 1px solid var(--theme-purple-accent);
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: var(--font-base);
-  color: var(--theme-text-dark);
+  color: var(--text-body);
   outline: none;
 }
 
@@ -372,7 +471,7 @@ section h3 {
   cursor: pointer;
   transition: all 0.15s;
   background: transparent;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   padding: 0;
 }
 
@@ -406,7 +505,7 @@ section h3 {
 
 .event-details-modal .drive-link-save {
   background: var(--theme-success);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .drive-link-save:hover {
@@ -414,7 +513,7 @@ section h3 {
 }
 
 .event-details-modal .drive-link-save:disabled {
-  background: var(--theme-text-muted);
+  background: var(--text-subtle);
   cursor: not-allowed;
 }
 
@@ -425,12 +524,12 @@ section h3 {
 
 .event-details-modal .drive-link-cancel:hover {
   background: var(--btn-secondary-hover-bg);
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .event-details-modal .btn-edit-reservation {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   width: 36px;
   height: 36px;
@@ -444,7 +543,7 @@ section h3 {
 }
 
 .event-details-modal .btn-edit-reservation:hover {
-  background: var(--theme-primary-dark);
+  background: var(--interactive-active);
   transform: translateY(-1px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
@@ -461,25 +560,25 @@ section h3 {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: var(--theme-bg-secondary);
-  border: 1px solid var(--theme-border-medium);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   transition: all 0.2s;
 }
 
 .event-details-modal .attachment-item:hover {
-  background: var(--theme-bg-tertiary);
+  background: var(--surface-tertiary);
 }
 
 .event-details-modal .file-name {
   flex: 1;
   font-size: var(--font-base);
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .file-size {
   font-size: var(--font-sm);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   font-family: 'Monaco', 'Courier New', monospace;
 }
 
@@ -493,7 +592,7 @@ section h3 {
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   cursor: pointer;
   transition: all 0.2s;
   padding: 0;
@@ -508,10 +607,10 @@ section h3 {
 .event-details-modal .empty-state {
   padding: 32px;
   text-align: center;
-  color: var(--theme-text-muted);
-  background: var(--theme-bg-secondary);
+  color: var(--text-subtle);
+  background: var(--surface-secondary);
   border-radius: var(--radius-md);
-  border: 2px dashed var(--theme-border-medium);
+  border: 2px dashed var(--border-default);
 }
 
 .event-details-modal .empty-state p {
@@ -521,11 +620,11 @@ section h3 {
 
 .event-details-modal .empty-state .hint {
   font-size: var(--font-sm);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
 }
 
 .event-details-modal .empty-state code {
-  background: var(--theme-border-medium);
+  background: var(--border-default);
   padding: 2px 6px;
   border-radius: var(--radius-xs);
   font-family: 'Monaco', 'Courier New', monospace;
@@ -556,19 +655,19 @@ section h3 {
 }
 
 .event-details-modal .btn-import-bl {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .btn-import-bl:hover {
-  background: var(--theme-primary-dark);
+  background: var(--interactive-active);
   transform: translateY(-1px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .event-details-modal .btn-add-reservation {
   background: var(--theme-success);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .btn-add-reservation:hover {
@@ -579,7 +678,7 @@ section h3 {
 
 .event-details-modal .btn-open-folder {
   background: var(--theme-warning);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .event-details-modal .btn-open-folder:hover:not(:disabled) {
@@ -590,7 +689,7 @@ section h3 {
 
 .event-details-modal .btn-open-folder:disabled {
   background: var(--btn-secondary-bg);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   cursor: not-allowed;
 }
 
@@ -600,8 +699,8 @@ section h3 {
   justify-content: space-between;
   align-items: center;
   padding: var(--space-4) var(--space-5);
-  border-top: 2px solid var(--theme-border-medium);
-  background: var(--theme-bg-secondary);
+  border-top: 2px solid var(--border-default);
+  background: var(--surface-secondary);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
@@ -612,9 +711,9 @@ section h3 {
 
 .event-details-modal .btn-secondary {
   padding: var(--btn-padding);
-  background: var(--theme-bg-card);
-  color: var(--theme-text-secondary);
-  border: 2px solid var(--theme-border);
+  background: var(--surface-primary);
+  color: var(--text-muted);
+  border: 2px solid var(--border-default);
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
   font-weight: var(--btn-font-weight);
@@ -623,8 +722,8 @@ section h3 {
 }
 
 .event-details-modal .btn-secondary:hover {
-  background: var(--theme-bg-page);
-  border-color: var(--theme-text-muted);
+  background: var(--surface-page);
+  border-color: var(--text-subtle);
 }
 
 .event-details-modal .btn-link {
@@ -632,8 +731,8 @@ section h3 {
   align-items: center;
   gap: 6px;
   padding: var(--btn-padding);
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -644,7 +743,7 @@ section h3 {
 }
 
 .event-details-modal .btn-link:hover {
-  background: var(--theme-primary-dark);
+  background: var(--interactive-active);
   transform: translateY(-1px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
@@ -654,8 +753,8 @@ section h3 {
   align-items: center;
   gap: 6px;
   padding: var(--btn-padding);
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -676,8 +775,8 @@ section h3 {
   gap: 6px;
   padding: var(--btn-padding);
   background: var(--accent-tint-light);
-  color: var(--theme-primary);
-  border: 1px solid var(--theme-primary);
+  color: var(--interactive-primary);
+  border: 1px solid var(--interactive-primary);
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
   font-weight: var(--btn-font-weight);
@@ -686,8 +785,8 @@ section h3 {
 }
 
 .event-details-modal .btn-bl-import:hover {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   transform: translateY(-1px);
 }
 
@@ -708,7 +807,7 @@ section h3 {
 
 .event-details-modal .btn-display-event:hover {
   background: var(--theme-success-alt);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   transform: translateY(-1px);
 }
 
@@ -718,7 +817,7 @@ section h3 {
   gap: 6px;
   padding: var(--btn-padding);
   background: var(--theme-danger);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -738,28 +837,28 @@ section h3 {
   .event-details-modal .event-info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .event-details-modal {
     max-width: 100%;
     max-height: 100dvh;
     border-radius: 0;
   }
-  
+
   .event-details-modal .event-details-header {
     border-radius: 0;
   }
-  
+
   .event-details-modal .event-details-footer {
     border-radius: 0;
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .event-details-modal .footer-actions {
     width: 100%;
     flex-direction: column;
   }
-  
+
   .event-details-modal .btn-secondary,
   .event-details-modal .btn-link {
     width: 100%;
@@ -769,7 +868,7 @@ section h3 {
 
 /* Modal d'aperçu de fichier */
 .event-details-modal .preview-modal {
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-lg);
   width: 90vw;
   max-width: 1200px;
@@ -781,7 +880,7 @@ section h3 {
 
 .event-details-modal .preview-header {
   padding: 16px 24px;
-  border-bottom: 1px solid var(--theme-border-medium);
+  border-bottom: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -791,7 +890,7 @@ section h3 {
   margin: 0;
   font-size: var(--font-md);
   font-weight: 600;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .btn-close {
@@ -800,7 +899,7 @@ section h3 {
   font-size: var(--font-2xl);
   line-height: 1;
   cursor: pointer;
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   padding: 0;
   width: 32px;
   height: 32px;
@@ -812,27 +911,39 @@ section h3 {
 }
 
 .event-details-modal .btn-close:hover {
-  background: var(--theme-bg-tertiary);
-  color: var(--theme-bg-dark);
+  background: var(--surface-tertiary);
+  color: var(--text-heading);
 }
 
 .event-details-modal .preview-body {
   flex: 1;
   overflow: auto;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.event-details-modal .preview-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.event-details-modal .preview-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .event-details-modal .unsupported-preview {
   text-align: center;
   padding: 48px;
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
 }
 
 .event-details-modal .unsupported-preview svg {
-  color: var(--theme-border-muted);
+  color: var(--border-subtle);
   margin-bottom: 16px;
 }
 
@@ -842,21 +953,21 @@ section h3 {
 
 .event-details-modal .preview-footer {
   padding: 16px 24px;
-  border-top: 1px solid var(--theme-border-medium);
+  border-top: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
 }
 
 .event-details-modal .file-info {
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   font-size: var(--font-base);
 }
 
 /* Modal de vue dossier */
 .event-details-modal .folder-view-modal {
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-lg);
   width: 90vw;
   max-width: 1000px;
@@ -868,12 +979,12 @@ section h3 {
 
 .event-details-modal .folder-header {
   padding: 20px 24px;
-  border-bottom: 1px solid var(--theme-border-medium);
+  border-bottom: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: var(--theme-gradient);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
@@ -890,17 +1001,17 @@ section h3 {
   flex: 1;
   overflow: auto;
   padding: 24px;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .event-details-modal .empty-folder {
   text-align: center;
   padding: 64px 24px;
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
 }
 
 .event-details-modal .empty-folder svg {
-  color: var(--theme-border-muted);
+  color: var(--border-subtle);
   margin-bottom: 16px;
 }
 
@@ -911,8 +1022,8 @@ section h3 {
 }
 
 .event-details-modal .folder-file-card {
-  background: var(--theme-bg-card);
-  border: 1px solid var(--theme-border-medium);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   padding: 16px;
   cursor: pointer;
@@ -925,7 +1036,7 @@ section h3 {
 }
 
 .event-details-modal .folder-file-card:hover {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   box-shadow: 0 4px 12px var(--focus-ring);
   transform: translateY(-2px);
 }
@@ -935,7 +1046,7 @@ section h3 {
   top: 6px;
   right: 6px;
   background: var(--theme-bg-card-translucent);
-  border: 1px solid var(--theme-border-medium);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   width: 28px;
   height: 28px;
@@ -943,7 +1054,7 @@ section h3 {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   transition: all 0.2s;
   opacity: 0;
   padding: 0;
@@ -965,8 +1076,8 @@ section h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--theme-primary);
-  background: var(--theme-bg-tertiary);
+  color: var(--interactive-primary);
+  background: var(--surface-tertiary);
   border-radius: var(--radius-md);
 }
 
@@ -985,7 +1096,7 @@ section h3 {
 .event-details-modal .folder-file-card .file-name {
   font-size: var(--font-base);
   font-weight: 500;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
   margin: 0 0 4px 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -995,22 +1106,22 @@ section h3 {
 
 .event-details-modal .folder-file-card .file-size {
   font-size: var(--font-sm);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   margin: 0;
 }
 
 .event-details-modal .folder-footer {
   padding: 16px 24px;
-  border-top: 1px solid var(--theme-border-medium);
+  border-top: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .event-details-modal .folder-footer span {
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   font-size: var(--font-base);
 }
 
@@ -1021,9 +1132,15 @@ section h3 {
 }
 
 .event-details-modal .attachment-item.clickable:hover {
-  background: var(--theme-bg-tertiary);
-  border-color: var(--theme-primary);
+  background: var(--surface-tertiary);
+  border-color: var(--interactive-primary);
   transform: translateX(4px);
+}
+
+.event-details-modal .attachment-item.clickable:focus-visible,
+.event-details-modal .folder-file-card:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 /* Label comme bouton */
@@ -1039,6 +1156,10 @@ label.btn-open-folder.disabled,
 label.btn-primary:has(input:disabled) {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.event-hidden-file-input {
+  display: none;
 }
 
 /* ── Section Affaires liées ── */
@@ -1057,14 +1178,14 @@ label.btn-primary:has(input:disabled) {
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: var(--theme-bg-secondary);
-  border: 2px solid var(--theme-border-medium);
+  background: var(--surface-secondary);
+  border: 2px solid var(--border-strong);
   border-radius: var(--radius-md);
   transition: all 0.2s;
 }
 
 .event-details-modal .affaire-card:hover {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   box-shadow: 0 2px 8px var(--accent-tint-alt);
 }
 
@@ -1086,12 +1207,12 @@ label.btn-primary:has(input:disabled) {
 .event-details-modal .affaire-client {
   font-weight: 600;
   font-size: var(--font-base);
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
 }
 
 .event-details-modal .affaire-titre {
   font-size: var(--font-base);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1099,7 +1220,7 @@ label.btn-primary:has(input:disabled) {
 
 .event-details-modal .affaire-dates {
   font-size: var(--font-sm);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
 }
 
 .event-details-modal .affaire-stats {
@@ -1110,6 +1231,6 @@ label.btn-primary:has(input:disabled) {
 
 .event-details-modal .affaire-stat {
   font-size: var(--font-base);
-  color: var(--theme-text-gray);
+  color: var(--text-subtle);
   white-space: nowrap;
 }

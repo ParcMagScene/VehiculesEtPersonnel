@@ -1,5 +1,5 @@
-import { useState, useId } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useId, useState } from 'react';
 
 /**
  * Accordion — Section dépliable
@@ -23,7 +23,7 @@ export default function Accordion({
   const id = useId();
 
   const toggle = () => {
-    if (controlledOpen === undefined) setInternal(o => !o);
+    if (controlledOpen === undefined) setInternal((o) => !o);
     onToggle?.(!isOpen);
   };
 

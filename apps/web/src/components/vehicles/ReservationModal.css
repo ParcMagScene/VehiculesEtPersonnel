@@ -256,13 +256,17 @@
   border-radius: var(--radius-full);
   flex-shrink: 0;
   border: 3px solid var(--theme-border);
-  box-shadow: 0 2px 6px var(--shadow-xl), 0 0 0 1px var(--shadow-xs);
+  box-shadow:
+    0 2px 6px var(--shadow-xl),
+    0 0 0 1px var(--shadow-xs);
   transition: transform 0.2s ease;
 }
 
 .vehicle-color-indicator:hover {
   transform: scale(1.15);
-  box-shadow: 0 3px 8px var(--shadow-xl), 0 0 0 1px var(--shadow-sm);
+  box-shadow:
+    0 3px 8px var(--shadow-xl),
+    0 0 0 1px var(--shadow-sm);
 }
 
 .multi-vehicle-preview {
@@ -544,7 +548,9 @@
   font-weight: 600;
   font-size: var(--font-base);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .dropdown-close-button:hover {
@@ -1048,7 +1054,11 @@
 .combined-trip-btn {
   border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
   margin-top: 0 !important;
-  background: linear-gradient(135deg, var(--theme-primary-dark) 0%, var(--theme-purple-accent) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-primary-dark) 0%,
+    var(--theme-purple-accent) 100%
+  ) !important;
 }
 
 /* Mode lecture seule */
@@ -1153,107 +1163,200 @@
 }
 
 /* ═══════════════════════════════════════════════════════
+   AFFAIRE SEARCH FIELD
+   ═══════════════════════════════════════════════════════ */
+.rm-affaire-field {
+  position: relative;
+}
+.rm-affaire-wrap {
+  position: relative;
+}
+.rm-affaire-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary, var(--theme-text-muted));
+  pointer-events: none;
+  z-index: 1;
+}
+.rm-affaire-wrap input {
+  padding-left: 30px !important;
+  width: 100%;
+  box-sizing: border-box;
+}
+.rm-affaire-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-card, var(--theme-bg-card));
+  border: 1px solid var(--border-color, var(--theme-border));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: var(--z-dropdown);
+  margin-top: 4px;
+}
+.rm-affaire-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.82rem;
+  color: var(--text-primary, var(--theme-text-primary));
+}
+.rm-affaire-option:hover {
+  background: var(--bg-hover, var(--theme-border-light));
+}
+.rm-affaire-opt-num {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.rm-affaire-opt-client {
+  color: var(--text-secondary, var(--theme-text-secondary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rm-affaire-opt-titre {
+  font-size: 0.78rem;
+  color: var(--text-secondary, var(--theme-text-muted));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.rm-affaire-empty {
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: var(--text-secondary, var(--theme-text-muted));
+}
+.rm-affaire-selected {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-hover, var(--theme-border-light));
+  border-radius: var(--radius-md);
+}
+.rm-affaire-client {
+  font-size: 0.82rem;
+  color: var(--text-secondary, var(--theme-text-secondary));
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════
    DARK THEME OVERRIDES — ReservationModal.css
    ═══════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .vehicle-picker-card-desktop:hover {
+[data-theme='dark'] .vehicle-picker-card-desktop:hover {
   background: var(--theme-bg-hover);
 }
 
-[data-theme="dark"] .vehicle-picker-card-desktop.selected {
+[data-theme='dark'] .vehicle-picker-card-desktop.selected {
   background: var(--violet-tint);
 }
 
-[data-theme="dark"] .vehicle-picker-photo-placeholder-desktop {
+[data-theme='dark'] .vehicle-picker-photo-placeholder-desktop {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .vehicle-picker-type-desktop {
+[data-theme='dark'] .vehicle-picker-type-desktop {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .multi-vehicle-preview {
+[data-theme='dark'] .multi-vehicle-preview {
   background: var(--info-tint-light);
   color: var(--theme-primary-light);
 }
 
-[data-theme="dark"] .custom-dropdown-trigger:hover {
+[data-theme='dark'] .custom-dropdown-trigger:hover {
   border-color: var(--theme-border-muted);
 }
 
-[data-theme="dark"] .custom-dropdown-trigger .placeholder {
+[data-theme='dark'] .custom-dropdown-trigger .placeholder {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .selected-event-display .event-dates {
+[data-theme='dark'] .selected-event-display .event-dates {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .event-affaire {
+[data-theme='dark'] .event-affaire {
   color: var(--theme-primary);
 }
 
-[data-theme="dark"] .status-reason-field textarea {
+[data-theme='dark'] .status-reason-field textarea {
   border-color: var(--theme-border);
 }
 
-[data-theme="dark"] .link-btn {
+[data-theme='dark'] .link-btn {
   background: var(--info-tint-light);
   color: var(--theme-primary);
 }
 
-[data-theme="dark"] .link-btn:hover {
+[data-theme='dark'] .link-btn:hover {
   border-color: var(--theme-primary);
 }
 
-[data-theme="dark"] .unlink-btn {
+[data-theme='dark'] .unlink-btn {
   background: rgba(52, 211, 153, 0.1);
   border-color: var(--theme-success);
   color: var(--theme-success);
 }
 
-[data-theme="dark"] .link-next-btn,
-[data-theme="dark"] .link-event-btn {
+[data-theme='dark'] .link-next-btn,
+[data-theme='dark'] .link-event-btn {
   background: var(--info-tint-light);
   color: var(--theme-primary);
 }
 
-[data-theme="dark"] .link-next-btn:hover,
-[data-theme="dark"] .link-event-btn:hover {
+[data-theme='dark'] .link-next-btn:hover,
+[data-theme='dark'] .link-event-btn:hover {
   border-color: var(--theme-primary);
 }
 
-[data-theme="dark"] .combobox-item:hover {
+[data-theme='dark'] .combobox-item:hover {
   background: var(--theme-bg-hover);
 }
 
-[data-theme="dark"] .combobox-item-tournee {
+[data-theme='dark'] .combobox-item-tournee {
   background: var(--theme-warning-bg);
 }
 
-[data-theme="dark"] .combobox-item-tournee:hover {
+[data-theme='dark'] .combobox-item-tournee:hover {
   background: rgba(245, 158, 11, 0.2);
 }
 
-[data-theme="dark"] .combobox-separator {
+[data-theme='dark'] .combobox-separator {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .trip-group-wrapper {
+[data-theme='dark'] .trip-group-wrapper {
   border-color: var(--theme-primary);
   background: var(--theme-bg-card);
 }
 
-[data-theme="dark"] .trip-group-header {
+[data-theme='dark'] .trip-group-header {
   color: var(--theme-primary);
 }
 
-[data-theme="dark"] .group-inner-separator {
+[data-theme='dark'] .group-inner-separator {
   background: var(--violet-tint);
   color: var(--theme-primary);
 }
 
-[data-theme="dark"] .unlink-inner-btn:hover {
+[data-theme='dark'] .unlink-inner-btn:hover {
   color: var(--theme-primary);
   background: var(--violet-tint);
 }
@@ -1466,4 +1569,25 @@
   padding: 1rem;
   text-align: center;
   color: var(--theme-text-gray);
+}
+
+/* Location — aperçu prix */
+.rental-price-preview {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--theme-bg-success, #f0fdf4);
+  border: 1px solid var(--theme-border-success, #bbf7d0);
+  border-radius: var(--radius-md, 8px);
+}
+
+.rental-price-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--theme-text-success, #16a34a);
+}
+
+.rental-price-detail {
+  font-size: 0.8rem;
+  color: var(--theme-text-gray);
+  margin-top: 0.25rem;
 }

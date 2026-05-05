@@ -100,7 +100,9 @@
   font-size: var(--font-md);
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .mobile-login .login-button:hover:not(:disabled) {
@@ -208,4 +210,11 @@
   margin: 0;
   color: var(--theme-text-muted);
   font-size: var(--font-sm);
+}
+
+.login-register-warning {
+  color: var(--theme-text-gray);
+  font-size: 12px;
+  display: block;
+  margin-top: 8px;
 }

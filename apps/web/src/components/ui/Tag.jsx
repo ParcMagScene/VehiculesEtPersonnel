@@ -20,12 +20,7 @@ export function Tag({
     <span className={`ui-tag ui-tag--${color} ui-tag--${size} ${className}`} {...props}>
       <span className="ui-tag__text">{children}</span>
       {closeable && (
-        <button
-          type="button"
-          className="ui-tag__close"
-          onClick={onClose}
-          aria-label="Supprimer"
-        >
+        <button type="button" className="ui-tag__close" onClick={onClose} aria-label="Supprimer">
           <X size={size === 'sm' ? 10 : 12} />
         </button>
       )}
@@ -63,9 +58,7 @@ export function Badge({
     <span className={`ui-badge-wrapper ${className}`} {...props}>
       {children}
       {count != null && count > 0 && (
-        <span className={`ui-badge ui-badge--count ui-badge--${color}`}>
-          {display}
-        </span>
+        <span className={`ui-badge ui-badge--count ui-badge--${color}`}>{display}</span>
       )}
     </span>
   );

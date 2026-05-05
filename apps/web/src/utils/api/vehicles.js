@@ -3,16 +3,21 @@ import { toSnakeCase } from './base.js';
 
 export function registerVehicleMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Véhicules
     async getVehicles() {
       return this.request('/vehicles');
     },
     async createVehicle(vehicle) {
-      return this.request('/vehicles', { method: 'POST', body: JSON.stringify(toSnakeCase(vehicle)) });
+      return this.request('/vehicles', {
+        method: 'POST',
+        body: JSON.stringify(toSnakeCase(vehicle)),
+      });
     },
     async updateVehicle(id, vehicle) {
-      return this.request(`/vehicles/${id}`, { method: 'PUT', body: JSON.stringify(toSnakeCase(vehicle)) });
+      return this.request(`/vehicles/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(toSnakeCase(vehicle)),
+      });
     },
     async deleteVehicle(id) {
       return this.request(`/vehicles/${id}`, { method: 'DELETE' });
@@ -23,10 +28,16 @@ export function registerVehicleMethods(ApiClient) {
       return this.request('/reservations');
     },
     async createReservation(reservation) {
-      return this.request('/reservations', { method: 'POST', body: JSON.stringify(toSnakeCase(reservation)) });
+      return this.request('/reservations', {
+        method: 'POST',
+        body: JSON.stringify(toSnakeCase(reservation)),
+      });
     },
     async updateReservation(id, reservation) {
-      return this.request(`/reservations/${id}`, { method: 'PUT', body: JSON.stringify(toSnakeCase(reservation)) });
+      return this.request(`/reservations/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(toSnakeCase(reservation)),
+      });
     },
     async deleteReservation(id) {
       return this.request(`/reservations/${id}`, { method: 'DELETE' });
@@ -40,13 +51,19 @@ export function registerVehicleMethods(ApiClient) {
       return this.request('/reservation-requests');
     },
     async createReservationRequest(request) {
-      return this.request('/reservation-requests', { method: 'POST', body: JSON.stringify(toSnakeCase(request)) });
+      return this.request('/reservation-requests', {
+        method: 'POST',
+        body: JSON.stringify(toSnakeCase(request)),
+      });
     },
     async approveReservationRequest(id) {
       return this.request(`/reservation-requests/${id}/approve`, { method: 'PUT' });
     },
     async rejectReservationRequest(id, reason) {
-      return this.request(`/reservation-requests/${id}/reject`, { method: 'PUT', body: JSON.stringify({ reason }) });
+      return this.request(`/reservation-requests/${id}/reject`, {
+        method: 'PUT',
+        body: JSON.stringify({ reason }),
+      });
     },
 
     // Maintenances
@@ -54,10 +71,16 @@ export function registerVehicleMethods(ApiClient) {
       return this.request('/maintenances');
     },
     async createMaintenance(maintenance) {
-      return this.request('/maintenances', { method: 'POST', body: JSON.stringify(toSnakeCase(maintenance)) });
+      return this.request('/maintenances', {
+        method: 'POST',
+        body: JSON.stringify(toSnakeCase(maintenance)),
+      });
     },
     async updateMaintenance(id, maintenance) {
-      return this.request(`/maintenances/${id}`, { method: 'PUT', body: JSON.stringify(toSnakeCase(maintenance)) });
+      return this.request(`/maintenances/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(toSnakeCase(maintenance)),
+      });
     },
     async deleteMaintenance(id) {
       return this.request(`/maintenances/${id}`, { method: 'DELETE' });
@@ -77,24 +100,13 @@ export function registerVehicleMethods(ApiClient) {
       return this.request('/annuaire/clients', { method: 'POST', body: JSON.stringify(client) });
     },
     async updateClient(id, client) {
-      return this.request(`/annuaire/clients/${id}`, { method: 'PUT', body: JSON.stringify(client) });
+      return this.request(`/annuaire/clients/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(client),
+      });
     },
     async deleteClient(id) {
       return this.request(`/annuaire/clients/${id}`, { method: 'DELETE' });
-    },
-
-    // Conducteurs
-    async getDrivers() {
-      return this.request('/drivers');
-    },
-    async createDriver(driver) {
-      return this.request('/drivers', { method: 'POST', body: JSON.stringify(driver) });
-    },
-    async updateDriver(id, driver) {
-      return this.request(`/drivers/${id}`, { method: 'PUT', body: JSON.stringify(driver) });
-    },
-    async deleteDriver(id) {
-      return this.request(`/drivers/${id}`, { method: 'DELETE' });
     },
 
     // Lieux
@@ -121,13 +133,38 @@ export function registerVehicleMethods(ApiClient) {
       return this.request(`/trip-details/${reservationId}`, { skipCamelCase: true });
     },
     async saveTripDetails(data) {
-      return this.request('/trip-details', { method: 'POST', body: JSON.stringify(data), skipCamelCase: true });
+      return this.request('/trip-details', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
     },
     async linkTrips(data) {
-      return this.request('/trip-details/link', { method: 'POST', body: JSON.stringify(data), skipCamelCase: true });
+      return this.request('/trip-details/link', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
     },
     async unlinkTrip(data) {
-      return this.request('/trip-details/unlink', { method: 'POST', body: JSON.stringify(data), skipCamelCase: true });
+      return this.request('/trip-details/unlink', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+
+    // Location — calcul de prix et reporting
+    async getRentalPrice({ vehicleId, startDate, startPeriod, endDate, endPeriod }) {
+      const params = new URLSearchParams({ vehicleId, startDate, startPeriod, endDate, endPeriod });
+      return this.request(`/rental/calculate-price?${params}`);
+    },
+    async getRentalReporting({ startDate, endDate } = {}) {
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      const qs = params.toString();
+      return this.request(`/rental/reporting${qs ? '?' + qs : ''}`);
     },
   });
 }

@@ -361,27 +361,6 @@
   transform: scale(1.1);
 }
 
-.toggle-banner-button {
-  background: var(--glass-light);
-  border: 1px solid var(--glass);
-  color: var(--theme-text-inverse);
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-xs);
-  cursor: pointer;
-  font-size: var(--font-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: all 0.2s;
-}
-
-.toggle-banner-button:hover {
-  background: var(--close-btn-hover-bg);
-  transform: scale(1.05);
-}
-
 /* Zone scrollable à droite */
 .banner-scroll-area {
   flex: 1;
@@ -413,10 +392,6 @@
 
 .banner-grid.month-view {
   grid-template-columns: repeat(62, minmax(55px, 1fr));
-}
-
-.banner-grid.year-view {
-  grid-template-columns: repeat(12, minmax(150px, 1fr));
 }
 
 /* Lignes de grille avec subgrid */
@@ -487,9 +462,10 @@
   gap: 0;
   padding: 0;
   min-height: 24px;
+  height: 100%;
   position: relative;
   z-index: var(--z-base);
-  align-items: center;
+  align-items: stretch;
 }
 
 /* Bloc d'événement qui s'étend sur plusieurs colonnes */
@@ -506,6 +482,7 @@
   transition: all 0.2s;
   white-space: nowrap;
   overflow: hidden;
+  align-self: stretch;
 }
 
 .event-block-span.clickable:hover {
@@ -601,8 +578,14 @@
 
 .event-block-span.linked {
   border-left-width: 4px !important;
-  background: linear-gradient(135deg, var(--success-tint-accent) 0%, rgba(5, 150, 105, 0.1) 100%) !important;
-  box-shadow: 0 0 0 2px var(--success-tint-medium), 0 2px 4px var(--shadow-sm);
+  background: linear-gradient(
+    135deg,
+    var(--success-tint-accent) 0%,
+    rgba(5, 150, 105, 0.1) 100%
+  ) !important;
+  box-shadow:
+    0 0 0 2px var(--success-tint-medium),
+    0 2px 4px var(--shadow-sm);
   position: relative;
 }
 
@@ -735,14 +718,14 @@
 }
 
 /* ═══ DARK MODE — Banner Google Calendar ═══ */
-[data-theme="dark"] .google-calendar-banner-grid {
+[data-theme='dark'] .google-calendar-banner-grid {
   background: var(--theme-bg-card);
 }
 
-[data-theme="dark"] .calendar-banner {
+[data-theme='dark'] .calendar-banner {
   background: var(--theme-bg-card);
 }
 
-[data-theme="dark"] .banner-vehicle-column {
+[data-theme='dark'] .banner-vehicle-column {
   background: var(--theme-gradient);
 }

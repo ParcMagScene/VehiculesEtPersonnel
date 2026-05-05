@@ -3,21 +3,30 @@
 // Composant à intégrer dans un modal de détail de réservation
 // ============================================================
 
-import { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, Trash2, Box, Search } from 'lucide-react';
-import { Button, ModalLayout, Input, Tooltip } from '@/design-system';
-import api from '../../utils/api';
-import { formatDimensions, buildChargementUrlForReservation, openInChargement } from '../../utils/deepLinking';
 import './ReservationEquipment.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+
+import { Box, Package, Plus, Search, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Button, Input, ModalLayout, Tooltip } from '@/design-system';
 
 import { TIMING } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import {
+  buildChargementUrlForReservation,
+  formatDimensions,
+  openInChargement,
+} from '../../utils/deepLinking';
 
 export default function ReservationEquipment({ reservationId, _currentUser }) {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
-  const [data, setData] = useState({ items: [], summary: { count: 0, totalQuantity: 0, totalWeight: 0, totalVolume: 0 } });
+  const [data, setData] = useState({
+    items: [],
+    summary: { count: 0, totalQuantity: 0, totalWeight: 0, totalVolume: 0 },
+  });
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
 
@@ -34,7 +43,9 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
     }
   }, [reservationId]);
 
-  useEffect(() => { loadEquipment(); }, [loadEquipment]);
+  useEffect(() => {
+    loadEquipment();
+  }, [loadEquipment]);
 
   const handleRemove = (linkId) => {
     confirm({
@@ -77,8 +88,12 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
             <span className="summary-value">{summary.totalVolume} m³</span>
             <span className="summary-label">Volume total</span>
           </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <Button variant="ghost" className="catalog-btn catalog-btn-3d" onClick={handleOpenChargement}>
+          <div className="u-ml-auto">
+            <Button
+              variant="ghost"
+              className="catalog-btn catalog-btn-3d"
+              onClick={handleOpenChargement}
+            >
               <Box size={16} /> Ouvrir dans Chargement 3D
             </Button>
           </div>
@@ -86,12 +101,16 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
       )}
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+      <div className="u-flex u-gap-2 u-mb-3">
         <Button variant="primary" size="sm" onClick={() => setShowAddDialog(true)}>
           <Plus size={14} /> Ajouter du matériel
         </Button>
         {items.length > 0 && (
-          <Button variant="ghost" className="catalog-btn catalog-btn-3d catalog-btn-sm" onClick={handleOpenChargement}>
+          <Button
+            variant="ghost"
+            className="catalog-btn catalog-btn-3d catalog-btn-sm"
+            onClick={handleOpenChargement}
+          >
             <Box size={14} /> Charger dans 3D
           </Button>
         )}
@@ -99,7 +118,9 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
 
       {/* Equipment list */}
       {loading ? (
-        <div className="catalog-empty"><p>Chargement…</p></div>
+        <div className="catalog-empty">
+          <p>Chargement…</p>
+        </div>
       ) : items.length === 0 ? (
         <div className="catalog-empty" style={{ padding: '2rem 1rem' }}>
           <Package size={32} />
@@ -108,11 +129,14 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
         </div>
       ) : (
         <div className="reservation-equipment-list">
-          {items.map(item => (
+          {items.map((item) => (
             <div key={item.id} className="reservation-equipment-item">
               <div className="eq-info">
                 <div className="eq-name">{item.equipmentName || item.equipment_name}</div>
-                <div className="eq-ref">{item.reference || '—'} · {formatDimensions(item.equipmentDimensions || item.equipment_dimensions)}</div>
+                <div className="eq-ref">
+                  {item.reference || '—'} ·{' '}
+                  {formatDimensions(item.equipmentDimensions || item.equipment_dimensions)}
+                </div>
                 {(item.flightcaseName || item.flightcase_name) && (
                   <div className="eq-fc">
                     <Box size={12} /> FC: {item.flightcaseName || item.flightcase_name}
@@ -120,9 +144,19 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
                 )}
               </div>
               <span className="eq-qty">×{item.quantity}</span>
-              {item.weight && <span style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>{item.weight * item.quantity} kg</span>}
+              {item.weight && (
+                <span className="u-text-secondary" style={{ fontSize: '0.8rem' }}>
+                  {item.weight * item.quantity} kg
+                </span>
+              )}
               <Tooltip content="Retirer">
-                <Button variant="danger" size="sm" iconOnly aria-label="Retirer" onClick={() => handleRemove(item.id)}>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  iconOnly
+                  aria-label="Retirer"
+                  onClick={() => handleRemove(item.id)}
+                >
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>
@@ -135,7 +169,10 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
       {showAddDialog && (
         <AddEquipmentDialog
           reservationId={reservationId}
-          onAdded={() => { setShowAddDialog(false); loadEquipment(); }}
+          onAdded={() => {
+            setShowAddDialog(false);
+            loadEquipment();
+          }}
           onClose={() => setShowAddDialog(false)}
         />
       )}
@@ -146,6 +183,7 @@ export default function ReservationEquipment({ reservationId, _currentUser }) {
 
 // ─── Dialog pour ajouter un équipement du catalogue ───
 function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
+  const toast = useToast();
   const [catalogItems, setCatalogItems] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -194,76 +232,97 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
       size="md"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button
-            variant="primary"
-            onClick={handleAssign}
-            disabled={!selectedItem || submitting}
-          >
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button variant="primary" onClick={handleAssign} disabled={!selectedItem || submitting}>
             {submitting ? 'Ajout…' : 'Ajouter'}
           </Button>
         </>
       }
     >
-        <div className="catalog-modal-body">
-          {/* Search */}
-          <div className="catalog-form-group">
-            <label>Rechercher dans le catalogue</label>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--theme-text-muted)' }} />
-              <Input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Nom, référence…"
-                style={{ paddingLeft: '2.25rem' }}
-                autoFocus
-              />
-            </div>
+      <div className="catalog-modal-body">
+        {/* Search */}
+        <div className="catalog-form-group">
+          <label>Rechercher dans le catalogue</label>
+          <div className="u-relative">
+            <Search
+              size={16}
+              className="u-absolute u-text-muted"
+              style={{ left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}
+            />
+            <Input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Nom, référence…"
+              style={{ paddingLeft: '2.25rem' }}
+              autoFocus
+            />
           </div>
+        </div>
 
-          {/* Results */}
-          <div style={{ maxHeight: '250px', overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--theme-border)' }}>
-            {loading ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-muted)' }}>Recherche…</div>
-            ) : catalogItems.length === 0 ? (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--theme-text-muted)' }}>Aucun résultat</div>
-            ) : (
-              catalogItems.map(item => (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedItem(item)}
-                  style={{
-                    padding: '0.5rem 0.75rem',
-                    cursor: 'pointer',
-                    background: selectedItem?.id === item.id ? 'rgba(99,102,241,0.1)' : 'transparent',
-                    borderBottom: '1px solid var(--theme-border)',
-                    borderLeft: selectedItem?.id === item.id ? '3px solid var(--theme-primary)' : '3px solid transparent',
-                  }}
-                >
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--theme-text-secondary)' }}>
-                    {item.reference || 'Sans réf.'} · {item.family || ''} · {formatDimensions(item.dimensions)}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Quantity */}
-          {selectedItem && (
-            <div className="catalog-form-group" style={{ marginTop: '0.75rem' }}>
-              <label>Quantité pour « {selectedItem.name} »</label>
-              <Input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} style={{ maxWidth: '120px' }} />
-              {selectedItem.defaultFlightcaseId && (
-                <div style={{ fontSize: '0.8rem', color: '#059669', marginTop: '0.25rem' }}>
-                  <Box size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
-                  Flight-case par défaut sera automatiquement assigné
-                </div>
-              )}
+        {/* Results */}
+        <div
+          className="u-rounded"
+          style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--theme-border)' }}
+        >
+          {loading ? (
+            <div className="u-text-center u-text-muted" style={{ padding: '1rem' }}>
+              Recherche…
             </div>
+          ) : catalogItems.length === 0 ? (
+            <div className="u-text-center u-text-muted" style={{ padding: '1rem' }}>
+              Aucun résultat
+            </div>
+          ) : (
+            catalogItems.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  cursor: 'pointer',
+                  background: selectedItem?.id === item.id ? 'rgba(99,102,241,0.1)' : 'transparent',
+                  borderBottom: '1px solid var(--theme-border)',
+                  borderLeft:
+                    selectedItem?.id === item.id
+                      ? '3px solid var(--theme-primary)'
+                      : '3px solid transparent',
+                }}
+              >
+                <div className="u-font-semibold" style={{ fontSize: '0.9rem' }}>
+                  {item.name}
+                </div>
+                <div className="u-text-secondary" style={{ fontSize: '0.8rem' }}>
+                  {item.reference || 'Sans réf.'} · {item.family || ''} ·{' '}
+                  {formatDimensions(item.dimensions)}
+                </div>
+              </div>
+            ))
           )}
         </div>
+
+        {/* Quantity */}
+        {selectedItem && (
+          <div className="catalog-form-group u-mt-3">
+            <label>Quantité pour « {selectedItem.name} »</label>
+            <Input
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              style={{ maxWidth: '120px' }}
+            />
+            {selectedItem.defaultFlightcaseId && (
+              <div className="u-mt-1" style={{ fontSize: '0.8rem', color: '#059669' }}>
+                <Box size={12} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                Flight-case par défaut sera automatiquement assigné
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </ModalLayout>
   );
 }

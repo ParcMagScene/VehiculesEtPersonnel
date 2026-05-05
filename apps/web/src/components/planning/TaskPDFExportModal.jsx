@@ -1,46 +1,48 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  X, FileDown, Eye, Check, CheckSquare, Square, Minus,
-  User, Clock, Loader2, Calendar, MapPin, Briefcase
-} from 'lucide-react';
-import api from '../../utils/api';
-import { formatDateFr } from '../../utils/formatUtils';
-import { safeParseDate } from '../../utils/dateUtils';
 import './TaskPDFExportModal.css';
-import { Button, EmptyState } from '@/design-system';
+
+import {
+  Briefcase,
+  Calendar,
+  Check,
+  CheckSquare,
+  Clock,
+  Eye,
+  FileDown,
+  Loader2,
+  MapPin,
+  Minus,
+  Square,
+  User,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button, EmptyState, Modal, ModalBody, ModalFooter, ModalHeader } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import {
+  ACCENT_COLORS,
+  EVENT_TYPE_COLORS,
+  PLANNING_SECTIONS,
+  STATUS_COLORS,
+} from '../../constants/colors';
+import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import { safeParseDate } from '../../utils/dateUtils';
+import { formatDateFr } from '../../utils/formatUtils';
 
-// ═══ Constantes sections (identiques au planning) ═══
+// ═══ Sections (depuis colorConstants) ═══
 const SECTIONS = {
-  rdv:                 { label: 'Rendez-vous',          emoji: '📅', color: '#059669' },
-  taches_prioritaires: { label: 'Tâches Prioritaires',  emoji: '🔴', color: '#ef4444' },
-  courses:             { label: 'Courses',               emoji: '🚗', color: '#8b5cf6' },
-  prep_locations:      { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b' },
-  prep_prestations:    { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6' },
-  prep_ventes:         { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981' },
-  prep_installations:  { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6' },
-  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b' },
-  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6' },
-  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981' },
-  montage:             { label: 'Montage',              emoji: '🔩', color: '#0891b2' },
-  demontage:           { label: 'Démontage',            emoji: '🔧', color: '#dc2626' },
-  evenements:          { label: 'Autres Événements',    emoji: '📌', color: '#64748b' },
-  taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
-  manual:              { label: 'Autres',                emoji: '📋', color: 'var(--theme-text-secondary)' },
+  ...PLANNING_SECTIONS,
+  evenements: { label: 'Autres Événements', emoji: '📌', color: STATUS_COLORS.neutral },
+  manual: { ...PLANNING_SECTIONS.manual, color: 'var(--theme-text-secondary)' },
 };
 
-// Aliases de section (identiques au planning)
 const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation: 'courses' };
 const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
 
 const EVENT_TYPES = {
-  preparation:  { label: 'Préparation',  emoji: '🔧', color: '#0891b2' },
-  enlevement:   { label: 'Enlèvement',   emoji: '📦', color: '#f59e0b' },
-  livraison:    { label: 'Livraison',     emoji: '🚚', color: '#10b981' },
-  depart:       { label: 'Départ',        emoji: '🚀', color: '#3b82f6' },
-  retour:       { label: 'Retour',        emoji: '↩️', color: '#8b5cf6' },
-  recuperation: { label: 'Récupération',  emoji: '📥', color: '#ef4444' },
+  ...EVENT_TYPE_COLORS,
+  preparation: { ...EVENT_TYPE_COLORS.preparation, color: ACCENT_COLORS.cyanDark },
 };
 
 const STATUS_ICONS = {
@@ -67,12 +69,14 @@ const mapEventToSection = (event) => {
     if (cat === 'installation') return 'prep_installations';
     return 'prep_locations';
   }
-  if (type === 'enlevement') return 'enlevement';
+  if (type === 'enlevement') return 'courses';
   if (type === 'depart') return 'depart';
-  if (type === 'livraison') return 'chargement';
-  if (type === 'retour') return 'retour';
-  if (type === 'recuperation') return 'recuperation';
+  if (type === 'livraison') return 'courses';
+  if (type === 'retour') return 'courses';
+  if (type === 'recuperation') return 'courses';
   if (type === 'installation') return 'installation';
+  if (type === 'montage') return 'montage';
+  if (type === 'demontage') return 'demontage';
   return 'evenements';
 };
 
@@ -81,8 +85,18 @@ const _mapAffaireToSection = (affaire) => {
   return info ? info.section : 'manual';
 };
 
-function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], googleRdvEvents = [], planningAssignments = [], _persons = [], onClose }) {
+function TaskPDFExportModal({
+  date,
+  tasks,
+  affaires = [],
+  displayEvents = [],
+  googleRdvEvents = [],
+  planningAssignments = [],
+  _persons = [],
+  onClose,
+}) {
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const initializedRef = useRef(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -90,7 +104,7 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
   // ── Map multi-affectations : "entityType:entityId" → [{personId, firstName, lastName}] ──
   const assignmentsByEntity = useMemo(() => {
     const map = new Map();
-    (planningAssignments || []).forEach(a => {
+    (planningAssignments || []).forEach((a) => {
       const key = `${a.entityType}:${a.entityId}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(a);
@@ -99,40 +113,52 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
   }, [planningAssignments]);
 
   // Helper: get assigned persons for an entity
-  const getAssignments = useCallback((entityType, entityId) => {
-    return assignmentsByEntity.get(`${entityType}:${entityId}`) || [];
-  }, [assignmentsByEntity]);
+  const getAssignments = useCallback(
+    (entityType, entityId) => {
+      return assignmentsByEntity.get(`${entityType}:${entityId}`) || [];
+    },
+    [assignmentsByEntity],
+  );
 
   // ── Construire les items par section (identique au planning) ──
   const { allItems, grouped, activeSections } = useMemo(() => {
     const items = [];
     const groups = {};
-    Object.keys(SECTIONS).forEach(k => { groups[k] = []; });
-
-    // 1) Tâches manuelles (exclure les tâches terminées et celles dont l'événement lié est terminé)
-    const doneEventIds = new Set((displayEvents || []).filter(ev => ev.status === STATUS.DONE).map(ev => ev.id));
-    (tasks || []).filter(t => t.status !== STATUS.DONE && !(t.displayEventId && doneEventIds.has(t.displayEventId))).forEach(t => {
-      const sec = t.section || 'manual';
-      const item = { uid: `task-${t.id}`, type: 'task', section: sec, data: t };
-      items.push(item);
-      if (!groups[sec]) groups[sec] = [];
-      groups[sec].push(item);
+    Object.keys(SECTIONS).forEach((k) => {
+      groups[k] = [];
     });
+
+    // 1) Tâches manuelles (exclure uniquement les tâches terminées, et filtrer sur la date du jour)
+    (tasks || [])
+      .filter((t) => t.status !== STATUS.DONE && t.date === date)
+      .forEach((t) => {
+        const sec = normalizeSection(t.section || 'manual');
+        const item = { uid: `task-${t.id}`, type: 'task', section: sec, data: t };
+        items.push(item);
+        if (!groups[sec]) groups[sec] = [];
+        groups[sec].push(item);
+      });
 
     // 2) Affaires — exclues de l'export PDF (les tâches liées suffisent)
 
-    // 3) Événements d'affichage non liés à des tâches (exclure les terminés)
-    const linkedEventIds = new Set((tasks || []).filter(t => t.displayEventId).map(t => t.displayEventId));
-    (displayEvents || []).filter(ev => !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE).forEach(ev => {
-      const sec = mapEventToSection(ev);
-      const item = { uid: `event-${ev.id}`, type: 'event', section: sec, data: ev };
-      items.push(item);
-      if (!groups[sec]) groups[sec] = [];
-      groups[sec].push(item);
-    });
+    // 3) Événements d'affichage non liés à des tâches (exclure les terminés, filtrer sur la date du jour)
+    const linkedEventIds = new Set(
+      (tasks || [])
+        .filter((t) => t.date === date && (t.display_event_id || t.displayEventId))
+        .map((t) => t.display_event_id || t.displayEventId),
+    );
+    (displayEvents || [])
+      .filter((ev) => ev.date === date && !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE)
+      .forEach((ev) => {
+        const sec = normalizeSection(mapEventToSection(ev));
+        const item = { uid: `event-${ev.id}`, type: 'event', section: sec, data: ev };
+        items.push(item);
+        if (!groups[sec]) groups[sec] = [];
+        groups[sec].push(item);
+      });
 
     // 4) Google Calendar RDV
-    (googleRdvEvents || []).forEach(ev => {
+    (googleRdvEvents || []).forEach((ev) => {
       const item = { uid: `gcal-${ev.id}`, type: 'gcal', section: 'rdv', data: ev };
       items.push(item);
       if (!groups.rdv) groups.rdv = [];
@@ -144,72 +170,85 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const m = (str || '').match(/\bAF\s*\d{4,}/i);
       return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
     };
-    Object.keys(groups).forEach(sec => {
+    Object.keys(groups).forEach((sec) => {
       const sectionItems = groups[sec];
       const affaireNums = new Set(
         sectionItems
-          .filter(i => i.type === 'affaire' || i.type === 'affaire-rdv')
-          .map(i => (i.data.numeroAffaire || '').toUpperCase())
-          .filter(Boolean)
+          .filter((i) => i.type === 'affaire' || i.type === 'affaire-rdv')
+          .map((i) => (i.data.numeroAffaire || '').toUpperCase())
+          .filter(Boolean),
       );
       if (affaireNums.size === 0) return;
       const toRemove = new Set();
-      sectionItems.forEach(i => {
+      sectionItems.forEach((i) => {
         if (i.type !== 'task') return;
         const t = i.data;
         const taskAffNum = (t.affaireNum || '').toUpperCase() || extractAffNum(t.title);
         if (taskAffNum && affaireNums.has(taskAffNum)) toRemove.add(i.uid);
       });
       if (toRemove.size > 0) {
-        groups[sec] = sectionItems.filter(i => !toRemove.has(i.uid));
+        groups[sec] = sectionItems.filter((i) => !toRemove.has(i.uid));
       }
     });
     // Reconstruire items sans les doublons retirés
     const removedUids = new Set();
-    Object.values(groups).forEach(arr => {
-      arr.forEach(i => removedUids.add(i.uid));
+    Object.values(groups).forEach((arr) => {
+      arr.forEach((i) => removedUids.add(i.uid));
     });
-    const dedupedItems = items.filter(i => removedUids.has(i.uid));
+    const dedupedItems = items.filter((i) => removedUids.has(i.uid));
 
-    const active = Object.keys(SECTIONS).filter(k => (groups[k] || []).length > 0);
+    const active = Object.keys(SECTIONS).filter((k) => (groups[k] || []).length > 0);
     return { allItems: dedupedItems, grouped: groups, activeSections: active };
-  }, [tasks, affaires, displayEvents, googleRdvEvents]);
+  }, [tasks, displayEvents, googleRdvEvents, date]);
 
-  // Initialiser avec tout sélectionné
+  // Initialiser avec tout sélectionné (une seule fois)
   useEffect(() => {
-    if (allItems.length > 0) {
-      setSelectedIds(new Set(allItems.map(i => i.uid)));
+    if (allItems.length > 0 && !initializedRef.current) {
+      initializedRef.current = true;
+      setSelectedIds(new Set(allItems.map((i) => i.uid)));
     }
   }, [allItems]);
 
   // Extraire les IDs sélectionnés par type
   const getSelectedPayload = useCallback(() => {
-    const taskIds = [], affaireIds = new Set(), eventIds = [], gcalEvents = [];
-    allItems.forEach(item => {
+    const taskIds = [],
+      affaireIds = new Set(),
+      eventIds = [],
+      gcalEvents = [];
+    allItems.forEach((item) => {
       if (!selectedIds.has(item.uid)) return;
       if (item.type === 'task') taskIds.push(item.data.id);
       else if (item.type === 'affaire' || item.type === 'affaire-rdv') {
         affaireIds.add(item.data.id);
-      }
-      else if (item.type === 'event') eventIds.push(item.data.id);
-      else if (item.type === 'gcal') gcalEvents.push({
-        summary: item.data.summary || 'RDV',
-        start: item.data.start?.dateTime || item.data.start?.date || '',
-        end: item.data.end?.dateTime || item.data.end?.date || '',
-        location: item.data.location || '',
-        affaire: item.data.affaire || '',
-      });
+      } else if (item.type === 'event') eventIds.push(item.data.id);
+      else if (item.type === 'gcal')
+        gcalEvents.push({
+          summary: item.data.summary || 'RDV',
+          start: item.data.start?.dateTime || item.data.start?.date || '',
+          end: item.data.end?.dateTime || item.data.end?.date || '',
+          location: item.data.location || '',
+          affaire: item.data.affaire || '',
+        });
     });
     return { taskIds, affaireIds: [...affaireIds], eventIds, gcalEvents };
   }, [allItems, selectedIds]);
 
   // Générer l'aperçu PDF
   const generatePreview = useCallback(async () => {
-    if (selectedIds.size === 0) { setPdfUrl(null); return; }
+    if (selectedIds.size === 0) {
+      setPdfUrl(null);
+      return;
+    }
     setGenerating(true);
     try {
       const sel = getSelectedPayload();
-      const blob = await api.exportTasksPdf(date, sel.taskIds, sel.affaireIds, sel.eventIds, sel.gcalEvents);
+      const blob = await api.exportTasksPdf(
+        date,
+        sel.taskIds,
+        sel.affaireIds,
+        sel.eventIds,
+        sel.gcalEvents,
+      );
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       setPdfUrl(URL.createObjectURL(blob));
     } catch (err) {
@@ -220,44 +259,53 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
   }, [date, selectedIds, pdfUrl, getSelectedPayload]);
 
   useEffect(() => {
-    if (selectedIds.size === 0) { setPdfUrl(null); return; }
+    if (selectedIds.size === 0) {
+      setPdfUrl(null);
+      return;
+    }
     const timer = setTimeout(() => generatePreview(), 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds, date]);
 
   useEffect(() => {
-    return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleItem = (uid) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(uid)) next.delete(uid); else next.add(uid);
+      if (next.has(uid)) next.delete(uid);
+      else next.add(uid);
       return next;
     });
   };
 
   const toggleSection = (sectionKey) => {
-    const sectionUids = (grouped[sectionKey] || []).map(i => i.uid);
-    const allSelected = sectionUids.every(uid => selectedIds.has(uid));
-    setSelectedIds(prev => {
+    const sectionUids = (grouped[sectionKey] || []).map((i) => i.uid);
+    const allSelected = sectionUids.every((uid) => selectedIds.has(uid));
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      sectionUids.forEach(uid => { if (allSelected) next.delete(uid); else next.add(uid); });
+      sectionUids.forEach((uid) => {
+        if (allSelected) next.delete(uid);
+        else next.add(uid);
+      });
       return next;
     });
   };
 
   const toggleAll = () => {
-    const allUids = allItems.map(i => i.uid);
+    const allUids = allItems.map((i) => i.uid);
     setSelectedIds(selectedIds.size === allUids.length ? new Set() : new Set(allUids));
   };
 
   const sectionState = (sectionKey) => {
-    const uids = (grouped[sectionKey] || []).map(i => i.uid);
+    const uids = (grouped[sectionKey] || []).map((i) => i.uid);
     if (uids.length === 0) return 'none';
-    const sel = uids.filter(uid => selectedIds.has(uid)).length;
+    const sel = uids.filter((uid) => selectedIds.has(uid)).length;
     if (sel === 0) return 'none';
     if (sel === uids.length) return 'all';
     return 'partial';
@@ -268,11 +316,19 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     setDownloading(true);
     try {
       const sel = getSelectedPayload();
-      const blob = await api.exportTasksPdf(date, sel.taskIds, sel.affaireIds, sel.eventIds, sel.gcalEvents);
+      const blob = await api.exportTasksPdf(
+        date,
+        sel.taskIds,
+        sel.affaireIds,
+        sel.eventIds,
+        sel.gcalEvents,
+      );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `fiche-${date}.pdf`;
-      document.body.appendChild(a); a.click();
+      a.href = url;
+      a.download = `fiche-${date}.pdf`;
+      document.body.appendChild(a);
+      a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -284,11 +340,12 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
 
   const totalItems = allItems.length;
   const dateFr = formatDateFr(date);
+  const previewSrc = pdfUrl ? `${pdfUrl}#zoom=80` : null;
 
   // ── Index affaires par numéro pour enrichir les tâches ──
   const affaireByNum = useMemo(() => {
     const map = new Map();
-    (affaires || []).forEach(a => {
+    (affaires || []).forEach((a) => {
       if (a.numeroAffaire) map.set(a.numeroAffaire.toUpperCase(), a);
     });
     return map;
@@ -312,8 +369,15 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     // 2. Retirer label de section (redondant avec le bandeau)
     if (sectionInfo?.affaireOnly) {
       title = title
-        .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
-        .replace(/^(Préparation|Chargement|Départ|Enlèvement|Retour|Récupération|Installation|Livraison)\s*—?\s*/i, '')
+        // eslint-disable-next-line no-misleading-character-class
+        .replace(
+          /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
+          '',
+        )
+        .replace(
+          /^(Pr(?:e|é)paration|Chargement|D(?:e|é)part|Enl(?:e|è)vement|Retour|R(?:e|é)cup(?:e|é)ration|Installation|Livraison)\s*—?\s*/i,
+          '',
+        )
         .trim();
       if (!title) title = task.googleEventTitle || task.notes || '-';
     }
@@ -323,7 +387,11 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const digits = affNum.replace(/^AF/i, '');
       const flexDigits = digits.split('').join('\\s*');
       const pattern = new RegExp('\\bAF\\s*' + flexDigits + '\\b', 'gi');
-      return text.replace(pattern, '').replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '').replace(/\s{2,}/g, ' ').trim();
+      return text
+        .replace(pattern, '')
+        .replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
     };
     title = stripAfNum(title);
     // 4. Enrichir avec client/titre affaire si titre trop générique
@@ -331,7 +399,9 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
     // 4. Enrichir avec client/titre de l'affaire SEULEMENT si titre vide/générique
     if (!title || /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(title)) {
       if (linkedAffaire) {
-        title = stripAfNum(linkedAffaire.client || linkedAffaire.titre || linkedAffaire.eventName || title || '-');
+        title = stripAfNum(
+          linkedAffaire.client || linkedAffaire.titre || linkedAffaire.eventName || title || '-',
+        );
       }
     }
     // Auto-majuscule
@@ -355,15 +425,37 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       // Course type extraction (3-source: section → eventType → title regex)
       let courseType = null;
       if (taskSection === 'courses') {
-        const SECTION_COURSE = { enlevement: 'enlevement', retour: 'retour', recuperation: 'recuperation' };
-        const EVENT_COURSE = { livraison: 'livraison', enlevement: 'enlevement', retour: 'retour', recuperation: 'recuperation' };
+        const SECTION_COURSE = {
+          enlevement: 'enlevement',
+          retour: 'retour',
+          recuperation: 'recuperation',
+        };
+        const EVENT_COURSE = {
+          livraison: 'livraison',
+          enlevement: 'enlevement',
+          retour: 'retour',
+          recuperation: 'recuperation',
+        };
         if (SECTION_COURSE[task.section]) courseType = SECTION_COURSE[task.section];
-        else if (task.eventType && EVENT_COURSE[task.eventType]) courseType = EVENT_COURSE[task.eventType];
+        else if (task.eventType && EVENT_COURSE[task.eventType])
+          courseType = EVENT_COURSE[task.eventType];
         else {
-          const m = (task.title || '').match(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\b/iu);
+          // eslint-disable-next-line no-misleading-character-class
+          const m = (task.title || '').match(
+            /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\b/iu,
+          );
           if (m) {
-            const raw = m[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            courseType = { livraison: 'livraison', recuperation: 'recuperation', enlevement: 'enlevement', retour: 'retour' }[raw] || null;
+            const raw = m[1]
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '');
+            courseType =
+              {
+                livraison: 'livraison',
+                recuperation: 'recuperation',
+                enlevement: 'enlevement',
+                retour: 'retour',
+              }[raw] || null;
           }
         }
       }
@@ -371,46 +463,118 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       // Clean title + strip course prefix
       let displayTitle = cleanTaskTitle(task);
       if (courseType) {
-        displayTitle = displayTitle
-          .replace(/^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u, '')
-          .replace(/^(Livraison|Récupération|Recuperation|Enlèvement|Enlevement|Retour)\s*—?\s*/i, '')
-          .trim() || task.googleEventTitle || task.notes || '-';
+        displayTitle =
+          displayTitle
+            // eslint-disable-next-line no-misleading-character-class
+            .replace(
+              /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
+              '',
+            )
+            .replace(
+              /^(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\s*—?\s*/i,
+              '',
+            )
+            .trim() ||
+          task.googleEventTitle ||
+          task.notes ||
+          '-';
       }
 
       // Client & Location
       const displayClient = task.eventClient || linkedAffaire?.client || '';
-      const displayLocation = task.eventLocation || linkedAffaire?.adresseLivraison?.split('\n')[0] || '';
+      const displayLocation =
+        task.eventLocation || linkedAffaire?.adresseLivraison?.split('\n')[0] || '';
       const clientLocationStr = [displayClient, displayLocation].filter(Boolean).join(' — ');
 
       // Time (ou période AM/PM si pas d'heure)
-      const timeStr = task.time ? (task.endTime ? `${task.time} → ${task.endTime}` : task.time) : (task.period || '');
+      const timeStr = String(task.time || task.period || '')
+        .split(/\s*(?:>|→|-)\s*/)[0]
+        .trim();
 
       const assignments = getAssignments('task', task.id);
       const courseInfo = courseType ? EVENT_TYPES[courseType] : null;
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
-          <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
-          <span className="task-cb-status" title={STATUS_LABELS[task.status]}>{STATUS_ICONS[task.status]}</span>
-          {affaireNum && <span className="task-cb-affaire" title={affaireNum}>{affaireNum}</span>}
+        <div
+          key={item.uid}
+          className={`task-checkbox-row ${checked ? 'selected' : ''} ${isDone ? 'done' : ''}`}
+          role="checkbox"
+          aria-checked={checked}
+          tabIndex={0}
+          onClick={() => toggleItem(item.uid)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleItem(item.uid);
+            }
+          }}
+        >
+          <span className={`task-cb ${checked ? 'checked' : ''}`}>
+            {checked && <Check size={10} />}
+          </span>
+          <span className="task-cb-status" title={STATUS_LABELS[task.status]}>
+            {STATUS_ICONS[task.status]}
+          </span>
+          {affaireNum && (
+            <span className="task-cb-affaire" title={affaireNum}>
+              {affaireNum}
+            </span>
+          )}
           {courseInfo && (
-            <span className="task-cb-course-badge" style={{ background: `${courseInfo.color}18`, color: courseInfo.color, borderColor: `${courseInfo.color}40` }}>
+            <span
+              className="task-cb-course-badge"
+              style={{
+                background: `${courseInfo.color}18`,
+                color: courseInfo.color,
+                borderColor: `${courseInfo.color}40`,
+              }}
+            >
               {courseInfo.emoji} {courseInfo.label}
             </span>
           )}
-          <span className={`task-cb-title ${isDone ? 'done' : ''}`} title={[displayTitle, displayLocation && `📍 ${displayLocation}`, task.notes && `📝 ${task.notes}`].filter(Boolean).join('\n')}>{displayTitle}</span>
-          {timeStr && <span className="task-cb-time"><Clock size={10} /> {timeStr}</span>}
-          {displayClient && <span className="task-cb-client" title={clientLocationStr}>{displayClient}</span>}
-          {!displayClient && displayLocation && <span className="task-cb-client" title={displayLocation}>📍 {displayLocation.slice(0, 25)}</span>}
+          <span
+            className={`task-cb-title ${isDone ? 'done' : ''}`}
+            title={[
+              displayTitle,
+              displayLocation && `📍 ${displayLocation}`,
+              task.notes && `📝 ${task.notes}`,
+            ]
+              .filter(Boolean)
+              .join('\n')}
+          >
+            {displayTitle}
+          </span>
+          {timeStr && (
+            <span className="task-cb-time">
+              <Clock size={10} /> {timeStr}
+            </span>
+          )}
+          {displayClient && (
+            <span className="task-cb-client" title={clientLocationStr}>
+              {displayClient}
+            </span>
+          )}
+          {!displayClient && displayLocation && (
+            <span className="task-cb-client" title={displayLocation}>
+              📍 {displayLocation.slice(0, 25)}
+            </span>
+          )}
           {assignments.length > 0 ? (
             <span className="task-cb-persons">
-              {assignments.map(a => (
-                <span key={a.personId} className="task-cb-person-chip" title={`${a.firstName} ${a.lastName || ''}`}>
-                  {a.firstName?.charAt(0)}{a.lastName?.charAt(0) || ''}
+              {assignments.map((a) => (
+                <span
+                  key={a.personId}
+                  className="task-cb-person-chip"
+                  title={`${a.firstName} ${a.lastName || ''}`}
+                >
+                  {a.firstName?.charAt(0)}
+                  {a.lastName?.charAt(0) || ''}
                 </span>
               ))}
             </span>
-          ) : (task.personFirstName || task.personLastName) ? (
-            <span className="task-cb-person"><User size={10} /> {task.personFirstName} {task.personLastName?.charAt(0)}.</span>
+          ) : task.personFirstName || task.personLastName ? (
+            <span className="task-cb-person">
+              <User size={10} /> {task.personFirstName} {task.personLastName?.charAt(0)}.
+            </span>
           ) : null}
         </div>
       );
@@ -421,20 +585,48 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const ti = AFFAIRE_TYPE_INFO[a.type] || { label: a.type || 'Affaire', emoji: '📋' };
       const assignments = getAssignments('affaire', a.id);
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
-          <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
-          <Briefcase size={11} style={{ color: 'var(--theme-purple-accent)', flexShrink: 0 }} />
-          <span className="task-cb-title">{ti.emoji} {a.numeroAffaire} — {a.client || 'Sans client'}</span>
+        <div
+          key={item.uid}
+          className={`task-checkbox-row ${checked ? 'selected' : ''}`}
+          role="checkbox"
+          aria-checked={checked}
+          tabIndex={0}
+          onClick={() => toggleItem(item.uid)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleItem(item.uid);
+            }
+          }}
+        >
+          <span className={`task-cb ${checked ? 'checked' : ''}`}>
+            {checked && <Check size={10} />}
+          </span>
+          <Briefcase
+            size={11}
+            className="u-flex-shrink-0"
+            style={{ color: 'var(--theme-purple-accent)' }}
+          />
+          <span className="task-cb-title">
+            {ti.emoji} {a.numeroAffaire} — {a.client || 'Sans client'}
+          </span>
           {assignments.length > 0 ? (
             <span className="task-cb-persons">
-              {assignments.map(as => (
-                <span key={as.personId} className="task-cb-person-chip" title={`${as.firstName} ${as.lastName || ''}`}>
-                  {as.firstName?.charAt(0)}{as.lastName?.charAt(0) || ''}
+              {assignments.map((as) => (
+                <span
+                  key={as.personId}
+                  className="task-cb-person-chip"
+                  title={`${as.firstName} ${as.lastName || ''}`}
+                >
+                  {as.firstName?.charAt(0)}
+                  {as.lastName?.charAt(0) || ''}
                 </span>
               ))}
             </span>
           ) : a.adresseLivraison ? (
-            <span className="task-cb-person"><MapPin size={10} /> {a.adresseLivraison.split('\n')[0].slice(0, 25)}</span>
+            <span className="task-cb-person">
+              <MapPin size={10} /> {a.adresseLivraison.split('\n')[0].slice(0, 25)}
+            </span>
           ) : null}
         </div>
       );
@@ -449,20 +641,42 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
         ? [ev.affaireId, ev.client].filter(Boolean).join(' — ') || ti.label
         : `${ti.label} ${ev.affaireId ? `(${ev.affaireId})` : ''} ${ev.client ? `— ${ev.client}` : ''}`;
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
-          <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
+        <div
+          key={item.uid}
+          className={`task-checkbox-row ${checked ? 'selected' : ''}`}
+          role="checkbox"
+          aria-checked={checked}
+          tabIndex={0}
+          onClick={() => toggleItem(item.uid)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleItem(item.uid);
+            }
+          }}
+        >
+          <span className={`task-cb ${checked ? 'checked' : ''}`}>
+            {checked && <Check size={10} />}
+          </span>
           <span className="task-cb-status">{isAffaireOnly ? '' : ti.emoji}</span>
           <span className="task-cb-title">{displayText}</span>
           {assignments.length > 0 ? (
             <span className="task-cb-persons">
-              {assignments.map(as => (
-                <span key={as.personId} className="task-cb-person-chip" title={`${as.firstName} ${as.lastName || ''}`}>
-                  {as.firstName?.charAt(0)}{as.lastName?.charAt(0) || ''}
+              {assignments.map((as) => (
+                <span
+                  key={as.personId}
+                  className="task-cb-person-chip"
+                  title={`${as.firstName} ${as.lastName || ''}`}
+                >
+                  {as.firstName?.charAt(0)}
+                  {as.lastName?.charAt(0) || ''}
                 </span>
               ))}
             </span>
           ) : ev.location ? (
-            <span className="task-cb-person"><MapPin size={10} /> {ev.location.slice(0, 20)}</span>
+            <span className="task-cb-person">
+              <MapPin size={10} /> {ev.location.slice(0, 20)}
+            </span>
           ) : null}
         </div>
       );
@@ -472,17 +686,43 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
       const ev = item.data;
       const startDT = ev.start?.dateTime || ev.start?.date || '';
       const timeStr = startDT.includes('T')
-        ? safeParseDate(startDT)?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || ''
+        ? safeParseDate(startDT)?.toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }) || ''
         : '';
       return (
-        <div key={item.uid} className={`task-checkbox-row ${checked ? 'selected' : ''}`} role="checkbox" tabIndex={0} onClick={() => toggleItem(item.uid)}>
-          <span className={`task-cb ${checked ? 'checked' : ''}`}>{checked && <Check size={10} />}</span>
-          <Calendar size={11} style={{ color: 'var(--theme-primary)', flexShrink: 0 }} />
+        <div
+          key={item.uid}
+          className={`task-checkbox-row ${checked ? 'selected' : ''}`}
+          role="checkbox"
+          aria-checked={checked}
+          tabIndex={0}
+          onClick={() => toggleItem(item.uid)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleItem(item.uid);
+            }
+          }}
+        >
+          <span className={`task-cb ${checked ? 'checked' : ''}`}>
+            {checked && <Check size={10} />}
+          </span>
+          <Calendar
+            size={11}
+            className="u-flex-shrink-0"
+            style={{ color: 'var(--theme-primary)' }}
+          />
           <span className="task-cb-title">
             {ev.affaire && <strong style={{ color: '#059669' }}>{ev.affaire} </strong>}
             {ev.summary || 'RDV'}
           </span>
-          {timeStr && <span className="task-cb-person"><Clock size={10} /> {timeStr}</span>}
+          {timeStr && (
+            <span className="task-cb-person">
+              <Clock size={10} /> {timeStr}
+            </span>
+          )}
         </div>
       );
     }
@@ -491,101 +731,129 @@ function TaskPDFExportModal({ date, tasks, affaires = [], displayEvents = [], go
   };
 
   return (
-    <div className="pdf-export-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="pdf-export-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
-        {/* Header */}
-        <div className="pdf-export-header">
-          <div className="pdf-export-header-left">
-            <FileDown size={20} />
-            <div>
-              <h3>Export PDF — Fiche du jour</h3>
-              <span className="pdf-export-date">{dateFr}</span>
-            </div>
-          </div>
-          <Button variant="ghost" className="pdf-export-close" onClick={onClose} aria-label="Fermer">
-            <X size={18} />
-          </Button>
+    <Modal open={true} onClose={onClose} size="xl" className="pdf-export-modal no-drag-resize">
+      <ModalHeader icon={<FileDown size={20} />} onClose={onClose} className="pdf-export-header">
+        <div className="pdf-header-content">
+          <span>Export PDF — Fiche du jour</span>
+          <span className="pdf-export-date">{dateFr}</span>
         </div>
-
-        <div className="pdf-export-body">
-          {/* Panneau de sélection (gauche) */}
-          <div className="pdf-export-selection">
-            <div className="selection-toolbar">
-              <Button variant="ghost" className="select-all-btn" onClick={toggleAll}>
-                {selectedIds.size === totalItems ? (
-                  <><CheckSquare size={15} /> Tout désélectionner</>
-                ) : (
-                  <><Square size={15} /> Tout sélectionner</>
-                )}
-              </Button>
-              <span className="selection-count">
-                {selectedIds.size}/{totalItems} élément{selectedIds.size > 1 ? 's' : ''}
-              </span>
-            </div>
-
-            <div className="selection-sections">
-              {activeSections.map(sectionKey => {
-                const info = SECTIONS[sectionKey];
-                const sectionItems = grouped[sectionKey] || [];
-                const state = sectionState(sectionKey);
-
-                return (
-                  <div key={sectionKey} className="selection-section">
-                    <div className="section-checkbox-row" role="checkbox" tabIndex={0} onClick={() => toggleSection(sectionKey)}>
-                      <span className="section-cb" style={{ borderColor: info.color }}>
-                        {state === 'all' && <Check size={12} style={{ color: info.color }} />}
-                        {state === 'partial' && <Minus size={12} style={{ color: info.color }} />}
-                      </span>
-                      <span className="section-cb-emoji">{info.emoji}</span>
-                      <span className="section-cb-label">{info.label}</span>
-                      <span className="section-cb-count" style={{ color: info.color }}>
-                        {sectionItems.filter(i => selectedIds.has(i.uid)).length}/{sectionItems.length}
-                      </span>
-                    </div>
-
-                    <div className="section-tasks-list">
-                      {sectionItems.map(renderItemRow)}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {activeSections.length === 0 && (
-                <div className="empty-selection">
-                  <p>Aucun élément pour cette date</p>
-                </div>
+      </ModalHeader>
+      <ModalBody className="pdf-export-body">
+        {/* Panneau de sélection (gauche) */}
+        <div className="pdf-export-selection">
+          <div className="selection-toolbar">
+            <Button variant="ghost" className="select-all-btn" onClick={toggleAll}>
+              {selectedIds.size === totalItems ? (
+                <>
+                  <CheckSquare size={15} /> Tout désélectionner
+                </>
+              ) : (
+                <>
+                  <Square size={15} /> Tout sélectionner
+                </>
               )}
-            </div>
+            </Button>
+            <span className="selection-count">
+              {selectedIds.size}/{totalItems} élément{selectedIds.size > 1 ? 's' : ''}
+            </span>
           </div>
 
-          {/* Aperçu PDF (droite) */}
-          <div className="pdf-export-preview">
-            {generating ? (
-              <div className="preview-loading">
-                <Loader2 size={32} className="spin" />
-                <p>Génération de l'aperçu…</p>
+          <div className="selection-sections">
+            {activeSections.map((sectionKey) => {
+              const info = SECTIONS[sectionKey];
+              const sectionItems = grouped[sectionKey] || [];
+              const state = sectionState(sectionKey);
+
+              return (
+                <div key={sectionKey} className="selection-section">
+                  <div
+                    className="section-checkbox-row"
+                    role="checkbox"
+                    aria-checked={
+                      state === 'all' ? 'true' : state === 'partial' ? 'mixed' : 'false'
+                    }
+                    tabIndex={0}
+                    onClick={() => toggleSection(sectionKey)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSection(sectionKey);
+                      }
+                    }}
+                  >
+                    <span className="section-cb" style={{ borderColor: info.color }}>
+                      {state === 'all' && <Check size={12} style={{ color: info.color }} />}
+                      {state === 'partial' && <Minus size={12} style={{ color: info.color }} />}
+                    </span>
+                    <span className="section-cb-emoji">{info.emoji}</span>
+                    <span className="section-cb-label">{info.label}</span>
+                    <span className="section-cb-count" style={{ color: info.color }}>
+                      {sectionItems.filter((i) => selectedIds.has(i.uid)).length}/
+                      {sectionItems.length}
+                    </span>
+                  </div>
+
+                  <div className="section-tasks-list">{sectionItems.map(renderItemRow)}</div>
+                </div>
+              );
+            })}
+
+            {activeSections.length === 0 && (
+              <div className="empty-selection">
+                <p>Aucun élément pour cette date</p>
               </div>
-            ) : pdfUrl ? (
-              <iframe src={pdfUrl} className="pdf-preview-frame" title="Aperçu PDF" />
-            ) : (
-              <EmptyState icon={<Eye size={40} />} title={<>Sélectionnez au moins un élément<br />pour voir l'aperçu</>} />
             )}
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="pdf-export-footer">
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button variant="primary" onClick={handleDownload} disabled={selectedIds.size === 0 || downloading}>
-            {downloading ? (
-              <><Loader2 size={15} className="spin" /> Téléchargement…</>
-            ) : (
-              <><FileDown size={15} /> Télécharger le PDF ({selectedIds.size} élément{selectedIds.size > 1 ? 's' : ''})</>
-            )}
-          </Button>
+        {/* Aperçu PDF (droite) */}
+        <div className="pdf-export-preview">
+          {generating ? (
+            <div className="preview-loading">
+              <Loader2 size={32} className="spin" />
+              <p>Génération de l'aperçu…</p>
+            </div>
+          ) : pdfUrl ? (
+            <div className="pdf-preview-frame-wrap">
+              <iframe src={previewSrc} className="pdf-preview-frame" title="Aperçu PDF" />
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Eye size={40} />}
+              title={
+                <>
+                  Sélectionnez au moins un élément
+                  <br />
+                  pour voir l'aperçu
+                </>
+              }
+            />
+          )}
         </div>
-      </div>
-    </div>
+      </ModalBody>
+
+      <ModalFooter className="pdf-export-footer">
+        <Button variant="ghost" onClick={onClose}>
+          Fermer
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleDownload}
+          disabled={selectedIds.size === 0 || downloading}
+        >
+          {downloading ? (
+            <>
+              <Loader2 size={15} className="spin" /> Téléchargement…
+            </>
+          ) : (
+            <>
+              <FileDown size={15} /> Télécharger le PDF ({selectedIds.size} élément
+              {selectedIds.size > 1 ? 's' : ''})
+            </>
+          )}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }
 

@@ -2,7 +2,6 @@
 
 export function registerAdminMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Configuration
     async getConfig(key) {
       return this.request(`/config/${key}`);
@@ -16,13 +15,27 @@ export function registerAdminMethods(ApiClient) {
       return this.request('/authorized-emails');
     },
     async addAuthorizedEmail(email) {
-      return this.request('/authorized-emails', { method: 'POST', body: JSON.stringify({ email }) });
+      return this.request('/authorized-emails', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
     },
     async removeAuthorizedEmail(id) {
       return this.request(`/authorized-emails/${id}`, { method: 'DELETE' });
     },
     async getUsers() {
       return this.request('/users');
+    },
+    async createUser(
+      email,
+      name,
+      password,
+      { isAdmin = false, readOnly = false, permissions } = {},
+    ) {
+      return this.request('/users', {
+        method: 'POST',
+        body: JSON.stringify({ email, name, password, isAdmin, readOnly, permissions }),
+      });
     },
     async updateUser(id, updates) {
       return this.request(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
@@ -31,10 +44,16 @@ export function registerAdminMethods(ApiClient) {
       return this.request(`/users/${id}`, { method: 'DELETE' });
     },
     async resetUserPassword(userId, newPassword) {
-      return this.request('/admin/reset-password', { method: 'POST', body: JSON.stringify({ userId, newPassword }) });
+      return this.request('/admin/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ userId, newPassword }),
+      });
     },
     async changePassword(currentPassword, newPassword) {
-      return this.request('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
+      return this.request('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
     },
 
     // Configuration Google Calendar
@@ -48,50 +67,90 @@ export function registerAdminMethods(ApiClient) {
       return this.request('/config/google/maps-api-key');
     },
     async saveGoogleClientId(value) {
-      return this.request('/config/google/client-id', { method: 'POST', body: JSON.stringify({ value }) });
+      return this.request('/config/google/client-id', {
+        method: 'POST',
+        body: JSON.stringify({ value }),
+      });
     },
     async saveGoogleCalendarId(value) {
-      return this.request('/config/google/calendar-id', { method: 'POST', body: JSON.stringify({ value }) });
+      return this.request('/config/google/calendar-id', {
+        method: 'POST',
+        body: JSON.stringify({ value }),
+      });
     },
     async saveGoogleMapsApiKey(value) {
-      return this.request('/config/google/maps-api-key', { method: 'POST', body: JSON.stringify({ value }) });
+      return this.request('/config/google/maps-api-key', {
+        method: 'POST',
+        body: JSON.stringify({ value }),
+      });
     },
 
-    // Google Calendar Proxy
-    async storeGoogleToken(accessToken, expiresAt) {
-      return this.request('/google-calendar/token', { method: 'POST', body: JSON.stringify({ accessToken, expiresAt }) });
+    // Google Calendar — Service Account (serveur uniquement, sans OAuth utilisateur)
+    async getGoogleOAuthConfigured() {
+      const status = await this.request('/calendar/status');
+      return { configured: !!status?.configured };
     },
-    async getGoogleTokenStatus() {
-      return this.request('/google-calendar/token-status');
+    async getGoogleOAuthStatus() {
+      const status = await this.request('/calendar/status');
+      return {
+        connected: !!status?.configured,
+        configured: !!status?.configured,
+        mode: status?.mode,
+        serviceAccountEmail: status?.serviceAccountEmail,
+        calendarId: status?.calendarId,
+        canWrite: !!status?.canWrite,
+        scopes: status?.scopes || [],
+      };
     },
-    async deleteGoogleToken() {
-      return this.request('/google-calendar/token', { method: 'DELETE' });
+    async getGoogleOAuthUrl() {
+      throw new Error(
+        'Flux OAuth utilisateur supprimé: configuration via Service Account uniquement',
+      );
     },
-    async getGoogleCalendars() {
-      return this.request('/google-calendar/calendars');
+    async disconnectGoogle() {
+      throw new Error('Flux OAuth utilisateur supprimé: aucune déconnexion utilisateur nécessaire');
     },
-    async addGoogleCalendar(body) {
-      return this.request('/google-calendar/calendars', { method: 'POST', body: JSON.stringify(body) });
+    async getCalendarServiceStatus() {
+      return this.request('/calendar/status');
     },
-    async getGoogleEvents(params = {}) {
+    async getGoogleCalendarsV2() {
+      return this.request('/google/calendars');
+    },
+    async addGoogleCalendarV2(body) {
+      return this.request('/google/calendars', { method: 'POST', body: JSON.stringify(body) });
+    },
+    async getGoogleEventsV2(params = {}) {
       const qs = new URLSearchParams(params).toString();
-      return this.request(`/google-calendar/events${qs ? '?' + qs : ''}`);
+      return this.request(`/calendar/events${qs ? '?' + qs : ''}`);
     },
-    async getGoogleEvent(eventId, calendarId) {
+    async getGoogleEventV2(eventId, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`);
+      return this.request(`/calendar/events/${encodeURIComponent(eventId)}${qs}`);
     },
-    async createGoogleEvent(eventData, calendarId) {
+    async createGoogleEventV2(eventData, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google-calendar/events${qs}`, { method: 'POST', body: JSON.stringify(eventData) });
+      return this.request(`/google/events${qs}`, {
+        method: 'POST',
+        body: JSON.stringify(eventData),
+      });
     },
-    async updateGoogleEvent(eventId, eventData, calendarId) {
+    async updateGoogleEventV2(eventId, eventData, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`, { method: 'PATCH', body: JSON.stringify(eventData) });
+      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, {
+        method: 'PATCH',
+        body: JSON.stringify(eventData),
+      });
     },
-    async deleteGoogleEvent(eventId, calendarId) {
+    async deleteGoogleEventV2(eventId, calendarId) {
       const qs = calendarId ? `?calendarId=${encodeURIComponent(calendarId)}` : '';
-      return this.request(`/google-calendar/events/${encodeURIComponent(eventId)}${qs}`, { method: 'DELETE' });
+      return this.request(`/google/events/${encodeURIComponent(eventId)}${qs}`, {
+        method: 'DELETE',
+      });
+    },
+    async syncPullReservations(days = 90) {
+      throw new Error(
+        `Synchronisation pull désactivée en mode Service Account readonly (days=${days})`,
+      );
     },
 
     // Demandes d'accès
@@ -99,13 +158,19 @@ export function registerAdminMethods(ApiClient) {
       return this.request('/access-requests');
     },
     async checkEmailAccessRequest(email) {
-      return this.request('/access-requests/check-email', { method: 'POST', body: JSON.stringify({ email }) });
+      return this.request('/access-requests/check-email', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
     },
     async createAccessRequest(data) {
       return this.request('/access-requests', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateAccessRequest(requestId, status, isAdmin = false) {
-      return this.request(`/access-requests/${requestId}`, { method: 'PATCH', body: JSON.stringify({ status, is_admin: isAdmin }) });
+      return this.request(`/access-requests/${requestId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, is_admin: isAdmin }),
+      });
     },
     async getPendingAccessRequestsCount() {
       return this.request('/access-requests/count/pending');

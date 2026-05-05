@@ -25,15 +25,25 @@ export default function ProgressBar({
     `ui-progress--${size}`,
     `ui-progress--${color}`,
     indeterminate && 'ui-progress--indeterminate',
-    className
-  ].filter(Boolean).join(' ');
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <div className={classes} role="progressbar"
+    <div
+      className={classes}
+      role="progressbar"
       aria-valuenow={indeterminate ? undefined : Math.round(pct)}
-      aria-valuemin={0} aria-valuemax={100} {...props}>
+      aria-valuemin={0}
+      aria-valuemax={100}
+      {...props}
+    >
       <div className="ui-progress__track">
-        <div className="ui-progress__fill" style={indeterminate ? undefined : { width: `${pct}%` }} />
+        <div
+          className="ui-progress__fill"
+          style={indeterminate ? undefined : { width: `${pct}%` }}
+        />
       </div>
       {label && <span className="ui-progress__label">{label}</span>}
     </div>

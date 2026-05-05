@@ -3,11 +3,13 @@
 // Upload, statut, prévisualisation, désactivation
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Camera, Trash2, Clock, Upload } from 'lucide-react';
+import { Camera, Clock, Trash2, Upload } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, SectionHeader, Select } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, Select, SectionHeader } from '@/design-system';
 
 const DURATION_OPTIONS = [
   { value: '15', label: '15 minutes' },
@@ -38,7 +40,9 @@ function SneakyTab({ _currentUser, refreshKey }) {
     }
   }, [toast]);
 
-  useEffect(() => { loadStatus(); }, [loadStatus, refreshKey]);
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus, refreshKey]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -49,7 +53,10 @@ function SneakyTab({ _currentUser, refreshKey }) {
   };
 
   const handleUpload = useCallback(async () => {
-    if (!selectedFile) { toast.error('Veuillez sélectionner une photo'); return; }
+    if (!selectedFile) {
+      toast.error('Veuillez sélectionner une photo');
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append('photo', selectedFile);
@@ -61,7 +68,7 @@ function SneakyTab({ _currentUser, refreshKey }) {
       const data = await api.getDisplaySneakyPhotoStatus();
       setStatus(data);
     } catch {
-      toast.error("Erreur activation");
+      toast.error('Erreur activation');
     }
   }, [selectedFile, duration, toast]);
 
@@ -80,7 +87,11 @@ function SneakyTab({ _currentUser, refreshKey }) {
   return (
     <div className="dtv-sneaky-photo">
       <div className="dtv-section">
-        <SectionHeader className="dtv-section-title" icon={<Camera size={16} />} title="Photo furtive" />
+        <SectionHeader
+          className="dtv-section-title"
+          icon={<Camera size={16} />}
+          title="Photo furtive"
+        />
         <p className="dtv-hint">
           Uploadez une photo qui défilera en bas de l'écran TV pendant la durée choisie.
         </p>
@@ -100,8 +111,12 @@ function SneakyTab({ _currentUser, refreshKey }) {
 
           <div className="dtv-form-group">
             <label>Durée d'affichage</label>
-            <Select value={duration} onChange={e => setDuration(e.target.value)}>
-              {DURATION_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+            <Select value={duration} onChange={(e) => setDuration(e.target.value)}>
+              {DURATION_OPTIONS.map((d) => (
+                <option key={d.value} value={d.value}>
+                  {d.label}
+                </option>
+              ))}
             </Select>
           </div>
 

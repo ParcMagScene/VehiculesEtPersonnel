@@ -350,3 +350,48 @@
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .ebl-toolbar {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .ebl-search {
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 100%;
+  }
+
+  .ebl-toolbar-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .ebl-btn-export,
+  .ebl-btn-print {
+    padding: 8px 12px;
+    font-size: var(--font-sm);
+  }
+
+  .ebl-item {
+    padding: 6px 8px 6px 28px;
+  }
+
+  .ebl-item-info {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .ebl-mini-preview {
+    display: none;
+  }
+
+  .ebl-group-header {
+    padding: 8px;
+    font-size: var(--font-sm);
+  }
+}

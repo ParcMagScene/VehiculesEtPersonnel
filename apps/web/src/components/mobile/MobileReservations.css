@@ -39,7 +39,10 @@
 }
 
 .mobile-reservations .add-button {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   color: var(--theme-text-inverse);
   box-shadow: 0 4px 12px var(--btn-primary-shadow);
 }
@@ -79,7 +82,9 @@
   box-shadow: none;
   background: var(--theme-bg-card);
   color: var(--theme-text-primary);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   box-sizing: border-box;
 }
 
@@ -132,7 +137,10 @@
 }
 
 .mobile-reservations .btn-submit {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   color: var(--theme-text-inverse);
   box-shadow: 0 4px 12px var(--btn-primary-shadow);
 }
@@ -162,7 +170,9 @@
   font-size: 15px;
   color: var(--theme-text-primary);
   text-align: left;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   box-sizing: border-box;
 }
 
@@ -236,8 +246,12 @@
 }
 
 @keyframes vp-overlay-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .vehicle-picker-modal {
@@ -252,8 +266,12 @@
 }
 
 @keyframes vp-slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .vehicle-picker-modal-header {
@@ -521,7 +539,10 @@
 }
 
 .mobile-reservations .btn-primary {
-  background: var(--theme-gradient, linear-gradient(135deg, var(--theme-primary), var(--theme-secondary)));
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  );
   color: var(--theme-text-inverse);
   border: none;
   padding: 14px var(--space-6);

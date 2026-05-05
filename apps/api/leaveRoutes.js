@@ -3,12 +3,23 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import db, { addToHistory } from './database.js';
-import { alertLeaveCreated, alertLeaveDecision } from './emailService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+import db, { addToHistory } from './database.js';
+import { alertLeaveCreated, alertLeaveDecision } from './emailService.js';
 import logger from './logger.js';
+import { validate } from './schemas/imports.js';
+import {
+  balanceUpdateSchema,
+  calculateSchema,
+  holidaySchema,
+  justificationSchema,
+  leaveCreateSchema,
+  leaveDecisionSchema,
+  leaveSignSchema,
+} from './schemas/leaves.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,12 +29,10 @@ const __dirname = path.dirname(__filename);
 // ═══════════════════════════════════════
 
 // Acquisition : 2,5 jours ouvrables / mois = 30 jours / an
-const DAYS_PER_MONTH = 2.5;
 const DAYS_PER_YEAR = 30;
 
 // Période de référence : 1er juin → 31 mai
 const REF_PERIOD_START_MONTH = 6; // juin
-const REF_PERIOD_START_DAY = 1;
 
 // Congé principal : min 12 jours ouvrables consécutifs entre 1er mai et 31 octobre
 const MIN_CONSECUTIVE_DAYS = 12;
@@ -31,10 +40,6 @@ const SUMMER_START_MONTH = 5;
 const SUMMER_END_MONTH = 10;
 
 // Fermeture annuelle : 24 décembre → 1er janvier
-const CLOSURE_START_DAY = 24;
-const CLOSURE_START_MONTH = 12;
-const CLOSURE_END_DAY = 1;
-const CLOSURE_END_MONTH = 1;
 
 // Date limite de pose des congés : 28 février
 const DEADLINE_MONTH = 2;
@@ -47,11 +52,11 @@ const MIN_MODIFICATION_DAYS = 30;
 // Conforme Code du travail Art. L3142-1 et IDCC 3252
 const EXCEPTIONAL_LEAVE_DURATIONS = {
   mariage_salarie: { days: 4, label: 'Mariage du salarié', requiresJustification: true },
-  pacs: { days: 4, label: 'Conclusion d\'un PACS', requiresJustification: true },
-  mariage_enfant: { days: 1, label: 'Mariage d\'un enfant', requiresJustification: true },
+  pacs: { days: 4, label: "Conclusion d'un PACS", requiresJustification: true },
+  mariage_enfant: { days: 1, label: "Mariage d'un enfant", requiresJustification: true },
   naissance: { days: 3, label: 'Naissance ou adoption', requiresJustification: true },
   deces_conjoint: { days: 3, label: 'Décès du conjoint/partenaire', requiresJustification: true },
-  deces_enfant: { days: 12, label: 'Décès d\'un enfant (< 25 ans)', requiresJustification: true },
+  deces_enfant: { days: 12, label: "Décès d'un enfant (< 25 ans)", requiresJustification: true },
   deces_parent: { days: 3, label: 'Décès père/mère', requiresJustification: true },
   deces_beau_parent: { days: 3, label: 'Décès beau-père/belle-mère', requiresJustification: true },
   deces_frere_soeur: { days: 3, label: 'Décès frère/sœur', requiresJustification: true },
@@ -64,12 +69,28 @@ const EXCEPTIONAL_LEAVE_DURATIONS = {
 const LEAVE_TYPES = {
   conge_paye: { label: 'Congés payés annuels', icon: '🏖️', color: '#60a5fa', deductsBalance: true },
   sans_solde: { label: 'Congé sans solde', icon: '💤', color: '#fb923c', deductsBalance: false },
-  exceptionnel: { label: 'Congé exceptionnel', icon: '🎉', color: '#a78bfa', deductsBalance: false },
-  maladie: { label: 'Congé maladie', icon: '🏥', color: '#f87171', deductsBalance: false, requiresJustification: true },
+  exceptionnel: {
+    label: 'Congé exceptionnel',
+    icon: '🎉',
+    color: '#a78bfa',
+    deductsBalance: false,
+  },
+  maladie: {
+    label: 'Congé maladie',
+    icon: '🏥',
+    color: '#f87171',
+    deductsBalance: false,
+    requiresJustification: true,
+  },
   parental: { label: 'Congé parental', icon: '👶', color: '#f472b6', deductsBalance: false },
   sabbatique: { label: 'Congé sabbatique', icon: '🌍', color: '#34d399', deductsBalance: false },
   formation: { label: 'Congé de formation', icon: '🎓', color: '#8b5cf6', deductsBalance: false },
-  fermeture: { label: 'Congés imposés (fermeture)', icon: '🔒', color: '#6b7280', deductsBalance: true },
+  fermeture: {
+    label: 'Congés imposés (fermeture)',
+    icon: '🔒',
+    color: '#6b7280',
+    deductsBalance: true,
+  },
 };
 
 // ═══════════════════════════════════════
@@ -92,7 +113,7 @@ function calcWorkingDays(startDate, endDate, startPeriod = 'AM', endPeriod = 'PM
   const holidays = new Set();
   for (let y = startYear; y <= endYear; y++) {
     const rows = db.prepare('SELECT date FROM public_holidays WHERE year = ?').all(y);
-    rows.forEach(r => holidays.add(r.date));
+    rows.forEach((r) => holidays.add(r.date));
   }
 
   let count = 0;
@@ -159,7 +180,11 @@ function checkMainLeaveRule(startDate, endDate, workingDays) {
   const endMonth = end.getMonth() + 1;
 
   // Si la demande est entre mai et octobre et dure 12+ jours, c'est conforme
-  if (startMonth >= SUMMER_START_MONTH && endMonth <= SUMMER_END_MONTH && workingDays >= MIN_CONSECUTIVE_DAYS) {
+  if (
+    startMonth >= SUMMER_START_MONTH &&
+    endMonth <= SUMMER_END_MONTH &&
+    workingDays >= MIN_CONSECUTIVE_DAYS
+  ) {
     return { valid: true, message: 'Conforme à la règle des 12 jours consécutifs mai-octobre' };
   }
 
@@ -207,7 +232,9 @@ function calculatePriorityScore(personId) {
 
   // Ancienneté (basée sur created_at)
   if (person.created_at) {
-    const years = Math.floor((Date.now() - new Date(person.created_at).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    const years = Math.floor(
+      (Date.now() - new Date(person.created_at).getTime()) / (365.25 * 24 * 60 * 60 * 1000),
+    );
     score += Math.min(years * 2, 20); // Max 20 points pour l'ancienneté
   }
 
@@ -222,7 +249,6 @@ function calculatePriorityScore(personId) {
 // ═══════════════════════════════════════
 
 export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
-
   // ──────────────────────────────────────
   // CONSTANTES ET TYPES DE CONGÉS
   // ──────────────────────────────────────
@@ -241,31 +267,39 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const { year } = req.query;
       let holidays;
       if (year) {
-        holidays = db.prepare('SELECT * FROM public_holidays WHERE year = ? ORDER BY date').all(year);
+        holidays = db
+          .prepare('SELECT * FROM public_holidays WHERE year = ? ORDER BY date')
+          .all(year);
       } else {
         holidays = db.prepare('SELECT * FROM public_holidays ORDER BY date').all();
       }
       res.json(holidays);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // POST /api/leaves/holidays — Ajouter un jour férié (admin)
-  app.post('/api/leaves/holidays', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const { date, name } = req.body;
-      if (!date || !name) return res.status(400).json({ error: 'Date et nom requis' });
-      const year = new Date(date).getFullYear();
-      db.prepare('INSERT OR IGNORE INTO public_holidays (date, name, year, is_custom) VALUES (?, ?, ?, 1)')
-        .run(date, name, year);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
-    }
-  });
+  app.post(
+    '/api/leaves/holidays',
+    authenticateToken,
+    requireAdmin,
+    validate(holidaySchema),
+    (req, res) => {
+      try {
+        const { date, name } = req.body;
+        const year = new Date(date).getFullYear();
+        db.prepare(
+          'INSERT OR IGNORE INTO public_holidays (date, name, year, is_custom) VALUES (?, ?, ?, 1)',
+        ).run(date, name, year);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // DELETE /api/leaves/holidays/:id — Supprimer un jour férié custom (admin)
   app.delete('/api/leaves/holidays/:id', authenticateToken, requireAdmin, (req, res) => {
@@ -274,7 +308,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -283,13 +317,16 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────────────────────────
 
   // POST /api/leaves/calculate — Calcul de jours ouvrables pour une période
-  app.post('/api/leaves/calculate', authenticateToken, (req, res) => {
+  app.post('/api/leaves/calculate', authenticateToken, validate(calculateSchema), (req, res) => {
     try {
       const { startDate, endDate, startPeriod, endPeriod, leaveType, exceptionalType } = req.body;
-      if (!startDate || !endDate) return res.status(400).json({ error: 'Dates requises' });
 
       // Pour les congés exceptionnels, utiliser la durée légale
-      if (leaveType === 'exceptionnel' && exceptionalType && EXCEPTIONAL_LEAVE_DURATIONS[exceptionalType]) {
+      if (
+        leaveType === 'exceptionnel' &&
+        exceptionalType &&
+        EXCEPTIONAL_LEAVE_DURATIONS[exceptionalType]
+      ) {
         const exceptInfo = EXCEPTIONAL_LEAVE_DURATIONS[exceptionalType];
         return res.json({
           workingDays: exceptInfo.days,
@@ -300,14 +337,22 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         });
       }
 
-      const workingDays = calcWorkingDays(startDate, endDate, startPeriod || 'AM', endPeriod || 'PM');
+      const workingDays = calcWorkingDays(
+        startDate,
+        endDate,
+        startPeriod || 'AM',
+        endPeriod || 'PM',
+      );
 
       // Récupérer les jours fériés dans la période
       const start = new Date(startDate);
       const end = new Date(endDate);
       const holidaysInPeriod = [];
       for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
-        const rows = db.prepare('SELECT date, name FROM public_holidays WHERE year = ? AND date >= ? AND date <= ?')
+        const rows = db
+          .prepare(
+            'SELECT date, name FROM public_holidays WHERE year = ? AND date >= ? AND date <= ?',
+          )
           .all(y, startDate, endDate);
         holidaysInPeriod.push(...rows);
       }
@@ -323,7 +368,9 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const d = new Date(startDate);
       while (d <= end) {
         if (isInClosurePeriod(d)) {
-          warnings.push('Cette période chevauche la fermeture annuelle (24/12 → 01/01). Les congés y sont imposés.');
+          warnings.push(
+            'Cette période chevauche la fermeture annuelle (24/12 → 01/01). Les congés y sont imposés.',
+          );
           break;
         }
         d.setDate(d.getDate() + 1);
@@ -341,7 +388,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -350,41 +397,59 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────────────────────────
 
   // POST /api/leaves — Créer une demande de congé
-  app.post('/api/leaves', authenticateToken, (req, res) => {
+  app.post('/api/leaves', authenticateToken, validate(leaveCreateSchema), (req, res) => {
     try {
       const {
-        personId, leaveType, exceptionalType,
-        startDate, endDate, startPeriod, endPeriod,
-        employeeComment, signatureEmployee,
+        personId,
+        leaveType,
+        exceptionalType,
+        startDate,
+        endDate,
+        startPeriod,
+        endPeriod,
+        employeeComment,
+        signatureEmployee,
       } = req.body;
 
       // Validations de base
       if (!personId || !startDate || !endDate) {
-        return res.status(400).json({ error: 'person_id, start_date et end_date sont requis' });
+        return res
+          .status(400)
+          .json({ success: false, error: 'person_id, start_date et end_date sont requis' });
       }
       if (!leaveType || !LEAVE_TYPES[leaveType]) {
-        return res.status(400).json({ error: 'Type de congé invalide' });
+        return res.status(400).json({ success: false, error: 'Type de congé invalide' });
       }
 
       // Vérifier que la personne existe
       const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
-      if (!person) return res.status(404).json({ error: 'Personne non trouvée' });
+      if (!person) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
       // Vérifier les dates
       if (new Date(endDate) < new Date(startDate)) {
-        return res.status(400).json({ error: 'La date de fin doit être postérieure à la date de début' });
+        return res.status(400).json({
+          success: false,
+          error: 'La date de fin doit être postérieure à la date de début',
+        });
       }
 
       // Calculer les jours ouvrables
       let workingDays;
-      if (leaveType === 'exceptionnel' && exceptionalType && EXCEPTIONAL_LEAVE_DURATIONS[exceptionalType]) {
+      if (
+        leaveType === 'exceptionnel' &&
+        exceptionalType &&
+        EXCEPTIONAL_LEAVE_DURATIONS[exceptionalType]
+      ) {
         workingDays = EXCEPTIONAL_LEAVE_DURATIONS[exceptionalType].days;
       } else {
         workingDays = calcWorkingDays(startDate, endDate, startPeriod || 'AM', endPeriod || 'PM');
       }
 
       if (workingDays <= 0) {
-        return res.status(400).json({ error: 'La période sélectionnée ne contient aucun jour ouvrable' });
+        return res.status(400).json({
+          success: false,
+          error: 'La période sélectionnée ne contient aucun jour ouvrable',
+        });
       }
 
       // Vérifier le justificatif pour congé maladie et certains congés exceptionnels
@@ -395,11 +460,10 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
 
       // Vérifier le solde pour les congés payés
       if (leaveType === 'conge_paye') {
-        const refPeriod = getReferencePeriod(startDate);
         const year = new Date(startDate).getFullYear();
-        const balance = db.prepare(
-          'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?'
-        ).get(personId, year, 'conge_paye');
+        const balance = db
+          .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+          .get(personId, year, 'conge_paye');
 
         if (balance) {
           const remaining = balance.days_entitled - balance.days_taken;
@@ -413,11 +477,15 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // Vérifier les chevauchements avec d'autres demandes acceptées
-      const overlapping = db.prepare(`
+      const overlapping = db
+        .prepare(
+          `
         SELECT * FROM leave_requests 
         WHERE person_id = ? AND status IN ('pending', 'accepted')
         AND start_date <= ? AND end_date >= ?
-      `).all(personId, endDate, startDate);
+      `,
+        )
+        .all(personId, endDate, startDate);
 
       if (overlapping.length > 0) {
         return res.status(409).json({
@@ -433,60 +501,94 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const userId = person.user_id || null;
 
       // Insérer la demande
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         INSERT INTO leave_requests (
           person_id, user_id, request_date, leave_type, exceptional_type,
           start_date, end_date, start_period, end_period, working_days,
           employee_comment, status, signature_employee, signature_employee_date,
           priority_score
         ) VALUES (?, ?, date('now'), ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
-      `).run(
-        personId, userId, leaveType, exceptionalType || null,
-        startDate, endDate, startPeriod || 'AM', endPeriod || 'PM', workingDays,
-        employeeComment || null,
-        signatureEmployee || null,
-        signatureEmployee ? new Date().toISOString() : null,
-        priorityScore,
-      );
+      `,
+        )
+        .run(
+          personId,
+          userId,
+          leaveType,
+          exceptionalType || null,
+          startDate,
+          endDate,
+          startPeriod || 'AM',
+          endPeriod || 'PM',
+          workingDays,
+          employeeComment || null,
+          signatureEmployee || null,
+          signatureEmployee ? new Date().toISOString() : null,
+          priorityScore,
+        );
 
       // Historiser la création
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO leave_request_history (leave_request_id, action, new_value, performed_by)
         VALUES (?, 'created', ?, ?)
-      `).run(
+      `,
+      ).run(
         result.lastInsertRowid,
         JSON.stringify({ leaveType, startDate, endDate, workingDays }),
         req.user.id,
       );
 
       // Créer aussi une entrée dans availabilities pour la visibilité dans le planning
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO availabilities (person_id, start_date, end_date, start_period, end_period,
           type, reason, source, status, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'leave_request', 'pending', ?)
-      `).run(
-        personId, startDate, endDate, startPeriod || 'AM', endPeriod || 'PM',
-        leaveType, employeeComment || `Demande de ${LEAVE_TYPES[leaveType]?.label || leaveType}`,
+      `,
+      ).run(
+        personId,
+        startDate,
+        endDate,
+        startPeriod || 'AM',
+        endPeriod || 'PM',
+        leaveType,
+        employeeComment || `Demande de ${LEAVE_TYPES[leaveType]?.label || leaveType}`,
         req.user.id,
       );
 
-      const created = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(result.lastInsertRowid);
+      const created = db
+        .prepare('SELECT * FROM leave_requests WHERE id = ?')
+        .get(result.lastInsertRowid);
 
-      addToHistory('leave_request', result.lastInsertRowid, 'created', 
-        { leaveType, startDate, endDate, workingDays }, req.user.id, req.user.name);
+      addToHistory(
+        'leave_request',
+        result.lastInsertRowid,
+        'created',
+        { leaveType, startDate, endDate, workingDays },
+        req.user.id,
+        req.user.name,
+      );
 
       // Alerte email aux admins
       try {
-        const person = db.prepare('SELECT first_name, last_name FROM persons WHERE id = ?').get(personId);
-        const personName = person ? `${person.first_name || ''} ${person.last_name || ''}`.trim() : req.user.name;
+        const person = db
+          .prepare('SELECT first_name, last_name FROM persons WHERE id = ?')
+          .get(personId);
+        const personName = person
+          ? `${person.first_name || ''} ${person.last_name || ''}`.trim()
+          : req.user.name;
         alertLeaveCreated(db, created, personName);
-      } catch (emailErr) { logger.warn('Alerte email congé:', emailErr.message); }
+      } catch (emailErr) {
+        logger.warn('Alerte email congé:', emailErr.message);
+      }
 
       res.status(201).json(created);
     } catch (error) {
       logger.error('Erreur POST /api/leaves:', error);
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -503,7 +605,9 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         return res.json([]); // Pas de profil personnel lié
       }
 
-      const requests = db.prepare(`
+      const requests = db
+        .prepare(
+          `
         SELECT lr.*, p.first_name, p.last_name, p.email as person_email,
                u.name as decision_by_name
         FROM leave_requests lr
@@ -511,12 +615,14 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN users u ON u.id = lr.decision_by
         WHERE lr.person_id = ?
         ORDER BY lr.created_at DESC
-      `).all(person.id);
+      `,
+        )
+        .all(person.id);
 
       res.json(requests);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -536,11 +642,26 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const conditions = [];
       const params = [];
 
-      if (status) { conditions.push('lr.status = ?'); params.push(status); }
-      if (personId) { conditions.push('lr.person_id = ?'); params.push(personId); }
-      if (leaveType) { conditions.push('lr.leave_type = ?'); params.push(leaveType); }
-      if (startDate) { conditions.push('lr.end_date >= ?'); params.push(startDate); }
-      if (endDate) { conditions.push('lr.start_date <= ?'); params.push(endDate); }
+      if (status) {
+        conditions.push('lr.status = ?');
+        params.push(status);
+      }
+      if (personId) {
+        conditions.push('lr.person_id = ?');
+        params.push(personId);
+      }
+      if (leaveType) {
+        conditions.push('lr.leave_type = ?');
+        params.push(leaveType);
+      }
+      if (startDate) {
+        conditions.push('lr.end_date >= ?');
+        params.push(startDate);
+      }
+      if (endDate) {
+        conditions.push('lr.start_date <= ?');
+        params.push(endDate);
+      }
 
       if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
       sql += ' ORDER BY lr.created_at DESC';
@@ -549,43 +670,51 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(requests);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // GET /api/leaves/pending — Demandes en attente (admin)
   app.get('/api/leaves/pending', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const requests = db.prepare(`
+      const requests = db
+        .prepare(
+          `
         SELECT lr.*, p.first_name, p.last_name, p.email as person_email, p.photo as person_photo,
                p.type as person_type, p.contract_type, p.created_at as person_created_at
         FROM leave_requests lr
         JOIN persons p ON p.id = lr.person_id
         WHERE lr.status = 'pending'
         ORDER BY lr.priority_score DESC, lr.created_at ASC
-      `).all();
+      `,
+        )
+        .all();
       res.json(requests);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // GET /api/leaves/pending/count — Nombre de demandes en attente (admin)
   app.get('/api/leaves/pending/count', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const result = db.prepare('SELECT COUNT(*) as count FROM leave_requests WHERE status = ?').get('pending');
+      const result = db
+        .prepare('SELECT COUNT(*) as count FROM leave_requests WHERE status = ?')
+        .get('pending');
       res.json({ count: result.count });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // GET /api/leaves/:id — Détail d'une demande
   app.get('/api/leaves/:id', authenticateToken, (req, res) => {
     try {
-      const request = db.prepare(`
+      const request = db
+        .prepare(
+          `
         SELECT lr.*, p.first_name, p.last_name, p.email as person_email, p.photo as person_photo,
                p.type as person_type, p.contract_type, p.created_at as person_created_at,
                u.name as decision_by_name, p.user_id as owner_user_id
@@ -593,37 +722,46 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         JOIN persons p ON p.id = lr.person_id
         LEFT JOIN users u ON u.id = lr.decision_by
         WHERE lr.id = ?
-      `).get(req.params.id);
+      `,
+        )
+        .get(req.params.id);
 
-      if (!request) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!request) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && request.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+        return res
+          .status(403)
+          .json({ success: false, error: 'Accès non autorisé à cette demande' });
       }
       delete request.owner_user_id;
 
       // Charger l'historique
-      request.history = db.prepare(`
+      request.history = db
+        .prepare(
+          `
         SELECT lrh.*, u.name as performer_name
         FROM leave_request_history lrh
         LEFT JOIN users u ON u.id = lrh.performed_by
         WHERE lrh.leave_request_id = ?
         ORDER BY lrh.performed_at
-      `).all(req.params.id);
+      `,
+        )
+        .all(req.params.id);
 
       // Marquer la réception si admin et pas encore fait
       if (currentUser?.is_admin && !request.reception_date && request.status === 'pending') {
-        db.prepare('UPDATE leave_requests SET reception_date = datetime("now") WHERE id = ?')
-          .run(req.params.id);
+        db.prepare('UPDATE leave_requests SET reception_date = datetime("now") WHERE id = ?').run(
+          req.params.id,
+        );
         request.reception_date = new Date().toISOString();
       }
 
       res.json(request);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -632,184 +770,250 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────────────────────────
 
   // PUT /api/leaves/:id/decision — Accepter, refuser ou modifier une demande (admin)
-  app.put('/api/leaves/:id/decision', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const { status, adminComment, modifiedStartDate, modifiedEndDate, signatureAdmin } = req.body;
+  app.put(
+    '/api/leaves/:id/decision',
+    authenticateToken,
+    requireAdmin,
+    validate(leaveDecisionSchema),
+    (req, res) => {
+      try {
+        const { status, adminComment, modifiedStartDate, modifiedEndDate, signatureAdmin } =
+          req.body;
 
-      if (!status || !['accepted', 'refused', 'modified'].includes(status)) {
-        return res.status(400).json({ error: 'Statut invalide. Valeurs acceptées : accepted, refused, modified' });
-      }
+        const existing = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
-      const existing = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
-
-      // Empêcher un admin d'approuver/modifier sa propre demande
-      if (existing.user_id === req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez pas traiter votre propre demande de congé' });
-      }
-
-      if (existing.status !== 'pending') {
-        return res.status(400).json({ error: 'Seules les demandes en attente peuvent être traitées' });
-      }
-
-      // Motif obligatoire pour refus et modification
-      if ((status === 'refused' || status === 'modified') && !adminComment) {
-        return res.status(400).json({ error: 'Le motif est obligatoire pour un refus ou une modification' });
-      }
-
-      // Pour une modification, vérifier les nouvelles dates
-      let modifiedWorkingDays = null;
-      if (status === 'modified') {
-        if (!modifiedStartDate || !modifiedEndDate) {
-          return res.status(400).json({ error: 'Les nouvelles dates sont requises pour une modification' });
+        // Empêcher un admin d'approuver/modifier sa propre demande
+        if (existing.user_id === req.user.id) {
+          return res.status(403).json({
+            success: false,
+            error: 'Vous ne pouvez pas traiter votre propre demande de congé',
+          });
         }
-        modifiedWorkingDays = calcWorkingDays(modifiedStartDate, modifiedEndDate, existing.start_period, existing.end_period);
-      }
 
-      // Transaction atomique pour la décision
-      const effectiveStartDate = status === 'modified' ? modifiedStartDate : existing.start_date;
-      const effectiveEndDate = status === 'modified' ? modifiedEndDate : existing.end_date;
-      const availStatus = status === 'accepted' || status === 'modified' ? 'approved' : 'rejected';
+        if (existing.status !== 'pending') {
+          return res.status(400).json({
+            success: false,
+            error: 'Seules les demandes en attente peuvent être traitées',
+          });
+        }
 
-      db.transaction(() => {
-        // Mettre à jour la demande
-        db.prepare(`
+        // Motif obligatoire pour refus et modification
+        if ((status === 'refused' || status === 'modified') && !adminComment) {
+          return res.status(400).json({
+            success: false,
+            error: 'Le motif est obligatoire pour un refus ou une modification',
+          });
+        }
+
+        // Pour une modification, vérifier les nouvelles dates
+        let modifiedWorkingDays = null;
+        if (status === 'modified') {
+          if (!modifiedStartDate || !modifiedEndDate) {
+            return res.status(400).json({
+              success: false,
+              error: 'Les nouvelles dates sont requises pour une modification',
+            });
+          }
+          modifiedWorkingDays = calcWorkingDays(
+            modifiedStartDate,
+            modifiedEndDate,
+            existing.start_period,
+            existing.end_period,
+          );
+        }
+
+        // Transaction atomique pour la décision
+        const effectiveStartDate = status === 'modified' ? modifiedStartDate : existing.start_date;
+        const effectiveEndDate = status === 'modified' ? modifiedEndDate : existing.end_date;
+        const availStatus =
+          status === 'accepted' || status === 'modified' ? 'approved' : 'rejected';
+
+        db.transaction(() => {
+          // Mettre à jour la demande
+          db.prepare(
+            `
           UPDATE leave_requests SET
             status = ?, admin_comment = ?, decision_date = datetime('now'), decision_by = ?,
             modified_start_date = ?, modified_end_date = ?, modified_working_days = ?,
             signature_admin = ?, signature_admin_date = ?,
             updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `).run(
-          status, adminComment || null, req.user.id,
-          modifiedStartDate || null, modifiedEndDate || null, modifiedWorkingDays,
-          signatureAdmin || null, signatureAdmin ? new Date().toISOString() : null,
-          req.params.id,
-        );
+        `,
+          ).run(
+            status,
+            adminComment || null,
+            req.user.id,
+            modifiedStartDate || null,
+            modifiedEndDate || null,
+            modifiedWorkingDays,
+            signatureAdmin || null,
+            signatureAdmin ? new Date().toISOString() : null,
+            req.params.id,
+          );
 
-        // Si accepté ou modifié, mettre à jour le solde de congés (si type déductible)
-        if ((status === 'accepted' || status === 'modified') && LEAVE_TYPES[existing.leave_type]?.deductsBalance) {
-          const effectiveDays = status === 'modified' ? modifiedWorkingDays : existing.working_days;
-          const year = new Date(existing.start_date).getFullYear();
+          // Si accepté ou modifié, mettre à jour le solde de congés (si type déductible)
+          if (
+            (status === 'accepted' || status === 'modified') &&
+            LEAVE_TYPES[existing.leave_type]?.deductsBalance
+          ) {
+            const effectiveDays =
+              status === 'modified' ? modifiedWorkingDays : existing.working_days;
+            const year = new Date(existing.start_date).getFullYear();
 
-          const balance = db.prepare(
-            'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?'
-          ).get(existing.person_id, year, existing.leave_type);
+            const balance = db
+              .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+              .get(existing.person_id, year, existing.leave_type);
 
-          if (balance) {
-            db.prepare('UPDATE leave_balances SET days_taken = days_taken + ? WHERE id = ?')
-              .run(effectiveDays, balance.id);
-          } else {
-            db.prepare(
-              'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, ?)'
-            ).run(existing.person_id, year, existing.leave_type, DAYS_PER_YEAR, effectiveDays);
+            if (balance) {
+              db.prepare('UPDATE leave_balances SET days_taken = days_taken + ? WHERE id = ?').run(
+                effectiveDays,
+                balance.id,
+              );
+            } else {
+              db.prepare(
+                'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, ?)',
+              ).run(existing.person_id, year, existing.leave_type, DAYS_PER_YEAR, effectiveDays);
+            }
           }
-        }
 
-        // Mettre à jour la disponibilité correspondante dans le planning
-        db.prepare(`
+          // Mettre à jour la disponibilité correspondante dans le planning
+          db.prepare(
+            `
           UPDATE availabilities SET 
             status = ?, approved_by = ?, approved_at = datetime('now'),
             rejection_reason = ?,
             start_date = ?, end_date = ?
           WHERE person_id = ? AND source = 'leave_request'
             AND start_date = ? AND end_date = ?
-        `).run(
-          availStatus, req.user.id,
-          status === 'refused' ? adminComment : null,
-          effectiveStartDate, effectiveEndDate,
-          existing.person_id, existing.start_date, existing.end_date,
-        );
+        `,
+          ).run(
+            availStatus,
+            req.user.id,
+            status === 'refused' ? adminComment : null,
+            effectiveStartDate,
+            effectiveEndDate,
+            existing.person_id,
+            existing.start_date,
+            existing.end_date,
+          );
 
-        // Historiser la décision
-        db.prepare(`
+          // Historiser la décision
+          db.prepare(
+            `
           INSERT INTO leave_request_history (leave_request_id, action, old_value, new_value, performed_by)
           VALUES (?, 'status_changed', ?, ?, ?)
-        `).run(
+        `,
+          ).run(
+            req.params.id,
+            JSON.stringify({ status: 'pending' }),
+            JSON.stringify({ status, adminComment, modifiedStartDate, modifiedEndDate }),
+            req.user.id,
+          );
+        })();
+
+        addToHistory(
+          'leave_request',
           req.params.id,
-          JSON.stringify({ status: 'pending' }),
-          JSON.stringify({ status, adminComment, modifiedStartDate, modifiedEndDate }),
+          `decision_${status}`,
+          { adminComment, modifiedStartDate, modifiedEndDate },
           req.user.id,
+          req.user.name,
         );
-      })();
 
-      addToHistory('leave_request', req.params.id, `decision_${status}`,
-        { adminComment, modifiedStartDate, modifiedEndDate }, req.user.id, req.user.name);
-
-      const updated = db.prepare(`
+        const updated = db
+          .prepare(
+            `
         SELECT lr.*, p.first_name, p.last_name, u.name as decision_by_name
         FROM leave_requests lr
         JOIN persons p ON p.id = lr.person_id
         LEFT JOIN users u ON u.id = lr.decision_by
         WHERE lr.id = ?
-      `).get(req.params.id);
+      `,
+          )
+          .get(req.params.id);
 
-      // Alerte email à l'employé (décision)
-      try {
-        alertLeaveDecision(db, { ...updated, status }, req.user.name);
-      } catch (emailErr) { logger.warn('Alerte email décision congé:', emailErr.message); }
+        // Alerte email à l'employé (décision)
+        try {
+          alertLeaveDecision(db, { ...updated, status }, req.user.name);
+        } catch (emailErr) {
+          logger.warn('Alerte email décision congé:', emailErr.message);
+        }
 
-      res.json(updated);
-    } catch (error) {
-      logger.error('Erreur PUT /api/leaves/:id/decision:', error);
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
-    }
-  });
+        res.json(updated);
+      } catch (error) {
+        logger.error('Erreur PUT /api/leaves/:id/decision:', error);
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ──────────────────────────────────────
   // SIGNATURE
   // ──────────────────────────────────────
 
   // PUT /api/leaves/:id/sign — Ajouter une signature (salarié ou admin)
-  app.put('/api/leaves/:id/sign', authenticateToken, (req, res) => {
+  app.put('/api/leaves/:id/sign', authenticateToken, validate(leaveSignSchema), (req, res) => {
     try {
       const { signature, role } = req.body; // role = 'employee' ou 'admin'
-      if (!signature || !role) {
-        return res.status(400).json({ error: 'Signature et rôle requis' });
-      }
 
-      const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      const existing = db
+        .prepare(
+          'SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?',
+        )
+        .get(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété pour signature employee, ou admin pour signature admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (role === 'employee' && existing.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez signer que vos propres demandes' });
+        return res
+          .status(403)
+          .json({ success: false, error: 'Vous ne pouvez signer que vos propres demandes' });
       }
       if (role === 'admin' && currentUser?.is_admin !== 1) {
-        return res.status(403).json({ error: 'Accès admin requis' });
+        return res.status(403).json({ success: false, error: 'Accès admin requis' });
       }
 
       if (role !== 'employee' && role !== 'admin') {
-        return res.status(400).json({ error: 'Rôle invalide. Valeurs : employee, admin' });
+        return res
+          .status(400)
+          .json({ success: false, error: 'Rôle invalide. Valeurs : employee, admin' });
       }
 
       db.transaction(() => {
         if (role === 'employee') {
-          db.prepare(`
+          db.prepare(
+            `
             UPDATE leave_requests SET signature_employee = ?, signature_employee_date = datetime('now'), updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-          `).run(signature, req.params.id);
+          `,
+          ).run(signature, req.params.id);
         } else {
-          db.prepare(`
+          db.prepare(
+            `
             UPDATE leave_requests SET signature_admin = ?, signature_admin_date = datetime('now'), updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-          `).run(signature, req.params.id);
+          `,
+          ).run(signature, req.params.id);
         }
 
         // Historiser
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO leave_request_history (leave_request_id, action, new_value, performed_by)
           VALUES (?, 'signed', ?, ?)
-        `).run(req.params.id, JSON.stringify({ role }), req.user.id);
+        `,
+        ).run(req.params.id, JSON.stringify({ role }), req.user.id);
       })();
 
       const updated = db.prepare('SELECT * FROM leave_requests WHERE id = ?').get(req.params.id);
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -820,59 +1024,76 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // PUT /api/leaves/:id/cancel — Annuler une demande (salarié, si délai respecté)
   app.put('/api/leaves/:id/cancel', authenticateToken, (req, res) => {
     try {
-      const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      const existing = db
+        .prepare(
+          'SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?',
+        )
+        .get(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && existing.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez annuler que vos propres demandes' });
+        return res
+          .status(403)
+          .json({ success: false, error: 'Vous ne pouvez annuler que vos propres demandes' });
       }
 
       // Seules les demandes pending ou accepted peuvent être annulées
       if (!['pending', 'accepted'].includes(existing.status)) {
-        return res.status(400).json({ error: 'Cette demande ne peut plus être annulée' });
+        return res
+          .status(400)
+          .json({ success: false, error: 'Cette demande ne peut plus être annulée' });
       }
 
       // Si acceptée, vérifier le délai de modification (1 mois)
       if (existing.status === 'accepted' && !canModify(existing.start_date)) {
         return res.status(400).json({
-          error: 'Modification impossible : le départ est dans moins d\'un mois. Contactez votre responsable.',
+          error:
+            "Modification impossible : le départ est dans moins d'un mois. Contactez votre responsable.",
         });
       }
 
       db.transaction(() => {
-        db.prepare(`
+        db.prepare(
+          `
           UPDATE leave_requests SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?
-        `).run(req.params.id);
+        `,
+        ).run(req.params.id);
 
         // Si la demande était acceptée et avait réduit le solde, le rétablir
         if (existing.status === 'accepted' && LEAVE_TYPES[existing.leave_type]?.deductsBalance) {
           const year = new Date(existing.start_date).getFullYear();
-          db.prepare(`
+          db.prepare(
+            `
             UPDATE leave_balances SET days_taken = MAX(0, days_taken - ?) 
             WHERE person_id = ? AND year = ? AND type = ?
-          `).run(existing.working_days, existing.person_id, year, existing.leave_type);
+          `,
+          ).run(existing.working_days, existing.person_id, year, existing.leave_type);
         }
 
         // Supprimer l'entrée de disponibilité correspondante
-        db.prepare(`
+        db.prepare(
+          `
           DELETE FROM availabilities 
           WHERE person_id = ? AND source = 'leave_request'
             AND start_date = ? AND end_date = ?
-        `).run(existing.person_id, existing.start_date, existing.end_date);
+        `,
+        ).run(existing.person_id, existing.start_date, existing.end_date);
 
         // Historiser
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO leave_request_history (leave_request_id, action, old_value, performed_by)
           VALUES (?, 'cancelled', ?, ?)
-        `).run(req.params.id, JSON.stringify({ status: existing.status }), req.user.id);
+        `,
+        ).run(req.params.id, JSON.stringify({ status: existing.status }), req.user.id);
       })();
 
       res.json({ success: true, message: 'Demande annulée' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -881,60 +1102,87 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────────────────────────
 
   // POST /api/leaves/:id/justification — Upload du justificatif
-  app.post('/api/leaves/:id/justification', authenticateToken, (req, res) => {
-    try {
-      const existing = db.prepare('SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+  app.post(
+    '/api/leaves/:id/justification',
+    authenticateToken,
+    validate(justificationSchema),
+    (req, res) => {
+      try {
+        const existing = db
+          .prepare(
+            'SELECT lr.*, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?',
+          )
+          .get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
-      // Vérifier propriété : propriétaire ou admin
-      const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-      if (currentUser?.is_admin !== 1 && existing.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Vous ne pouvez modifier que vos propres demandes' });
-      }
+        // Vérifier propriété : propriétaire ou admin
+        const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
+        if (currentUser?.is_admin !== 1 && existing.owner_user_id !== req.user.id) {
+          return res
+            .status(403)
+            .json({ success: false, error: 'Vous ne pouvez modifier que vos propres demandes' });
+        }
 
-      // Le fichier est envoyé en base64 dans le body
-      const { filename, data } = req.body;
-      if (!filename || !data) {
-        return res.status(400).json({ error: 'Fichier requis (filename + data en base64)' });
-      }
+        // Le fichier est envoyé en base64 dans le body
+        const { filename, data } = req.body;
+        if (!filename || !data) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Fichier requis (filename + data en base64)' });
+        }
 
-      // [SECURITY] Valider l'extension du fichier
-      const ALLOWED_JUSTIFICATION_EXTS = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
-      const MAX_JUSTIFICATION_SIZE = 10 * 1024 * 1024; // 10 Mo
-      const ext = path.extname(filename).toLowerCase();
-      if (!ALLOWED_JUSTIFICATION_EXTS.includes(ext)) {
-        return res.status(400).json({ error: 'Type de fichier non autorisé (PDF, JPG, PNG, WebP uniquement)' });
-      }
+        // [SECURITY] Valider l'extension du fichier
+        const ALLOWED_JUSTIFICATION_EXTS = ['.pdf', '.jpg', '.jpeg', '.png', '.webp'];
+        const MAX_JUSTIFICATION_SIZE = 10 * 1024 * 1024; // 10 Mo
+        const ext = path.extname(filename).toLowerCase();
+        if (!ALLOWED_JUSTIFICATION_EXTS.includes(ext)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Type de fichier non autorisé (PDF, JPG, PNG, WebP uniquement)',
+          });
+        }
 
-      // [SECURITY] Décoder et vérifier la taille
-      const buffer = Buffer.from(data, 'base64');
-      if (buffer.length > MAX_JUSTIFICATION_SIZE) {
-        return res.status(400).json({ error: 'Fichier trop volumineux (max 10 Mo)' });
-      }
+        // [SECURITY] Décoder et vérifier la taille
+        const buffer = Buffer.from(data, 'base64');
+        if (buffer.length > MAX_JUSTIFICATION_SIZE) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Fichier trop volumineux (max 10 Mo)' });
+        }
 
-      // Créer le dossier de justificatifs
-      const justificationsDir = path.join(__dirname, '..', '..', 'public', 'leave-justifications');
-      if (!fs.existsSync(justificationsDir)) {
-        fs.mkdirSync(justificationsDir, { recursive: true });
-      }
+        // Créer le dossier de justificatifs
+        const justificationsDir = path.join(
+          __dirname,
+          '..',
+          '..',
+          'public',
+          'leave-justifications',
+        );
+        if (!fs.existsSync(justificationsDir)) {
+          fs.mkdirSync(justificationsDir, { recursive: true });
+        }
 
-      // Sauvegarder le fichier
-      const safeName = `${existing.id}_${Date.now()}_${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-      const filePath = path.join(justificationsDir, safeName);
-      fs.writeFileSync(filePath, buffer);
+        // Sauvegarder le fichier
+        const safeName = `${existing.id}_${Date.now()}_${filename.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const filePath = path.join(justificationsDir, safeName);
+        fs.writeFileSync(filePath, buffer);
 
-      // Mettre à jour la demande
-      db.prepare(`
+        // Mettre à jour la demande
+        db.prepare(
+          `
         UPDATE leave_requests SET justification_path = ?, justification_filename = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(`/leave-justifications/${safeName}`, filename, req.params.id);
+      `,
+        ).run(`/leave-justifications/${safeName}`, filename, req.params.id);
 
-      res.json({ success: true, path: `/leave-justifications/${safeName}` });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
-    }
-  });
+        res.json({ success: true, path: `/leave-justifications/${safeName}` });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ──────────────────────────────────────
   // SOLDES DE CONGÉS (enrichi)
@@ -952,8 +1200,10 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // Tous les personnels actifs
-      const persons = db.prepare("SELECT id, first_name, last_name FROM persons WHERE status = 'active'").all();
-      const balances = persons.map(p => ({
+      const persons = db
+        .prepare("SELECT id, first_name, last_name FROM persons WHERE status = 'active'")
+        .all();
+      const balances = persons.map((p) => ({
         ...p,
         balance: getOrCreateBalance(p.id, targetYear),
       }));
@@ -961,37 +1211,45 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(balances);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // PUT /api/leaves/balances — Mettre à jour le solde (admin)
-  app.put('/api/leaves/balances', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const { personId, year, type, daysEntitled } = req.body;
-      if (!personId || !year) return res.status(400).json({ error: 'personId et year requis' });
+  app.put(
+    '/api/leaves/balances',
+    authenticateToken,
+    requireAdmin,
+    validate(balanceUpdateSchema),
+    (req, res) => {
+      try {
+        const { personId, year, type, daysEntitled } = req.body;
 
-      const leaveType = type || 'conge_paye';
-      const entitled = daysEntitled !== undefined ? daysEntitled : DAYS_PER_YEAR;
+        const leaveType = type || 'conge_paye';
+        const entitled = daysEntitled !== undefined ? daysEntitled : DAYS_PER_YEAR;
 
-      const existing = db.prepare(
-        'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?'
-      ).get(personId, year, leaveType);
+        const existing = db
+          .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+          .get(personId, year, leaveType);
 
-      if (existing) {
-        db.prepare('UPDATE leave_balances SET days_entitled = ? WHERE id = ?').run(entitled, existing.id);
-      } else {
-        db.prepare(
-          'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, 0)'
-        ).run(personId, year, leaveType, entitled);
+        if (existing) {
+          db.prepare('UPDATE leave_balances SET days_entitled = ? WHERE id = ?').run(
+            entitled,
+            existing.id,
+          );
+        } else {
+          db.prepare(
+            'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, 0)',
+          ).run(personId, year, leaveType, entitled);
+        }
+
+        res.json(getOrCreateBalance(personId, year));
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-
-      res.json(getOrCreateBalance(personId, year));
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // ──────────────────────────────────────
   // GÉNÉRATION PDF
@@ -1000,7 +1258,9 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/leaves/:id/pdf — Générer et télécharger le PDF récapitulatif
   app.get('/api/leaves/:id/pdf', authenticateToken, (req, res) => {
     try {
-      const request = db.prepare(`
+      const request = db
+        .prepare(
+          `
         SELECT lr.*, p.first_name, p.last_name, p.email as person_email,
                p.type as person_type, p.contract_type,
                u.name as decision_by_name, p.user_id as owner_user_id
@@ -1008,14 +1268,18 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
         JOIN persons p ON p.id = lr.person_id
         LEFT JOIN users u ON u.id = lr.decision_by
         WHERE lr.id = ?
-      `).get(req.params.id);
+      `,
+        )
+        .get(req.params.id);
 
-      if (!request) return res.status(404).json({ error: 'Demande non trouvée' });
+      if (!request) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
       // Vérifier propriété : propriétaire ou admin
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && request.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+        return res
+          .status(403)
+          .json({ success: false, error: 'Accès non autorisé à cette demande' });
       }
       delete request.owner_user_id;
 
@@ -1031,7 +1295,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
     } catch (error) {
       logger.error('Erreur PDF:', error);
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1046,31 +1310,63 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const targetYear = year || new Date().getFullYear();
 
       const stats = {
-        total: db.prepare('SELECT COUNT(*) as count FROM leave_requests WHERE strftime("%Y", start_date) = ?').get(String(targetYear)).count,
-        pending: db.prepare('SELECT COUNT(*) as count FROM leave_requests WHERE status = "pending" AND strftime("%Y", start_date) = ?').get(String(targetYear)).count,
-        accepted: db.prepare('SELECT COUNT(*) as count FROM leave_requests WHERE status = "accepted" AND strftime("%Y", start_date) = ?').get(String(targetYear)).count,
-        refused: db.prepare('SELECT COUNT(*) as count FROM leave_requests WHERE status = "refused" AND strftime("%Y", start_date) = ?').get(String(targetYear)).count,
-        modified: db.prepare('SELECT COUNT(*) as count FROM leave_requests WHERE status = "modified" AND strftime("%Y", start_date) = ?').get(String(targetYear)).count,
-        totalDays: db.prepare('SELECT COALESCE(SUM(working_days), 0) as total FROM leave_requests WHERE status IN ("accepted", "modified") AND strftime("%Y", start_date) = ?').get(String(targetYear)).total,
-        byType: db.prepare(`
+        total: db
+          .prepare(
+            'SELECT COUNT(*) as count FROM leave_requests WHERE strftime("%Y", start_date) = ?',
+          )
+          .get(String(targetYear)).count,
+        pending: db
+          .prepare(
+            'SELECT COUNT(*) as count FROM leave_requests WHERE status = "pending" AND strftime("%Y", start_date) = ?',
+          )
+          .get(String(targetYear)).count,
+        accepted: db
+          .prepare(
+            'SELECT COUNT(*) as count FROM leave_requests WHERE status = "accepted" AND strftime("%Y", start_date) = ?',
+          )
+          .get(String(targetYear)).count,
+        refused: db
+          .prepare(
+            'SELECT COUNT(*) as count FROM leave_requests WHERE status = "refused" AND strftime("%Y", start_date) = ?',
+          )
+          .get(String(targetYear)).count,
+        modified: db
+          .prepare(
+            'SELECT COUNT(*) as count FROM leave_requests WHERE status = "modified" AND strftime("%Y", start_date) = ?',
+          )
+          .get(String(targetYear)).count,
+        totalDays: db
+          .prepare(
+            'SELECT COALESCE(SUM(working_days), 0) as total FROM leave_requests WHERE status IN ("accepted", "modified") AND strftime("%Y", start_date) = ?',
+          )
+          .get(String(targetYear)).total,
+        byType: db
+          .prepare(
+            `
           SELECT leave_type, COUNT(*) as count, COALESCE(SUM(working_days), 0) as total_days
           FROM leave_requests
           WHERE strftime("%Y", start_date) = ? AND status IN ('accepted', 'modified')
           GROUP BY leave_type
-        `).all(String(targetYear)),
-        byMonth: db.prepare(`
+        `,
+          )
+          .all(String(targetYear)),
+        byMonth: db
+          .prepare(
+            `
           SELECT strftime("%m", start_date) as month, COUNT(*) as count
           FROM leave_requests
           WHERE strftime("%Y", start_date) = ? AND status IN ('accepted', 'modified')
           GROUP BY strftime("%m", start_date)
           ORDER BY month
-        `).all(String(targetYear)),
+        `,
+          )
+          .all(String(targetYear)),
       };
 
       res.json(stats);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1082,24 +1378,37 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/leaves/conflicts', authenticateToken, requireAdmin, (req, res) => {
     try {
       // Trouver les demandes qui se chevauchent et sont pending
-      const pending = db.prepare(`
+      const pending = db
+        .prepare(
+          `
         SELECT lr.*, p.first_name, p.last_name, p.type as person_type
         FROM leave_requests lr
         JOIN persons p ON p.id = lr.person_id
         WHERE lr.status = 'pending'
         ORDER BY lr.priority_score DESC, lr.start_date
-      `).all();
+      `,
+        )
+        .all();
 
       // Grouper les conflits
       const conflicts = [];
       for (let i = 0; i < pending.length; i++) {
         for (let j = i + 1; j < pending.length; j++) {
-          if (pending[i].start_date <= pending[j].end_date && pending[i].end_date >= pending[j].start_date) {
+          if (
+            pending[i].start_date <= pending[j].end_date &&
+            pending[i].end_date >= pending[j].start_date
+          ) {
             conflicts.push({
               request1: pending[i],
               request2: pending[j],
-              overlapStart: pending[i].start_date > pending[j].start_date ? pending[i].start_date : pending[j].start_date,
-              overlapEnd: pending[i].end_date < pending[j].end_date ? pending[i].end_date : pending[j].end_date,
+              overlapStart:
+                pending[i].start_date > pending[j].start_date
+                  ? pending[i].start_date
+                  : pending[j].start_date,
+              overlapEnd:
+                pending[i].end_date < pending[j].end_date
+                  ? pending[i].end_date
+                  : pending[j].end_date,
             });
           }
         }
@@ -1108,7 +1417,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       res.json(conflicts);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1120,24 +1429,34 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/leaves/:id/history', authenticateToken, (req, res) => {
     try {
       // Vérifier propriété : propriétaire ou admin
-      const leaveReq = db.prepare('SELECT lr.person_id, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?').get(req.params.id);
-      if (!leaveReq) return res.status(404).json({ error: 'Demande non trouvée' });
+      const leaveReq = db
+        .prepare(
+          'SELECT lr.person_id, p.user_id as owner_user_id FROM leave_requests lr JOIN persons p ON p.id = lr.person_id WHERE lr.id = ?',
+        )
+        .get(req.params.id);
+      if (!leaveReq) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
       const currentUser = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
       if (currentUser?.is_admin !== 1 && leaveReq.owner_user_id !== req.user.id) {
-        return res.status(403).json({ error: 'Accès non autorisé à cette demande' });
+        return res
+          .status(403)
+          .json({ success: false, error: 'Accès non autorisé à cette demande' });
       }
 
-      const history = db.prepare(`
+      const history = db
+        .prepare(
+          `
         SELECT lrh.*, u.name as performer_name
         FROM leave_request_history lrh
         LEFT JOIN users u ON u.id = lrh.performed_by
         WHERE lrh.leave_request_id = ?
         ORDER BY lrh.performed_at
-      `).all(req.params.id);
+      `,
+        )
+        .all(req.params.id);
       res.json(history);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1146,24 +1465,24 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────────────────────────
 
   function getOrCreateBalance(personId, year) {
-    let balance = db.prepare(
-      'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?'
-    ).get(personId, year, 'conge_paye');
+    let balance = db
+      .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+      .get(personId, year, 'conge_paye');
 
     if (!balance) {
       db.prepare(
-        'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, 0)'
+        'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, 0)',
       ).run(personId, year, 'conge_paye', DAYS_PER_YEAR);
-      balance = db.prepare(
-        'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?'
-      ).get(personId, year, 'conge_paye');
+      balance = db
+        .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+        .get(personId, year, 'conge_paye');
     }
 
     // Vérifier le report de l'année précédente (jusqu'au 31 décembre)
     const prevYear = parseInt(year) - 1;
-    const prevBalance = db.prepare(
-      'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?'
-    ).get(personId, prevYear, 'conge_paye');
+    const prevBalance = db
+      .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+      .get(personId, prevYear, 'conge_paye');
 
     let carryOver = 0;
     if (prevBalance) {
@@ -1180,7 +1499,7 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       ...balance,
       remaining: balance.days_entitled - balance.days_taken,
       carryOver,
-      totalAvailable: (balance.days_entitled - balance.days_taken) + carryOver,
+      totalAvailable: balance.days_entitled - balance.days_taken + carryOver,
     };
   }
 }
@@ -1223,9 +1542,10 @@ function generateLeaveRequestPdfHtml(request) {
     return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
-  const exceptionalLabel = request.exceptional_type && EXCEPTIONAL_LEAVE_DURATIONS[request.exceptional_type]
-    ? ` — ${EXCEPTIONAL_LEAVE_DURATIONS[request.exceptional_type].label}`
-    : '';
+  const exceptionalLabel =
+    request.exceptional_type && EXCEPTIONAL_LEAVE_DURATIONS[request.exceptional_type]
+      ? ` — ${EXCEPTIONAL_LEAVE_DURATIONS[request.exceptional_type].label}`
+      : '';
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -1295,9 +1615,13 @@ function generateLeaveRequestPdfHtml(request) {
       <div class="info-value">Du ${formatDate(request.start_date)} (${request.start_period === 'AM' ? 'matin' : 'après-midi'}) au ${formatDate(request.end_date)} (${request.end_period === 'AM' ? 'matin' : 'après-midi'})</div>
       <div class="info-label">Jours ouvrables :</div>
       <div class="info-value"><strong>${request.working_days} jour${request.working_days > 1 ? 's' : ''}</strong></div>
-      ${request.employee_comment ? `
+      ${
+        request.employee_comment
+          ? `
       <div class="info-label">Remarques du salarié :</div>
-      <div class="info-value">${request.employee_comment}</div>` : ''}
+      <div class="info-value">${request.employee_comment}</div>`
+          : ''
+      }
     </div>
   </div>
 
@@ -1306,37 +1630,61 @@ function generateLeaveRequestPdfHtml(request) {
     <div class="info-grid">
       <div class="info-label">Statut :</div>
       <div class="info-value"><span class="status-badge">${statusLabels[request.status]}</span></div>
-      ${request.decision_date ? `
+      ${
+        request.decision_date
+          ? `
       <div class="info-label">Date de décision :</div>
-      <div class="info-value">${formatDate(request.decision_date)}</div>` : ''}
-      ${request.decision_by_name ? `
+      <div class="info-value">${formatDate(request.decision_date)}</div>`
+          : ''
+      }
+      ${
+        request.decision_by_name
+          ? `
       <div class="info-label">Décidé par :</div>
-      <div class="info-value">${request.decision_by_name}</div>` : ''}
-      ${request.admin_comment ? `
+      <div class="info-value">${request.decision_by_name}</div>`
+          : ''
+      }
+      ${
+        request.admin_comment
+          ? `
       <div class="info-label">Motif / Commentaire :</div>
-      <div class="info-value">${request.admin_comment}</div>` : ''}
-      ${request.modified_start_date ? `
+      <div class="info-value">${request.admin_comment}</div>`
+          : ''
+      }
+      ${
+        request.modified_start_date
+          ? `
       <div class="info-label">Période modifiée :</div>
-      <div class="info-value">Du ${formatDate(request.modified_start_date)} au ${formatDate(request.modified_end_date)} (${request.modified_working_days || '?'} jours)</div>` : ''}
-      ${request.reception_date ? `
+      <div class="info-value">Du ${formatDate(request.modified_start_date)} au ${formatDate(request.modified_end_date)} (${request.modified_working_days || '?'} jours)</div>`
+          : ''
+      }
+      ${
+        request.reception_date
+          ? `
       <div class="info-label">Date de réception :</div>
-      <div class="info-value">${formatDate(request.reception_date)}</div>` : ''}
+      <div class="info-value">${formatDate(request.reception_date)}</div>`
+          : ''
+      }
     </div>
   </div>
 
   <div class="signatures">
     <div class="sig-box">
       <div class="sig-label">Signature du salarié</div>
-      ${request.signature_employee 
-        ? `<img class="sig-img" src="${request.signature_employee}" alt="Signature salarié" />`
-        : '<div class="sig-line"></div>'}
+      ${
+        request.signature_employee
+          ? `<img class="sig-img" src="${request.signature_employee}" alt="Signature salarié" />`
+          : '<div class="sig-line"></div>'
+      }
       <div class="sig-date">${request.signature_employee_date ? formatDate(request.signature_employee_date) : 'Non signé'}</div>
     </div>
     <div class="sig-box">
       <div class="sig-label">Signature de l'employeur</div>
-      ${request.signature_admin 
-        ? `<img class="sig-img" src="${request.signature_admin}" alt="Signature admin" />`
-        : '<div class="sig-line"></div>'}
+      ${
+        request.signature_admin
+          ? `<img class="sig-img" src="${request.signature_admin}" alt="Signature admin" />`
+          : '<div class="sig-line"></div>'
+      }
       <div class="sig-date">${request.signature_admin_date ? formatDate(request.signature_admin_date) : 'Non signé'}</div>
     </div>
   </div>
@@ -1362,4 +1710,4 @@ function generateLeaveRequestPdfHtml(request) {
 </html>`;
 }
 
-export { LEAVE_TYPES, EXCEPTIONAL_LEAVE_DURATIONS };
+export { EXCEPTIONAL_LEAVE_DURATIONS, LEAVE_TYPES };

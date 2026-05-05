@@ -1,12 +1,29 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, Send, Paperclip, Plus, MessageSquare, File, Image, Download, Users } from 'lucide-react';
-import { Button, Input, ModalLayout, Spinner } from '@/design-system';
-import api, { getApiUrl } from '../../utils/api';
-import { format, isToday, isYesterday } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import './MobileMessaging.css';
 
+import { format, isToday, isYesterday } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import {
+  ArrowLeft,
+  Download,
+  File,
+  Image,
+  MessageSquare,
+  Paperclip,
+  Plus,
+  Send,
+  Users,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button, Input, ModalLayout, Spinner } from '@/design-system';
+
+import { AVATAR_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import api, { getApiUrl } from '../../utils/api';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
+
 const API_BASE_URL = getApiUrl();
+const MOBILE_MESSAGES_LIMIT = 30;
 
 const formatMsgTime = (dateStr) => {
   if (!dateStr) return '';
@@ -36,21 +53,68 @@ const formatDateSeparator = (dateStr) => {
 
 const getInitials = (name) => {
   if (!name) return '?';
-  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  return name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 };
 
 const getAvatarColor = (name) => {
   if (!name) return 'var(--theme-text-muted)';
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
-  return colors[Math.abs(hash) % colors.length];
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 };
 
 const formatFileSize = (bytes) => {
   if (bytes < 1024) return bytes + ' o';
   if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' Ko';
   return (bytes / 1048576).toFixed(1) + ' Mo';
+};
+
+const areMessagesEquivalent = (prev, next) => {
+  if (prev === next) return true;
+  if (!Array.isArray(prev) || !Array.isArray(next)) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    const a = prev[i];
+    const b = next[i];
+    if (!a || !b) return false;
+    if (a.id !== b.id) return false;
+    if (a.created_at !== b.created_at) return false;
+    if (a.edited_at !== b.edited_at) return false;
+    if (a.content !== b.content) return false;
+    if (a.type !== b.type) return false;
+
+    const aAtt = Array.isArray(a.attachments) ? a.attachments : [];
+    const bAtt = Array.isArray(b.attachments) ? b.attachments : [];
+    if (aAtt.length !== bAtt.length) return false;
+  }
+
+  return true;
+};
+
+const areConversationsEquivalent = (prev, next) => {
+  if (prev === next) return true;
+  if (!Array.isArray(prev) || !Array.isArray(next)) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    const a = prev[i];
+    const b = next[i];
+    if (!a || !b) return false;
+    if (a.id !== b.id) return false;
+    if (a.unread_count !== b.unread_count) return false;
+    if (a.last_message !== b.last_message) return false;
+    if (a.last_message_at !== b.last_message_at) return false;
+    if (a.last_message_sender !== b.last_message_sender) return false;
+    if (a.display_name !== b.display_name) return false;
+  }
+
+  return true;
 };
 
 function MobileMessaging({ currentUser, onBack }) {
@@ -62,29 +126,115 @@ function MobileMessaging({ currentUser, onBack }) {
   const [showNewConv, setShowNewConv] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [sseReady, setSseReady] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const pollRef = useRef(null);
+  const sseRef = useRef(null);
+  const activeConversationRef = useRef(null);
+  const conversationsRef = useRef([]);
+  const convRefreshTimerRef = useRef(null);
+  const lastConvRefreshRef = useRef(0);
+  const readReceiptTimerRef = useRef(null);
+  const pendingReadConvRef = useRef(null);
+  const lastNewMessageEventRef = useRef(0);
+
+  const updateConversationIfChanged = useCallback((conversationId, mutate) => {
+    setConversations((prev) => {
+      const idx = prev.findIndex((c) => Number(c.id) === Number(conversationId));
+      if (idx === -1) return prev;
+
+      const current = prev[idx];
+      const next = mutate(current);
+
+      if (!next || next === current) return prev;
+
+      const sameUnread = next.unread_count === current.unread_count;
+      const sameLastMessage = next.last_message === current.last_message;
+      const sameLastMessageAt = next.last_message_at === current.last_message_at;
+      const sameLastSender = next.last_message_sender === current.last_message_sender;
+
+      if (sameUnread && sameLastMessage && sameLastMessageAt && sameLastSender) {
+        return prev;
+      }
+
+      const rest = [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+      return [next, ...rest];
+    });
+  }, []);
 
   const loadConversations = useCallback(async () => {
     try {
-      const data = await api.getConversations();
-      setConversations(data);
+      const data = await api.getConversations({ limit: 30, includeParticipants: false });
+      setConversations((prev) => (areConversationsEquivalent(prev, data) ? prev : data));
+      return data;
     } catch (err) {
       console.error('Erreur chargement conversations:', err);
+      return [];
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const loadMessages = useCallback(async (convId) => {
+  const scheduleConversationsRefresh = useCallback(
+    (force = false) => {
+      const now = Date.now();
+      const elapsed = now - lastConvRefreshRef.current;
+      const minIntervalMs = 1200;
+
+      const runRefresh = () => {
+        lastConvRefreshRef.current = Date.now();
+        loadConversations().catch(() => {
+          // silencieux
+        });
+      };
+
+      if (force || elapsed >= minIntervalMs) {
+        if (convRefreshTimerRef.current) {
+          clearTimeout(convRefreshTimerRef.current);
+          convRefreshTimerRef.current = null;
+        }
+        runRefresh();
+        return;
+      }
+
+      if (!convRefreshTimerRef.current) {
+        convRefreshTimerRef.current = setTimeout(() => {
+          convRefreshTimerRef.current = null;
+          runRefresh();
+        }, minIntervalMs - elapsed);
+      }
+    },
+    [loadConversations],
+  );
+
+  const scheduleMarkConversationRead = useCallback((convId) => {
+    if (!convId) return;
+    pendingReadConvRef.current = convId;
+
+    if (readReceiptTimerRef.current) return;
+
+    readReceiptTimerRef.current = setTimeout(() => {
+      const targetConvId = pendingReadConvRef.current;
+      pendingReadConvRef.current = null;
+      readReceiptTimerRef.current = null;
+      if (!targetConvId) return;
+      api.markConversationRead(targetConvId).catch(() => {
+        // silencieux
+      });
+    }, 800);
+  }, []);
+
+  const loadMessages = useCallback(async (convId, { markAsRead = true } = {}) => {
     try {
-      const data = await api.getMessages(convId);
-      setMessages(data);
-      await api.markConversationRead(convId);
-      setConversations(prev => prev.map(c =>
-        c.id === convId ? { ...c, unread_count: 0 } : c
-      ));
+      const data = await api.getMessages(convId, MOBILE_MESSAGES_LIMIT);
+      setMessages((prev) => (areMessagesEquivalent(prev, data) ? prev : data));
+      if (markAsRead) {
+        await api.markConversationRead(convId);
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c)),
+        );
+      }
     } catch (err) {
       console.error('Erreur chargement messages:', err);
     }
@@ -94,28 +244,213 @@ function MobileMessaging({ currentUser, onBack }) {
     loadConversations();
   }, [loadConversations]);
 
-  // Polling
   useEffect(() => {
-    pollRef.current = setInterval(() => {
-      if (activeConversation) {
-        loadMessages(activeConversation.id);
+    activeConversationRef.current = activeConversation;
+  }, [activeConversation]);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(
+    loadConversations,
+    { disabled: !!activeConversation },
+  );
+
+  // SSE temps réel (rafraîchit la conversation active et la liste)
+  useEffect(() => {
+    let reconnectTimer = null;
+    let retries = 0;
+    let closed = false;
+
+    const closeSource = () => {
+      if (sseRef.current) {
+        sseRef.current.close();
+        sseRef.current = null;
       }
-      loadConversations();
-    }, 5000);
-    return () => clearInterval(pollRef.current);
-  }, [activeConversation, loadMessages, loadConversations]);
+    };
+
+    const connect = () => {
+      if (closed) return;
+      closeSource();
+
+      const es = new EventSource('/api/messaging/sse', { withCredentials: true });
+      sseRef.current = es;
+
+      es.onopen = () => {
+        retries = 0;
+        setSseReady(true);
+      };
+
+      es.addEventListener('new_message', async (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          lastNewMessageEventRef.current = Date.now();
+          const currentConv = activeConversationRef.current;
+          const targetConvId = Number(data?.conversation_id);
+
+          if (Number.isFinite(targetConvId)) {
+            const hasConversation = conversationsRef.current.some(
+              (c) => Number(c.id) === targetConvId,
+            );
+
+            if (hasConversation) {
+              updateConversationIfChanged(targetConvId, (current) => ({
+                ...current,
+                last_message: data.content,
+                last_message_at: data.created_at,
+                last_message_sender: data.sender_name,
+                unread_count:
+                  currentConv && Number(currentConv.id) === targetConvId
+                    ? 0
+                    : current.unread_count || 0,
+              }));
+            } else {
+              scheduleConversationsRefresh();
+            }
+          } else {
+            scheduleConversationsRefresh();
+          }
+
+          if (currentConv && Number(data?.conversation_id) === Number(currentConv.id)) {
+            if (data?.id) {
+              setMessages((prev) => {
+                if (prev.some((m) => Number(m.id) === Number(data.id))) return prev;
+                return [
+                  ...prev,
+                  {
+                    id: data.id,
+                    conversation_id: data.conversation_id,
+                    sender_id: data.sender_id,
+                    sender_name: data.sender_name,
+                    content: data.content,
+                    type: data.type || 'text',
+                    created_at: data.created_at,
+                    attachments: Array.isArray(data.attachments) ? data.attachments : [],
+                  },
+                ];
+              });
+              updateConversationIfChanged(currentConv.id, (current) => ({
+                ...current,
+                unread_count: 0,
+                last_message: data.content,
+                last_message_at: data.created_at,
+                last_message_sender: data.sender_name,
+              }));
+              scheduleMarkConversationRead(currentConv.id);
+            } else {
+              await loadMessages(currentConv.id, { markAsRead: false });
+              scheduleMarkConversationRead(currentConv.id);
+            }
+          }
+        } catch {
+          // silencieux
+        }
+      });
+
+      es.addEventListener('unread_update', (e) => {
+        let parsed = null;
+        try {
+          parsed = JSON.parse(e?.data || '{}');
+        } catch {
+          parsed = null;
+        }
+
+        if (parsed && Number.isFinite(Number(parsed.conversation_id))) {
+          const targetConvId = Number(parsed.conversation_id);
+          const nextUnread = Number.isFinite(Number(parsed.conversation_unread))
+            ? Number(parsed.conversation_unread)
+            : 0;
+
+          updateConversationIfChanged(targetConvId, (current) => ({
+            ...current,
+            unread_count: nextUnread,
+          }));
+          return;
+        }
+
+        // Le backend envoie unread_update juste après new_message:
+        // on évite un 2e refresh inutile si l'événement est corrélé.
+        if (Date.now() - lastNewMessageEventRef.current < 1500) {
+          return;
+        }
+        scheduleConversationsRefresh();
+      });
+
+      es.onerror = () => {
+        setSseReady(false);
+        closeSource();
+        if (closed) return;
+        retries += 1;
+        const delay = Math.min(retries * 2000, 30000);
+        reconnectTimer = setTimeout(connect, delay);
+      };
+    };
+
+    connect();
+
+    return () => {
+      closed = true;
+      setSseReady(false);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (convRefreshTimerRef.current) {
+        clearTimeout(convRefreshTimerRef.current);
+        convRefreshTimerRef.current = null;
+      }
+      if (readReceiptTimerRef.current) {
+        clearTimeout(readReceiptTimerRef.current);
+        readReceiptTimerRef.current = null;
+      }
+      pendingReadConvRef.current = null;
+      closeSource();
+    };
+  }, [
+    loadMessages,
+    scheduleConversationsRefresh,
+    scheduleMarkConversationRead,
+    updateConversationIfChanged,
+  ]);
+
+  // Fallback polling lent si SSE indisponible
+  useEffect(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+
+    if (sseReady) {
+      return undefined;
+    }
+
+    pollRef.current = setInterval(() => {
+      scheduleConversationsRefresh(true);
+      if (activeConversation) {
+        loadMessages(activeConversation.id, { markAsRead: false }).catch(() => {
+          // silencieux
+        });
+      }
+    }, 30000);
+
+    return () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [activeConversation, loadMessages, scheduleConversationsRefresh, sseReady]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const getConversationName = (conv) => {
+    if (conv.display_name) return conv.display_name;
     if (conv.title) return conv.title;
     if (conv.type === 'direct' && conv.participants) {
-      const other = conv.participants.find(p => p.id !== currentUser?.id);
+      const other = conv.participants.find((p) => p.id !== currentUser?.id);
       return other?.name || 'Conversation';
     }
-    return conv.participants?.map(p => p.name).join(', ') || 'Conversation';
+    return conv.participants?.map((p) => p.name).join(', ') || 'Conversation';
   };
 
   const handleSend = async () => {
@@ -125,12 +460,19 @@ function MobileMessaging({ currentUser, onBack }) {
 
     try {
       const msg = await api.sendMessage(activeConversation.id, text);
-      setMessages(prev => [...prev, msg]);
-      setConversations(prev => prev.map(c =>
-        c.id === activeConversation.id
-          ? { ...c, last_message: text, last_message_at: msg.created_at, last_message_sender: currentUser?.name }
-          : c
-      ));
+      setMessages((prev) => [...prev, msg]);
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === activeConversation.id
+            ? {
+                ...c,
+                last_message: text,
+                last_message_at: msg.created_at,
+                last_message_sender: currentUser?.name,
+              }
+            : c,
+        ),
+      );
     } catch (err) {
       console.error('Erreur envoi message:', err);
     }
@@ -141,12 +483,18 @@ function MobileMessaging({ currentUser, onBack }) {
     if (!file || !activeConversation) return;
     e.target.value = '';
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+    if (file.size > MAX_FILE_SIZE) {
+      window.alert('Le fichier dépasse la taille maximale autorisée (10 Mo)');
+      return;
+    }
+
     try {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result.split(',')[1];
         const msg = await api.sendFileMessage(activeConversation.id, file.name, base64, file.type);
-        setMessages(prev => [...prev, msg]);
+        setMessages((prev) => [...prev, msg]);
       };
       reader.readAsDataURL(file);
     } catch (err) {
@@ -160,11 +508,11 @@ function MobileMessaging({ currentUser, onBack }) {
       const result = await api.createConversation('direct', null, [selectedUserId]);
       setShowNewConv(false);
       setSelectedUserId(null);
-      await loadConversations();
-      const conv = (await api.getConversations()).find(c => c.id === result.id);
+      const refreshedConversations = await loadConversations();
+      const conv = refreshedConversations.find((c) => c.id === result.id);
       if (conv) {
         setActiveConversation(conv);
-        await loadMessages(conv.id);
+        await loadMessages(conv.id, { markAsRead: false });
       }
     } catch (err) {
       console.error('Erreur création conversation:', err);
@@ -174,14 +522,14 @@ function MobileMessaging({ currentUser, onBack }) {
   const openNewConvModal = async () => {
     try {
       const users = await api.request('/users/names');
-      setAllUsers(users.filter(u => u.id !== currentUser?.id));
+      setAllUsers(users.filter((u) => u.id !== currentUser?.id));
       setShowNewConv(true);
     } catch (err) {
       console.error('Erreur chargement utilisateurs:', err);
     }
   };
 
-  const messagesWithDates = () => {
+  const messagesWithDates = useMemo(() => {
     const result = [];
     let lastDate = null;
     for (const msg of messages) {
@@ -193,26 +541,44 @@ function MobileMessaging({ currentUser, onBack }) {
       result.push({ type: 'message', ...msg });
     }
     return result;
-  };
+  }, [messages]);
 
-  const totalUnread = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+  const totalUnread = useMemo(
+    () => conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0),
+    [conversations],
+  );
 
   // Vue Chat
   if (activeConversation) {
     return (
       <div className="mobile-messaging-chat">
         <div className="mmsg-chat-header">
-          <Button variant="ghost" className="mmsg-back" onClick={() => { setActiveConversation(null); setMessages([]); }}>
+          <Button
+            variant="ghost"
+            className="mmsg-back"
+            onClick={() => {
+              setActiveConversation(null);
+              setMessages([]);
+            }}
+            aria-label="Retour aux conversations"
+          >
             <ArrowLeft size={20} />
           </Button>
-          <div className="mmsg-chat-avatar" style={{ background: getAvatarColor(getConversationName(activeConversation)) }}>
-            {activeConversation.type === 'group' ? <Users size={14} /> : getInitials(getConversationName(activeConversation))}
+          <div
+            className="mmsg-chat-avatar"
+            style={{ background: getAvatarColor(getConversationName(activeConversation)) }}
+          >
+            {activeConversation.type === 'group' ? (
+              <Users size={14} />
+            ) : (
+              getInitials(getConversationName(activeConversation))
+            )}
           </div>
           <span className="mmsg-chat-name">{getConversationName(activeConversation)}</span>
         </div>
 
         <div className="mmsg-messages">
-          {messagesWithDates().map((item, i) => {
+          {messagesWithDates.map((item, i) => {
             if (item.type === 'date') {
               return (
                 <div key={`date-${i}`} className="mmsg-date-sep">
@@ -234,18 +600,26 @@ function MobileMessaging({ currentUser, onBack }) {
                       alt={item.attachments[0].original_name}
                       loading="lazy"
                       className="mmsg-img"
-                      onClick={() => window.open(`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`, '_blank')}
+                      onClick={() =>
+                        window.open(
+                          `${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`,
+                          '_blank',
+                        )
+                      }
                     />
                   )}
                   {(item.type === 'file' || item.type === 'video') && item.attachments?.[0] && (
                     <a
                       href={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
-                      target="_blank" rel="noopener noreferrer"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="mmsg-file-link"
                     >
                       {item.type === 'video' ? <Image size={14} /> : <File size={14} />}
                       <span>{item.attachments[0].original_name}</span>
-                      <span className="mmsg-file-size">{formatFileSize(item.attachments[0].size)}</span>
+                      <span className="mmsg-file-size">
+                        {formatFileSize(item.attachments[0].size)}
+                      </span>
                       <Download size={12} />
                     </a>
                   )}
@@ -258,7 +632,12 @@ function MobileMessaging({ currentUser, onBack }) {
         </div>
 
         <div className="mmsg-input-area">
-          <Button variant="ghost" className="mmsg-attach" onClick={() => fileInputRef.current?.click()}>
+          <Button
+            variant="ghost"
+            className="mmsg-attach"
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Joindre un fichier"
+          >
             <Paperclip size={20} />
           </Button>
           <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
@@ -266,10 +645,21 @@ function MobileMessaging({ currentUser, onBack }) {
             className="mmsg-input"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSend(); } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
             placeholder="Écrire un message…"
           />
-          <Button variant="ghost" className="mmsg-send" onClick={handleSend} disabled={!inputText.trim()}>
+          <Button
+            variant="ghost"
+            className="mmsg-send"
+            onClick={handleSend}
+            disabled={!inputText.trim()}
+            aria-label="Envoyer"
+          >
             <Send size={18} />
           </Button>
         </div>
@@ -279,13 +669,21 @@ function MobileMessaging({ currentUser, onBack }) {
 
   // Vue Liste des conversations
   return (
-    <div className="mobile-messaging">
+    <div className="mobile-messaging" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="mmsg-header">
-        <Button variant="ghost" className="mmsg-back" onClick={onBack}>
+        <Button variant="ghost" className="mmsg-back" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
-        <h2>Messages {totalUnread > 0 && <span className="mmsg-total-badge">{totalUnread}</span>}</h2>
-        <Button variant="ghost" className="mmsg-new-btn" onClick={openNewConvModal}>
+        <h2>
+          Messages {totalUnread > 0 && <span className="mmsg-total-badge">{totalUnread}</span>}
+        </h2>
+        <Button
+          variant="ghost"
+          className="mmsg-new-btn"
+          onClick={openNewConvModal}
+          aria-label="Nouvelle conversation"
+        >
           <Plus size={20} />
         </Button>
       </div>
@@ -305,14 +703,33 @@ function MobileMessaging({ currentUser, onBack }) {
         </div>
       ) : (
         <div className="mmsg-conv-list">
-          {conversations.map(conv => (
+          {conversations.map((conv) => (
             <div
               key={conv.id}
               className={`mmsg-conv-item ${conv.unread_count > 0 ? 'unread' : ''}`}
-              onClick={() => { setActiveConversation(conv); loadMessages(conv.id); }}
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                setActiveConversation(conv);
+                loadMessages(conv.id);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setActiveConversation(conv);
+                  loadMessages(conv.id);
+                }
+              }}
             >
-              <div className="mmsg-conv-avatar" style={{ background: getAvatarColor(getConversationName(conv)) }}>
-                {conv.type === 'group' ? <Users size={16} /> : getInitials(getConversationName(conv))}
+              <div
+                className="mmsg-conv-avatar"
+                style={{ background: getAvatarColor(getConversationName(conv)) }}
+              >
+                {conv.type === 'group' ? (
+                  <Users size={16} />
+                ) : (
+                  getInitials(getConversationName(conv))
+                )}
               </div>
               <div className="mmsg-conv-info">
                 <div className="mmsg-conv-top">
@@ -321,13 +738,16 @@ function MobileMessaging({ currentUser, onBack }) {
                 </div>
                 <div className="mmsg-conv-bottom">
                   <span className="mmsg-conv-last">
-                    {conv.last_message_sender && conv.last_message_sender !== getConversationName(conv)
+                    {conv.last_message_sender &&
+                    conv.last_message_sender !== getConversationName(conv)
                       ? `${conv.last_message_sender.split(' ')[0]}: `
                       : ''}
                     {conv.last_message || 'Nouvelle conversation'}
                   </span>
                   {conv.unread_count > 0 && (
-                    <span className="mmsg-badge">{conv.unread_count > 9 ? '9+' : conv.unread_count}</span>
+                    <span className="mmsg-badge">
+                      {conv.unread_count > 9 ? '9+' : conv.unread_count}
+                    </span>
                   )}
                 </div>
               </div>
@@ -346,26 +766,50 @@ function MobileMessaging({ currentUser, onBack }) {
           size="sm"
           footer={
             <>
-              <Button variant="ghost" className="mmsg-cancel" onClick={() => { setShowNewConv(false); setSelectedUserId(null); }}>Annuler</Button>
-              <Button variant="ghost" className="mmsg-confirm" onClick={handleNewConversation} disabled={!selectedUserId}>Démarrer</Button>
+              <Button
+                variant="ghost"
+                className="mmsg-cancel"
+                onClick={() => {
+                  setShowNewConv(false);
+                  setSelectedUserId(null);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="ghost"
+                className="mmsg-confirm"
+                onClick={handleNewConversation}
+                disabled={!selectedUserId}
+              >
+                Démarrer
+              </Button>
             </>
           }
         >
-            <div className="mmsg-user-list">
-              {allUsers.map(user => (
-                <div
-                  key={user.id}
-                  className={`mmsg-user-item ${selectedUserId === user.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedUserId(user.id)}
-                >
-                  <div className="mmsg-user-avatar" style={{ background: getAvatarColor(user.name) }}>
-                    {getInitials(user.name)}
-                  </div>
-                  <span>{user.name}</span>
+          <div className="mmsg-user-list">
+            {allUsers.map((user) => (
+              <div
+                key={user.id}
+                className={`mmsg-user-item ${selectedUserId === user.id ? 'selected' : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedUserId(user.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedUserId(user.id);
+                  }
+                }}
+              >
+                <div className="mmsg-user-avatar" style={{ background: getAvatarColor(user.name) }}>
+                  {getInitials(user.name)}
                 </div>
-              ))}
-              {allUsers.length === 0 && <p className="mmsg-no-users">Aucun autre utilisateur</p>}
-            </div>
+                <span>{user.name}</span>
+              </div>
+            ))}
+            {allUsers.length === 0 && <p className="mmsg-no-users">Aucun autre utilisateur</p>}
+          </div>
         </ModalLayout>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Hook pour détecter les modifications non sauvegardées dans un formulaire.
@@ -42,15 +42,20 @@ export function useDirtyForm(formData) {
   }, [formData]);
 
   // Wrapper pour protéger la fermeture
-  const guardClose = useCallback((onClose) => () => {
-    if (!isDirty) {
-      onClose();
-      return;
-    }
-    if (window.confirm('Vous avez des modifications non sauvegardées. Quitter sans enregistrer ?')) {
-      onClose();
-    }
-  }, [isDirty]);
+  const guardClose = useCallback(
+    (onClose) => () => {
+      if (!isDirty) {
+        onClose();
+        return;
+      }
+      if (
+        window.confirm('Vous avez des modifications non sauvegardées. Quitter sans enregistrer ?')
+      ) {
+        onClose();
+      }
+    },
+    [isDirty],
+  );
 
   return { isDirty, resetDirty, guardClose };
 }

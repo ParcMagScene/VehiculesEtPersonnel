@@ -21,7 +21,9 @@
   cursor: pointer;
   font-size: var(--font-base);
   color: var(--theme-text-primary);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
   text-align: left;
   gap: 8px;
 }
@@ -210,4 +212,26 @@
 
 .driver-select-dropdown::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .driver-select-dropdown {
+    max-height: 220px;
+  }
+
+  .driver-select-option {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .driver-select-trigger {
+    min-height: 44px;
+    font-size: var(--font-base);
+  }
+
+  .driver-select-dropdown {
+    max-height: 200px;
+  }
 }

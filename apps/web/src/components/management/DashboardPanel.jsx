@@ -1,12 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { format, startOfDay, addDays, isToday, isPast, startOfWeek, endOfWeek } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import logger from '../../utils/logger';
 import './DashboardPanel.css';
+
+import { addDays, endOfWeek, format, isPast, isToday, startOfDay, startOfWeek } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { Button, Card, SectionHeader, Spinner } from '@/design-system';
 
 import { ROLES, STATUS } from '../../constants';
+import api from '../../utils/api';
+import logger from '../../utils/logger';
 
 // ═══════════════════════════════════════════════════
 // Point 1 — Dashboard global desktop
@@ -46,7 +48,9 @@ const DashboardPanel = ({
         // Stock alerts
         const stockData = results[0].status === 'fulfilled' ? results[0].value : [];
         if (Array.isArray(stockData)) {
-          setStockAlerts(stockData.filter(a => a.quantity <= (a.alert_threshold || 5)).slice(0, 5));
+          setStockAlerts(
+            stockData.filter((a) => a.quantity <= (a.alert_threshold || 5)).slice(0, 5),
+          );
         }
 
         // Pending requests
@@ -57,7 +61,9 @@ const DashboardPanel = ({
         const ordersData = results[2].status === 'fulfilled' ? results[2].value : [];
         if (Array.isArray(ordersData)) {
           setOrdersCount({
-            pending: ordersData.filter(o => o.status === STATUS.PENDING || o.status === 'en_attente').length,
+            pending: ordersData.filter(
+              (o) => o.status === STATUS.PENDING || o.status === 'en_attente',
+            ).length,
             total: ordersData.length,
           });
         }
@@ -81,30 +87,36 @@ const DashboardPanel = ({
 
   const vehicleStats = useMemo(() => {
     const total = vehicles.length;
-    const inMaintenance = maintenances.filter(m =>
-      m.status === 'in_progress' || m.status === STATUS.SCHEDULED
+    const inMaintenance = maintenances.filter(
+      (m) => m.status === 'in_progress' || m.status === STATUS.SCHEDULED,
     ).length;
-    const immobilized = maintenances.filter(m => m.isImmobilized).length;
-    
+    const immobilized = maintenances.filter((m) => m.isImmobilized).length;
+
     // Réservations aujourd'hui
     const todayStr = format(today, 'yyyy-MM-dd');
-    const reservedToday = reservations.filter(r => {
+    const reservedToday = reservations.filter((r) => {
       const start = r.startDate || r.date;
       const end = r.endDate || r.date;
       return start <= todayStr && end >= todayStr;
     }).length;
 
-    return { total, inMaintenance, immobilized, reservedToday, available: total - reservedToday - immobilized };
+    return {
+      total,
+      inMaintenance,
+      immobilized,
+      reservedToday,
+      available: total - reservedToday - immobilized,
+    };
   }, [vehicles, maintenances, reservations, today]);
 
   const maintenanceStats = useMemo(() => {
-    const overdue = maintenances.filter(m => {
+    const overdue = maintenances.filter((m) => {
       if (m.status === STATUS.COMPLETED || m.status === STATUS.CANCELLED) return false;
       const dueDate = m.scheduledDate || m.dueDate;
       return dueDate && isPast(new Date(dueDate)) && !isToday(new Date(dueDate));
     }).length;
 
-    const upcoming7d = maintenances.filter(m => {
+    const upcoming7d = maintenances.filter((m) => {
       if (m.status === STATUS.COMPLETED || m.status === STATUS.CANCELLED) return false;
       const dueDate = m.scheduledDate || m.dueDate;
       if (!dueDate) return false;
@@ -112,7 +124,7 @@ const DashboardPanel = ({
       return d >= today && d <= addDays(today, 7);
     }).length;
 
-    const reported = maintenances.filter(m => m.status === 'reported').length;
+    const reported = maintenances.filter((m) => m.status === 'reported').length;
 
     return { overdue, upcoming7d, reported, total: maintenances.length };
   }, [maintenances, today]);
@@ -120,7 +132,7 @@ const DashboardPanel = ({
   const personnelStats = useMemo(() => {
     return {
       total: persons.length,
-      active: persons.filter(p => p.status === STATUS.ACTIVE || !p.status).length,
+      active: persons.filter((p) => p.status === STATUS.ACTIVE || !p.status).length,
     };
   }, [persons]);
 
@@ -129,19 +141,19 @@ const DashboardPanel = ({
     const tomorrowStr = format(addDays(today, 1), 'yyyy-MM-dd');
     const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
 
-    const todayCount = reservations.filter(r => {
+    const todayCount = reservations.filter((r) => {
       const start = r.startDate || r.date;
       const end = r.endDate || r.date;
       return start <= todayStr && end >= todayStr;
     }).length;
 
-    const tomorrowCount = reservations.filter(r => {
+    const tomorrowCount = reservations.filter((r) => {
       const start = r.startDate || r.date;
       const end = r.endDate || r.date;
       return start <= tomorrowStr && end >= tomorrowStr;
     }).length;
 
-    const weekCount = reservations.filter(r => {
+    const weekCount = reservations.filter((r) => {
       const start = r.startDate || r.date;
       const end = r.endDate || r.date;
       return start <= weekEndStr && end >= format(weekStart, 'yyyy-MM-dd');
@@ -155,7 +167,7 @@ const DashboardPanel = ({
   const upcomingReservations = useMemo(() => {
     const todayStr = format(today, 'yyyy-MM-dd');
     return reservations
-      .filter(r => {
+      .filter((r) => {
         const end = r.endDate || r.date;
         return end >= todayStr;
       })
@@ -165,7 +177,7 @@ const DashboardPanel = ({
 
   const upcomingMaintenances = useMemo(() => {
     return maintenances
-      .filter(m => m.status !== STATUS.COMPLETED && m.status !== STATUS.CANCELLED)
+      .filter((m) => m.status !== STATUS.COMPLETED && m.status !== STATUS.CANCELLED)
       .sort((a, b) => {
         const da = a.scheduledDate || a.dueDate || '9999';
         const db = b.scheduledDate || b.dueDate || '9999';
@@ -174,10 +186,13 @@ const DashboardPanel = ({
       .slice(0, 5);
   }, [maintenances]);
 
-  const getVehicleName = useCallback((vehicleId) => {
-    const v = vehicles.find(v => v.id === vehicleId);
-    return v ? (v.name || `${v.brand} ${v.model}`) : `Véhicule #${vehicleId}`;
-  }, [vehicles]);
+  const getVehicleName = useCallback(
+    (vehicleId) => {
+      const v = vehicles.find((v) => v.id === vehicleId);
+      return v ? v.name || `${v.brand} ${v.model}` : `Véhicule #${vehicleId}`;
+    },
+    [vehicles],
+  );
 
   const getStatusLabel = (status) => {
     const map = {
@@ -204,7 +219,9 @@ const DashboardPanel = ({
     if (!dateStr) return '—';
     try {
       return format(new Date(dateStr), 'dd MMM', { locale: fr });
-    } catch { return dateStr; }
+    } catch {
+      return dateStr;
+    }
   };
 
   const greeting = useMemo(() => {
@@ -220,9 +237,7 @@ const DashboardPanel = ({
       <div className="dashboard-header">
         <div className="dashboard-greeting">
           <h1>{greeting}</h1>
-          <p className="dashboard-date">
-            {format(today, "EEEE d MMMM yyyy", { locale: fr })}
-          </p>
+          <p className="dashboard-date">{format(today, 'EEEE d MMMM yyyy', { locale: fr })}</p>
         </div>
       </div>
 
@@ -236,7 +251,9 @@ const DashboardPanel = ({
             <div className="kpi-label">Véhicules</div>
             <div className="kpi-details">
               <span className="kpi-detail good">{vehicleStats.available} dispo</span>
-              <span className="kpi-detail info">{vehicleStats.reservedToday} réservé{vehicleStats.reservedToday > 1 ? 's' : ''}</span>
+              <span className="kpi-detail info">
+                {vehicleStats.reservedToday} réservé{vehicleStats.reservedToday > 1 ? 's' : ''}
+              </span>
               {vehicleStats.immobilized > 0 && (
                 <span className="kpi-detail danger">{vehicleStats.immobilized} immob.</span>
               )}
@@ -245,7 +262,10 @@ const DashboardPanel = ({
         </Card>
 
         {/* Réservations */}
-        <Card className="kpi-card kpi-reservations" onClick={() => onNavigateToModule?.('vehicles')}>
+        <Card
+          className="kpi-card kpi-reservations"
+          onClick={() => onNavigateToModule?.('vehicles')}
+        >
           <div className="kpi-icon">📅</div>
           <div className="kpi-body">
             <div className="kpi-value">{reservationStats.todayCount}</div>
@@ -268,7 +288,9 @@ const DashboardPanel = ({
                 <span className="kpi-detail danger">{maintenanceStats.overdue} en retard</span>
               )}
               {maintenanceStats.reported > 0 && (
-                <span className="kpi-detail warning">{maintenanceStats.reported} signalé{maintenanceStats.reported > 1 ? 's' : ''}</span>
+                <span className="kpi-detail warning">
+                  {maintenanceStats.reported} signalé{maintenanceStats.reported > 1 ? 's' : ''}
+                </span>
               )}
             </div>
           </div>
@@ -309,11 +331,19 @@ const DashboardPanel = ({
       <div className="dashboard-sections">
         {/* Prochaines réservations */}
         <div className="dashboard-section">
-          <SectionHeader className="section-header" title="📅 Prochaines réservations" actions={
-            <Button variant="ghost" className="section-link" onClick={() => onNavigateToModule?.('vehicles')}>
-              Voir tout →
-            </Button>
-          } />
+          <SectionHeader
+            className="section-header"
+            title="📅 Prochaines réservations"
+            actions={
+              <Button
+                variant="ghost"
+                className="section-link"
+                onClick={() => onNavigateToModule?.('vehicles')}
+              >
+                Voir tout →
+              </Button>
+            }
+          />
           <div className="section-body">
             {upcomingReservations.length === 0 ? (
               <p className="empty-text">Aucune réservation à venir</p>
@@ -324,14 +354,22 @@ const DashboardPanel = ({
                   const isCurrentDay = startDate === format(today, 'yyyy-MM-dd');
                   const isTmrw = startDate === format(addDays(today, 1), 'yyyy-MM-dd');
                   return (
-                    <div key={r.id || i} className={`reservation-item ${isCurrentDay ? 'today' : ''}`}>
+                    <div
+                      key={r.id || i}
+                      className={`reservation-item ${isCurrentDay ? 'today' : ''}`}
+                    >
                       <div className="res-date">
-                        {isCurrentDay ? "Aujourd'hui" : isTmrw ? 'Demain' : formatDateShort(startDate)}
+                        {isCurrentDay
+                          ? "Aujourd'hui"
+                          : isTmrw
+                            ? 'Demain'
+                            : formatDateShort(startDate)}
                       </div>
                       <div className="res-vehicle">{getVehicleName(r.vehicleId)}</div>
                       <div className="res-client">{r.client || r.description || '—'}</div>
                       <div className="res-period">
-                        {r.startPeriod === 'morning' ? 'AM' : 'PM'} → {r.endPeriod === 'afternoon' ? 'PM' : 'AM'}
+                        {r.startPeriod === 'morning' ? 'AM' : 'PM'} →{' '}
+                        {r.endPeriod === 'afternoon' ? 'PM' : 'AM'}
                       </div>
                     </div>
                   );
@@ -343,11 +381,19 @@ const DashboardPanel = ({
 
         {/* Maintenances en cours / à venir */}
         <div className="dashboard-section">
-          <SectionHeader className="section-header" title="🔧 Maintenances" actions={
-            <Button variant="ghost" className="section-link" onClick={() => onNavigateToModule?.('vehicles')}>
-              Voir tout →
-            </Button>
-          } />
+          <SectionHeader
+            className="section-header"
+            title="🔧 Maintenances"
+            actions={
+              <Button
+                variant="ghost"
+                className="section-link"
+                onClick={() => onNavigateToModule?.('vehicles')}
+              >
+                Voir tout →
+              </Button>
+            }
+          />
           <div className="section-body">
             {upcomingMaintenances.length === 0 ? (
               <p className="empty-text">Aucune maintenance en attente</p>
@@ -355,9 +401,13 @@ const DashboardPanel = ({
               <div className="maintenance-list">
                 {upcomingMaintenances.map((m, i) => {
                   const dueDate = m.scheduledDate || m.dueDate;
-                  const isOverdue = dueDate && isPast(new Date(dueDate)) && !isToday(new Date(dueDate));
+                  const isOverdue =
+                    dueDate && isPast(new Date(dueDate)) && !isToday(new Date(dueDate));
                   return (
-                    <div key={m.id || i} className={`maintenance-item ${isOverdue ? 'overdue' : ''}`}>
+                    <div
+                      key={m.id || i}
+                      className={`maintenance-item ${isOverdue ? 'overdue' : ''}`}
+                    >
                       <div className="maint-vehicle">{getVehicleName(m.vehicleId)}</div>
                       <div className="maint-type">{m.type || m.maintenanceType || '—'}</div>
                       <div className={`maint-status ${getStatusClass(m.status)}`}>
@@ -378,18 +428,30 @@ const DashboardPanel = ({
         {/* Alertes stock */}
         {stockAlerts.length > 0 && (
           <div className="dashboard-section section-alerts">
-            <SectionHeader className="section-header" title="⚠️ Alertes stock bas" actions={
-              <Button variant="ghost" className="section-link" onClick={() => onNavigateToModule?.('stock')}>
-                Voir le stock →
-              </Button>
-            } />
+            <SectionHeader
+              className="section-header"
+              title="⚠️ Alertes stock bas"
+              actions={
+                <Button
+                  variant="ghost"
+                  className="section-link"
+                  onClick={() => onNavigateToModule?.('stock')}
+                >
+                  Voir le stock →
+                </Button>
+              }
+            />
             <div className="section-body">
               <div className="stock-alert-list">
                 {stockAlerts.map((item, i) => (
                   <div key={item.id || i} className="stock-alert-item">
                     <span className="stock-alert-name">{item.name || item.label}</span>
-                    <span className="stock-alert-qty danger">{item.quantity} restant{item.quantity > 1 ? 's' : ''}</span>
-                    <span className="stock-alert-threshold">seuil : {item.alert_threshold || 5}</span>
+                    <span className="stock-alert-qty danger">
+                      {item.quantity} restant{item.quantity > 1 ? 's' : ''}
+                    </span>
+                    <span className="stock-alert-threshold">
+                      seuil : {item.alert_threshold || 5}
+                    </span>
                   </div>
                 ))}
               </div>

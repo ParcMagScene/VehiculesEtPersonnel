@@ -1,8 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link as LinkIcon, QrCode, Copy, Check, Printer } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import './MobileAccess.css';
+
+import { Check, Copy, Link as LinkIcon, Printer, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
+import { QRCodeSVG } from 'qrcode.react';
+import { useState } from 'react';
+
 import { Button, Input } from '@/design-system';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 // Fonctionnalités mobiles à afficher sur l'affichette
 const MOBILE_FEATURES = [
@@ -19,32 +24,12 @@ const MOBILE_FEATURES = [
 ];
 
 function MobileAccess() {
-  const canvasRef = useRef(null);
   const [copied, setCopied] = useState(false);
   const [posterCount, setPosterCount] = useState(1);
   const [posterFormat, setPosterFormat] = useState('A4');
-  
+
   // URL de l'interface mobile
   const mobileUrl = `${window.location.origin}/#/mobile`;
-  
-  // Générer le QR code au chargement
-  useEffect(() => {
-    generateQRCode();
-  }, []);
-
-  const generateQRCode = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const size = 200;
-    canvas.width = size;
-    canvas.height = size;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(mobileUrl)}`;
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => { ctx.drawImage(img, 0, 0, size, size); };
-    img.src = qrApiUrl;
-  };
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(mobileUrl).then(() => {
@@ -54,7 +39,7 @@ function MobileAccess() {
   };
 
   // ─── Impression affichette ───
-  const handlePrintPoster = () => {
+  const handlePrintPoster = async () => {
     const isLandscape = posterFormat === 'A4-paysage';
     const pageSize = isLandscape ? 'A4 landscape' : posterFormat === 'A5' ? 'A5' : 'A4';
     const qrSize = posterFormat === 'A5' ? 120 : 180;
@@ -64,11 +49,12 @@ function MobileAccess() {
     const featIconSize = posterFormat === 'A5' ? '11pt' : '14pt';
     const urlSize = posterFormat === 'A5' ? '8pt' : '10pt';
 
-    const featuresHtml = MOBILE_FEATURES.map(f =>
-      `<div class="feat"><span class="feat-icon">${f.icon}</span><div><strong>${f.label}</strong><span class="feat-desc">${f.desc}</span></div></div>`
+    const featuresHtml = MOBILE_FEATURES.map(
+      (f) =>
+        `<div class="feat"><span class="feat-icon">${f.icon}</span><div><strong>${f.label}</strong><span class="feat-desc">${f.desc}</span></div></div>`,
     ).join('');
 
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(mobileUrl)}`;
+    const qrUrl = await QRCode.toDataURL(mobileUrl, { width: 400, margin: 1 });
 
     const posters = [];
     for (let i = 0; i < posterCount; i++) {
@@ -116,7 +102,7 @@ function MobileAccess() {
         .poster:last-child { page-break-after: auto; }
         .poster-header {
           display: flex; align-items: center; gap: 16px;
-          padding-bottom: 14px; border-bottom: 3px solid #6366f1;
+          padding-bottom: 14px; border-bottom: 3px solid ${ACCENT_COLORS.indigo};
           margin-bottom: 18px;
         }
         .poster-logo { height: ${posterFormat === 'A5' ? '50px' : '72px'}; width: auto; }
@@ -125,7 +111,7 @@ function MobileAccess() {
           font-size: ${titleSize}; color: #1e293b; font-weight: 800; line-height: 1.1;
         }
         .poster-subtitle {
-          font-size: ${subSize}; color: #6366f1; font-weight: 600; margin-top: 4px;
+          font-size: ${subSize}; color: ${ACCENT_COLORS.indigo}; font-weight: 600; margin-top: 4px;
         }
         .poster-body {
           flex: 1; display: flex; gap: 24px; align-items: flex-start;
@@ -136,7 +122,7 @@ function MobileAccess() {
           ${isLandscape ? 'flex-shrink: 0;' : ''}
         }
         .qr-frame {
-          border: 4px solid #6366f1; border-radius: 16px; padding: 12px;
+          border: 4px solid ${ACCENT_COLORS.indigo}; border-radius: 16px; padding: 12px;
           background: white; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
         }
         .qr-img { width: ${qrSize}px; height: ${qrSize}px; display: block; }
@@ -144,7 +130,7 @@ function MobileAccess() {
           font-size: ${subSize}; color: #475569; font-weight: 600; text-align: center;
         }
         .url-box {
-          font-family: monospace; font-size: ${urlSize}; color: #6366f1;
+          font-family: monospace; font-size: ${urlSize}; color: ${ACCENT_COLORS.indigo};
           background: #f1f5f9; padding: 6px 14px; border-radius: 8px;
           text-align: center; word-break: break-all; font-weight: 600;
         }
@@ -166,13 +152,13 @@ function MobileAccess() {
         }
         .feat-icon { font-size: ${featIconSize}; flex-shrink: 0; }
         .feat strong { display: block; font-size: ${featSize}; color: #1e293b; line-height: 1.2; }
-        .feat-desc { font-size: ${posterFormat === 'A5' ? '7pt' : '9pt'}; color: #64748b; }
+        .feat-desc { font-size: ${posterFormat === 'A5' ? '7pt' : '9pt'}; color: ${STATUS_COLORS.neutral}; }
         .poster-footer {
           margin-top: 18px; padding-top: 10px; border-top: 2px solid #e2e8f0;
           text-align: center;
         }
         .poster-footer p { font-size: ${posterFormat === 'A5' ? '8pt' : '10pt'}; color: #94a3b8; }
-        .footer-brand { font-weight: 700; color: #6366f1 !important; margin-top: 4px; }
+        .footer-brand { font-weight: 700; color: ${ACCENT_COLORS.indigo} !important; margin-top: 4px; }
       </style>
     </head><body>${posters.join('')}</body></html>`;
 
@@ -246,9 +232,14 @@ function MobileAccess() {
 
         {/* Impression affichettes */}
         <div className="poster-section">
-          <h3><Printer size={18} /> Imprimer des affichettes</h3>
-          <p className="poster-desc">Imprimez des affichettes avec le QR code et les fonctionnalités pour les afficher dans vos locaux.</p>
-          
+          <h3>
+            <Printer size={18} /> Imprimer des affichettes
+          </h3>
+          <p className="poster-desc">
+            Imprimez des affichettes avec le QR code et les fonctionnalités pour les afficher dans
+            vos locaux.
+          </p>
+
           <div className="poster-options">
             <div className="poster-option-group">
               <label>Format</label>
@@ -257,8 +248,10 @@ function MobileAccess() {
                   { id: 'A4', label: 'A4 Portrait' },
                   { id: 'A4-paysage', label: 'A4 Paysage' },
                   { id: 'A5', label: 'A5' },
-                ].map(f => (
-                  <Button variant="ghost"                     key={f.id}
+                ].map((f) => (
+                  <Button
+                    variant="ghost"
+                    key={f.id}
                     className={`poster-format-btn ${posterFormat === f.id ? 'active' : ''}`}
                     onClick={() => setPosterFormat(f.id)}
                   >
@@ -274,7 +267,9 @@ function MobileAccess() {
                 min={1}
                 max={20}
                 value={posterCount}
-                onChange={(e) => setPosterCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+                onChange={(e) =>
+                  setPosterCount(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))
+                }
                 className="poster-qty-input"
               />
             </div>
@@ -288,9 +283,8 @@ function MobileAccess() {
 
         <div className="access-info">
           <p>
-            <strong>Note :</strong> Les utilisateurs doivent disposer d'un compte 
-            autorisé pour accéder à l'interface mobile. Gérez les accès dans 
-            l'onglet "Utilisateurs".
+            <strong>Note :</strong> Les utilisateurs doivent disposer d'un compte autorisé pour
+            accéder à l'interface mobile. Gérez les accès dans l'onglet "Utilisateurs".
           </p>
         </div>
       </div>

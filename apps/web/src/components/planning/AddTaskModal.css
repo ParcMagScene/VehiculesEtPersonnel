@@ -3,7 +3,7 @@
 .atm-overlay {
   position: fixed;
   inset: 0;
-  background: var(--theme-overlay);
+  background: var(--surface-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,7 +12,7 @@
 }
 
 .atm-modal {
-  background: var(--bg-card, var(--theme-bg-card));
+  background: var(--bg-card, var(--surface-primary));
   border-radius: var(--radius-lg);
   width: 520px;
   max-width: 95vw;
@@ -24,8 +24,14 @@
 }
 
 @keyframes atm-slideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Header */
@@ -34,14 +40,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-color, var(--theme-border));
+  border-bottom: 1px solid var(--border-color, var(--border-default));
 }
 
 .atm-header h3 {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 600;
-  color: var(--text-primary, var(--theme-text-primary));
+  color: var(--text-primary, var(--text-body));
   display: flex;
   align-items: center;
   gap: 8px;
@@ -50,13 +56,16 @@
 .atm-close {
   background: none;
   border: none;
-  color: var(--text-secondary, var(--theme-text-secondary));
+  color: var(--text-secondary, var(--text-muted));
   cursor: pointer;
   padding: 4px;
   border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
-.atm-close:hover { background: var(--bg-hover, var(--theme-border-light)); color: var(--text-primary); }
+.atm-close:hover {
+  background: var(--bg-hover, var(--border-subtle));
+  color: var(--text-primary);
+}
 
 /* Body */
 .atm-body {
@@ -76,29 +85,31 @@
 .atm-field label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-secondary, var(--theme-text-secondary));
+  color: var(--text-secondary, var(--text-muted));
   text-transform: uppercase;
   letter-spacing: 0.03em;
   display: flex;
   align-items: center;
   gap: 5px;
 }
-.atm-required { color: var(--theme-danger); }
+.atm-required {
+  color: var(--theme-danger);
+}
 
 .atm-field input,
 .atm-field select {
   padding: 8px 10px;
-  border: 1px solid var(--border-color, var(--theme-border));
+  border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
   font-size: 0.88rem;
-  color: var(--text-primary, var(--theme-text-primary));
-  background: var(--bg-input, var(--theme-bg-card));
+  color: var(--text-primary, var(--text-body));
+  background: var(--bg-input, var(--surface-primary));
   transition: border-color 0.15s;
 }
 .atm-field input:focus,
 .atm-field select:focus {
   outline: none;
-  border-color: var(--primary, var(--theme-info));
+  border-color: var(--primary, var(--interactive-primary));
   box-shadow: 0 0 0 3px var(--primary-tint-light);
 }
 
@@ -121,20 +132,22 @@
   gap: 5px;
   background: none;
   border: none;
-  color: var(--primary, var(--theme-info));
+  color: var(--primary, var(--interactive-primary));
   font-size: 0.78rem;
   cursor: pointer;
   padding: 4px 0;
   font-weight: 500;
 }
-.atm-location-toggle:hover { text-decoration: underline; }
+.atm-location-toggle:hover {
+  text-decoration: underline;
+}
 .atm-location-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg-card, var(--theme-bg-card));
-  border: 1px solid var(--border-color, var(--theme-border));
+  background: var(--bg-card, var(--surface-primary));
+  border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   max-height: 200px;
@@ -151,12 +164,19 @@
   cursor: pointer;
   text-align: left;
   font-size: 0.82rem;
-  color: var(--text-primary, var(--theme-text-primary));
+  color: var(--text-primary, var(--text-body));
   line-height: 1.4;
 }
-.atm-location-option:hover { background: var(--bg-hover, var(--theme-border-light)); }
-.atm-location-option strong { font-weight: 700; }
-.atm-location-addr { color: var(--text-secondary, var(--theme-text-secondary)); font-size: 0.78rem; }
+.atm-location-option:hover {
+  background: var(--bg-hover, var(--border-subtle));
+}
+.atm-location-option strong {
+  font-weight: 700;
+}
+.atm-location-addr {
+  color: var(--text-secondary, var(--text-muted));
+  font-size: 0.78rem;
+}
 
 /* ═══ Affaire Autocomplete ═══ */
 .atm-affaire-wrap {
@@ -167,7 +187,7 @@
   left: 10px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-secondary, var(--theme-text-muted));
+  color: var(--text-secondary, var(--text-subtle));
   pointer-events: none;
 }
 .atm-affaire-input {
@@ -180,8 +200,8 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg-card, var(--theme-bg-card));
-  border: 1px solid var(--border-color, var(--theme-border));
+  background: var(--bg-card, var(--surface-primary));
+  border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   max-height: 200px;
@@ -200,46 +220,68 @@
   cursor: pointer;
   text-align: left;
   font-size: 0.82rem;
-  color: var(--text-primary, var(--theme-text-primary));
+  color: var(--text-primary, var(--text-body));
 }
-.atm-affaire-option:hover { background: var(--bg-hover, var(--theme-border-light)); }
-.atm-affaire-opt-num { font-weight: 600; flex-shrink: 0; }
-.atm-affaire-opt-client { color: var(--text-secondary, var(--theme-text-secondary)); overflow: hidden; text-overflow: ellipsis; }
-.atm-affaire-empty { padding: 10px 12px; font-size: 0.82rem; color: var(--text-secondary, var(--theme-text-muted)); }
+.atm-affaire-option:hover {
+  background: var(--bg-hover, var(--border-subtle));
+}
+.atm-affaire-opt-num {
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.atm-affaire-opt-client {
+  color: var(--text-secondary, var(--text-muted));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.atm-affaire-empty {
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: var(--text-secondary, var(--text-subtle));
+}
 
 .atm-affaire-selected {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
-  background: var(--bg-hover, var(--theme-border-light));
+  background: var(--bg-hover, var(--border-subtle));
   border-radius: var(--radius-md);
 }
-.atm-affaire-client { font-size: 0.82rem; color: var(--text-secondary, var(--theme-text-secondary)); flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.atm-affaire-client {
+  font-size: 0.82rem;
+  color: var(--text-secondary, var(--text-muted));
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .atm-affaire-clear {
   background: none;
   border: none;
-  color: var(--text-secondary, var(--theme-text-muted));
+  color: var(--text-secondary, var(--text-subtle));
   cursor: pointer;
   padding: 3px;
   border-radius: var(--radius-xs);
 }
-.atm-affaire-clear:hover { color: var(--theme-danger); background: var(--theme-danger-bg); }
+.atm-affaire-clear:hover {
+  color: var(--theme-danger);
+  background: var(--theme-danger-bg);
+}
 
 /* ═══ Location input ═══ */
 .atm-location-input {
   width: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
-  border: 1px solid var(--border-color, var(--theme-border));
+  border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
   font-size: 0.88rem;
-  color: var(--text-primary, var(--theme-text-primary));
-  background: var(--bg-input, var(--theme-bg-card));
+  color: var(--text-primary, var(--text-body));
+  background: var(--bg-input, var(--surface-primary));
 }
 .atm-location-input:focus {
   outline: none;
-  border-color: var(--primary, var(--theme-info));
+  border-color: var(--primary, var(--interactive-primary));
   box-shadow: 0 0 0 3px var(--primary-tint-light);
 }
 
@@ -247,12 +289,12 @@
 .atm-vehicle-select {
   margin-top: 6px;
   padding: 8px 10px;
-  border: 1px solid var(--border-color, var(--theme-border));
+  border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
   font-size: 0.88rem;
   width: 100%;
-  color: var(--text-primary, var(--theme-text-primary));
-  background: var(--bg-input, var(--theme-bg-card));
+  color: var(--text-primary, var(--text-body));
+  background: var(--bg-input, var(--surface-primary));
 }
 
 /* ═══ Footer ═══ */
@@ -261,26 +303,28 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 14px 20px;
-  border-top: 1px solid var(--border-color, var(--theme-border));
+  border-top: 1px solid var(--border-color, var(--border-default));
 }
 .atm-btn-cancel {
   padding: 8px 16px;
-  border: 1px solid var(--border-color, var(--theme-border));
+  border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
-  background: var(--bg-card, var(--theme-bg-card));
-  color: var(--text-secondary, var(--theme-text-secondary));
+  background: var(--bg-card, var(--surface-primary));
+  color: var(--text-secondary, var(--text-muted));
   font-size: var(--font-base);
   cursor: pointer;
   font-weight: 500;
 }
-.atm-btn-cancel:hover { background: var(--bg-hover, var(--theme-border-light)); }
+.atm-btn-cancel:hover {
+  background: var(--bg-hover, var(--border-subtle));
+}
 
 .atm-btn-submit {
   padding: 8px 18px;
   border: none;
   border-radius: var(--radius-md);
-  background: var(--primary, var(--theme-info));
-  color: var(--theme-bg-card);
+  background: var(--primary, var(--interactive-primary));
+  color: var(--text-inverse);
   font-size: var(--font-base);
   cursor: pointer;
   font-weight: 600;
@@ -289,12 +333,25 @@
   gap: 5px;
   transition: background 0.15s;
 }
-.atm-btn-submit:hover:not(:disabled) { background: var(--primary-dark, var(--theme-info-dark)); }
-.atm-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.atm-btn-submit:hover:not(:disabled) {
+  background: var(--primary-dark, var(--interactive-hover));
+}
+.atm-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* ═══ Responsive ═══ */
 @media (max-width: 640px) {
-  .atm-modal { width: 98vw; max-height: 92vh; }
-  .atm-section-grid { grid-template-columns: repeat(2, 1fr); }
-  .atm-row { flex-direction: column; gap: 14px; }
+  .atm-modal {
+    width: 98vw;
+    max-height: 92vh;
+  }
+  .atm-section-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .atm-row {
+    flex-direction: column;
+    gap: 14px;
+  }
 }

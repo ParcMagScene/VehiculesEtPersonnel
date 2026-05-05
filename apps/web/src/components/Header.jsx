@@ -1,50 +1,85 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, Truck, XCircle, ClipboardList, AlertTriangle, CalendarCheck, Bell, LayoutGrid, Users, Clock, Check, X, Wrench, Calendar, UserCog, Briefcase, MessageSquare, HelpCircle, Package, ShoppingCart, Mail, Boxes, Sun, Moon, Radio, Building2, Video } from 'lucide-react';
-import api from '../utils/api';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { getPeriodTimestamp } from '../utils/dateUtils';
-import OverdueInterventionModal from './planning/OverdueInterventionModal';
-import ProfileEditModal from './auth/ProfileEditModal';
-import { useToast } from '../hooks/useToast';
-import { useConfirmDialog } from '../hooks/useConfirmDialog';
-import { Avatar, Button, Textarea , Tooltip} from '@/design-system';
-import { STATUS } from '../constants';
-
 import './Header.css';
 
-const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings, activeModule, setActiveModule, maintenances = [], vehicles = [], _onOpenVehicleMaintenance, onOpenMaintenance, reservations = [], currentUser, onLogout, onUpdateMaintenance, onRefreshMaintenances, onReservationUpdate, onUserUpdate, onToggleMessaging, onToggleMailing, unreadMsgCount = 0, onOpenPreferences, onOpenHelp, tabPrefs = {}, theme, onToggleTheme }) => {
-  const toast = useToast();
-  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
-  const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
-  const [notificationFilter, setNotificationFilter] = useState('all'); // 'all', 'scheduled', 'reported'
-  const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
-  const [showRequestsPopup, setShowRequestsPopup] = useState(false);
-  const [pendingRequestsCounts, setPendingRequestsCounts] = useState({ interventionRequests: 0, reservationRequests: 0, total: 0 });
-  const [pendingReservationRequests, setPendingReservationRequests] = useState([]);
-  const [expandedReportedId, setExpandedReportedId] = useState(null);
-  const [rejectingRequestId, setRejectingRequestId] = useState(null);
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  // (quick-create supprimé — les actions sont dans le header et la bannière)
+import { format } from 'date-fns';
+import { HelpCircle, Moon, Sun } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
-  // Charger les demandes en attente (interventions + réservations) pour le badge admin
+import { Button, Tooltip } from '@/design-system';
+
+import { STATUS } from '../constants';
+import { useToast } from '../hooks/useToast';
+import { DESKTOP_MODULES } from '../router/routes.config';
+import api from '../utils/api';
+import { isApiCoolingDown } from '../utils/api/base';
+import { getPeriodTimestamp } from '../utils/dateUtils';
+import HeaderActions from './header/HeaderActions';
+import HeaderNotifications from './header/HeaderNotifications';
+import OverdueInterventionModal from './planning/OverdueInterventionModal';
+
+const Header = ({
+  _view,
+  _setView,
+  _currentDate,
+  _setCurrentDate,
+  onOpenSettings,
+  activeModule,
+  setActiveModule,
+  maintenances = [],
+  vehicles = [],
+  _onOpenVehicleMaintenance,
+  onOpenMaintenance,
+  reservations = [],
+  currentUser,
+  onLogout,
+  onUpdateMaintenance,
+  onRefreshMaintenances,
+  onReservationUpdate,
+  onUserUpdate,
+  onToggleMessaging,
+  onToggleMailing,
+  onDetachSonos,
+  unreadMsgCount = 0,
+  onOpenPreferences,
+  onOpenHelp,
+  tabPrefs = {},
+  theme,
+  onToggleTheme,
+}) => {
+  const toast = useToast();
+  const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
+  const [notificationFilter, setNotificationFilter] = useState('all');
+  const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
+  const [showRequestsPopup, setShowRequestsPopup] = useState(false);
+  const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
+  const [pendingRequestsCounts, setPendingRequestsCounts] = useState({
+    interventionRequests: 0,
+    reservationRequests: 0,
+    total: 0,
+  });
+  const [pendingReservationRequests, setPendingReservationRequests] = useState([]);
+
+  // [PERF Sprint 2] Fusion de deux setInterval(30s) en un seul, avec Promise.all
+  // pour grouper les requêtes (compteur demandes interventions/réservations + compteur
+  // demandes d'accès admin). Évite un timer redondant et déclenche les 2 fetch en parallèle.
   useEffect(() => {
-    const loadPendingRequestsCounts = async () => {
-      if (currentUser?.isAdmin) {
-        try {
-          const data = await api.getPendingRequestsCount();
-          setPendingRequestsCounts(data);
-        } catch (error) {
-          console.error('Erreur chargement comptage demandes:', error);
-        }
+    const loadAdminBadges = async () => {
+      if (!currentUser?.isAdmin) return;
+      if (isApiCoolingDown()) return;
+      const [countsRes, accessRes] = await Promise.allSettled([
+        api.getPendingRequestsCount(),
+        api.getPendingAccessRequestsCount(),
+      ]);
+      if (countsRes.status === 'fulfilled' && countsRes.value) {
+        setPendingRequestsCounts(countsRes.value);
       }
+      if (accessRes.status === 'fulfilled' && accessRes.value) {
+        setPendingAccessRequests(accessRes.value.count || 0);
+      }
+      // Erreurs silencieuses : valeurs initiales conservées (badges = 0)
     };
-    
-    loadPendingRequestsCounts();
-    const interval = setInterval(loadPendingRequestsCounts, 30000);
+
+    loadAdminBadges();
+    const interval = setInterval(loadAdminBadges, 30000);
     return () => clearInterval(interval);
   }, [currentUser, maintenances]);
 
@@ -52,72 +87,33 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
   useEffect(() => {
     const loadPendingReservations = async () => {
       if (currentUser?.isAdmin) {
+        if (isApiCoolingDown()) return;
         try {
           const data = await api.getPendingReservationRequests();
           setPendingReservationRequests(data);
-        } catch (error) {
-          console.error('Erreur chargement demandes de réservation:', error);
+        } catch {
+          // Silencieux : liste vide conservée
         }
       }
     };
     loadPendingReservations();
   }, [showRequestsPopup, showNotificationsPopup, currentUser]);
 
-  // Charger le nombre de demandes d'accès en attente (pour admins uniquement)
-  useEffect(() => {
-    const loadPendingRequests = async () => {
-      if (currentUser?.isAdmin) {
-        try {
-          const data = await api.getPendingAccessRequestsCount();
-          setPendingAccessRequests(data.count || 0);
-        } catch (error) {
-          console.error('Erreur chargement demandes:', error);
-        }
-      }
-    };
-    
-    loadPendingRequests();
-    // Recharger toutes les 30 secondes
-    const interval = setInterval(loadPendingRequests, 30000);
-    return () => clearInterval(interval);
-  }, [currentUser]);
-  
   // Fonction pour détecter les conflits entre une intervention et les réservations
   const getMaintenanceConflicts = (maintenance) => {
     if (!maintenance.startDate || !maintenance.endDate) return [];
-    
+
     const newStart = getPeriodTimestamp(maintenance.startDate, 'AM');
     const newEnd = getPeriodTimestamp(maintenance.endDate, 'PM');
-    
+
     const conflicts = [];
     for (const r of reservations) {
       if (String(r.vehicleId) !== String(maintenance.vehicleId)) continue;
-      
-      const existingStart = getPeriodTimestamp(r.date, r.period);
-      const existingEnd = getPeriodTimestamp(
-        r.endDate || r.date,
-        r.endPeriod || r.period
-      );
-      
-      if (Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd)) {
-        conflicts.push(r);
-      }
-    }
-    return conflicts;
-  };
-  
-  // Détecter les conflits pour une demande de réservation
-  const getRequestConflicts = (request) => {
-    if (!request.startDate || !request.endDate) return [];
-    const reqStart = getPeriodTimestamp(request.startDate, request.startPeriod || 'AM');
-    const reqEnd = getPeriodTimestamp(request.endDate, request.endPeriod || 'PM');
-    
-    const conflicts = [];
-    for (const r of reservations) {
-      if (String(r.vehicleId) !== String(request.vehicleId)) continue;
+
       const existingStart = getPeriodTimestamp(r.date, r.period);
       const existingEnd = getPeriodTimestamp(r.endDate || r.date, r.endPeriod || r.period);
-      if (Math.max(reqStart, existingStart) <= Math.min(reqEnd, existingEnd)) {
+
+      if (Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd)) {
         conflicts.push(r);
       }
     }
@@ -125,44 +121,48 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
   };
 
   // Compter les pannes signalées, interventions programmées et demandes d'intervention
-  const reportedMaintenances = maintenances.filter(m => m.status === 'reported');
-  const scheduledMaintenances = maintenances.filter(m => m.status === STATUS.SCHEDULED);
-  const pendingMaintenances = maintenances.filter(m => m.status === STATUS.PENDING);
-  const inProgressMaintenances = maintenances.filter(m => m.status === 'in_progress');
-  const immobilizedVehicles = reportedMaintenances.filter(m => m.isImmobilized);
-  
+  const reportedMaintenances = maintenances.filter((m) => m.status === 'reported');
+  const scheduledMaintenances = maintenances.filter((m) => m.status === STATUS.SCHEDULED);
+  const pendingMaintenances = maintenances.filter((m) => m.status === STATUS.PENDING);
+  const inProgressMaintenances = maintenances.filter((m) => m.status === 'in_progress');
+  const immobilizedVehicles = reportedMaintenances.filter((m) => m.isImmobilized);
+
   // Détecter les interventions en retard (date de fin dépassée)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const overdueInterventions = scheduledMaintenances.filter(m => {
+  const overdueInterventions = scheduledMaintenances.filter((m) => {
     if (!m.endDate) return false;
     const endDate = new Date(m.endDate);
     endDate.setHours(23, 59, 59, 999);
     return endDate < today;
   });
-  
+
   // Détecter les interventions en conflit avec des réservations
-  const conflictingMaintenances = scheduledMaintenances.filter(m => {
+  const conflictingMaintenances = scheduledMaintenances.filter((m) => {
     const conflicts = getMaintenanceConflicts(m);
     return conflicts.length > 0;
   });
-  
+
   // Notifications d'interventions actives (cloche) - sans les demandes/pannes qui ont leur propre badge
-  const activeInterventions = [...scheduledMaintenances, ...inProgressMaintenances, ...overdueInterventions];
+  const activeInterventions = [
+    ...scheduledMaintenances,
+    ...inProgressMaintenances,
+    ...overdueInterventions,
+  ];
 
   // Handlers pour les interventions en retard
   const handleMarkCompleted = async (intervention) => {
     try {
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
-        status: STATUS.COMPLETED
+        status: STATUS.COMPLETED,
       });
       if (onRefreshMaintenances) {
         await onRefreshMaintenances();
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      toast.error('Erreur lors de la mise à jour de l\'intervention');
+      toast.error("Erreur lors de la mise à jour de l'intervention");
     }
   };
 
@@ -171,14 +171,14 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
         status: STATUS.CANCELLED,
-        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[Annulée] ${reason}`
+        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[Annulée] ${reason}`,
       });
       if (onRefreshMaintenances) {
         await onRefreshMaintenances();
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
-      toast.error('Erreur lors de la mise à jour de l\'intervention');
+      toast.error("Erreur lors de la mise à jour de l'intervention");
     }
   };
 
@@ -187,934 +187,159 @@ const Header = ({ _view, _setView, _currentDate, _setCurrentDate, onOpenSettings
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
         status: STATUS.PENDING,
-        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[En attente] ${reason}`
+        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[En attente] ${reason}`,
       });
       if (onRefreshMaintenances) {
         await onRefreshMaintenances();
       }
     } catch (error) {
       console.error('Erreur lors de la mise en attente:', error);
-      toast.error('Erreur lors de la mise en attente de l\'intervention');
+      toast.error("Erreur lors de la mise en attente de l'intervention");
     }
   };
 
   const handleReschedule = async (intervention) => {
     try {
-      // Marquer l'intervention comme "Reportée"
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
         status: 'rescheduled',
-        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[Reportée] Intervention reportée le ${format(new Date(), 'dd/MM/yyyy')}`
+        notes:
+          (intervention.notes ? intervention.notes + '\n\n' : '') +
+          `[Reportée] Intervention reportée le ${format(new Date(), 'dd/MM/yyyy')}`,
       });
       if (onRefreshMaintenances) {
         await onRefreshMaintenances();
       }
     } catch (error) {
       console.error('Erreur lors du report:', error);
-      toast.error('Erreur lors du report de l\'intervention');
+      toast.error("Erreur lors du report de l'intervention");
     }
     setSelectedOverdueIntervention(null);
   };
 
   return (
     <>
-    <div className="header">
-      <div className="header-content">
-        <div className="header-title-container">
-          <div className="header-logo-area">
-            <img src="/Logos/LogoEmagTransp.png" alt="eM@g Scene" className="header-logo" />
- <Tooltip content="Aide — Guide d'utilisation" position="bottom">
-   <Button variant="ghost" className="help-trigger-btn" onClick={onOpenHelp} aria-label="Aide">
-              <HelpCircle size={18} />
-              <span>Aide</span>
-            </Button>
- </Tooltip>
-            <Button variant="ghost" 
-              className="theme-toggle-btn" 
-              onClick={onToggleTheme} 
-              title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'} 
-              aria-label="Basculer le thème"
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
-          </div>
-          <div className="module-tabs" role="tablist" aria-label="Module principal">
-            {(() => {
-              const allTabs = [
-                { id: 'vehicles', label: 'Parc', icon: Truck },
-                { id: 'equipment', label: 'Équipements', icon: Package },
-                { id: 'affaires', label: 'Affaires', icon: Briefcase },
-                { id: 'orders', label: 'Commandes', icon: ShoppingCart },
-                { id: 'stock', label: 'Stocks', icon: Boxes },
-                { id: 'planning', label: 'Planning', icon: Radio },
-                { id: 'annuaire', label: 'Annuaire', icon: Building2 },
-                { id: 'video', label: 'Vidéo', icon: Video },
-              ];
-              const hiddenTabs = tabPrefs.hiddenTabs || [];
-              const tabOrder = tabPrefs.tabOrder || allTabs.map(t => t.id);
-              const orderedTabs = tabOrder
-                .map(id => allTabs.find(t => t.id === id))
-                .filter(t => t && !hiddenTabs.includes(t.id));
-              // S'assurer que les onglets non ordonnés sont ajoutés à la fin
-              allTabs.forEach(t => {
-                if (!orderedTabs.find(ot => ot.id === t.id) && !hiddenTabs.includes(t.id)) {
-                  orderedTabs.push(t);
-                }
-              });
-              return orderedTabs.map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <Button variant="ghost"                     key={tab.id}
-                    className={`module-tab ${activeModule === tab.id ? 'active' : ''}`}
-                    onClick={() => setActiveModule(tab.id)}
-                    role="tab"
-                    aria-selected={activeModule === tab.id}
-                  >
-                    <Icon size={18} />
-                    <span>{tab.label}</span>
-                  </Button>
-                );
-              });
-            })()}
-          </div>
-        </div>
-        
-        {/* Popup des notifications */}
-        {showNotificationsPopup && (
-          <div className="notifications-popup-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowNotificationsPopup(false)}>
-            <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
-              <div className="notifications-popup-header">
-                <h3><Bell size={20} strokeWidth={2.5} className="popup-icon" /> {
-                  notificationFilter === 'reported' ? 'Pannes signalées' :
-                  notificationFilter === STATUS.PENDING ? "Demandes d'intervention / CT" :
-                  notificationFilter === STATUS.ACTIVE ? 'Interventions actives' :
-                  notificationFilter === 'reservations' ? 'Demandes de réservation' :
-                  'Notifications'
-                }</h3>
-                <Button variant="ghost" className="close-popup-button" onClick={() => setShowNotificationsPopup(false)} aria-label="Fermer les notifications">✕</Button>
-              </div>
-              <div className="notifications-popup-content">
-                {((notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
-                  (notificationFilter === STATUS.PENDING && pendingMaintenances.length === 0) ||
-                  (notificationFilter === STATUS.ACTIVE && activeInterventions.length === 0)) ? (
-                  <p className="no-notifications">Aucune notification</p>
-                ) : (
-                  <>
-                    {/* Section Interventions en retard */}
-                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === 'overdue') && overdueInterventions.length > 0 && (
-                      <div className="notification-section">
-                        <h4 className="notification-section-title"><Clock size={18} strokeWidth={2.5} /> Interventions en retard</h4>
-                        <div className="notifications-list">
-                          {overdueInterventions.map(maintenance => {
-                            const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
-                            const daysOverdue = Math.floor((today - new Date(maintenance.endDate)) / (1000 * 60 * 60 * 24));
-                            
-                            return (
-                              <div 
-                                key={maintenance.id} 
-                                className="notification-item overdue"
-                                onClick={() => {
-                                  setShowNotificationsPopup(false);
-                                  setSelectedOverdueIntervention({ intervention: maintenance, vehicle });
-                                }}
-                              >
-                                <div className="notification-item-header">
-                                  <span className="notification-vehicle-name">
-                                    {vehicle?.name || 'Véhicule inconnu'}
-                                  </span>
-                                  <span className="notification-status overdue">
-                                    En retard
-                                  </span>
-                                </div>
-                                <p className="notification-description">{maintenance.description}</p>
-                                <span className="notification-date overdue-date">
-                                  Fin prévue: {format(new Date(maintenance.endDate), 'dd/MM/yyyy')}
-                                  {daysOverdue > 0 && ` • ${daysOverdue} jour${daysOverdue > 1 ? 's' : ''} de retard`}
-                                </span>
-                                {vehicle?.registration && (
-                                  <span className="notification-registration">{vehicle.registration}</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Section Interventions programmées */}
-                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === STATUS.SCHEDULED) && scheduledMaintenances.length > 0 && (
-                      <div className="notification-section">
-                        <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions programmées</h4>
-                        <div className="notifications-list">
-                          {scheduledMaintenances.map(maintenance => {
-                            const vehicle = vehicles.find(v => v.id === maintenance.vehicleId)
-                              || { id: maintenance.vehicleId, name: maintenance.vehicleName || 'Véhicule inconnu' };
-                            
-                            return (
-                              <div 
-                                key={maintenance.id} 
-                                className="notification-item"
-                                onClick={() => {
-                                  setShowNotificationsPopup(false);
-                                  if (onOpenMaintenance) {
-                                    onOpenMaintenance(vehicle, maintenance.id);
-                                  }
-                                }}
-                              >
-                                <div className="notification-item-header">
-                                  <span className="notification-vehicle-name">
-                                    {vehicle?.name || 'Véhicule inconnu'}
-                                  </span>
-                                  <span className="notification-status scheduled">
-                                    Programmée
-                                  </span>
-                                </div>
-                                <p className="notification-description">{maintenance.description}</p>
-                                {maintenance.startDate && (
-                                  <span className="notification-date">
-                                    {maintenance.startDate === maintenance.endDate 
-                                      ? format(new Date(maintenance.startDate), 'dd/MM/yyyy')
-                                      : `${format(new Date(maintenance.startDate), 'dd/MM')} - ${format(new Date(maintenance.endDate), 'dd/MM/yyyy')}`
-                                    }
-                                  </span>
-                                )}
-                                {vehicle?.registration && (
-                                  <span className="notification-registration">{vehicle.registration}</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Section Interventions en cours */}
-                    {(notificationFilter === 'all' || notificationFilter === STATUS.ACTIVE || notificationFilter === 'in_progress') && inProgressMaintenances.length > 0 && (
-                      <div className="notification-section">
-                        <h4 className="notification-section-title"><CalendarCheck size={18} strokeWidth={2.5} /> Interventions en cours</h4>
-                        <div className="notifications-list">
-                          {inProgressMaintenances.map(maintenance => {
-                            const vehicle = vehicles.find(v => v.id === maintenance.vehicleId)
-                              || { id: maintenance.vehicleId, name: maintenance.vehicleName || 'Véhicule inconnu' };
-                            
-                            return (
-                              <div 
-                                key={maintenance.id} 
-                                className="notification-item"
-                                onClick={() => {
-                                  setShowNotificationsPopup(false);
-                                  if (onOpenMaintenance) {
-                                    onOpenMaintenance(vehicle, maintenance.id);
-                                  }
-                                }}
-                              >
-                                <div className="notification-item-header">
-                                  <span className="notification-vehicle-name">
-                                    {vehicle?.name || 'Véhicule inconnu'}
-                                  </span>
-                                  <span className="notification-status in-progress">
-                                    En cours
-                                  </span>
-                                </div>
-                                <p className="notification-description">{maintenance.description}</p>
-                                {maintenance.startDate && (
-                                  <span className="notification-date">
-                                    {maintenance.startDate === maintenance.endDate 
-                                      ? format(new Date(maintenance.startDate), 'dd/MM/yyyy')
-                                      : `${format(new Date(maintenance.startDate), 'dd/MM')} - ${format(new Date(maintenance.endDate), 'dd/MM/yyyy')}`
-                                    }
-                                  </span>
-                                )}
-                                {vehicle?.registration && (
-                                  <span className="notification-registration">{vehicle.registration}</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Section Demandes d'intervention */}
-                    {(notificationFilter === 'all' || notificationFilter === STATUS.PENDING) && pendingMaintenances.length > 0 && (
-                      <div className="notification-section">
-                        <h4 className="notification-section-title"><ClipboardList size={18} strokeWidth={2.5} /> Demandes d'intervention</h4>
-                        <div className="notifications-list">
-                          {pendingMaintenances.map(maintenance => {
-                            const vehicle = vehicles.find(v => v.id === maintenance.vehicleId)
-                              || { id: maintenance.vehicleId, name: maintenance.vehicleName || 'Véhicule inconnu' };
-                            
-                            return (
-                              <div 
-                                key={maintenance.id} 
-                                className="notification-item"
-                                onClick={() => {
-                                  setShowNotificationsPopup(false);
-                                  if (onOpenMaintenance) {
-                                    onOpenMaintenance(vehicle, maintenance.id);
-                                  }
-                                }}
-                              >
-                                <div className="notification-item-header">
-                                  <span className="notification-vehicle-name">
-                                    {vehicle?.name || 'Véhicule inconnu'}
-                                  </span>
-                                  <span className="notification-status pending">
-                                    En attente
-                                  </span>
-                                </div>
-                                <p className="notification-description">{maintenance.description}</p>
-                                {vehicle?.registration && (
-                                  <span className="notification-registration">{vehicle.registration}</span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Section Pannes signalées */}
-                    {(notificationFilter === 'all' || notificationFilter === 'reported') && reportedMaintenances.length > 0 && (
-                      <div className="notification-section">
-                        <h4 className="notification-section-title"><AlertTriangle size={18} strokeWidth={2.5} /> Pannes signalées</h4>
-                        <div className="notifications-list">
-                          {reportedMaintenances.map(maintenance => {
-                            const vehicle = vehicles.find(v => v.id === maintenance.vehicleId);
-                            const isExpanded = expandedReportedId === maintenance.id;
-                            
-                            return (
-                              <div 
-                                key={maintenance.id} 
-                                className={`notification-item ${isExpanded ? 'expanded' : ''}`}
-                                onClick={() => setExpandedReportedId(isExpanded ? null : maintenance.id)}
-                              >
-                                <div className="notification-item-header">
-                                  <span className="notification-vehicle-name">
-                                    {maintenance.isImmobilized && <XCircle size={16} strokeWidth={2.5} className="inline-icon" />}
-                                    {vehicle?.name || 'Véhicule inconnu'}
-                                  </span>
-                                  <span className="notification-status reported">
-                                    {maintenance.isImmobilized ? 'Immobilisé' : 'Signalée'}
-                                  </span>
-                                </div>
-                                <p className="notification-description">{maintenance.description}</p>
-                                {maintenance.reportedBy && (
-                                  <span className="notification-requester">
-                                    <Users size={12} /> Signalée par {maintenance.reportedBy}
-                                  </span>
-                                )}
-                                {vehicle?.registration && (
-                                  <span className="notification-registration">{vehicle.registration}</span>
-                                )}
-                                <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <Button variant="ghost"                                     className="notif-action-btn create-intervention"
-                                    onClick={() => {
-                                      setShowNotificationsPopup(false);
-                                      setExpandedReportedId(null);
-                                      if (onOpenMaintenance && vehicle) {
-                                        onOpenMaintenance(vehicle, maintenance.id);
-                                      }
-                                    }}
-                                  >
-                                    <Wrench size={14} />
-                                    Créer une intervention
-                                  </Button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Section Demandes de réservation - uniquement via badge réservation */}
-                    {notificationFilter === 'reservations' && currentUser?.isAdmin && pendingReservationRequests.length === 0 && (
-                      <p className="no-notifications">Aucune demande de réservation en attente</p>
-                    )}
-                    {notificationFilter === 'reservations' && currentUser?.isAdmin && pendingReservationRequests.length > 0 && (
-                      <div className="notification-section">
-                        <h4 className="notification-section-title">
-                          <CalendarCheck size={18} strokeWidth={2.5} /> 
-                          Demandes de réservation 
-                          <span className="section-count">{pendingReservationRequests.length}</span>
-                        </h4>
-                        <div className="notifications-list">
-                          {pendingReservationRequests.map(request => {
-                            const isRejecting = rejectingRequestId === request.id;
-                            const conflicts = getRequestConflicts(request);
-                            const periodLabel = (p) => p === 'AM' ? 'Matin' : 'Après-midi';
-                            
-                            return (
-                            <div 
-                              key={`notif-resreq-${request.id}`}
-                              className={`notification-item reservation-request ${conflicts.length > 0 ? 'has-conflict' : ''}`}
-                            >
-                              <div className="notification-item-header">
-                                <span className="notification-vehicle-name">
-                                  {request.vehicleName || 'Véhicule inconnu'}
-                                </span>
-                                <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
-                                  {conflicts.length > 0 ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}` : 'En attente'}
-                                </span>
-                              </div>
-                              {/* Demandeur */}
-                              {request.requesterName && (
-                                <div className="notification-requester-line">
-                                  <Users size={13} /> Demandé par <strong>{request.requesterName}</strong>
-                                </div>
-                              )}
-                              {/* Période demandée */}
-                              {request.startDate && (
-                                <div className="request-period-info">
-                                  <Calendar size={13} className="request-period-icon" />
-                                  <span className="request-period-dates">
-                                    {request.startDate === request.endDate 
-                                      ? (
-                                        <>
-                                          <strong>{format(new Date(request.startDate), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.startPeriod)}{request.startPeriod !== request.endPeriod ? ` → ${periodLabel(request.endPeriod)}` : ''}</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <strong>{format(new Date(request.startDate), 'EEE d MMM', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.startPeriod)}</span>
-                                          <span className="request-period-arrow">→</span>
-                                          <strong>{format(new Date(request.endDate), 'EEE d MMM yyyy', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.endPeriod)}</span>
-                                        </>
-                                      )
-                                    }
-                                  </span>
-                                </div>
-                              )}
-                              {/* Conflits détectés */}
-                              {conflicts.length > 0 && (
-                                <div className="request-conflicts-box">
-                                  <div className="request-conflicts-title">
-                                    <AlertTriangle size={13} /> Conflits avec réservations existantes :
-                                  </div>
-                                  {conflicts.slice(0, 3).map((c, ci) => (
-                                    <div key={ci} className="request-conflict-item">
-                                      <span className="conflict-client">{c.clientName || c.prestationName || 'Réservation'}</span>
-                                      <span className="conflict-dates">
-                                        {format(new Date(c.startDate), 'dd/MM')} {c.startPeriod}
-                                        {(c.endDate && c.endDate !== c.startDate) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
-                                      </span>
-                                    </div>
-                                  ))}
-                                  {conflicts.length > 3 && (
-                                    <span className="conflict-more">+ {conflicts.length - 3} autre(s)…</span>
-                                  )}
-                                </div>
-                              )}
-                              <p className="notification-description">
-                                {request.clientName && `Client: ${request.clientName}`}
-                                {request.prestationName && ` • ${request.prestationName}`}
-                              </p>
-                              {request.registration && (
-                                <span className="notification-registration">{request.registration}</span>
-                              )}
-                              {isRejecting ? (
-                                <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
-                                  <Textarea
-                                    className="reject-reason-input"
-                                    value={rejectionReason}
-                                    onChange={(e) => setRejectionReason(e.target.value)}
-                                    placeholder="Motif du refus..."
-                                    aria-label="Motif du refus"
-                                    rows={2}
-                                    autoFocus
-                                  />
-                                  <div className="reject-form-buttons">
-                                    <Button variant="ghost"                                       className="notif-action-btn confirm-reject"
-                                      disabled={!rejectionReason.trim()}
-                                      onClick={async () => {
-                                        try {
-                                          await api.rejectReservationRequest(request.id, rejectionReason);
-                                          setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                          setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                          setRejectingRequestId(null);
-                                          setRejectionReason('');
-                                        } catch (error) {
-                                          console.error('Erreur refus:', error);
-                                          toast.error('Erreur lors du refus de la demande');
-                                        }
-                                      }}
-                                    >
-                                      Confirmer le refus
-                                    </Button>
-                                    <Button variant="ghost"                                       className="notif-action-btn cancel-reject"
-                                      onClick={() => {
-                                        setRejectingRequestId(null);
-                                        setRejectionReason('');
-                                      }}
-                                    >
-                                      Annuler
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <Button variant="ghost"                                     className="notif-action-btn approve"
-                                    onClick={async () => {
-                                      try {
-                                        await api.approveReservationRequest(request.id);
-                                        setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                        setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                        if (onReservationUpdate) onReservationUpdate();
-                                      } catch (error) {
-                                        console.error('Erreur approbation:', error);
-                                        toast.error('Erreur lors de l\'approbation');
-                                      }
-                                    }}
-                                  >
-                                    <Check size={14} />
-                                    Approuver
-                                  </Button>
-                                  <Button variant="ghost"                                     className="notif-action-btn reject"
-                                    onClick={() => setRejectingRequestId(request.id)}
-                                  >
-                                    <X size={14} />
-                                    Refuser
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Popup des demandes de réservation */}
-        {showRequestsPopup && (
-          <div className="notifications-popup-overlay" onMouseDown={(e) => e.target === e.currentTarget && setShowRequestsPopup(false)}>
-            <div className="notifications-popup" onClick={(e) => e.stopPropagation()}>
-              <div className="notifications-popup-header">
-                <h3><CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" /> Demandes de réservation</h3>
-                <Button variant="ghost" className="close-popup-button" onClick={() => setShowRequestsPopup(false)} aria-label="Fermer les demandes">✕</Button>
-              </div>
-              <div className="notifications-popup-content">
-                {pendingReservationRequests.length === 0 ? (
-                  <p className="no-notifications">Aucune demande de réservation en attente</p>
-                ) : (
-                  <>
-                    {/* Section Demandes de réservation */}
-                    {pendingReservationRequests.length > 0 && (
-                      <div className="notification-section">
-                        <h4 className="notification-section-title">
-                          <CalendarCheck size={18} strokeWidth={2.5} /> 
-                          Demandes de réservation 
-                          <span className="section-count">{pendingReservationRequests.length}</span>
-                        </h4>
-                        <div className="notifications-list">
-                          {pendingReservationRequests.map(request => {
-                            const isRejecting = rejectingRequestId === request.id;
-                            const conflicts = getRequestConflicts(request);
-                            const periodLabel = (p) => p === 'AM' ? 'Matin' : 'Après-midi';
-                            
-                            return (
-                            <div 
-                              key={`resreq-${request.id}`}
-                              className={`notification-item reservation-request ${conflicts.length > 0 ? 'has-conflict' : ''}`}
-                            >
-                              <div className="notification-item-header">
-                                <span className="notification-vehicle-name">
-                                  {request.vehicleName || 'Véhicule inconnu'}
-                                </span>
-                                <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
-                                  {conflicts.length > 0 ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}` : 'En attente'}
-                                </span>
-                              </div>
-                              {/* Demandeur */}
-                              {request.requesterName && (
-                                <div className="notification-requester-line">
-                                  <Users size={13} /> Demandé par <strong>{request.requesterName}</strong>
-                                </div>
-                              )}
-                              {/* Période demandée */}
-                              {request.startDate && (
-                                <div className="request-period-info">
-                                  <Calendar size={13} className="request-period-icon" />
-                                  <span className="request-period-dates">
-                                    {request.startDate === request.endDate 
-                                      ? (
-                                        <>
-                                          <strong>{format(new Date(request.startDate), 'EEEE d MMMM yyyy', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.startPeriod)}{request.startPeriod !== request.endPeriod ? ` → ${periodLabel(request.endPeriod)}` : ''}</span>
-                                        </>
-                                      ) : (
-                                        <>
-                                          <strong>{format(new Date(request.startDate), 'EEE d MMM', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.startPeriod)}</span>
-                                          <span className="request-period-arrow">→</span>
-                                          <strong>{format(new Date(request.endDate), 'EEE d MMM yyyy', { locale: fr })}</strong>
-                                          <span className="request-period-tag">{periodLabel(request.endPeriod)}</span>
-                                        </>
-                                      )
-                                    }
-                                  </span>
-                                </div>
-                              )}
-                              {/* Conflits détectés */}
-                              {conflicts.length > 0 && (
-                                <div className="request-conflicts-box">
-                                  <div className="request-conflicts-title">
-                                    <AlertTriangle size={13} /> Conflits avec réservations existantes :
-                                  </div>
-                                  {conflicts.slice(0, 3).map((c, ci) => (
-                                    <div key={ci} className="request-conflict-item">
-                                      <span className="conflict-client">{c.clientName || c.prestationName || 'Réservation'}</span>
-                                      <span className="conflict-dates">
-                                        {format(new Date(c.startDate), 'dd/MM')} {c.startPeriod}
-                                        {(c.endDate && c.endDate !== c.startDate) ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}` : ''}
-                                      </span>
-                                    </div>
-                                  ))}
-                                  {conflicts.length > 3 && (
-                                    <span className="conflict-more">+ {conflicts.length - 3} autre(s)…</span>
-                                  )}
-                                </div>
-                              )}
-                              <p className="notification-description">
-                                {request.clientName && `Client: ${request.clientName}`}
-                                {request.prestationName && ` • ${request.prestationName}`}
-                              </p>
-                              {request.registration && (
-                                <span className="notification-registration">{request.registration}</span>
-                              )}
-                              {isRejecting ? (
-                                <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
-                                  <Textarea
-                                    className="reject-reason-input"
-                                    value={rejectionReason}
-                                    onChange={(e) => setRejectionReason(e.target.value)}
-                                    placeholder="Motif du refus..."
-                                    aria-label="Motif du refus"
-                                    rows={2}
-                                    autoFocus
-                                  />
-                                  <div className="reject-form-buttons">
-                                    <Button variant="ghost"                                       className="notif-action-btn confirm-reject"
-                                      disabled={!rejectionReason.trim()}
-                                      onClick={async () => {
-                                        try {
-                                          await api.rejectReservationRequest(request.id, rejectionReason);
-                                          setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                          setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                          setRejectingRequestId(null);
-                                          setRejectionReason('');
-                                        } catch (error) {
-                                          toast.error('Erreur lors du refus');
-                                        }
-                                      }}
-                                    >
-                                      <X size={14} /> Confirmer le refus
-                                    </Button>
-                                    <Button variant="ghost"                                       className="notif-action-btn dismiss"
-                                      onClick={() => { setRejectingRequestId(null); setRejectionReason(''); }}
-                                    >
-                                      Annuler
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-                                  <Button variant="ghost"                                     className="notif-action-btn approve"
-                                    onClick={() => {
-                                      confirm({
-                                        title: 'Approuver la demande',
-                                        message: 'Approuver cette demande et créer la réservation ?',
-                                        variant: 'confirm',
-                                        confirmLabel: 'Approuver',
-                                        onConfirm: async () => {
-                                          try {
-                                            await api.approveReservationRequest(request.id);
-                                            setPendingReservationRequests(prev => prev.filter(r => r.id !== request.id));
-                                            setPendingRequestsCounts(prev => ({ ...prev, reservationRequests: prev.reservationRequests - 1, total: prev.total - 1 }));
-                                            toast.success('Demande approuvée ! La réservation a été créée.');
-                                          } catch (error) {
-                                            toast.error('Erreur lors de la validation');
-                                          }
-                                        },
-                                      });
-                                    }}
-                                  >
-                                    <Check size={14} />
-                                    Valider
-                                  </Button>
-                                  <Button variant="ghost"                                     className="notif-action-btn reject"
-                                    onClick={() => { setRejectingRequestId(request.id); setRejectionReason(''); }}
-                                  >
-                                    <X size={14} />
-                                    Refuser
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="header-controls">
-
-          <div className="header-right-actions">
-            <div className="header-notification-badges">
-            {/* Badge 1: Pannes signalées (reported) */}
-            {currentUser?.isAdmin && reportedMaintenances.length > 0 && (
-              <div 
-                className="notification-badge unified has-reported"
-                onClick={() => {
-                  setNotificationFilter('reported');
-                  setShowNotificationsPopup(true);
-                }}
-                style={{ position: 'relative' }}
-                title={`${reportedMaintenances.length} panne(s) signalée(s)`}
-              >
-                <AlertTriangle size={16} strokeWidth={2.5} />
-                <span className="notification-count">{reportedMaintenances.length}</span>
-                {immobilizedVehicles.length > 0 && (
-                  <span className="notification-alert-badge">
-                    <XCircle size={10} strokeWidth={3} />
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Badge 2: Demandes d'intervention / CT (pending) */}
-            {currentUser?.isAdmin && pendingMaintenances.length > 0 && (
-              <div 
-                className="notification-badge unified has-pending"
-                onClick={() => {
-                  setNotificationFilter('pending');
-                  setShowNotificationsPopup(true);
-                }}
-                style={{ position: 'relative' }}
-                title={`${pendingMaintenances.length} demande(s) d'intervention/CT`}
-              >
-                <ClipboardList size={16} strokeWidth={2.5} />
-                <span className="notification-count">{pendingMaintenances.length}</span>
-              </div>
-            )}
-
-            {/* Badge 3: Demandes de réservation (admin) */}
-            {currentUser?.isAdmin && pendingRequestsCounts.reservationRequests > 0 && (
-              <div 
-                className="notification-badge unified requests-badge"
-                onClick={() => {
-                  setNotificationFilter('reservations');
-                  setShowNotificationsPopup(true);
-                }}
-                style={{ position: 'relative' }}
-                title={`${pendingRequestsCounts.reservationRequests} demande(s) de réservation`}
-              >
-                <CalendarCheck size={16} strokeWidth={2.5} />
-                <span className="notification-count">{pendingRequestsCounts.reservationRequests}</span>
-              </div>
-            )}
-
-            {/* Badge 4: Interventions actives (programmées, en cours, en retard) */}
-            {activeInterventions.length > 0 && (
-              <div 
-                className={`notification-badge unified ${
-                  overdueInterventions.length > 0 ? 'has-overdue' : 
-                  conflictingMaintenances.length > 0 ? 'has-conflict' : 
-                  'has-scheduled'
-                }`}
-                onClick={() => {
-                  setNotificationFilter('active');
-                  setShowNotificationsPopup(true);
-                }}
-                style={{ position: 'relative' }}
-                title={`${activeInterventions.length} intervention(s) active(s)`}
-              >
-                <Bell size={16} strokeWidth={2.5} />
-                <span className="notification-count">{activeInterventions.length}</span>
-                {overdueInterventions.length > 0 && (
-                  <span className="notification-alert-badge">
-                    <Clock size={10} strokeWidth={3} />
-                  </span>
-                )}
-              </div>
-            )}
-            </div>
-            
- <Tooltip content="Messages" position="bottom">
-   <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMessaging} aria-label="Messages">
-              <MessageSquare size={20} />
-              {unreadMsgCount > 0 && <span className="msg-toggle-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>}
-            </Button>
- </Tooltip>
-
-            {currentUser?.isAdmin && (
- <Tooltip content="Mailing" position="bottom">
-   <Button variant="ghost" className="msg-toggle-button" onClick={onToggleMailing} aria-label="Mailing">
-                <Mail size={20} />
-              </Button>
- </Tooltip>
-            )}
-
-            <Button variant="ghost" 
-              className="settings-button" 
-              onClick={onOpenSettings} 
-              aria-label="Ouvrir les paramètres"
-              style={{ position: 'relative' }}
-            >
-              <Settings size={18} />
-              {currentUser?.isAdmin && pendingAccessRequests > 0 && (
-                <span 
-                  style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    background: '#ef4444',
-                    color: 'white',
-                    borderRadius: '50%',
-                    width: '20px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    border: '2px solid white',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                  }}
+      <div className="header">
+        <div className="header-content">
+          <div className="header-title-container">
+            <div className="header-logo-area">
+              <img src="/Logos/LogoEmagTransp.png" alt="eM@g Scene" className="header-logo" />
+              <Tooltip content="Aide — Guide d'utilisation" position="bottom">
+                <Button
+                  variant="ghost"
+                  className="help-trigger-btn"
+                  onClick={onOpenHelp}
+                  aria-label="Aide"
                 >
-                  {pendingAccessRequests}
-                </span>
-              )}
-            </Button>
-
-            {currentUser && (
-              <div style={{ position: 'relative' }}>
-                <Button variant="ghost"                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  title={currentUser.name}
-                  aria-label={`Menu utilisateur (${currentUser.name})`}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    padding: 0,
-                    background: 'transparent',
-                    overflow: 'hidden'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.1)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
-                  }}
-                >
-                  <Avatar name={currentUser.name} avatar={currentUser.avatar} size={36} />
+                  <HelpCircle size={18} />
+                  <span>Aide</span>
                 </Button>
-
-                {showUserMenu && (
-                  <>
-                    <div className="user-menu-overlay" onMouseDown={() => setShowUserMenu(false)} />
-                    <div className="user-menu-dropdown">
-                      <div className="user-menu-header">
-                        <Avatar name={currentUser.name} avatar={currentUser.avatar} size="md" />
-                        <div>
-                          <div className="user-menu-name">{currentUser.name}</div>
-                          <div className="user-menu-role">
-                            {currentUser.isAdmin ? 'Administrateur' : 'Utilisateur'}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Button variant="ghost"                         className="user-menu-btn"
-                        onClick={() => { setShowUserMenu(false); setShowProfileModal(true); }}
-                      >
-                        <UserCog size={16} />
-                        Mon profil
-                      </Button>
-
-                      <Button variant="ghost"                         className="user-menu-btn"
-                        onClick={() => { setShowUserMenu(false); if (onOpenPreferences) onOpenPreferences(); }}
-                      >
-                        <Settings size={16} />
-                        Préférences
-                      </Button>
-
-                      <Button variant="ghost"                         className="user-menu-btn"
-                        onClick={() => { setShowUserMenu(false); onLogout(); }}
-                      >
-                        <LayoutGrid size={16} />
-                        Changer d'utilisateur
-                      </Button>
-
-                      <Button variant="ghost"                         className="user-menu-btn danger"
-                        onClick={() => { setShowUserMenu(false); onLogout(); }}
-                      >
-                        <XCircle size={16} />
-                        Se déconnecter
-                      </Button>
-
-                      <Button variant="ghost"                         className="user-menu-cancel"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Annuler
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+              </Tooltip>
+              <Button
+                variant="ghost"
+                className="theme-toggle-btn"
+                onClick={onToggleTheme}
+                title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                aria-label="Basculer le thème"
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </Button>
+            </div>
+            <div className="module-tabs" role="tablist" aria-label="Module principal">
+              {(() => {
+                // [Sprint B] Source unique : routes.config.js (évite la dérive entre Header,
+                // UserPreferencesModal et la validation URL).
+                const allTabs = DESKTOP_MODULES;
+                const hiddenTabs = tabPrefs.hiddenTabs || [];
+                const tabOrder = tabPrefs.tabOrder || allTabs.map((t) => t.id);
+                const orderedTabs = tabOrder
+                  .map((id) => allTabs.find((t) => t.id === id))
+                  .filter((t) => t && !hiddenTabs.includes(t.id));
+                allTabs.forEach((t) => {
+                  if (!orderedTabs.find((ot) => ot.id === t.id) && !hiddenTabs.includes(t.id)) {
+                    orderedTabs.push(t);
+                  }
+                });
+                return orderedTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <Button
+                      variant="ghost"
+                      key={tab.id}
+                      className={`module-tab ${activeModule === tab.id ? 'active' : ''}`}
+                      onClick={() => setActiveModule(tab.id)}
+                      role="tab"
+                      aria-selected={activeModule === tab.id}
+                    >
+                      <Icon size={18} />
+                      <span>{tab.label}</span>
+                    </Button>
+                  );
+                });
+              })()}
+            </div>
           </div>
+
+          <HeaderNotifications
+            showNotificationsPopup={showNotificationsPopup}
+            setShowNotificationsPopup={setShowNotificationsPopup}
+            showRequestsPopup={showRequestsPopup}
+            setShowRequestsPopup={setShowRequestsPopup}
+            notificationFilter={notificationFilter}
+            overdueInterventions={overdueInterventions}
+            scheduledMaintenances={scheduledMaintenances}
+            inProgressMaintenances={inProgressMaintenances}
+            pendingMaintenances={pendingMaintenances}
+            reportedMaintenances={reportedMaintenances}
+            activeInterventions={activeInterventions}
+            vehicles={vehicles}
+            onOpenMaintenance={onOpenMaintenance}
+            currentUser={currentUser}
+            pendingReservationRequests={pendingReservationRequests}
+            setPendingReservationRequests={setPendingReservationRequests}
+            pendingRequestsCounts={pendingRequestsCounts}
+            setPendingRequestsCounts={setPendingRequestsCounts}
+            reservations={reservations}
+            onReservationUpdate={onReservationUpdate}
+            setSelectedOverdueIntervention={setSelectedOverdueIntervention}
+          />
+
+          <HeaderActions
+            currentUser={currentUser}
+            reportedMaintenances={reportedMaintenances}
+            immobilizedVehicles={immobilizedVehicles}
+            pendingMaintenances={pendingMaintenances}
+            activeInterventions={activeInterventions}
+            overdueInterventions={overdueInterventions}
+            conflictingMaintenances={conflictingMaintenances}
+            pendingRequestsCounts={pendingRequestsCounts}
+            pendingAccessRequests={pendingAccessRequests}
+            unreadMsgCount={unreadMsgCount}
+            onToggleMessaging={onToggleMessaging}
+            onToggleMailing={onToggleMailing}
+            onDetachSonos={onDetachSonos}
+            onOpenSettings={onOpenSettings}
+            onOpenPreferences={onOpenPreferences}
+            onLogout={onLogout}
+            onUserUpdate={onUserUpdate}
+            setNotificationFilter={setNotificationFilter}
+            setShowNotificationsPopup={setShowNotificationsPopup}
+          />
         </div>
       </div>
-    </div>
 
-    {selectedOverdueIntervention && (
-      <OverdueInterventionModal
-        intervention={selectedOverdueIntervention.intervention}
-        vehicle={selectedOverdueIntervention.vehicle}
-        onClose={() => setSelectedOverdueIntervention(null)}
-        onMarkCompleted={handleMarkCompleted}
-        onMarkNotCompleted={handleMarkNotCompleted}
-        onMarkPending={handleMarkPending}
-        onReschedule={handleReschedule}
-      />
-    )}
-
-    {showProfileModal && (
-      <ProfileEditModal
-        currentUser={currentUser}
-        onClose={() => setShowProfileModal(false)}
-        onUserUpdate={(updatedUser) => {
-          if (onUserUpdate) onUserUpdate(updatedUser);
-          setShowProfileModal(false);
-        }}
-      />
-    )}
-
-    {ConfirmDialogRenderer}
-  </>
+      {selectedOverdueIntervention && (
+        <OverdueInterventionModal
+          intervention={selectedOverdueIntervention.intervention}
+          vehicle={selectedOverdueIntervention.vehicle}
+          onClose={() => setSelectedOverdueIntervention(null)}
+          onMarkCompleted={handleMarkCompleted}
+          onMarkNotCompleted={handleMarkNotCompleted}
+          onMarkPending={handleMarkPending}
+          onReschedule={handleReschedule}
+        />
+      )}
+    </>
   );
 };
 

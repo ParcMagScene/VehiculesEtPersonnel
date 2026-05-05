@@ -143,3 +143,93 @@
   gap: 12px;
   background: var(--theme-bg-page);
 }
+
+/* ─── Onglets ─── */
+.profile-edit-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--theme-border);
+  padding: 0 8px;
+  background: var(--theme-bg-secondary);
+}
+
+.profile-edit-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: var(--font-base);
+  font-weight: 500;
+  color: var(--theme-text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.profile-edit-tab:hover {
+  color: var(--theme-text-body);
+}
+
+.profile-edit-tab.active {
+  color: var(--theme-primary);
+  border-bottom-color: var(--theme-primary);
+}
+
+/* ─── Section PIN ─── */
+.profile-edit-pin-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 0 16px;
+  color: var(--theme-text-body);
+}
+
+.profile-edit-pin-header svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--theme-primary);
+}
+
+.profile-edit-pin-desc {
+  margin: 4px 0 0;
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+}
+
+.profile-edit-pin-input {
+  font-size: 1.4rem;
+  letter-spacing: 0.4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  max-width: 140px;
+}
+
+.profile-edit-pin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-edit-pin-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.profile-edit-pin-delete {
+  color: var(--theme-danger) !important;
+}
+
+@keyframes profile-edit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.profile-edit-spin {
+  animation: profile-edit-spin 0.8s linear infinite;
+}

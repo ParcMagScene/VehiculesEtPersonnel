@@ -5,6 +5,36 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.2.0] — 2026-04-11
+
+### Added
+- `googleBidirectionalSync.js` : service complet de synchronisation bidirectionnelle Google Calendar (push + pull)
+- `syncReservationToGoogle()` / `deleteReservationFromGoogle()` — push automatique sur CRUD réservations
+- `pullReservationsFromGoogle()` — réconciliation Google → eM@g avec fenêtre -7j/+90j et pagination
+- `buildGoogleEventPayload()` — mapping réservation → événement Google (all-day vs dateTime, AM/PM)
+- `listGoogleEventsInWindow()` — fetch paginé des événements Google Calendar
+- `parseGoogleEventDates()` / `parsePeriodFromDateTime()` — parsing dates Google vers format eM@g
+- Endpoint `POST /api/google/sync/pull-reservations` dans `googleRoutes.js`
+- Feature flag `GOOGLE_BIDIRECTIONAL_SYNC` (défaut `false`) pour activation contrôlée
+- Propriétés privées Google `emagReservationId` + `emagSource` pour traçabilité
+
+### Changed
+- `vehicleRoutes.js` : hooks async `syncReservationToGoogle` / `deleteReservationFromGoogle` sur POST/PUT/DELETE réservations (best-effort)
+
+---
+
+## [1.1.1] — 2026-04-10
+
+### Fixed
+- `schemas/imports.js` : middleware `validate()` rendu compatible Zod (`error.issues` + fallback `error.errors`) pour éviter `TypeError: undefined.map` sur `PUT /api/reservations/:id`.
+- `vehicleRoutes.js` : mise à jour réservation non bloquée admin-only, accès ouvert aux utilisateurs non `read_only` via middleware dédié.
+
+### Added
+- `authorize.js` : nouveau middleware `requireNotReadOnly`.
+- `authorize.js` : ajout de `read_only` à la whitelist des permissions validées.
+
+---
+
 ## [1.1.0] — 2026-04-08
 
 ### Security

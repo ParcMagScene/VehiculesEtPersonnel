@@ -1,5 +1,6 @@
-import React from 'react';
 import './ui.css';
+
+import React from 'react';
 
 /**
  * Panel — Conteneur structuré avec header/body/footer
@@ -14,7 +15,7 @@ import './ui.css';
  */
 const Panel = React.forwardRef(function Panel(
   { title, icon, onClose, footer, headerActions, className = '', children, style, ...rest },
-  ref
+  ref,
 ) {
   const cls = ['ui-panel', className].filter(Boolean).join(' ');
 
@@ -29,7 +30,12 @@ const Panel = React.forwardRef(function Panel(
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             {headerActions}
             {onClose && (
-              <button className="ui-panel-close" onClick={onClose} aria-label="Fermer" type="button">
+              <button
+                className="ui-panel-close"
+                onClick={onClose}
+                aria-label="Fermer"
+                type="button"
+              >
                 ✕
               </button>
             )}

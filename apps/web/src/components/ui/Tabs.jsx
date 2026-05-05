@@ -1,4 +1,4 @@
-import { useState, useId, createContext, useContext } from 'react';
+import { createContext, useContext, useId, useState } from 'react';
 
 const TabsContext = createContext(null);
 
@@ -15,13 +15,7 @@ const TabsContext = createContext(null);
  *     <TabPanel value="avance">Contenu avancé…</TabPanel>
  *   </Tabs>
  */
-export function Tabs({
-  defaultValue,
-  value: controlledValue,
-  onChange,
-  children,
-  className = '',
-}) {
+export function Tabs({ defaultValue, value: controlledValue, onChange, children, className = '' }) {
   const [internal, setInternal] = useState(defaultValue);
   const current = controlledValue !== undefined ? controlledValue : internal;
   const handleChange = (val) => {
@@ -56,14 +50,7 @@ export function TabList({ children, className = '' }) {
 /**
  * Tab — Bouton onglet individuel
  */
-export function Tab({
-  value,
-  icon,
-  badge,
-  disabled = false,
-  children,
-  className = '',
-}) {
+export function Tab({ value, icon, badge, disabled = false, children, className = '' }) {
   const id = useId();
   const ctx = useTabsContext();
   const isActive = ctx?.active === value;
@@ -94,10 +81,7 @@ export function TabPanel({ value, children, className = '' }) {
   if (ctx?.active !== value) return null;
 
   return (
-    <div
-      role="tabpanel"
-      className={`ui-tab-panel ${className}`}
-    >
+    <div role="tabpanel" className={`ui-tab-panel ${className}`}>
       {children}
     </div>
   );

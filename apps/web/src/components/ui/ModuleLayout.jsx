@@ -22,11 +22,9 @@ function ModuleToolbar({ className = '', children }) {
  * ModuleContent — Zone de contenu scrollable.
  */
 function ModuleContent({ className = '', children, noPadding = false }) {
-  const cls = [
-    'ui-module-content',
-    noPadding && 'ui-module-content--no-padding',
-    className,
-  ].filter(Boolean).join(' ');
+  const cls = ['ui-module-content', noPadding && 'ui-module-content--no-padding', className]
+    .filter(Boolean)
+    .join(' ');
   return <div className={cls}>{children}</div>;
 }
 
@@ -43,15 +41,26 @@ function ModuleFooter({ className = '', children }) {
  */
 function SplitLayout({ sidebar, sidebarWidth = 280, side = 'left', className = '', children }) {
   const cls = ['ui-split-layout', `ui-split-layout--${side}`, className].filter(Boolean).join(' ');
-  const sideStyle = { width: typeof sidebarWidth === 'number' ? `${sidebarWidth}px` : sidebarWidth, flexShrink: 0 };
+  const sideStyle = {
+    width: typeof sidebarWidth === 'number' ? `${sidebarWidth}px` : sidebarWidth,
+    flexShrink: 0,
+  };
 
   return (
     <div className={cls}>
-      {side === 'left' && <aside className="ui-split-sidebar" style={sideStyle}>{sidebar}</aside>}
+      {side === 'left' && (
+        <aside className="ui-split-sidebar" style={sideStyle}>
+          {sidebar}
+        </aside>
+      )}
       <div className="ui-split-main">{children}</div>
-      {side === 'right' && <aside className="ui-split-sidebar" style={sideStyle}>{sidebar}</aside>}
+      {side === 'right' && (
+        <aside className="ui-split-sidebar" style={sideStyle}>
+          {sidebar}
+        </aside>
+      )}
     </div>
   );
 }
 
-export { ModuleLayout, ModuleToolbar, ModuleContent, ModuleFooter, SplitLayout };
+export { ModuleContent, ModuleFooter, ModuleLayout, ModuleToolbar, SplitLayout };

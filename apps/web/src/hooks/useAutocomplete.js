@@ -10,18 +10,20 @@ export const useAutocomplete = (key, maxSuggestions = 20) => {
     try {
       const stored = localStorage.getItem(`autocomplete_${key}`);
       return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   });
 
   const addToHistory = (value) => {
     if (!value || !value.trim()) return;
-    
+
     const trimmed = value.trim();
-    const newSuggestions = [
-      trimmed,
-      ...suggestions.filter(s => s !== trimmed)
-    ].slice(0, maxSuggestions);
-    
+    const newSuggestions = [trimmed, ...suggestions.filter((s) => s !== trimmed)].slice(
+      0,
+      maxSuggestions,
+    );
+
     setSuggestions(newSuggestions);
     localStorage.setItem(`autocomplete_${key}`, JSON.stringify(newSuggestions));
   };

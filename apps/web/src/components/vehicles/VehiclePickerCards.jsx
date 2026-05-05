@@ -1,11 +1,13 @@
-import { Check } from 'lucide-react';
-import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import './VehiclePickerCards.css';
+
+import { Check } from 'lucide-react';
+
+import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 
 /**
  * Composant réutilisable de sélection de véhicule avec photos.
  * Utilisable en mode mobile (liste verticale) ou desktop (grille).
- * 
+ *
  * @param {Object[]} vehicles - Liste des véhicules à afficher
  * @param {number|string} selectedId - ID du véhicule sélectionné (mode unique)
  * @param {number[]|string[]} selectedIds - IDs des véhicules sélectionnés (mode multiple)
@@ -23,7 +25,7 @@ function VehiclePickerCards({
   multiple = false,
   disabled = false,
   variant = 'mobile',
-  emptyMessage = 'Aucun véhicule disponible'
+  emptyMessage = 'Aucun véhicule disponible',
 }) {
   const isDesktop = variant === 'desktop';
   const containerClass = isDesktop ? 'vehicle-picker-grid' : 'vehicle-picker-list';
@@ -62,10 +64,18 @@ function VehiclePickerCards({
                 src={`/Photos/${vehicle.photo}`}
                 alt={vehicle.name}
                 loading="lazy"
-                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
               />
             ) : (
-              <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} loading="lazy" className="vehicle-avatar" />
+              <img
+                src={getVehicleAvatar(vehicle.type)}
+                alt={vehicle.name}
+                loading="lazy"
+                className="vehicle-avatar"
+              />
             )}
           </div>
 

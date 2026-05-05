@@ -1,6 +1,6 @@
 # 🏗️ Architecture Complète — eM@g
 
-> **Dernière mise à jour** : 8 avril 2026 (Audit qualité 6 phases + tests)
+> **Dernière mise à jour** : 9 avril 2026 (Module Sonos complet v2.4.0)
 > **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
 > **Domaine** : (configurable via .env)
 
@@ -70,10 +70,10 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 |-----------|------|
 | `lucide-react` | Icônes SVG |
 | `date-fns` | Manipulation de dates |
-| `xlsx` | Import/export Excel |
+| `jspdf` + `jspdf-autotable` | Génération PDF côté client |
 | `pdfjs-dist` | Lecture PDF côté client |
-| `@react-oauth/google` | OAuth2 Google |
-| `canvas` | Rendu canvas (PDF) |
+| `@react-oauth/google` | ~~Supprimé v2.3.0~~ — remplacé par OAuth2 Authorization Code Flow backend |
+| `html2canvas` | Capture canvas/DOM |
 
 ### Librairies backend
 
@@ -86,6 +86,8 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 | `multer` | Upload de fichiers |
 | `node-fetch` | Requêtes HTTP côté serveur |
 | `nodemailer` | Envoi d'emails (module mailing) |
+| `sonos` | Contrôle enceintes Sonos (UPnP/SOAP LAN) |
+| `googleapis` | Google Calendar API (OAuth2 Authorization Code Flow) |
 | `compression` | Compression gzip des réponses HTTP |
 | `helmet` | Headers de sécurité HTTP |
 
@@ -95,74 +97,10 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 
 ```
 eM@g/
-├── index.html                      # Point d'entrée HTML (SPA)
-├── package.json                    # Dépendances frontend
-├── vite.config.js                  # Config Vite (proxy, build, etc.)
-│
-├── src/                            # ══ CODE SOURCE FRONTEND ══
-│   ├── main.jsx                    # Point d'entrée React
-│   ├── App.jsx                     # Composant racine (~901 lignes)
-│   ├── App.css / index.css / theme.css / theme-palettes.css
-│   │
-│   ├── contexts/
-│   │   └── AuthContext.jsx         # AuthProvider + useAuth (état auth, login/logout, prefs)
-│   │
-│   ├── components/                 # 131 composants React organisés par domaine
-│   │   ├── vehicles/               # (21) Calendar, VehicleDetailsModal, VehicleMaintenanceModal…
-│   │   ├── affaires/               # (8) AffairesPanel, BLImportModal, AffaireDetailPanel…
-│   │   ├── personnel/              # (9) PersonnelPanel, PersonnelAgenda…
-│   │   ├── leaves/                 # (5) LeavesTab, LeaveRequestForm…
-│   │   ├── equipment/              # (5) EquipmentPanel, EquipmentBatchLabels…
-│   │   ├── planning/               # (9) PlanningPanel, TaskPlanningPanel…
-│   │   ├── management/             # (5) ManagementPanel, UserManagement, DashboardPanel…
-│   │   ├── orders/                 # (3) OrdersPanel, CataloguePanel, StockPanel
-│   │   ├── messaging/              # (1) MessagingPanel
-│   │   ├── mailing/                # (1) MailingPanel
-│   │   ├── annuaire/               # (2) AnnuairePanel…
-│   │   ├── auth/                   # (6) LoginForm, ChangePassword, ProfileEditModal…
-│   │   ├── DisplayDashboard/       # (21) Module Dashboard écrans
-│   │   ├── mobile/                 # (16) Interface mobile complète
-│   │   ├── ui/                     # (6) Card, Panel, Table, ScrollArea, FormField, SectionHeader
-│   │   └── *.jsx                   # ~15 composants partagés (Header, UserAvatar, ConfirmDialog…)
-│   │
-│   ├── hooks/                      # 10 hooks React custom
-│   │   ├── useAppData.js           # Données métier (véhicules, réservations, clients…) + IndexedDB sync
-│   │   ├── useGoogleCalendar.js    # Google Calendar events, sync affaires
-│   │   ├── useMessagingPolling.js   # Polling messages non lus + notifications
-│   │   ├── useAutocomplete.js
-│   │   ├── useDraggableModals.js
-│   │   ├── useFeedback.js
-│   │   ├── useKeyboardShortcuts.js
-│   │   ├── useTheme.js
-│   │   ├── useToast.jsx
-│   │   └── useWindowWidth.js
-│   │
-│   └── utils/                      # Fonctions utilitaires
-│       ├── api.js                  # Barrel re-export (5 lignes)
-│       ├── api/                    # Client API modulaire (~375 méthodes, 15 modules domaine)
-│       │   ├── base.js             # ApiClient class (constructor, request, auth, URL detection)
-│       │   ├── vehicles.js         # Véhicules, réservations, maintenances, clients, conducteurs
-│       │   ├── admin.js            # Config, utilisateurs, Google, access-requests
-│       │   ├── personnel.js        # Personnes, compétences, missions, affectations
-│       │   ├── leaves.js           # Congés (types, demandes, soldes, PDF)
-│       │   ├── affaires.js         # Affaires CRUD, liens, sync
-│       │   ├── planning.js         # Événements, BL imports, tâches, récurrences
-│       │   ├── equipment.js        # Catégories, items, SAV, photos
-│       │   ├── orders.js           # Commandes, fournisseurs, catalogue, devis
-│       │   ├── stock.js            # Stock catégories/items/mouvements
-│       │   ├── messaging.js        # Conversations, messages
-│       │   ├── mailing.js          # Templates, envoi, historique
-│       │   ├── annuaire.js         # Clients, fournisseurs, prestataires, contacts
-│       │   ├── display.js          # Écrans, playlists, médias, apparence, sonos, TV
-│       │   └── index.js            # Assemblage mixins + singleton export
-│       ├── deepLinking.js          # URL builders, ouverture protocole Chargement 3D
-│       ├── dateUtils.js            # Utilitaires de dates
-│       ├── indexedDB.js            # Cache IndexedDB (11 stores)
-│       ├── pdfParser.js            # Parsing PDF (pdfjs-dist)
-│       └── ...
+├── package.json                    # Scripts racine + workspaces
 │
 ├── apps/api/                       # ══ CODE SOURCE BACKEND ══
-│   ├── server.js                   # Point d'entrée Express (~317 lignes — refactoré Phase 3)
+│   ├── server.js                   # Point d'entrée Express (montage middlewares + routes)
 │   ├── cache.js                    # Cache LRU/TTL en mémoire (auth, stats, listes, iCal, config)
 │   ├── db-helpers.js               # addToHistory, getHistory (extrait de database.js)
 │   ├── migrations.js               # Migrations post-init (extrait de database.js)
@@ -199,7 +137,8 @@ eM@g/
 │   ├── stockRoutes.js              # Routes stock (~433 lignes)
 │   ├── mailingRoutes.js            # Routes mailing (~299 lignes)
 │   ├── messagingRoutes.js          # Routes messagerie (~368 lignes)
-│   ├── displayRoutes.js            # Routes Dashboard écrans (~1965 lignes)
+│   ├── displayRoutes.js            # Routes Dashboard écrans (~1710 lignes, Sonos extrait)
+│   ├── sonosRoutes.js              # Routes Sonos (~730 lignes — contrôles, zones, favoris)
 │   ├── annuaireRoutes.js           # Routes annuaire (~1069 lignes)
 │   ├── attachmentsRoutes.js        # Routes pièces jointes (~251 lignes)
 │   ├── profileRoutes.js            # Routes profil utilisateur (~178 lignes)
@@ -208,6 +147,13 @@ eM@g/
 │   ├── ecosystem.config.js         # Configuration PM2
 │   ├── backup-database.sh          # Script de backup SQLite
 │   └── migrations/                 # 17 fichiers SQL
+│
+├── apps/web/                       # ══ CODE SOURCE FRONTEND ══
+│   ├── index.html                  # Point d'entrée HTML (SPA)
+│   ├── vite.config.js              # Config Vite
+│   └── src/                        # App.jsx, composants, hooks, utils/api
+│
+├── apps/tv-client/                 # ══ CLIENT TV ══
 │
 ├── public/                         # ══ ASSETS STATIQUES ══
 │   ├── depot-zones.json            # Zones du dépôt 1 — Événementiel (SVG 770×560)
@@ -256,7 +202,7 @@ Client HTTP
 │         └──────────────┼───────────────┘         │
 │                        ▼                         │
 │  ┌──────────────────────────────────────────┐    │
-│  │ Route Handlers (18 fichiers)             │    │
+│  │ Route Handlers (25+ fichiers/modules)    │    │
 │  │                                          │    │
 │  │  server.js : point d'entrée, montage     │    │
 │  │                                          │    │
@@ -288,7 +234,8 @@ Client HTTP
 │  │     tasks, planning, PDF export)         │    │
 │  │                                          │    │
 │  │  + catalogRoutes, equipmentRoutes,       │    │
-│  │  displayRoutes, annuaireRoutes,          │    │
+│  │  displayRoutes, sonosRoutes,              │    │
+│  │  annuaireRoutes,          │    │
 │  │  leaveRoutes, ordersRoutes, stockRoutes, │    │
 │  │  mailingRoutes, messagingRoutes,         │    │
 │  │  attachmentsRoutes, profileRoutes        │    │
@@ -302,7 +249,7 @@ Client HTTP
 │                  ▼                               │
 │  ┌──────────────────────────────────────────┐    │
 │  │ SQLite (better-sqlite3)                  │    │
-│  │ db.sqlite3 — WAL mode — 92 tables       │    │
+│  │ vehicules.db (DB_PATH) — WAL mode — ~86 tables déclarées │    │
 │  │ 15 index de performance (Phase 4)        │    │
 │  │ FK enforced                              │    │
 │  └──────────────────────────────────────────┘    │
@@ -323,7 +270,8 @@ Client HTTP
 | `planningRoutes.js` | ~2668 | Planning & communication (événements, tâches, affaires, PDF, BL imports) |
 | `leaveRoutes.js` | ~1346 | Congés (demandes, approbation, solde, planning) |
 | `equipmentRoutes.js` | ~1299 | Équipements individualisés (UID, SAV, localisation multi-dépôt) |
-| `displayRoutes.js` | ~1965 | Dashboard écrans (screens, playlists, médias, sonos, apparence) |
+| `displayRoutes.js` | ~1710 | Dashboard écrans (screens, playlists, médias, apparence) |
+| `sonosRoutes.js` | ~730 | Module Sonos (config, now-playing, zones, contrôles, favoris) |
 | `ordersRoutes.js` | ~1377 | Commandes fournisseurs |
 | `annuaireRoutes.js` | ~1069 | Annuaire (clients, fournisseurs, prestataires, contacts, import) |
 | `catalogRoutes.js` | ~775 | Catalogue (équipements, flight-cases, camions) |
@@ -371,6 +319,7 @@ main.jsx
             ├─ useAuth()              ← Contexte auth (login/logout, prefs)
             ├─ useAppData()           ← Données métier + IndexedDB sync (useMemo optimisé Phase 4)
             ├─ useGoogleCalendar()    ← Google Calendar events, sync affaires
+            ├─ useGoogleSync()        ← Sync leader election, IndexedDB cache, polling 5min
             ├─ useMessagingPolling()   ← Polling messages + notifications
             │
             ├─ Détection mobile → MobileApp (si /mobile ou #/mobile)
@@ -590,9 +539,11 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 
 ## 7. API — Catalogue des routes
 
-> **Total : ~431 routes API** réparties en 12 fichiers
+> **Total : ~457 routes API** réparties sur 25+ fichiers/modules
+>
+> **Important** : cette section est un panorama fonctionnel. La référence API exhaustive (modules, endpoints, préfixes actifs) est maintenue dans `docs/api/README.md` et les fichiers `docs/api/*.md`.
 
-### Authentification (`/api/auth/*`)
+### Authentification (`/api/auth/*`) — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -602,7 +553,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | POST | `/api/auth/logout` | ✅ | Déconnexion |
 | POST | `/api/auth/change-password` | ✅ | Changer son mot de passe |
 
-### Véhicules (`/api/vehicles`)
+### Véhicules (`/api/vehicles`) — extrait
 
 | Méthode | Route | Auth | Admin |
 |---------|-------|:----:|:-----:|
@@ -611,7 +562,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | PUT | `/api/vehicles/:id` | ✅ | ❌ |
 | DELETE | `/api/vehicles/:id` | ✅ | ❌ |
 
-### Réservations (`/api/reservations`)
+### Réservations (`/api/reservations`) — extrait
 
 | Méthode | Route | Auth | Admin |
 |---------|-------|:----:|:-----:|
@@ -620,7 +571,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | PUT | `/api/reservations/:id` | ✅ | ✅ |
 | DELETE | `/api/reservations/:id` | ✅ | ✅ |
 
-### Demandes de réservation (`/api/reservation-requests`)
+### Demandes de réservation (`/api/reservation-requests`) — extrait
 
 | Méthode | Route | Auth | Admin |
 |---------|-------|:----:|:-----:|
@@ -629,7 +580,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | PUT | `/api/reservation-requests/:id/approve` | ✅ | ✅ |
 | PUT | `/api/reservation-requests/:id/reject` | ✅ | ✅ |
 
-### Maintenances (`/api/maintenances`)
+### Maintenances (`/api/maintenances`) — extrait
 
 | Méthode | Route | Auth | Admin |
 |---------|-------|:----:|:-----:|
@@ -640,7 +591,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 
 > *Non-admin limité à ses propres signalements (status='reported')
 
-### Entités CRUD (`routes.js`)
+### Entités CRUD (`routes.js`) — extrait
 
 | Entité | GET | POST | PUT | DELETE |
 |--------|:---:|:----:|:---:|:------:|
@@ -649,7 +600,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | `/api/locations` | ✅ | ✅ | ✅ | ✅ |
 | `/api/garages` | ✅ | ✅ | ✅ | ✅ |
 
-### Personnel (`personnelRoutes.js`)
+### Personnel (`personnelRoutes.js`) — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -660,7 +611,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | GET/POST/PUT/DELETE | `/api/assignments` | ✅ | CRUD affectations (détection conflits) |
 | GET | `/api/personnel/planning` | ✅ | Planning global |
 
-### Congés (`leaveRoutes.js`)
+### Congés (`leaveRoutes.js`) — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -670,7 +621,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | GET | `/api/leaves/balance/:personId` | ✅ | Solde de congé |
 | GET | `/api/leaves/planning` | ✅ | Planning des congés |
 
-### Catalogue (`catalogRoutes.js`)
+### Catalogue (`catalogRoutes.js`) — extrait
 
 | Méthode | Route | Auth | Permission |
 |---------|-------|:----:|:----------:|
@@ -683,7 +634,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | GET/POST/DELETE | `/api/reservations/:id/equipment` | ✅ | — |
 | GET | `/api/reservations/:id/chargement-export` | ✅ | — |
 
-### Équipements (`equipmentRoutes.js`)
+### Équipements (`equipmentRoutes.js`) — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -697,7 +648,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | GET/POST/PUT/DELETE | `/api/sav-tickets` | ✅ | Tickets SAV |
 | GET/POST/PUT/DELETE | `/api/equipment-lists` | ✅ | Listes d'équipements |
 
-### Communication & Planning (`planningRoutes.js`)
+### Communication & Planning (`planningRoutes.js`) — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -709,7 +660,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | POST/PUT/DELETE | `/api/communication/tasks` | ✅ | CRUD tâches (avec affaire_num) |
 | GET | `/api/communication/tasks/pdf` | ✅ | Export PDF planning (titres nettoyés) |
 
-### Stock & Commandes
+### Stock & Commandes — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -718,7 +669,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | GET/POST/PUT/DELETE | `/api/orders` | ✅ | Commandes fournisseurs |
 | GET/POST/PUT/DELETE | `/api/suppliers` | ✅ | Fournisseurs |
 
-### Mailing (`mailingRoutes.js`)
+### Mailing (`mailingRoutes.js`) — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -726,7 +677,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | POST | `/api/mailing/send` | ✅ | Envoi de campagne |
 | GET | `/api/mailing/history` | ✅ | Historique d'envois |
 
-### Messagerie (`messagingRoutes.js`)
+### Messagerie (`messagingRoutes.js`) — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -735,7 +686,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | GET | `/api/messages/conversations/:id` | ✅ | Messages d'une conversation |
 | POST | `/api/messages` | ✅ | Envoyer un message |
 
-### Fichiers & pièces jointes
+### Fichiers & pièces jointes — extrait
 
 | Méthode | Route | Auth | Description |
 |---------|-------|:----:|-------------|
@@ -744,7 +695,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 | GET | `/api/attachments/:affaireId` | ✅ | Lister PJ d'une affaire |
 | DELETE | `/api/attachments/:affaireId/:filename` | ✅ | Supprimer une PJ |
 
-### Administration
+### Administration — extrait
 
 | Méthode | Route | Auth | Admin |
 |---------|-------|:----:|:-----:|
@@ -813,10 +764,10 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 ### 📺 Module Dashboard TV (Affichage dynamique)
 - **Composants** : 21 composants dans `DisplayDashboard/`
   - **Onglets principaux** : `ScreensTab`, `PlaylistsTab`, `MediaTab`, `MessagesTab`, `TemplatesTab`, `LogsTab`
-  - **Onglets avancés** : `AppearanceTab` (apparence), `ColorRulesTab` (règles couleurs), `SonosTab` (contrôle Sonos), `SneakyTab` (GIFs furtifs), `WelcomeMessagesTab` (messages bienvenue), `LocationIconsTab` (icônes localisation)
+  - **Onglets avancés** : `AppearanceTab` (apparence), `ColorRulesTab` (règles couleurs), `SonosTab` (contrôle Sonos — playback, volume, zones, favoris), `SneakyTab` (GIFs furtifs), `WelcomeMessagesTab` (messages bienvenue), `LocationIconsTab` (icônes localisation)
   - **Modales** : `ScreenFormModal`, `PlaylistFormModal`, `MediaUploadModal`, `MessageFormModal`, `TemplateFormModal`
   - **Prévisualisation** : `TVPreviewPanel` (aperçu complet), `TVScreenMini` (mini-aperçu), `DashboardTasksSidebar` (sidebar tâches)
-- **Backend** : `displayRoutes.js` (~1955 lignes) — API complète : screens, playlists, médias, messages, templates, logs, sonos now-playing, sneaky GIFs, sidebar-config, tv-state, apparence, couleurs, bienvenue, icônes localisation, alarme
+- **Backend** : `displayRoutes.js` (~1710 lignes) + `sonosRoutes.js` (~730 lignes) — API complète : screens, playlists, médias, messages, templates, logs, sonos (config, now-playing, contrôles, zones, favoris), sneaky GIFs, sidebar-config, tv-state, apparence, couleurs, bienvenue, icônes localisation, alarme
 - **Nettoyage titres TV** : `cleanTvTitle()` supprime emojis, labels de section et numéros AF des titres affichés sur les écrans TV
 - **Sidebar tâches** : `DashboardTasksSidebar` avec `cleanTaskDisplayTitle()` (logique 2 étapes : google_event_title vs title brut, notes affichées)
 - **Alarme SNCF** : Alarme sonore à l'échéance des tâches + bouton test admin + endpoint `/api/display/tv/test-alarm`
@@ -848,7 +799,7 @@ Le fichier `database.js` exécute des migrations dynamiques au démarrage :
 ### ⚙️ Module Configuration
 - **Composants** : `GoogleCalendarConfig`, `ManagementPanel` (multi-onglets)
 - **Onglets** : Véhicules, Clients, Conducteurs, Lieux, Personnel, Mon compte, Demandes, Utilisateurs, Import/Export, Config Google, Accès Mobile, Plan Dépôt
-- **Configuration stockée** : Google Client ID, Calendar ID, Maps API Key, adresse entreprise
+- **Configuration stockée** : Calendar ID, Maps API Key, adresse entreprise (Google OAuth2 côté serveur via `googleapis`, voir `GUIDE_GOOGLE_OAUTH2.md`)
 
 ### 📒 Module Annuaire
 - **Composants** : `AnnuairePanel` (~1112 lignes, 6 sous-composants)
@@ -1103,7 +1054,7 @@ node scripts/sync_inventory_to_catalog.js chemin/vers/inventaire.xlsx
 | **Domaine** | Configurable via `ALLOWED_ORIGINS` (.env) |
 | **Frontend** | `vite preview` sur port **4173** (PM2 : `vehicules`) |
 | **Backend** | `node server.js` sur port **3002** (PM2 : `vehicules-backend`) |
-| **Base de données** | `apps/api/db.sqlite3` |
+| **Base de données** | `apps/api/vehicules.db` (configurable via `DB_PATH`) |
 
 ### PM2 — Process Manager
 

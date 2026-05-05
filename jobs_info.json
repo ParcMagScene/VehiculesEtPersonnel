@@ -1,0 +1,534 @@
+{
+  "total_count": 6,
+  "jobs": [
+    {
+      "id": 73141864463,
+      "run_id": 24980657677,
+      "workflow_name": "CI — Branche dev",
+      "head_branch": "dev",
+      "run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677",
+      "run_attempt": 1,
+      "node_id": "CR_kwDORCecR88AAAARB5hIDw",
+      "head_sha": "41a4cecafe7279dd99354cbf26fd7d6a21c3d5d9",
+      "url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/jobs/73141864463",
+      "html_url": "https://github.com/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677/job/73141864463",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-04-27T06:48:23Z",
+      "started_at": "2026-04-27T06:48:24Z",
+      "completed_at": "2026-04-27T06:50:16Z",
+      "name": "Tests backend (node:test)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-04-27T06:48:25Z",
+          "completed_at": "2026-04-27T06:48:26Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-04-27T06:48:26Z",
+          "completed_at": "2026-04-27T06:48:27Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-04-27T06:48:27Z",
+          "completed_at": "2026-04-27T06:48:32Z"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-04-27T06:48:32Z",
+          "completed_at": "2026-04-27T06:50:13Z"
+        },
+        {
+          "name": "Tests unitaires backend avec couverture",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-04-27T06:50:13Z",
+          "completed_at": "2026-04-27T06:50:14Z"
+        },
+        {
+          "name": "Rapport de couverture backend",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-04-27T06:50:14Z",
+          "completed_at": "2026-04-27T06:50:14Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-04-27T06:50:14Z",
+          "completed_at": "2026-04-27T06:50:14Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-04-27T06:50:14Z",
+          "completed_at": "2026-04-27T06:50:14Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-04-27T06:50:14Z",
+          "completed_at": "2026-04-27T06:50:15Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/check-runs/73141864463",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000310,
+      "runner_name": "GitHub Actions 1000000310",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 73141864467,
+      "run_id": 24980657677,
+      "workflow_name": "CI — Branche dev",
+      "head_branch": "dev",
+      "run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677",
+      "run_attempt": 1,
+      "node_id": "CR_kwDORCecR88AAAARB5hIEw",
+      "head_sha": "41a4cecafe7279dd99354cbf26fd7d6a21c3d5d9",
+      "url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/jobs/73141864467",
+      "html_url": "https://github.com/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677/job/73141864467",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-04-27T06:48:23Z",
+      "started_at": "2026-04-27T06:48:24Z",
+      "completed_at": "2026-04-27T06:50:14Z",
+      "name": "Documentation coherence",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-04-27T06:48:25Z",
+          "completed_at": "2026-04-27T06:48:26Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-04-27T06:48:26Z",
+          "completed_at": "2026-04-27T06:48:28Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-04-27T06:48:28Z",
+          "completed_at": "2026-04-27T06:48:32Z"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-04-27T06:48:32Z",
+          "completed_at": "2026-04-27T06:50:12Z"
+        },
+        {
+          "name": "Vérifier la cohérence docs ↔ code",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-04-27T06:50:12Z",
+          "completed_at": "2026-04-27T06:50:12Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-04-27T06:50:12Z",
+          "completed_at": "2026-04-27T06:50:12Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-04-27T06:50:12Z",
+          "completed_at": "2026-04-27T06:50:13Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-04-27T06:50:13Z",
+          "completed_at": "2026-04-27T06:50:13Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/check-runs/73141864467",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000311,
+      "runner_name": "GitHub Actions 1000000311",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 73141864476,
+      "run_id": 24980657677,
+      "workflow_name": "CI — Branche dev",
+      "head_branch": "dev",
+      "run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677",
+      "run_attempt": 1,
+      "node_id": "CR_kwDORCecR88AAAARB5hIHA",
+      "head_sha": "41a4cecafe7279dd99354cbf26fd7d6a21c3d5d9",
+      "url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/jobs/73141864476",
+      "html_url": "https://github.com/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677/job/73141864476",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-04-27T06:48:23Z",
+      "started_at": "2026-04-27T06:48:26Z",
+      "completed_at": "2026-04-27T06:51:03Z",
+      "name": "Tests frontend (Vitest)",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-04-27T06:48:27Z",
+          "completed_at": "2026-04-27T06:48:28Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-04-27T06:48:28Z",
+          "completed_at": "2026-04-27T06:48:29Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-04-27T06:48:29Z",
+          "completed_at": "2026-04-27T06:48:37Z"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-04-27T06:48:37Z",
+          "completed_at": "2026-04-27T06:50:19Z"
+        },
+        {
+          "name": "Tests Vitest avec coverage",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-04-27T06:50:19Z",
+          "completed_at": "2026-04-27T06:50:58Z"
+        },
+        {
+          "name": "Rapport de couverture",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-04-27T06:50:58Z",
+          "completed_at": "2026-04-27T06:50:58Z"
+        },
+        {
+          "name": "Upload rapport de couverture",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-04-27T06:50:58Z",
+          "completed_at": "2026-04-27T06:51:00Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-04-27T06:51:00Z",
+          "completed_at": "2026-04-27T06:51:00Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-04-27T06:51:00Z",
+          "completed_at": "2026-04-27T06:51:01Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-04-27T06:51:01Z",
+          "completed_at": "2026-04-27T06:51:01Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/check-runs/73141864476",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000312,
+      "runner_name": "GitHub Actions 1000000312",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 73141864495,
+      "run_id": 24980657677,
+      "workflow_name": "CI — Branche dev",
+      "head_branch": "dev",
+      "run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677",
+      "run_attempt": 1,
+      "node_id": "CR_kwDORCecR88AAAARB5hILw",
+      "head_sha": "41a4cecafe7279dd99354cbf26fd7d6a21c3d5d9",
+      "url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/jobs/73141864495",
+      "html_url": "https://github.com/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677/job/73141864495",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-04-27T06:48:23Z",
+      "started_at": "2026-04-27T06:48:24Z",
+      "completed_at": "2026-04-27T06:50:57Z",
+      "name": "ESLint + Prettier",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-04-27T06:48:25Z",
+          "completed_at": "2026-04-27T06:48:26Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-04-27T06:48:26Z",
+          "completed_at": "2026-04-27T06:48:27Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-04-27T06:48:27Z",
+          "completed_at": "2026-04-27T06:48:29Z"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-04-27T06:48:29Z",
+          "completed_at": "2026-04-27T06:50:12Z"
+        },
+        {
+          "name": "ESLint",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-04-27T06:50:12Z",
+          "completed_at": "2026-04-27T06:50:42Z"
+        },
+        {
+          "name": "Prettier (vérification)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-04-27T06:50:42Z",
+          "completed_at": "2026-04-27T06:50:56Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-04-27T06:50:56Z",
+          "completed_at": "2026-04-27T06:50:56Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-04-27T06:50:56Z",
+          "completed_at": "2026-04-27T06:50:56Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-04-27T06:50:56Z",
+          "completed_at": "2026-04-27T06:50:56Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/check-runs/73141864495",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000313,
+      "runner_name": "GitHub Actions 1000000313",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    },
+    {
+      "id": 73141864883,
+      "run_id": 24980657677,
+      "workflow_name": "CI — Branche dev",
+      "head_branch": "dev",
+      "run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677",
+      "run_attempt": 1,
+      "node_id": "CR_kwDORCecR88AAAARB5hJsw",
+      "head_sha": "41a4cecafe7279dd99354cbf26fd7d6a21c3d5d9",
+      "url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/jobs/73141864883",
+      "html_url": "https://github.com/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677/job/73141864883",
+      "status": "completed",
+      "conclusion": "skipped",
+      "created_at": "2026-04-27T06:48:23Z",
+      "started_at": "2026-04-27T06:48:23Z",
+      "completed_at": "2026-04-27T06:48:23Z",
+      "name": "Conventional Commits",
+      "steps": [
+
+      ],
+      "check_run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/check-runs/73141864883",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": null,
+      "runner_name": null,
+      "runner_group_id": null,
+      "runner_group_name": null
+    },
+    {
+      "id": 73142173403,
+      "run_id": 24980657677,
+      "workflow_name": "CI — Branche dev",
+      "head_branch": "dev",
+      "run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677",
+      "run_attempt": 1,
+      "node_id": "CR_kwDORCecR88AAAARB5z-2w",
+      "head_sha": "41a4cecafe7279dd99354cbf26fd7d6a21c3d5d9",
+      "url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/actions/jobs/73142173403",
+      "html_url": "https://github.com/ParcMagScene/VehiculesEtPersonnel/actions/runs/24980657677/job/73142173403",
+      "status": "completed",
+      "conclusion": "success",
+      "created_at": "2026-04-27T06:51:03Z",
+      "started_at": "2026-04-27T06:51:05Z",
+      "completed_at": "2026-04-27T06:53:07Z",
+      "name": "Build frontend",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-04-27T06:51:06Z",
+          "completed_at": "2026-04-27T06:51:07Z"
+        },
+        {
+          "name": "Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-04-27T06:51:07Z",
+          "completed_at": "2026-04-27T06:51:09Z"
+        },
+        {
+          "name": "Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-04-27T06:51:09Z",
+          "completed_at": "2026-04-27T06:51:20Z"
+        },
+        {
+          "name": "Run npm ci",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-04-27T06:51:20Z",
+          "completed_at": "2026-04-27T06:52:54Z"
+        },
+        {
+          "name": "Build production",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-04-27T06:52:54Z",
+          "completed_at": "2026-04-27T06:53:04Z"
+        },
+        {
+          "name": "Vérifier le build",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-04-27T06:53:04Z",
+          "completed_at": "2026-04-27T06:53:04Z"
+        },
+        {
+          "name": "Post Run actions/setup-node@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-04-27T06:53:04Z",
+          "completed_at": "2026-04-27T06:53:04Z"
+        },
+        {
+          "name": "Post Run actions/checkout@v4",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-04-27T06:53:04Z",
+          "completed_at": "2026-04-27T06:53:05Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-04-27T06:53:05Z",
+          "completed_at": "2026-04-27T06:53:05Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/ParcMagScene/VehiculesEtPersonnel/check-runs/73142173403",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000314,
+      "runner_name": "GitHub Actions 1000000314",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}

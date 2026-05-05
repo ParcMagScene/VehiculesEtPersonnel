@@ -5,26 +5,48 @@
 // Conforme Code du travail, IDCC 3252
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Calendar, Clock, CheckCircle, XCircle, Plus, Download, RefreshCw, Users, BarChart3,
-  ChevronDown, Trash2, Shield,
-  CalendarOff, Eye, TrendingUp,
-} from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import './LeavesTab.css';
+
+import { endOfMonth, format, parseISO, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {
+  BarChart3,
+  Calendar,
+  CalendarOff,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  Download,
+  Eye,
+  Plus,
+  RefreshCw,
+  Shield,
+  Trash2,
+  TrendingUp,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import {
+  Button,
+  Card,
+  DetailRow,
+  EmptyState,
+  InlineAlert,
+  SectionHeader,
+  Tooltip,
+} from '@/design-system';
+
+import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
-import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
+import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 import LeaveRequestForm from './LeaveRequestForm';
 import LeaveRequestsPanel from './LeaveRequestsPanel';
 import LeaveValidationPanel from './LeaveValidationPanel';
-import './LeavesTab.css';
-import { Button, Card, DetailRow, EmptyState, InlineAlert, Tooltip, SectionHeader } from '@/design-system';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-
-import { STATUS } from '../../constants';
 
 // ═══════════════════════════════════════
 // Helpers
@@ -32,14 +54,20 @@ import { STATUS } from '../../constants';
 
 const fmtDate = (d) => {
   if (!d) return '—';
-  try { return format(parseISO(d), 'd MMM yyyy', { locale: fr }); }
-  catch { return d; }
+  try {
+    return format(parseISO(d), 'd MMM yyyy', { locale: fr });
+  } catch {
+    return d;
+  }
 };
 
 const fmtShortDate = (d) => {
   if (!d) return '—';
-  try { return format(parseISO(d), 'd MMM', { locale: fr }); }
-  catch { return d; }
+  try {
+    return format(parseISO(d), 'd MMM', { locale: fr });
+  } catch {
+    return d;
+  }
 };
 
 // ═══════════════════════════════════════
@@ -115,7 +143,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
             year: new Date().getFullYear(),
           });
           setMyBalance(Array.isArray(bal) ? bal[0] : bal);
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
     } catch (err) {
       console.error('[LeavesTab] Erreur chargement:', err);
@@ -133,17 +163,21 @@ const LeavesTab = ({ persons = [], currentUser }) => {
   // Computed
   // ═══════════════════════════════════════
 
-  const myStats = useMemo(() => ({
-    total: myRequests.length,
-    pending: myRequests.filter(r => r.status === STATUS.PENDING).length,
-    accepted: myRequests.filter(r => r.status === STATUS.ACCEPTED || r.status === 'modified').length,
-    refused: myRequests.filter(r => r.status === STATUS.REFUSED).length,
-  }), [myRequests]);
+  const myStats = useMemo(
+    () => ({
+      total: myRequests.length,
+      pending: myRequests.filter((r) => r.status === STATUS.PENDING).length,
+      accepted: myRequests.filter((r) => r.status === STATUS.ACCEPTED || r.status === 'modified')
+        .length,
+      refused: myRequests.filter((r) => r.status === STATUS.REFUSED).length,
+    }),
+    [myRequests],
+  );
 
   const filteredRequests = useMemo(() => {
     const source = adminView === 'all' ? allRequests : myRequests;
     if (requestFilter === 'all') return source;
-    return source.filter(r => r.status === requestFilter);
+    return source.filter((r) => r.status === requestFilter);
   }, [adminView, allRequests, myRequests, requestFilter]);
 
   // Qui est en congé ce mois-ci ? (admin)
@@ -154,7 +188,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
     const monthEnd = endOfMonth(now);
 
     return allRequests
-      .filter(r => {
+      .filter((r) => {
         if (r.status !== STATUS.ACCEPTED && r.status !== 'modified') return false;
         const start = parseISO(r.start_date || r.startDate);
         const end = parseISO(r.end_date || r.endDate);
@@ -180,7 +214,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           loadData();
           toast.success('Demande annulée');
         } catch (err) {
-          setError(err.error || err.message || 'Erreur lors de l\'annulation');
+          setError(err.error || err.message || "Erreur lors de l'annulation");
         }
       },
     });
@@ -191,7 +225,10 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       const data = await api.getLeavePdf(id);
       if (data.html) {
         const win = openSanitizedPrintWindow(data.html);
-        if (!win) { setError('Popup bloquée'); return; }
+        if (!win) {
+          setError('Popup bloquée');
+          return;
+        }
         setTimeout(() => win.print(), 500);
       }
     } catch {
@@ -224,9 +261,11 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           )}
         </div>
         <div className="lt-header-actions">
-          <Tooltip content="Rafraîchir"><Button variant="ghost" className="lt-btn lt-btn-refresh" onClick={loadData}>
-            <RefreshCw size={16} />
-          </Button></Tooltip>
+          <Tooltip content="Rafraîchir">
+            <Button variant="ghost" className="lt-btn lt-btn-refresh" onClick={loadData}>
+              <RefreshCw size={16} />
+            </Button>
+          </Tooltip>
           <Button variant="primary" onClick={() => setShowRequestForm(true)}>
             <Plus size={16} /> Nouvelle demande
           </Button>
@@ -234,7 +273,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       </div>
 
       {error && (
-        <InlineAlert dismissible onDismiss={() => setError('')}>{error}</InlineAlert>
+        <InlineAlert dismissible onDismiss={() => setError('')}>
+          {error}
+        </InlineAlert>
       )}
 
       {/* KPI Cards */}
@@ -245,21 +286,25 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           <div className="lt-kpi-data">
             <span className="lt-kpi-value">
               {myBalance
-                ? ((myBalance.daysEntitled || myBalance.days_entitled || 25) - (myBalance.daysTaken || myBalance.days_taken || 0))
+                ? (myBalance.daysEntitled || myBalance.days_entitled || 25) -
+                  (myBalance.daysTaken || myBalance.days_taken || 0)
                 : '—'}
             </span>
             <span className="lt-kpi-label">jours restants</span>
           </div>
           {myBalance && (
             <div className="lt-kpi-detail">
-              {myBalance.daysEntitled || myBalance.days_entitled || 25} acquis · {myBalance.daysTaken || myBalance.days_taken || 0} pris
+              {myBalance.daysEntitled || myBalance.days_entitled || 25} acquis ·{' '}
+              {myBalance.daysTaken || myBalance.days_taken || 0} pris
             </div>
           )}
         </Card>
 
         {/* En attente */}
         <Card className="lt-kpi-card pending">
-          <div className="lt-kpi-icon"><Clock size={20} /></div>
+          <div className="lt-kpi-icon">
+            <Clock size={20} />
+          </div>
           <div className="lt-kpi-data">
             <span className="lt-kpi-value">{myStats.pending}</span>
             <span className="lt-kpi-label">en attente</span>
@@ -268,7 +313,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
 
         {/* Acceptées */}
         <Card className="lt-kpi-card accepted">
-          <div className="lt-kpi-icon"><CheckCircle size={20} /></div>
+          <div className="lt-kpi-icon">
+            <CheckCircle size={20} />
+          </div>
           <div className="lt-kpi-data">
             <span className="lt-kpi-value">{myStats.accepted}</span>
             <span className="lt-kpi-label">acceptées</span>
@@ -277,11 +324,10 @@ const LeavesTab = ({ persons = [], currentUser }) => {
 
         {/* Admin : En attente de validation */}
         {isAdmin && (
-          <Card
-            className="lt-kpi-card admin-pending"
-            onClick={() => setShowValidationPanel(true)}
-          >
-            <div className="lt-kpi-icon"><Shield size={20} /></div>
+          <Card className="lt-kpi-card admin-pending" onClick={() => setShowValidationPanel(true)}>
+            <div className="lt-kpi-icon">
+              <Shield size={20} />
+            </div>
             <div className="lt-kpi-data">
               <span className="lt-kpi-value">{pendingRequests.length}</span>
               <span className="lt-kpi-label">à valider</span>
@@ -296,17 +342,23 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       {/* Navigation admin */}
       {isAdmin && (
         <div className="lt-admin-nav">
-          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'overview' ? 'active' : ''}`}
+          <Button
+            variant="ghost"
+            className={`lt-nav-btn ${adminView === 'overview' ? 'active' : ''}`}
             onClick={() => setAdminView('overview')}
           >
             <BarChart3 size={14} /> Vue d'ensemble
           </Button>
-          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'mine' ? 'active' : ''}`}
+          <Button
+            variant="ghost"
+            className={`lt-nav-btn ${adminView === 'mine' ? 'active' : ''}`}
             onClick={() => setAdminView('mine')}
           >
             <Calendar size={14} /> Mes congés
           </Button>
-          <Button variant="ghost"             className={`lt-nav-btn ${adminView === 'all' ? 'active' : ''}`}
+          <Button
+            variant="ghost"
+            className={`lt-nav-btn ${adminView === 'all' ? 'active' : ''}`}
             onClick={() => setAdminView('all')}
           >
             <Users size={14} /> Toutes les demandes
@@ -320,14 +372,25 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           {/* Demandes en attente de validation */}
           {pendingRequests.length > 0 && (
             <div className="lt-section">
-              <SectionHeader className="lt-section-header" icon={<Clock size={16} />} title={`Demandes en attente (${pendingRequests.length})`} actions={
-                <Button variant="secondary" size="sm" onClick={() => setShowValidationPanel(true)}>
-                  Ouvrir panneau complet
-                </Button>
-              } />
+              <SectionHeader
+                className="lt-section-header"
+                icon={<Clock size={16} />}
+                title={`Demandes en attente (${pendingRequests.length})`}
+                actions={
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowValidationPanel(true)}
+                  >
+                    Ouvrir panneau complet
+                  </Button>
+                }
+              />
               <div className="lt-pending-list">
-                {pendingRequests.slice(0, 5).map(req => {
-                  const typeCfg = LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] || LEAVE_TYPE_LABELS.conge_paye;
+                {pendingRequests.slice(0, 5).map((req) => {
+                  const typeCfg =
+                    LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] ||
+                    LEAVE_TYPE_LABELS.conge_paye;
                   return (
                     <div key={req.id} className="lt-pending-card">
                       <div className="lt-pending-person">
@@ -338,20 +401,27 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                           {typeCfg.icon} {typeCfg.label}
                         </span>
                         <span className="lt-pending-dates">
-                          {fmtShortDate(req.start_date || req.startDate)} → {fmtShortDate(req.end_date || req.endDate)}
+                          {fmtShortDate(req.start_date || req.startDate)} →{' '}
+                          {fmtShortDate(req.end_date || req.endDate)}
                         </span>
                         <span className="lt-pending-days">
                           {req.working_days || req.workingDays}j
                         </span>
                       </div>
                       {req.priority_score > 0 && (
-                        <Tooltip content="Priorité" position="bottom"><span className="lt-priority-badge">P{req.priority_score}</span></Tooltip>
+                        <Tooltip content="Priorité" position="bottom">
+                          <span className="lt-priority-badge">P{req.priority_score}</span>
+                        </Tooltip>
                       )}
                     </div>
                   );
                 })}
                 {pendingRequests.length > 5 && (
-                  <Button variant="ghost" className="lt-btn lt-btn-link" onClick={() => setShowValidationPanel(true)}>
+                  <Button
+                    variant="ghost"
+                    className="lt-btn lt-btn-link"
+                    onClick={() => setShowValidationPanel(true)}
+                  >
                     Voir les {pendingRequests.length - 5} autres…
                   </Button>
                 )}
@@ -361,7 +431,11 @@ const LeavesTab = ({ persons = [], currentUser }) => {
 
           {/* Absences du mois */}
           <div className="lt-section">
-            <SectionHeader className="lt-section-header" icon={<Calendar size={16} />} title={`Absences du mois — ${format(new Date(), 'MMMM yyyy', { locale: fr })}`} />
+            <SectionHeader
+              className="lt-section-header"
+              icon={<Calendar size={16} />}
+              title={`Absences du mois — ${format(new Date(), 'MMMM yyyy', { locale: fr })}`}
+            />
             {teamCalendar.length === 0 ? (
               <div className="lt-empty-section">
                 <CheckCircle size={16} />
@@ -369,8 +443,10 @@ const LeavesTab = ({ persons = [], currentUser }) => {
               </div>
             ) : (
               <div className="lt-team-calendar">
-                {teamCalendar.map(req => {
-                  const typeCfg = LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] || LEAVE_TYPE_LABELS.conge_paye;
+                {teamCalendar.map((req) => {
+                  const typeCfg =
+                    LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] ||
+                    LEAVE_TYPE_LABELS.conge_paye;
                   return (
                     <div key={req.id} className="lt-team-row">
                       <div className="lt-team-person">
@@ -380,10 +456,12 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                         {typeCfg.icon} {typeCfg.label}
                       </div>
                       <div className="lt-team-dates">
-                        {fmtShortDate(req.start_date || req.startDate)} → {fmtShortDate(req.end_date || req.endDate)}
+                        {fmtShortDate(req.start_date || req.startDate)} →{' '}
+                        {fmtShortDate(req.end_date || req.endDate)}
                       </div>
                       <div className="lt-team-days">
-                        {req.working_days || req.workingDays} jour{(req.working_days || req.workingDays) > 1 ? 's' : ''}
+                        {req.working_days || req.workingDays} jour
+                        {(req.working_days || req.workingDays) > 1 ? 's' : ''}
                       </div>
                     </div>
                   );
@@ -395,27 +473,40 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           {/* Statistiques */}
           {stats && (
             <div className="lt-section">
-              <SectionHeader className="lt-section-header" icon={<TrendingUp size={16} />} title={`Statistiques ${new Date().getFullYear()}`} />
+              <SectionHeader
+                className="lt-section-header"
+                icon={<TrendingUp size={16} />}
+                title={`Statistiques ${new Date().getFullYear()}`}
+              />
               <div className="lt-stats-grid">
-                {stats.byType && Object.entries(stats.byType).map(([type, count]) => {
-                  const cfg = LEAVE_TYPE_LABELS[type] || { label: type, icon: '📋', color: 'var(--theme-text-gray)' };
-                  return (
-                    <div key={type} className="lt-stat-card">
-                      <span className="lt-stat-icon">{cfg.icon}</span>
-                      <span className="lt-stat-count">{count}</span>
-                      <span className="lt-stat-label">{cfg.label}</span>
-                    </div>
-                  );
-                })}
+                {stats.byType &&
+                  Object.entries(stats.byType).map(([type, count]) => {
+                    const cfg = LEAVE_TYPE_LABELS[type] || {
+                      label: type,
+                      icon: '📋',
+                      color: 'var(--theme-text-gray)',
+                    };
+                    return (
+                      <div key={type} className="lt-stat-card">
+                        <span className="lt-stat-icon">{cfg.icon}</span>
+                        <span className="lt-stat-count">{count}</span>
+                        <span className="lt-stat-label">{cfg.label}</span>
+                      </div>
+                    );
+                  })}
               </div>
               {stats.byMonth && (
                 <div className="lt-stats-months">
                   <div className="lt-month-chart">
                     {Object.entries(stats.byMonth).map(([month, count]) => {
                       const maxCount = Math.max(...Object.values(stats.byMonth), 1);
-                      const height = (count / maxCount * 100);
+                      const height = (count / maxCount) * 100;
                       return (
-                        <div key={month} className="lt-month-bar" title={`${month}: ${count} demande${count > 1 ? 's' : ''}`}>
+                        <div
+                          key={month}
+                          className="lt-month-bar"
+                          title={`${month}: ${count} demande${count > 1 ? 's' : ''}`}
+                        >
                           <div className="lt-month-bar-fill" style={{ height: `${height}%` }} />
                           <span className="lt-month-label">{month.slice(0, 3)}</span>
                         </div>
@@ -430,7 +521,11 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           {/* Soldes de l'équipe */}
           {balances.length > 0 && (
             <div className="lt-section">
-              <SectionHeader className="lt-section-header" icon={<Users size={16} />} title="Soldes de l'équipe" />
+              <SectionHeader
+                className="lt-section-header"
+                icon={<Users size={16} />}
+                title="Soldes de l'équipe"
+              />
               <div className="lt-balances-table">
                 <div className="lt-balances-header">
                   <span>Collaborateur</span>
@@ -442,15 +537,19 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                   const entitled = b.daysEntitled || b.days_entitled || 25;
                   const taken = b.daysTaken || b.days_taken || 0;
                   const remaining = entitled - taken;
-                  const person = persons.find(p => p.id === (b.personId || b.person_id));
+                  const person = persons.find((p) => p.id === (b.personId || b.person_id));
                   return (
                     <div key={i} className={`lt-balances-row ${remaining <= 5 ? 'low' : ''}`}>
                       <span className="lt-balance-name">
-                        {person ? `${person.firstName} ${person.lastName}` : `#${b.personId || b.person_id}`}
+                        {person
+                          ? `${person.firstName} ${person.lastName}`
+                          : `#${b.personId || b.person_id}`}
                       </span>
                       <span className="lt-balance-num">{entitled}</span>
                       <span className="lt-balance-num">{taken}</span>
-                      <span className={`lt-balance-num remaining ${remaining <= 5 ? 'warning' : ''}`}>
+                      <span
+                        className={`lt-balance-num remaining ${remaining <= 5 ? 'warning' : ''}`}
+                      >
                         {remaining}
                       </span>
                     </div>
@@ -467,22 +566,30 @@ const LeavesTab = ({ persons = [], currentUser }) => {
         <div className="lt-requests">
           {/* Filtres */}
           <div className="lt-filters">
-            <Button variant="ghost"               className={`lt-filter-btn ${requestFilter === 'all' ? 'active' : ''}`}
+            <Button
+              variant="ghost"
+              className={`lt-filter-btn ${requestFilter === 'all' ? 'active' : ''}`}
               onClick={() => setRequestFilter('all')}
             >
               Toutes ({adminView === 'all' ? allRequests.length : myRequests.length})
             </Button>
-            <Button variant="ghost"               className={`lt-filter-btn pending ${requestFilter === STATUS.PENDING ? 'active' : ''}`}
+            <Button
+              variant="ghost"
+              className={`lt-filter-btn pending ${requestFilter === STATUS.PENDING ? 'active' : ''}`}
               onClick={() => setRequestFilter('pending')}
             >
               <Clock size={12} /> En attente
             </Button>
-            <Button variant="ghost"               className={`lt-filter-btn accepted ${requestFilter === STATUS.ACCEPTED ? 'active' : ''}`}
+            <Button
+              variant="ghost"
+              className={`lt-filter-btn accepted ${requestFilter === STATUS.ACCEPTED ? 'active' : ''}`}
               onClick={() => setRequestFilter('accepted')}
             >
               <CheckCircle size={12} /> Acceptées
             </Button>
-            <Button variant="ghost"               className={`lt-filter-btn refused ${requestFilter === STATUS.REFUSED ? 'active' : ''}`}
+            <Button
+              variant="ghost"
+              className={`lt-filter-btn refused ${requestFilter === STATUS.REFUSED ? 'active' : ''}`}
               onClick={() => setRequestFilter('refused')}
             >
               <XCircle size={12} /> Refusées
@@ -494,14 +601,20 @@ const LeavesTab = ({ persons = [], currentUser }) => {
             <EmptyState
               icon={<CalendarOff size={32} />}
               title={adminView === 'mine' ? 'Aucune demande de congé' : 'Aucune demande'}
-              action={<Button variant="primary" onClick={() => setShowRequestForm(true)}><Plus size={16} /> Faire une demande</Button>}
+              action={
+                <Button variant="primary" onClick={() => setShowRequestForm(true)}>
+                  <Plus size={16} /> Faire une demande
+                </Button>
+              }
             />
           ) : (
             <div className="lt-request-list">
-              {filteredRequests.map(req => {
+              {filteredRequests.map((req) => {
                 const statusCfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
                 const StatusIcon = statusCfg.icon;
-                const typeCfg = LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] || LEAVE_TYPE_LABELS.conge_paye;
+                const typeCfg =
+                  LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] ||
+                  LEAVE_TYPE_LABELS.conge_paye;
                 const isExpanded = expandedId === req.id;
 
                 return (
@@ -523,7 +636,10 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                       </div>
                       <div className="lt-card-center">
                         <Calendar size={12} />
-                        <span>{fmtDate(req.start_date || req.startDate)} → {fmtDate(req.end_date || req.endDate)}</span>
+                        <span>
+                          {fmtDate(req.start_date || req.startDate)} →{' '}
+                          {fmtDate(req.end_date || req.endDate)}
+                        </span>
                         <span className="lt-card-days">
                           {req.working_days || req.workingDays} j
                         </span>
@@ -538,58 +654,95 @@ const LeavesTab = ({ persons = [], currentUser }) => {
                         </span>
                         <ChevronDown
                           size={14}
-                          style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                          style={{
+                            transform: isExpanded ? 'rotate(180deg)' : 'none',
+                            transition: 'transform 0.2s',
+                          }}
                         />
                       </div>
                     </div>
 
                     {/* Détails */}
                     {isExpanded && (
-                      <div className="lt-card-details" onClick={e => e.stopPropagation()}>
+                      <div className="lt-card-details" onClick={(e) => e.stopPropagation()}>
                         {req.employee_comment && (
-                          <DetailRow className="lt-detail-row" label="Commentaire :" value={req.employee_comment} />
+                          <DetailRow
+                            className="lt-detail-row"
+                            label="Commentaire :"
+                            value={req.employee_comment}
+                          />
                         )}
                         {req.admin_comment && (
-                          <DetailRow className="lt-detail-row" label="Réponse admin :" value={req.admin_comment} />
+                          <DetailRow
+                            className="lt-detail-row"
+                            label="Réponse admin :"
+                            value={req.admin_comment}
+                          />
                         )}
                         {req.decision_date && (
-                          <DetailRow className="lt-detail-row" label="Décidé le :" value={fmtDate(req.decision_date)} />
+                          <DetailRow
+                            className="lt-detail-row"
+                            label="Décidé le :"
+                            value={fmtDate(req.decision_date)}
+                          />
                         )}
                         {(req.modified_start_date || req.modifiedStartDate) && (
                           <DetailRow className="lt-detail-row modified" label="Période modifiée :">
-                            {fmtDate(req.modified_start_date || req.modifiedStartDate)} → {fmtDate(req.modified_end_date || req.modifiedEndDate)}
-                            {' '}({req.modified_working_days || req.modifiedWorkingDays}j)
+                            {fmtDate(req.modified_start_date || req.modifiedStartDate)} →{' '}
+                            {fmtDate(req.modified_end_date || req.modifiedEndDate)} (
+                            {req.modified_working_days || req.modifiedWorkingDays}j)
                           </DetailRow>
                         )}
                         {req.signature_employee && (
                           <DetailRow className="lt-detail-row" label="Signature salarié :">
-                            <span className="lt-sig-ok"><CheckCircle size={12} /> Signé</span>
+                            <span className="lt-sig-ok">
+                              <CheckCircle size={12} /> Signé
+                            </span>
                           </DetailRow>
                         )}
                         {req.signature_admin && (
                           <DetailRow className="lt-detail-row" label="Signature employeur :">
-                            <span className="lt-sig-ok"><CheckCircle size={12} /> Signé</span>
+                            <span className="lt-sig-ok">
+                              <CheckCircle size={12} /> Signé
+                            </span>
                           </DetailRow>
                         )}
                         <div className="lt-card-actions">
-                          <Button variant="ghost" className="lt-action-btn pdf" onClick={() => handleDownloadPdf(req.id)}>
+                          <Button
+                            variant="ghost"
+                            className="lt-action-btn pdf"
+                            onClick={() => handleDownloadPdf(req.id)}
+                          >
                             <Download size={14} /> PDF
                           </Button>
-                          {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) && (
-                            cancellingId === req.id ? (
+                          {(req.status === STATUS.PENDING || req.status === STATUS.ACCEPTED) &&
+                            (cancellingId === req.id ? (
                               <div className="lt-cancel-confirm">
                                 <span>Confirmer ?</span>
-                                <Button variant="ghost" className="lt-action-btn yes" onClick={() => handleCancel(req.id)}>Oui</Button>
-                                <Button variant="ghost" className="lt-action-btn no" onClick={() => setCancellingId(null)}>Non</Button>
+                                <Button
+                                  variant="ghost"
+                                  className="lt-action-btn yes"
+                                  onClick={() => handleCancel(req.id)}
+                                >
+                                  Oui
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  className="lt-action-btn no"
+                                  onClick={() => setCancellingId(null)}
+                                >
+                                  Non
+                                </Button>
                               </div>
                             ) : (
-                              <Button variant="ghost"                                 className="lt-action-btn cancel"
+                              <Button
+                                variant="ghost"
+                                className="lt-action-btn cancel"
                                 onClick={() => setCancellingId(req.id)}
                               >
                                 <Trash2 size={14} /> Annuler
                               </Button>
-                            )
-                          )}
+                            ))}
                         </div>
                       </div>
                     )}
@@ -604,7 +757,11 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       {/* Jours fériés */}
       {holidays.length > 0 && (adminView === 'mine' || !isAdmin) && (
         <div className="lt-section lt-holidays">
-          <SectionHeader className="lt-section-header" icon={<Calendar size={16} />} title={`Jours fériés ${new Date().getFullYear()}`} />
+          <SectionHeader
+            className="lt-section-header"
+            icon={<Calendar size={16} />}
+            title={`Jours fériés ${new Date().getFullYear()}`}
+          />
           <div className="lt-holidays-list">
             {holidays.map((h, i) => (
               <span key={i} className="lt-holiday-chip">
@@ -620,11 +777,14 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       {showRequestForm && (
         <LeaveRequestForm
           person={null}
-          persons={persons.filter(p => p.status === STATUS.ACTIVE)}
+          persons={persons.filter((p) => p.status === STATUS.ACTIVE)}
           isAdmin={isAdmin}
           currentUser={currentUser}
           onClose={() => setShowRequestForm(false)}
-          onCreated={() => { setShowRequestForm(false); loadData(); }}
+          onCreated={() => {
+            setShowRequestForm(false);
+            loadData();
+          }}
         />
       )}
 

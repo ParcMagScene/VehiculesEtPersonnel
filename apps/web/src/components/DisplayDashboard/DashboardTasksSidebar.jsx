@@ -3,51 +3,68 @@
 // Affiche les tâches du jour (filtrable par section) avec couleurs
 // automatiques (type de tâche + type d'affaire) + widget Sonos
 // ═══════════════════════════════════════════════════════════════
+/* eslint-disable no-misleading-character-class */
 
-import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
-  ClipboardList, Clock, Check, Music, Disc, RefreshCw,
-  Truck, Settings, Eye, EyeOff,
-  Save, Briefcase
+  Briefcase,
+  Check,
+  ClipboardList,
+  Clock,
+  Disc,
+  Eye,
+  EyeOff,
+  Music,
+  RefreshCw,
+  Save,
+  Settings,
+  Truck,
 } from 'lucide-react';
-import api from '../../utils/api';
-import { useToast } from '../../hooks/useToast';
-import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Accordion, Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { ACCENT_COLORS, PLANNING_SECTIONS, STATUS_COLORS } from '../../constants/colors';
+import { useToast } from '../../hooks/useToast';
+import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
+import api from '../../utils/api';
 
-// ─── Sections (mêmes que TaskPlanningPanel, sans rdv/evenements) ───
-const SECTIONS = {
-  taches_prioritaires: { label: 'Prioritaires',        emoji: '🔴', color: '#ef4444' },
-  courses:             { label: 'Courses',              emoji: '🚗', color: '#8b5cf6' },
-  prep_locations:      { label: 'Prépa Locations',      emoji: '📦', color: '#f59e0b' },
-  prep_prestations:    { label: 'Prépa Prestations',    emoji: '🎤', color: '#3b82f6' },
-  prep_ventes:         { label: 'Prépa Ventes',         emoji: '🏷️', color: '#10b981' },
-  prep_installations:  { label: 'Prépa Installations',  emoji: '⚙️', color: '#8b5cf6' },
-  prep_tournees:       { label: 'Prépa Tournées',       emoji: '🚐', color: '#ec4899' },
-  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b' },
-  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6' },
-  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981' },
-  montage:             { label: 'Montage',              emoji: '🔩', color: '#0891b2' },
-  demontage:           { label: 'Démontage',            emoji: '🔧', color: '#dc2626' },
-  taches_secondaires:  { label: 'Secondaires',          emoji: '🟡', color: '#f59e0b' },
-  manual:              { label: 'Autres',               emoji: '📋', color: '#64748b' },
-};
+// ─── Sections (depuis colorConstants, labels courts pour sidebar) ───
+const SECTIONS = Object.fromEntries(
+  Object.entries(PLANNING_SECTIONS)
+    .filter(([k]) => k !== 'rdv' && k !== 'evenements' && k !== 'depot')
+    .map(([k, v]) => [
+      k,
+      {
+        ...v,
+        label:
+          k === 'taches_prioritaires'
+            ? 'Prioritaires'
+            : k === 'taches_secondaires'
+              ? 'Secondaires'
+              : k.startsWith('prep_')
+                ? v.label.replace('Préparations ', 'Prépa ')
+                : v.label,
+      },
+    ]),
+);
 
 const SECTION_ALIASES = { enlevement: 'courses', retour: 'courses', recuperation: 'courses' };
 const normalizeSection = (sec) => SECTION_ALIASES[sec] || sec;
 const SECTION_ORDER = Object.keys(SECTIONS);
 
 // Lookup rapide type d'affaire par clé
-const AFFAIRE_TYPE_MAP = Object.fromEntries(AFFAIRE_TYPES.map(t => [t.value, t]));
+const AFFAIRE_TYPE_MAP = Object.fromEntries(AFFAIRE_TYPES.map((t) => [t.value, t]));
 
 // ─── Nettoyage du titre de tâche (retire emojis, label de section, numéro AF) ───
-const SECTION_LABEL_RE = /^(Pr[eé]paration|Chargement|D[eé]part|Enl[eè]vement|Retour|R[eé]cup[eé]ration|Installation|Livraison|Montage|D[eé]montage|Prioritaires?|Secondaires?|Courses?|Divers)\s*[—–\-:]?\s*/i;
-const EMOJI_RE = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u2700-\u27BF]/gu;
+const SECTION_LABEL_RE =
+  /^(Pr(?:e|é)paration|Chargement|D(?:e|é)part|Enl(?:e|è)vement|Retour|R(?:e|é)cup(?:e|é)ration|Installation|Livraison|Montage|D(?:e|é)montage|Prioritaires?|Secondaires?|Courses?|Divers)\s*[—–\-:]?\s*/i;
+// eslint-disable-next-line no-misleading-character-class
+const EMOJI_RE =
+  /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u2700-\u27BF]/gu;
 
 function stripAfNum(text, task) {
-  const affNum = (task.affaire_num || task.affaireNum || '');
+  const affNum = task.affaire_num || task.affaireNum || '';
   if (!affNum) return text;
   const digits = affNum.replace(/^AF/i, '');
   if (!digits) return text;
@@ -64,7 +81,11 @@ function cleanTaskDisplayTitle(task, affaireName) {
     let t = rawTitle.replace(EMOJI_RE, '').trim();
     t = t.replace(SECTION_LABEL_RE, '').trim();
     t = stripAfNum(t, task);
-    t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
+    t = t
+      .replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '')
+      .replace(/^[\s—–-]+/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
     if (t) return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
@@ -73,7 +94,11 @@ function cleanTaskDisplayTitle(task, affaireName) {
     let t = rawGev.replace(EMOJI_RE, '').trim();
     t = t.replace(SECTION_LABEL_RE, '').trim();
     t = stripAfNum(t, task);
-    t = t.replace(/\s*[—–\-]\s*(?=[—–\-]|$)/g, '').replace(/^[\s—–\-]+/, '').replace(/\s{2,}/g, ' ').trim();
+    t = t
+      .replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '')
+      .replace(/^[\s—–-]+/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
     if (t) return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
@@ -119,7 +144,9 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     try {
       const data = await api.getDisplaySidebarConfig();
       setVisibleSections(data.sections); // null = all
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // ─── Chargement des affaires (pour résoudre les types) ───
@@ -127,17 +154,19 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     try {
       const data = await api.getAffaires();
       const map = {};
-      (Array.isArray(data) ? data : []).forEach(a => {
+      (Array.isArray(data) ? data : []).forEach((a) => {
         if (a.numeroAffaire) map[a.numeroAffaire.toUpperCase()] = a;
       });
       setAffairesMap(map);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // ─── Sonos now playing ───
   const loadNowPlaying = useCallback(async () => {
     try {
-      const data = await api.getDisplaySonosNowPlaying();
+      const data = await api.getSonosNowPlaying();
       setNowPlaying(data);
     } catch {
       setNowPlaying({ playing: false, error: 'Erreur de connexion' });
@@ -158,46 +187,55 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   }, [loadTasks, loadNowPlaying, loadSidebarConfig, loadAffaires, refreshKey]);
 
   // ─── Toggle visibilité d'une tâche (afficher/masquer sur l'écran TV) ───
-  const handleToggleVisible = useCallback(async (task) => {
-    try {
-      await api.toggleTaskVisibility(task.id);
-      loadTasks();
-    } catch {
-      toast.error('Erreur toggle visibilité');
-    }
-  }, [loadTasks, toast]);
+  const handleToggleVisible = useCallback(
+    async (task) => {
+      try {
+        await api.toggleTaskVisibility(task.id);
+        loadTasks();
+      } catch {
+        toast.error('Erreur toggle visibilité');
+      }
+    },
+    [loadTasks, toast],
+  );
 
   // ─── Résoudre la couleur d'une tâche ───
-  const getTaskColor = useCallback((task) => {
-    // 1. Si une affaire est liée → couleur du type d'affaire
-    const affNum = (task.affaire_num || task.affaireNum || '').toUpperCase();
-    if (affNum) {
-      const affaire = affairesMap[affNum];
-      if (affaire && affaire.type) {
-        const typeInfo = AFFAIRE_TYPE_MAP[affaire.type];
-        if (typeInfo) return typeInfo.color;
+  const getTaskColor = useCallback(
+    (task) => {
+      // 1. Si une affaire est liée → couleur du type d'affaire
+      const affNum = (task.affaire_num || task.affaireNum || '').toUpperCase();
+      if (affNum) {
+        const affaire = affairesMap[affNum];
+        if (affaire && affaire.type) {
+          const typeInfo = AFFAIRE_TYPE_MAP[affaire.type];
+          if (typeInfo) return typeInfo.color;
+        }
+        // Fallback : essayer depuis event_category
+        if (task.event_category) {
+          const cat = task.event_category.toLowerCase();
+          if (cat === 'prestation') return STATUS_COLORS.info;
+          if (cat === 'location') return STATUS_COLORS.warning;
+          if (cat === 'installation') return STATUS_COLORS.success;
+          if (cat === 'vente') return ACCENT_COLORS.violet;
+          if (cat.includes('tourn')) return ACCENT_COLORS.pink;
+        }
       }
-      // Fallback : essayer depuis event_category
-      if (task.event_category) {
-        const cat = task.event_category.toLowerCase();
-        if (cat === 'prestation') return '#3b82f6';
-        if (cat === 'location') return '#f59e0b';
-        if (cat === 'installation') return '#10b981';
-        if (cat === 'vente') return '#8b5cf6';
-        if (cat.includes('tourn')) return '#ec4899';
-      }
-    }
-    // 2. Couleur de la section
-    const sec = normalizeSection(task.section || 'manual');
-    const sectionInfo = SECTIONS[sec];
-    return sectionInfo ? sectionInfo.color : '#64748b';
-  }, [affairesMap]);
+      // 2. Couleur de la section
+      const sec = normalizeSection(task.section || 'manual');
+      const sectionInfo = SECTIONS[sec];
+      return sectionInfo ? sectionInfo.color : STATUS_COLORS.neutral;
+    },
+    [affairesMap],
+  );
 
-  // ─── Grouper par section ───
+  // ─── Grouper par section (exclure les tâches validées) ───
   const grouped = useMemo(() => {
     const groups = {};
-    SECTION_ORDER.forEach(key => { groups[key] = []; });
-    tasks.forEach(t => {
+    SECTION_ORDER.forEach((key) => {
+      groups[key] = [];
+    });
+    tasks.forEach((t) => {
+      if (t.status === STATUS.DONE) return;
       if (t.sourceType === 'google_event' && !t.section) return;
       const sec = normalizeSection(t.section || 'manual');
       if (!groups[sec]) groups[sec] = [];
@@ -209,35 +247,39 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   // Sections filtrées
   const filteredOrder = useMemo(() => {
     if (!visibleSections) return SECTION_ORDER;
-    return SECTION_ORDER.filter(k => visibleSections.includes(k));
+    return SECTION_ORDER.filter((k) => visibleSections.includes(k));
   }, [visibleSections]);
 
   // Compteur total tâches (dans sections visibles)
   const totalTasks = useMemo(() => {
     let count = 0;
-    filteredOrder.forEach(k => { count += (grouped[k] || []).length; });
+    filteredOrder.forEach((k) => {
+      count += (grouped[k] || []).length;
+    });
     return count;
   }, [grouped, filteredOrder]);
 
   const doneTasks = useMemo(() => {
     let count = 0;
-    filteredOrder.forEach(k => {
-      (grouped[k] || []).forEach(t => { if (t.status === STATUS.DONE) count++; });
+    filteredOrder.forEach((k) => {
+      (grouped[k] || []).forEach((t) => {
+        if (t.status === STATUS.DONE) count++;
+      });
     });
     return count;
   }, [grouped, filteredOrder]);
 
   const toggleSection = (key) => {
-    setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
+    setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   // ─── Filter toggles ───
   const toggleSectionFilter = (key) => {
     setFilterDirty(true);
-    setVisibleSections(prev => {
+    setVisibleSections((prev) => {
       const current = prev || [...SECTION_ORDER];
       if (current.includes(key)) {
-        const next = current.filter(k => k !== key);
+        const next = current.filter((k) => k !== key);
         return next.length === 0 ? [key] : next; // empêcher vide
       }
       return [...current, key];
@@ -253,7 +295,9 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     try {
       await api.saveDisplaySidebarConfig(visibleSections);
       setFilterDirty(false);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [visibleSections]);
 
   const formatTime = (seconds) => {
@@ -264,14 +308,28 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   };
 
   // Résoudre badge affaire sur la tâche
-  const getAffaireBadge = useCallback((task) => {
-    const affNum = (task.affaire_num || task.affaireNum || '').toUpperCase();
-    if (!affNum) return null;
-    const affaire = affairesMap[affNum];
-    const typeInfo = affaire?.type ? AFFAIRE_TYPE_MAP[affaire.type] : null;
-    const name = (affaire?.nom || affaire?.titre || affaire?.client || task.eventClient || '').trim();
-    return { num: affNum, name, color: typeInfo?.color || '#6366f1', icon: typeInfo?.icon || '📋' };
-  }, [affairesMap]);
+  const getAffaireBadge = useCallback(
+    (task) => {
+      const affNum = (task.affaire_num || task.affaireNum || '').toUpperCase();
+      if (!affNum) return null;
+      const affaire = affairesMap[affNum];
+      const typeInfo = affaire?.type ? AFFAIRE_TYPE_MAP[affaire.type] : null;
+      const name = (
+        affaire?.nom ||
+        affaire?.titre ||
+        affaire?.client ||
+        task.eventClient ||
+        ''
+      ).trim();
+      return {
+        num: affNum,
+        name,
+        color: typeInfo?.color || ACCENT_COLORS.indigo,
+        icon: typeInfo?.icon || '📋',
+      };
+    },
+    [affairesMap],
+  );
 
   return (
     <div className="dash-tasks-sidebar" style={style}>
@@ -279,9 +337,13 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       <div className="dash-tasks-header">
         <ClipboardList size={16} />
         <span className="dash-tasks-title">Tâches du jour</span>
-        <span className="dash-tasks-count">{doneTasks}/{totalTasks}</span>
-        <Button variant="ghost"           className={`dash-filter-btn ${showFilterPanel ? 'active' : ''}`}
-          onClick={() => setShowFilterPanel(p => !p)}
+        <span className="dash-tasks-count">
+          {doneTasks}/{totalTasks}
+        </span>
+        <Button
+          variant="ghost"
+          className={`dash-filter-btn ${showFilterPanel ? 'active' : ''}`}
+          onClick={() => setShowFilterPanel((p) => !p)}
           title="Filtrer les sections"
         >
           <Settings size={13} />
@@ -293,21 +355,27 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         <div className="dash-filter-panel">
           <div className="dash-filter-top">
             <span className="dash-filter-label">Sections affichées</span>
-            <Button variant="ghost" className="dash-filter-all" onClick={selectAllSections}>Toutes</Button>
+            <Button variant="ghost" className="dash-filter-all" onClick={selectAllSections}>
+              Toutes
+            </Button>
           </div>
           <div className="dash-filter-grid">
-            {SECTION_ORDER.map(key => {
+            {SECTION_ORDER.map((key) => {
               const sec = SECTIONS[key];
               const isVisible = !visibleSections || visibleSections.includes(key);
               const count = (grouped[key] || []).length;
               return (
-                <Button variant="ghost"                   key={key}
+                <Button
+                  variant="ghost"
+                  key={key}
                   className={`dash-filter-chip ${isVisible ? 'on' : 'off'}`}
                   onClick={() => toggleSectionFilter(key)}
                   style={isVisible ? { borderColor: sec.color, color: sec.color } : {}}
                 >
                   {isVisible ? <Eye size={10} /> : <EyeOff size={10} />}
-                  <span>{sec.emoji} {sec.label}</span>
+                  <span>
+                    {sec.emoji} {sec.label}
+                  </span>
                   {count > 0 && <span className="dash-filter-chip-count">{count}</span>}
                 </Button>
               );
@@ -323,7 +391,11 @@ function DashboardTasksSidebar({ refreshKey, style }) {
 
       {/* ─── Date ─── */}
       <div className="dash-tasks-date">
-        {new Date(today + 'T00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+        {new Date(today + 'T00:00').toLocaleDateString('fr-FR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+        })}
       </div>
 
       {/* ─── Liste par section ─── */}
@@ -333,7 +405,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         ) : totalTasks === 0 ? (
           <div className="dash-tasks-empty">Aucune tâche aujourd'hui</div>
         ) : (
-          filteredOrder.map(key => {
+          filteredOrder.map((key) => {
             const items = grouped[key];
             if (!items || items.length === 0) return null;
             const section = SECTIONS[key];
@@ -341,13 +413,21 @@ function DashboardTasksSidebar({ refreshKey, style }) {
             return (
               <div key={key} className="dash-section">
                 <Accordion
-                  title={<><span className="dash-section-emoji">{section.emoji}</span> <span className="dash-section-label" style={{ color: section.color }}>{section.label}</span> <span className="dash-section-count">{items.length}</span></>}
+                  title={
+                    <>
+                      <span className="dash-section-emoji">{section.emoji}</span>{' '}
+                      <span className="dash-section-label" style={{ color: section.color }}>
+                        {section.label}
+                      </span>{' '}
+                      <span className="dash-section-count">{items.length}</span>
+                    </>
+                  }
                   open={!collapsed}
                   onToggle={() => toggleSection(key)}
                   className="dash-section-accordion"
                 >
                   <div className="dash-section-items">
-                    {items.map(task => {
+                    {items.map((task) => {
                       const isDone = task.status === STATUS.DONE;
                       const isProgress = task.status === 'in_progress';
                       const isHidden = task.visible === 0;
@@ -359,13 +439,17 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                           className={`dash-task-item ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''} ${isHidden ? 'hidden-task' : ''}`}
                           style={{ borderLeftColor: taskColor }}
                         >
-                          <Button variant="ghost"                             className={`dash-task-visible-btn ${isHidden ? 'off' : ''}`}
+                          <Button
+                            variant="ghost"
+                            className={`dash-task-visible-btn ${isHidden ? 'off' : ''}`}
                             onClick={() => handleToggleVisible(task)}
-                            title={isHidden ? 'Afficher sur l\'écran TV' : 'Masquer de l\'écran TV'}
+                            title={isHidden ? "Afficher sur l'écran TV" : "Masquer de l'écran TV"}
                           >
                             {isHidden ? <EyeOff size={11} /> : <Eye size={11} />}
                           </Button>
-                          <span className={`dash-task-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}>
+                          <span
+                            className={`dash-task-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+                          >
                             {isDone ? <Check size={10} /> : isProgress ? <Clock size={10} /> : null}
                           </span>
                           <div className="dash-task-info">
@@ -373,13 +457,19 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                               {affBadge && (
                                 <span
                                   className="dash-task-affaire"
-                                  style={{ background: `${affBadge.color}14`, color: affBadge.color, borderColor: `${affBadge.color}40` }}
+                                  style={{
+                                    background: `${affBadge.color}14`,
+                                    color: affBadge.color,
+                                    borderColor: `${affBadge.color}40`,
+                                  }}
                                   title={affBadge.num}
                                 >
                                   <Briefcase size={8} /> {affBadge.name || affBadge.num}
                                 </span>
                               )}
-                              <span className="dash-task-name">{cleanTaskDisplayTitle(task, affBadge?.name)}</span>
+                              <span className="dash-task-name">
+                                {cleanTaskDisplayTitle(task, affBadge?.name)}
+                              </span>
                             </div>
                             <div className="dash-task-meta">
                               {(task.time || task.period) && (
@@ -387,16 +477,18 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                                   <Clock size={9} />
                                   {task.time
                                     ? `${task.time}${task.endTime ? ` → ${task.endTime}` : ''}`
-                                    : ({ AM: 'Matin', PM: 'Après-midi', JOURNEE: 'Journée' }[task.period] || task.period)}
+                                    : { AM: 'Matin', PM: 'Après-midi', JOURNEE: 'Journée' }[
+                                        task.period
+                                      ] || task.period}
                                 </span>
                               )}
                               {task.reservation_vehicle_name && (
-                                <span className="dash-task-vehicle"><Truck size={9} /> {task.reservation_vehicle_name}</span>
+                                <span className="dash-task-vehicle">
+                                  <Truck size={9} /> {task.reservation_vehicle_name}
+                                </span>
                               )}
                             </div>
-                            {task.notes && (
-                              <div className="dash-task-notes">{task.notes}</div>
-                            )}
+                            {task.notes && <div className="dash-task-notes">{task.notes}</div>}
                           </div>
                         </div>
                       );
@@ -414,18 +506,31 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         <div className="dash-sonos-header">
           <Music size={14} />
           <span>Sonos</span>
-          <Tooltip content="Rafraîchir"><Button variant="ghost" className="dash-sonos-refresh" onClick={loadNowPlaying}>
-            <RefreshCw size={10} />
-          </Button></Tooltip>
+          <Tooltip content="Rafraîchir">
+            <Button variant="ghost" className="dash-sonos-refresh" onClick={loadNowPlaying}>
+              <RefreshCw size={10} />
+            </Button>
+          </Tooltip>
         </div>
         {nowPlaying && nowPlaying.title ? (
           <div className={`dash-sonos-playing ${nowPlaying.playing ? '' : 'paused'}`}>
             {nowPlaying.albumArtURI && (
-              <img src={nowPlaying.albumArtURI} alt="" loading="lazy" className="dash-sonos-art" />
+              <img
+                src={nowPlaying.albumArtURI}
+                alt=""
+                loading="lazy"
+                className="dash-sonos-art"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             )}
             <div className="dash-sonos-info">
               <div className="dash-sonos-title">{nowPlaying.title}</div>
-              <div className="dash-sonos-artist">{nowPlaying.artist}{nowPlaying.playing ? '' : ' — en pause'}</div>
+              <div className="dash-sonos-artist">
+                {nowPlaying.artist}
+                {nowPlaying.playing ? '' : ' — en pause'}
+              </div>
               {nowPlaying.duration > 0 && (
                 <div className="dash-sonos-time">
                   {formatTime(nowPlaying.position)} / {formatTime(nowPlaying.duration)}

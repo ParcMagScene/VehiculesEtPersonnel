@@ -15,9 +15,9 @@
   align-items: center;
   gap: var(--space-2-5);
   padding: var(--space-2-5) var(--space-4);
-  background: var(--theme-bg-card);
-  border-bottom: 1px solid var(--theme-border-light);
-  color: var(--theme-text-muted);
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
 }
 
 .mloc-search-input {
@@ -25,12 +25,12 @@
   border: none;
   background: transparent;
   font-size: 0.95rem;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
   outline: none;
 }
 
 .mloc-search-input::placeholder {
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
 }
 
 .mloc-search-clear {
@@ -40,17 +40,17 @@
   width: 28px;
   height: 28px;
   border: none;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   border-radius: var(--radius-full);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 /* ── Résultats de recherche ── */
 .mloc-search-results {
   padding: var(--space-3) var(--space-4);
-  background: var(--theme-bg-card);
-  border-bottom: 1px solid var(--theme-border);
+  background: var(--surface-primary);
+  border-bottom: 1px solid var(--border-default);
   max-height: 50vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -59,7 +59,7 @@
 .mloc-search-count {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: var(--space-2-5);
@@ -76,17 +76,17 @@
   padding: var(--space-2) var(--space-2-5);
   border-left: 3px solid;
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
   cursor: pointer;
 }
 
 .mloc-search-zone-count {
   margin-left: auto;
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
   padding: 1px 7px;
   border-radius: var(--radius-md-lg);
   font-size: var(--font-xs);
@@ -103,8 +103,8 @@
   gap: var(--space-2);
   padding: var(--space-1-5) var(--space-2);
   font-size: 0.82rem;
-  color: var(--theme-text-body);
-  border-bottom: 1px solid var(--theme-border-light);
+  color: var(--text-body);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .mloc-search-item:last-child {
@@ -113,7 +113,7 @@
 
 .mloc-search-more {
   font-size: 0.78rem;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   padding: var(--space-1) var(--space-2);
   font-style: italic;
 }
@@ -121,8 +121,8 @@
 .mloc-uid {
   font-size: 0.68rem;
   font-family: 'SF Mono', 'Monaco', monospace;
-  background: var(--theme-bg-tertiary);
-  color: var(--theme-text-secondary);
+  background: var(--surface-tertiary);
+  color: var(--text-muted);
   padding: 1px 5px;
   border-radius: var(--radius-xs);
 }
@@ -133,7 +133,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 .mloc-stat {
@@ -142,7 +142,7 @@
   gap: var(--space-1-5);
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .mloc-stat.warning {
@@ -153,7 +153,7 @@
 .mloc-view-toggle {
   margin-left: auto;
   display: flex;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
@@ -165,14 +165,14 @@
   width: 36px;
   height: 32px;
   border: none;
-  background: var(--theme-bg-card);
-  color: var(--theme-text-muted);
+  background: var(--surface-primary);
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .mloc-view-toggle button.active {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 
 /* ── Sélecteur d'étage ── */
@@ -185,21 +185,21 @@
 .mloc-floor-btn {
   flex: 1;
   padding: var(--space-2);
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md-lg);
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   text-align: center;
   transition: all 0.2s;
 }
 
 .mloc-floor-btn.active {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
-  border-color: var(--theme-primary);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
+  border-color: var(--interactive-primary);
 }
 
 /* ── Carte SVG ── */
@@ -208,7 +208,7 @@
   flex: 1;
   min-height: 250px;
   overflow: hidden;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   touch-action: none;
 }
 
@@ -232,10 +232,10 @@
 .mloc-zoom-controls button {
   width: 36px;
   height: 36px;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md-lg);
-  background: var(--theme-bg-card);
-  color: var(--theme-text-secondary);
+  background: var(--surface-primary);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -244,7 +244,7 @@
 }
 
 .mloc-zoom-controls button:active {
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
 }
 
 /* ── Liste des zones ── */
@@ -263,7 +263,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) 14px;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.15s;
@@ -275,8 +275,8 @@
 }
 
 .mloc-zone-item.selected {
-  ring: 2px solid var(--theme-primary);
-  box-shadow: 0 0 0 2px var(--theme-primary);
+  ring: 2px solid var(--interactive-primary);
+  box-shadow: 0 0 0 2px var(--interactive-primary);
 }
 
 .mloc-zone-color {
@@ -294,19 +294,19 @@
 .mloc-zone-name {
   font-size: 0.92rem;
   font-weight: 600;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .mloc-zone-floor {
   font-size: var(--font-sm);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   margin-top: 1px;
 }
 
 .mloc-zone-count {
   font-size: var(--font-lg);
   font-weight: 700;
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   min-width: 30px;
   text-align: center;
 }
@@ -318,7 +318,7 @@
   left: 0;
   right: 0;
   max-height: 55vh;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
   box-shadow: 0 -4px 24px var(--shadow-xl);
   z-index: var(--z-dropdown);
@@ -329,8 +329,12 @@
 }
 
 @keyframes panel-slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .mloc-panel-header {
@@ -338,19 +342,19 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-5) var(--space-3);
-  border-bottom: 1px solid var(--theme-border-light);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .mloc-panel-header h3 {
   margin: 0;
   font-size: var(--font-md);
   font-weight: 700;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .mloc-panel-count {
   font-size: 0.78rem;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
 }
 
 .mloc-panel-header button {
@@ -360,9 +364,9 @@
   width: 36px;
   height: 36px;
   border: none;
-  background: var(--theme-bg-secondary);
+  background: var(--surface-secondary);
   border-radius: var(--radius-full);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   cursor: pointer;
 }
 
@@ -377,7 +381,7 @@
 .mloc-panel-empty {
   padding: var(--space-6);
   text-align: center;
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   font-size: 0.88rem;
 }
 
@@ -386,8 +390,8 @@
   align-items: center;
   gap: var(--space-2-5);
   padding: var(--space-2-5) 0;
-  border-bottom: 1px solid var(--theme-border-light);
-  color: var(--theme-text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
 }
 
 .mloc-equipment-item:last-child {
@@ -402,7 +406,7 @@
 .mloc-eq-name {
   font-size: 0.88rem;
   font-weight: 600;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -415,7 +419,7 @@
   flex-wrap: wrap;
   margin-top: var(--space-0-5);
   font-size: var(--font-xs);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
 }
 
 .mloc-eq-status {
@@ -424,8 +428,8 @@
   font-size: 0.7rem;
   font-weight: 600;
   flex-shrink: 0;
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-secondary);
+  background: var(--surface-secondary);
+  color: var(--text-muted);
 }
 
 .mloc-eq-status.available {

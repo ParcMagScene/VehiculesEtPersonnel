@@ -22,27 +22,27 @@
   --theme-primary-light: #8b5cf6;
   --theme-accent: #a855f7;
   --theme-indigo: #6366f1;
-  
+
   /* ─── Dégradés ─── */
   --theme-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --theme-gradient-reverse: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
   --theme-gradient-subtle: linear-gradient(135deg, #eef2ff 0%, #faf5ff 100%);
   --theme-gradient-alt: linear-gradient(135deg, #6366f1, #8b5cf6);
-  
+
   /* ─── Danger (pour modals d'alerte) ─── */
   --theme-danger: #ef4444;
   --theme-danger-dark: #dc2626;
   --theme-danger-gradient: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  
+
   /* ─── Succès ─── */
   --theme-success: #22c55e;
   --theme-success-dark: #16a34a;
-  
+
   /* ─── Texte ─── */
   --theme-text-primary: #1e293b;
   --theme-text-secondary: #64748b;
-  --theme-text-muted: #94a3b8;
-  
+  --theme-text-muted: #657686; /* WCAG AA 4.68:1 on white */
+
   /* ─── Texte — étendus ─── */
   --theme-text-heading: #111827;
   --theme-text-dark: #334155;
@@ -50,17 +50,17 @@
   --theme-text-subtle: #475569;
   --theme-text-gray: #6b7280;
   --theme-text-inverse: #ffffff;
-  
+
   /* ─── Fonds — étendus ─── */
   --theme-bg-secondary: #f9fafb;
   --theme-bg-tertiary: #f3f4f6;
   --theme-bg-dark: #1f2937;
   --theme-bg-darker: #111827;
-  
+
   /* ─── Bordures — étendues ─── */
   --theme-border-medium: #e5e7eb;
   --theme-border-muted: #d1d5db;
-  
+
   /* ─── Info / Bleu ─── */
   --theme-info: #3b82f6;
   --theme-info-dark: #2563eb;
@@ -69,7 +69,7 @@
   --theme-info-border: #bfdbfe;
   --theme-info-text: #1d4ed8;
   --theme-info-text-alt: #4338ca;
-  
+
   /* ─── Warning / Orange ─── */
   --theme-warning: #f59e0b;
   --theme-warning-dark: #d97706;
@@ -77,7 +77,7 @@
   --theme-warning-text: #92400e;
   --theme-warning-text-alt: #78350f;
   --theme-warning-border: #fed7aa;
-  
+
   /* ─── Succès — étendus ─── */
   --theme-success-alt: #10b981;
   --theme-success-bg: #f0fdf4;
@@ -85,7 +85,7 @@
   --theme-success-border: #86efac;
   --theme-success-text: #065f46;
   --theme-success-text-alt: #166534;
-  
+
   /* ─── Danger — étendus ─── */
   --theme-danger-bg: #fef2f2;
   --theme-danger-border: #fca5a5;
@@ -102,12 +102,12 @@
   --theme-purple-border: #d8b4fe;
   --theme-purple-accent: #c4b5fd;
   --theme-purple-text: #6d28d9;
-  
+
   /* ─── Bordures ─── */
   --theme-border: #e2e8f0;
   --theme-border-light: #f1f5f9;
   --theme-border-focus: #8b5cf6;
-  
+
   /* ─── Fonds ─── */
   --theme-bg-page: #f8fafc;
   --theme-bg-card: white;
@@ -116,16 +116,16 @@
   --theme-bg-hover: #eef2ff;
   --theme-bg-indigo-light: #e0e7ff;
   --theme-bg-indigo-lighter: #c7d2fe;
-  
+
   /* ─── Overlay ─── */
   --theme-overlay: rgba(15, 23, 42, 0.5);
   --theme-overlay-dark: rgba(0, 0, 0, 0.6);
-  
+
   /* ─── Modal header (texte blanc sur gradient) ─── */
   --modal-header-bg: var(--theme-gradient);
   --modal-header-color: white;
   --modal-header-border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  
+
   /* ─── Close button (semi-transparent sur header gradient) ─── */
   --close-btn-bg: rgba(255, 255, 255, 0.15);
   --close-btn-border: rgba(255, 255, 255, 0.25);
@@ -134,7 +134,7 @@
   --close-btn-hover-border: rgba(255, 255, 255, 0.4);
   --close-btn-radius: 8px;
   --close-btn-size: 36px;
-  
+
   /* ─── Boutons — Standard global ─── */
   --btn-radius: 8px;
   --btn-font-size: var(--font-base);
@@ -142,20 +142,20 @@
   --btn-padding: 10px 20px;
   --btn-height: 40px;
   --btn-transition: all 0.2s ease;
-  
+
   /* ─── Bouton primaire (gradient) ─── */
   --btn-primary-bg: var(--theme-gradient);
   --btn-primary-color: white;
   --btn-primary-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
   --btn-primary-hover-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-  
+
   /* ─── Bouton secondaire (annuler) ─── */
   --btn-secondary-bg: #f3f4f6;
   --btn-secondary-color: #374151;
   --btn-secondary-border: 1px solid #e5e7eb;
   --btn-secondary-hover-bg: #e5e7eb;
   --btn-secondary-hover-border-color: #d1d5db;
-  
+
   /* ─── Bouton danger (supprimer/annuler intervention) ─── */
   --btn-danger-bg: #fee2e2;
   --btn-danger-color: #dc2626;
@@ -163,29 +163,29 @@
   --btn-danger-hover-bg: #fecaca;
   --btn-danger-filled-bg: #ef4444;
   --btn-danger-filled-color: white;
-  
+
   /* ─── Bouton succès (terminé) ─── */
   --btn-success-bg: #d1fae5;
   --btn-success-color: #059669;
   --btn-success-border: 2px solid #86efac;
   --btn-success-hover-bg: #a7f3d0;
   --btn-success-gradient: linear-gradient(135deg, #10b981, #059669);
-  
+
   /* ─── Bouton warning (reporter) ─── */
   --btn-warning-bg: #fef3c7;
   --btn-warning-color: #d97706;
   --btn-warning-border: 2px solid #fde68a;
   --btn-warning-hover-bg: #fde68a;
-  
+
   /* ─── Ombres ─── */
   --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.25);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-hover: 0 4px 16px rgba(102, 126, 234, 0.2);
-  
+
   /* ─── Focus ─── */
   --focus-ring: 0 0 0 3px rgba(102, 126, 234, 0.15);
   --focus-border: var(--theme-border-focus);
-  
+
   /* ─── Transitions ─── */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.2s ease;
@@ -197,7 +197,7 @@
      En dark mode, les --theme-* sont redéfinies → les alias
      prennent automatiquement les bonnes valeurs.
      ────────────────────────────────────────── */
-  
+
   /* Alias court → --theme-* (utilisés dans le codebase) */
   --bg-primary: var(--theme-bg-card);
   --bg-secondary: var(--theme-bg-secondary);
@@ -417,7 +417,7 @@
    THÈME SOMBRE (Dark Mode)
    Activé via data-theme="dark" sur <html>
    ═══════════════════════════════════════════════════════ */
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* ─── Couleurs principales ─── */
   --theme-primary: #818cf8;
   --theme-secondary: #a78bfa;
@@ -441,13 +441,13 @@
 
   /* ─── [AUDIT] Table dark ─── */
   --table-row-stripe: var(--theme-bg-tertiary);
-  
+
   /* ─── Dégradés ─── */
   --theme-gradient: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
   --theme-gradient-reverse: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   --theme-gradient-subtle: linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%);
   --theme-gradient-alt: linear-gradient(135deg, #818cf8, #a78bfa);
-  
+
   /* ─── Danger ─── */
   --theme-danger: #f87171;
   --theme-danger-dark: #ef4444;
@@ -455,7 +455,7 @@
   --theme-danger-border: #991b1b;
   --theme-danger-text: #fca5a5;
   --theme-danger-text-alt: #f87171;
-  
+
   /* ─── Orange ─── */
   --theme-orange-bg: #431407;
   --theme-orange-text: #fdba74;
@@ -466,7 +466,7 @@
   --theme-purple-border: #581c87;
   --theme-purple-accent: #7c3aed;
   --theme-purple-text: #a78bfa;
-  
+
   /* ─── Succès ─── */
   --theme-success: #4ade80;
   --theme-success-dark: #22c55e;
@@ -476,25 +476,25 @@
   --theme-success-border: #166534;
   --theme-success-text: #86efac;
   --theme-success-text-alt: #4ade80;
-  
+
   /* ─── Texte ─── */
   --theme-text-primary: #f1f5f9;
   --theme-text-secondary: #94a3b8;
-  --theme-text-muted: #64748b;
+  --theme-text-muted: #8293a7; /* WCAG AA: 4.65:1 on bg-card, 5.68:1 on bg-page */
   --theme-text-heading: #f8fafc;
   --theme-text-dark: #e2e8f0;
   --theme-text-body: #cbd5e1;
   --theme-text-subtle: #94a3b8;
   --theme-text-gray: #9ca3af;
   --theme-text-inverse: #0f172a;
-  
+
   /* ─── Bordures ─── */
   --theme-border: #334155;
   --theme-border-light: #1e293b;
   --theme-border-medium: #374151;
   --theme-border-muted: #4b5563;
   --theme-border-focus: #a78bfa;
-  
+
   /* ─── Fonds ─── */
   --theme-bg-page: #0f172a;
   --theme-bg-card: #1e293b;
@@ -507,7 +507,7 @@
   --theme-bg-indigo-light: #1e1b4b;
   --theme-bg-indigo-lighter: #312e81;
   --theme-bg-card-translucent: rgba(30, 41, 59, 0.95);
-  
+
   /* ─── Info / Bleu ─── */
   --theme-info: #60a5fa;
   --theme-info-dark: #3b82f6;
@@ -516,7 +516,7 @@
   --theme-info-border: #1e40af;
   --theme-info-text: #93c5fd;
   --theme-info-text-alt: #60a5fa;
-  
+
   /* ─── Warning / Orange ─── */
   --theme-warning: #fbbf24;
   --theme-warning-dark: #f59e0b;
@@ -524,41 +524,41 @@
   --theme-warning-text: #fde68a;
   --theme-warning-text-alt: #fbbf24;
   --theme-warning-border: #92400e;
-  
+
   /* ─── Overlay ─── */
   --theme-overlay: rgba(0, 0, 0, 0.7);
   --theme-overlay-dark: rgba(0, 0, 0, 0.8);
-  
+
   /* ─── Boutons secondaire en dark ─── */
   --btn-secondary-bg: #334155;
   --btn-secondary-color: #e2e8f0;
   --btn-secondary-border: 1px solid #475569;
   --btn-secondary-hover-bg: #475569;
   --btn-secondary-hover-border-color: #64748b;
-  
+
   /* ─── Boutons danger en dark ─── */
   --btn-danger-bg: #451a1a;
   --btn-danger-color: #f87171;
   --btn-danger-border: 2px solid #991b1b;
   --btn-danger-hover-bg: #7f1d1d;
-  
+
   /* ─── Boutons succès en dark ─── */
   --btn-success-bg: #14261a;
   --btn-success-color: #4ade80;
   --btn-success-border: 2px solid #166534;
   --btn-success-hover-bg: #166534;
-  
+
   /* ─── Boutons warning en dark ─── */
   --btn-warning-bg: #451a03;
   --btn-warning-color: #fbbf24;
   --btn-warning-border: 2px solid #92400e;
   --btn-warning-hover-bg: #78350f;
-  
+
   /* ─── Ombres ─── */
   --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.5);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-hover: 0 4px 16px rgba(99, 102, 241, 0.3);
-  
+
   /* ─── Focus ─── */
   --focus-ring: 0 0 0 3px rgba(129, 140, 248, 0.25);
 
@@ -592,7 +592,7 @@
   --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.2);
   --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-toast: 0 8px 30px rgba(0, 0, 0, 0.5);
-  
+
   color-scheme: dark;
 }
 
@@ -678,8 +678,14 @@
 }
 
 @keyframes themeModalSlideUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Bouton d'action primaire */
@@ -890,8 +896,6 @@
   height: 38px;
 }
 
-
-
 /* ═══════════════════════════════════════════════════════
    TOOLTIP UNIFIÉ
    ═══════════════════════════════════════════════════════ */
@@ -951,8 +955,14 @@
 }
 
 @keyframes tooltipFadeIn {
-  from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); }
-  to { opacity: 1; transform: translate(-50%, -100%); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
+  }
 }
 
 /* ─── Tooltip data-attribute (PersonnelPanel slots) ─── */
@@ -978,7 +988,9 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.15s ease, visibility 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
 }
 
 [data-emag-tooltip]::after {
@@ -993,7 +1005,9 @@
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.15s ease, visibility 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
 }
 
 [data-emag-tooltip]:hover::before,
@@ -1001,8 +1015,6 @@
   opacity: 1;
   visibility: visible;
 }
-
-
 
 /* ═══════════════════════════════════════════════════════════════
    Animations centralisées
@@ -1017,42 +1029,81 @@
 /* --- Keyframes réutilisables (centralisées ici, retirées des fichiers composants) --- */
 
 @keyframes overlayIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes overlayOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalSlideUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 0.8; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1074,10 +1125,11 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.3s ease;
+  transition:
+    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
   opacity: 0;
   border-radius: var(--radius-md-lg) 0 0 var(--radius-md-lg);
 }
@@ -1090,8 +1142,9 @@
 .stock-slide-panel > * {
   transform: translateX(60px);
   opacity: 0;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.25s ease;
+  transition:
+    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease;
 }
 
 .shared-slide-panel.open,
@@ -1113,8 +1166,9 @@
 .stock-slide-panel.open > * {
   transform: translateX(0);
   opacity: 1;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.35s ease 0.05s;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.35s ease 0.05s;
 }
 
 .shared-slide-panel.closing,
@@ -1137,8 +1191,9 @@
 .stock-slide-panel.closing > * {
   transform: translateX(60px);
   opacity: 0;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.2s ease;
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease;
 }
 
 /* ─── Pattern B: Close Button ─── */

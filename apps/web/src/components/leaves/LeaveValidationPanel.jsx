@@ -4,22 +4,51 @@
 // Workflow : consultation → décision → signature → notification
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  X, Calendar, Clock, CheckCircle, XCircle, AlertTriangle,
-  FileText, Download, ChevronDown, User,
-  Shield, Pen, MessageSquare, RefreshCw, BarChart3,
-  Eye, Send, ArrowRight,
-} from 'lucide-react';
+import './LeaveValidationPanel.css';
+
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
-import { STATUS_CONFIG, LEAVE_TYPE_LABELS } from './leaveConstants';
-import './LeaveValidationPanel.css';
-import { Avatar, Button, DetailRow, EmptyState, InlineAlert, Tab, TabList, TabPanel, Tabs, Textarea } from '@/design-system';
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Calendar,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  Download,
+  Eye,
+  FileText,
+  MessageSquare,
+  Pen,
+  RefreshCw,
+  Send,
+  Shield,
+  User,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import {
+  Avatar,
+  Button,
+  DetailRow,
+  EmptyState,
+  InlineAlert,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+  Textarea,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
+import api from '../../utils/api';
+import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
+import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 
 // ═══════════════════════════════════════
 // COMPOSANT SIGNATURE CANVAS (admin)
@@ -51,7 +80,11 @@ const AdminSignaturePad = ({ onSign, _value }) => {
     return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
   };
 
-  const startDraw = (e) => { e.preventDefault(); isDrawing.current = true; lastPoint.current = getPos(e); };
+  const startDraw = (e) => {
+    e.preventDefault();
+    isDrawing.current = true;
+    lastPoint.current = getPos(e);
+  };
   const draw = (e) => {
     if (!isDrawing.current) return;
     e.preventDefault();
@@ -77,14 +110,23 @@ const AdminSignaturePad = ({ onSign, _value }) => {
 
   return (
     <div className="lvp-sig-pad">
-      <div className="lvp-sig-label"><Pen size={12} /> Signature employeur</div>
+      <div className="lvp-sig-label">
+        <Pen size={12} /> Signature employeur
+      </div>
       <canvas
         ref={canvasRef}
         className="lvp-sig-canvas"
-        onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
-        onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
+        onMouseDown={startDraw}
+        onMouseMove={draw}
+        onMouseUp={endDraw}
+        onMouseLeave={endDraw}
+        onTouchStart={startDraw}
+        onTouchMove={draw}
+        onTouchEnd={endDraw}
       />
-      <Button variant="ghost" type="button" className="lvp-sig-clear" onClick={clear}>Effacer</Button>
+      <Button variant="ghost" type="button" className="lvp-sig-clear" onClick={clear}>
+        Effacer
+      </Button>
     </div>
   );
 };
@@ -131,13 +173,18 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
     }
   }, [tab]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Formatter date
   const fmtDate = (d) => {
     if (!d) return '—';
-    try { return format(parseISO(d), 'd MMM yyyy', { locale: fr }); }
-    catch { return d; }
+    try {
+      return format(parseISO(d), 'd MMM yyyy', { locale: fr });
+    } catch {
+      return d;
+    }
   };
 
   // Prendre une décision
@@ -158,7 +205,8 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
     setProcessing(true);
     setError('');
     try {
-      const status = action === 'accept' ? 'accepted' : action === 'refuse' ? 'refused' : 'modified';
+      const status =
+        action === 'accept' ? 'accepted' : action === 'refuse' ? 'refused' : 'modified';
       await api.makeLeaveDecision(id, {
         status,
         adminComment: adminComment || undefined,
@@ -192,33 +240,39 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
       const data = await api.getLeavePdf(id);
       if (data.html) {
         const win = openSanitizedPrintWindow(data.html);
-        if (!win) { setError('Popup bloquée'); return; }
+        if (!win) {
+          setError('Popup bloquée');
+          return;
+        }
         setTimeout(() => win.print(), 500);
       }
-    } catch (err) { setError('Erreur génération PDF'); }
+    } catch (err) {
+      setError('Erreur génération PDF');
+    }
   };
 
   return (
-    <div className="lvp-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="lvp-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Validation des congés">
-        {/* En-tête */}
-        <div className="lvp-header">
-          <div className="lvp-header-title">
-            <Shield size={20} />
-            <h2>Validation des congés</h2>
-          </div>
-          <div className="lvp-header-actions">
-            <Button variant="ghost" className="lvp-btn-refresh" onClick={loadData} aria-label="Actualiser"><RefreshCw size={16} /></Button>
-            <Button variant="ghost" className="lvp-close-btn" onClick={onClose} aria-label="Fermer"><X size={20} /></Button>
-          </div>
-        </div>
-
+    <Modal open={true} onClose={onClose} size="lg" className="lvp-panel">
+      <ModalHeader icon={<Shield size={20} />} onClose={onClose}>
+        Validation des congés
+        <Button
+          variant="ghost"
+          className="lvp-btn-refresh"
+          onClick={loadData}
+          aria-label="Actualiser"
+        >
+          <RefreshCw size={16} />
+        </Button>
+      </ModalHeader>
+      <ModalBody>
         {/* Statistiques */}
         {stats && (
           <div className="lvp-stats-bar">
             <div className="lvp-stat-item">
               <BarChart3 size={14} />
-              <span>{stats.total} demandes en {new Date().getFullYear()}</span>
+              <span>
+                {stats.total} demandes en {new Date().getFullYear()}
+              </span>
             </div>
             <div className="lvp-stat-item pending">
               <Clock size={14} />
@@ -237,331 +291,485 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
 
         {/* Onglets */}
         <Tabs value={tab} onChange={setTab}>
-        <TabList className="lvp-tabs">
-          <Tab value="pending" icon={<Clock size={14} />} badge={stats?.pending > 0 ? stats.pending : undefined}>
-            En attente
-          </Tab>
-          <Tab value="all" icon={<FileText size={14} />}>
-            Toutes
-          </Tab>
-          <Tab value="conflicts" icon={<AlertTriangle size={14} />} badge={conflicts.length > 0 ? conflicts.length : undefined}>
-            Conflits
-          </Tab>
-        </TabList>
+          <TabList className="lvp-tabs">
+            <Tab
+              value="pending"
+              icon={<Clock size={14} />}
+              badge={stats?.pending > 0 ? stats.pending : undefined}
+            >
+              En attente
+            </Tab>
+            <Tab value="all" icon={<FileText size={14} />}>
+              Toutes
+            </Tab>
+            <Tab
+              value="conflicts"
+              icon={<AlertTriangle size={14} />}
+              badge={conflicts.length > 0 ? conflicts.length : undefined}
+            >
+              Conflits
+            </Tab>
+          </TabList>
 
-        {/* Erreur */}
-        {error && (
-          <InlineAlert dismissible onDismiss={() => setError('')}>{error}</InlineAlert>
-        )}
-
-        {/* Contenu */}
-        <div className="lvp-content">
-          {loading ? (
-            <div className="lvp-loading"><Clock size={20} /> Chargement...</div>
-          ) : (
-          <>
-          <TabPanel value="conflicts">
-            {conflicts.length === 0 ? (
-              <EmptyState icon={<CheckCircle size={32} />} title="Aucun conflit détecté" />
-            ) : (
-              conflicts.map((c, idx) => (
-                <div key={idx} className="lvp-conflict-card">
-                  <div className="lvp-conflict-header">
-                    <AlertTriangle size={14} />
-                    <span>Chevauchement détecté</span>
-                    <span className="lvp-conflict-overlap">
-                      {fmtDate(c.overlapStart)} → {fmtDate(c.overlapEnd)}
-                    </span>
-                  </div>
-                  <div className="lvp-conflict-requests">
-                    <div className="lvp-conflict-req">
-                      <User size={12} />
-                      <strong>{c.request1.first_name} {c.request1.last_name}</strong>
-                      <span>{fmtDate(c.request1.start_date)} → {fmtDate(c.request1.end_date)}</span>
-                      <span className="lvp-conflict-score">Priorité: {c.request1.priority_score}</span>
-                    </div>
-                    <div className="lvp-conflict-vs">VS</div>
-                    <div className="lvp-conflict-req">
-                      <User size={12} />
-                      <strong>{c.request2.first_name} {c.request2.last_name}</strong>
-                      <span>{fmtDate(c.request2.start_date)} → {fmtDate(c.request2.end_date)}</span>
-                      <span className="lvp-conflict-score">Priorité: {c.request2.priority_score}</span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </TabPanel>
-          <TabPanel value="pending">
-            {requests.length === 0 ? (
-              <EmptyState icon={<CheckCircle size={32} />} title="Aucune demande en attente" />
-            ) : (
-              requests.map(req => {
-                const statusCfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
-                const StatusIcon = statusCfg.icon;
-                const typeCfg = LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] || LEAVE_TYPE_LABELS.conge_paye;
-                const isExpanded = expandedId === req.id;
-                const isDeciding = decisionMode?.id === req.id;
-
-                return (
-                  <div key={req.id} className={`lvp-card ${req.status}`}>
-                    <div
-                      className="lvp-card-main"
-                      onClick={() => setExpandedId(isExpanded ? null : req.id)}
-                    >
-                      {/* Info personne */}
-                      <div className="lvp-card-person">
-                        <Avatar name={`${req.first_name || req.firstName} ${req.last_name || req.lastName}`} avatar={req.person_photo} size="sm" />
-                        <div>
-                          <div className="lvp-person-name">
-                            {req.first_name || req.firstName} {req.last_name || req.lastName}
-                          </div>
-                          <div className="lvp-person-meta">
-                            {req.person_type || req.personType} • {req.contract_type || req.contractType || '—'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Type & dates */}
-                      <div className="lvp-card-info">
-                        <div className="lvp-card-type" style={{ color: typeCfg.color }}>
-                          {typeCfg.icon} {typeCfg.label}
-                        </div>
-                        <div className="lvp-card-dates">
-                          {fmtDate(req.start_date || req.startDate)} → {fmtDate(req.end_date || req.endDate)}
-                        </div>
-                        <div className="lvp-card-days">
-                          {req.working_days || req.workingDays} jour{(req.working_days || req.workingDays) > 1 ? 's' : ''}
-                        </div>
-                      </div>
-
-                      {/* Status + priority */}
-                      <div className="lvp-card-right">
-                        <div className="lvp-card-status" style={{ background: statusCfg.bg, color: statusCfg.color }}>
-                          <StatusIcon size={12} /> {statusCfg.label}
-                        </div>
-                        {req.priority_score > 0 && (
-                          <div className="lvp-card-priority" title="Score de priorité">
-                            ★ {req.priority_score || req.priorityScore}
-                          </div>
-                        )}
-                        <ChevronDown
-                          size={14}
-                          className="lvp-card-chevron"
-                          style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Détails expansés */}
-                    {isExpanded && (
-                      <div className="lvp-card-expanded">
-                        {req.employee_comment && (
-                          <DetailRow className="lvp-detail" icon={<MessageSquare size={12} />} label="Commentaire salarié :" value={req.employee_comment || req.employeeComment} />
-                        )}
-                        {req.request_date && (
-                          <DetailRow className="lvp-detail" icon={<Calendar size={12} />} label="Demandé le :" value={fmtDate(req.request_date || req.requestDate)} />
-                        )}
-                        {req.reception_date && (
-                          <DetailRow className="lvp-detail" icon={<Eye size={12} />} label="Réceptionné :" value={fmtDate(req.reception_date || req.receptionDate)} />
-                        )}
-                        {req.signature_employee && (
-                          <DetailRow className="lvp-detail" icon={<Pen size={12} />} label="Signature salarié :">
-                            <span className="lvp-sig-ok"><CheckCircle size={12} /> Signé</span>
-                          </DetailRow>
-                        )}
-                        {req.admin_comment && (
-                          <DetailRow className="lvp-detail" icon={<Shield size={12} />} label="Réponse admin :" value={req.admin_comment || req.adminComment} />
-                        )}
-                        {req.decision_by_name && (
-                          <DetailRow className="lvp-detail" icon={<User size={12} />} label="Décision par :">
-                            {req.decision_by_name || req.decisionByName} le {fmtDate(req.decision_date || req.decisionDate)}
-                          </DetailRow>
-                        )}
-                        {req.justification_filename && (
-                          <DetailRow className="lvp-detail" icon={<FileText size={12} />} label="Justificatif :">
-                            <a href={req.justification_path || req.justificationPath} target="_blank" rel="noopener noreferrer">
-                              {req.justification_filename || req.justificationFilename}
-                            </a>
-                          </DetailRow>
-                        )}
-
-                        {/* Bouton PDF */}
-                        <div className="lvp-detail-actions">
-                          <Button variant="ghost" className="lvp-action-btn pdf" onClick={() => handlePdf(req.id)}>
-                            <Download size={14} /> PDF
-                          </Button>
-                        </div>
-
-                        {/* ZONE DE DÉCISION (pending uniquement) */}
-                        {req.status === STATUS.PENDING && !isDeciding && (
-                          <div className="lvp-decision-btns">
-                            <Button variant="ghost"                               className="lvp-decision-btn accept"
-                              onClick={() => { setDecisionMode({ id: req.id, action: 'accept' }); setAdminComment(''); }}
-                            >
-                              <CheckCircle size={14} /> Accepter
-                            </Button>
-                            <Button variant="ghost"                               className="lvp-decision-btn refuse"
-                              onClick={() => { setDecisionMode({ id: req.id, action: 'refuse' }); setAdminComment(''); }}
-                            >
-                              <XCircle size={14} /> Refuser
-                            </Button>
-                            <Button variant="ghost"                               className="lvp-decision-btn modify"
-                              onClick={() => {
-                                setDecisionMode({ id: req.id, action: 'modify' });
-                                setAdminComment('');
-                                setModifiedStartDate(req.start_date || req.startDate || '');
-                                setModifiedEndDate(req.end_date || req.endDate || '');
-                              }}
-                            >
-                              <ArrowRight size={14} /> Modifier
-                            </Button>
-                          </div>
-                        )}
-
-                        {/* FORMULAIRE DE DÉCISION */}
-                        {isDeciding && (
-                          <div className="lvp-decision-form">
-                            <div className="lvp-decision-title">
-                              {decisionMode.action === 'accept' && <><CheckCircle size={14} /> Accepter cette demande</>}
-                              {decisionMode.action === 'refuse' && <><XCircle size={14} /> Refuser cette demande</>}
-                              {decisionMode.action === 'modify' && <><ArrowRight size={14} /> Modifier cette demande</>}
-                            </div>
-
-                            {/* Motif (obligatoire pour refus/modification) */}
-                            {(decisionMode.action === 'refuse' || decisionMode.action === 'modify') && (
-                              <div className="lvp-decision-field">
-                                <label>
-                                  Motif {decisionMode.action === 'refuse' ? 'du refus' : 'de la modification'} *
-                                </label>
-                                <Textarea
-                                  value={adminComment}
-                                  onChange={e => setAdminComment(e.target.value)}
-                                  placeholder="Motif obligatoire..."
-                                  rows={2}
-                                  required
-                                />
-                              </div>
-                            )}
-
-                            {/* Commentaire (optionnel pour acceptation) */}
-                            {decisionMode.action === 'accept' && (
-                              <div className="lvp-decision-field">
-                                <label>Commentaire (optionnel)</label>
-                                <Textarea
-                                  value={adminComment}
-                                  onChange={e => setAdminComment(e.target.value)}
-                                  placeholder="Commentaire..."
-                                  rows={2}
-                                />
-                              </div>
-                            )}
-
-                            {/* Dates modifiées */}
-                            {decisionMode.action === 'modify' && (
-                              <div className="lvp-decision-dates">
-                                <div className="lvp-decision-field">
-                                  <label>Nouvelle date de début</label>
-                                  <input
-                                    type="date"
-                                    value={modifiedStartDate}
-                                    onChange={e => setModifiedStartDate(e.target.value)}
-                                    required
-                                  />
-                                </div>
-                                <div className="lvp-decision-field">
-                                  <label>Nouvelle date de fin</label>
-                                  <input
-                                    type="date"
-                                    value={modifiedEndDate}
-                                    onChange={e => setModifiedEndDate(e.target.value)}
-                                    required
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Signature admin */}
-                            <AdminSignaturePad
-                              value={adminSignature}
-                              onSign={setAdminSignature}
-                            />
-
-                            {/* Actions */}
-                            <div className="lvp-decision-actions">
-                              <Button variant="ghost"                                 className="lvp-action-btn cancel"
-                                onClick={() => {
-                                  setDecisionMode(null);
-                                  setAdminComment('');
-                                  setAdminSignature(null);
-                                }}
-                              >
-                                Annuler
-                              </Button>
-                              <Button variant="ghost"                                 className={`lvp-action-btn confirm ${decisionMode.action}`}
-                                onClick={handleDecision}
-                                disabled={processing}
-                              >
-                                {processing ? (
-                                  <><Clock size={14} /> Traitement...</>
-                                ) : (
-                                  <>
-                                    <Send size={14} />
-                                    {decisionMode.action === 'accept' && 'Confirmer l\'acceptation'}
-                                    {decisionMode.action === 'refuse' && 'Confirmer le refus'}
-                                    {decisionMode.action === 'modify' && 'Confirmer la modification'}
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </TabPanel>
-          <TabPanel value="all">
-            {requests.length === 0 ? (
-              <EmptyState icon={<CheckCircle size={32} />} title="Aucune demande" />
-            ) : (
-              requests.map(req => {
-                const statusCfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
-                const StatusIcon = statusCfg.icon;
-                const typeCfg = LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] || LEAVE_TYPE_LABELS.conge_paye;
-                return (
-                  <div key={req.id} className={`lvp-card ${req.status}`}>
-                    <div className="lvp-card-main" role="button" tabIndex={0} onClick={() => setExpandedId(expandedId === req.id ? null : req.id)}>
-                      <div className="lvp-card-person">
-                        <Avatar name={`${req.first_name || req.firstName} ${req.last_name || req.lastName}`} avatar={req.person_photo} size="sm" />
-                        <div>
-                          <div className="lvp-person-name">{req.first_name || req.firstName} {req.last_name || req.lastName}</div>
-                          <div className="lvp-person-meta">{req.person_type || req.personType} • {req.contract_type || req.contractType || '—'}</div>
-                        </div>
-                      </div>
-                      <div className="lvp-card-info">
-                        <div className="lvp-card-type" style={{ color: typeCfg.color }}>{typeCfg.icon} {typeCfg.label}</div>
-                        <div className="lvp-card-dates">{fmtDate(req.start_date || req.startDate)} → {fmtDate(req.end_date || req.endDate)}</div>
-                        <div className="lvp-card-days">{req.working_days || req.workingDays} jour{(req.working_days || req.workingDays) > 1 ? 's' : ''}</div>
-                      </div>
-                      <div className="lvp-card-right">
-                        <div className="lvp-card-status" style={{ background: statusCfg.bg, color: statusCfg.color }}><StatusIcon size={12} /> {statusCfg.label}</div>
-                        <ChevronDown size={14} className="lvp-card-chevron" style={{ transform: expandedId === req.id ? 'rotate(180deg)' : 'none' }} />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </TabPanel>
-          </>
+          {/* Erreur */}
+          {error && (
+            <InlineAlert dismissible onDismiss={() => setError('')}>
+              {error}
+            </InlineAlert>
           )}
-        </div>
+
+          {/* Contenu */}
+          <div className="lvp-content">
+            {loading ? (
+              <div className="lvp-loading">
+                <Clock size={20} /> Chargement...
+              </div>
+            ) : (
+              <>
+                <TabPanel value="conflicts">
+                  {conflicts.length === 0 ? (
+                    <EmptyState icon={<CheckCircle size={32} />} title="Aucun conflit détecté" />
+                  ) : (
+                    conflicts.map((c, idx) => (
+                      <div key={idx} className="lvp-conflict-card">
+                        <div className="lvp-conflict-header">
+                          <AlertTriangle size={14} />
+                          <span>Chevauchement détecté</span>
+                          <span className="lvp-conflict-overlap">
+                            {fmtDate(c.overlapStart)} → {fmtDate(c.overlapEnd)}
+                          </span>
+                        </div>
+                        <div className="lvp-conflict-requests">
+                          <div className="lvp-conflict-req">
+                            <User size={12} />
+                            <strong>
+                              {c.request1.first_name} {c.request1.last_name}
+                            </strong>
+                            <span>
+                              {fmtDate(c.request1.start_date)} → {fmtDate(c.request1.end_date)}
+                            </span>
+                            <span className="lvp-conflict-score">
+                              Priorité: {c.request1.priority_score}
+                            </span>
+                          </div>
+                          <div className="lvp-conflict-vs">VS</div>
+                          <div className="lvp-conflict-req">
+                            <User size={12} />
+                            <strong>
+                              {c.request2.first_name} {c.request2.last_name}
+                            </strong>
+                            <span>
+                              {fmtDate(c.request2.start_date)} → {fmtDate(c.request2.end_date)}
+                            </span>
+                            <span className="lvp-conflict-score">
+                              Priorité: {c.request2.priority_score}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </TabPanel>
+                <TabPanel value="pending">
+                  {requests.length === 0 ? (
+                    <EmptyState
+                      icon={<CheckCircle size={32} />}
+                      title="Aucune demande en attente"
+                    />
+                  ) : (
+                    requests.map((req) => {
+                      const statusCfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
+                      const StatusIcon = statusCfg.icon;
+                      const typeCfg =
+                        LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] ||
+                        LEAVE_TYPE_LABELS.conge_paye;
+                      const isExpanded = expandedId === req.id;
+                      const isDeciding = decisionMode?.id === req.id;
+
+                      return (
+                        <div key={req.id} className={`lvp-card ${req.status}`}>
+                          <div
+                            className="lvp-card-main"
+                            onClick={() => setExpandedId(isExpanded ? null : req.id)}
+                          >
+                            {/* Info personne */}
+                            <div className="lvp-card-person">
+                              <Avatar
+                                name={`${req.first_name || req.firstName} ${req.last_name || req.lastName}`}
+                                avatar={req.person_photo}
+                                size="sm"
+                              />
+                              <div>
+                                <div className="lvp-person-name">
+                                  {req.first_name || req.firstName} {req.last_name || req.lastName}
+                                </div>
+                                <div className="lvp-person-meta">
+                                  {req.person_type || req.personType} •{' '}
+                                  {req.contract_type || req.contractType || '—'}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Type & dates */}
+                            <div className="lvp-card-info">
+                              <div className="lvp-card-type" style={{ color: typeCfg.color }}>
+                                {typeCfg.icon} {typeCfg.label}
+                              </div>
+                              <div className="lvp-card-dates">
+                                {fmtDate(req.start_date || req.startDate)} →{' '}
+                                {fmtDate(req.end_date || req.endDate)}
+                              </div>
+                              <div className="lvp-card-days">
+                                {req.working_days || req.workingDays} jour
+                                {(req.working_days || req.workingDays) > 1 ? 's' : ''}
+                              </div>
+                            </div>
+
+                            {/* Status + priority */}
+                            <div className="lvp-card-right">
+                              <div
+                                className="lvp-card-status"
+                                style={{ background: statusCfg.bg, color: statusCfg.color }}
+                              >
+                                <StatusIcon size={12} /> {statusCfg.label}
+                              </div>
+                              {req.priority_score > 0 && (
+                                <div className="lvp-card-priority" title="Score de priorité">
+                                  ★ {req.priority_score || req.priorityScore}
+                                </div>
+                              )}
+                              <ChevronDown
+                                size={14}
+                                className="lvp-card-chevron"
+                                style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Détails expansés */}
+                          {isExpanded && (
+                            <div className="lvp-card-expanded">
+                              {req.employee_comment && (
+                                <DetailRow
+                                  className="lvp-detail"
+                                  icon={<MessageSquare size={12} />}
+                                  label="Commentaire salarié :"
+                                  value={req.employee_comment || req.employeeComment}
+                                />
+                              )}
+                              {req.request_date && (
+                                <DetailRow
+                                  className="lvp-detail"
+                                  icon={<Calendar size={12} />}
+                                  label="Demandé le :"
+                                  value={fmtDate(req.request_date || req.requestDate)}
+                                />
+                              )}
+                              {req.reception_date && (
+                                <DetailRow
+                                  className="lvp-detail"
+                                  icon={<Eye size={12} />}
+                                  label="Réceptionné :"
+                                  value={fmtDate(req.reception_date || req.receptionDate)}
+                                />
+                              )}
+                              {req.signature_employee && (
+                                <DetailRow
+                                  className="lvp-detail"
+                                  icon={<Pen size={12} />}
+                                  label="Signature salarié :"
+                                >
+                                  <span className="lvp-sig-ok">
+                                    <CheckCircle size={12} /> Signé
+                                  </span>
+                                </DetailRow>
+                              )}
+                              {req.admin_comment && (
+                                <DetailRow
+                                  className="lvp-detail"
+                                  icon={<Shield size={12} />}
+                                  label="Réponse admin :"
+                                  value={req.admin_comment || req.adminComment}
+                                />
+                              )}
+                              {req.decision_by_name && (
+                                <DetailRow
+                                  className="lvp-detail"
+                                  icon={<User size={12} />}
+                                  label="Décision par :"
+                                >
+                                  {req.decision_by_name || req.decisionByName} le{' '}
+                                  {fmtDate(req.decision_date || req.decisionDate)}
+                                </DetailRow>
+                              )}
+                              {req.justification_filename && (
+                                <DetailRow
+                                  className="lvp-detail"
+                                  icon={<FileText size={12} />}
+                                  label="Justificatif :"
+                                >
+                                  <a
+                                    href={req.justification_path || req.justificationPath}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    {req.justification_filename || req.justificationFilename}
+                                  </a>
+                                </DetailRow>
+                              )}
+
+                              {/* Bouton PDF */}
+                              <div className="lvp-detail-actions">
+                                <Button
+                                  variant="ghost"
+                                  className="lvp-action-btn pdf"
+                                  onClick={() => handlePdf(req.id)}
+                                >
+                                  <Download size={14} /> PDF
+                                </Button>
+                              </div>
+
+                              {/* ZONE DE DÉCISION (pending uniquement) */}
+                              {req.status === STATUS.PENDING && !isDeciding && (
+                                <div className="lvp-decision-btns">
+                                  <Button
+                                    variant="ghost"
+                                    className="lvp-decision-btn accept"
+                                    onClick={() => {
+                                      setDecisionMode({ id: req.id, action: 'accept' });
+                                      setAdminComment('');
+                                    }}
+                                  >
+                                    <CheckCircle size={14} /> Accepter
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    className="lvp-decision-btn refuse"
+                                    onClick={() => {
+                                      setDecisionMode({ id: req.id, action: 'refuse' });
+                                      setAdminComment('');
+                                    }}
+                                  >
+                                    <XCircle size={14} /> Refuser
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    className="lvp-decision-btn modify"
+                                    onClick={() => {
+                                      setDecisionMode({ id: req.id, action: 'modify' });
+                                      setAdminComment('');
+                                      setModifiedStartDate(req.start_date || req.startDate || '');
+                                      setModifiedEndDate(req.end_date || req.endDate || '');
+                                    }}
+                                  >
+                                    <ArrowRight size={14} /> Modifier
+                                  </Button>
+                                </div>
+                              )}
+
+                              {/* FORMULAIRE DE DÉCISION */}
+                              {isDeciding && (
+                                <div className="lvp-decision-form">
+                                  <div className="lvp-decision-title">
+                                    {decisionMode.action === 'accept' && (
+                                      <>
+                                        <CheckCircle size={14} /> Accepter cette demande
+                                      </>
+                                    )}
+                                    {decisionMode.action === 'refuse' && (
+                                      <>
+                                        <XCircle size={14} /> Refuser cette demande
+                                      </>
+                                    )}
+                                    {decisionMode.action === 'modify' && (
+                                      <>
+                                        <ArrowRight size={14} /> Modifier cette demande
+                                      </>
+                                    )}
+                                  </div>
+
+                                  {/* Motif (obligatoire pour refus/modification) */}
+                                  {(decisionMode.action === 'refuse' ||
+                                    decisionMode.action === 'modify') && (
+                                    <div className="lvp-decision-field">
+                                      <label>
+                                        Motif{' '}
+                                        {decisionMode.action === 'refuse'
+                                          ? 'du refus'
+                                          : 'de la modification'}{' '}
+                                        *
+                                      </label>
+                                      <Textarea
+                                        value={adminComment}
+                                        onChange={(e) => setAdminComment(e.target.value)}
+                                        placeholder="Motif obligatoire..."
+                                        rows={2}
+                                        required
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Commentaire (optionnel pour acceptation) */}
+                                  {decisionMode.action === 'accept' && (
+                                    <div className="lvp-decision-field">
+                                      <label>Commentaire (optionnel)</label>
+                                      <Textarea
+                                        value={adminComment}
+                                        onChange={(e) => setAdminComment(e.target.value)}
+                                        placeholder="Commentaire..."
+                                        rows={2}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Dates modifiées */}
+                                  {decisionMode.action === 'modify' && (
+                                    <div className="lvp-decision-dates">
+                                      <div className="lvp-decision-field">
+                                        <label>Nouvelle date de début</label>
+                                        <input
+                                          type="date"
+                                          value={modifiedStartDate}
+                                          onChange={(e) => setModifiedStartDate(e.target.value)}
+                                          required
+                                        />
+                                      </div>
+                                      <div className="lvp-decision-field">
+                                        <label>Nouvelle date de fin</label>
+                                        <input
+                                          type="date"
+                                          value={modifiedEndDate}
+                                          onChange={(e) => setModifiedEndDate(e.target.value)}
+                                          required
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Signature admin */}
+                                  <AdminSignaturePad
+                                    value={adminSignature}
+                                    onSign={setAdminSignature}
+                                  />
+
+                                  {/* Actions */}
+                                  <div className="lvp-decision-actions">
+                                    <Button
+                                      variant="ghost"
+                                      className="lvp-action-btn cancel"
+                                      onClick={() => {
+                                        setDecisionMode(null);
+                                        setAdminComment('');
+                                        setAdminSignature(null);
+                                      }}
+                                    >
+                                      Annuler
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className={`lvp-action-btn confirm ${decisionMode.action}`}
+                                      onClick={handleDecision}
+                                      disabled={processing}
+                                    >
+                                      {processing ? (
+                                        <>
+                                          <Clock size={14} /> Traitement...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Send size={14} />
+                                          {decisionMode.action === 'accept' &&
+                                            "Confirmer l'acceptation"}
+                                          {decisionMode.action === 'refuse' && 'Confirmer le refus'}
+                                          {decisionMode.action === 'modify' &&
+                                            'Confirmer la modification'}
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </TabPanel>
+                <TabPanel value="all">
+                  {requests.length === 0 ? (
+                    <EmptyState icon={<CheckCircle size={32} />} title="Aucune demande" />
+                  ) : (
+                    requests.map((req) => {
+                      const statusCfg = STATUS_CONFIG[req.status] || STATUS_CONFIG.pending;
+                      const StatusIcon = statusCfg.icon;
+                      const typeCfg =
+                        LEAVE_TYPE_LABELS[req.leave_type || req.leaveType] ||
+                        LEAVE_TYPE_LABELS.conge_paye;
+                      return (
+                        <div key={req.id} className={`lvp-card ${req.status}`}>
+                          <div
+                            className="lvp-card-main"
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setExpandedId(expandedId === req.id ? null : req.id)}
+                          >
+                            <div className="lvp-card-person">
+                              <Avatar
+                                name={`${req.first_name || req.firstName} ${req.last_name || req.lastName}`}
+                                avatar={req.person_photo}
+                                size="sm"
+                              />
+                              <div>
+                                <div className="lvp-person-name">
+                                  {req.first_name || req.firstName} {req.last_name || req.lastName}
+                                </div>
+                                <div className="lvp-person-meta">
+                                  {req.person_type || req.personType} •{' '}
+                                  {req.contract_type || req.contractType || '—'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="lvp-card-info">
+                              <div className="lvp-card-type" style={{ color: typeCfg.color }}>
+                                {typeCfg.icon} {typeCfg.label}
+                              </div>
+                              <div className="lvp-card-dates">
+                                {fmtDate(req.start_date || req.startDate)} →{' '}
+                                {fmtDate(req.end_date || req.endDate)}
+                              </div>
+                              <div className="lvp-card-days">
+                                {req.working_days || req.workingDays} jour
+                                {(req.working_days || req.workingDays) > 1 ? 's' : ''}
+                              </div>
+                            </div>
+                            <div className="lvp-card-right">
+                              <div
+                                className="lvp-card-status"
+                                style={{ background: statusCfg.bg, color: statusCfg.color }}
+                              >
+                                <StatusIcon size={12} /> {statusCfg.label}
+                              </div>
+                              <ChevronDown
+                                size={14}
+                                className="lvp-card-chevron"
+                                style={{
+                                  transform: expandedId === req.id ? 'rotate(180deg)' : 'none',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </TabPanel>
+              </>
+            )}
+          </div>
         </Tabs>
-      </div>
-    </div>
+      </ModalBody>
+    </Modal>
   );
 };
 

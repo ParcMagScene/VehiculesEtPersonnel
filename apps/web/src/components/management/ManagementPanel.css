@@ -55,6 +55,108 @@
   }
 }
 
+/* ── Mode modal centré (Settings) ── */
+.management-overlay--modal {
+  justify-content: center;
+  align-items: center;
+}
+
+.management-panel--modal {
+  max-width: 1120px;
+  width: 94vw;
+  height: auto;
+  max-height: 88vh;
+  max-height: 88dvh;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+  animation: modalFadeIn 0.25s ease-out;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.management-panel--modal .management-header {
+  flex-shrink: 0;
+}
+
+/* ── Settings body: sidebar + content ── */
+.settings-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-body {
+  display: contents;
+}
+
+.management-panel--modal .management-tabs {
+  flex-direction: column;
+  width: 200px;
+  min-width: 200px;
+  border-bottom: none;
+  border-right: 1px solid var(--theme-border-medium);
+  position: static;
+  overflow-x: visible;
+  overflow-y: auto;
+  padding: 0.75rem 0;
+  box-shadow: none;
+  top: auto;
+}
+
+.management-panel--modal .tab-button {
+  flex: unset;
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 0.6rem 1rem;
+  gap: 0.6rem;
+  border-bottom: none;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  text-align: left;
+}
+
+.management-panel--modal .tab-button:hover {
+  transform: none;
+}
+
+.management-panel--modal .tab-button.active {
+  border-bottom-color: transparent;
+  border-left-color: var(--tab-color);
+  box-shadow: none;
+  background: var(--theme-bg-secondary);
+}
+
+.management-panel--modal .tab-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.management-panel--modal .tab-label {
+  font-size: var(--font-sm);
+}
+
+.management-panel--modal .settings-body .management-content {
+  flex: 1;
+  min-width: 0;
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .management-header {
   display: flex;
   justify-content: space-between;
@@ -162,10 +264,14 @@
 }
 
 .tab-label {
-  font-size: var(--font-base);
+  font-size: var(--font-xs);
   position: relative;
   z-index: var(--z-base);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .tab-badge {
@@ -189,12 +295,21 @@
 }
 
 @keyframes badge-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .management-content {
   padding: 2rem;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-height: 0;
 }
 
 .add-section {
@@ -489,7 +604,9 @@
   justify-content: center;
   font-size: var(--font-sm);
   z-index: var(--z-dropdown);
-  box-shadow: 0 0 0 2px var(--theme-bg-card), 0 2px 6px var(--danger-tint-dark);
+  box-shadow:
+    0 0 0 2px var(--theme-bg-card),
+    0 2px 6px var(--danger-tint-dark);
   animation: pulse-danger 1.5s ease-in-out infinite;
   cursor: help;
 }
@@ -1030,15 +1147,20 @@
 }
 
 @keyframes pulse-danger {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 0 2px var(--theme-bg-card), 0 2px 6px var(--danger-tint-dark);
+    box-shadow:
+      0 0 0 2px var(--theme-bg-card),
+      0 2px 6px var(--danger-tint-dark);
   }
   50% {
     opacity: 0.7;
     transform: scale(1.1);
-    box-shadow: 0 0 0 2px var(--theme-bg-card), 0 3px 10px rgba(220, 38, 38, 0.6);
+    box-shadow:
+      0 0 0 2px var(--theme-bg-card),
+      0 3px 10px rgba(220, 38, 38, 0.6);
   }
 }
 
@@ -1089,6 +1211,26 @@
     display: none;
   }
 
+  /* Settings modal: sidebar collapses to icon-only */
+  .management-panel--modal .management-tabs {
+    width: 52px;
+    min-width: 52px;
+    padding: 0.5rem 0;
+  }
+
+  .management-panel--modal .tab-button {
+    justify-content: center;
+    padding: 0.6rem 0.5rem;
+  }
+
+  .management-panel--modal .tab-label {
+    display: none;
+  }
+
+  .management-panel--modal .settings-body .management-content {
+    padding: 1rem;
+  }
+
   .item-info > div:not(.item-photo):not(.item-color) {
     grid-template-columns: 1fr;
     gap: 0.25rem;
@@ -1124,6 +1266,54 @@
     overflow-x: auto;
   }
 
+  /* Settings modal: go full screen on small screens */
+  .management-panel--modal {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .settings-body {
+    flex-direction: column;
+  }
+
+  .management-panel--modal .management-tabs {
+    flex-direction: row;
+    width: 100%;
+    min-width: unset;
+    border-right: none;
+    border-bottom: 1px solid var(--theme-border-medium);
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 0.25rem 0;
+  }
+
+  .management-panel--modal .tab-button {
+    flex-direction: column;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.4rem 0.5rem;
+    gap: 0.2rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .management-panel--modal .tab-button.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--tab-color);
+  }
+
+  .management-panel--modal .tab-label {
+    display: none;
+  }
+
+  .management-panel--modal .tab-icon {
+    width: 28px;
+    height: 28px;
+  }
+
   .item-info {
     flex-direction: column;
     align-items: flex-start;
@@ -1140,58 +1330,88 @@
    DARK THEME OVERRIDES — ManagementPanel.css
    ═══════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .management-tabs {
+[data-theme='dark'] .management-tabs {
   background: linear-gradient(to bottom, var(--theme-bg-card), var(--theme-bg-secondary));
 }
 
-[data-theme="dark"] .drag-handle {
+[data-theme='dark'] .drag-handle {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .item-registration {
+[data-theme='dark'] .item-registration {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .item-brand {
+[data-theme='dark'] .item-brand {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .item-detail {
+[data-theme='dark'] .item-detail {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .sync-info p {
+[data-theme='dark'] .sync-info p {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .sync-status.success {
+[data-theme='dark'] .sync-status.success {
   background: rgba(34, 197, 94, 0.15);
   color: var(--theme-success);
 }
 
-[data-theme="dark"] .sync-status.info {
+[data-theme='dark'] .sync-status.info {
   background: var(--primary-tint-medium);
   color: var(--theme-info);
 }
 
-[data-theme="dark"] .sync-status.error {
+[data-theme='dark'] .sync-status.error {
   background: var(--theme-danger-border);
   color: var(--theme-danger);
 }
 
-[data-theme="dark"] .sync-instructions {
+[data-theme='dark'] .sync-instructions {
   border-color: var(--theme-warning);
 }
 
-[data-theme="dark"] .sync-instructions h4 {
+[data-theme='dark'] .sync-instructions h4 {
   color: var(--theme-warning);
 }
 
-[data-theme="dark"] .sync-instructions ol {
+[data-theme='dark'] .sync-instructions ol {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .sync-tips ul {
+[data-theme='dark'] .sync-tips ul {
   color: var(--theme-text-secondary);
 }
 
+/* ═══ Tarifs de location ═══ */
+
+.rental-rates-edit {
+  margin-top: 0.5rem;
+}
+
+.rental-rates-edit label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--theme-text-secondary);
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.rental-rates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.rental-rates-grid input {
+  font-size: 0.85rem;
+}
+
+.item-rates {
+  font-size: 0.75rem;
+  color: var(--theme-success, #16a34a);
+  font-weight: 500;
+  margin-top: 2px;
+}

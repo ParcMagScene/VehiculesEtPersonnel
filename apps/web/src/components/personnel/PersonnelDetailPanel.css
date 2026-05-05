@@ -39,7 +39,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .pdp-slide-title-info {
@@ -49,7 +49,7 @@
 .pdp-slide-name {
   font-size: 15px;
   font-weight: 700;
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   display: block;
   white-space: nowrap;
   overflow: hidden;
@@ -69,7 +69,7 @@
   font-size: var(--font-2xs);
   font-weight: 600;
   background: var(--glass-light);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -91,10 +91,10 @@
   width: 5px;
 }
 .pdp-slide-body::-webkit-scrollbar-track {
-  background: var(--theme-border-light);
+  background: var(--border-subtle);
 }
 .pdp-slide-body::-webkit-scrollbar-thumb {
-  background: var(--theme-bg-muted);
+  background: var(--surface-hover);
   border-radius: var(--radius-xs);
 }
 
@@ -111,9 +111,9 @@
   align-items: center;
   gap: 14px;
   padding: 12px;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-md-lg);
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
 }
 
 .pdp-avatar-large {
@@ -125,7 +125,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .pdp-identity-info {
@@ -136,7 +136,7 @@
 .pdp-fullname {
   font-size: var(--font-lg);
   font-weight: 700;
-  color: var(--theme-bg-dark);
+  color: var(--text-heading);
   margin-bottom: 4px;
 }
 
@@ -165,12 +165,30 @@
   color: var(--theme-warning-text);
 }
 
-.pdp-type-badge.type-intermittent { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
-.pdp-type-badge.type-CDD { background: var(--theme-bg-indigo-light); color: var(--theme-info-text-alt); }
-.pdp-type-badge.type-freelance { background: var(--theme-success-bg); color: var(--theme-success-text-alt); }
-.pdp-type-badge.type-prestataire { background: var(--theme-danger-bg); color: var(--theme-danger-text); }
-.pdp-type-badge.type-auto-entrepreneur { background: var(--theme-warning-bg); color: var(--theme-orange-text); }
-.pdp-type-badge.type-entreprise { background: var(--theme-purple-bg); color: var(--theme-primary-dark); }
+.pdp-type-badge.type-intermittent {
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
+}
+.pdp-type-badge.type-CDD {
+  background: var(--theme-bg-indigo-light);
+  color: var(--theme-info-text-alt);
+}
+.pdp-type-badge.type-freelance {
+  background: var(--theme-success-bg);
+  color: var(--theme-success-text-alt);
+}
+.pdp-type-badge.type-prestataire {
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+}
+.pdp-type-badge.type-auto-entrepreneur {
+  background: var(--theme-warning-bg);
+  color: var(--theme-orange-text);
+}
+.pdp-type-badge.type-entreprise {
+  background: var(--theme-purple-bg);
+  color: var(--theme-primary-dark);
+}
 
 .pdp-inactive-badge {
   background: var(--theme-bg-tertiary) !important;
@@ -193,11 +211,11 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: var(--theme-bg-card);
-  border: 1px solid var(--theme-border-medium);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
-  color: var(--theme-text-dark);
+  color: var(--text-body);
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s;
@@ -210,7 +228,7 @@
 }
 
 .pdp-contact-item svg {
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   flex-shrink: 0;
 }
 
@@ -229,9 +247,9 @@
   border-radius: var(--radius-xl);
   font-size: var(--font-xs);
   font-weight: 600;
-  background: color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 12%, var(--theme-bg-card));
-  color: var(--chip-color, var(--theme-text-gray));
-  border: 1px solid color-mix(in srgb, var(--chip-color, var(--theme-text-gray)) 25%, transparent);
+  background: color-mix(in srgb, var(--chip-color, var(--text-muted)) 12%, var(--surface-primary));
+  color: var(--chip-color, var(--text-muted));
+  border: 1px solid color-mix(in srgb, var(--chip-color, var(--text-muted)) 25%, transparent);
 }
 
 .pdp-chip svg {
@@ -267,11 +285,11 @@
 /* Notes */
 .pdp-notes {
   padding: 10px 12px;
-  background: var(--theme-bg-card);
-  border: 1px solid var(--theme-border-medium);
+  background: var(--surface-primary);
+  border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
-  color: var(--theme-text-subtle);
+  color: var(--text-muted);
   line-height: 1.5;
   white-space: pre-wrap;
 }
@@ -279,9 +297,9 @@
 /* ═══ Footer ═══ */
 .pdp-slide-footer {
   padding: 12px 16px;
-  border-top: 1px solid var(--theme-border);
+  border-top: 1px solid var(--border-default);
   flex-shrink: 0;
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
 }
 
 .pdp-slide-edit-btn {
@@ -294,7 +312,7 @@
   border: none;
   border-radius: var(--radius-md);
   background: var(--theme-gradient);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
@@ -310,7 +328,7 @@
 .pdp-absence-add-btn {
   margin-left: auto;
   background: none;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   width: 22px;
   height: 22px;
@@ -318,20 +336,20 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--theme-primary);
+  color: var(--interactive-primary);
   transition: all 0.2s;
 }
 
 .pdp-absence-add-btn:hover {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
-  border-color: var(--theme-primary);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
+  border-color: var(--interactive-primary);
 }
 
 .pdp-absence-loading,
 .pdp-absence-empty {
   font-size: var(--font-sm);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   text-align: center;
   padding: 8px;
 }
@@ -344,9 +362,9 @@
 
 .pdp-absence-item {
   padding: 6px 10px;
-  border-left: 3px solid var(--theme-text-muted);
+  border-left: 3px solid var(--text-muted);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--theme-bg-page);
+  background: var(--surface-page);
   font-size: var(--font-sm);
 }
 
@@ -374,12 +392,12 @@
 
 .pdp-absence-dates {
   font-size: var(--font-xs);
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .pdp-absence-reason {
   font-size: var(--font-xs);
-  color: var(--theme-text-muted);
+  color: var(--text-muted);
   font-style: italic;
   margin-top: 2px;
 }

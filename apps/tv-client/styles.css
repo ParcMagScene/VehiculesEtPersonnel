@@ -5,6 +5,21 @@
 
 * { box-sizing: border-box; }
 
+/* Variables internes (fallbacks pour variables référencées dans le CSS) */
+:root {
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-md-lg: 10px;
+  --radius-xl: 16px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-5: 20px;
+  --font-base: 1rem;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -20,6 +35,8 @@ body {
   /* Safe area pour TV overscan (Raspberry Pi) — activé via ?overscan=XX ou auto-détection */
   padding: var(--tv-overscan, 0);
   max-width: 100vw;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ═══════════ NAVIGATION MOBILE (ONGLETS) ═══════════ */
@@ -56,15 +73,16 @@ body {
 /* ═══════════ HEADER DASHBOARD ═══════════ */
 header {
   display: grid;
-  grid-template-columns: 1fr 1.5fr 1.5fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  padding: 0 2em;
+  padding: 0 1.5em;
+  gap: 0.5em;
   background: var(--secondary-color, #000000);
   color: var(--primary-color, #fff);
 }
 
 #logo {
-  margin-left: 2em;
+  margin-left: 0.5em;
   justify-self: start;
   height: clamp(140px, 14vw, 180px);
   width: auto;
@@ -103,20 +121,38 @@ header {
 /* Date et heure */
 #date {
   display: block;
-  font-size: 2.5em;
+  font-size: 2.2em;
   white-space: nowrap;
   text-align: right;
 }
 #heure {
   display: block;
-  font-size: 2.2em;
+  font-size: 3.5em;
   font-weight: bold;
-  margin-top: 0.1em;
-  text-align: center;
+  margin-top: 0.05em;
+  text-align: right;
 }
 #datetime {
   justify-self: end;
-  margin-right: 2em;
+  white-space: nowrap;
+}
+
+/* Météo collée à droite */
+#weather {
+  font-size: 2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.3;
+  min-width: 0;
+}
+.weather-line1 {
+  font-size: 1.4em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.weather-line2 {
+  display: none;
 }
 
 /* ═══════════ ANIMATION MARQUEE ═══════════ */
@@ -149,18 +185,20 @@ header {
 /* ═══════════ LISTE ÉVÉNEMENTS ═══════════ */
 #events-list, #regular-events-list, .recurrent-events-list {
   padding: 0;
-  margin: 0 1.5em;
+  margin: 0;
   list-style: none;
   font-size: 2.3em;
+  text-align: left;
 }
 #events-list li, #regular-events-list li, .recurrent-events-list li {
-  padding: 0.8em 0;
+  padding: 0.8em 1em;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   word-break: break-word;
   background: var(--event-bg-color, #000000);
   color: var(--event-text-color, #fff);
   opacity: 0.85;
-  margin-bottom: 0.6em;
+  margin-bottom: 0;
+  cursor: default;
 }
 
 /* Événements toute la journée */
@@ -170,7 +208,7 @@ header {
   border-radius: var(--radius-sm);
 }
 
-/* Structure en colonnes */
+/* Structure en colonnes : Période | Titre | Badge affaire | Icône lieu */
 .event-columns {
   display: grid;
   grid-template-columns: auto 1fr auto auto;
@@ -181,10 +219,11 @@ header {
 
 /* main */
 main {
-  padding: 2em 3em;
+  padding: 0.5em 0;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 200px - var(--tv-overscan, 0px) * 2);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -193,11 +232,39 @@ main {
   margin-top: 2em;
   padding: 0;
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .recurrent-events-section {
   margin-top: auto;
   padding: 0;
   margin-bottom: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.events-container,
+.recurrent-events-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.35em 0.7em;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 225, 255, 0.45) transparent;
+}
+
+.events-container::-webkit-scrollbar,
+.recurrent-events-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.events-container::-webkit-scrollbar-thumb,
+.recurrent-events-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 225, 255, 0.45);
+  border-radius: 999px;
 }
 .recurrent-events-title {
   color: var(--primary-color, #00e1ff);
@@ -214,6 +281,7 @@ main {
   font-weight: 600;
   font-size: 1.1em;
   white-space: nowrap;
+  text-align: left;
 }
 .col-location {
   font-size: 0.85em;
@@ -258,6 +326,8 @@ main {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 0.35em;
+  flex-wrap: wrap;
   min-width: 0;
 }
 .tv-affaire-badge {
@@ -269,10 +339,30 @@ main {
   padding: 0.15em 0.6em;
   border-radius: 5px;
   color: var(--badge-color, #3b82f6);
+  /* Fallback pour navigateurs sans color-mix() (ancien Chromium Pi) */
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  /* Navigateurs modernes : utilise la vraie couleur du badge */
   background: color-mix(in srgb, var(--badge-color, #3b82f6) 15%, transparent);
   border: 1px solid color-mix(in srgb, var(--badge-color, #3b82f6) 35%, transparent);
   white-space: nowrap;
   line-height: 1.4;
+}
+
+.tv-vehicle-badge {
+  display: inline-block;
+  font-size: 0.68em;
+  font-weight: 700;
+  padding: 0.15em 0.5em;
+  border-radius: 5px;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.15);
+  border: 1px solid rgba(22, 163, 74, 0.35);
+  white-space: nowrap;
+  line-height: 1.4;
+  max-width: 22vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Section badge */
@@ -376,6 +466,8 @@ footer {
   max-width: 450px;
 }
 
+/* Volume indicator — retiré (affichage seul) */
+
 /* ═══════════ PHOTO FURTIVE ═══════════ */
 .sneaky-photo-container {
   position: fixed;
@@ -406,7 +498,7 @@ footer {
 }
 
 /* ═══════════ MÉTÉO ═══════════ */
-#weather { font-size: 1.4em; }
+#weather { font-size: 1.1em; }
 .weather-box {
   display: flex;
   align-items: center;
@@ -419,13 +511,14 @@ footer {
 /* ═══════════ RESPONSIVE TV 720p-900p ═══════════ */
 @media (min-width: 769px) and (max-width: 1400px) {
   header {
-    grid-template-columns: 1fr 1.2fr 1fr;
+    grid-template-columns: auto 1fr auto;
     padding: 0 1em;
+    gap: 0.5em;
   }
-  #logo { height: clamp(80px, 10vw, 120px); margin-left: 1em; }
+  #logo { height: clamp(80px, 10vw, 120px); margin-left: 0.5em; }
   #welcome { font-size: clamp(1.5em, 4vw, 2.5em); }
-  #datetime { font-size: clamp(1em, 2.5vw, 1.8em); }
-  #date, #heure { font-size: clamp(0.8em, 2vw, 1.2em); }
+  #datetime { font-size: clamp(0.8em, 2vw, 1.2em); }
+  #date, #heure { font-size: clamp(0.7em, 1.5vw, 1em); }
   .event-columns {
     grid-template-columns: auto 1fr auto auto;
     gap: 0.6em;
@@ -438,10 +531,10 @@ footer {
   .events-container, .recurrent-events-container { padding: 0.5em 1em; }
   .event-item {
     padding: 0.8em 1em;
-    margin-bottom: 0.5em;
+    margin-bottom: 0;
     font-size: clamp(0.9em, 1.5vw, 1.1em);
   }
-  #weather { font-size: clamp(0.8em, 1.5vw, 1em); min-width: 120px !important; }
+  #weather { font-size: clamp(0.7em, 1.3vw, 0.9em); }
 }
 
 /* 720p */
@@ -460,12 +553,12 @@ footer {
 /* 1360×768 */
 @media screen and (max-width: 1400px) {
   body { font-size: 1.05em; }
-  header { grid-template-columns: 1fr 1.2fr 1.5fr; padding: 0.2em 0.5em; }
+  header { grid-template-columns: auto 1fr auto; padding: 0.2em 0.5em; gap: 0.5em; }
   #logo { height: 120px; max-width: 90%; }
   #welcome { font-size: 2em; }
-  #date { font-size: 1.5em; margin-right: 1em; }
-  #heure { font-size: 3.2em; font-weight: bold; }
-  #weather { min-width: 120px; margin-right: 2em; }
+  #date { font-size: 0.9em; }
+  #heure { font-size: 1.1em; font-weight: bold; }
+  #weather { font-size: 0.85em; }
   #events-list li, #regular-events-list li { font-size: 1em; padding: 0.3em 0.5em; }
   .recurrent-events-list li { font-size: 0.9em; padding: 0.25em 0.5em; }
   .recurrent-events-title { font-size: 1.4em; }
@@ -505,40 +598,8 @@ footer {
 }
 
 /* ═══════════ BOUTON TEST SONORE ═══════════ */
-#btn-test-sound {
-  background: rgba(0, 225, 255, 0.15);
-  border: 2px solid rgba(0, 225, 255, 0.4);
-  color: var(--primary-color, #00e1ff);
-  font-size: 1.5em;
-  padding: 0.3em 0.5em;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: opacity 0.4s ease;
-  flex-shrink: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-#btn-test-sound.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-#btn-test-sound:hover {
-  background: rgba(0, 225, 255, 0.3);
-  border-color: var(--primary-color, #00e1ff);
-  transform: scale(1.1);
-}
-#btn-test-sound:active,
-#btn-test-sound.test-playing {
-  background: rgba(255, 200, 0, 0.3);
-  border-color: #ffc800;
-  animation: bell-ring 0.4s ease 3;
-}
 
-@keyframes bell-ring {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(15deg); }
-  75% { transform: rotate(-15deg); }
-}
+
 
 /* ═══════════ ALARME FLASH ═══════════ */
 .alarm-flash {
@@ -574,6 +635,31 @@ footer {
 /* Affichage end_time dans la colonne horaire */
 .col-time {
   white-space: nowrap;
+}
+
+/* ═══════════ INDICATEUR OFFLINE ═══════════ */
+#offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.4em 1em;
+  background: rgba(220, 38, 38, 0.9);
+  color: #fff;
+  font-size: 0.9em;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+  animation: offline-slide-in 0.3s ease;
+}
+
+@keyframes offline-slide-in {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(0); }
 }
 
 

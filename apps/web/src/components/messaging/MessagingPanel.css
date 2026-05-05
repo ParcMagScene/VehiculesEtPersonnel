@@ -48,12 +48,23 @@
   color: var(--theme-text-inverse);
   width: 32px;
   height: 32px;
+  min-width: 32px;
+  padding: 0;
   border-radius: var(--radius-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s;
+}
+
+.msg-header-btn svg,
+.msg-back-btn svg,
+.msg-attach-btn svg,
+.msg-emoji-btn svg,
+.msg-send-btn svg {
+  display: block;
+  stroke: currentColor;
 }
 
 .msg-header-btn:hover {
@@ -410,7 +421,7 @@
   width: 320px;
   background: var(--theme-bg-card);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   border: 1px solid var(--theme-border);
   z-index: var(--z-dropdown);
   overflow: hidden;
@@ -464,7 +475,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.1s, transform 0.1s;
+  transition:
+    background 0.1s,
+    transform 0.1s;
 }
 
 .msg-emoji-item:hover {

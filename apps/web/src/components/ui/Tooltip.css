@@ -7,7 +7,7 @@
 }
 
 .ui-tooltip {
-  position: absolute;
+  position: fixed;
   z-index: var(--z-tooltip);
   background: var(--overlay-text);
   color: var(--theme-text-inverse);
@@ -22,30 +22,28 @@
 }
 
 @keyframes ui-tooltip-fade {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* ─── Positions ─── */
 .ui-tooltip--top {
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+  transform-origin: bottom center;
 }
 .ui-tooltip--bottom {
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+  transform-origin: top center;
 }
 .ui-tooltip--left {
-  right: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
+  transform-origin: center right;
 }
 .ui-tooltip--right {
-  left: calc(100% + 8px);
-  top: 50%;
-  transform: translateY(-50%);
+  transform-origin: center left;
 }
 
 /* ─── Arrow (using ::after) ─── */

@@ -3,11 +3,13 @@
 // + Message furtif temporaire
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { MessageCircle, Zap, Save, Trash2, Clock } from 'lucide-react';
+import { Clock, MessageCircle, Save, Trash2, Zap } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, SectionHeader, Select, Textarea } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, Select, Textarea, SectionHeader} from '@/design-system';
 
 const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
 const DAY_LABELS = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven' };
@@ -57,10 +59,12 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
     }
   }, [toast]);
 
-  useEffect(() => { loadData(); }, [loadData, refreshKey]);
+  useEffect(() => {
+    loadData();
+  }, [loadData, refreshKey]);
 
   const handleMessageChange = (day, slot, value) => {
-    setMessages(prev => {
+    setMessages((prev) => {
       const next = {
         ...prev,
         [day]: { ...(prev[day] || {}), [slot]: value },
@@ -86,7 +90,10 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
   }, [messages, toast]);
 
   const handleActivateSneaky = useCallback(async () => {
-    if (!sneakyText.trim()) { toast.error('Veuillez entrer un message'); return; }
+    if (!sneakyText.trim()) {
+      toast.error('Veuillez entrer un message');
+      return;
+    }
     try {
       await api.activateDisplaySneakyMessage(sneakyText.trim(), sneakyDuration);
       toast.success('Message furtif activé');
@@ -114,22 +121,41 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
     <div className="dtv-welcome-messages">
       {/* Message furtif */}
       <div className="dtv-section dtv-sneaky-section">
-        <SectionHeader className="dtv-section-title" icon={<Zap size={16} />} title="Message d'accueil furtif" />
-        <p className="dtv-hint">Active un message temporaire qui remplace le message d'accueil configuré.</p>
+        <SectionHeader
+          className="dtv-section-title"
+          icon={<Zap size={16} />}
+          title="Message d'accueil furtif"
+        />
+        <p className="dtv-hint">
+          Active un message temporaire qui remplace le message d'accueil configuré.
+        </p>
 
         <div className="dtv-form-group">
           <label>Message à afficher</label>
-          <Textarea value={sneakyText} onChange={e => setSneakyText(e.target.value)}
-            placeholder="Entrez votre message furtif..." rows={2} />
+          <Textarea
+            value={sneakyText}
+            onChange={(e) => setSneakyText(e.target.value)}
+            placeholder="Entrez votre message furtif..."
+            rows={2}
+          />
         </div>
         <div className="dtv-form-row">
-          <div className="dtv-form-group" style={{ flex: 1 }}>
+          <div className="dtv-form-group dtv-form-group-fill">
             <label>Durée d'affichage</label>
-            <Select value={sneakyDuration} onChange={e => setSneakyDuration(e.target.value)}>
-              {DURATION_OPTIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+            <Select value={sneakyDuration} onChange={(e) => setSneakyDuration(e.target.value)}>
+              {DURATION_OPTIONS.map((d) => (
+                <option key={d.value} value={d.value}>
+                  {d.label}
+                </option>
+              ))}
             </Select>
           </div>
-          <Button variant="primary" size="sm" onClick={handleActivateSneaky} style={{ alignSelf: 'flex-end' }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleActivateSneaky}
+            className="dtv-align-end"
+          >
             <Zap size={14} /> Activer
           </Button>
         </div>
@@ -139,7 +165,8 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
             <div className="dtv-sneaky-active">
               <span className="dtv-badge-active">✅ Actif</span>
               <span className="dtv-sneaky-expires">
-                <Clock size={12} /> Expire: {new Date(sneakyStatus.expiresAt).toLocaleString('fr-FR')}
+                <Clock size={12} /> Expire:{' '}
+                {new Date(sneakyStatus.expiresAt).toLocaleString('fr-FR')}
               </span>
             </div>
             <div className="dtv-sneaky-preview">« {sneakyStatus.message} »</div>
@@ -152,15 +179,24 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
 
       {/* Messages par jour/créneau */}
       <div className="dtv-section">
-        <SectionHeader className="dtv-section-title" icon={<MessageCircle size={16} />} title="Messages d'accueil dynamiques" />
-        <p className="dtv-hint">Configurez les messages affichés selon le jour et le créneau horaire.</p>
+        <SectionHeader
+          className="dtv-section-title"
+          icon={<MessageCircle size={16} />}
+          title="Messages d'accueil dynamiques"
+        />
+        <p className="dtv-hint">
+          Configurez les messages affichés selon le jour et le créneau horaire.
+        </p>
 
         {/* Onglets jours */}
         <div className="dtv-day-tabs">
-          {DAYS.map(day => (
-            <Button variant="ghost" key={day}
+          {DAYS.map((day) => (
+            <Button
+              variant="ghost"
+              key={day}
               className={`dtv-day-tab ${activeDay === day ? 'active' : ''}`}
-              onClick={() => setActiveDay(day)}>
+              onClick={() => setActiveDay(day)}
+            >
               {DAY_LABELS[day]}
             </Button>
           ))}
@@ -168,12 +204,12 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
 
         {/* Créneaux du jour actif */}
         <div className="dtv-slots">
-          {SLOTS.map(slot => (
+          {SLOTS.map((slot) => (
             <div key={slot.id} className="dtv-form-group">
               <label>{slot.label}</label>
               <Textarea
                 value={messages[activeDay]?.[slot.id] || ''}
-                onChange={e => handleMessageChange(activeDay, slot.id, e.target.value)}
+                onChange={(e) => handleMessageChange(activeDay, slot.id, e.target.value)}
                 placeholder={`Message pour ${slot.label.toLowerCase()}...`}
                 rows={2}
               />

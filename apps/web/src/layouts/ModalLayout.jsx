@@ -1,5 +1,6 @@
-import { Modal, ModalHeader, ModalBody, ModalFooter } from '../components/ui';
 import './ModalLayout.css';
+
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '../components/ui';
 
 /**
  * ModalLayout — Wrapper obligatoire pour tous les modaux.
@@ -43,14 +44,8 @@ function ModalLayout({
           {title}
         </ModalHeader>
       )}
-      <ModalBody className={bodyClassName}>
-        {children}
-      </ModalBody>
-      {footer && (
-        <ModalFooter align={footerAlign}>
-          {footer}
-        </ModalFooter>
-      )}
+      <ModalBody className={bodyClassName}>{children}</ModalBody>
+      {footer && <ModalFooter align={footerAlign}>{footer}</ModalFooter>}
     </Modal>
   );
 }

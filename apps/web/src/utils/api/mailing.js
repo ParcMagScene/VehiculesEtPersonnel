@@ -2,7 +2,6 @@
 
 export function registerMailingMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Configuration Email
     async getEmailConfig() {
       return this.request('/email-config');

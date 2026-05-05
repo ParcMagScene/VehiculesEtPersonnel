@@ -1,10 +1,14 @@
+import './MobileLogin.css';
+import './MobileSheet.css';
+
+import { Key, LogIn, Mail, UserPlus } from 'lucide-react';
 import { useState } from 'react';
-import { LogIn, UserPlus, Mail, Key } from 'lucide-react';
+
+import { BottomSheet, Button, Card, FormField, InlineAlert, Input } from '@/design-system';
+
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
-import './MobileLogin.css';
-import { useToast } from '../../hooks/useToast';
-import { Button, Card, FormField, InlineAlert, Input } from '@/design-system';
 
 function MobileLogin({ onLogin }) {
   const toast = useToast();
@@ -21,6 +25,8 @@ function MobileLogin({ onLogin }) {
   const [resetFormPassword, setResetFormPassword] = useState('');
   const [resetFormConfirm, setResetFormConfirm] = useState('');
   const [resetError, setResetError] = useState('');
+  const [resetStep, setResetStep] = useState(1);
+  const [resetOtp, setResetOtp] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,9 +72,7 @@ function MobileLogin({ onLogin }) {
           <h1>Connexion eM@g</h1>
           <p>{mode === 'register' ? 'Créer un compte' : 'Connectez-vous pour continuer'}</p>
           {mode === 'register' && (
-            <small style={{ color: 'var(--theme-text-gray)', fontSize: '12px', display: 'block', marginTop: '8px' }}>
-              ⚠️ Email autorisé requis
-            </small>
+            <small className="login-register-warning">⚠️ Email autorisé requis</small>
           )}
         </div>
 
@@ -111,16 +115,21 @@ function MobileLogin({ onLogin }) {
             />
           </FormField>
 
-          {error && (
-            <InlineAlert>{error}</InlineAlert>
-          )}
+          {error && <InlineAlert>{error}</InlineAlert>}
 
           <Button variant="ghost" type="submit" className="login-button" disabled={isLoading}>
-            {isLoading ? (mode === 'register' ? 'Création...' : 'Connexion...') : (mode === 'register' ? 'Créer le compte' : 'Se connecter')}
+            {isLoading
+              ? mode === 'register'
+                ? 'Création...'
+                : 'Connexion...'
+              : mode === 'register'
+                ? 'Créer le compte'
+                : 'Se connecter'}
           </Button>
 
-          <Button variant="ghost" 
-            type="button" 
+          <Button
+            variant="ghost"
+            type="button"
             className="toggle-mode-button"
             onClick={() => {
               setMode(mode === 'login' ? 'register' : 'login');
@@ -131,8 +140,9 @@ function MobileLogin({ onLogin }) {
             {mode === 'login' ? 'Créer un compte' : 'Déjà un compte ? Se connecter'}
           </Button>
 
-          <Button variant="ghost" 
-            type="button" 
+          <Button
+            variant="ghost"
+            type="button"
             className="access-request-button"
             onClick={() => setShowAccessRequest(true)}
           >
@@ -141,7 +151,9 @@ function MobileLogin({ onLogin }) {
           </Button>
 
           {mode === 'login' && (
-            <Button variant="ghost"               type="button"
+            <Button
+              variant="ghost"
+              type="button"
               className="forgot-password-button"
               onClick={() => {
                 setShowResetPassword(true);
@@ -150,6 +162,8 @@ function MobileLogin({ onLogin }) {
                 setResetFormPassword('');
                 setResetFormConfirm('');
                 setResetError('');
+                setResetStep(1);
+                setResetOtp('');
               }}
             >
               <Key size={16} />
@@ -167,40 +181,66 @@ function MobileLogin({ onLogin }) {
         <AccessRequestModal
           onClose={() => setShowAccessRequest(false)}
           onSuccess={() => {
-            toast.success('Demande envoyée avec succès ! Vous recevrez un email dès qu\'un administrateur aura validé votre demande.');
+            toast.success(
+              "Demande envoyée avec succès ! Vous recevrez un email dès qu'un administrateur aura validé votre demande.",
+            );
           }}
         />
       )}
 
-      {/* Modal Réinitialisation directe du mot de passe */}
-      {showResetPassword && (
-        <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowResetPassword(false); }}>
-          <div className="mobile-sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="mobile-sheet-handle" />
-            <h3 className="mobile-sheet-title">🔑 Réinitialiser le mot de passe</h3>
-            <div className="mobile-sheet-form">
-              <p className="mobile-sheet-desc">
-                Entrez votre adresse email, votre nom complet et choisissez un nouveau mot de passe.
-              </p>
-              
-              <form onSubmit={async (e) => {
-                e.preventDefault();
-                if (resetFormPassword !== resetFormConfirm) {
-                  setResetError('Les mots de passe ne correspondent pas');
-                  return;
-                }
-                setIsLoading(true);
-                setResetError('');
-                try {
-                  const data = await api.selfResetPasswordWithNewPassword(resetFormEmail, resetFormName, resetFormPassword);
-                  onLogin(data.user);
+      {/* Modal Réinitialisation du mot de passe (2 étapes avec OTP) */}
+      <BottomSheet
+        open={showResetPassword}
+        onClose={() => {
+          setShowResetPassword(false);
+          setResetError('');
+          setResetStep(1);
+          setResetOtp('');
+        }}
+        title="🔑 Réinitialiser le mot de passe"
+      >
+        <div className="mobile-sheet-form">
+          <p className="mobile-sheet-desc">
+            {resetStep === 1
+              ? 'Entrez votre adresse email et votre nom complet. Un code de vérification vous sera envoyé par email.'
+              : 'Un code de vérification a été envoyé à votre adresse email. Saisissez-le ci-dessous avec votre nouveau mot de passe.'}
+          </p>
+
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setIsLoading(true);
+              setResetError('');
+              try {
+                if (resetStep === 1) {
+                  await api.selfResetPassword(resetFormEmail, resetFormName);
+                  setResetStep(2);
+                } else {
+                  if (resetFormPassword !== resetFormConfirm) {
+                    setResetError('Les mots de passe ne correspondent pas');
+                    return;
+                  }
+                  if (resetFormPassword.length < 10) {
+                    setResetError('Le mot de passe doit contenir au moins 10 caractères');
+                    return;
+                  }
+                  await api.setNewPassword(resetFormEmail, resetOtp, resetFormPassword);
                   setShowResetPassword(false);
-                } catch (err) {
-                  setResetError(err.message);
-                } finally {
-                  setIsLoading(false);
+                  setResetStep(1);
+                  setResetOtp('');
+                  setError(
+                    'Mot de passe réinitialisé — connectez-vous avec votre nouveau mot de passe.',
+                  );
                 }
-              }}>
+              } catch (err) {
+                setResetError(err.message);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+          >
+            {resetStep === 1 ? (
+              <>
                 <FormField className="form-group" label="Adresse email" htmlFor="reset-email">
                   <Input
                     id="reset-email"
@@ -223,8 +263,34 @@ function MobileLogin({ onLogin }) {
                     required
                   />
                 </FormField>
+              </>
+            ) : (
+              <>
+                <FormField
+                  className="form-group"
+                  label="Code de vérification (6 chiffres)"
+                  htmlFor="reset-otp"
+                >
+                  <Input
+                    id="reset-otp"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    value={resetOtp}
+                    onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="000000"
+                    required
+                    autoFocus
+                    autoComplete="one-time-code"
+                  />
+                </FormField>
 
-                <FormField className="form-group" label="Nouveau mot de passe" htmlFor="reset-password">
+                <FormField
+                  className="form-group"
+                  label="Nouveau mot de passe"
+                  htmlFor="reset-password"
+                >
                   <Input
                     id="reset-password"
                     type="password"
@@ -232,12 +298,16 @@ function MobileLogin({ onLogin }) {
                     onChange={(e) => setResetFormPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    minLength={6}
+                    minLength={10}
                     autoComplete="new-password"
                   />
                 </FormField>
 
-                <FormField className="form-group" label="Confirmer le mot de passe" htmlFor="reset-confirm">
+                <FormField
+                  className="form-group"
+                  label="Confirmer le mot de passe"
+                  htmlFor="reset-confirm"
+                >
                   <Input
                     id="reset-confirm"
                     type="password"
@@ -245,33 +315,53 @@ function MobileLogin({ onLogin }) {
                     onChange={(e) => setResetFormConfirm(e.target.value)}
                     placeholder="••••••••"
                     required
-                    minLength={6}
+                    minLength={10}
                     autoComplete="new-password"
                   />
                 </FormField>
+              </>
+            )}
 
-                {resetError && <InlineAlert>{resetError}</InlineAlert>}
-                
-                <div className="mobile-sheet-form-actions">
-                  <Button variant="ghost"                     type="button"
-                    className="toggle-mode-button"
-                    onClick={() => { setShowResetPassword(false); setResetError(''); }}
-                    disabled={isLoading}
-                  >
-                    Annuler
-                  </Button>
-                  <Button variant="ghost"                     type="submit"
-                    className="login-button"
-                    disabled={isLoading || !resetFormEmail || !resetFormName || !resetFormPassword || !resetFormConfirm}
-                  >
-                    {isLoading ? 'Réinitialisation...' : 'Réinitialiser'}
-                  </Button>
-                </div>
-              </form>
+            {resetError && <InlineAlert>{resetError}</InlineAlert>}
+
+            <div className="mobile-sheet-form-actions">
+              <Button
+                variant="ghost"
+                type="button"
+                className="toggle-mode-button"
+                onClick={() => {
+                  setShowResetPassword(false);
+                  setResetError('');
+                  setResetStep(1);
+                  setResetOtp('');
+                }}
+                disabled={isLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="ghost"
+                type="submit"
+                className="login-button"
+                disabled={
+                  isLoading ||
+                  (resetStep === 1 && (!resetFormEmail || !resetFormName)) ||
+                  (resetStep === 2 &&
+                    (resetOtp.length !== 6 || !resetFormPassword || !resetFormConfirm))
+                }
+              >
+                {isLoading
+                  ? resetStep === 1
+                    ? 'Envoi...'
+                    : 'Réinitialisation...'
+                  : resetStep === 1
+                    ? 'Envoyer le code'
+                    : 'Réinitialiser'}
+              </Button>
             </div>
-          </div>
+          </form>
         </div>
-      )}
+      </BottomSheet>
     </div>
   );
 }

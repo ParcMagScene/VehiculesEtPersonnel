@@ -4,9 +4,11 @@
 // Supporte un ou plusieurs dépôts
 // ============================================================
 
-import { useMemo } from 'react';
-import { MapPin, Warehouse } from 'lucide-react';
 import './LocationSelector.css';
+
+import { MapPin, Warehouse } from 'lucide-react';
+import { useMemo } from 'react';
+
 import { Select } from '@/design-system';
 
 export default function LocationSelector({ zones, depots, value, onChange }) {
@@ -28,7 +30,7 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
   // Dépôt actuellement sélectionné
   const selectedDepot = useMemo(() => {
     if (!depot) return null;
-    return depotList.find(d => d.id === depot) || null;
+    return depotList.find((d) => d.id === depot) || null;
   }, [depotList, depot]);
 
   // Étages du dépôt sélectionné
@@ -40,7 +42,7 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
   const zonesByFloor = useMemo(() => {
     if (!selectedDepot?.zones) return {};
     const grouped = {};
-    selectedDepot.zones.forEach(z => {
+    selectedDepot.zones.forEach((z) => {
       if (!grouped[z.floor]) grouped[z.floor] = [];
       grouped[z.floor].push(z);
     });
@@ -50,7 +52,7 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
   // Zone sélectionnée
   const selectedZone = useMemo(() => {
     if (!selectedDepot?.zones || !zone) return null;
-    return selectedDepot.zones.find(z => z.id === zone);
+    return selectedDepot.zones.find((z) => z.id === zone);
   }, [selectedDepot, zone]);
 
   // Codes disponibles pour la zone sélectionnée
@@ -77,13 +79,13 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
   };
 
   const handleZoneChange = (newZoneId) => {
-    const zoneObj = selectedDepot?.zones?.find(z => z.id === newZoneId);
+    const zoneObj = selectedDepot?.zones?.find((z) => z.id === newZoneId);
     // Si pas de dépôt sélectionné, chercher dans tous les dépôts
     let foundDepotId = depot;
     let foundZone = zoneObj;
     if (!zoneObj && !depot) {
       for (const d of depotList) {
-        const z = d.zones?.find(z => z.id === newZoneId);
+        const z = d.zones?.find((z) => z.id === newZoneId);
         if (z) {
           foundDepotId = d.id;
           foundZone = z;
@@ -118,14 +120,15 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
         {/* Dépôt */}
         {hasMultipleDepots && (
           <div className="location-form-group">
-            <label><Warehouse size={12} /> Dépôt</label>
-            <Select
-              value={depot}
-              onChange={(e) => handleDepotChange(e.target.value)}
-            >
+            <label>
+              <Warehouse size={12} /> Dépôt
+            </label>
+            <Select value={depot} onChange={(e) => handleDepotChange(e.target.value)}>
               <option value="">— Aucun —</option>
-              {depotList.map(d => (
-                <option key={d.id} value={d.id}>{d.name || `Dépôt ${d.id}`}</option>
+              {depotList.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name || `Dépôt ${d.id}`}
+                </option>
               ))}
             </Select>
           </div>
@@ -140,8 +143,10 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
             disabled={hasMultipleDepots && !depot}
           >
             <option value="">— Aucun —</option>
-            {floors.map(f => (
-              <option key={f.id} value={f.id}>{f.label}</option>
+            {floors.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
             ))}
           </Select>
         </div>
@@ -149,28 +154,31 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
         {/* Zone */}
         <div className="location-form-group">
           <label>Zone</label>
-          <Select
-            value={zone}
-            onChange={(e) => handleZoneChange(e.target.value)}
-          >
+          <Select value={zone} onChange={(e) => handleZoneChange(e.target.value)}>
             <option value="">— Aucune —</option>
-            {depot && floor && zonesByFloor[floor]?.map(z => (
-              <option key={z.id} value={z.id}>
-                {z.label}
-              </option>
-            ))}
-            {depot && !floor && selectedDepot?.zones?.map(z => (
-              <option key={z.id} value={z.id}>
-                [{z.floor}] {z.label}
-              </option>
-            ))}
-            {!depot && depotList.map(d => (
-              d.zones?.map(z => (
-                <option key={`${d.id}_${z.id}`} value={z.id}>
-                  {hasMultipleDepots ? `${d.name || 'Dépôt ' + d.id} — ` : ''}[{z.floor}] {z.label}
+            {depot &&
+              floor &&
+              zonesByFloor[floor]?.map((z) => (
+                <option key={z.id} value={z.id}>
+                  {z.label}
                 </option>
-              ))
-            ))}
+              ))}
+            {depot &&
+              !floor &&
+              selectedDepot?.zones?.map((z) => (
+                <option key={z.id} value={z.id}>
+                  [{z.floor}] {z.label}
+                </option>
+              ))}
+            {!depot &&
+              depotList.map((d) =>
+                d.zones?.map((z) => (
+                  <option key={`${d.id}_${z.id}`} value={z.id}>
+                    {hasMultipleDepots ? `${d.name || 'Dépôt ' + d.id} — ` : ''}[{z.floor}]{' '}
+                    {z.label}
+                  </option>
+                )),
+              )}
           </Select>
         </div>
 
@@ -183,8 +191,10 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
             disabled={!zone || availableCodes.length === 0}
           >
             <option value="">— Aucun —</option>
-            {availableCodes.map(c => (
-              <option key={c} value={c}>{c}</option>
+            {availableCodes.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
           </Select>
         </div>

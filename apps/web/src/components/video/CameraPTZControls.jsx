@@ -2,9 +2,11 @@
 // CameraPTZControls.jsx — Contrôle PTZ (Pan/Tilt/Zoom)
 // ═══════════════════════════════════════════════════════════════
 
-import { usePTZ } from '../../hooks/usePTZ';
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ZoomIn, ZoomOut } from 'lucide-react';
+
 import { Button, Tooltip } from '@/design-system';
+
+import { usePTZ } from '../../hooks/usePTZ';
 
 const CameraPTZControls = ({ camera }) => {
   const { moving, startMove, stopMove } = usePTZ(camera);
@@ -21,25 +23,41 @@ const CameraPTZControls = ({ camera }) => {
     <div className="ptz-controls">
       <div className="ptz-controls__dpad">
         <Tooltip content="Haut">
-          <Button variant="ghost" className="ptz-controls__btn ptz-controls__btn--up" {...makeHandlers('up')}>
+          <Button
+            variant="ghost"
+            className="ptz-controls__btn ptz-controls__btn--up"
+            {...makeHandlers('up')}
+          >
             <ChevronUp size={20} />
           </Button>
         </Tooltip>
         <div className="ptz-controls__row">
           <Tooltip content="Gauche">
-            <Button variant="ghost" className="ptz-controls__btn ptz-controls__btn--left" {...makeHandlers('left')}>
+            <Button
+              variant="ghost"
+              className="ptz-controls__btn ptz-controls__btn--left"
+              {...makeHandlers('left')}
+            >
               <ChevronLeft size={20} />
             </Button>
           </Tooltip>
           <div className="ptz-controls__center" />
           <Tooltip content="Droite">
-            <Button variant="ghost" className="ptz-controls__btn ptz-controls__btn--right" {...makeHandlers('right')}>
+            <Button
+              variant="ghost"
+              className="ptz-controls__btn ptz-controls__btn--right"
+              {...makeHandlers('right')}
+            >
               <ChevronRight size={20} />
             </Button>
           </Tooltip>
         </div>
         <Tooltip content="Bas">
-          <Button variant="ghost" className="ptz-controls__btn ptz-controls__btn--down" {...makeHandlers('down')}>
+          <Button
+            variant="ghost"
+            className="ptz-controls__btn ptz-controls__btn--down"
+            {...makeHandlers('down')}
+          >
             <ChevronDown size={20} />
           </Button>
         </Tooltip>

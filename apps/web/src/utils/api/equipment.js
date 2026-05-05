@@ -1,9 +1,7 @@
 // API — Parc Matériel (Catégories, Items, SAV, Listes, Photos, Assignments)
-import { API_URL } from './base.js';
 
 export function registerEquipmentMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Catégories
     async getEquipmentCategories() {
       return this.request('/equipment-categories');
@@ -12,7 +10,10 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request('/equipment-categories', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateEquipmentCategory(id, data) {
-      return this.request(`/equipment-categories/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      return this.request(`/equipment-categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
     },
     async deleteEquipmentCategory(id) {
       return this.request(`/equipment-categories/${id}`, { method: 'DELETE' });
@@ -39,10 +40,16 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request(`/equipment/${id}/serialize`, { method: 'POST' });
     },
     async linkEquipmentPhoto(id, photo) {
-      return this.request(`/equipment/${id}/photo`, { method: 'PATCH', body: JSON.stringify({ photo }) });
+      return this.request(`/equipment/${id}/photo`, {
+        method: 'PATCH',
+        body: JSON.stringify({ photo }),
+      });
     },
     async importEquipmentCsv(data, mode = 'import') {
-      return this.request('/equipment/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
+      return this.request('/equipment/import-csv', {
+        method: 'POST',
+        body: JSON.stringify({ data, mode }),
+      });
     },
     async getEquipmentCategoriesTree() {
       return this.request('/equipment-categories/tree');
@@ -87,9 +94,6 @@ export function registerEquipmentMethods(ApiClient) {
     async deleteSavTicket(id) {
       return this.request(`/sav-tickets/${id}`, { method: 'DELETE' });
     },
-    async importSavTicketsCsv(data, mode = 'import', manualLinks = null, skipDuplicates = false, updateDuplicates = false) {
-      return this.request('/sav-tickets/import-csv', { method: 'POST', body: JSON.stringify({ data, mode, manualLinks, skipDuplicates, updateDuplicates }) });
-    },
     async removeSavDuplicates() {
       return this.request('/sav-tickets/duplicates', { method: 'DELETE' });
     },
@@ -97,20 +101,56 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request('/sav-tickets/unlinked');
     },
     async linkSavTicket(ticketId, equipmentId) {
-      return this.request(`/sav-tickets/${ticketId}/link`, { method: 'PUT', body: JSON.stringify({ equipment_id: equipmentId }) });
+      return this.request(`/sav-tickets/${ticketId}/link`, {
+        method: 'PUT',
+        body: JSON.stringify({ equipment_id: equipmentId }),
+      });
     },
 
     // PDF SAV
     async exportSavReportPdf(start, end, type = 'all') {
       const qs = new URLSearchParams({ start, end, type }).toString();
-      const resp = await fetch(`${API_URL}/sav-tickets/report/pdf?${qs}`, { credentials: 'include' });
-      if (!resp.ok) throw new Error('Erreur export PDF rapport maintenance');
-      return resp.blob();
+      return this.requestBlob(`/sav-tickets/report/pdf?${qs}`);
     },
     async exportSavActivePdf() {
-      const resp = await fetch(`${API_URL}/sav-tickets/active/pdf`, { credentials: 'include' });
-      if (!resp.ok) throw new Error('Erreur export PDF matériel en SAV');
-      return resp.blob();
+      return this.requestBlob('/sav-tickets/active/pdf');
+    },
+
+    // ───────────────────────────────────────────────────────
+    // Module SAV unifié — synchro LocMat (Phase 3)
+    // ───────────────────────────────────────────────────────
+    async savImportPreview(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      return this.requestFormData('/sav/import/preview', formData);
+    },
+    async savImportConfirm(file, decisions) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('decisions', JSON.stringify(decisions || {}));
+      return this.requestFormData('/sav/import/confirm', formData);
+    },
+    async getSavImports() {
+      return this.request('/sav/imports');
+    },
+    async getSavImport(id) {
+      return this.request(`/sav/imports/${id}`);
+    },
+    async exportSavImportPdf(id) {
+      return this.requestBlob(`/sav/imports/${id}/pdf`);
+    },
+    async getSavTicketsV2(params = {}) {
+      const qs = new URLSearchParams(params).toString();
+      return this.request(`/sav/tickets${qs ? '?' + qs : ''}`);
+    },
+    async getSavTicketV2(id) {
+      return this.request(`/sav/tickets/${id}`);
+    },
+    async patchSavTicket(id, data) {
+      return this.request(`/sav/tickets/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
     },
 
     // Listes Favoris / Surveillance
@@ -118,10 +158,16 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request('/equipment-lists');
     },
     async addToEquipmentList(equipment_id, list_type) {
-      return this.request('/equipment-lists', { method: 'POST', body: JSON.stringify({ equipment_id, list_type }) });
+      return this.request('/equipment-lists', {
+        method: 'POST',
+        body: JSON.stringify({ equipment_id, list_type }),
+      });
     },
     async removeFromEquipmentList(equipment_id, list_type) {
-      return this.request('/equipment-lists', { method: 'DELETE', body: JSON.stringify({ equipment_id, list_type }) });
+      return this.request('/equipment-lists', {
+        method: 'DELETE',
+        body: JSON.stringify({ equipment_id, list_type }),
+      });
     },
 
     // Photos
@@ -133,22 +179,18 @@ export function registerEquipmentMethods(ApiClient) {
       for (const file of files) {
         formData.append('photos', file);
       }
-      const res = await fetch(`${API_URL}/equipment-photos/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'Erreur upload');
-      }
-      return res.json();
+      return this.requestFormData('/equipment-photos/upload', formData);
     },
     async deleteEquipmentPhoto(filename) {
-      return this.request(`/equipment-photos/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      return this.request(`/equipment-photos/${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+      });
     },
     async renameEquipmentPhoto(oldName, newName) {
-      return this.request('/equipment-photos/rename', { method: 'PUT', body: JSON.stringify({ oldName, newName }) });
+      return this.request('/equipment-photos/rename', {
+        method: 'PUT',
+        body: JSON.stringify({ oldName, newName }),
+      });
     },
 
     // Zones de dépôt
@@ -157,7 +199,10 @@ export function registerEquipmentMethods(ApiClient) {
       return this.request(`/equipment-depot-zones${qs}`);
     },
     async updateEquipmentDepotZones(zones, depotId) {
-      return this.request('/equipment-depot-zones', { method: 'PUT', body: JSON.stringify({ zones, depot: depotId }) });
+      return this.request('/equipment-depot-zones', {
+        method: 'PUT',
+        body: JSON.stringify({ zones, depot: depotId }),
+      });
     },
     async getAllDepotZones() {
       return this.request('/equipment-all-depot-zones');

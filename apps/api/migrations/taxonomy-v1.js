@@ -13,7 +13,6 @@
 import logger from '../logger.js';
 
 export function runTaxonomyMigrations(db) {
-
   // ─── 1. Normaliser la casse des familles equipment_categories ───
   try {
     const migKey = 'taxonomy_normalize_family_case_v1';
@@ -24,16 +23,18 @@ export function runTaxonomyMigrations(db) {
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
       const renames = [
-        ['SONORISATION',           'Sonorisation'],
-        ['ECLAIRAGE',              'Éclairage'],
-        ['AUDIOVISUEL',            'Audiovisuel'],
-        ['DISTRIBUTION ELECTRIQUE','Distribution Électrique'],
-        ['BACKLINE',               'Backline'],
-        ['RIDEAU-MACHINERIE',      'Rideau-Machinerie'],
-        ['INFORMATIQUE',           'Informatique'],
-        ['STRUCTURE',              'Structure'],
+        ['SONORISATION', 'Sonorisation'],
+        ['ECLAIRAGE', 'Éclairage'],
+        ['AUDIOVISUEL', 'Audiovisuel'],
+        ['DISTRIBUTION ELECTRIQUE', 'Distribution Électrique'],
+        ['BACKLINE', 'Backline'],
+        ['RIDEAU-MACHINERIE', 'Rideau-Machinerie'],
+        ['INFORMATIQUE', 'Informatique'],
+        ['STRUCTURE', 'Structure'],
       ];
-      const update = db.prepare('UPDATE equipment_categories SET name = ? WHERE name = ? AND parent_id IS NULL');
+      const update = db.prepare(
+        'UPDATE equipment_categories SET name = ? WHERE name = ? AND parent_id IS NULL',
+      );
       let changes = 0;
       for (const [oldName, newName] of renames) {
         const r = update.run(newName, oldName);
@@ -52,15 +53,25 @@ export function runTaxonomyMigrations(db) {
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
       // Corriger "praticables" → "Praticables"
-      db.prepare("UPDATE equipment_categories SET name = 'Praticables' WHERE name = 'praticables' AND level = 'subfamily'").run();
+      db.prepare(
+        "UPDATE equipment_categories SET name = 'Praticables' WHERE name = 'praticables' AND level = 'subfamily'",
+      ).run();
       // Corriger "protente / Crash / Leste" → "Protente / Crash / Leste"
-      db.prepare("UPDATE equipment_categories SET name = 'Protente / Crash / Leste' WHERE name = 'protente / Crash / Leste' AND level = 'subfamily'").run();
+      db.prepare(
+        "UPDATE equipment_categories SET name = 'Protente / Crash / Leste' WHERE name = 'protente / Crash / Leste' AND level = 'subfamily'",
+      ).run();
       // Corriger "Cablages audio" → "Câblages Audio"
-      db.prepare("UPDATE equipment_categories SET name = 'Câblages Audio' WHERE name = 'Cablages audio' AND level = 'subfamily'").run();
+      db.prepare(
+        "UPDATE equipment_categories SET name = 'Câblages Audio' WHERE name = 'Cablages audio' AND level = 'subfamily'",
+      ).run();
       // Corriger "Cablage" → "Câblage" dans Backline (sous-famille id 54's parent)
-      db.prepare("UPDATE equipment_categories SET name = 'Câblage' WHERE name = 'Cablage' AND level = 'subfamily'").run();
+      db.prepare(
+        "UPDATE equipment_categories SET name = 'Câblage' WHERE name = 'Cablage' AND level = 'subfamily'",
+      ).run();
       // Corriger "Intercomm / Talky" → "Intercom / Talky"
-      db.prepare("UPDATE equipment_categories SET name = 'Intercom / Talky' WHERE name = 'Intercomm / Talky' AND level = 'subfamily'").run();
+      db.prepare(
+        "UPDATE equipment_categories SET name = 'Intercom / Talky' WHERE name = 'Intercomm / Talky' AND level = 'subfamily'",
+      ).run();
 
       db.prepare('INSERT INTO _migrations_log (key) VALUES (?)').run(migKey);
       logger.info(`  ✅ Migration ${migKey}: sous-familles normalisées`);
@@ -75,20 +86,22 @@ export function runTaxonomyMigrations(db) {
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
       const insertFamily = db.prepare(
-        "INSERT INTO equipment_categories (name, icon, color, level) VALUES (?, ?, ?, 'family')"
+        "INSERT INTO equipment_categories (name, icon, color, level) VALUES (?, ?, ?, 'family')",
       );
 
       const newFamilies = [
-        ['Accroche',         '🔗', '#14b8a6'],
-        ['Motorisation',     '⚙️',  '#f97316'],
-        ['Mobilier',         '🪑', '#6b7280'],
-        ['Outillage & EPI',  '🔧', '#f59e0b'],
+        ['Accroche', '🔗', '#14b8a6'],
+        ['Motorisation', '⚙️', '#f97316'],
+        ['Mobilier', '🪑', '#6b7280'],
+        ['Outillage & EPI', '🔧', '#f59e0b'],
       ];
 
       const familyIds = {};
       for (const [name, icon, color] of newFamilies) {
         // Vérifier si cette famille existe déjà
-        const exists = db.prepare("SELECT id FROM equipment_categories WHERE name = ? AND level = 'family'").get(name);
+        const exists = db
+          .prepare("SELECT id FROM equipment_categories WHERE name = ? AND level = 'family'")
+          .get(name);
         if (!exists) {
           const r = insertFamily.run(name, icon, color);
           familyIds[name] = r.lastInsertRowid;
@@ -100,16 +113,18 @@ export function runTaxonomyMigrations(db) {
 
       // ─── 3a. Ajouter sous-familles pour Accroche ───
       const insertSub = db.prepare(
-        "INSERT INTO equipment_categories (name, parent_id, level, icon, color) VALUES (?, ?, 'subfamily', ?, ?)"
+        "INSERT INTO equipment_categories (name, parent_id, level, icon, color) VALUES (?, ?, 'subfamily', ?, ?)",
       );
 
       if (familyIds['Accroche']) {
         const accSubs = [
-          ['Élingues',              '🔗', '#14b8a6'],
-          ['Accessoires d\'accroche', '🔗', '#14b8a6'],
+          ['Élingues', '🔗', '#14b8a6'],
+          ["Accessoires d'accroche", '🔗', '#14b8a6'],
         ];
         for (const [name, icon, color] of accSubs) {
-          const exists = db.prepare("SELECT id FROM equipment_categories WHERE name = ? AND parent_id = ?").get(name, familyIds['Accroche']);
+          const exists = db
+            .prepare('SELECT id FROM equipment_categories WHERE name = ? AND parent_id = ?')
+            .get(name, familyIds['Accroche']);
           if (!exists) {
             insertSub.run(name, familyIds['Accroche'], icon, color);
           }
@@ -119,12 +134,14 @@ export function runTaxonomyMigrations(db) {
       // ─── 3b. Ajouter sous-familles pour Motorisation ───
       if (familyIds['Motorisation']) {
         const motSubs = [
-          ['Moteurs',        '⚙️', '#f97316'],
+          ['Moteurs', '⚙️', '#f97316'],
           ['Pieds de levage', '⚙️', '#f97316'],
-          ['Télécommandes',  '⚙️', '#f97316'],
+          ['Télécommandes', '⚙️', '#f97316'],
         ];
         for (const [name, icon, color] of motSubs) {
-          const exists = db.prepare("SELECT id FROM equipment_categories WHERE name = ? AND parent_id = ?").get(name, familyIds['Motorisation']);
+          const exists = db
+            .prepare('SELECT id FROM equipment_categories WHERE name = ? AND parent_id = ?')
+            .get(name, familyIds['Motorisation']);
           if (!exists) {
             insertSub.run(name, familyIds['Motorisation'], icon, color);
           }
@@ -135,10 +152,12 @@ export function runTaxonomyMigrations(db) {
       if (familyIds['Mobilier']) {
         const mobSubs = [
           ['Mobilier scénique', '🪑', '#6b7280'],
-          ['Podiums',           '🪑', '#6b7280'],
+          ['Podiums', '🪑', '#6b7280'],
         ];
         for (const [name, icon, color] of mobSubs) {
-          const exists = db.prepare("SELECT id FROM equipment_categories WHERE name = ? AND parent_id = ?").get(name, familyIds['Mobilier']);
+          const exists = db
+            .prepare('SELECT id FROM equipment_categories WHERE name = ? AND parent_id = ?')
+            .get(name, familyIds['Mobilier']);
           if (!exists) {
             insertSub.run(name, familyIds['Mobilier'], icon, color);
           }
@@ -148,15 +167,17 @@ export function runTaxonomyMigrations(db) {
       // ─── 3d. Sous-familles pour Outillage & EPI ───
       if (familyIds['Outillage & EPI']) {
         const oepSubs = [
-          ['Outillage',           '🔧', '#f59e0b'],
-          ['Électroportatif',     '⚡', '#3b82f6'],
-          ['Levage & Manutention','🏗️', '#ef4444'],
-          ['Mesure & Contrôle',   '📐', '#10b981'],
-          ['EPI',                 '🦺', '#8b5cf6'],
-          ['Véhicule annexe',     '🚗', '#6366f1'],
+          ['Outillage', '🔧', '#f59e0b'],
+          ['Électroportatif', '⚡', '#3b82f6'],
+          ['Levage & Manutention', '🏗️', '#ef4444'],
+          ['Mesure & Contrôle', '📐', '#10b981'],
+          ['EPI', '🦺', '#8b5cf6'],
+          ['Véhicule annexe', '🚗', '#6366f1'],
         ];
         for (const [name, icon, color] of oepSubs) {
-          const exists = db.prepare("SELECT id FROM equipment_categories WHERE name = ? AND parent_id = ?").get(name, familyIds['Outillage & EPI']);
+          const exists = db
+            .prepare('SELECT id FROM equipment_categories WHERE name = ? AND parent_id = ?')
+            .get(name, familyIds['Outillage & EPI']);
           if (!exists) {
             insertSub.run(name, familyIds['Outillage & EPI'], icon, color);
           }
@@ -176,18 +197,42 @@ export function runTaxonomyMigrations(db) {
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
       // Trouver les IDs des nouvelles familles
-      const accroche = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Accroche' AND level = 'family'").get();
-      const motorisation = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Motorisation' AND level = 'family'").get();
+      const accroche = db
+        .prepare("SELECT id FROM equipment_categories WHERE name = 'Accroche' AND level = 'family'")
+        .get();
+      const motorisation = db
+        .prepare(
+          "SELECT id FROM equipment_categories WHERE name = 'Motorisation' AND level = 'family'",
+        )
+        .get();
 
       if (accroche && motorisation) {
         // Trouver les sous-familles cibles
-        const sfElingues = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Élingues' AND parent_id = ?").get(accroche.id);
-        const sfAccessAccroche = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Accessoires d''accroche' AND parent_id = ?").get(accroche.id);
-        const sfMoteurs = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Moteurs' AND parent_id = ?").get(motorisation.id);
-        const sfPieds = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Pieds de levage' AND parent_id = ?").get(motorisation.id);
-        const sfTeleco = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Télécommandes' AND parent_id = ?").get(motorisation.id);
+        const sfElingues = db
+          .prepare("SELECT id FROM equipment_categories WHERE name = 'Élingues' AND parent_id = ?")
+          .get(accroche.id);
+        const sfAccessAccroche = db
+          .prepare(
+            "SELECT id FROM equipment_categories WHERE name = 'Accessoires d''accroche' AND parent_id = ?",
+          )
+          .get(accroche.id);
+        const sfMoteurs = db
+          .prepare("SELECT id FROM equipment_categories WHERE name = 'Moteurs' AND parent_id = ?")
+          .get(motorisation.id);
+        const sfPieds = db
+          .prepare(
+            "SELECT id FROM equipment_categories WHERE name = 'Pieds de levage' AND parent_id = ?",
+          )
+          .get(motorisation.id);
+        const sfTeleco = db
+          .prepare(
+            "SELECT id FROM equipment_categories WHERE name = 'Télécommandes' AND parent_id = ?",
+          )
+          .get(motorisation.id);
 
-        const moveCategory = db.prepare('UPDATE equipment_categories SET parent_id = ? WHERE id = ?');
+        const moveCategory = db.prepare(
+          'UPDATE equipment_categories SET parent_id = ? WHERE id = ?',
+        );
         let moved = 0;
 
         // Élingues acier (id 161) → Élingues sous Accroche
@@ -223,15 +268,21 @@ export function runTaxonomyMigrations(db) {
 
         // Marquer l'ancienne sous-famille Levage (id 19) comme legacy
         // On ne la supprime pas, on la renomme pour traçabilité
-        const oldLevage = db.prepare("SELECT id FROM equipment_categories WHERE id = 19 AND name = 'Levage'").get();
+        const oldLevage = db
+          .prepare("SELECT id FROM equipment_categories WHERE id = 19 AND name = 'Levage'")
+          .get();
         if (oldLevage) {
-          db.prepare("UPDATE equipment_categories SET name = '[Legacy] Levage', description = 'Catégories migrées vers Accroche et Motorisation' WHERE id = 19").run();
+          db.prepare(
+            "UPDATE equipment_categories SET name = '[Legacy] Levage', description = 'Catégories migrées vers Accroche et Motorisation' WHERE id = 19",
+          ).run();
         }
 
         db.prepare('INSERT INTO _migrations_log (key) VALUES (?)').run(migKey);
         logger.info(`  ✅ Migration ${migKey}: ${moved} catégorie(s) reclassées depuis Levage`);
       } else {
-        logger.warn('⚠️ Migration taxonomy_reclassify_levage: familles Accroche/Motorisation introuvables');
+        logger.warn(
+          '⚠️ Migration taxonomy_reclassify_levage: familles Accroche/Motorisation introuvables',
+        );
       }
     }
   } catch (e) {
@@ -243,14 +294,18 @@ export function runTaxonomyMigrations(db) {
     const migKey = 'taxonomy_adopt_orphan_categories_v1';
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
-      const oep = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Outillage & EPI' AND level = 'family'").get();
+      const oep = db
+        .prepare(
+          "SELECT id FROM equipment_categories WHERE name = 'Outillage & EPI' AND level = 'family'",
+        )
+        .get();
       if (oep) {
         // Les orphelines : ids 1-8 (sans parent_id, level='category' ou 'family')
         // On les convertit en sous-familles de "Outillage & EPI"
         // Sauf id=7 "Informatique" (doublon de id=16 INFORMATIQUE) et id=8 "Autre" → Divers
 
         const orphanMapping = [
-          // [id, nouveau_nom, target]  
+          // [id, nouveau_nom, target]
           [1, 'Outillage', oep.id],
           [2, 'Électroportatif', oep.id],
           [3, 'Levage & Manutention', oep.id],
@@ -260,27 +315,36 @@ export function runTaxonomyMigrations(db) {
         ];
 
         const adoptOrphan = db.prepare(
-          "UPDATE equipment_categories SET parent_id = ?, level = 'subfamily' WHERE id = ? AND parent_id IS NULL"
+          "UPDATE equipment_categories SET parent_id = ?, level = 'subfamily' WHERE id = ? AND parent_id IS NULL",
         );
 
         let adopted = 0;
         for (const [id, , targetId] of orphanMapping) {
           // Vérifier qu'il n'y a pas de doublon de nom dans la sous-famille cible
-          const existingSub = db.prepare(
-            "SELECT id FROM equipment_categories WHERE name = (SELECT name FROM equipment_categories WHERE id = ?) AND parent_id = ? AND id != ?"
-          ).get(id, targetId, id);
+          const existingSub = db
+            .prepare(
+              'SELECT id FROM equipment_categories WHERE name = (SELECT name FROM equipment_categories WHERE id = ?) AND parent_id = ? AND id != ?',
+            )
+            .get(id, targetId, id);
 
           if (existingSub) {
             // Un doublon existe déjà → supprimer l'orpheline (0 equipment liés)
-            const eqCount = db.prepare("SELECT COUNT(*) as cnt FROM equipment WHERE category_id = ?").get(id);
+            const eqCount = db
+              .prepare('SELECT COUNT(*) as cnt FROM equipment WHERE category_id = ?')
+              .get(id);
             if (eqCount.cnt === 0) {
-              db.prepare("DELETE FROM equipment_categories WHERE id = ?").run(id);
+              db.prepare('DELETE FROM equipment_categories WHERE id = ?').run(id);
               logger.info(`  🗑️  Orpheline id=${id} supprimée (doublon, 0 equipment)`);
             } else {
               // Migrer les équipements vers la sous-famille existante
-              db.prepare("UPDATE equipment SET category_id = ? WHERE category_id = ?").run(existingSub.id, id);
-              db.prepare("DELETE FROM equipment_categories WHERE id = ?").run(id);
-              logger.info(`  🔄 Orpheline id=${id}: ${eqCount.cnt} equipment migrés vers id=${existingSub.id}`);
+              db.prepare('UPDATE equipment SET category_id = ? WHERE category_id = ?').run(
+                existingSub.id,
+                id,
+              );
+              db.prepare('DELETE FROM equipment_categories WHERE id = ?').run(id);
+              logger.info(
+                `  🔄 Orpheline id=${id}: ${eqCount.cnt} equipment migrés vers id=${existingSub.id}`,
+              );
             }
           } else {
             const r = adoptOrphan.run(targetId, id);
@@ -289,30 +353,52 @@ export function runTaxonomyMigrations(db) {
         }
 
         // Orpheline id=7 "Informatique" → fusionner avec famille Informatique existante
-        const infoFamily = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Informatique' AND level = 'family'").get();
+        const infoFamily = db
+          .prepare(
+            "SELECT id FROM equipment_categories WHERE name = 'Informatique' AND level = 'family'",
+          )
+          .get();
         if (infoFamily) {
-          const infoOrphan = db.prepare("SELECT id FROM equipment_categories WHERE id = 7 AND parent_id IS NULL").get();
+          const infoOrphan = db
+            .prepare('SELECT id FROM equipment_categories WHERE id = 7 AND parent_id IS NULL')
+            .get();
           if (infoOrphan) {
-            const eqCount = db.prepare("SELECT COUNT(*) as cnt FROM equipment WHERE category_id = 7").get();
+            const eqCount = db
+              .prepare('SELECT COUNT(*) as cnt FROM equipment WHERE category_id = 7')
+              .get();
             if (eqCount.cnt > 0) {
-              db.prepare("UPDATE equipment SET category_id = ? WHERE category_id = 7").run(infoFamily.id);
+              db.prepare('UPDATE equipment SET category_id = ? WHERE category_id = 7').run(
+                infoFamily.id,
+              );
             }
-            db.prepare("DELETE FROM equipment_categories WHERE id = 7").run();
+            db.prepare('DELETE FROM equipment_categories WHERE id = 7').run();
             logger.info(`  🔄 Orpheline id=7 "Informatique" fusionnée avec famille Informatique`);
           }
         }
 
         // Orpheline id=8 "Autre" → rattacher au Divers existant
-        const divers = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Divers' AND level = 'family'").get();
+        const divers = db
+          .prepare("SELECT id FROM equipment_categories WHERE name = 'Divers' AND level = 'family'")
+          .get();
         if (!divers) {
           // Créer Divers si inexistant
-          db.prepare("INSERT INTO equipment_categories (name, icon, color, level) VALUES ('Divers', '📋', '#94a3b8', 'family')").run();
-          const diversNew = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Divers' AND level = 'family'").get();
+          db.prepare(
+            "INSERT INTO equipment_categories (name, icon, color, level) VALUES ('Divers', '📋', '#94a3b8', 'family')",
+          ).run();
+          const diversNew = db
+            .prepare(
+              "SELECT id FROM equipment_categories WHERE name = 'Divers' AND level = 'family'",
+            )
+            .get();
           if (diversNew) {
-            db.prepare("UPDATE equipment_categories SET parent_id = ?, level = 'subfamily', name = 'Sans catégorie' WHERE id = 8 AND parent_id IS NULL").run(diversNew.id);
+            db.prepare(
+              "UPDATE equipment_categories SET parent_id = ?, level = 'subfamily', name = 'Sans catégorie' WHERE id = 8 AND parent_id IS NULL",
+            ).run(diversNew.id);
           }
         } else {
-          db.prepare("UPDATE equipment_categories SET parent_id = ?, level = 'subfamily', name = 'Sans catégorie' WHERE id = 8 AND parent_id IS NULL").run(divers.id);
+          db.prepare(
+            "UPDATE equipment_categories SET parent_id = ?, level = 'subfamily', name = 'Sans catégorie' WHERE id = 8 AND parent_id IS NULL",
+          ).run(divers.id);
         }
 
         db.prepare('INSERT INTO _migrations_log (key) VALUES (?)').run(migKey);
@@ -328,7 +414,7 @@ export function runTaxonomyMigrations(db) {
     const migKey = 'taxonomy_supplier_unified_family_v1';
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
-      const cols = db.pragma('table_info(supplier_articles)').map(c => c.name);
+      const cols = db.pragma('table_info(supplier_articles)').map((c) => c.name);
       if (!cols.includes('unified_family')) {
         db.exec('ALTER TABLE supplier_articles ADD COLUMN unified_family TEXT');
         logger.info('  ✅ supplier_articles.unified_family ajouté');
@@ -348,7 +434,9 @@ export function runTaxonomyMigrations(db) {
       // Remplir le mapping
       const existingCount = db.prepare('SELECT COUNT(*) as cnt FROM taxonomy_family_mapping').get();
       if (existingCount.cnt === 0) {
-        const ins = db.prepare('INSERT INTO taxonomy_family_mapping (source_pattern, target_family, is_regex, priority) VALUES (?, ?, ?, ?)');
+        const ins = db.prepare(
+          'INSERT INTO taxonomy_family_mapping (source_pattern, target_family, is_regex, priority) VALUES (?, ?, ?, ?)',
+        );
 
         const mappings = [
           // Sonorisation
@@ -362,20 +450,45 @@ export function runTaxonomyMigrations(db) {
           ['boîtier.*scène|cordon micro', 'Sonorisation', 1, 5],
           // Éclairage
           ['projecteur.*scén|asservi|lyre|led.*changeur|blinder|stroboscope', 'Éclairage', 1, 10],
-          ['lampe|bague.*filtre|bloc.*puissance|lighting|projecteur.*architect', 'Éclairage', 1, 10],
+          [
+            'lampe|bague.*filtre|bloc.*puissance|lighting|projecteur.*architect',
+            'Éclairage',
+            1,
+            10,
+          ],
           ['éclairage.*gén|éclairage général|livré avec coupe', 'Éclairage', 1, 10],
           ['projecteur.*led|projecteur.*photo', 'Éclairage', 1, 5],
           ['pièces détachées pour projecteurs', 'Éclairage', 1, 5],
           // Structure
-          ['structure.*scén|cercle|angle.*livr|gladiator|hauteur|tableau.*charge', 'Structure', 1, 10],
+          [
+            'structure.*scén|cercle|angle.*livr|gladiator|hauteur|tableau.*charge',
+            'Structure',
+            1,
+            10,
+          ],
           ['mvccs', 'Structure', 0, 10],
           // Audiovisuel
-          ['vidéoprojecteur|écran|caméscope|apn|cadr|convertisseur.*scaler|lcd', 'Audiovisuel', 1, 10],
+          [
+            'vidéoprojecteur|écran|caméscope|apn|cadr|convertisseur.*scaler|lcd',
+            'Audiovisuel',
+            1,
+            10,
+          ],
           ['accessoires pour apn|accessoires.*prise.*vue|appareils photo', 'Audiovisuel', 1, 10],
-          ['adaptateur.*vidéo|vidéo et data|support.*moniteur|support.*écran', 'Audiovisuel', 1, 10],
+          [
+            'adaptateur.*vidéo|vidéo et data|support.*moniteur|support.*écran',
+            'Audiovisuel',
+            1,
+            10,
+          ],
           // Distribution Électrique
           ['matériel.*électr|électricité|schuko|tableau.*électr', 'Distribution Électrique', 1, 10],
-          ['câble|cable|connectique|adaptateur.*audio.*lumi|speakerlink', 'Distribution Électrique', 1, 5],
+          [
+            'câble|cable|connectique|adaptateur.*audio.*lumi|speakerlink',
+            'Distribution Électrique',
+            1,
+            5,
+          ],
           ['analogique polywire', 'Distribution Électrique', 1, 5],
           // Accroche
           ['élingue|sangle.*textile|stopchute|pince.*manchon', 'Accroche', 1, 10],
@@ -386,7 +499,12 @@ export function runTaxonomyMigrations(db) {
           ['informatique|accessoires informatiques', 'Informatique', 1, 5],
           // Outillage & EPI
           ['outillage|électroportatif|chariot', 'Outillage & EPI', 1, 10],
-          ['epi|équipement.*protection|sécurité.*incendie|lampe.*frontale', 'Outillage & EPI', 1, 10],
+          [
+            'epi|équipement.*protection|sécurité.*incendie|lampe.*frontale',
+            'Outillage & EPI',
+            1,
+            10,
+          ],
           // Divers
           ['rack|flight.case|valise.*transport|sac.*housse', 'Divers', 1, 5],
           ['gaffer|adhésif|marquage|velcro|balisage|signalisation', 'Divers', 1, 5],
@@ -412,22 +530,25 @@ export function runTaxonomyMigrations(db) {
     const migKey = 'taxonomy_apply_supplier_mapping_v1';
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
-      const rules = db.prepare(
-        'SELECT source_pattern, target_family, is_regex FROM taxonomy_family_mapping ORDER BY priority DESC'
-      ).all();
+      const rules = db
+        .prepare(
+          'SELECT source_pattern, target_family, is_regex FROM taxonomy_family_mapping ORDER BY priority DESC',
+        )
+        .all();
 
       const updateFamily = db.prepare(
-        'UPDATE supplier_articles SET unified_family = ? WHERE id = ?'
+        'UPDATE supplier_articles SET unified_family = ? WHERE id = ?',
       );
 
-      const unmapped = db.prepare(
-        "SELECT id, family FROM supplier_articles WHERE unified_family IS NULL AND family IS NOT NULL AND family != ''"
-      ).all();
+      const unmapped = db
+        .prepare(
+          "SELECT id, family FROM supplier_articles WHERE unified_family IS NULL AND family IS NOT NULL AND family != ''",
+        )
+        .all();
 
       let mapped = 0;
       for (const row of unmapped) {
         const familyLower = row.family.toLowerCase();
-        let matched = false;
         for (const rule of rules) {
           if (rule.is_regex) {
             try {
@@ -435,15 +556,15 @@ export function runTaxonomyMigrations(db) {
               if (re.test(familyLower)) {
                 updateFamily.run(rule.target_family, row.id);
                 mapped++;
-                matched = true;
                 break;
               }
-            } catch { /* regex invalide, skip */ }
+            } catch {
+              /* regex invalide, skip */
+            }
           } else {
             if (familyLower === rule.source_pattern.toLowerCase()) {
               updateFamily.run(rule.target_family, row.id);
               mapped++;
-              matched = true;
               break;
             }
           }
@@ -452,7 +573,9 @@ export function runTaxonomyMigrations(db) {
       }
 
       db.prepare('INSERT INTO _migrations_log (key) VALUES (?)').run(migKey);
-      logger.info(`  ✅ Migration ${migKey}: ${mapped}/${unmapped.length} articles fournisseurs mappés`);
+      logger.info(
+        `  ✅ Migration ${migKey}: ${mapped}/${unmapped.length} articles fournisseurs mappés`,
+      );
     }
   } catch (e) {
     logger.warn('⚠️ Migration taxonomy_apply_supplier_mapping:', e.message);
@@ -463,7 +586,7 @@ export function runTaxonomyMigrations(db) {
     const migKey = 'taxonomy_equipment_catalog_unified_v1';
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
-      const cols = db.pragma('table_info(equipment_catalog)').map(c => c.name);
+      const cols = db.pragma('table_info(equipment_catalog)').map((c) => c.name);
       if (!cols.includes('unified_family')) {
         db.exec('ALTER TABLE equipment_catalog ADD COLUMN unified_family TEXT');
         logger.info('  ✅ equipment_catalog.unified_family ajouté');
@@ -479,9 +602,13 @@ export function runTaxonomyMigrations(db) {
     const migKey = 'taxonomy_add_divers_family_v1';
     const already = db.prepare('SELECT 1 FROM _migrations_log WHERE key = ?').get(migKey);
     if (!already) {
-      const divers = db.prepare("SELECT id FROM equipment_categories WHERE name = 'Divers' AND level = 'family'").get();
+      const divers = db
+        .prepare("SELECT id FROM equipment_categories WHERE name = 'Divers' AND level = 'family'")
+        .get();
       if (!divers) {
-        db.prepare("INSERT INTO equipment_categories (name, icon, color, level) VALUES ('Divers', '📋', '#94a3b8', 'family')").run();
+        db.prepare(
+          "INSERT INTO equipment_categories (name, icon, color, level) VALUES ('Divers', '📋', '#94a3b8', 'family')",
+        ).run();
         logger.info('  ✅ Famille "Divers" ajoutée à equipment_categories');
       }
       db.prepare('INSERT INTO _migrations_log (key) VALUES (?)').run(migKey);

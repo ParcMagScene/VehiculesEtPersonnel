@@ -2,7 +2,6 @@
 
 export function registerPersonnelMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Personnes
     async getPersons() {
       return this.request('/persons');
@@ -20,10 +19,16 @@ export function registerPersonnelMethods(ApiClient) {
       return this.request(`/persons/${id}`, { method: 'DELETE' });
     },
     async importPersonnelCsv(data, mode = 'import') {
-      return this.request('/persons/import-csv', { method: 'POST', body: JSON.stringify({ data, mode }) });
+      return this.request('/persons/import-csv', {
+        method: 'POST',
+        body: JSON.stringify({ data, mode }),
+      });
     },
     async bulkDeletePersons(ids) {
-      return this.request('/persons/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) });
+      return this.request('/persons/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      });
     },
 
     // Compétences
@@ -65,10 +70,16 @@ export function registerPersonnelMethods(ApiClient) {
       return this.request(`/availabilities${qs ? '?' + qs : ''}`);
     },
     async createAvailability(availability) {
-      return this.request('/availabilities', { method: 'POST', body: JSON.stringify(availability) });
+      return this.request('/availabilities', {
+        method: 'POST',
+        body: JSON.stringify(availability),
+      });
     },
     async updateAvailability(id, availability) {
-      return this.request(`/availabilities/${id}`, { method: 'PUT', body: JSON.stringify(availability) });
+      return this.request(`/availabilities/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(availability),
+      });
     },
     async deleteAvailability(id) {
       return this.request(`/availabilities/${id}`, { method: 'DELETE' });
@@ -77,7 +88,10 @@ export function registerPersonnelMethods(ApiClient) {
       return this.request(`/availabilities/${id}/approve`, { method: 'POST' });
     },
     async rejectLeaveRequest(id, reason) {
-      return this.request(`/availabilities/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
+      return this.request(`/availabilities/${id}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
     },
 
     // Missions
@@ -116,7 +130,10 @@ export function registerPersonnelMethods(ApiClient) {
       return this.request('/assignments', { method: 'POST', body: JSON.stringify(assignment) });
     },
     async updateAssignment(id, assignment) {
-      return this.request(`/assignments/${id}`, { method: 'PUT', body: JSON.stringify(assignment) });
+      return this.request(`/assignments/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(assignment),
+      });
     },
     async deleteAssignment(id) {
       return this.request(`/assignments/${id}`, { method: 'DELETE' });

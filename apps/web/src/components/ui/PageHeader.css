@@ -88,6 +88,12 @@
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .ui-page-header-row { flex-direction: column; align-items: flex-start; }
-  .ui-page-header-actions { width: 100%; justify-content: flex-end; }
+  .ui-page-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ui-page-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }

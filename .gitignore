@@ -1,6 +1,7 @@
 node_modules/
 dist/
 dist-backup/
+coverage/
 .DS_Store
 *.log
 .env
@@ -67,6 +68,9 @@ mediamtx.yml
 # Backup avec credentials Google et données métier
 apps/api/backup-restore.json
 
+# Clé Service Account Google (secrets — ne jamais committer)
+apps/api/google-sa-key.json
+
 # Backups de base de données (toutes)
 apps/api/backups/
 
@@ -122,3 +126,6 @@ public/Logos/*.svg
 
 # Scripts internes de nettoyage
 scripts/_cleanup-*.cjs
+
+# Certificats SSL/TLS
+ssl/

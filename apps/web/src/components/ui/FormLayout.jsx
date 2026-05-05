@@ -7,10 +7,17 @@ import './FormLayout.css';
 function FormLayout({ className = '', children, onSubmit }) {
   const cls = ['ui-form-layout', className].filter(Boolean).join(' ');
   const handleSubmit = onSubmit
-    ? (e) => { e.preventDefault(); onSubmit(e); }
+    ? (e) => {
+        e.preventDefault();
+        onSubmit(e);
+      }
     : undefined;
   const Tag = onSubmit ? 'form' : 'div';
-  return <Tag className={cls} onSubmit={handleSubmit}>{children}</Tag>;
+  return (
+    <Tag className={cls} onSubmit={handleSubmit}>
+      {children}
+    </Tag>
+  );
 }
 
 /**
@@ -37,9 +44,14 @@ function FormSection({ title, description, className = '', children }) {
 function FormRow({ columns, gap, className = '', children }) {
   const cls = ['ui-form-row', className].filter(Boolean).join(' ');
   const style = {};
-  if (columns) style.gridTemplateColumns = typeof columns === 'number' ? `repeat(${columns}, 1fr)` : columns;
+  if (columns)
+    style.gridTemplateColumns = typeof columns === 'number' ? `repeat(${columns}, 1fr)` : columns;
   if (gap) style.gap = gap;
-  return <div className={cls} style={Object.keys(style).length ? style : undefined}>{children}</div>;
+  return (
+    <div className={cls} style={Object.keys(style).length ? style : undefined}>
+      {children}
+    </div>
+  );
 }
 
 /**
@@ -50,4 +62,4 @@ function FormActions({ align = 'end', className = '', children }) {
   return <div className={cls}>{children}</div>;
 }
 
-export { FormLayout, FormSection, FormRow, FormActions };
+export { FormActions, FormLayout, FormRow, FormSection };

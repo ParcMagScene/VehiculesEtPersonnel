@@ -1,19 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Package, Home, ArrowRight } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, InlineAlert, Spinner } from '@/design-system';
 import './MobileQRLanding.css';
+
+import { ArrowRight, Home, Package } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { Button, InlineAlert, Spinner } from '@/design-system';
+
+import { EQUIPMENT_STATUS } from '../../constants';
+import api from '../../utils/api';
 
 // ═══ PAGE D'ATTERRISSAGE QR — CHOIX MATÉRIEL OU ACCUEIL ═══
 // Affiché quand un utilisateur scanne le QR code d'un équipement
 // Propose : "Aller au matériel" ou "Accueil eM@g"
-
-const EQUIPMENT_STATUS = {
-  available: { label: 'Disponible', color: '#10b981', icon: '✅' },
-  in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
-  maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
-  retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
-};
 
 function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
   const [equipment, setEquipment] = useState(null);
@@ -35,7 +32,9 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
     if (uid) load();
   }, [uid]);
 
-  const status = equipment ? EQUIPMENT_STATUS[equipment.status] || EQUIPMENT_STATUS.available : null;
+  const status = equipment
+    ? EQUIPMENT_STATUS[equipment.status] || EQUIPMENT_STATUS.available
+    : null;
 
   return (
     <div className="qr-landing">
@@ -63,7 +62,10 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
               <div className="qr-landing-uid">{uid}</div>
               <div className="qr-landing-name">{equipment.name}</div>
               {equipment.brand && (
-                <div className="qr-landing-detail">{equipment.brand}{equipment.model ? ` — ${equipment.model}` : ''}</div>
+                <div className="qr-landing-detail">
+                  {equipment.brand}
+                  {equipment.model ? ` — ${equipment.model}` : ''}
+                </div>
               )}
               {status && (
                 <div className="qr-landing-status" style={{ color: status.color }}>
@@ -76,7 +78,9 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
 
         {/* Action buttons */}
         <div className="qr-landing-actions">
-          <Button variant="ghost"             className="qr-landing-btn qr-landing-btn-equipment"
+          <Button
+            variant="ghost"
+            className="qr-landing-btn qr-landing-btn-equipment"
             onClick={onGoToEquipment}
             disabled={loading || !!error}
           >
@@ -85,9 +89,7 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
             <ArrowRight size={18} />
           </Button>
 
-          <Button variant="ghost"             className="qr-landing-btn qr-landing-btn-home"
-            onClick={onGoHome}
-          >
+          <Button variant="ghost" className="qr-landing-btn qr-landing-btn-home" onClick={onGoHome}>
             <Home size={22} />
             <span>Accueil eM@g</span>
             <ArrowRight size={18} />

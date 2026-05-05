@@ -1,55 +1,100 @@
-import { useState, useEffect, useRef } from 'react';
-import { Car, Settings, LogOut, Home, Menu, X, LayoutGrid, Monitor, Users, MessageSquare, Truck, Package, ShoppingCart, MapPin, Palmtree, Sun, Moon, Palette, ClipboardCheck, Briefcase, ClipboardList } from 'lucide-react';
-import MobileHome from './MobileHome';
-import MobileParcDashboard from './MobileParcDashboard';
-import MobileReservations from './MobileReservations';
-import MobileMaintenances from './MobileMaintenances';
-import MobileAvailability from './MobileAvailability';
-import MobilePlanning from './MobilePlanning';
-import MobilePersonnel from './MobilePersonnel';
-import MobileMessaging from './MobileMessaging';
-import MobileEquipment from './MobileEquipment';
-import MobileEquipmentQR from './MobileEquipmentQR';
-import MobileQRLanding from './MobileQRLanding';
-import MobileOrders from './MobileOrders';
-import MobileLeaves from './MobileLeaves';
-import MobileInventory from './MobileInventory';
-import MobileLocation from './MobileLocation';
-import MobileAffaires from './MobileAffaires';
-import MobileTasks from './MobileTasks';
-import MobileLogin from './MobileLogin';
-import { useTheme, PALETTES } from '../../hooks/useTheme';
-import api from '../../utils/api';
-import { playNotificationSound, requestNotificationPermission, showBrowserNotification } from '../../utils/notificationSound';
 import './MobileApp.css';
-import { Button, Spinner } from '@/design-system';
+
+import { LayoutGrid, LogOut, MessageSquare, Monitor, Moon, Sun } from 'lucide-react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+
+import { BottomSheet, Button, Skeleton, Spinner } from '@/design-system';
+
+import { useMessagingSSE } from '../../hooks/useMessagingSSE';
+import useMobileRouter from '../../hooks/useMobileRouter';
+import useSwipeBack from '../../hooks/useSwipeBack';
+import { PALETTES, useTheme } from '../../hooks/useTheme';
+import api from '../../utils/api';
+import MobileHeader from './MobileHeader';
+import MobileHome from './MobileHome';
+import MobileLogin from './MobileLogin';
+import MobileParcDashboard from './MobileParcDashboard';
+import MobileQRLanding from './MobileQRLanding';
+import MobileTabBar from './MobileTabBar';
+
+const MobilePlanning = lazy(() => import('./MobilePlanning'));
+const MobileAvailability = lazy(() => import('./MobileAvailability'));
+const MobileReservations = lazy(() => import('./MobileReservations'));
+const MobileMaintenances = lazy(() => import('./MobileMaintenances'));
+const MobileAffaires = lazy(() => import('./MobileAffaires'));
+const MobileTasks = lazy(() => import('./MobileTasks'));
+const MobilePersonnel = lazy(() => import('./MobilePersonnel'));
+const MobileMessaging = lazy(() => import('./MobileMessaging'));
+const MobileEquipment = lazy(() => import('./MobileEquipment'));
+const MobileEquipmentQR = lazy(() => import('./MobileEquipmentQR'));
+const MobileOrders = lazy(() => import('./MobileOrders'));
+const MobileLeaves = lazy(() => import('./MobileLeaves'));
+const MobileInventory = lazy(() => import('./MobileInventory'));
+const MobileLocation = lazy(() => import('./MobileLocation'));
+const MobileSonos = lazy(() => import('./MobileSonos'));
+const MobileSuivi = lazy(() => import('./MobileSuivi'));
+const MobileDashboardAdmin = lazy(() => import('./MobileDashboardAdmin'));
+
+function MobileScreenFallback() {
+  return (
+    <div className="mobile-loading">
+      <Spinner size="lg" />
+    </div>
+  );
+}
 
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [currentScreen, setCurrentScreen] = useState('home');
+  const { currentScreen, qrUid: routerQrUid, navigate, goBack } = useMobileRouter();
+  const setCurrentScreen = navigate; // Bridge — migration progressive
   const [qrEquipmentUid, setQrEquipmentUid] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [maintenances, setMaintenances] = useState([]);
   const [clients, setClients] = useState([]);
-  const [drivers, setDrivers] = useState([]);
   const [garages, setGarages] = useState([]);
+  const [auxLoaded, setAuxLoaded] = useState({
+    clients: false,
+    garages: false,
+  });
+  const [auxDataLoading, setAuxDataLoading] = useState(false);
   const { theme: _theme, isDark, toggleTheme, palette, setPalette } = useTheme();
-  const [showThemePanel, setShowThemePanel] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = !!currentUser?.isAdmin;
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
   const [msgToast, setMsgToast] = useState(null);
-  
+
+  // Swipe-back : retour à l'écran précédent (goBack fourni par useMobileRouter)
+  const { swipeBackProps, swipeProgress } = useSwipeBack(goBack, {
+    disabled: currentScreen === 'home',
+  });
+
   // Refs pour contrôler les formulaires
   const reservationFormRef = useRef(null);
   const maintenanceFormRef = useRef(null);
-  const prevUnreadRef = useRef(-1);
   const msgToastTimerRef = useRef(null);
   const currentScreenRef = useRef('home');
+
+  // SSE messagerie temps réel (fallback polling auto)
+  const handleNewMessage = useCallback((msg) => {
+    if (currentScreenRef.current !== 'messaging') {
+      if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
+      const label =
+        msg.type === 'text'
+          ? `💬 ${msg.sender_name}: ${msg.content?.substring(0, 50) || ''}`
+          : `📎 ${msg.sender_name} a envoyé un fichier`;
+      setMsgToast(label);
+      msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
+    }
+  }, []);
+
+  const { unreadMsgCount } = useMessagingSSE({
+    currentUser: isAuthenticated ? currentUser : null,
+    onNewMessage: handleNewMessage,
+    // eslint-disable-next-line react-hooks/refs
+    isMessagingOpen: currentScreenRef.current === 'messaging',
+  });
 
   // Vérifier l'authentification
   useEffect(() => {
@@ -64,122 +109,122 @@ function MobileApp({ onSwitchToDesktop }) {
     checkAuth();
   }, []);
 
-  // Charger les données
-  useEffect(() => {
-    if (!isAuthenticated || isLoading) return;
-
-    const loadData = async () => {
-      try {
-        const [
-          vehiclesData,
-          reservationsData,
-          maintenancesData,
-          clientsData,
-          driversData,
-          garagesData
-        ] = await Promise.all([
-          api.getVehicles(),
-          api.getReservations(),
-          api.getMaintenances(),
-          api.getClients(),
-          api.getDrivers(),
-          api.getGarages()
-        ]);
-
-        setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
-        setReservations(reservationsData);
-        setMaintenances(maintenancesData);
-        setClients(clientsData);
-        setDrivers(driversData);
-        setGarages(garagesData);
-      } catch (error) {
-        console.error('Erreur lors du chargement des données:', error);
-        if (error.message.includes('authentification') || error.message.includes('401')) {
-          handleLogout();
-        }
-      }
-    };
-
-    loadData();
-  }, [isAuthenticated, isLoading]);
-
-  // Sync currentScreen ref
-  useEffect(() => { currentScreenRef.current = currentScreen; }, [currentScreen]);
-
-  // Détection QR code dans le hash : #/mobile/equipment/EMAG-XXXXX
-  useEffect(() => {
-    const checkQrHash = () => {
-      const hash = window.location.hash;
-      const match = hash.match(/#\/mobile\/equipment\/(EMAG-\d+)/i);
-      if (match) {
-        setQrEquipmentUid(match[1]);
-        setCurrentScreen('qr-landing');
-      }
-    };
-    checkQrHash();
-    window.addEventListener('hashchange', checkQrHash);
-    return () => window.removeEventListener('hashchange', checkQrHash);
-  }, []);
-
-  // Polling notifications messages non lus
-  useEffect(() => {
-    if (!isAuthenticated || !currentUser) return;
-
-    // Demander permission navigateur
-    requestNotificationPermission();
-
-    const fetchUnread = async () => {
-      try {
-        const data = await api.getUnreadCount();
-        const newCount = data.unread || 0;
-        const prevCount = prevUnreadRef.current;
-
-        if (newCount > prevCount && prevCount !== -1) {
-          const diff = newCount - prevCount;
-
-          // Son
-          playNotificationSound();
-
-          // Toast in-app (sauf si on est déjà dans la messagerie)
-          if (currentScreenRef.current !== 'messaging') {
-            if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
-            setMsgToast(`${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`);
-            msgToastTimerRef.current = setTimeout(() => setMsgToast(null), 6000);
-          }
-
-          // Notification navigateur
-          if (currentScreenRef.current !== 'messaging') {
-            showBrowserNotification(
-              `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
-              { body: 'Cliquez pour ouvrir la messagerie eM@g' }
-            );
-          }
-        }
-
-        prevUnreadRef.current = newCount;
-        setUnreadMsgCount(newCount);
-      } catch (e) { /* silencieux */ }
-    };
-
-    prevUnreadRef.current = -1;
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 10000);
-    return () => {
-      clearInterval(interval);
-      if (msgToastTimerRef.current) clearTimeout(msgToastTimerRef.current);
-    };
-  }, [isAuthenticated, currentUser]);
-
-  const handleLogin = (user) => {
-    setIsAuthenticated(true);
-    setCurrentUser(user);
-  };
-
   const handleLogout = async () => {
     await api.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
     setCurrentScreen('home');
+  };
+
+  // Charger les données coeur (utilisées par l'accueil/parc)
+  const loadCoreParcData = useCallback(async () => {
+    try {
+      const [vehiclesData, reservationsData, maintenancesData] = await Promise.all([
+        api.getVehicles(),
+        api.getReservations(),
+        api.getMaintenances(),
+      ]);
+
+      setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
+      setReservations(reservationsData);
+      setMaintenances(maintenancesData);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      if (error.message.includes('authentification') || error.message.includes('401')) {
+        handleLogout();
+      }
+    }
+  }, []);
+
+  // Charger les référentiels à la demande (écrans planning/réservation/maintenance)
+  const loadAuxiliaryParcData = useCallback(
+    async ({ includeClients = false, includeGarages = false, force = false } = {}) => {
+      const needClients = includeClients && (force || !auxLoaded.clients);
+      const needGarages = includeGarages && (force || !auxLoaded.garages);
+
+      if (!needClients && !needGarages) return;
+
+      setAuxDataLoading(true);
+      try {
+        const tasks = [];
+        if (needClients) {
+          tasks.push(
+            api.getClients().then((data) => {
+              setClients(data);
+            }),
+          );
+        }
+        if (needGarages) {
+          tasks.push(
+            api.getGarages().then((data) => {
+              setGarages(data);
+            }),
+          );
+        }
+
+        await Promise.all(tasks);
+
+        setAuxLoaded((prev) => ({
+          clients: prev.clients || needClients,
+          garages: prev.garages || needGarages,
+        }));
+      } catch (error) {
+        console.error('Erreur lors du chargement des référentiels:', error);
+        if (error.message.includes('authentification') || error.message.includes('401')) {
+          handleLogout();
+        }
+      } finally {
+        setAuxDataLoading(false);
+      }
+    },
+    [auxLoaded],
+  );
+
+  // Refresh complet demandé par certains écrans
+  const loadParcData = useCallback(async () => {
+    await Promise.all([
+      loadCoreParcData(),
+      loadAuxiliaryParcData({
+        includeClients: true,
+        includeGarages: true,
+        force: true,
+      }),
+    ]);
+  }, [loadCoreParcData, loadAuxiliaryParcData]);
+
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+    loadCoreParcData();
+  }, [isAuthenticated, isLoading, loadCoreParcData]);
+
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+
+    if (currentScreen === 'planning' || currentScreen === 'reservations') {
+      loadAuxiliaryParcData({ includeClients: true });
+      return;
+    }
+
+    if (currentScreen === 'maintenances') {
+      loadAuxiliaryParcData({ includeGarages: true });
+    }
+  }, [currentScreen, isAuthenticated, isLoading, loadAuxiliaryParcData]);
+
+  // Sync currentScreen ref
+  useEffect(() => {
+    currentScreenRef.current = currentScreen;
+  }, [currentScreen]);
+
+  // Sync QR UID depuis le router hash
+  useEffect(() => {
+    if (routerQrUid) setQrEquipmentUid(routerQrUid);
+  }, [routerQrUid]);
+
+  // Polling notifications messages non lus — remplacé par SSE (useMessagingSSE)
+
+  const handleLogin = (user) => {
+    setIsAuthenticated(true);
+    setCurrentUser(user);
   };
 
   const handleReservationCreated = (newReservation) => {
@@ -191,21 +236,25 @@ function MobileApp({ onSwitchToDesktop }) {
     setMaintenances([...maintenances, newMaintenance]);
     setCurrentScreen('home');
   };
-  
+
   const handleCreateReservation = () => {
     reservationFormRef.current?.openForm();
   };
-  
+
   const handleCreateMaintenance = () => {
     maintenanceFormRef.current?.openForm();
   };
+
+  const planningDepsReady = auxLoaded.clients;
+  const reservationsDepsReady = auxLoaded.clients;
+  const maintenancesDepsReady = auxLoaded.garages;
 
   if (isLoading) {
     return (
       <div className="mobile-app">
         <div className="mobile-loading">
-          <Spinner size="lg" />
-          <p>Chargement...</p>
+          <Skeleton width="60%" height={28} style={{ marginBottom: 16 }} />
+          <Skeleton count={3} width="100%" height={64} gap={12} style={{ borderRadius: 12 }} />
         </div>
       </div>
     );
@@ -221,237 +270,117 @@ function MobileApp({ onSwitchToDesktop }) {
       <MobileQRLanding
         uid={qrEquipmentUid}
         onGoToEquipment={() => setCurrentScreen('equipment-qr')}
-        onGoHome={() => { setQrEquipmentUid(null); setCurrentScreen('home'); window.location.hash = '#/mobile'; }}
+        onGoHome={() => {
+          setQrEquipmentUid(null);
+          navigate('home');
+        }}
       />
     );
   }
 
   return (
     <div className="mobile-app">
-      {/* Header */}
-      <header className="mobile-header">
-        <Button variant="ghost" className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
-        </Button>
-        <img src="/Logos/LogoEmagTransp.png" alt="eM@g" className="mobile-header-logo" />
-        <div className="user-info">
-          <Button variant="ghost"             className="header-msg-btn"
-            onClick={() => { setCurrentScreen('messaging'); currentScreenRef.current = 'messaging'; }}
-          >
-            <MessageSquare size={20} />
-            {unreadMsgCount > 0 && (
-              <span className="header-msg-badge">{unreadMsgCount > 9 ? '9+' : unreadMsgCount}</span>
-            )}
-          </Button>
-          <Button variant="ghost" 
-            className="user-initial"
-            onClick={() => setShowUserMenu(!showUserMenu)}
-          >
-            {currentUser?.name?.charAt(0)}
-          </Button>
-        </div>
-      </header>
+      {/* Header unifié */}
+      <MobileHeader
+        currentScreen={currentScreen}
+        onBack={goBack}
+        onHome={() => navigate('home')}
+        onMessaging={() => {
+          setCurrentScreen('messaging');
+          currentScreenRef.current = 'messaging';
+        }}
+        unreadMsgCount={unreadMsgCount}
+        currentUser={currentUser}
+        onUserMenu={() => setShowUserMenu(!showUserMenu)}
+      />
 
-      {/* User menu bottom-sheet */}
-      {showUserMenu && (
-        <div className="mobile-sheet-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowUserMenu(false); }}>
-          <div className="mobile-sheet">
-            <div className="mobile-sheet-handle" />
-            <div className="mobile-sheet-user">
-              <div className="mobile-sheet-avatar">{currentUser?.name?.charAt(0)}</div>
-              <div>
-                <div className="mobile-sheet-name">{currentUser?.name}</div>
-                <div className="mobile-sheet-email">{currentUser?.email}</div>
-              </div>
-            </div>
-            <div className="mobile-sheet-actions">
-              <Button variant="ghost" onClick={() => { setShowUserMenu(false); window.location.reload(); }}>
-                <LayoutGrid size={18} />
-                Changer d'utilisateur
-              </Button>
-              <Button variant="ghost" className="danger" onClick={() => { setShowUserMenu(false); handleLogout(); }}>
-                <LogOut size={18} />
-                Se déconnecter
-              </Button>
-            </div>
+      {/* User menu bottom-sheet (+ thème + actions) */}
+      <BottomSheet open={showUserMenu} onClose={() => setShowUserMenu(false)} title="">
+        <div className="mobile-sheet-user">
+          <div className="mobile-sheet-avatar">{currentUser?.name?.charAt(0)}</div>
+          <div>
+            <div className="mobile-sheet-name">{currentUser?.name}</div>
+            <div className="mobile-sheet-email">{currentUser?.email}</div>
           </div>
         </div>
-      )}
-
-      {/* Menu latéral */}
-      <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>
-        <div className="menu-overlay" onMouseDown={() => setMenuOpen(false)}></div>
-        <div className="menu-content">
-          <div className="menu-user">
-            <div className="menu-avatar">{currentUser?.name?.charAt(0)}</div>
-            <div className="menu-user-details">
-              <p className="menu-user-name">{currentUser?.name}</p>
-              <p className="menu-user-email">{currentUser?.email}</p>
+        <div className="mobile-sheet-actions">
+          {/* Thème */}
+          <div className="mobile-sheet-theme">
+            <Button variant="ghost" onClick={toggleTheme}>
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? 'Mode clair' : 'Mode sombre'}
+            </Button>
+            <div className="mobile-sheet-palette-grid">
+              {PALETTES.map((p) => {
+                const colors = isDark ? p.darkColors : p.colors;
+                return (
+                  <button
+                    type="button"
+                    key={p.id}
+                    className={`mobile-sheet-palette-btn ${palette === p.id ? 'active' : ''}`}
+                    onClick={() => setPalette(p.id)}
+                    title={p.name}
+                  >
+                    <span
+                      className="mobile-sheet-palette-dot"
+                      style={{
+                        background: `linear-gradient(135deg, ${colors.primary} 50%, ${colors.accent} 50%)`,
+                      }}
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
-          
-          <nav className="menu-nav">
-            <Button variant="ghost"               className={currentScreen === 'home' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('home'); setMenuOpen(false); }}
-            >
-              <Home size={20} />
-              <span>Accueil</span>
-            </Button>
-
-            <div className="menu-section-label">Parc</div>
-            <Button variant="ghost"               className={currentScreen === 'parc-dashboard' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('parc-dashboard'); setMenuOpen(false); }}
-            >
-              <Truck size={20} />
-              <span>Tableau de bord</span>
-            </Button>
-            <Button variant="ghost"               className={currentScreen === 'planning' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('planning'); setMenuOpen(false); }}
-            >
-              <LayoutGrid size={20} />
-              <span>Planning</span>
-            </Button>
-            <Button variant="ghost"               className={currentScreen === 'reservations' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('reservations'); setMenuOpen(false); }}
-            >
-              <Car size={20} />
-              <span>Réservations</span>
-            </Button>
-            <Button variant="ghost"               className={currentScreen === 'maintenances' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('maintenances'); setMenuOpen(false); }}
-            >
-              <Settings size={20} />
-              <span>Interventions</span>
-            </Button>
-
-            <Button variant="ghost"               className={currentScreen === 'affaires' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('affaires'); setMenuOpen(false); }}
-            >
-              <Briefcase size={20} />
-              <span>Affaires</span>
-            </Button>
-            <Button variant="ghost"               className={currentScreen === 'tasks' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('tasks'); setMenuOpen(false); }}
-            >
-              <ClipboardList size={20} />
-              <span>Tâches du jour</span>
-            </Button>
-
-            <div className="menu-section-label">Équipe</div>
-            <Button variant="ghost"               className={currentScreen === 'personnel' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('personnel'); setMenuOpen(false); }}
-            >
-              <Users size={20} />
-              <span>Personnel</span>
-            </Button>
-            <Button variant="ghost"               className={currentScreen === 'messaging' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('messaging'); setMenuOpen(false); }}
-            >
-              <MessageSquare size={20} />
-              <span>Messagerie</span>
-              {unreadMsgCount > 0 && <span className="menu-badge">{unreadMsgCount}</span>}
-            </Button>
-
-            <div className="menu-section-label">Gestion</div>
-            {(isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance) && (
-            <Button variant="ghost"               className={currentScreen === 'equipment' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('equipment'); setMenuOpen(false); }}
-            >
-              <Package size={20} />
-              <span>Matériel & SAV</span>
-            </Button>
-            )}
-            <Button variant="ghost"               className={currentScreen === 'location' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('location'); setMenuOpen(false); }}
-            >
-              <MapPin size={20} />
-              <span>Localisation</span>
-            </Button>
-            {(isAdmin || currentUser?.permissions?.can_manage_catalog) && (
-            <Button variant="ghost"               className={currentScreen === 'orders' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('orders'); setMenuOpen(false); }}
-            >
-              <ShoppingCart size={20} />
-              <span>Commandes</span>
-            </Button>
-            )}
-            <Button variant="ghost"               className={currentScreen === 'leaves' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('leaves'); setMenuOpen(false); }}
-            >
-              <Palmtree size={20} />
-              <span>Congés</span>
-            </Button>
-            {(isAdmin || currentUser?.permissions?.can_manage_equipment_maintenance) && (
-            <Button variant="ghost"               className={currentScreen === 'inventory' ? 'active' : ''}
-              onClick={() => { setCurrentScreen('inventory'); setMenuOpen(false); }}
-            >
-              <ClipboardCheck size={20} />
-              <span>Inventaire</span>
-            </Button>
-            )}
-
-            {/* ── Thème ── */}
-            <div className="menu-section-label">Apparence</div>
-            <Button variant="ghost" onClick={() => setShowThemePanel(!showThemePanel)}>
-              <Palette size={20} />
-              <span>Thème & couleurs</span>
-              <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--theme-text-muted)' }}>
-                {isDark ? '🌙' : '☀️'}
-              </span>
-            </Button>
-            {showThemePanel && (
-              <div className="menu-theme-panel">
-                <div className="menu-theme-mode">
-                  <Button variant="ghost" 
-                    className={`menu-theme-mode-btn ${!isDark ? 'active' : ''}`} 
-                    onClick={() => { if (isDark) toggleTheme(); }}
-                  >
-                    <Sun size={16} /> Clair
-                  </Button>
-                  <Button variant="ghost" 
-                    className={`menu-theme-mode-btn ${isDark ? 'active' : ''}`}
-                    onClick={() => { if (!isDark) toggleTheme(); }}
-                  >
-                    <Moon size={16} /> Sombre
-                  </Button>
-                </div>
-                <div className="menu-palette-grid">
-                  {PALETTES.map(p => {
-                    const colors = isDark ? p.darkColors : p.colors;
-                    return (
-                      <Button variant="ghost"                         key={p.id}
-                        className={`menu-palette-btn ${palette === p.id ? 'active' : ''}`}
-                        onClick={() => setPalette(p.id)}
-                        title={p.name}
-                      >
-                        <div className="menu-palette-preview">
-                          <div style={{ background: colors.primary, width: '50%', height: '100%', borderRadius: '4px 0 0 4px' }} />
-                          <div style={{ background: colors.accent, width: '50%', height: '100%', borderRadius: '0 4px 4px 0' }} />
-                        </div>
-                        <span>{p.name.replace('Flat ', '')}</span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </nav>
-
-          <Button variant="ghost" className="menu-logout" onClick={handleLogout}>
-            <LogOut size={20} />
-            <span>Se déconnecter</span>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowUserMenu(false);
+              window.location.reload();
+            }}
+          >
+            <LayoutGrid size={18} />
+            Changer d&apos;utilisateur
           </Button>
           {onSwitchToDesktop && (
-            <Button variant="ghost" className="menu-desktop" onClick={onSwitchToDesktop}>
-              <Monitor size={20} />
-              <span>Version bureau</span>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowUserMenu(false);
+                onSwitchToDesktop();
+              }}
+            >
+              <Monitor size={18} />
+              Version bureau
             </Button>
           )}
+          <Button
+            variant="ghost"
+            className="danger"
+            onClick={() => {
+              setShowUserMenu(false);
+              handleLogout();
+            }}
+          >
+            <LogOut size={18} />
+            Se déconnecter
+          </Button>
         </div>
-      </div>
+      </BottomSheet>
 
       {/* Contenu principal */}
-      <main className="mobile-content">
+      <main className="mobile-content" {...swipeBackProps}>
+        {swipeProgress > 0 && (
+          <div
+            className="swipe-back-indicator"
+            style={{
+              opacity: swipeProgress,
+              transform: `translateX(${swipeProgress * 20 - 20}px)`,
+            }}
+          >
+            ‹
+          </div>
+        )}
         {currentScreen === 'home' && (
           <MobileHome
             vehicles={vehicles}
@@ -473,142 +402,216 @@ function MobileApp({ onSwitchToDesktop }) {
             onCreateMaintenance={handleCreateMaintenance}
           />
         )}
-        
-        {currentScreen === 'planning' && (
-          <MobilePlanning
-            vehicles={vehicles}
-            reservations={reservations}
-            maintenances={maintenances}
-            currentDate={new Date()}
-            onClose={() => setCurrentScreen('parc-dashboard')}
-            clients={clients}
-            drivers={drivers}
-          />
-        )}
-        
+
+        {currentScreen === 'planning' &&
+          (!planningDepsReady || auxDataLoading ? (
+            <MobileScreenFallback />
+          ) : (
+            <Suspense fallback={<MobileScreenFallback />}>
+              <MobilePlanning
+                vehicles={vehicles}
+                reservations={reservations}
+                maintenances={maintenances}
+                currentDate={new Date()}
+                onClose={() => setCurrentScreen('parc-dashboard')}
+                clients={clients}
+                drivers={[]}
+                onRefresh={loadParcData}
+              />
+            </Suspense>
+          ))}
+
         {currentScreen === 'availability' && (
-          <MobileAvailability
-            vehicles={vehicles}
-            reservations={reservations}
-            maintenances={maintenances}
-            onClose={() => setCurrentScreen('parc-dashboard')}
-            onCreateReservation={(_vehicleId, _date) => {
-              setCurrentScreen('reservations');
-            }}
-          />
-        )}
-        
-        {currentScreen === 'reservations' && (
-          <MobileReservations
-            ref={reservationFormRef}
-            vehicles={vehicles}
-            reservations={reservations}
-            clients={clients}
-            drivers={drivers}
-            currentUser={currentUser}
-            onReservationCreated={handleReservationCreated}
-            onBack={() => setCurrentScreen('parc-dashboard')}
-          />
-        )}
-        
-        {currentScreen === 'maintenances' && (
-          <MobileMaintenances
-            ref={maintenanceFormRef}
-            vehicles={vehicles}
-            maintenances={maintenances}
-            garages={garages}
-            currentUser={currentUser}
-            onMaintenanceCreated={handleMaintenanceCreated}
-            onBack={() => setCurrentScreen('parc-dashboard')}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileAvailability
+              vehicles={vehicles}
+              reservations={reservations}
+              maintenances={maintenances}
+              onClose={() => setCurrentScreen('parc-dashboard')}
+              onCreateReservation={(_vehicleId, _date) => {
+                setCurrentScreen('reservations');
+              }}
+            />
+          </Suspense>
         )}
 
+        {currentScreen === 'reservations' &&
+          (!reservationsDepsReady || auxDataLoading ? (
+            <MobileScreenFallback />
+          ) : (
+            <Suspense fallback={<MobileScreenFallback />}>
+              <MobileReservations
+                ref={reservationFormRef}
+                vehicles={vehicles}
+                reservations={reservations}
+                clients={clients}
+                drivers={[]}
+                currentUser={currentUser}
+                onReservationCreated={handleReservationCreated}
+                onBack={() => setCurrentScreen('parc-dashboard')}
+                onRefresh={loadParcData}
+              />
+            </Suspense>
+          ))}
+
+        {currentScreen === 'maintenances' &&
+          (!maintenancesDepsReady || auxDataLoading ? (
+            <MobileScreenFallback />
+          ) : (
+            <Suspense fallback={<MobileScreenFallback />}>
+              <MobileMaintenances
+                ref={maintenanceFormRef}
+                vehicles={vehicles}
+                maintenances={maintenances}
+                garages={garages}
+                currentUser={currentUser}
+                onMaintenanceCreated={handleMaintenanceCreated}
+                onBack={() => setCurrentScreen('parc-dashboard')}
+                onRefresh={loadParcData}
+              />
+            </Suspense>
+          ))}
+
         {currentScreen === 'affaires' && (
-          <MobileAffaires
-            onBack={() => setCurrentScreen('home')}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileAffaires onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'tasks' && (
-          <MobileTasks
-            currentUser={currentUser}
-            onBack={() => setCurrentScreen('home')}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileTasks currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'personnel' && (
-          <MobilePersonnel
-            onBack={() => setCurrentScreen('home')}
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobilePersonnel onBack={() => setCurrentScreen('home')} currentUser={currentUser} />
+          </Suspense>
         )}
 
         {currentScreen === 'messaging' && (
-          <MobileMessaging
-            currentUser={currentUser}
-            onBack={() => setCurrentScreen('home')}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileMessaging currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'equipment' && (
-          <MobileEquipment
-            onBack={() => setCurrentScreen('home')}
-            initialTab="inventory"
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileEquipment
+              onBack={() => setCurrentScreen('home')}
+              initialTab="inventory"
+              currentUser={currentUser}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'sav' && (
-          <MobileEquipment
-            onBack={() => setCurrentScreen('home')}
-            initialTab="sav"
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileEquipment
+              onBack={() => setCurrentScreen('home')}
+              initialTab="sav"
+              currentUser={currentUser}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'equipment-qr' && qrEquipmentUid && (
-          <MobileEquipmentQR
-            uid={qrEquipmentUid}
-            currentUser={currentUser}
-            onBack={() => { setQrEquipmentUid(null); setCurrentScreen('equipment'); window.location.hash = '#/mobile'; }}
-            onNavigateHome={() => { setQrEquipmentUid(null); setCurrentScreen('home'); window.location.hash = '#/mobile'; }}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileEquipmentQR
+              uid={qrEquipmentUid}
+              currentUser={currentUser}
+              onBack={() => {
+                setQrEquipmentUid(null);
+                navigate('equipment');
+              }}
+              onNavigateHome={() => {
+                setQrEquipmentUid(null);
+                navigate('home');
+              }}
+            />
+          </Suspense>
         )}
 
         {currentScreen === 'orders' && (
-          <MobileOrders
-            onBack={() => setCurrentScreen('home')}
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileOrders onBack={() => setCurrentScreen('home')} currentUser={currentUser} />
+          </Suspense>
         )}
 
         {currentScreen === 'leaves' && (
-          <MobileLeaves
-            currentUser={currentUser}
-            onBack={() => setCurrentScreen('home')}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileLeaves currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'inventory' && (
-          <MobileInventory
-            onBack={() => setCurrentScreen('home')}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileInventory onBack={() => setCurrentScreen('home')} />
+          </Suspense>
         )}
 
         {currentScreen === 'location' && (
-          <MobileLocation
-            onBack={() => setCurrentScreen('home')}
-          />
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileLocation onBack={() => setCurrentScreen('home')} />
+          </Suspense>
+        )}
+
+        {currentScreen === 'sonos' && (
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileSonos currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
+        )}
+
+        {currentScreen === 'suivi' && (
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileSuivi currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+          </Suspense>
+        )}
+
+        {currentScreen === 'dashboard-admin' && isAdmin && (
+          <Suspense fallback={<MobileScreenFallback />}>
+            <MobileDashboardAdmin
+              currentUser={currentUser}
+              onBack={() => setCurrentScreen('home')}
+            />
+          </Suspense>
         )}
       </main>
 
       {/* Toast notification messages */}
       {msgToast && (
-        <div className="mobile-msg-toast" role="button" tabIndex={0} onClick={() => { setMsgToast(null); setCurrentScreen('messaging'); }}>
+        <div
+          className="mobile-msg-toast"
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            setMsgToast(null);
+            setCurrentScreen('messaging');
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setMsgToast(null);
+              setCurrentScreen('messaging');
+            }
+          }}
+        >
           <MessageSquare size={16} />
           <span>{msgToast}</span>
         </div>
       )}
+
+      {/* Barre d'onglets fixe en bas */}
+      <MobileTabBar
+        currentScreen={currentScreen}
+        onNavigate={(screen) => {
+          setShowUserMenu(false);
+          navigate(screen);
+        }}
+        onOpenProfile={() => setShowUserMenu(true)}
+        profileActive={showUserMenu}
+      />
     </div>
   );
 }

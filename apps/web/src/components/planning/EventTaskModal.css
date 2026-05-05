@@ -7,7 +7,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-tooltip);
-  background: var(--theme-overlay);
+  background: var(--surface-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,20 +16,39 @@
 }
 
 @keyframes etm-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .etm-modal {
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 560px;
   max-height: 85vh;
-  overflow-y: auto;
+  overflow: hidden;
   box-shadow: var(--shadow-modal);
   display: flex;
   flex-direction: column;
+}
+
+.etm-modal .ui-modal-title h3 {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.2;
+}
+
+.etm-header-title {
+  font-weight: 700;
 }
 
 /* Header */
@@ -38,7 +57,7 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: var(--space-3) var(--space-4) var(--space-2);
-  border-bottom: 1px solid var(--theme-border-primary);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .etm-header h3 {
@@ -47,28 +66,28 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .etm-event-title {
-  margin: 0.25rem 0 0;
-  font-size: var(--font-base);
-  color: var(--theme-text-secondary);
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .etm-close {
   background: none;
   border: none;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
 .etm-close:hover {
-  background: var(--theme-bg-hover);
-  color: var(--theme-text-primary);
+  background: var(--surface-hover);
+  color: var(--text-body);
 }
 
 /* Event summary badges */
@@ -77,7 +96,7 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: var(--space-2) var(--space-5);
-  border-bottom: 1px solid var(--theme-border-primary);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .etm-badge {
@@ -87,8 +106,8 @@
   font-size: 0.78rem;
   padding: 3px 10px;
   border-radius: var(--radius-2xl);
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-secondary);
+  background: var(--surface-secondary);
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -121,14 +140,14 @@
 }
 
 .etm-step {
-  border: 1px solid var(--theme-border-primary);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
   transition: all 0.15s;
 }
 
 .etm-step.enabled {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
   box-shadow: 0 0 0 1px var(--theme-primary-alpha, var(--primary-tint-medium));
 }
 
@@ -143,20 +162,20 @@
 }
 
 .etm-step-header:hover {
-  background: var(--theme-bg-hover);
+  background: var(--surface-hover);
 }
 
 .etm-step-check {
   width: 20px;
   height: 20px;
   border-radius: var(--radius-sm);
-  border: 2px solid var(--theme-border-secondary, #ccc);
+  border: 2px solid var(--border-default);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition: all 0.15s;
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .etm-step-check.checked {
@@ -166,7 +185,7 @@
 .etm-step-label {
   font-size: 0.88rem;
   font-weight: 600;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
 }
 
 .etm-step-fields {
@@ -178,8 +197,14 @@
 }
 
 @keyframes etm-fields-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .etm-field {
@@ -195,7 +220,7 @@
 .etm-field label {
   font-size: var(--font-xs);
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -204,17 +229,25 @@
 .etm-field select {
   padding: 5px 8px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--theme-border-primary);
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-primary);
+  border: 1px solid var(--border-default);
+  /* Évite le rendu translucide de la liste native dans le modal */
+  background: var(--surface-primary);
+  color: var(--text-body);
   font-size: 0.82rem;
   outline: none;
   transition: border-color 0.15s;
 }
 
+/* Force un fond opaque pour la popup native des options */
+.etm-field select option,
+.etm-field select optgroup {
+  background-color: var(--surface-primary);
+  color: var(--text-body);
+}
+
 .etm-field input:focus,
 .etm-field select:focus {
-  border-color: var(--theme-primary);
+  border-color: var(--interactive-primary);
 }
 
 /* Location row (input + Maps link) */
@@ -250,7 +283,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.5rem;
-  border-top: 1px solid var(--theme-border-primary);
+  border-top: 1px solid var(--border-default);
   gap: 0.75rem;
 }
 
@@ -274,8 +307,8 @@
 }
 
 .etm-btn.primary {
-  background: var(--theme-primary);
-  color: var(--theme-text-inverse);
+  background: var(--interactive-primary);
+  color: var(--text-inverse);
 }
 .etm-btn.primary:hover:not(:disabled) {
   filter: brightness(1.1);
@@ -286,11 +319,11 @@
 }
 
 .etm-btn.secondary {
-  background: var(--theme-bg-secondary);
-  color: var(--theme-text-primary);
+  background: var(--surface-secondary);
+  color: var(--text-body);
 }
 .etm-btn.secondary:hover {
-  background: var(--theme-bg-hover);
+  background: var(--surface-hover);
 }
 
 .etm-btn.danger {

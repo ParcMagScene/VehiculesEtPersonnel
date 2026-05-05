@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
-import { Calendar, MapPin, Save, Clock, Type, AlignLeft } from 'lucide-react';
 import './GoogleEventFormModal.css';
-import { Button, Input, Textarea, Toggle } from '@/design-system';
+
+import { format } from 'date-fns';
+import { AlignLeft, Calendar, Clock, MapPin, Save, Type } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { Button, Input, ModalLayout, Textarea, Toggle } from '@/design-system';
+
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import AddressAutocomplete from '../AddressAutocomplete';
 
@@ -16,9 +20,12 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
     startDate: '',
     endDate: '',
     description: '',
-    location: ''
+    location: '',
   });
   const [saving, setSaving] = useState(false);
+  const { resetDirty, guardClose } = useDirtyForm(formData);
+  const safeClose = guardClose(onClose);
+  const needsResetRef = useRef(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -30,10 +37,14 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         startDateTime: event.start?.dateTime ? toLocalInput(event.start.dateTime) : '',
         endDateTime: event.end?.dateTime ? toLocalInput(event.end.dateTime) : '',
         allDay: isAllDay,
-        startDate: event.start?.date || (event.start?.dateTime ? format(new Date(event.start.dateTime), 'yyyy-MM-dd') : ''),
-        endDate: event.end?.date || (event.end?.dateTime ? format(new Date(event.end.dateTime), 'yyyy-MM-dd') : ''),
+        startDate:
+          event.start?.date ||
+          (event.start?.dateTime ? format(new Date(event.start.dateTime), 'yyyy-MM-dd') : ''),
+        endDate:
+          event.end?.date ||
+          (event.end?.dateTime ? format(new Date(event.end.dateTime), 'yyyy-MM-dd') : ''),
         description: event.description || '',
-        location: event.location || ''
+        location: event.location || '',
       });
     } else {
       // Create mode — defaults based on currentDate
@@ -53,10 +64,19 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         startDate: format(start, 'yyyy-MM-dd'),
         endDate: format(start, 'yyyy-MM-dd'),
         description: '',
-        location: ''
+        location: '',
       });
     }
+    needsResetRef.current = true;
   }, [isOpen, mode, event, currentDate]);
+
+  // Reset dirty tracking after initial form data load
+  useEffect(() => {
+    if (needsResetRef.current) {
+      needsResetRef.current = false;
+      resetDirty();
+    }
+  }, [formData, resetDirty]);
 
   const toLocalInput = (isoString) => {
     const d = new Date(isoString);
@@ -69,7 +89,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -111,11 +131,11 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
         }
         eventData.start = {
           dateTime: new Date(formData.startDateTime).toISOString(),
-          timeZone
+          timeZone,
         };
         eventData.end = {
           dateTime: new Date(formData.endDateTime).toISOString(),
-          timeZone
+          timeZone,
         };
       }
 
@@ -128,119 +148,125 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="event-form-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="event-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
-        <div className="event-form-header">
-          <Calendar size={20} />
-          <h2>{mode === 'edit' ? 'Modifier l\'événement' : 'Nouvel événement Google'}</h2>
-          <Button variant="ghost" className="event-form-close" onClick={onClose}>×</Button>
+    <ModalLayout
+      open={isOpen}
+      onClose={safeClose}
+      size="md"
+      title={mode === 'edit' ? "Modifier l'événement" : 'Nouvel événement Google'}
+      icon={<Calendar size={20} />}
+      className="event-form-modal"
+      footer={
+        <>
+          <Button variant="ghost" onClick={safeClose}>
+            Annuler
+          </Button>
+          <Button variant="primary" type="submit" form="google-event-form" disabled={saving}>
+            <Save size={16} />
+            {saving ? 'Enregistrement...' : mode === 'edit' ? 'Mettre à jour' : "Créer l'événement"}
+          </Button>
+        </>
+      }
+    >
+      <form id="google-event-form" onSubmit={handleSubmit}>
+        <div className="event-form-body">
+          {/* Titre */}
+          <div className="event-form-field">
+            <label>
+              <Type size={15} /> Titre
+            </label>
+            <Input
+              type="text"
+              value={formData.summary}
+              onChange={(e) => handleChange('summary', e.target.value)}
+              placeholder="Titre de l'événement"
+              autoFocus
+              required
+            />
+          </div>
+
+          {/* Journée entière toggle */}
+          <div className="event-form-field event-form-toggle">
+            <label>
+              <Clock size={15} /> Journée entière
+            </label>
+            <Toggle
+              checked={formData.allDay}
+              onChange={(e) => handleChange('allDay', e.target.checked)}
+            />
+          </div>
+
+          {/* Dates */}
+          {formData.allDay ? (
+            <div className="event-form-row">
+              <div className="event-form-field">
+                <label>Date de début</label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => handleChange('startDate', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="event-form-field">
+                <label>Date de fin</label>
+                <input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => handleChange('endDate', e.target.value)}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="event-form-row">
+              <div className="event-form-field">
+                <label>Début</label>
+                <input
+                  type="datetime-local"
+                  value={formData.startDateTime}
+                  onChange={(e) => handleChange('startDateTime', e.target.value)}
+                  required
+                />
+              </div>
+              <div className="event-form-field">
+                <label>Fin</label>
+                <input
+                  type="datetime-local"
+                  value={formData.endDateTime}
+                  onChange={(e) => handleChange('endDateTime', e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Lieu */}
+          <div className="event-form-field">
+            <label>
+              <MapPin size={15} /> Lieu
+            </label>
+            <AddressAutocomplete
+              value={formData.location}
+              onChange={(val) => handleChange('location', val)}
+              placeholder="Adresse ou lieu"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="event-form-field">
+            <label>
+              <AlignLeft size={15} /> Description
+            </label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              placeholder="Description de l'événement"
+              rows={4}
+            />
+          </div>
         </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="event-form-body">
-            {/* Titre */}
-            <div className="event-form-field">
-              <label><Type size={15} /> Titre</label>
-              <Input
-                type="text"
-                value={formData.summary}
-                onChange={e => handleChange('summary', e.target.value)}
-                placeholder="Titre de l'événement"
-                autoFocus
-                required
-              />
-            </div>
-
-            {/* Journée entière toggle */}
-            <div className="event-form-field event-form-toggle">
-              <label><Clock size={15} /> Journée entière</label>
-              <Toggle
-                checked={formData.allDay}
-                onChange={e => handleChange('allDay', e.target.checked)}
-              />
-            </div>
-
-            {/* Dates */}
-            {formData.allDay ? (
-              <div className="event-form-row">
-                <div className="event-form-field">
-                  <label>Date de début</label>
-                  <input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={e => handleChange('startDate', e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="event-form-field">
-                  <label>Date de fin</label>
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={e => handleChange('endDate', e.target.value)}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="event-form-row">
-                <div className="event-form-field">
-                  <label>Début</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.startDateTime}
-                    onChange={e => handleChange('startDateTime', e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="event-form-field">
-                  <label>Fin</label>
-                  <input
-                    type="datetime-local"
-                    value={formData.endDateTime}
-                    onChange={e => handleChange('endDateTime', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Lieu */}
-            <div className="event-form-field">
-              <label><MapPin size={15} /> Lieu</label>
-              <AddressAutocomplete
-                value={formData.location}
-                onChange={val => handleChange('location', val)}
-                placeholder="Adresse ou lieu"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="event-form-field">
-              <label><AlignLeft size={15} /> Description</label>
-              <Textarea
-                value={formData.description}
-                onChange={e => handleChange('description', e.target.value)}
-                placeholder="Description de l'événement"
-                rows={4}
-              />
-            </div>
-          </div>
-
-          <div className="event-form-footer">
-            <Button variant="ghost" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" type="submit" disabled={saving}>
-              <Save size={16} />
-              {saving ? 'Enregistrement...' : mode === 'edit' ? 'Mettre à jour' : 'Créer l\'événement'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </ModalLayout>
   );
 }
 

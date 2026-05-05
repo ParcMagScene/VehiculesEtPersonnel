@@ -13,8 +13,12 @@
 }
 
 @keyframes tdOverlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .trip-details-modal {
@@ -33,8 +37,14 @@
 }
 
 @keyframes tripModalSlideUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .trip-details-form {
@@ -332,7 +342,7 @@
   .trip-row {
     grid-template-columns: 1fr;
   }
-  
+
   .pause-item {
     grid-template-columns: 1fr;
   }
@@ -555,12 +565,26 @@
   color: var(--theme-text-body);
 }
 
-.timeline-step--departure .timeline-step-label { color: var(--theme-info-text); }
-.timeline-step--arrival .timeline-step-label { color: var(--theme-purple-text); }
-.timeline-step--transfer .timeline-step-label { color: var(--theme-warning-text-alt); }
-.timeline-step--return-departure .timeline-step-label { color: var(--theme-success-text); }
-.timeline-step--final-arrival .timeline-step-label { color: var(--theme-success-text); }
-.timeline-step--pause .timeline-step-label { color: var(--theme-text-gray); font-weight: 500; font-size: var(--font-sm); }
+.timeline-step--departure .timeline-step-label {
+  color: var(--theme-info-text);
+}
+.timeline-step--arrival .timeline-step-label {
+  color: var(--theme-purple-text);
+}
+.timeline-step--transfer .timeline-step-label {
+  color: var(--theme-warning-text-alt);
+}
+.timeline-step--return-departure .timeline-step-label {
+  color: var(--theme-success-text);
+}
+.timeline-step--final-arrival .timeline-step-label {
+  color: var(--theme-success-text);
+}
+.timeline-step--pause .timeline-step-label {
+  color: var(--theme-text-gray);
+  font-weight: 500;
+  font-size: var(--font-sm);
+}
 
 .timeline-step-affaire {
   font-size: 0.65rem;

@@ -1,34 +1,107 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Package, Search, Plus, Edit2, Trash2, ArrowLeft, TrendingUp, AlertTriangle, ArrowUpCircle, ArrowDownCircle,
-  RotateCcw, Layers, Tag as TagIcon, MapPin, Euro, Hash, X, Check, Archive, Upload, ExternalLink, Map } from 'lucide-react';
+import './StockPanel.css';
+
+import {
+  AlertTriangle,
+  Archive,
+  ArrowDownCircle,
+  ArrowLeft,
+  ArrowUpCircle,
+  Check,
+  Edit2,
+  Euro,
+  ExternalLink,
+  Hash,
+  Layers,
+  Map,
+  MapPin,
+  Package,
+  Plus,
+  RotateCcw,
+  Search,
+  Tag as TagIcon,
+  Trash2,
+  TrendingUp,
+  Upload,
+  X,
+} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import {
+  Button,
+  EmptyState,
+  EntityCombobox,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalLayout,
+  SearchBar,
+  Select,
+  Spinner,
+  Table,
+  Tag,
+  Textarea,
+  Tooltip,
+} from '@/design-system';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
-import { Button, ModalLayout, Input, Textarea, Select, Table, EntityCombobox, Spinner, Tag, EmptyState, InlineAlert, SearchBar, Tooltip } from '@/design-system';
-import './StockPanel.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { extractTextFromPDF } from '../../utils/pdfParser';
-import LocationSelector from '../vehicles/LocationSelector';
 import DepotMap from '../vehicles/DepotMap';
+import LocationSelector from '../vehicles/LocationSelector';
 
 // ═══ Constantes ═══
-const MOVEMENT_TYPES = {
-  in: { label: 'Entrée', color: '#10b981', icon: '📥', Icon: ArrowDownCircle },
-  out: { label: 'Sortie', color: '#ef4444', icon: '📤', Icon: ArrowUpCircle },
-  adjustment: { label: 'Ajustement', color: '#f59e0b', icon: '🔧', Icon: RotateCcw },
-  return: { label: 'Retour', color: '#3b82f6', icon: '↩️', Icon: RotateCcw } };
 
-const UNITS = ['u', 'm', 'm²', 'm³', 'kg', 'L', 'h', 'j', 'lot', 'forfait', 'paire', 'rouleau', 'boîte'];
+const MOVEMENT_TYPES = {
+  in: { label: 'Entrée', color: STATUS_COLORS.success, icon: '📥', Icon: ArrowDownCircle },
+  out: { label: 'Sortie', color: STATUS_COLORS.danger, icon: '📤', Icon: ArrowUpCircle },
+  adjustment: { label: 'Ajustement', color: STATUS_COLORS.warning, icon: '🔧', Icon: RotateCcw },
+  return: { label: 'Retour', color: STATUS_COLORS.info, icon: '↩️', Icon: RotateCcw },
+};
+
+const UNITS = [
+  'u',
+  'm',
+  'm²',
+  'm³',
+  'kg',
+  'L',
+  'h',
+  'j',
+  'lot',
+  'forfait',
+  'paire',
+  'rouleau',
+  'boîte',
+];
 
 const CATEGORY_COLORS = [
-  '#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#64748b'
+  ACCENT_COLORS.indigo,
+  STATUS_COLORS.info,
+  STATUS_COLORS.success,
+  STATUS_COLORS.warning,
+  STATUS_COLORS.danger,
+  ACCENT_COLORS.violet,
+  ACCENT_COLORS.pink,
+  '#14b8a6',
+  ACCENT_COLORS.orange,
+  STATUS_COLORS.neutral,
 ];
 
 const CATEGORY_ICONS = ['📦', '🔧', '⚡', '🔩', '🛠️', '📐', '🧰', '💡', '🔌', '🧲', '🪛', '⛓️'];
 
 // ═══ Composant Principal ═══
-function StockPanel({ currentUser, stockType = 'vente', showManagement = false, onOpenManagement, onCloseManagement }) {
+function StockPanel({
+  currentUser,
+  stockType = 'vente',
+  showManagement = false,
+  onOpenManagement,
+  onCloseManagement,
+}) {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [items, setItems] = useState([]);
@@ -71,14 +144,16 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
       if (categoryFilter) params.category_id = categoryFilter;
       if (lowStockFilter) params.low_stock = 'true';
 
-      const [itemsData, catsData, statsData, suppData, zonesData, allZonesData] = await Promise.all([
-        api.getStockItems(params),
-        api.getStockCategories(),
-        api.getStockStats({ stock_type: stockType }),
-        api.getSuppliers({}).catch(() => []),
-        api.getEquipmentDepotZones().catch(() => null),
-        api.getAllDepotZones().catch(() => null),
-      ]);
+      const [itemsData, catsData, statsData, suppData, zonesData, allZonesData] = await Promise.all(
+        [
+          api.getStockItems(params),
+          api.getStockCategories(),
+          api.getStockStats({ stock_type: stockType }),
+          api.getSuppliers({}).catch(() => []),
+          api.getEquipmentDepotZones().catch(() => null),
+          api.getAllDepotZones().catch(() => null),
+        ],
+      );
       setItems(itemsData);
       setCategories(catsData);
       setStats(statsData);
@@ -91,7 +166,7 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
     } finally {
       setLoading(false);
     }
-  }, [stockType, debouncedSearch, categoryFilter, lowStockFilter]);
+  }, [stockType, debouncedSearch, categoryFilter, lowStockFilter, toast]);
 
   const loadMovements = useCallback(async (itemId) => {
     try {
@@ -104,7 +179,9 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // ═══ Handlers Articles ═══
   const handleSaveItem = async (data) => {
@@ -131,14 +208,16 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
 
   const handleDeleteItem = (item) => {
     confirm({
-      title: 'Supprimer l\'article',
+      title: "Supprimer l'article",
       message: `Supprimer "${item.name}" (${item.reference}) ? L'historique des mouvements sera aussi supprimé.`,
       onConfirm: async () => {
         try {
           await api.deleteStockItem(item.id);
           setSelectedItem(null);
           loadData();
-        } catch (error) { toast.error('Erreur: ' + error.message); }
+        } catch (error) {
+          toast.error('Erreur: ' + error.message);
+        }
       },
     });
   };
@@ -167,7 +246,9 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
         try {
           await api.deleteStockCategory(cat.id);
           loadData();
-        } catch (error) { toast.error('Erreur: ' + error.message); }
+        } catch (error) {
+          toast.error('Erreur: ' + error.message);
+        }
       },
     });
   };
@@ -210,7 +291,10 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
                 item={dialogItem}
                 movements={movements}
                 onBack={() => setDialogItem(null)}
-                onEdit={() => { setEditingItem(dialogItem); setShowItemForm(true); }}
+                onEdit={() => {
+                  setEditingItem(dialogItem);
+                  setShowItemForm(true);
+                }}
                 onDelete={() => handleDeleteItem(dialogItem)}
                 onMovement={() => setShowMovementForm(true)}
                 loadMovements={loadMovements}
@@ -238,16 +322,25 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
                       setSelectedItem(null);
                     } else {
                       setSelectedItem(item);
-                      api.getStockItem(item.id).then(detail => setSelectedItem(detail)).catch(() => {});
+                      api
+                        .getStockItem(item.id)
+                        .then((detail) => setSelectedItem(detail))
+                        .catch(() => {});
                     }
                   }, 200);
                 }}
                 onDoubleClick={(item) => {
                   clearTimeout(clickTimerRef.current);
                   setDialogItem(item);
-                  api.getStockItem(item.id).then(detail => setDialogItem(detail)).catch(() => {});
+                  api
+                    .getStockItem(item.id)
+                    .then((detail) => setDialogItem(detail))
+                    .catch(() => {});
                 }}
-                onAdd={() => { setEditingItem(null); setShowItemForm(true); }}
+                onAdd={() => {
+                  setEditingItem(null);
+                  setShowItemForm(true);
+                }}
                 onImport={() => setShowImport(true)}
                 isAdmin={isAdmin}
               />
@@ -260,8 +353,14 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           <StockSlidePanel
             item={selectedItem}
             onClose={() => setSelectedItem(null)}
-            onOpenDialog={(item) => { setSelectedItem(null); setDialogItem(item); }}
-            onEdit={(item) => { setEditingItem(item); setShowItemForm(true); }}
+            onOpenDialog={(item) => {
+              setSelectedItem(null);
+              setDialogItem(item);
+            }}
+            onEdit={(item) => {
+              setEditingItem(item);
+              setShowItemForm(true);
+            }}
             onMovement={() => setShowMovementForm(true)}
             isAdmin={isAdmin}
             depotZones={depotZones}
@@ -279,7 +378,10 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           depotZones={depotZones}
           allDepotZones={allDepotZones}
           onSave={handleSaveItem}
-          onClose={() => { setShowItemForm(false); setEditingItem(null); }}
+          onClose={() => {
+            setShowItemForm(false);
+            setEditingItem(null);
+          }}
         />
       )}
       {showCategoryForm && (
@@ -287,7 +389,10 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
           category={editingCategory}
           categories={categories}
           onSave={handleSaveCategory}
-          onClose={() => { setShowCategoryForm(false); setEditingCategory(null); }}
+          onClose={() => {
+            setShowCategoryForm(false);
+            setEditingCategory(null);
+          }}
         />
       )}
       {showMovementForm && (
@@ -301,28 +406,36 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
       {ConfirmDialogRenderer}
       {showImport && (
         <ImportStockModal
-          onDone={() => { setShowImport(false); loadData(); }}
+          onDone={() => {
+            setShowImport(false);
+            loadData();
+          }}
           onClose={() => setShowImport(false)}
         />
       )}
 
       {/* Panneau Gestion Catégories (via bouton Gestion du header) */}
       {showManagement && (
-        <div className="stock-management-overlay" onMouseDown={(e) => e.target === e.currentTarget && onCloseManagement?.()}>
-          <div className="stock-management-panel" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="stock-management-header">
-              <h2><Layers size={20} /> Gestion des catégories</h2>
-              <Button variant="ghost" onClick={onCloseManagement} aria-label="Fermer"><X size={20} /></Button>
-            </div>
+        <Modal open={true} onClose={onCloseManagement} size="lg" className="stock-management-panel">
+          <ModalHeader icon={<Layers size={20} />} onClose={onCloseManagement}>
+            Gestion des catégories
+          </ModalHeader>
+          <ModalBody>
             <CategoriesView
               categories={categories}
-              onAdd={() => { setEditingCategory(null); setShowCategoryForm(true); }}
-              onEdit={(cat) => { setEditingCategory(cat); setShowCategoryForm(true); }}
+              onAdd={() => {
+                setEditingCategory(null);
+                setShowCategoryForm(true);
+              }}
+              onEdit={(cat) => {
+                setEditingCategory(cat);
+                setShowCategoryForm(true);
+              }}
               onDelete={handleDeleteCategory}
               isAdmin={isAdmin}
             />
-          </div>
-        </div>
+          </ModalBody>
+        </Modal>
       )}
     </div>
   );
@@ -331,7 +444,16 @@ function StockPanel({ currentUser, stockType = 'vente', showManagement = false, 
 // ═══════════════════════════════════════════════════════════════
 // Volet latéral (Slide Panel)
 // ═══════════════════════════════════════════════════════════════
-const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAdmin, _depotZones, _allDepotZones }) => {
+const StockSlidePanel = ({
+  item,
+  onClose,
+  onOpenDialog,
+  onEdit,
+  onMovement,
+  isAdmin,
+  _depotZones,
+  _allDepotZones,
+}) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -339,6 +461,7 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
 
   useEffect(() => {
     if (item) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsVisible(true);
       setIsClosing(false);
       const raf = requestAnimationFrame(() => {
@@ -348,7 +471,10 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
     } else {
       setIsOpen(false);
       setIsClosing(true);
-      const timer = setTimeout(() => { setIsVisible(false); setIsClosing(false); }, 350);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setIsClosing(false);
+      }, 350);
       return () => clearTimeout(timer);
     }
   }, [item]);
@@ -382,19 +508,40 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
     : current.location || null;
 
   return (
-    <div className={`stock-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`} ref={panelRef}>
+    <div
+      className={`stock-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
+      ref={panelRef}
+    >
       <div className="stock-slide-header">
         <div className="stock-slide-title-row">
           <span className="stock-slide-name">{current.name}</span>
           <span className="stock-slide-ref">{current.reference}</span>
         </div>
         <Tooltip content="Fermer">
-          <Button variant="ghost" className="stock-slide-close" onClick={handleClose} aria-label="Fermer"><X size={18} /></Button>
+          <Button
+            variant="ghost"
+            className="stock-slide-close"
+            onClick={handleClose}
+            aria-label="Fermer"
+          >
+            <X size={18} />
+          </Button>
         </Tooltip>
       </div>
       <div className="stock-slide-body">
         {current.category_name && (
-          <span className="stock-cat-badge" style={current.category_color ? { background: current.category_color + '20', color: current.category_color, borderColor: current.category_color } : undefined}>
+          <span
+            className="stock-cat-badge"
+            style={
+              current.category_color
+                ? {
+                    background: current.category_color + '20',
+                    color: current.category_color,
+                    borderColor: current.category_color,
+                  }
+                : undefined
+            }
+          >
             {current.category_icon} {current.category_name}
           </span>
         )}
@@ -402,14 +549,35 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
           <span className={`stock-qty-big ${isOut ? 'rupture' : isLow ? 'low' : 'ok'}`}>
             {current.quantity} {current.unit}
           </span>
-          {isLow && !isOut && <Tag color="warning" size="sm">Stock bas</Tag>}
-          {isOut && <Tag color="danger" size="sm">Rupture</Tag>}
-          {current.min_quantity > 0 && <small className="stock-slide-min">Seuil : {current.min_quantity} {current.unit}</small>}
+          {isLow && !isOut && (
+            <Tag color="warning" size="sm">
+              Stock bas
+            </Tag>
+          )}
+          {isOut && (
+            <Tag color="danger" size="sm">
+              Rupture
+            </Tag>
+          )}
+          {current.min_quantity > 0 && (
+            <small className="stock-slide-min">
+              Seuil : {current.min_quantity} {current.unit}
+            </small>
+          )}
         </div>
         <div className="stock-slide-prices">
-          <div><small>P.U. Achat</small><span>{formatCurrency(current.unit_price)}</span></div>
-          <div><small>P.U. Vente</small><span>{formatCurrency(current.sell_price)}</span></div>
-          <div><small>Valeur stock</small><span>{formatCurrency(current.quantity * (current.unit_price || 0))}</span></div>
+          <div>
+            <small>P.U. Achat</small>
+            <span>{formatCurrency(current.unit_price)}</span>
+          </div>
+          <div>
+            <small>P.U. Vente</small>
+            <span>{formatCurrency(current.sell_price)}</span>
+          </div>
+          <div>
+            <small>Valeur stock</small>
+            <span>{formatCurrency(current.quantity * (current.unit_price || 0))}</span>
+          </div>
         </div>
         {locationLabel && (
           <div className="stock-slide-location">
@@ -417,24 +585,35 @@ const StockSlidePanel = ({ item, onClose, onOpenDialog, onEdit, onMovement, isAd
           </div>
         )}
         {current.supplier_name && (
-          <div className="stock-slide-supplier"><Hash size={14} /> {current.supplier_name}</div>
+          <div className="stock-slide-supplier">
+            <Hash size={14} /> {current.supplier_name}
+          </div>
         )}
         {current.notes && <p className="stock-slide-notes">{current.notes}</p>}
       </div>
       <div className="stock-slide-footer">
- <Tooltip content="Mouvement" position="bottom">
-   <Button variant="secondary" onClick={() => onMovement()}>
-          <TrendingUp size={14} /> Mouvement
-        </Button>
- </Tooltip>
+        <Tooltip content="Mouvement" position="bottom">
+          <Button variant="secondary" onClick={() => onMovement()}>
+            <TrendingUp size={14} /> Mouvement
+          </Button>
+        </Tooltip>
         {isAdmin && (
           <Tooltip content="Modifier">
-            <Button variant="secondary" onClick={() => onEdit(current)} iconOnly aria-label="Modifier">
+            <Button
+              variant="secondary"
+              onClick={() => onEdit(current)}
+              iconOnly
+              aria-label="Modifier"
+            >
               <Edit2 size={14} />
             </Button>
           </Tooltip>
         )}
-        <Button variant="ghost" className="stock-slide-open-btn" onClick={() => onOpenDialog(current)}>
+        <Button
+          variant="ghost"
+          className="stock-slide-open-btn"
+          onClick={() => onOpenDialog(current)}
+        >
           <ExternalLink size={14} /> Ouvrir la fiche
         </Button>
       </div>
@@ -453,28 +632,36 @@ function _DashboardView({ stats, _items, onSelectItem }) {
       {/* KPIs */}
       <div className="stock-kpis">
         <div className="stock-kpi">
-          <div className="kpi-icon" style={{ background: 'var(--theme-info-bg-strong)' }}><Package size={20} color="#3b82f6" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--theme-info-bg-strong)' }}>
+            <Package size={20} color={STATUS_COLORS.info} />
+          </div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.totalItems}</span>
             <span className="kpi-label">Articles actifs</span>
           </div>
         </div>
         <div className="stock-kpi">
-          <div className="kpi-icon" style={{ background: 'var(--theme-success-bg-strong)' }}><Euro size={20} color="#10b981" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--theme-success-bg-strong)' }}>
+            <Euro size={20} color={STATUS_COLORS.success} />
+          </div>
           <div className="kpi-info">
             <span className="kpi-value">{formatCurrency(stats.totalValue)}</span>
             <span className="kpi-label">Valeur du stock</span>
           </div>
         </div>
         <div className="stock-kpi warning">
-          <div className="kpi-icon" style={{ background: 'var(--btn-warning-bg)' }}><AlertTriangle size={20} color="#f59e0b" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--btn-warning-bg)' }}>
+            <AlertTriangle size={20} color={STATUS_COLORS.warning} />
+          </div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.lowStockCount}</span>
             <span className="kpi-label">Stock bas</span>
           </div>
         </div>
         <div className="stock-kpi danger">
-          <div className="kpi-icon" style={{ background: 'var(--btn-danger-bg)' }}><Archive size={20} color="#ef4444" /></div>
+          <div className="kpi-icon" style={{ background: 'var(--btn-danger-bg)' }}>
+            <Archive size={20} color={STATUS_COLORS.danger} />
+          </div>
           <div className="kpi-info">
             <span className="kpi-value">{stats.outOfStockCount}</span>
             <span className="kpi-label">Rupture</span>
@@ -487,11 +674,17 @@ function _DashboardView({ stats, _items, onSelectItem }) {
         <div className="stock-dashboard-section">
           <h3>📊 Activité (30 derniers jours)</h3>
           <div className="stock-activity-grid">
-            {stats.recentMovements.map(m => {
+            {stats.recentMovements.map((m) => {
               const mt = MOVEMENT_TYPES[m.type];
               return (
-                <div key={m.type} className="stock-activity-card" style={{ borderLeftColor: mt?.color }}>
-                  <span className="activity-type">{mt?.icon} {mt?.label || m.type}</span>
+                <div
+                  key={m.type}
+                  className="stock-activity-card"
+                  style={{ borderLeftColor: mt?.color }}
+                >
+                  <span className="activity-type">
+                    {mt?.icon} {mt?.label || m.type}
+                  </span>
                   <span className="activity-count">{m.count} mouvement(s)</span>
                   <span className="activity-qty">Σ {m.total_qty}</span>
                 </div>
@@ -506,10 +699,17 @@ function _DashboardView({ stats, _items, onSelectItem }) {
         <div className="stock-dashboard-section">
           <h3>⚠️ Alertes stock bas</h3>
           <div className="stock-alerts-list">
-            {stats.lowStockItems.map(item => {
-              const pct = item.min_quantity > 0 ? Math.round((item.quantity / item.min_quantity) * 100) : 0;
+            {stats.lowStockItems.map((item) => {
+              const pct =
+                item.min_quantity > 0 ? Math.round((item.quantity / item.min_quantity) * 100) : 0;
               return (
-                <div key={item.id} className="stock-alert-item" role="button" tabIndex={0} onClick={() => onSelectItem(item)}>
+                <div
+                  key={item.id}
+                  className="stock-alert-item"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelectItem(item)}
+                >
                   <div className="alert-item-info">
                     <span className="alert-item-name">{item.name}</span>
                     <span className="alert-item-ref">{item.reference}</span>
@@ -538,7 +738,13 @@ function _DashboardView({ stats, _items, onSelectItem }) {
           <h3>🔥 Articles les plus mouvementés</h3>
           <div className="stock-top-items">
             {stats.topMovedItems.map((item, i) => (
-              <div key={item.id} className="stock-top-item" role="button" tabIndex={0} onClick={() => onSelectItem(item)}>
+              <div
+                key={item.id}
+                className="stock-top-item"
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectItem(item)}
+              >
                 <span className="top-rank">#{i + 1}</span>
                 <span className="top-name">{item.name}</span>
                 <span className="top-ref">{item.reference}</span>
@@ -555,48 +761,81 @@ function _DashboardView({ stats, _items, onSelectItem }) {
 // ═══════════════════════════════════════════════════════════════
 // Liste des Articles
 // ═══════════════════════════════════════════════════════════════
-function ItemsListView({ items, categories, searchTerm, onSearchChange, categoryFilter, onCategoryChange, lowStockFilter, onLowStockChange, selectedItemId, onSelect, onDoubleClick, onAdd, onImport, _isAdmin, stats, onOpenManagement }) {
+function ItemsListView({
+  items,
+  categories,
+  searchTerm,
+  onSearchChange,
+  categoryFilter,
+  onCategoryChange,
+  lowStockFilter,
+  onLowStockChange,
+  selectedItemId,
+  onSelect,
+  onDoubleClick,
+  onAdd,
+  onImport,
+  _isAdmin,
+  stats,
+  onOpenManagement,
+}) {
   return (
     <div className="stock-items-view">
       {/* Toolbar */}
       <div className="stock-toolbar">
-        <SearchBar value={searchTerm} onChange={onSearchChange} placeholder="Rechercher un article..." />
+        <SearchBar
+          value={searchTerm}
+          onChange={onSearchChange}
+          placeholder="Rechercher un article..."
+        />
         <div className="stock-filters">
           <EntityCombobox
             value={categoryFilter}
-            onChange={val => onCategoryChange(val)}
-            options={categories.map(c => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
+            onChange={(val) => onCategoryChange(val)}
+            options={categories.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
             placeholder="Toutes catégories"
             allowClear
           />
           <Tooltip content="Afficher uniquement les stocks bas" position="bottom">
-            <Button variant="ghost"             className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
-            onClick={() => onLowStockChange(!lowStockFilter)}
- 
-          >
-            <AlertTriangle size={14} />
-            Stock bas
-          </Button>
+            <Button
+              variant="ghost"
+              className={`stock-filter-btn ${lowStockFilter ? 'active' : ''}`}
+              onClick={() => onLowStockChange(!lowStockFilter)}
+            >
+              <AlertTriangle size={14} />
+              Stock bas
+            </Button>
           </Tooltip>
         </div>
         {stats && (
           <div className="stock-header-stats">
-            <span className="stat-badge"><Package size={14} /> {stats.totalItems || 0} articles</span>
-            {stats.lowStockCount > 0 && <span className="stat-badge warning"><AlertTriangle size={14} /> {stats.lowStockCount} stock bas</span>}
+            <span className="stat-badge">
+              <Package size={14} /> {stats.totalItems || 0} articles
+            </span>
+            {stats.lowStockCount > 0 && (
+              <span className="stat-badge warning">
+                <AlertTriangle size={14} /> {stats.lowStockCount} stock bas
+              </span>
+            )}
           </div>
         )}
- <Tooltip content="Importer un inventaire CSV" position="bottom">
-   <Button variant="ghost" className="stock-add-btn" onClick={onImport}>
-          <Upload size={16} />
-          <span>Importer</span>
-        </Button>
- </Tooltip>
+        <Tooltip content="Importer un inventaire CSV" position="bottom">
+          <Button variant="ghost" className="stock-add-btn" onClick={onImport}>
+            <Upload size={16} />
+            <span>Importer</span>
+          </Button>
+        </Tooltip>
         <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
           <Plus size={16} />
           <span>Nouvel article</span>
         </Button>
         {onOpenManagement && (
-          <Button variant="ghost" className="stock-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion des catégories">
+          <Button
+            variant="ghost"
+            className="stock-management-btn"
+            onClick={onOpenManagement}
+            aria-label="Ouvrir la gestion des catégories"
+          >
             <Layers size={16} /> Gestion
           </Button>
         )}
@@ -607,7 +846,11 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
         <EmptyState
           icon={<Package size={48} />}
           title="Aucun article trouvé"
-          action={<Button variant="ghost" className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer un article</Button>}
+          action={
+            <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
+              <Plus size={16} /> Créer un article
+            </Button>
+          }
         />
       ) : (
         <div className="stock-table-container">
@@ -626,7 +869,7 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
               </tr>
             </thead>
             <tbody>
-              {items.map(item => {
+              {items.map((item) => {
                 const isLow = item.min_quantity > 0 && item.quantity <= item.min_quantity;
                 const isOut = item.quantity === 0;
                 const isSelected = selectedItemId === item.id;
@@ -644,10 +887,23 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
                     </td>
                     <td>
                       {item.category_name ? (
-                        <span className="stock-cat-badge" style={item.category_color ? { background: item.category_color + '20', color: item.category_color, borderColor: item.category_color } : undefined}>
+                        <span
+                          className="stock-cat-badge"
+                          style={
+                            item.category_color
+                              ? {
+                                  background: item.category_color + '20',
+                                  color: item.category_color,
+                                  borderColor: item.category_color,
+                                }
+                              : undefined
+                          }
+                        >
                           {item.category_icon} {item.category_name}
                         </span>
-                      ) : '—'}
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td className={`stock-qty ${isOut ? 'rupture' : isLow ? 'low' : ''}`}>
                       {item.quantity}
@@ -657,7 +913,9 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
                     <td>{item.unit}</td>
                     <td>{formatCurrency(item.unit_price)}</td>
                     <td>{formatCurrency(item.sell_price)}</td>
-                    <td className="stock-value">{formatCurrency(item.quantity * (item.unit_price || 0))}</td>
+                    <td className="stock-value">
+                      {formatCurrency(item.quantity * (item.unit_price || 0))}
+                    </td>
                     <td className="stock-location">
                       {item.location_zone
                         ? `${item.location_depot ? `D${item.location_depot}–` : ''}${item.location_zone}`
@@ -672,7 +930,8 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
       )}
 
       <div className="stock-footer-info">
-        {items.length} article(s) — Valeur totale : {formatCurrency(items.reduce((sum, i) => sum + (i.quantity * i.unit_price), 0))}
+        {items.length} article(s) — Valeur totale :{' '}
+        {formatCurrency(items.reduce((sum, i) => sum + i.quantity * i.unit_price, 0))}
       </div>
     </div>
   );
@@ -681,7 +940,18 @@ function ItemsListView({ items, categories, searchTerm, onSearchChange, category
 // ═══════════════════════════════════════════════════════════════
 // Détail d'un article
 // ═══════════════════════════════════════════════════════════════
-function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement, loadMovements, isAdmin, depotZones, allDepotZones }) {
+function ItemDetailView({
+  item,
+  movements,
+  onBack,
+  onEdit,
+  onDelete,
+  onMovement,
+  loadMovements,
+  isAdmin,
+  depotZones,
+  allDepotZones,
+}) {
   const [showMap, setShowMap] = useState(false);
   useEffect(() => {
     loadMovements(item.id);
@@ -723,76 +993,135 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
 
           <div className="stock-detail-grid">
             <div className="stock-detail-field">
-              <label><TagIcon size={14} /> Catégorie</label>
+              <span className="stock-detail-label">
+                <TagIcon size={14} /> Catégorie
+              </span>
               <span>
                 {item.category_name ? (
-                  <span className="stock-cat-badge" style={item.category_color ? { background: item.category_color + '20', color: item.category_color, borderColor: item.category_color } : undefined}>
+                  <span
+                    className="stock-cat-badge"
+                    style={
+                      item.category_color
+                        ? {
+                            background: item.category_color + '20',
+                            color: item.category_color,
+                            borderColor: item.category_color,
+                          }
+                        : undefined
+                    }
+                  >
                     {item.category_icon} {item.category_name}
                   </span>
-                ) : '—'}
+                ) : (
+                  '—'
+                )}
               </span>
             </div>
             <div className="stock-detail-field">
-              <label><Package size={14} /> Quantité</label>
+              <span className="stock-detail-label">
+                <Package size={14} /> Quantité
+              </span>
               <span className={`stock-qty-big ${isOut ? 'rupture' : isLow ? 'low' : 'ok'}`}>
                 {item.quantity} {item.unit}
-                {isLow && !isOut && <Tag color="warning" size="sm">Stock bas</Tag>}
-                {isOut && <Tag color="danger" size="sm">Rupture</Tag>}
+                {isLow && !isOut && (
+                  <Tag color="warning" size="sm">
+                    Stock bas
+                  </Tag>
+                )}
+                {isOut && (
+                  <Tag color="danger" size="sm">
+                    Rupture
+                  </Tag>
+                )}
               </span>
             </div>
             <div className="stock-detail-field">
-              <label><AlertTriangle size={14} /> Seuil alerte</label>
-              <span>{item.min_quantity > 0 ? `${item.min_quantity} ${item.unit}` : 'Non défini'}</span>
+              <span className="stock-detail-label">
+                <AlertTriangle size={14} /> Seuil alerte
+              </span>
+              <span>
+                {item.min_quantity > 0 ? `${item.min_quantity} ${item.unit}` : 'Non défini'}
+              </span>
             </div>
             <div className="stock-detail-field">
-              <label><Euro size={14} /> P.U. Achat</label>
+              <span className="stock-detail-label">
+                <Euro size={14} /> P.U. Achat
+              </span>
               <span>{formatCurrency(item.unit_price)}</span>
             </div>
             <div className="stock-detail-field">
-              <label><Euro size={14} /> P.U. Vente</label>
+              <span className="stock-detail-label">
+                <Euro size={14} /> P.U. Vente
+              </span>
               <span>{formatCurrency(item.sell_price)}</span>
             </div>
             <div className="stock-detail-field">
-              <label><Euro size={14} /> Valeur stock</label>
-              <span className="stock-value-total">{formatCurrency(item.quantity * item.unit_price)}</span>
-            </div>
-            <div className="stock-detail-field">
-              <label><MapPin size={14} /> Emplacement</label>
-              <span>
-                {(item.location_zone)
-                  ? <>
-                      {item.location_depot ? `D${item.location_depot} — ` : ''}{item.location_zone}{item.location_floor ? ` (${item.location_floor})` : ''}
-                      {(depotZones || allDepotZones) && (
- <Tooltip content="Voir sur le plan" position="bottom">
-   <Button variant="ghost" className="stock-zone-map-btn" onClick={() => setShowMap(!showMap)}>
-                          <Map size={13} /> Plan
-                        </Button>
- </Tooltip>
-                      )}
-                    </>
-                  : item.location || '—'}
+              <span className="stock-detail-label">
+                <Euro size={14} /> Valeur stock
+              </span>
+              <span className="stock-value-total">
+                {formatCurrency(item.quantity * item.unit_price)}
               </span>
             </div>
             <div className="stock-detail-field">
-              <label><Hash size={14} /> Fournisseur</label>
+              <span className="stock-detail-label">
+                <MapPin size={14} /> Emplacement
+              </span>
+              <span>
+                {item.location_zone ? (
+                  <>
+                    {item.location_depot ? `D${item.location_depot} — ` : ''}
+                    {item.location_zone}
+                    {item.location_floor ? ` (${item.location_floor})` : ''}
+                    {(depotZones || allDepotZones) && (
+                      <Tooltip content="Voir sur le plan" position="bottom">
+                        <Button
+                          variant="ghost"
+                          className="stock-zone-map-btn"
+                          onClick={() => setShowMap(!showMap)}
+                        >
+                          <Map size={13} /> Plan
+                        </Button>
+                      </Tooltip>
+                    )}
+                  </>
+                ) : (
+                  item.location || '—'
+                )}
+              </span>
+            </div>
+            <div className="stock-detail-field">
+              <span className="stock-detail-label">
+                <Hash size={14} /> Fournisseur
+              </span>
               <span>{item.supplier_name || '—'}</span>
             </div>
           </div>
 
-          {showMap && item.location_zone && (() => {
-            const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
-            const depotData = depotsList.find(d => String(d.id || d.depotId) === String(item.location_depot)) || depotsList[0];
-            if (!depotData) return null;
-            return (
-              <div className="stock-detail-map">
-                <DepotMap zones={depotData} selectedZone={item.location_zone} onZoneSelect={() => {}} onZoneFilter={() => {}} compact />
-              </div>
-            );
-          })()}
+          {showMap &&
+            item.location_zone &&
+            (() => {
+              const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
+              const depotData =
+                depotsList.find((d) => String(d.id || d.depotId) === String(item.location_depot)) ||
+                depotsList[0];
+              if (!depotData) return null;
+              return (
+                <div className="stock-detail-map">
+                  <DepotMap
+                    zones={depotData}
+                    selectedZone={item.location_zone}
+                    onZoneSelect={() => {}}
+                    onZoneFilter={() => {}}
+                    compact
+                  />
+                </div>
+              );
+            })()}
 
           {item.notes && (
             <div className="stock-detail-notes">
-              <label>Notes</label>
+              <span className="stock-detail-label">Notes</span>
               <p>{item.notes}</p>
             </div>
           )}
@@ -800,26 +1129,35 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
 
         {/* Historique des mouvements */}
         <div className="stock-detail-card">
-          <h4><TrendingUp size={16} /> Historique des mouvements</h4>
+          <h4>
+            <TrendingUp size={16} /> Historique des mouvements
+          </h4>
           {movements.length === 0 ? (
             <p className="stock-empty-text">Aucun mouvement enregistré</p>
           ) : (
             <div className="stock-movements-list">
-              {movements.map(m => {
+              {movements.map((m) => {
                 const mt = MOVEMENT_TYPES[m.type] || {};
                 return (
                   <div key={m.id} className="stock-movement-row">
-                    <span className="movement-icon" style={{ color: mt.color }}>{mt.icon}</span>
+                    <span className="movement-icon" style={{ color: mt.color }}>
+                      {mt.icon}
+                    </span>
                     <div className="movement-info">
-                      <span className="movement-type" style={{ color: mt.color }}>{mt.label}</span>
+                      <span className="movement-type" style={{ color: mt.color }}>
+                        {mt.label}
+                      </span>
                       <span className="movement-reason">{m.reason || '—'}</span>
                     </div>
                     <div className="movement-qty-change">
                       <span>{m.previous_quantity}</span>
                       <span className="movement-arrow">→</span>
                       <span className="movement-new-qty">{m.new_quantity}</span>
-                      <span className={`movement-diff ${m.type === 'out' ? 'negative' : 'positive'}`}>
-                        {m.type === 'out' ? '-' : '+'}{m.quantity}
+                      <span
+                        className={`movement-diff ${m.type === 'out' ? 'negative' : 'positive'}`}
+                      >
+                        {m.type === 'out' ? '-' : '+'}
+                        {m.quantity}
                       </span>
                     </div>
                     <div className="movement-meta">
@@ -838,92 +1176,15 @@ function ItemDetailView({ item, movements, onBack, onEdit, onDelete, onMovement,
 }
 
 // ═══════════════════════════════════════════════════════════════
-// Vue Mouvements globaux
-// ═══════════════════════════════════════════════════════════════
-function _MovementsView({ movements, _items, onAddMovement, _onRefresh }) {
-  const [typeFilter, setTypeFilter] = useState('');
-
-  const filtered = useMemo(() => {
-    if (!typeFilter) return movements;
-    return movements.filter(m => m.type === typeFilter);
-  }, [movements, typeFilter]);
-
-  return (
-    <div className="stock-movements-view">
-      <div className="stock-toolbar">
-        <div className="stock-filters">
-          <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-            <option value="">Tous types</option>
-            {Object.entries(MOVEMENT_TYPES).map(([k, v]) => (
-              <option key={k} value={k}>{v.icon} {v.label}</option>
-            ))}
-          </Select>
-        </div>
-        <Button variant="ghost" className="stock-add-btn" onClick={onAddMovement}>
-          <Plus size={16} /> Nouveau mouvement
-        </Button>
-      </div>
-
-      {filtered.length === 0 ? (
-        <EmptyState icon={<TrendingUp size={48} />} title="Aucun mouvement enregistré" />
-      ) : (
-        <div className="stock-table-container">
-          <Table className="stock-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Article</th>
-                <th>Quantité</th>
-                <th>Avant → Après</th>
-                <th>Motif</th>
-                <th>Utilisateur</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(m => {
-                const mt = MOVEMENT_TYPES[m.type] || {};
-                return (
-                  <tr key={m.id}>
-                    <td>{formatDate(m.created_at)}</td>
-                    <td>
-                      <span className="movement-type-badge" style={{ background: mt.color + '20', color: mt.color }}>
-                        {mt.icon} {mt.label}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="movement-item-info">
-                        <span>{m.item_name}</span>
-                        <small>{m.item_reference}</small>
-                      </div>
-                    </td>
-                    <td className={`movement-qty ${m.type === 'out' ? 'negative' : 'positive'}`}>
-                      {m.type === 'out' ? '-' : '+'}{m.quantity} {m.item_unit}
-                    </td>
-                    <td className="movement-change">
-                      {m.previous_quantity} → {m.new_quantity}
-                    </td>
-                    <td>{m.reason || '—'}</td>
-                    <td>{m.user_name || '—'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </Table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════
 // Vue Catégories
 // ═══════════════════════════════════════════════════════════════
 function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
   return (
     <div className="stock-categories-view">
       <div className="stock-toolbar">
-        <h3><Layers size={18} /> Catégories ({categories.length})</h3>
+        <h3>
+          <Layers size={18} /> Catégories ({categories.length})
+        </h3>
         {isAdmin && (
           <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
             <Plus size={16} /> Nouvelle catégorie
@@ -935,12 +1196,22 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
         <EmptyState
           icon={<Layers size={48} />}
           title="Aucune catégorie créée"
-          action={isAdmin && <Button variant="ghost" className="stock-add-btn" onClick={onAdd}><Plus size={16} /> Créer</Button>}
+          action={
+            isAdmin && (
+              <Button variant="ghost" className="stock-add-btn" onClick={onAdd}>
+                <Plus size={16} /> Créer
+              </Button>
+            )
+          }
         />
       ) : (
         <div className="stock-categories-grid">
-          {categories.map(cat => (
-            <div key={cat.id} className="stock-category-card" style={{ borderLeftColor: cat.color }}>
+          {categories.map((cat) => (
+            <div
+              key={cat.id}
+              className="stock-category-card"
+              style={{ borderLeftColor: cat.color }}
+            >
               <div className="cat-card-header">
                 <span className="cat-icon">{cat.icon}</span>
                 <span className="cat-name">{cat.name}</span>
@@ -951,10 +1222,18 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
               {isAdmin && (
                 <div className="cat-actions">
                   <Tooltip content="Modifier">
-                    <Button variant="ghost" onClick={() => onEdit(cat)}><Edit2 size={14} /></Button>
+                    <Button variant="ghost" onClick={() => onEdit(cat)}>
+                      <Edit2 size={14} />
+                    </Button>
                   </Tooltip>
                   <Tooltip content="Supprimer">
-                    <Button variant="ghost" onClick={() => onDelete(cat)} disabled={cat.item_count > 0}><Trash2 size={14} /></Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => onDelete(cat)}
+                      disabled={cat.item_count > 0}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
                   </Tooltip>
                 </div>
               )}
@@ -969,7 +1248,16 @@ function CategoriesView({ categories, onAdd, onEdit, onDelete, isAdmin }) {
 // ═══════════════════════════════════════════════════════════════
 // Modal Formulaire Article
 // ═══════════════════════════════════════════════════════════════
-function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones, onSave, onClose }) {
+function ItemFormModal({
+  item,
+  categories,
+  suppliers,
+  depotZones,
+  allDepotZones,
+  onSave,
+  onClose,
+}) {
+  const toast = useToast();
   const [showMap, setShowMap] = useState(false);
   const [mapDepotIdx, setMapDepotIdx] = useState(0);
   const [form, setForm] = useState({
@@ -987,9 +1275,10 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
     location_zone: item?.location_zone || '',
     location_floor: item?.location_floor || '',
     supplier_id: item?.supplier_id || '',
-    notes: item?.notes || '' });
+    notes: item?.notes || '',
+  });
 
-  const handleChange = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+  const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -1001,7 +1290,8 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
       quantity: Number(form.quantity) || 0,
       min_quantity: Number(form.min_quantity) || 0,
       category_id: form.category_id || null,
-      supplier_id: form.supplier_id || null });
+      supplier_id: form.supplier_id || null,
+    });
   };
 
   return (
@@ -1013,89 +1303,159 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
       className="stock-modal"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button variant="primary" type="submit" form="stock-item-form"><Check size={16} /> {item ? 'Enregistrer' : 'Créer'}</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button variant="primary" type="submit" form="stock-item-form">
+            <Check size={16} /> {item ? 'Enregistrer' : 'Créer'}
+          </Button>
         </>
       }
     >
-        <form id="stock-item-form" onSubmit={handleSubmit} className="stock-modal-form">
-          <div className="stock-form-row">
-            <div className="stock-form-field">
-              <label>Référence</label>
-              <Input type="text" value={form.reference} onChange={(e) => handleChange('reference', e.target.value)} placeholder="Auto-généré si vide" />
-            </div>
-            <div className="stock-form-field full">
-              <label>Nom *</label>
-              <Input type="text" value={form.name} onChange={(e) => handleChange('name', e.target.value)} required />
-            </div>
+      <form id="stock-item-form" onSubmit={handleSubmit} className="stock-modal-form">
+        <div className="stock-form-row">
+          <div className="stock-form-field">
+            <label htmlFor="stock-reference">Référence</label>
+            <Input
+              id="stock-reference"
+              type="text"
+              value={form.reference}
+              onChange={(e) => handleChange('reference', e.target.value)}
+              placeholder="Auto-généré si vide"
+            />
+          </div>
+          <div className="stock-form-field full">
+            <label htmlFor="stock-nom">Nom *</label>
+            <Input
+              id="stock-nom"
+              type="text"
+              value={form.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              required
+            />
+          </div>
+        </div>
+        <div className="stock-form-field">
+          <label htmlFor="stock-description">Description</label>
+          <Textarea
+            id="stock-description"
+            value={form.description}
+            onChange={(e) => handleChange('description', e.target.value)}
+            rows={2}
+          />
+        </div>
+        <div className="stock-form-row">
+          <div className="stock-form-field">
+            <label htmlFor="stock-categorie">Catégorie</label>
+            <EntityCombobox
+              id="stock-categorie"
+              value={form.category_id}
+              onChange={(val) => handleChange('category_id', val)}
+              options={categories.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
+              placeholder="— Aucune —"
+            />
           </div>
           <div className="stock-form-field">
-            <label>Description</label>
-            <Textarea value={form.description} onChange={(e) => handleChange('description', e.target.value)} rows={2} />
+            <label htmlFor="stock-unite">Unité</label>
+            <Select
+              id="stock-unite"
+              value={form.unit}
+              onChange={(e) => handleChange('unit', e.target.value)}
+            >
+              {UNITS.map((u) => (
+                <option key={u} value={u}>
+                  {u}
+                </option>
+              ))}
+            </Select>
           </div>
-          <div className="stock-form-row">
-            <div className="stock-form-field">
-              <label>Catégorie</label>
-              <EntityCombobox
-                value={form.category_id}
-                onChange={val => handleChange('category_id', val)}
-                options={categories.map(c => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
-                placeholder="— Aucune —"
-              />
-            </div>
-            <div className="stock-form-field">
-              <label>Unité</label>
-              <Select value={form.unit} onChange={(e) => handleChange('unit', e.target.value)}>
-                {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-              </Select>
-            </div>
-            <div className="stock-form-field">
-              <label>Fournisseur</label>
-              <EntityCombobox
-                value={form.supplier_id}
-                onChange={val => handleChange('supplier_id', val)}
-                options={suppliers}
-                placeholder="— Aucun —"
-              />
-            </div>
+          <div className="stock-form-field">
+            <label htmlFor="stock-fournisseur">Fournisseur</label>
+            <EntityCombobox
+              id="stock-fournisseur"
+              value={form.supplier_id}
+              onChange={(val) => handleChange('supplier_id', val)}
+              options={suppliers}
+              placeholder="— Aucun —"
+            />
           </div>
-          <div className="stock-form-row">
-            <div className="stock-form-field">
-              <label>P.U. Achat (€)</label>
-              <Input type="number" step="0.01" min="0" value={form.unit_price} onChange={(e) => handleChange('unit_price', e.target.value)} />
-            </div>
-            <div className="stock-form-field">
-              <label>P.U. Vente (€)</label>
-              <Input type="number" step="0.01" min="0" value={form.sell_price} onChange={(e) => handleChange('sell_price', e.target.value)} />
-            </div>
-            <div className="stock-form-field">
-              <label>Quantité</label>
-              <Input type="number" step="0.01" min="0" value={form.quantity} onChange={(e) => handleChange('quantity', e.target.value)} />
-            </div>
-            <div className="stock-form-field">
-              <label>Seuil alerte</label>
-              <Input type="number" step="0.01" min="0" value={form.min_quantity} onChange={(e) => handleChange('min_quantity', e.target.value)} />
-            </div>
+        </div>
+        <div className="stock-form-row">
+          <div className="stock-form-field">
+            <label htmlFor="stock-p-u-achat">P.U. Achat (€)</label>
+            <Input
+              id="stock-p-u-achat"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.unit_price}
+              onChange={(e) => handleChange('unit_price', e.target.value)}
+            />
           </div>
-          {(depotZones || allDepotZones) ? (
-            <div className="stock-form-field stock-form-full">
-              <LocationSelector
-                zones={depotZones}
-                depots={allDepotZones}
-                value={{
-                  location_depot: form.location_depot,
-                  location_zone: form.location_zone,
-                  location_floor: form.location_floor }}
-                onChange={(loc) => setForm(f => ({
+          <div className="stock-form-field">
+            <label htmlFor="stock-p-u-vente">P.U. Vente (€)</label>
+            <Input
+              id="stock-p-u-vente"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.sell_price}
+              onChange={(e) => handleChange('sell_price', e.target.value)}
+            />
+          </div>
+          <div className="stock-form-field">
+            <label htmlFor="stock-quantite">Quantité</label>
+            <Input
+              id="stock-quantite"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.quantity}
+              onChange={(e) => handleChange('quantity', e.target.value)}
+            />
+          </div>
+          <div className="stock-form-field">
+            <label htmlFor="stock-seuil-alerte">Seuil alerte</label>
+            <Input
+              id="stock-seuil-alerte"
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.min_quantity}
+              onChange={(e) => handleChange('min_quantity', e.target.value)}
+            />
+          </div>
+        </div>
+        {depotZones || allDepotZones ? (
+          <div className="stock-form-field stock-form-full">
+            <LocationSelector
+              zones={depotZones}
+              depots={allDepotZones}
+              value={{
+                location_depot: form.location_depot,
+                location_zone: form.location_zone,
+                location_floor: form.location_floor,
+              }}
+              onChange={(loc) =>
+                setForm((f) => ({
                   ...f,
                   location_depot: loc.location_depot || '',
                   location_zone: loc.location_zone || '',
-                  location_floor: loc.location_floor || '' }))}
-              />
-              <Button variant="ghost" type="button" className="stock-form-map-toggle" onClick={() => setShowMap(!showMap)}>
-                <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
-              </Button>
-              {showMap && (() => {
+                  location_floor: loc.location_floor || '',
+                }))
+              }
+            />
+            <Button
+              variant="ghost"
+              type="button"
+              className="stock-form-map-toggle"
+              onClick={() => setShowMap(!showMap)}
+              aria-pressed={showMap}
+            >
+              <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
+            </Button>
+            {showMap &&
+              (() => {
                 const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
                 const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
                 if (!currentDepotData) return null;
@@ -1104,7 +1464,13 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                     {depotsList.length > 1 && (
                       <div className="stock-form-map-tabs">
                         {depotsList.map((d, i) => (
-                          <Button variant="ghost" key={d.id || i} type="button" className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`} onClick={() => setMapDepotIdx(i)}>
+                          <Button
+                            variant="ghost"
+                            key={d.id || i}
+                            type="button"
+                            className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`}
+                            onClick={() => setMapDepotIdx(i)}
+                          >
                             {d.name || `Dépôt ${d.id || i + 1}`}
                           </Button>
                         ))}
@@ -1115,12 +1481,13 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                       selectedZone={form.location_zone}
                       onZoneSelect={(zoneId) => {
                         if (!zoneId) return;
-                        const zoneObj = currentDepotData.zones?.find(z => z.id === zoneId);
-                        setForm(f => ({
+                        const zoneObj = currentDepotData.zones?.find((z) => z.id === zoneId);
+                        setForm((f) => ({
                           ...f,
                           location_depot: currentDepotData.id || currentDepotData.depotId || '',
                           location_zone: zoneId,
-                          location_floor: zoneObj?.floor || '' }));
+                          location_floor: zoneObj?.floor || '',
+                        }));
                       }}
                       onZoneFilter={() => {}}
                       compact
@@ -1128,18 +1495,29 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
                   </div>
                 );
               })()}
-            </div>
-          ) : (
-            <div className="stock-form-field">
-              <label>Emplacement</label>
-              <Input type="text" value={form.location} onChange={(e) => handleChange('location', e.target.value)} placeholder="ex: Étagère A3, Atelier B..." />
-            </div>
-          )}
-          <div className="stock-form-field">
-            <label>Notes</label>
-            <Textarea value={form.notes} onChange={(e) => handleChange('notes', e.target.value)} rows={2} />
           </div>
-        </form>
+        ) : (
+          <div className="stock-form-field">
+            <label htmlFor="stock-emplacement">Emplacement</label>
+            <Input
+              id="stock-emplacement"
+              type="text"
+              value={form.location}
+              onChange={(e) => handleChange('location', e.target.value)}
+              placeholder="ex: Étagère A3, Atelier B..."
+            />
+          </div>
+        )}
+        <div className="stock-form-field">
+          <label htmlFor="stock-notes">Notes</label>
+          <Textarea
+            id="stock-notes"
+            value={form.notes}
+            onChange={(e) => handleChange('notes', e.target.value)}
+            rows={2}
+          />
+        </div>
+      </form>
     </ModalLayout>
   );
 }
@@ -1148,14 +1526,16 @@ function ItemFormModal({ item, categories, suppliers, depotZones, allDepotZones,
 // Modal Formulaire Catégorie
 // ═══════════════════════════════════════════════════════════════
 function CategoryFormModal({ category, categories, onSave, onClose }) {
+  const toast = useToast();
   const [form, setForm] = useState({
     name: category?.name || '',
     description: category?.description || '',
     parent_id: category?.parent_id || '',
     color: category?.color || CATEGORY_COLORS[0],
-    icon: category?.icon || '📦' });
+    icon: category?.icon || '📦',
+  });
 
-  const parentOptions = categories.filter(c => c.id !== category?.id);
+  const parentOptions = categories.filter((c) => c.id !== category?.id);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -1172,55 +1552,77 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
       className="stock-modal stock-modal-sm"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button variant="primary" type="submit" form="category-form"><Check size={16} /> {category ? 'Enregistrer' : 'Créer'}</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button variant="primary" type="submit" form="category-form">
+            <Check size={16} /> {category ? 'Enregistrer' : 'Créer'}
+          </Button>
         </>
       }
     >
-        <form id="category-form" onSubmit={handleSubmit} className="stock-modal-form">
-          <div className="stock-form-field">
-            <label>Nom *</label>
-            <Input type="text" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} required />
+      <form id="category-form" onSubmit={handleSubmit} className="stock-modal-form">
+        <div className="stock-form-field">
+          <label htmlFor="stock-nom-2">Nom *</label>
+          <Input
+            id="stock-nom-2"
+            type="text"
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            required
+          />
+        </div>
+        <div className="stock-form-field">
+          <label htmlFor="stock-description-2">Description</label>
+          <Input
+            id="stock-description-2"
+            type="text"
+            value={form.description}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+          />
+        </div>
+        <div className="stock-form-field">
+          <label htmlFor="stock-parent">Parent</label>
+          <EntityCombobox
+            id="stock-parent"
+            value={form.parent_id}
+            onChange={(val) => setForm((f) => ({ ...f, parent_id: val }))}
+            options={parentOptions.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
+            placeholder="— Aucun (racine) —"
+          />
+        </div>
+        <div className="stock-form-field">
+          <span className="stock-form-group-label">Icône</span>
+          <div className="stock-icon-picker">
+            {CATEGORY_ICONS.map((icon) => (
+              <Button
+                variant="ghost"
+                key={icon}
+                type="button"
+                className={`icon-pick ${form.icon === icon ? 'active' : ''}`}
+                onClick={() => setForm((f) => ({ ...f, icon }))}
+              >
+                {icon}
+              </Button>
+            ))}
           </div>
-          <div className="stock-form-field">
-            <label>Description</label>
-            <Input type="text" value={form.description} onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))} />
+        </div>
+        <div className="stock-form-field">
+          <span className="stock-form-group-label">Couleur</span>
+          <div className="stock-color-picker">
+            {CATEGORY_COLORS.map((color) => (
+              <Button
+                variant="ghost"
+                key={color}
+                type="button"
+                className={`color-pick ${form.color === color ? 'active' : ''}`}
+                style={{ background: color }}
+                onClick={() => setForm((f) => ({ ...f, color }))}
+              />
+            ))}
           </div>
-          <div className="stock-form-field">
-            <label>Parent</label>
-            <EntityCombobox
-              value={form.parent_id}
-              onChange={val => setForm(f => ({ ...f, parent_id: val }))}
-              options={parentOptions.map(c => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
-              placeholder="— Aucun (racine) —"
-            />
-          </div>
-          <div className="stock-form-field">
-            <label>Icône</label>
-            <div className="stock-icon-picker">
-              {CATEGORY_ICONS.map(icon => (
-                <Button variant="ghost"                   key={icon}
-                  type="button"
-                  className={`icon-pick ${form.icon === icon ? 'active' : ''}`}
-                  onClick={() => setForm(f => ({ ...f, icon }))}
-                >{icon}</Button>
-              ))}
-            </div>
-          </div>
-          <div className="stock-form-field">
-            <label>Couleur</label>
-            <div className="stock-color-picker">
-              {CATEGORY_COLORS.map(color => (
-                <Button variant="ghost"                   key={color}
-                  type="button"
-                  className={`color-pick ${form.color === color ? 'active' : ''}`}
-                  style={{ background: color }}
-                  onClick={() => setForm(f => ({ ...f, color }))}
-                />
-              ))}
-            </div>
-          </div>
-        </form>
+        </div>
+      </form>
     </ModalLayout>
   );
 }
@@ -1229,22 +1631,26 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
 // Modal Formulaire Mouvement
 // ═══════════════════════════════════════════════════════════════
 function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
+  const toast = useToast();
   const [form, setForm] = useState({
     stock_item_id: preselectedItem?.id || '',
     type: 'in',
     quantity: '',
     reason: '',
-    reference: '' });
+    reference: '',
+  });
 
-  const selectedItem = items.find(i => i.id === Number(form.stock_item_id));
+  const selectedItem = items.find((i) => i.id === Number(form.stock_item_id));
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.stock_item_id || !form.quantity) return toast.warning('Article et quantité sont requis');
+    if (!form.stock_item_id || !form.quantity)
+      return toast.warning('Article et quantité sont requis');
     onSave({
       ...form,
       stock_item_id: Number(form.stock_item_id),
-      quantity: Number(form.quantity) });
+      quantity: Number(form.quantity),
+    });
   };
 
   return (
@@ -1256,92 +1662,103 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
       className="stock-modal stock-modal-sm"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button variant="primary" type="submit" form="movement-form"><Check size={16} /> Valider</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Annuler
+          </Button>
+          <Button variant="primary" type="submit" form="movement-form">
+            <Check size={16} /> Valider
+          </Button>
         </>
       }
     >
-        <form id="movement-form" onSubmit={handleSubmit} className="stock-modal-form">
+      <form id="movement-form" onSubmit={handleSubmit} className="stock-modal-form">
+        <div className="stock-form-field">
+          <label htmlFor="stock-article">Article *</label>
+          <Select
+            id="stock-article"
+            value={form.stock_item_id}
+            onChange={(e) => setForm((f) => ({ ...f, stock_item_id: e.target.value }))}
+            required
+          >
+            <option value="">— Sélectionner —</option>
+            {items.map((item) => (
+              <option key={item.id} value={item.id}>
+                [{item.reference}] {item.name} (stock: {item.quantity} {item.unit})
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="stock-form-field">
+          <span className="stock-form-group-label">Type de mouvement</span>
+          <div className="stock-movement-types">
+            {Object.entries(MOVEMENT_TYPES).map(([key, mt]) => (
+              <Button
+                variant="ghost"
+                key={key}
+                type="button"
+                className={`movement-type-btn ${form.type === key ? 'active' : ''}`}
+                style={{ '--mt-color': mt.color }}
+                onClick={() => setForm((f) => ({ ...f, type: key }))}
+              >
+                {mt.icon} {mt.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="stock-form-row">
           <div className="stock-form-field">
-            <label>Article *</label>
-            <Select
-              value={form.stock_item_id}
-              onChange={(e) => setForm(f => ({ ...f, stock_item_id: e.target.value }))}
+            <label htmlFor="stock-quantite-2">Quantité *</label>
+            <Input
+              id="stock-quantite-2"
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={form.quantity}
+              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
               required
-            >
-              <option value="">— Sélectionner —</option>
-              {items.map(item => (
-                <option key={item.id} value={item.id}>
-                  [{item.reference}] {item.name} (stock: {item.quantity} {item.unit})
-                </option>
-              ))}
-            </Select>
+            />
           </div>
-          <div className="stock-form-field">
-            <label>Type de mouvement</label>
-            <div className="stock-movement-types">
-              {Object.entries(MOVEMENT_TYPES).map(([key, mt]) => (
-                <Button variant="ghost"                   key={key}
-                  type="button"
-                  className={`movement-type-btn ${form.type === key ? 'active' : ''}`}
-                  style={{ '--mt-color': mt.color }}
-                  onClick={() => setForm(f => ({ ...f, type: key }))}
-                >
-                  {mt.icon} {mt.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-          <div className="stock-form-row">
+          {selectedItem && (
             <div className="stock-form-field">
-              <label>Quantité *</label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={form.quantity}
-                onChange={(e) => setForm(f => ({ ...f, quantity: e.target.value }))}
-                required
-              />
-            </div>
-            {selectedItem && (
-              <div className="stock-form-field">
-                <label>Stock actuel</label>
-                <div className="stock-current-qty">
-                  {selectedItem.quantity} {selectedItem.unit}
-                  {form.quantity && (
-                    <span className="stock-preview-qty">
-                      → {form.type === 'in' || form.type === 'return'
-                        ? selectedItem.quantity + Number(form.quantity)
-                        : form.type === 'out'
-                          ? Math.max(0, selectedItem.quantity - Number(form.quantity))
-                          : Number(form.quantity)
-                      } {selectedItem.unit}
-                    </span>
-                  )}
-                </div>
+              <span className="stock-form-group-label">Stock actuel</span>
+              <div className="stock-current-qty">
+                {selectedItem.quantity} {selectedItem.unit}
+                {form.quantity && (
+                  <span className="stock-preview-qty">
+                    →{' '}
+                    {form.type === 'in' || form.type === 'return'
+                      ? selectedItem.quantity + Number(form.quantity)
+                      : form.type === 'out'
+                        ? Math.max(0, selectedItem.quantity - Number(form.quantity))
+                        : Number(form.quantity)}{' '}
+                    {selectedItem.unit}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-          <div className="stock-form-field">
-            <label>Motif / Raison</label>
-            <Input
-              type="text"
-              value={form.reason}
-              onChange={(e) => setForm(f => ({ ...f, reason: e.target.value }))}
-              placeholder="ex: Livraison fournisseur, Prêt chantier, Inventaire..."
-            />
-          </div>
-          <div className="stock-form-field">
-            <label>Référence (BL, facture...)</label>
-            <Input
-              type="text"
-              value={form.reference}
-              onChange={(e) => setForm(f => ({ ...f, reference: e.target.value }))}
-              placeholder="ex: BL-2024-0045"
-            />
-          </div>
-        </form>
+            </div>
+          )}
+        </div>
+        <div className="stock-form-field">
+          <label htmlFor="stock-motif-raison">Motif / Raison</label>
+          <Input
+            id="stock-motif-raison"
+            type="text"
+            value={form.reason}
+            onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+            placeholder="ex: Livraison fournisseur, Prêt chantier, Inventaire..."
+          />
+        </div>
+        <div className="stock-form-field">
+          <label htmlFor="stock-reference-bl-facture">Référence (BL, facture...)</label>
+          <Input
+            id="stock-reference-bl-facture"
+            type="text"
+            value={form.reference}
+            onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
+            placeholder="ex: BL-2024-0045"
+          />
+        </div>
+      </form>
     </ModalLayout>
   );
 }
@@ -1351,24 +1768,38 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
 // ═══════════════════════════════════════════════════════════════
 
 function parseInventoryCSV(text) {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   const items = [];
   // Try to detect separator (tab, semicolon, comma)
-  const firstDataLine = lines.find(l => /\d/.test(l) && !/^(Rapport|Inventaire|Résumé|Synthèse|Catégorie|Emplacement|Fournisseur|TOTAL|Page|Détail|Référence)/i.test(l));
+  const firstDataLine = lines.find(
+    (l) =>
+      /\d/.test(l) &&
+      !/^(Rapport|Inventaire|Résumé|Synthèse|Catégorie|Emplacement|Fournisseur|TOTAL|Page|Détail|Référence)/i.test(
+        l,
+      ),
+  );
   const sep = firstDataLine?.includes('\t') ? '\t' : firstDataLine?.includes(';') ? ';' : ',';
 
   // Find header line
-  let headerIdx = lines.findIndex(l => {
+  let headerIdx = lines.findIndex((l) => {
     const lower = l.toLowerCase();
-    return (lower.includes('référence') || lower.includes('reference') || lower.includes('ref'))
-      && (lower.includes('nom') || lower.includes('désignation') || lower.includes('designation') || lower.includes('article'));
+    return (
+      (lower.includes('référence') || lower.includes('reference') || lower.includes('ref')) &&
+      (lower.includes('nom') ||
+        lower.includes('désignation') ||
+        lower.includes('designation') ||
+        lower.includes('article'))
+    );
   });
 
   if (headerIdx === -1) {
     // No header found — try raw data parsing (each field separated)
     // Fallback: treat each line as: reference, name, description, category, location, quantity, unit_price, total
     for (const line of lines) {
-      const cols = line.split(sep).map(c => c.trim());
+      const cols = line.split(sep).map((c) => c.trim());
       if (cols.length >= 6) {
         const qty = parseFloat(cols[cols.length - 3]?.replace(/\s/g, '').replace(',', '.'));
         const val = parseFloat(cols[cols.length - 2]?.replace(/\s/g, '').replace(',', '.'));
@@ -1380,31 +1811,33 @@ function parseInventoryCSV(text) {
             category_name: cols[3] || '',
             location: cols[4] || '',
             quantity: qty,
-            unit_price: isNaN(val) ? 0 : val });
+            unit_price: isNaN(val) ? 0 : val,
+          });
         }
       }
     }
     return items;
   }
 
-  const headers = lines[headerIdx].split(sep).map(h => h.trim().toLowerCase());
+  const headers = lines[headerIdx].split(sep).map((h) => h.trim().toLowerCase());
   const colIdx = {
-    ref: headers.findIndex(h => /^(r[ée]f|reference)/.test(h)),
-    name: headers.findIndex(h => /^(nom|d[ée]signation|article)/.test(h)),
-    desc: headers.findIndex(h => /^desc/.test(h)),
-    cat: headers.findIndex(h => /^cat[ée]gorie/.test(h)),
-    loc: headers.findIndex(h => /^(emplacement|lieu|location)/.test(h)),
-    qty: headers.findIndex(h => /^(quanti|qty|qté|stock)/.test(h)),
-    price: headers.findIndex(h => /^(valeur|prix|p\.?u|unit)/.test(h)),
-    total: headers.findIndex(h => /^total/.test(h)) };
+    ref: headers.findIndex((h) => /^(r[ée]f|reference)/.test(h)),
+    name: headers.findIndex((h) => /^(nom|d[ée]signation|article)/.test(h)),
+    desc: headers.findIndex((h) => /^desc/.test(h)),
+    cat: headers.findIndex((h) => /^cat[ée]gorie/.test(h)),
+    loc: headers.findIndex((h) => /^(emplacement|lieu|location)/.test(h)),
+    qty: headers.findIndex((h) => /^(quanti|qty|qté|stock)/.test(h)),
+    price: headers.findIndex((h) => /^(valeur|prix|p\.?u|unit)/.test(h)),
+    total: headers.findIndex((h) => /^total/.test(h)),
+  };
 
   for (let i = headerIdx + 1; i < lines.length; i++) {
     const line = lines[i];
     if (/^(Page|TOTAL|Synthèse)/i.test(line)) continue;
-    const cols = line.split(sep).map(c => c.trim());
+    const cols = line.split(sep).map((c) => c.trim());
     if (cols.length < 3) continue;
 
-    const get = (idx) => idx >= 0 && idx < cols.length ? cols[idx] : '';
+    const get = (idx) => (idx >= 0 && idx < cols.length ? cols[idx] : '');
     const getNum = (idx) => {
       const v = get(idx).replace(/\s/g, '').replace(',', '.');
       return parseFloat(v) || 0;
@@ -1420,7 +1853,8 @@ function parseInventoryCSV(text) {
       category_name: get(colIdx.cat),
       location: get(colIdx.loc),
       quantity: getNum(colIdx.qty),
-      unit_price: getNum(colIdx.price) });
+      unit_price: getNum(colIdx.price),
+    });
   }
 
   return items;
@@ -1433,18 +1867,37 @@ function parseInventoryPDF(text) {
 
   // Catégories connues dans le PDF (avec formes tronquées)
   const CATEGORIES = [
-    'Batteries', 'Connecteurs', 'Consommables divers', 'Consommables d',
-    'Câbles', 'DICJONTEUR', 'ELEC', 'Filtres',
-    'Gaffer & Adhésifs', 'Gaffer & Adhés',
-    'Lampes', 'Mousse & Protection', 'Mousse & Prote',
-    'Outillage', 'EPI', 'SON', 'STRUCTURE', 'Sans catégorie', 'Électronique',
+    'Batteries',
+    'Connecteurs',
+    'Consommables divers',
+    'Consommables d',
+    'Câbles',
+    'DICJONTEUR',
+    'ELEC',
+    'Filtres',
+    'Gaffer & Adhésifs',
+    'Gaffer & Adhés',
+    'Lampes',
+    'Mousse & Protection',
+    'Mousse & Prote',
+    'Outillage',
+    'EPI',
+    'SON',
+    'STRUCTURE',
+    'Sans catégorie',
+    'Électronique',
   ];
   const LOCATIONS = ['Atelier', 'Sans emplacement', 'Stock Pièces', 'Stock Vente'];
-  const SKIP_RE = /^(Rapport|Inventaire|Résumé|Synthèse|Catégorie\s|Référence\s|Détail|Page\s+\d|\d+\s+articles$)/i;
+  const SKIP_RE =
+    /^(Rapport|Inventaire|Résumé|Synthèse|Catégorie\s|Référence\s|Détail|Page\s+\d|\d+\s+articles$)/i;
 
   const restoreCat = (raw) => {
     const n = raw.replace(/…$/, '').trim();
-    const MAP = { 'Consommables d': 'Consommables divers', 'Gaffer & Adhés': 'Gaffer & Adhésifs', 'Mousse & Prote': 'Mousse & Protection' };
+    const MAP = {
+      'Consommables d': 'Consommables divers',
+      'Gaffer & Adhés': 'Gaffer & Adhésifs',
+      'Mousse & Prote': 'Mousse & Protection',
+    };
     return MAP[n] || n;
   };
   const parseNum = (s) => parseFloat((s || '').replace(/\s/g, '').replace(',', '.'));
@@ -1454,7 +1907,10 @@ function parseInventoryPDF(text) {
     if (!line || SKIP_RE.test(line)) continue;
 
     // Split sur 2+ espaces = colonnes
-    const cols = line.split(/\s{2 }/).map(c => c.trim()).filter(Boolean);
+    const cols = line
+      .split(/\s{2 }/)
+      .map((c) => c.trim())
+      .filter(Boolean);
     if (cols.length < 4) continue;
 
     // Les 3 dernières colonnes = total, valeur, quantité
@@ -1466,7 +1922,7 @@ function parseInventoryPDF(text) {
 
     // Emplacement (optionnel)
     let location = '';
-    if (idx >= 0 && LOCATIONS.some(l => cols[idx].startsWith(l))) {
+    if (idx >= 0 && LOCATIONS.some((l) => cols[idx].startsWith(l))) {
       location = cols[idx];
       idx--;
     }
@@ -1475,7 +1931,7 @@ function parseInventoryPDF(text) {
     let category_name = '';
     if (idx >= 0) {
       const cleaned = cols[idx].replace(/…$/, '').trim();
-      if (CATEGORIES.some(c => cleaned === c || cleaned.startsWith(c))) {
+      if (CATEGORIES.some((c) => cleaned === c || cleaned.startsWith(c))) {
         category_name = restoreCat(cols[idx]);
         idx--;
       }
@@ -1483,7 +1939,9 @@ function parseInventoryPDF(text) {
 
     // Le reste = référence, nom, description
     const remaining = cols.slice(0, idx + 1);
-    let reference = '', name = '', description = '';
+    let reference = '',
+      name = '',
+      description = '';
     if (remaining.length >= 3) {
       reference = remaining[0];
       name = remaining[1];
@@ -1503,7 +1961,8 @@ function parseInventoryPDF(text) {
       category_name,
       location,
       quantity: isNaN(qty) ? 0 : qty,
-      unit_price: isNaN(value) ? 0 : value });
+      unit_price: isNaN(value) ? 0 : value,
+    });
   }
   return items;
 }
@@ -1520,7 +1979,10 @@ function ImportStockModal({ onDone, onClose }) {
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
-    if (f) { setFile(f); setPasteText(''); }
+    if (f) {
+      setFile(f);
+      setPasteText('');
+    }
   };
 
   const isPDF = file?.name?.toLowerCase().endsWith('.pdf');
@@ -1566,9 +2028,12 @@ function ImportStockModal({ onDone, onClose }) {
     try {
       const res = await api.importStockItems({
         items: parsedItems,
-        mode: importMode });
+        mode: importMode,
+      });
       setResult(res);
-      toast.success(`Import terminé : ${res.inserted} créés, ${res.updated} mis à jour, ${res.skipped} ignorés`);
+      toast.success(
+        `Import terminé : ${res.inserted} créés, ${res.updated} mis à jour, ${res.skipped} ignorés`,
+      );
       onDone();
     } catch (e) {
       setError('Erreur import: ' + (e.message || 'erreur serveur'));
@@ -1586,30 +2051,47 @@ function ImportStockModal({ onDone, onClose }) {
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [parsedItems]);
 
-  const totalQty = useMemo(() => parsedItems.reduce((s, i) => s + (i.quantity || 0), 0), [parsedItems]);
+  const totalQty = useMemo(
+    () => parsedItems.reduce((s, i) => s + (i.quantity || 0), 0),
+    [parsedItems],
+  );
   const totalValue = useMemo(
     () => parsedItems.reduce((s, i) => s + (i.quantity || 0) * (i.unit_price || 0), 0),
-    [parsedItems]
+    [parsedItems],
   );
 
   return (
     <ModalLayout
       open
       onClose={step !== 'importing' ? onClose : undefined}
-      title={<><Upload size={20} /> Importer un inventaire</>}
+      title={
+        <>
+          <Upload size={20} /> Importer un inventaire
+        </>
+      }
       size="lg"
       className="stock-modal stock-modal-lg"
       footer={
         step === 'select' ? (
           <>
-            <Button variant="ghost" onClick={onClose}>Annuler</Button>
+            <Button variant="ghost" onClick={onClose}>
+              Annuler
+            </Button>
             <Button variant="primary" onClick={handleParse} disabled={!file && !pasteText.trim()}>
               <Search size={16} /> Analyser
             </Button>
           </>
         ) : step === 'preview' ? (
           <>
-            <Button variant="ghost" onClick={() => { setStep('select'); setParsedItems([]); }}>← Retour</Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setStep('select');
+                setParsedItems([]);
+              }}
+            >
+              ← Retour
+            </Button>
             <Button variant="primary" onClick={handleImport}>
               <Upload size={16} /> Importer {parsedItems.length} articles
             </Button>
@@ -1617,137 +2099,169 @@ function ImportStockModal({ onDone, onClose }) {
         ) : null
       }
     >
-        <div className="stock-modal-body" style={{ maxHeight: '70vh', overflow: 'auto' }}>
-          {error && (
-            <InlineAlert>{error}</InlineAlert>
-          )}
+      <div className="stock-modal-body u-overflow-auto" style={{ maxHeight: '70vh' }}>
+        {error && <InlineAlert>{error}</InlineAlert>}
 
-          {/* STEP: SELECT */}
-          {step === 'select' && (
-            <>
-              <p className="stock-import-hint">
-                Importez un <strong>PDF</strong> (Rapport d'Inventaire) ou un <strong>CSV</strong> (colonnes&nbsp;: Référence, Nom, Description, Catégorie, Emplacement, Quantité, Valeur).
-              </p>
+        {/* STEP: SELECT */}
+        {step === 'select' && (
+          <>
+            <p className="stock-import-hint">
+              Importez un <strong>PDF</strong> (Rapport d'Inventaire) ou un <strong>CSV</strong>{' '}
+              (colonnes&nbsp;: Référence, Nom, Description, Catégorie, Emplacement, Quantité,
+              Valeur).
+            </p>
 
-              <div className="stock-form-field">
-                <label>Fichier PDF ou CSV</label>
-                <input
-                  type="file"
-                  accept=".pdf,.csv,.tsv,.txt"
-                  onChange={handleFileChange}
-                />
-                {file && <small>{file.name} — {(file.size / 1024).toFixed(1)} Ko</small>}
-              </div>
-
-              {!isPDF && (
-                <div className="stock-form-field">
-                  <label>Ou coller les données (CSV)</label>
-                  <Textarea
-                    rows={8}
-                    value={pasteText}
-                    onChange={e => { setPasteText(e.target.value); setFile(null); }}
-                    aria-label="Coller les données CSV"
-                    placeholder={"Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17"}
-                    style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
-                  />
-                </div>
+            <div className="stock-form-field">
+              <label htmlFor="stock-import-file">Fichier PDF ou CSV</label>
+              <input
+                id="stock-import-file"
+                type="file"
+                accept=".pdf,.csv,.tsv,.txt"
+                onChange={handleFileChange}
+              />
+              {file && (
+                <small>
+                  {file.name} — {(file.size / 1024).toFixed(1)} Ko
+                </small>
               )}
-
-              <div className="stock-form-field">
-                <label>Mode d'import</label>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                    <input type="radio" name="importMode" value="upsert" checked={importMode === 'upsert'} onChange={() => setImportMode('upsert')} />
-                    Créer + mettre à jour
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                    <input type="radio" name="importMode" value="insert_only" checked={importMode === 'insert_only'} onChange={() => setImportMode('insert_only')} />
-                    Créer uniquement (ignorer les existants)
-                  </label>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* STEP: PREVIEW */}
-          {step === 'preview' && parsedItems.length > 0 && (
-            <>
-              <div className="stock-import-stats">
-                <div className="stock-import-stat">
-                  <strong>{parsedItems.length}</strong>
-                  <span>articles</span>
-                </div>
-                <div className="stock-import-stat">
-                  <strong>{totalQty.toLocaleString('fr-FR')}</strong>
-                  <span>quantité totale</span>
-                </div>
-                <div className="stock-import-stat">
-                  <strong>{totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</strong>
-                  <span>valeur estimée</span>
-                </div>
-                <div className="stock-import-stat">
-                  <strong>{catCounts.length}</strong>
-                  <span>catégories</span>
-                </div>
-              </div>
-
-              {/* Catégories détectées */}
-              <div className="stock-import-cats">
-                <h4>Catégories détectées :</h4>
-                <div className="stock-import-cat-list">
-                  {catCounts.map(([cat, count]) => (
-                    <span key={cat} className="stock-import-cat-badge">
-                      {cat} <em>({count})</em>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Aperçu */}
-              <div className="stock-import-preview">
-                <Table className="stock-table">
-                  <thead>
-                    <tr>
-                      <th>Réf.</th>
-                      <th>Nom</th>
-                      <th>Catégorie</th>
-                      <th>Emplacement</th>
-                      <th style={{ textAlign: 'right' }}>Qté</th>
-                      <th style={{ textAlign: 'right' }}>Valeur unit.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parsedItems.slice(0, 30).map((item, i) => (
-                      <tr key={i}>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{item.reference || '—'}</td>
-                        <td>{item.name}</td>
-                        <td>{item.category_name || '—'}</td>
-                        <td>{item.location || '—'}</td>
-                        <td style={{ textAlign: 'right' }}>{item.quantity}</td>
-                        <td style={{ textAlign: 'right' }}>
-                          {item.unit_price ? item.unit_price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-                {parsedItems.length > 30 && (
-                  <p className="stock-import-hint" style={{ textAlign: 'center', marginTop: 8 }}>
-                    …et {parsedItems.length - 30} autres articles
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* STEP: IMPORTING */}
-          {step === 'importing' && (
-            <div className="stock-import-loading">
-              <Spinner size="lg" />
-              <p>Import de {parsedItems.length} articles en cours…</p>
             </div>
-          )}
-        </div>
+
+            {!isPDF && (
+              <div className="stock-form-field">
+                <label htmlFor="stock-ou-coller-les-donnees-csv">Ou coller les données (CSV)</label>
+                <Textarea
+                  id="stock-ou-coller-les-donnees-csv"
+                  rows={8}
+                  value={pasteText}
+                  onChange={(e) => {
+                    setPasteText(e.target.value);
+                    setFile(null);
+                  }}
+                  aria-label="Coller les données CSV"
+                  placeholder={
+                    'Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17'
+                  }
+                  style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                />
+              </div>
+            )}
+
+            <div className="stock-form-field">
+              <span className="stock-form-group-label">Mode d'import</span>
+              <div className="u-flex u-gap-3">
+                <label className="u-flex-center u-gap-1 u-cursor-pointer">
+                  <input
+                    type="radio"
+                    name="importMode"
+                    value="upsert"
+                    checked={importMode === 'upsert'}
+                    onChange={() => setImportMode('upsert')}
+                  />
+                  Créer + mettre à jour
+                </label>
+                <label className="u-flex-center u-gap-1 u-cursor-pointer">
+                  <input
+                    type="radio"
+                    name="importMode"
+                    value="insert_only"
+                    checked={importMode === 'insert_only'}
+                    onChange={() => setImportMode('insert_only')}
+                  />
+                  Créer uniquement (ignorer les existants)
+                </label>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* STEP: PREVIEW */}
+        {step === 'preview' && parsedItems.length > 0 && (
+          <>
+            <div className="stock-import-stats">
+              <div className="stock-import-stat">
+                <strong>{parsedItems.length}</strong>
+                <span>articles</span>
+              </div>
+              <div className="stock-import-stat">
+                <strong>{totalQty.toLocaleString('fr-FR')}</strong>
+                <span>quantité totale</span>
+              </div>
+              <div className="stock-import-stat">
+                <strong>
+                  {totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                </strong>
+                <span>valeur estimée</span>
+              </div>
+              <div className="stock-import-stat">
+                <strong>{catCounts.length}</strong>
+                <span>catégories</span>
+              </div>
+            </div>
+
+            {/* Catégories détectées */}
+            <div className="stock-import-cats">
+              <h4>Catégories détectées :</h4>
+              <div className="stock-import-cat-list">
+                {catCounts.map(([cat, count]) => (
+                  <span key={cat} className="stock-import-cat-badge">
+                    {cat} <em>({count})</em>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Aperçu */}
+            <div className="stock-import-preview">
+              <Table className="stock-table">
+                <thead>
+                  <tr>
+                    <th>Réf.</th>
+                    <th>Nom</th>
+                    <th>Catégorie</th>
+                    <th>Emplacement</th>
+                    <th className="u-text-right">Qté</th>
+                    <th className="u-text-right">Valeur unit.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedItems.slice(0, 30).map((item, i) => (
+                    <tr key={i}>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        {item.reference || '—'}
+                      </td>
+                      <td>{item.name}</td>
+                      <td>{item.category_name || '—'}</td>
+                      <td>{item.location || '—'}</td>
+                      <td className="u-text-right">{item.quantity}</td>
+                      <td className="u-text-right">
+                        {item.unit_price
+                          ? item.unit_price.toLocaleString('fr-FR', {
+                              style: 'currency',
+                              currency: 'EUR',
+                            })
+                          : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+              {parsedItems.length > 30 && (
+                <p className="stock-import-hint u-text-center u-mt-2">
+                  …et {parsedItems.length - 30} autres articles
+                </p>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* STEP: IMPORTING */}
+        {step === 'importing' && (
+          <div className="stock-import-loading">
+            <Spinner size="lg" />
+            <p>Import de {parsedItems.length} articles en cours…</p>
+          </div>
+        )}
+      </div>
     </ModalLayout>
   );
 }

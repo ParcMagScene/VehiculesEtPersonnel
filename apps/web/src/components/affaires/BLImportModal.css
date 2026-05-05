@@ -469,3 +469,139 @@
   border-radius: var(--radius-sm) !important;
   font-size: 0.82rem !important;
 }
+
+/* ═══ PHASE D — Inline styles migration ═══ */
+
+.bl-import-modal .bl-hidden-input {
+  display: none;
+}
+
+.bl-import-modal .bl-type-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.bl-import-modal .bl-incompat-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--theme-danger);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.bl-import-modal .bl-incompat-alert svg {
+  flex-shrink: 0;
+}
+
+.bl-import-modal .bl-success-icon {
+  color: var(--theme-success);
+}
+
+.bl-import-modal .bl-field-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--theme-text-secondary);
+  font-weight: 400;
+}
+
+.bl-import-modal .bl-conf-dot {
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.bl-import-modal .bl-sections-wrap {
+  margin-top: 8px;
+  padding: 6px 0;
+}
+
+.bl-import-modal .bl-sections-title {
+  font-size: 0.82rem;
+  margin-bottom: 4px;
+}
+
+.bl-import-modal .bl-section-item {
+  font-size: 0.78rem;
+  color: var(--theme-text-secondary);
+  padding: 2px 8px;
+}
+
+.bl-import-modal .bl-suppliers-wrap {
+  margin-top: 6px;
+  padding: 4px 0;
+}
+
+.bl-import-modal .bl-suppliers-title {
+  font-size: 0.82rem;
+  margin-bottom: 4px;
+}
+
+.bl-import-modal .bl-supplier-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: 0 8px;
+}
+
+.bl-import-modal .bl-supplier-tag {
+  font-size: 0.72rem;
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-primary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-border);
+}
+
+.bl-import-modal .bl-item-code {
+  font-size: 0.65rem;
+  color: var(--theme-text-secondary);
+  margin-left: 4px;
+}
+
+.bl-import-modal .bl-item-ref {
+  font-size: 0.7rem;
+  color: var(--theme-text-muted);
+  margin-left: 4px;
+}
+
+.bl-import-modal .bl-item-supplier {
+  font-size: 0.62rem;
+  background: var(--theme-info-bg, #164e63);
+  color: var(--theme-info-text, #67e8f9);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.bl-import-modal .bl-items-more {
+  font-size: 0.8rem;
+  color: var(--theme-text-secondary);
+  padding: 4px 12px;
+}
+
+.bl-import-modal .bl-no-data-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--theme-warning);
+  font-size: 0.85rem;
+}
+
+.bl-import-modal .bl-no-data-btn {
+  margin-left: auto;
+}
+
+.bl-import-modal .bl-blocked-badge {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--theme-danger);
+}

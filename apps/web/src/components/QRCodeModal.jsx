@@ -1,7 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { QrCode, Printer, Link as LinkIcon, Download } from 'lucide-react';
-import { Button, ModalLayout } from '@/design-system';
 import './QRCodeModal.css';
+
+import { Download, Link as LinkIcon, Printer, QrCode } from 'lucide-react';
+import QRCode from 'qrcode';
+import { useEffect, useRef } from 'react';
+
+import { Button, ModalLayout } from '@/design-system';
 
 function QRCodeModal({ onClose }) {
   const canvasRef = useRef(null);
@@ -9,32 +12,20 @@ function QRCodeModal({ onClose }) {
 
   useEffect(() => {
     generateQRCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const generateQRCode = () => {
+  const generateQRCode = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    const size = 300;
-    canvas.width = size;
-    canvas.height = size;
-
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(mobileUrl)}`;
-    
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, size, size);
-    };
-    img.src = qrApiUrl;
+    await QRCode.toCanvas(canvas, mobileUrl, { width: 300, margin: 1 });
   };
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     const canvas = canvasRef.current;
     const qrDataUrl = canvas.toDataURL('image/png');
-    
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -160,7 +151,9 @@ function QRCodeModal({ onClose }) {
         </head>
         <body>
           <div class="print-container">
-            ${[1, 2, 3, 4].map(() => `
+            ${[1, 2, 3, 4]
+              .map(
+                () => `
               <div class="qr-card">
                 <div class="qr-header">
                   <div class="qr-logo">
@@ -187,7 +180,9 @@ function QRCodeModal({ onClose }) {
                   Scannez avec votre smartphone
                 </div>
               </div>
-            `).join('')}
+            `,
+              )
+              .join('')}
           </div>
           <script>
             window.onload = function() {
@@ -221,16 +216,20 @@ function QRCodeModal({ onClose }) {
     ctx.drawImage(canvas, 0, 0);
 
     // Convertir en JPG et télécharger
-    exportCanvas.toBlob((blob) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'qrcode-emag-mobile.jpg';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }, 'image/jpeg', 0.95);
+    exportCanvas.toBlob(
+      (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'qrcode-emag-mobile.jpg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      },
+      'image/jpeg',
+      0.95,
+    );
   };
 
   const _handleOverlayClick = (e) => {
@@ -260,39 +259,38 @@ function QRCodeModal({ onClose }) {
         </>
       }
     >
-        <div className="qr-modal-content">
-          <div className="qr-code-container">
-            <canvas ref={canvasRef} />
+      <div className="qr-modal-content">
+        <div className="qr-code-container">
+          <canvas ref={canvasRef} />
+        </div>
+
+        <div className="qr-info">
+          <h3>Interface Mobile</h3>
+          <p className="qr-description">
+            Scannez ce QR code avec votre smartphone pour accéder à l'interface mobile de gestion
+            des véhicules.
+          </p>
+
+          <div className="qr-url-section">
+            <label>
+              <LinkIcon size={16} />
+              URL d'accès
+            </label>
+            <div className="qr-url-display">{mobileUrl}</div>
           </div>
 
-          <div className="qr-info">
-            <h3>Interface Mobile</h3>
-            <p className="qr-description">
-              Scannez ce QR code avec votre smartphone pour accéder à l'interface mobile de gestion des véhicules.
-            </p>
-
-            <div className="qr-url-section">
-              <label>
-                <LinkIcon size={16} />
-                URL d'accès
-              </label>
-              <div className="qr-url-display">
-                {mobileUrl}
-              </div>
-            </div>
-
-            <div className="qr-legend">
-              <h4>Fonctionnalités disponibles :</h4>
-              <ul>
-                <li>✓ Consultation des réservations</li>
-                <li>✓ Création de nouvelles réservations</li>
-                <li>✓ Signalement de pannes</li>
-                <li>✓ Demandes d'intervention</li>
-                <li>✓ Planification d'interventions</li>
-              </ul>
-            </div>
+          <div className="qr-legend">
+            <h4>Fonctionnalités disponibles :</h4>
+            <ul>
+              <li>✓ Consultation des réservations</li>
+              <li>✓ Création de nouvelles réservations</li>
+              <li>✓ Signalement de pannes</li>
+              <li>✓ Demandes d'intervention</li>
+              <li>✓ Planification d'interventions</li>
+            </ul>
           </div>
         </div>
+      </div>
     </ModalLayout>
   );
 }

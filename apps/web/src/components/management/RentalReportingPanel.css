@@ -1,0 +1,140 @@
+.rental-reporting-panel {
+  padding: 1rem;
+}
+
+.rental-reporting-loading,
+.rental-reporting-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--theme-text-gray);
+}
+
+/* Filtres */
+.rental-reporting-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.rental-reporting-filters select {
+  max-width: 200px;
+}
+
+.rental-reporting-custom-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rental-reporting-custom-dates input {
+  max-width: 160px;
+}
+
+/* KPIs */
+.rental-reporting-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.rental-kpi {
+  background: var(--theme-bg-card, #fff);
+  border: 1px solid var(--theme-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  padding: 1rem;
+  text-align: center;
+}
+
+.rental-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--theme-text-accent, #2563eb);
+}
+
+.rental-kpi-label {
+  font-size: 0.8rem;
+  color: var(--theme-text-gray);
+  margin-top: 0.25rem;
+}
+
+/* Sections */
+.rental-reporting-section {
+  margin-bottom: 1.5rem;
+}
+
+/* Tables */
+.rental-reporting-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.rental-reporting-table th,
+.rental-reporting-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--theme-border, #e5e7eb);
+}
+
+.rental-reporting-table th {
+  font-weight: 600;
+  color: var(--theme-text-gray);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.rental-amount {
+  font-weight: 600;
+  color: var(--theme-text-success, #16a34a);
+}
+
+.rental-reg {
+  color: var(--theme-text-gray);
+  font-size: 0.8rem;
+  margin-left: 0.25rem;
+}
+
+/* Taux d'occupation */
+.rental-occupancy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.rental-occupancy-card {
+  background: var(--theme-bg-card, #fff);
+  border: 1px solid var(--theme-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  padding: 0.75rem;
+}
+
+.rental-occupancy-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.rental-occupancy-bar-wrap {
+  height: 8px;
+  background: var(--theme-bg-secondary, #f3f4f6);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rental-occupancy-bar {
+  height: 100%;
+  background: var(--theme-text-accent, #2563eb);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.rental-occupancy-rate {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--theme-text-accent, #2563eb);
+  margin-top: 0.25rem;
+  text-align: right;
+}

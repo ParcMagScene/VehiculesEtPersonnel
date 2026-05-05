@@ -2,13 +2,15 @@
 // PlaybackPanel.jsx — Relecture des enregistrements NVR
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Calendar, Play, Square, Loader, Clock, Film, AlertCircle } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, Select , Tooltip} from '@/design-system';
-import { TIMING } from '../../constants';
-
 import './PlaybackPanel.css';
+
+import { AlertCircle, Calendar, Clock, Film, Loader, Play, Square } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button, Select, Tooltip } from '@/design-system';
+
+import { TIMING } from '../../constants';
+import api from '../../utils/api';
 
 const PlaybackPanel = ({ cameras, initialCameraId }) => {
   const [selectedCameraId, setSelectedCameraId] = useState(() => initialCameraId || '');
@@ -27,9 +29,21 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
   const pcRef = useRef(null);
   const sessionTokenRef = useRef(null);
   const connectingRef = useRef(false);
+  const retryCountRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Filtrer les caméras qui supportent le playback (NVR avec enregistrement)
-  const nvrCameras = cameras.filter(c => c.enabled && c.supportsPlayback);
+  const nvrCameras = useMemo(
+    () => cameras.filter((c) => c.enabled && c.supportsPlayback),
+    [cameras],
+  );
 
   // Rechercher les enregistrements
   const handleSearch = useCallback(async () => {
@@ -39,15 +53,17 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
     setRecordings([]);
     try {
       const result = await api.getRecordings(selectedCameraId, date);
+      if (!isMountedRef.current) return;
       setRecordings(result.recordings || []);
       if ((result.recordings || []).length === 0) {
         setSearchError('Aucun enregistrement trouvé pour cette date');
       }
     } catch (e) {
+      if (!isMountedRef.current) return;
       const detail = e.response?.data?.detail;
-      setSearchError(detail ? `${e.message} : ${detail}` : (e.message || 'Erreur de recherche'));
+      setSearchError(detail ? `${e.message} : ${detail}` : e.message || 'Erreur de recherche');
     } finally {
-      setSearching(false);
+      if (isMountedRef.current) setSearching(false);
     }
   }, [selectedCameraId, date]);
 
@@ -70,76 +86,93 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
   }, []);
 
   // Démarrer le playback d'un segment
-  const startPlayback = useCallback(async (startTime, endTime) => {
-    if (connectingRef.current) return; // Empêcher les clics multiples (ref = pas de stale closure)
-    connectingRef.current = true;
-    await stopPlayback();
-    setConnecting(true);
-    setPlaybackError(null);
-    setCurrentSegment({ startTime, endTime });
+  const startPlayback = useCallback(
+    async (startTime, endTime) => {
+      if (connectingRef.current) return; // Empêcher les clics multiples (ref = pas de stale closure)
+      connectingRef.current = true;
+      await stopPlayback();
+      setConnecting(true);
+      setPlaybackError(null);
+      setCurrentSegment({ startTime, endTime });
 
-    try {
-      const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-      });
-      pcRef.current = pc;
+      try {
+        const pc = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+        });
+        pcRef.current = pc;
 
-      pc.addTransceiver('video', { direction: 'recvonly' });
-      pc.addTransceiver('audio', { direction: 'recvonly' });
+        pc.addTransceiver('video', { direction: 'recvonly' });
+        pc.addTransceiver('audio', { direction: 'recvonly' });
 
-      pc.ontrack = (event) => {
-        if (videoRef.current && event.streams?.[0]) {
-          videoRef.current.srcObject = event.streams[0];
-          setPlaying(true);
-          setConnecting(false);
-        }
-      };
-
-      pc.oniceconnectionstatechange = () => {
-        const state = pc.iceConnectionState;
-        if (state === 'failed' || state === 'disconnected') {
-          setPlaybackError('Connexion perdue');
-          setPlaying(false);
-        }
-      };
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      // Attendre ICE gathering
-      await new Promise((resolve) => {
-        if (pc.iceGatheringState === 'complete') return resolve();
-        const check = () => {
-          if (pc.iceGatheringState === 'complete') {
-            pc.removeEventListener('icegatheringstatechange', check);
-            resolve();
+        pc.ontrack = (event) => {
+          if (videoRef.current && event.streams?.[0]) {
+            videoRef.current.srcObject = event.streams[0];
+            setPlaying(true);
+            setConnecting(false);
           }
         };
-        pc.addEventListener('icegatheringstatechange', check);
-        setTimeout(resolve, TIMING.STATUS_CLEAR);
-      });
 
-      const result = await api.startPlayback(
-        selectedCameraId,
-        pc.localDescription.sdp,
-        startTime,
-        endTime
-      );
+        pc.oniceconnectionstatechange = () => {
+          const state = pc.iceConnectionState;
+          if (state === 'connected') {
+            retryCountRef.current = 0;
+          }
+          if (state === 'failed' || state === 'disconnected') {
+            if (retryCountRef.current < 3) {
+              retryCountRef.current++;
+              setPlaybackError(`Connexion perdue — tentative ${retryCountRef.current}/3...`);
+              setPlaying(false);
+              setTimeout(() => {
+                if (isMountedRef.current && pcRef.current === pc) {
+                  startPlayback(startTime, endTime);
+                }
+              }, 2000);
+            } else {
+              setPlaybackError('Connexion perdue — échec après 3 tentatives');
+              setPlaying(false);
+            }
+          }
+        };
 
-      if (!result?.answerSdp) {
-        throw new Error('Flux de relecture indisponible');
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        // Attendre ICE gathering
+        await new Promise((resolve) => {
+          if (pc.iceGatheringState === 'complete') return resolve();
+          const check = () => {
+            if (pc.iceGatheringState === 'complete') {
+              pc.removeEventListener('icegatheringstatechange', check);
+              resolve();
+            }
+          };
+          pc.addEventListener('icegatheringstatechange', check);
+          setTimeout(resolve, TIMING.STATUS_CLEAR);
+        });
+
+        const result = await api.startPlayback(
+          selectedCameraId,
+          pc.localDescription.sdp,
+          startTime,
+          endTime,
+        );
+
+        if (!result?.answerSdp) {
+          throw new Error('Flux de relecture indisponible');
+        }
+        sessionTokenRef.current = result.sessionToken;
+
+        await pc.setRemoteDescription({ type: 'answer', sdp: result.answerSdp });
+      } catch (e) {
+        setPlaybackError(e.message || 'Erreur de connexion');
+        setConnecting(false);
+        setPlaying(false);
+      } finally {
+        connectingRef.current = false;
       }
-      sessionTokenRef.current = result.sessionToken;
-
-      await pc.setRemoteDescription({ type: 'answer', sdp: result.answerSdp });
-    } catch (e) {
-      setPlaybackError(e.message || 'Erreur de connexion');
-      setConnecting(false);
-      setPlaying(false);
-    } finally {
-      connectingRef.current = false;
-    }
-  }, [selectedCameraId, stopPlayback]);
+    },
+    [selectedCameraId, stopPlayback],
+  );
 
   // Recherche automatique dès qu'une caméra et une date sont sélectionnées
   useEffect(() => {
@@ -150,11 +183,13 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
 
   // Cleanup au démontage
   useEffect(() => {
-    return () => { stopPlayback(); };
+    return () => {
+      stopPlayback();
+    };
   }, [stopPlayback]);
 
   // Construire la timeline à partir des enregistrements
-  const timelineSegments = recordings.map(r => {
+  const timelineSegments = recordings.map((r) => {
     const start = parseTime(r.startTime);
     const end = parseTime(r.endTime);
     return { ...r, startMinutes: start, endMinutes: end };
@@ -165,27 +200,32 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
       {/* Contrôles de recherche */}
       <div className="playback-panel__controls">
         <div className="playback-panel__field">
-          <label><Film size={14} /> Caméra</label>
-          <Select
-            value={selectedCameraId}
-            onChange={e => setSelectedCameraId(e.target.value)}
-          >
+          <label>
+            <Film size={14} /> Caméra
+          </label>
+          <Select value={selectedCameraId} onChange={(e) => setSelectedCameraId(e.target.value)}>
             <option value="">Sélectionner une caméra…</option>
-            {nvrCameras.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+            {nvrCameras.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </Select>
         </div>
         <div className="playback-panel__field">
-          <label><Calendar size={14} /> Date</label>
+          <label>
+            <Calendar size={14} /> Date
+          </label>
           <input
             type="date"
             value={date}
             max={new Date().toISOString().slice(0, 10)}
-            onChange={e => setDate(e.target.value)}
+            onChange={(e) => setDate(e.target.value)}
           />
         </div>
-        {searching && <Loader size={16} className="spin" style={{ color: 'var(--accent)', marginLeft: 8 }} />}
+        {searching && (
+          <Loader size={16} className="spin" style={{ color: 'var(--accent)', marginLeft: 8 }} />
+        )}
       </div>
 
       {searchError && (
@@ -199,7 +239,10 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
         <div className="playback-panel__timeline-wrap">
           <div className="playback-panel__timeline-header">
             <Clock size={14} />
-            <span>{recordings.length} segment{recordings.length > 1 ? 's' : ''} trouvé{recordings.length > 1 ? 's' : ''}</span>
+            <span>
+              {recordings.length} segment{recordings.length > 1 ? 's' : ''} trouvé
+              {recordings.length > 1 ? 's' : ''}
+            </span>
           </div>
           <div className="playback-panel__timeline">
             <div className="playback-panel__timeline-bar">
@@ -235,12 +278,16 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
             {recordings.map((rec, i) => {
               const isActive = currentSegment?.startTime === rec.startTime;
               return (
-                <Button variant="ghost"                   key={i}
+                <Button
+                  variant="ghost"
+                  key={i}
                   className={`playback-panel__segment-btn ${isActive ? 'active' : ''}`}
                   onClick={() => startPlayback(rec.startTime, rec.endTime)}
                 >
                   <Play size={12} />
-                  <span>{rec.startTime.slice(11, 16)} → {rec.endTime.slice(11, 16)}</span>
+                  <span>
+                    {rec.startTime.slice(11, 16)} → {rec.endTime.slice(11, 16)}
+                  </span>
                   <span className="playback-panel__segment-size">{formatSize(rec.size)}</span>
                 </Button>
               );
@@ -278,11 +325,11 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
         />
         {(playing || connecting) && (
           <div className="playback-panel__player-controls">
- <Tooltip content="Arrêter" position="bottom">
-   <Button variant="secondary" size="sm" onClick={stopPlayback}>
-              <Square size={16} /> Arrêter
-            </Button>
- </Tooltip>
+            <Tooltip content="Arrêter" position="bottom">
+              <Button variant="secondary" size="sm" onClick={stopPlayback}>
+                <Square size={16} /> Arrêter
+              </Button>
+            </Tooltip>
             {currentSegment && (
               <span className="playback-panel__now-playing">
                 🎬 {currentSegment.startTime.slice(11, 16)} → {currentSegment.endTime.slice(11, 16)}

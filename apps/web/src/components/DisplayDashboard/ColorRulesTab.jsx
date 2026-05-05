@@ -3,11 +3,13 @@
 // (type de tâche → couleur d'affichage sur l'écran TV)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback, memo } from 'react';
-import { Tag, Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Save, Tag, Trash2 } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
+import { Button, SectionHeader, Select, Tooltip } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { Button, Select, Tooltip, SectionHeader } from '@/design-system';
 
 // Types de tâches (sections) disponibles pour l'association couleur
 const TASK_SECTIONS = [
@@ -28,6 +30,7 @@ const TASK_SECTIONS = [
   { key: 'installation', label: '🔧 Installation' },
   { key: 'montage', label: '🔩 Montage' },
   { key: 'demontage', label: '🔧 Démontage' },
+  { key: 'intervention', label: '🛠️ Intervention' },
   { key: 'taches_secondaires', label: '📋 Secondaire' },
   { key: 'manual', label: '✏️ Divers' },
 ];
@@ -50,15 +53,17 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
     }
   }, [toast]);
 
-  useEffect(() => { loadRules(); }, [loadRules, refreshKey]);
+  useEffect(() => {
+    loadRules();
+  }, [loadRules, refreshKey]);
 
   const handleAdd = () => {
-    setRules(prev => [...prev, { keyword: '', color: '#00e1ff', description: '' }]);
+    setRules((prev) => [...prev, { keyword: '', color: '#00e1ff', description: '' }]);
   };
 
   const handleChange = (index, field, value) => {
-    setRules(prev => {
-      const next = prev.map((r, i) => i === index ? { ...r, [field]: value } : r);
+    setRules((prev) => {
+      const next = prev.map((r, i) => (i === index ? { ...r, [field]: value } : r));
       if (onPreviewChange) {
         onPreviewChange({ colorRules: next });
       }
@@ -67,13 +72,13 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
   };
 
   const handleRemove = (index) => {
-    setRules(prev => prev.filter((_, i) => i !== index));
+    setRules((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = useCallback(async () => {
     try {
       setSaving(true);
-      const validRules = rules.filter(r => r.keyword.trim());
+      const validRules = rules.filter((r) => r.keyword.trim());
       await api.saveDisplayColorRules(validRules);
       setRules(validRules);
       toast.success('Règles de couleurs enregistrées');
@@ -89,14 +94,20 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
   return (
     <div className="dtv-color-rules">
       <div className="dtv-section">
-        <SectionHeader className="dtv-section-title" icon={<Tag size={16} />} title="Couleurs par type de tâche" />
+        <SectionHeader
+          className="dtv-section-title"
+          icon={<Tag size={16} />}
+          title="Couleurs par type de tâche"
+        />
         <p className="dtv-hint">
           Attribuez une couleur d'affichage sur l'écran TV à chaque type de tâche.
         </p>
 
         <div className="dtv-rules-list">
           {rules.length === 0 && (
-            <div className="dtv-empty-hint">Aucune règle définie. Cliquez sur « Ajouter » pour commencer.</div>
+            <div className="dtv-empty-hint">
+              Aucune règle définie. Cliquez sur « Ajouter » pour commencer.
+            </div>
           )}
           {rules.map((rule, index) => (
             <div key={index} className="dtv-rule-card">
@@ -104,25 +115,34 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
                 <input
                   type="color"
                   value={rule.color}
-                  onChange={e => handleChange(index, 'color', e.target.value)}
+                  onChange={(e) => handleChange(index, 'color', e.target.value)}
                   className="dtv-rule-color"
                   title="Couleur"
                 />
                 <Select
                   value={rule.keyword}
-                  onChange={e => handleChange(index, 'keyword', e.target.value)}
+                  onChange={(e) => handleChange(index, 'keyword', e.target.value)}
                   className="dtv-rule-keyword"
                 >
                   <option value="">— Choisir un type de tâche —</option>
-                  {TASK_SECTIONS
-                    .filter(s => s.key === rule.keyword || !rules.some((r, ri) => ri !== index && r.keyword === s.key))
-                    .map(s => (
-                      <option key={s.key} value={s.key}>{s.label}</option>
-                    ))
-                  }
+                  {TASK_SECTIONS.filter(
+                    (s) =>
+                      s.key === rule.keyword ||
+                      !rules.some((r, ri) => ri !== index && r.keyword === s.key),
+                  ).map((s) => (
+                    <option key={s.key} value={s.key}>
+                      {s.label}
+                    </option>
+                  ))}
                 </Select>
                 <Tooltip content="Supprimer">
-                  <Button variant="danger" size="sm" iconOnly aria-label="Supprimer la règle" onClick={() => handleRemove(index)}>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    iconOnly
+                    aria-label="Supprimer la règle"
+                    onClick={() => handleRemove(index)}
+                  >
                     <Trash2 size={14} />
                   </Button>
                 </Tooltip>

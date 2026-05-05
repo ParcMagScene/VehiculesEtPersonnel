@@ -1,10 +1,21 @@
 // PlaylistsTab — Liste et gestion des playlists
-import { useState, useEffect, useCallback, memo } from 'react';
-import { List, Play, Monitor, Clock, Trash2, Settings, ToggleLeft, ToggleRight } from 'lucide-react';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import api from '../../utils/api';
+import {
+  Clock,
+  List,
+  Monitor,
+  Play,
+  Settings,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+} from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
+
 import { Button, EmptyState, Tooltip } from '@/design-system';
+
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 
 function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
   const toast = useToast();
@@ -28,45 +39,55 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
     loadPlaylists();
   }, [loadPlaylists, refreshKey]);
 
-  const handleDelete = useCallback((playlist) => {
-    confirm({
-      title: 'Supprimer',
-      message: `Supprimer la playlist \xAB ${playlist.name} \xBB ?`,
-      variant: 'danger',
-      confirmLabel: 'Supprimer',
-      onConfirm: async () => {
-        try {
-          await api.deleteDisplayPlaylist(playlist.id);
-          toast.success('Playlist supprim\xE9e');
-          onRefresh();
-        } catch {
-          toast.error('Erreur suppression');
-        }
-      },
-    });
-  }, [confirm, toast, onRefresh]);
+  const handleDelete = useCallback(
+    (playlist) => {
+      confirm({
+        title: 'Supprimer',
+        message: `Supprimer la playlist \xAB ${playlist.name} \xBB ?`,
+        variant: 'danger',
+        confirmLabel: 'Supprimer',
+        onConfirm: async () => {
+          try {
+            await api.deleteDisplayPlaylist(playlist.id);
+            toast.success('Playlist supprim\xE9e');
+            onRefresh();
+          } catch {
+            toast.error('Erreur suppression');
+          }
+        },
+      });
+    },
+    [confirm, toast, onRefresh],
+  );
 
-  const handleToggle = useCallback(async (playlist) => {
-    try {
-      await api.updateDisplayPlaylist(playlist.id, { isActive: !playlist.is_active });
-      toast.success(playlist.is_active ? 'Playlist désactivée' : 'Playlist activée');
-      onRefresh();
-    } catch {
-      toast.error('Erreur modification');
-    }
-  }, [toast, onRefresh]);
+  const handleToggle = useCallback(
+    async (playlist) => {
+      try {
+        await api.updateDisplayPlaylist(playlist.id, { isActive: !playlist.is_active });
+        toast.success(playlist.is_active ? 'Playlist désactivée' : 'Playlist activée');
+        onRefresh();
+      } catch {
+        toast.error('Erreur modification');
+      }
+    },
+    [toast, onRefresh],
+  );
 
   if (loading) return <div className="display-loading">Chargement des playlists…</div>;
 
   if (playlists.length === 0) {
     return (
-      <EmptyState icon={<List size={48} strokeWidth={1} />} title="Aucune playlist" description="Créez une playlist pour organiser vos contenus d'affichage." />
+      <EmptyState
+        icon={<List size={48} strokeWidth={1} />}
+        title="Aucune playlist"
+        description="Créez une playlist pour organiser vos contenus d'affichage."
+      />
     );
   }
 
   return (
     <div className="display-list">
-      {playlists.map(pl => (
+      {playlists.map((pl) => (
         <div key={pl.id} className={`display-list-item ${!pl.is_active ? 'inactive' : ''}`}>
           <div className="list-item-icon">
             <Play size={18} />
@@ -75,26 +96,48 @@ function PlaylistsTab({ currentUser, refreshKey, onEdit, onRefresh }) {
             <h4>{pl.name}</h4>
             {pl.description && <p className="list-item-desc">{pl.description}</p>}
             <div className="list-item-meta">
-              <span><Clock size={12} /> {pl.default_duration}s par défaut</span>
+              <span>
+                <Clock size={12} /> {pl.default_duration}s par défaut
+              </span>
               <span>Transition : {pl.transition}</span>
               <span>{pl.item_count || 0} item(s)</span>
-              <span><Monitor size={12} /> {pl.screen_count || 0} écran(s)</span>
+              <span>
+                <Monitor size={12} /> {pl.screen_count || 0} écran(s)
+              </span>
             </div>
           </div>
           <div className="list-item-actions">
             <Tooltip content="Modifier">
-              <Button variant="ghost" size="sm" iconOnly aria-label="Modifier" onClick={() => onEdit(pl)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
+                aria-label="Modifier"
+                onClick={() => onEdit(pl)}
+              >
                 <Settings size={14} />
               </Button>
             </Tooltip>
             <Tooltip content={pl.is_active ? 'Désactiver' : 'Activer'}>
-              <Button variant="ghost" size="sm" iconOnly aria-label="Basculer visibilité" onClick={() => handleToggle(pl)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
+                aria-label="Basculer visibilité"
+                onClick={() => handleToggle(pl)}
+              >
                 {pl.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
               </Button>
             </Tooltip>
             {currentUser?.isAdmin && (
               <Tooltip content="Supprimer">
-                <Button variant="danger" size="sm" iconOnly aria-label="Supprimer" onClick={() => handleDelete(pl)}>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  iconOnly
+                  aria-label="Supprimer"
+                  onClick={() => handleDelete(pl)}
+                >
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>

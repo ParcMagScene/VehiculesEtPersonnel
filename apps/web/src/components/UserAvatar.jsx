@@ -9,30 +9,34 @@ const getInitials = (name) => {
 };
 
 // Générer une couleur unique basée sur le nom
+import { AVATAR_COLORS, STATUS_COLORS } from '../constants/colors';
+
 const getColorFromName = (name) => {
-  if (!name) return 'var(--theme-text-gray)';
+  if (!name) return STATUS_COLORS.neutralSoft;
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const colors = [
-    '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
-    '#10b981', '#06b6d4', '#6366f1', '#f97316',
-    '#14b8a6', '#a855f7', '#ef4444', '#84cc16'
-  ];
-  return colors[Math.abs(hash) % colors.length];
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 };
 
 const adjustColor = (color, percent) => {
   const num = parseInt(color.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
   const R = (num >> 16) + amt;
-  const G = (num >> 8 & 0x00FF) + amt;
-  const B = (num & 0x0000FF) + amt;
-  return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-    (B < 255 ? B < 1 ? 0 : B : 255))
-    .toString(16).slice(1);
+  const G = ((num >> 8) & 0x00ff) + amt;
+  const B = (num & 0x0000ff) + amt;
+  return (
+    '#' +
+    (
+      0x1000000 +
+      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+      (B < 255 ? (B < 1 ? 0 : B) : 255)
+    )
+      .toString(16)
+      .slice(1)
+  );
 };
 
 /**
@@ -60,7 +64,7 @@ const UserAvatar = ({ name, avatar, size = 40, gradient = true, style = {} }) =>
           borderRadius: '50%',
           objectFit: 'cover',
           flexShrink: 0,
-          ...style
+          ...style,
         }}
         onError={(e) => {
           // Fallback vers initiales si l'image ne charge pas
@@ -92,7 +96,7 @@ const UserAvatar = ({ name, avatar, size = 40, gradient = true, style = {} }) =>
         fontWeight: 600,
         flexShrink: 0,
         userSelect: 'none',
-        ...style
+        ...style,
       }}
     >
       {getInitials(name)}
@@ -100,5 +104,5 @@ const UserAvatar = ({ name, avatar, size = 40, gradient = true, style = {} }) =>
   );
 };
 
-export { getInitials, getColorFromName, adjustColor };
+export { adjustColor, getColorFromName, getInitials };
 export default UserAvatar;

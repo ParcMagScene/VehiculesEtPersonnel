@@ -1,32 +1,9 @@
-/* Modal Fiche Détaillée Véhicule */
-.vd-overlay {
-  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
-  background: var(--theme-overlay);
-  z-index: var(--z-modal);
-  padding: 1rem;
-  backdrop-filter: blur(4px);
-  isolation: isolate;
-  animation: vdOverlayFadeIn 0.2s ease-out;
-}
-
-@keyframes vdOverlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+/* Modal Fiche Détaillée Véhicule
+   Utilise <Modal size="lg"> du DS — seuls les overrides spécifiques ici */
 
 .vehicle-details-modal {
   background: var(--theme-bg-page);
-  border-radius: var(--radius-xl);
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-modal);
-  position: relative;
-  z-index: var(--z-base);
-  animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: min(800px, 94vw);
 }
 
 .vehicle-details-modal .modal-header {
@@ -51,14 +28,18 @@
   width: 12px;
   height: 48px;
   border-radius: var(--radius-sm);
-  box-shadow: 0 2px 8px var(--shadow-xl), inset 0 1px 0 var(--close-btn-hover-bg);
+  box-shadow:
+    0 2px 8px var(--shadow-xl),
+    inset 0 1px 0 var(--close-btn-hover-bg);
   border: 1px solid var(--shadow-sm);
   transition: transform 0.2s ease;
 }
 
 .vehicle-details-modal .vehicle-color-indicator:hover {
   transform: scaleX(1.2);
-  box-shadow: 0 3px 10px var(--shadow-xl), inset 0 1px 0 var(--close-btn-hover-bg);
+  box-shadow:
+    0 3px 10px var(--shadow-xl),
+    inset 0 1px 0 var(--close-btn-hover-bg);
 }
 
 .vehicle-details-modal .header-info h2 {
@@ -190,7 +171,12 @@
 /* Kilométrage intégré dans la grille */
 .vehicle-details-modal .info-item-km {
   grid-column: 1 / -1;
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg-strong) 60%, var(--theme-bg-indigo-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-info-bg) 0%,
+    var(--theme-info-bg-strong) 60%,
+    var(--theme-bg-indigo-light) 100%
+  );
   border: 1px solid var(--theme-info-border);
   border-radius: var(--radius-md-lg);
   padding: 14px 18px;
@@ -398,7 +384,11 @@
 }
 
 .vehicle-details-modal .maintenance-item.status-rescheduled {
-  background: linear-gradient(to right, var(--theme-orange-bg, var(--theme-orange-bg)), var(--theme-bg-card));
+  background: linear-gradient(
+    to right,
+    var(--theme-orange-bg, var(--theme-orange-bg)),
+    var(--theme-bg-card)
+  );
   border-left-color: var(--theme-warning);
 }
 
@@ -623,7 +613,8 @@
 }
 
 @keyframes pulse-red {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -724,8 +715,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .vehicle-details-modal {
-    width: 95%;
-    max-height: 95vh;
+    width: 95vw;
   }
 
   .vehicle-details-modal .modal-header {
@@ -766,7 +756,7 @@
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .vehicle-details-modal .deadline-header {
     flex-direction: column;
     align-items: flex-start;

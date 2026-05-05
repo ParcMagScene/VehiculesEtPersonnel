@@ -10,6 +10,29 @@
   min-width: 400px;
 }
 
+/* ═══ Close button (local — ne dépend pas d'AffaireDetailPanel.css) ═══ */
+.vehicle-slide-panel .slide-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: var(--close-btn-radius);
+  border: 1px solid var(--close-btn-border);
+  background: var(--close-btn-bg);
+  color: var(--close-btn-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  padding: 0;
+}
+.vehicle-slide-panel .slide-panel-close:hover {
+  background: var(--close-btn-hover-bg);
+  border-color: var(--close-btn-hover-border);
+  color: var(--theme-text-inverse);
+}
+
 /* ═══ Header ═══ */
 .vdp-slide-header {
   display: flex;
@@ -35,7 +58,9 @@
   height: 36px;
   border-radius: var(--radius-xs);
   flex-shrink: 0;
-  box-shadow: 0 1px 4px var(--shadow-xl), inset 0 1px 0 var(--close-btn-hover-bg);
+  box-shadow:
+    0 1px 4px var(--shadow-xl),
+    inset 0 1px 0 var(--close-btn-hover-bg);
 }
 
 .vdp-slide-title-info {
@@ -160,7 +185,12 @@
 /* Kilomètrage */
 .vdp-km-card {
   margin-top: 10px;
-  background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg-strong) 60%, var(--theme-bg-indigo-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-info-bg) 0%,
+    var(--theme-info-bg-strong) 60%,
+    var(--theme-bg-indigo-light) 100%
+  );
   border: 1px solid var(--theme-info-border);
   border-radius: var(--radius-md-lg);
   padding: 10px 14px;
@@ -231,22 +261,30 @@
 .vdp-schedule {
   background: linear-gradient(135deg, var(--theme-success-alt) 0%, var(--theme-success-dark) 100%);
 }
-.vdp-schedule:hover { box-shadow: 0 3px 8px var(--success-tint-bold); }
+.vdp-schedule:hover {
+  box-shadow: 0 3px 8px var(--success-tint-bold);
+}
 
 .vdp-request {
   background: var(--theme-gradient);
 }
-.vdp-request:hover { box-shadow: 0 3px 8px var(--btn-primary-hover-shadow); }
+.vdp-request:hover {
+  box-shadow: 0 3px 8px var(--btn-primary-hover-shadow);
+}
 
 .vdp-km-ctrl {
   background: linear-gradient(135deg, var(--theme-info) 0%, var(--theme-info-text) 100%);
 }
-.vdp-km-ctrl:hover { box-shadow: 0 3px 8px var(--primary-tint-bold); }
+.vdp-km-ctrl:hover {
+  box-shadow: 0 3px 8px var(--primary-tint-bold);
+}
 
 .vdp-breakdown {
   background: linear-gradient(135deg, var(--theme-warning) 0%, var(--theme-danger-dark) 100%);
 }
-.vdp-breakdown:hover { box-shadow: 0 3px 8px var(--danger-tint-dark); }
+.vdp-breakdown:hover {
+  box-shadow: 0 3px 8px var(--danger-tint-dark);
+}
 
 /* Contrôles techniques */
 .vdp-ct-list {
@@ -302,8 +340,13 @@
 }
 
 @keyframes pulse-red {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .vdp-ct-dates {
@@ -387,13 +430,34 @@
   letter-spacing: 0.3px;
 }
 
-.vdp-status-badge.status-planned { background: var(--theme-info-bg-strong); color: var(--theme-info-dark); }
-.vdp-status-badge.status-in-progress { background: var(--theme-warning-bg); color: var(--theme-warning-text); }
-.vdp-status-badge.status-completed { background: var(--btn-success-bg); color: var(--theme-success-text); }
-.vdp-status-badge.status-pending { background: var(--theme-purple-bg); color: var(--theme-primary-dark); }
-.vdp-status-badge.status-reported { background: var(--theme-danger-bg); color: var(--theme-danger-text); }
-.vdp-status-badge.status-cancelled { background: var(--theme-bg-tertiary); color: var(--theme-text-subtle); }
-.vdp-status-badge.status-rescheduled { background: var(--theme-warning-bg); color: var(--theme-orange-text); }
+.vdp-status-badge.status-planned {
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-dark);
+}
+.vdp-status-badge.status-in-progress {
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
+}
+.vdp-status-badge.status-completed {
+  background: var(--btn-success-bg);
+  color: var(--theme-success-text);
+}
+.vdp-status-badge.status-pending {
+  background: var(--theme-purple-bg);
+  color: var(--theme-primary-dark);
+}
+.vdp-status-badge.status-reported {
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+}
+.vdp-status-badge.status-cancelled {
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-subtle);
+}
+.vdp-status-badge.status-rescheduled {
+  background: var(--theme-warning-bg);
+  color: var(--theme-orange-text);
+}
 
 .vdp-intervention-date {
   font-size: var(--font-xs);
@@ -424,9 +488,21 @@
   font-weight: 700;
 }
 
-.vdp-tag-km { background: var(--theme-info-bg); color: var(--theme-info-text); border: 1px solid var(--theme-info-border); }
-.vdp-tag-cost { background: var(--theme-success-bg); color: #15803d; border: 1px solid var(--theme-success-border); }
-.vdp-tag-garage { background: var(--theme-bg-page); color: var(--theme-text-subtle); border: 1px solid var(--theme-border); }
+.vdp-tag-km {
+  background: var(--theme-info-bg);
+  color: var(--theme-info-text);
+  border: 1px solid var(--theme-info-border);
+}
+.vdp-tag-cost {
+  background: var(--theme-success-bg);
+  color: #15803d;
+  border: 1px solid var(--theme-success-border);
+}
+.vdp-tag-garage {
+  background: var(--theme-bg-page);
+  color: var(--theme-text-subtle);
+  border: 1px solid var(--theme-border);
+}
 
 .vdp-empty {
   text-align: center;

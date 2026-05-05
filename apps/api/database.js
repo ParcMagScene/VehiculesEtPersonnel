@@ -1,8 +1,9 @@
 import Database from 'better-sqlite3';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import logger from "./logger.js";
+import { fileURLToPath } from 'url';
+
+import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,8 +33,9 @@ db.pragma('foreign_keys = ON');
 // et permet des lectures pendant les écritures
 db.pragma('journal_mode = WAL');
 
-// Définir le mode de synchronisation pour garantir l'écriture sur disque
-db.pragma('synchronous = FULL');
+// Mode de synchronisation — NORMAL est sûr avec WAL (pas de fsync supplémentaire
+// sur le WAL file, protection identique contre la corruption de la DB principale)
+db.pragma('synchronous = NORMAL');
 
 // Configurer le checkpoint automatique (tous les 1000 pages)
 db.pragma('wal_autocheckpoint = 1000');
@@ -41,14 +43,35 @@ db.pragma('wal_autocheckpoint = 1000');
 // [PHASE 4] Timeout 5s si la DB est verrouillée par un autre writer
 db.pragma('busy_timeout = 5000');
 
+// [PERF Sprint 1] Tuning supplémentaires :
+// - cache_size négatif = en KiB (ici 50 Mo de cache pages)
+// - temp_store en mémoire pour les sorts/temp B-trees
+// - mmap_size : I/O memory-mapped (jusqu'à ~30 Mo) pour accélérer les lectures
+db.pragma('cache_size = -50000');
+db.pragma('temp_store = MEMORY');
+db.pragma('mmap_size = 30000000');
+
 // Créer les tables
 // [AUDIT FIX P1-12] Les clauses ON DELETE des FOREIGN KEY ne s'appliquent qu'aux nouvelles bases.
 // Pour les bases existantes, SQLite ne permet pas de modifier les FK via ALTER TABLE.
 function initializeDatabase() {
   // [AUDIT FIX P0-5] Helper pour migrations ALTER TABLE idempotentes
+  // [SEC PHASE 2] Whitelist stricte des identifiants pour bloquer toute injection
+  // même si un appelant interne passait une chaîne non-littérale.
   function safeAddColumn(table, column, type, defaultVal) {
-    const cols = db.pragma(`table_info(${table})`).map(c => c.name);
+    const ID_RE = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+    if (!ID_RE.test(table) || !ID_RE.test(column)) {
+      throw new Error(`safeAddColumn: identifiant invalide (table=${table}, column=${column})`);
+    }
+    // Type SQLite restreint aux mots-clés standards (incl. composites courants)
+    const TYPE_RE =
+      /^(INTEGER|TEXT|REAL|BLOB|NUMERIC|BOOLEAN|DATETIME|DATE)(\s+(NOT\s+NULL|UNIQUE))?$/i;
+    if (!TYPE_RE.test(String(type).trim())) {
+      throw new Error(`safeAddColumn: type invalide (${type})`);
+    }
+    const cols = db.pragma(`table_info(${table})`).map((c) => c.name);
     if (!cols.includes(column)) {
+      // defaultVal reste interpolé mais cantonné aux migrations internes (pas d'input externe)
       const defClause = defaultVal !== undefined ? ` DEFAULT ${defaultVal}` : '';
       db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${defClause}`);
       logger.info(`  ✅ Migration: ${table}.${column} ajouté`);
@@ -142,7 +165,8 @@ function initializeDatabase() {
       modified_by INTEGER,
       modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
+      FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL,
+      FOREIGN KEY (assigned_to) REFERENCES persons(id) ON DELETE SET NULL
     )
   `);
 
@@ -453,7 +477,9 @@ function initializeDatabase() {
       FOREIGN KEY (voter_id) REFERENCES users(id) ON DELETE CASCADE
     )
   `);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_votes_availability ON leave_votes(availability_id)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_leave_votes_availability ON leave_votes(availability_id)`,
+  );
 
   // Table des missions
   db.exec(`
@@ -583,14 +609,21 @@ function initializeDatabase() {
 
   // Migration : ajouter colonne 'nom' si absente
   try {
-    const cols = db.prepare("PRAGMA table_info(affaires)").all().map(c => c.name);
+    const cols = db
+      .prepare('PRAGMA table_info(affaires)')
+      .all()
+      .map((c) => c.name);
     if (!cols.includes('nom')) {
       db.exec("ALTER TABLE affaires ADD COLUMN nom TEXT DEFAULT ''");
       // Pré-remplir nom avec event_name ou client pour les affaires existantes
-      db.exec("UPDATE affaires SET nom = COALESCE(NULLIF(event_name, ''), NULLIF(client, ''), '') WHERE nom IS NULL OR nom = ''");
+      db.exec(
+        "UPDATE affaires SET nom = COALESCE(NULLIF(event_name, ''), NULLIF(client, ''), '') WHERE nom IS NULL OR nom = ''",
+      );
       logger.info('✅ Migration: colonne nom ajoutée à affaires');
     }
-  } catch (e) { /* colonne existe déjà */ }
+  } catch (_e) {
+    /* colonne existe déjà */
+  }
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_affaires_numero ON affaires(numero_affaire);
@@ -715,18 +748,24 @@ function initializeDatabase() {
 
   // Migration: required_skill_id (INTEGER FK) → required_skills (TEXT JSON, sans FK)
   try {
-    const missionCols = db.prepare("PRAGMA table_info(missions)").all();
-    const hasRequiredSkills = missionCols.some(col => col.name === 'required_skills');
+    const missionCols = db.prepare('PRAGMA table_info(missions)').all();
+    const hasRequiredSkills = missionCols.some((col) => col.name === 'required_skills');
     if (!hasRequiredSkills) {
-      db.prepare("ALTER TABLE missions ADD COLUMN required_skills TEXT DEFAULT NULL").run();
+      db.prepare('ALTER TABLE missions ADD COLUMN required_skills TEXT DEFAULT NULL').run();
       // Migrer les données existantes
-      const missions = db.prepare('SELECT id, required_skill_id FROM missions WHERE required_skill_id IS NOT NULL').all();
+      const missions = db
+        .prepare('SELECT id, required_skill_id FROM missions WHERE required_skill_id IS NOT NULL')
+        .all();
       const update = db.prepare('UPDATE missions SET required_skills = ? WHERE id = ?');
       for (const m of missions) {
         // Si c'est déjà un JSON array, le garder tel quel ; sinon, l'emballer
         let val = String(m.required_skill_id);
-        try { const parsed = JSON.parse(val); if (!Array.isArray(parsed)) val = JSON.stringify([m.required_skill_id]); }
-        catch { val = JSON.stringify([m.required_skill_id]); }
+        try {
+          const parsed = JSON.parse(val);
+          if (!Array.isArray(parsed)) val = JSON.stringify([m.required_skill_id]);
+        } catch {
+          val = JSON.stringify([m.required_skill_id]);
+        }
         update.run(val, m.id);
       }
       logger.info('✅ Migration required_skill_id → required_skills effectuée');
@@ -737,13 +776,13 @@ function initializeDatabase() {
 
   // Migration: ajouter default_positions (JSON) dans persons
   try {
-    const personsCols = db.prepare("PRAGMA table_info(persons)").all();
-    const hasDefaultPositions = personsCols.some(col => col.name === 'default_positions');
+    const personsCols = db.prepare('PRAGMA table_info(persons)').all();
+    const hasDefaultPositions = personsCols.some((col) => col.name === 'default_positions');
     if (!hasDefaultPositions) {
       db.prepare("ALTER TABLE persons ADD COLUMN default_positions TEXT DEFAULT '[]'").run();
       logger.info('✅ Colonne default_positions ajoutée à persons');
     }
-  } catch (error) {
+  } catch (_error) {
     // Colonne déjà présente
   }
 
@@ -816,7 +855,9 @@ function initializeDatabase() {
       FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
-  db.exec(`CREATE INDEX IF NOT EXISTS idx_leave_history_request ON leave_request_history(leave_request_id)`);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_leave_history_request ON leave_request_history(leave_request_id)`,
+  );
 
   // Jours fériés (configurables par admin)
   db.exec(`
@@ -883,30 +924,32 @@ function initializeDatabase() {
   // Elles sont conservées pour compatibilité arrière mais NE DOIVENT PLUS être utilisées.
   // La migration vers controles_techniques est effectuée automatiquement ci-dessous.
   try {
-    const columns = db.prepare("PRAGMA table_info(vehicles)").all();
-    const hasKilometrage = columns.some(col => col.name === 'kilometrage');
-    const hasControleTechniqueType = columns.some(col => col.name === 'controle_technique_type');
-    const hasControleTechniqueDate = columns.some(col => col.name === 'controle_technique_date');
-    const hasControleTechniqueDeadline = columns.some(col => col.name === 'controle_technique_deadline');
-    const hasControlesTechniques = columns.some(col => col.name === 'controles_techniques');
-    
+    const columns = db.prepare('PRAGMA table_info(vehicles)').all();
+    const hasKilometrage = columns.some((col) => col.name === 'kilometrage');
+    const hasControleTechniqueType = columns.some((col) => col.name === 'controle_technique_type');
+    const hasControleTechniqueDate = columns.some((col) => col.name === 'controle_technique_date');
+    const hasControleTechniqueDeadline = columns.some(
+      (col) => col.name === 'controle_technique_deadline',
+    );
+    const hasControlesTechniques = columns.some((col) => col.name === 'controles_techniques');
+
     if (!hasKilometrage) {
-      db.prepare("ALTER TABLE vehicles ADD COLUMN kilometrage INTEGER DEFAULT 0").run();
+      db.prepare('ALTER TABLE vehicles ADD COLUMN kilometrage INTEGER DEFAULT 0').run();
       logger.info('✅ Colonne kilometrage ajoutée');
     }
-    
+
     if (!hasControleTechniqueType) {
-      db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_type TEXT").run();
+      db.prepare('ALTER TABLE vehicles ADD COLUMN controle_technique_type TEXT').run();
       logger.info('✅ Colonne controle_technique_type ajoutée');
     }
-    
+
     if (!hasControleTechniqueDate) {
-      db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_date TEXT").run();
+      db.prepare('ALTER TABLE vehicles ADD COLUMN controle_technique_date TEXT').run();
       logger.info('✅ Colonne controle_technique_date ajoutée');
     }
-    
+
     if (!hasControleTechniqueDeadline) {
-      db.prepare("ALTER TABLE vehicles ADD COLUMN controle_technique_deadline TEXT").run();
+      db.prepare('ALTER TABLE vehicles ADD COLUMN controle_technique_deadline TEXT').run();
       logger.info('✅ Colonne controle_technique_deadline ajoutée');
     }
 
@@ -914,29 +957,39 @@ function initializeDatabase() {
     if (!hasControlesTechniques) {
       db.prepare("ALTER TABLE vehicles ADD COLUMN controles_techniques TEXT DEFAULT '[]'").run();
       logger.info('✅ Colonne controles_techniques ajoutée');
-      
+
       // Migrer les anciennes données vers le nouveau format
-      const vehiclesWithOldData = db.prepare(`
+      const vehiclesWithOldData = db
+        .prepare(
+          `
         SELECT id, controle_technique_type, controle_technique_date, controle_technique_deadline 
         FROM vehicles 
         WHERE controle_technique_type IS NOT NULL AND controle_technique_type != ''
-      `).all();
-      
+      `,
+        )
+        .all();
+
       for (const vehicle of vehiclesWithOldData) {
-        const controles = [{
-          type: vehicle.controle_technique_type,
-          date: vehicle.controle_technique_date,
-          deadline: vehicle.controle_technique_deadline
-        }];
-        db.prepare("UPDATE vehicles SET controles_techniques = ? WHERE id = ?")
-          .run(JSON.stringify(controles), vehicle.id);
+        const controles = [
+          {
+            type: vehicle.controle_technique_type,
+            date: vehicle.controle_technique_date,
+            deadline: vehicle.controle_technique_deadline,
+          },
+        ];
+        db.prepare('UPDATE vehicles SET controles_techniques = ? WHERE id = ?').run(
+          JSON.stringify(controles),
+          vehicle.id,
+        );
       }
-      
+
       if (vehiclesWithOldData.length > 0) {
-        logger.info(`✅ Migration de ${vehiclesWithOldData.length} contrôles techniques vers le nouveau format`);
+        logger.info(
+          `✅ Migration de ${vehiclesWithOldData.length} contrôles techniques vers le nouveau format`,
+        );
       }
     }
-  } catch (error) {
+  } catch (_error) {
     logger.info('Info: Colonnes véhicules déjà présentes');
   }
 
@@ -948,44 +1001,50 @@ function initializeDatabase() {
       applied_at TEXT DEFAULT (datetime('now'))
     )`);
 
-    const alreadyApplied = db.prepare("SELECT 1 FROM migrations_log WHERE name = ?").get('add_tachygraphe_limiteur');
+    const alreadyApplied = db
+      .prepare('SELECT 1 FROM migrations_log WHERE name = ?')
+      .get('add_tachygraphe_limiteur');
 
     if (!alreadyApplied) {
       const plTypes = ['PL', 'CAMION', 'PORTEUR', 'TRACTEUR', 'SEMI'];
-      const allVehicles = db.prepare("SELECT id, type, controles_techniques FROM vehicles").all();
+      const allVehicles = db.prepare('SELECT id, type, controles_techniques FROM vehicles').all();
       let addedCount = 0;
 
       for (const v of allVehicles) {
         if (!v.type) continue;
         const vType = v.type.toUpperCase();
-        const isPL = plTypes.some(t => vType.includes(t));
+        const isPL = plTypes.some((t) => vType.includes(t));
         if (!isPL) continue;
 
         let controles = [];
         try {
           controles = v.controles_techniques ? JSON.parse(v.controles_techniques) : [];
-        } catch (e) { controles = []; }
+        } catch (_e) {
+          controles = [];
+        }
         if (!Array.isArray(controles)) controles = [];
 
         let modified = false;
-        if (!controles.some(c => c.type === 'TACHYGRAPHE')) {
+        if (!controles.some((c) => c.type === 'TACHYGRAPHE')) {
           controles.push({ type: 'TACHYGRAPHE', date: null, deadline: null });
           modified = true;
         }
-        if (!controles.some(c => c.type === 'LIMITEUR')) {
+        if (!controles.some((c) => c.type === 'LIMITEUR')) {
           controles.push({ type: 'LIMITEUR', date: null, deadline: null });
           modified = true;
         }
 
         if (modified) {
-          db.prepare("UPDATE vehicles SET controles_techniques = ? WHERE id = ?")
-            .run(JSON.stringify(controles), v.id);
+          db.prepare('UPDATE vehicles SET controles_techniques = ? WHERE id = ?').run(
+            JSON.stringify(controles),
+            v.id,
+          );
           addedCount++;
         }
       }
 
       // Marquer la migration comme appliquée
-      db.prepare("INSERT INTO migrations_log (name) VALUES (?)").run('add_tachygraphe_limiteur');
+      db.prepare('INSERT INTO migrations_log (name) VALUES (?)').run('add_tachygraphe_limiteur');
       logger.info(`✅ Migration Tachygraphe/Limiteur appliquée (${addedCount} véhicule(s) PL)`);
     }
   } catch (error) {
@@ -1022,8 +1081,12 @@ function initializeDatabase() {
       FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
     )
   `);
-  db.exec("CREATE INDEX IF NOT EXISTS idx_trip_details_reservation_id ON trip_details(reservation_id)");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_trip_details_trip_group_id ON trip_details(trip_group_id)");
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_trip_details_reservation_id ON trip_details(reservation_id)',
+  );
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_trip_details_trip_group_id ON trip_details(trip_group_id)',
+  );
 
   // Table des pauses de trajets
   db.exec(`
@@ -1039,57 +1102,89 @@ function initializeDatabase() {
       FOREIGN KEY (trip_detail_id) REFERENCES trip_details(id) ON DELETE CASCADE
     )
   `);
-  db.exec("CREATE INDEX IF NOT EXISTS idx_trip_pauses_trip_detail_id ON trip_pauses(trip_detail_id)");
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_trip_pauses_trip_detail_id ON trip_pauses(trip_detail_id)',
+  );
 
   // Migration: ajouter trip_group_id dans trip_details pour lier les trajets
   try {
-    const tripDetailColumns = db.prepare("PRAGMA table_info(trip_details)").all();
-    const hasTripGroupId = tripDetailColumns.some(col => col.name === 'trip_group_id');
-    
+    const tripDetailColumns = db.prepare('PRAGMA table_info(trip_details)').all();
+    const hasTripGroupId = tripDetailColumns.some((col) => col.name === 'trip_group_id');
+
     if (!hasTripGroupId) {
-      db.prepare("ALTER TABLE trip_details ADD COLUMN trip_group_id TEXT").run();
-      db.exec("CREATE INDEX IF NOT EXISTS idx_trip_details_trip_group_id ON trip_details(trip_group_id)");
+      db.prepare('ALTER TABLE trip_details ADD COLUMN trip_group_id TEXT').run();
+      db.exec(
+        'CREATE INDEX IF NOT EXISTS idx_trip_details_trip_group_id ON trip_details(trip_group_id)',
+      );
       logger.info('✅ Colonne trip_group_id ajoutée à trip_details');
     }
-  } catch (error) {
+  } catch (_error) {
     logger.info('Info: Colonne trip_group_id déjà présente ou table trip_details non créée');
   }
 
   // Migration: ajouter avatar dans users
   try {
-    const userColumns = db.prepare("PRAGMA table_info(users)").all();
-    const hasAvatar = userColumns.some(col => col.name === 'avatar');
+    const userColumns = db.prepare('PRAGMA table_info(users)').all();
+    const hasAvatar = userColumns.some((col) => col.name === 'avatar');
     if (!hasAvatar) {
-      db.prepare("ALTER TABLE users ADD COLUMN avatar TEXT").run();
+      db.prepare('ALTER TABLE users ADD COLUMN avatar TEXT').run();
       logger.info('✅ Colonne avatar ajoutée à users');
     }
-    const hasPreferences = userColumns.some(col => col.name === 'preferences');
+    const hasPreferences = userColumns.some((col) => col.name === 'preferences');
     if (!hasPreferences) {
       db.prepare("ALTER TABLE users ADD COLUMN preferences TEXT DEFAULT '{}'").run();
       logger.info('✅ Colonne preferences ajoutée à users');
     }
-    const hasPermissions = userColumns.some(col => col.name === 'permissions');
+    const hasPermissions = userColumns.some((col) => col.name === 'permissions');
     if (!hasPermissions) {
       db.prepare("ALTER TABLE users ADD COLUMN permissions TEXT DEFAULT '{}'").run();
       logger.info('✅ Colonne permissions ajoutée à users');
     }
     // [AUDIT FIX CRIT-1] Colonnes OTP reset password
-    const hasResetToken = userColumns.some(col => col.name === 'reset_token_hash');
+    const hasResetToken = userColumns.some((col) => col.name === 'reset_token_hash');
     if (!hasResetToken) {
-      db.prepare("ALTER TABLE users ADD COLUMN reset_token_hash TEXT").run();
-      db.prepare("ALTER TABLE users ADD COLUMN reset_token_expires TEXT").run();
+      db.prepare('ALTER TABLE users ADD COLUMN reset_token_hash TEXT').run();
+      db.prepare('ALTER TABLE users ADD COLUMN reset_token_expires TEXT').run();
       logger.info('✅ Colonnes reset_token_hash/expires ajoutées à users');
     }
-  } catch (error) {
+    // [AUDIT FIX C5] Colonnes 2FA/TOTP
+    const hasTotp = userColumns.some((col) => col.name === 'totp_secret');
+    if (!hasTotp) {
+      db.prepare('ALTER TABLE users ADD COLUMN totp_secret TEXT').run();
+      db.prepare('ALTER TABLE users ADD COLUMN totp_enabled INTEGER DEFAULT 0').run();
+      logger.info('✅ Colonnes totp_secret/totp_enabled ajoutées à users');
+    }
+    // Migration: ajouter is_blocked dans users
+    const hasBlocked = userColumns.some((col) => col.name === 'is_blocked');
+    if (!hasBlocked) {
+      db.prepare('ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0').run();
+      logger.info('✅ Colonne is_blocked ajoutée à users');
+    }
+  } catch (_error) {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
+  }
+
+  // Migration: PIN code 4 chiffres et flag is_team pour compte Equipe
+  try {
+    const userColsPinTeam = db.prepare('PRAGMA table_info(users)').all();
+    if (!userColsPinTeam.some((c) => c.name === 'pin_hash')) {
+      db.prepare('ALTER TABLE users ADD COLUMN pin_hash TEXT').run();
+      logger.info('✅ Colonne pin_hash ajoutée à users');
+    }
+    if (!userColsPinTeam.some((c) => c.name === 'is_team')) {
+      db.prepare('ALTER TABLE users ADD COLUMN is_team INTEGER DEFAULT 0').run();
+      logger.info('✅ Colonne is_team ajoutée à users');
+    }
+  } catch (_err) {
+    logger.info('Info: Migration pin_hash/is_team déjà appliquée');
   }
 
   // Migration: ajouter is_admin dans authorized_emails (pour bases existantes)
   try {
-    const authEmailCols = db.prepare("PRAGMA table_info(authorized_emails)").all();
-    const hasIsAdmin = authEmailCols.some(col => col.name === 'is_admin');
+    const authEmailCols = db.prepare('PRAGMA table_info(authorized_emails)').all();
+    const hasIsAdmin = authEmailCols.some((col) => col.name === 'is_admin');
     if (!hasIsAdmin) {
-      db.prepare("ALTER TABLE authorized_emails ADD COLUMN is_admin INTEGER DEFAULT 0").run();
+      db.prepare('ALTER TABLE authorized_emails ADD COLUMN is_admin INTEGER DEFAULT 0').run();
       logger.info('✅ Colonne is_admin ajoutée à authorized_emails');
     }
   } catch (error) {
@@ -1098,30 +1193,30 @@ function initializeDatabase() {
 
   // Migration: ajouter google_drive_link dans reservations
   try {
-    const resColumns = db.prepare("PRAGMA table_info(reservations)").all();
-    const hasDriveLink = resColumns.some(col => col.name === 'google_drive_link');
+    const resColumns = db.prepare('PRAGMA table_info(reservations)').all();
+    const hasDriveLink = resColumns.some((col) => col.name === 'google_drive_link');
     if (!hasDriveLink) {
-      db.prepare("ALTER TABLE reservations ADD COLUMN google_drive_link TEXT").run();
+      db.prepare('ALTER TABLE reservations ADD COLUMN google_drive_link TEXT').run();
       logger.info('✅ Colonne google_drive_link ajoutée à reservations');
     }
-  } catch (error) {
+  } catch (_error) {
     logger.info('Info: Colonne google_drive_link déjà présente');
   }
 
   // Migration: ajouter contract_type dans persons + migrer les types existants
   try {
-    const personsColumns = db.prepare("PRAGMA table_info(persons)").all();
-    const hasContractType = personsColumns.some(col => col.name === 'contract_type');
+    const personsColumns = db.prepare('PRAGMA table_info(persons)').all();
+    const hasContractType = personsColumns.some((col) => col.name === 'contract_type');
     if (!hasContractType) {
-      db.prepare("ALTER TABLE persons ADD COLUMN contract_type TEXT").run();
+      db.prepare('ALTER TABLE persons ADD COLUMN contract_type TEXT').run();
       logger.info('✅ Colonne contract_type ajoutée à persons');
 
       // Migrer les types existants vers le nouveau système
       // salarié, technicien, conducteur → type='permanent'
       // intermittent → type='contractuel', contract_type='intermittent'
       // indépendant → type='contractuel', contract_type='freelance'
-      const personsToMigrate = db.prepare("SELECT id, type FROM persons").all();
-      const updateStmt = db.prepare("UPDATE persons SET type = ?, contract_type = ? WHERE id = ?");
+      const personsToMigrate = db.prepare('SELECT id, type FROM persons').all();
+      const updateStmt = db.prepare('UPDATE persons SET type = ?, contract_type = ? WHERE id = ?');
       let migrated = 0;
       for (const p of personsToMigrate) {
         if (['salarié', 'technicien', 'conducteur'].includes(p.type)) {
@@ -1136,7 +1231,9 @@ function initializeDatabase() {
         }
       }
       if (migrated > 0) {
-        logger.info(`✅ Migration types personnel : ${migrated} personnes migrées (permanent/contractuel)`);
+        logger.info(
+          `✅ Migration types personnel : ${migrated} personnes migrées (permanent/contractuel)`,
+        );
       }
     }
   } catch (error) {
@@ -1150,12 +1247,17 @@ function initializeDatabase() {
   try {
     if (safeAddColumn('missions', 'affaire', 'TEXT')) {
       // Backfill: extraire le numéro d'affaire depuis le titre (ex: "AF32512 — ...")
-      const missionsToFix = db.prepare("SELECT id, title, notes FROM missions WHERE affaire IS NULL").all();
+      const missionsToFix = db
+        .prepare('SELECT id, title, notes FROM missions WHERE affaire IS NULL')
+        .all();
       for (const m of missionsToFix) {
         // Chercher un pattern AF\d+ dans le titre ou les notes
         const match = (m.title || '').match(/AF\d+/i) || (m.notes || '').match(/AF\d+/i);
         if (match) {
-          db.prepare('UPDATE missions SET affaire = ? WHERE id = ?').run(match[0].toUpperCase(), m.id);
+          db.prepare('UPDATE missions SET affaire = ? WHERE id = ?').run(
+            match[0].toUpperCase(),
+            m.id,
+          );
         }
       }
       logger.info('✅ Migration: backfill affaire dans missions effectué');
@@ -1214,9 +1316,19 @@ function initializeDatabase() {
         FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
       )
     `);
-    db.exec('CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_participants_user ON conversation_participants(user_id)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_participants_conversation ON conversation_participants(conversation_id)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at)',
+    );
+    // Index curseur: couvre WHERE conversation_id=? AND id<? ORDER BY id DESC (lot 17+)
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_messages_conv_id ON messages(conversation_id, id DESC)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_participants_user ON conversation_participants(user_id)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_participants_conversation ON conversation_participants(conversation_id)',
+    );
   } catch (error) {
     logger.warn('⚠️ Migration messagerie:', error.message);
   }
@@ -1244,7 +1356,10 @@ function initializeDatabase() {
     db.exec(`INSERT OR IGNORE INTO email_config (id) VALUES (1)`);
 
     // Migration: ajouter les nouvelles colonnes d'alerte
-    const emailCols = db.prepare('PRAGMA table_info(email_config)').all().map(c => c.name);
+    const emailCols = db
+      .prepare('PRAGMA table_info(email_config)')
+      .all()
+      .map((c) => c.name);
     if (!emailCols.includes('alert_leave')) {
       db.prepare('ALTER TABLE email_config ADD COLUMN alert_leave BOOLEAN DEFAULT 1').run();
       logger.info('  + email_config.alert_leave');
@@ -1263,7 +1378,7 @@ function initializeDatabase() {
 
   // [AUDIT FIX P0-5] Migration: Système de gestion des congés (colonne par colonne, idempotent)
   try {
-    safeAddColumn('availabilities', 'status', "TEXT NOT NULL", "'approved'");
+    safeAddColumn('availabilities', 'status', 'TEXT NOT NULL', "'approved'");
     safeAddColumn('availabilities', 'approved_by', 'INTEGER');
     safeAddColumn('availabilities', 'approved_at', 'DATETIME');
     safeAddColumn('availabilities', 'rejection_reason', 'TEXT');
@@ -1354,20 +1469,30 @@ function initializeDatabase() {
 
     // Migration : ajouter parent_id et level si manquants
     try {
-      const catCols = db.prepare("PRAGMA table_info(equipment_categories)").all().map(c => c.name);
+      const catCols = db
+        .prepare('PRAGMA table_info(equipment_categories)')
+        .all()
+        .map((c) => c.name);
       if (!catCols.includes('parent_id')) {
         db.prepare('ALTER TABLE equipment_categories ADD COLUMN parent_id INTEGER').run();
         logger.info('✅ Migration: parent_id ajouté à equipment_categories');
       }
       if (!catCols.includes('level')) {
-        db.prepare("ALTER TABLE equipment_categories ADD COLUMN level TEXT NOT NULL DEFAULT 'category'").run();
+        db.prepare(
+          "ALTER TABLE equipment_categories ADD COLUMN level TEXT NOT NULL DEFAULT 'category'",
+        ).run();
         logger.info('✅ Migration: level ajouté à equipment_categories');
       }
-    } catch (e) { /* colonnes déjà présentes */ }
+    } catch (_e) {
+      /* colonnes déjà présentes */
+    }
 
     // Migration : ajouter brand et stock_quantity à equipment
     try {
-      const eqCols = db.prepare("PRAGMA table_info(equipment)").all().map(c => c.name);
+      const eqCols = db
+        .prepare('PRAGMA table_info(equipment)')
+        .all()
+        .map((c) => c.name);
       if (!eqCols.includes('brand')) {
         db.prepare('ALTER TABLE equipment ADD COLUMN brand TEXT').run();
         logger.info('✅ Migration: brand ajouté à equipment');
@@ -1390,7 +1515,9 @@ function initializeDatabase() {
         }
         if (existingEq.length > 0) logger.info(`✅ Migration: ${existingEq.length} UID générés`);
       }
-    } catch (e) { /* colonnes déjà présentes */ }
+    } catch (_e) {
+      /* colonnes déjà présentes */
+    }
 
     // ═══ Table favoris/surveillance matériel ═══
     db.exec(`
@@ -1408,7 +1535,10 @@ function initializeDatabase() {
 
     // Migration : ajouter colonnes import à sav_tickets + rendre equipment_id nullable
     try {
-      const savCols = db.prepare("PRAGMA table_info(sav_tickets)").all().map(c => c.name);
+      const savCols = db
+        .prepare('PRAGMA table_info(sav_tickets)')
+        .all()
+        .map((c) => c.name);
       if (!savCols.includes('import_code')) {
         // Recréer la table avec equipment_id nullable et colonnes import
         db.exec(`
@@ -1440,16 +1570,109 @@ function initializeDatabase() {
           ALTER TABLE sav_tickets_new RENAME TO sav_tickets;
           CREATE INDEX IF NOT EXISTS idx_sav_tickets_equipment_id ON sav_tickets(equipment_id);
         `);
-        logger.info('✅ Migration: import_code/serial/name ajoutés à sav_tickets, equipment_id nullable');
+        logger.info(
+          '✅ Migration: import_code/serial/name ajoutés à sav_tickets, equipment_id nullable',
+        );
       }
     } catch (e) {
       logger.warn('⚠️ Migration sav_tickets import:', e.message);
     }
 
+    // ═══ Migration SAV LocMat sync (Phase 3 — module SAV unifié) ═══
+    // Ajoute colonnes nécessaires à la synchro bidirectionnelle eM@g ↔ LocMat :
+    //  - locmat_code     : ID ticket côté LocMat (ex. "IN0000000123") — match prioritaire
+    //  - serial_number   : SN brut décodé du CSV (peut différer de equipment.serial_number)
+    //  - uid             : UID eM@g décodé du CSV (ex. "EMAG-00042")
+    //  - opened_at       : date d'entrée SAV (depuis colonne « Début » du CSV)
+    //  - closed_at       : date de sortie SAV (depuis colonne « Fin » du CSV)
+    //  - last_modified_source : 'emag' | 'locmat' — source de la dernière modif
+    //  - last_modified_at     : timestamp de la dernière modif (pour résolution collisions)
+    //  - notes           : notes libres internes (si non déjà présent)
+    try {
+      const savCols = db
+        .prepare('PRAGMA table_info(sav_tickets)')
+        .all()
+        .map((c) => c.name);
+      const addCol = (name, type) => {
+        if (!savCols.includes(name)) {
+          db.prepare(`ALTER TABLE sav_tickets ADD COLUMN ${name} ${type}`).run();
+          logger.info(`✅ Migration SAV: colonne ${name} ajoutée`);
+        }
+      };
+      addCol('locmat_code', 'TEXT');
+      addCol('serial_number', 'TEXT');
+      addCol('uid', 'TEXT');
+      addCol('opened_at', 'DATETIME');
+      addCol('closed_at', 'DATETIME');
+      addCol('last_modified_source', "TEXT DEFAULT 'emag'");
+      addCol('last_modified_at', 'DATETIME');
+      addCol('notes', 'TEXT');
+
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_sav_locmat_code ON sav_tickets(locmat_code);
+        CREATE INDEX IF NOT EXISTS idx_sav_uid ON sav_tickets(uid);
+        CREATE INDEX IF NOT EXISTS idx_sav_serial ON sav_tickets(serial_number);
+        CREATE INDEX IF NOT EXISTS idx_sav_status ON sav_tickets(status);
+      `);
+
+      // Backfill last_modified_* pour tickets historiques (créés avant la sync LocMat)
+      db.prepare(
+        `UPDATE sav_tickets
+           SET last_modified_source = 'emag',
+               last_modified_at = COALESCE(updated_at, created_at)
+         WHERE last_modified_at IS NULL`,
+      ).run();
+    } catch (e) {
+      logger.warn('⚠️ Migration sav_tickets LocMat sync:', e.message);
+    }
+
+    // ═══ Table d'historique des imports SAV (audit + rapport PDF) ═══
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS sav_imports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        imported_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        imported_by INTEGER,
+        filename TEXT,
+        rows_total INTEGER DEFAULT 0,
+        rows_new INTEGER DEFAULT 0,
+        rows_updated INTEGER DEFAULT 0,
+        rows_closed INTEGER DEFAULT 0,
+        rows_collisions INTEGER DEFAULT 0,
+        rows_duplicates INTEGER DEFAULT 0,
+        rows_errors INTEGER DEFAULT 0,
+        summary TEXT,        -- JSON résumé compact
+        details TEXT,        -- JSON détaillé pour rapport PDF
+        FOREIGN KEY (imported_by) REFERENCES users(id) ON DELETE SET NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_sav_imports_date ON sav_imports(imported_at DESC);
+    `);
+
+    // ═══ Historique des modifications de tickets SAV (audit field-level) ═══
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS sav_ticket_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticket_id INTEGER NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        field TEXT NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        source TEXT NOT NULL DEFAULT 'emag',  -- 'emag' | 'locmat'
+        user_id INTEGER,
+        import_id INTEGER,
+        FOREIGN KEY (ticket_id) REFERENCES sav_tickets(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (import_id) REFERENCES sav_imports(id) ON DELETE SET NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_sav_history_ticket ON sav_ticket_history(ticket_id);
+      CREATE INDEX IF NOT EXISTS idx_sav_history_import ON sav_ticket_history(import_id);
+    `);
+
     // Catégories par défaut
     const catCount = db.prepare('SELECT COUNT(*) as c FROM equipment_categories').get();
     if (catCount.c === 0) {
-      const insertCat = db.prepare('INSERT INTO equipment_categories (name, icon, color, level) VALUES (?, ?, ?, ?)');
+      const insertCat = db.prepare(
+        'INSERT INTO equipment_categories (name, icon, color, level) VALUES (?, ?, ?, ?)',
+      );
       insertCat.run('Sonorisation', '🔊', '#3b82f6', 'family');
       insertCat.run('Éclairage', '💡', '#f59e0b', 'family');
       insertCat.run('Structure', '🏗️', '#ef4444', 'family');
@@ -1573,21 +1796,21 @@ function initializeDatabase() {
 
   // Migration: ajouter code_libre et postal_code, city dans persons
   try {
-    const personsCols2 = db.prepare("PRAGMA table_info(persons)").all();
-    const hasCodeLibre = personsCols2.some(col => col.name === 'code_libre');
+    const personsCols2 = db.prepare('PRAGMA table_info(persons)').all();
+    const hasCodeLibre = personsCols2.some((col) => col.name === 'code_libre');
     if (!hasCodeLibre) {
-      db.prepare("ALTER TABLE persons ADD COLUMN code_libre TEXT").run();
+      db.prepare('ALTER TABLE persons ADD COLUMN code_libre TEXT').run();
       db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_persons_code_libre ON persons(code_libre)');
       logger.info('✅ Colonne code_libre ajoutée à persons');
     }
-    const hasPostalCode = personsCols2.some(col => col.name === 'postal_code');
+    const hasPostalCode = personsCols2.some((col) => col.name === 'postal_code');
     if (!hasPostalCode) {
-      db.prepare("ALTER TABLE persons ADD COLUMN postal_code TEXT").run();
+      db.prepare('ALTER TABLE persons ADD COLUMN postal_code TEXT').run();
       logger.info('✅ Colonne postal_code ajoutée à persons');
     }
-    const hasCity = personsCols2.some(col => col.name === 'city');
+    const hasCity = personsCols2.some((col) => col.name === 'city');
     if (!hasCity) {
-      db.prepare("ALTER TABLE persons ADD COLUMN city TEXT").run();
+      db.prepare('ALTER TABLE persons ADD COLUMN city TEXT').run();
       logger.info('✅ Colonne city ajoutée à persons');
     }
   } catch (error) {
@@ -1662,57 +1885,69 @@ function initializeDatabase() {
 
   // Index pour les nouvelles tables
   db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_family ON equipment_catalog(family)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_category ON equipment_catalog(category)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_reference ON equipment_catalog(reference)');
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_equipment_catalog_category ON equipment_catalog(category)',
+  );
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_equipment_catalog_reference ON equipment_catalog(reference)',
+  );
   db.exec('CREATE INDEX IF NOT EXISTS idx_flightcases_category ON flightcases(category)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_truck_models_type ON truck_models(type)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_reservation ON equipment_to_vehicle(reservation_id)');
-  db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_equipment ON equipment_to_vehicle(equipment_id)');
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_reservation ON equipment_to_vehicle(reservation_id)',
+  );
+  db.exec(
+    'CREATE INDEX IF NOT EXISTS idx_equipment_to_vehicle_equipment ON equipment_to_vehicle(equipment_id)',
+  );
 
   // ═══ Migration: Localisation dépôt pour equipment_catalog ═══
   try {
-    const catalogCols = db.prepare("PRAGMA table_info(equipment_catalog)").all();
-    const colNames = catalogCols.map(c => c.name);
+    const catalogCols = db.prepare('PRAGMA table_info(equipment_catalog)').all();
+    const colNames = catalogCols.map((c) => c.name);
     if (!colNames.includes('location_zone')) {
-      db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_zone TEXT").run();
+      db.prepare('ALTER TABLE equipment_catalog ADD COLUMN location_zone TEXT').run();
       logger.info('✅ Migration: ajout colonne location_zone à equipment_catalog');
     }
     if (!colNames.includes('location_code')) {
-      db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_code TEXT").run();
+      db.prepare('ALTER TABLE equipment_catalog ADD COLUMN location_code TEXT').run();
       logger.info('✅ Migration: ajout colonne location_code à equipment_catalog');
     }
     if (!colNames.includes('location_floor')) {
-      db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_floor TEXT").run();
+      db.prepare('ALTER TABLE equipment_catalog ADD COLUMN location_floor TEXT').run();
       logger.info('✅ Migration: ajout colonne location_floor à equipment_catalog');
     }
     if (!colNames.includes('location_depot')) {
-      db.prepare("ALTER TABLE equipment_catalog ADD COLUMN location_depot TEXT").run();
+      db.prepare('ALTER TABLE equipment_catalog ADD COLUMN location_depot TEXT').run();
       logger.info('✅ Migration: ajout colonne location_depot à equipment_catalog');
     }
-    db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_location_zone ON equipment_catalog(location_zone)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_catalog_location_floor ON equipment_catalog(location_floor)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_equipment_catalog_location_zone ON equipment_catalog(location_zone)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_equipment_catalog_location_floor ON equipment_catalog(location_floor)',
+    );
   } catch (error) {
     logger.warn('⚠️ Migration location_zone/code/floor:', error.message);
   }
 
   // ═══ Migration: Localisation dépôt pour equipment (inventaire matériel) ═══
   try {
-    const eqCols = db.prepare("PRAGMA table_info(equipment)").all();
-    const eqColNames = eqCols.map(c => c.name);
+    const eqCols = db.prepare('PRAGMA table_info(equipment)').all();
+    const eqColNames = eqCols.map((c) => c.name);
     if (!eqColNames.includes('location_zone')) {
-      db.prepare("ALTER TABLE equipment ADD COLUMN location_zone TEXT").run();
+      db.prepare('ALTER TABLE equipment ADD COLUMN location_zone TEXT').run();
       logger.info('✅ Migration: ajout colonne location_zone à equipment');
     }
     if (!eqColNames.includes('location_code')) {
-      db.prepare("ALTER TABLE equipment ADD COLUMN location_code TEXT").run();
+      db.prepare('ALTER TABLE equipment ADD COLUMN location_code TEXT').run();
       logger.info('✅ Migration: ajout colonne location_code à equipment');
     }
     if (!eqColNames.includes('location_floor')) {
-      db.prepare("ALTER TABLE equipment ADD COLUMN location_floor TEXT").run();
+      db.prepare('ALTER TABLE equipment ADD COLUMN location_floor TEXT').run();
       logger.info('✅ Migration: ajout colonne location_floor à equipment');
     }
     if (!eqColNames.includes('location_depot')) {
-      db.prepare("ALTER TABLE equipment ADD COLUMN location_depot TEXT").run();
+      db.prepare('ALTER TABLE equipment ADD COLUMN location_depot TEXT').run();
       logger.info('✅ Migration: ajout colonne location_depot à equipment');
     }
     db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_location_zone ON equipment(location_zone)');
@@ -1724,24 +1959,103 @@ function initializeDatabase() {
 
   // ═══ Migration: Parser les valeurs texte "location" → champs structurés ═══
   try {
-    const needsMigration = db.prepare(
-      "SELECT COUNT(*) as cnt FROM equipment WHERE location IS NOT NULL AND location != '' AND (location_depot IS NULL OR location_depot = '')"
-    ).get();
+    const needsMigration = db
+      .prepare(
+        "SELECT COUNT(*) as cnt FROM equipment WHERE location IS NOT NULL AND location != '' AND (location_depot IS NULL OR location_depot = '')",
+      )
+      .get();
     if (needsMigration.cnt > 0) {
       logger.info(`📦 Migration localisation: ${needsMigration.cnt} équipements à migrer...`);
 
       // Mapping zone → étage pour chaque dépôt
-      const depot1RDC = new Set(['A1','A2','A3','A4','A5','B1','B2','B3','B4','C','C1','C2','C3','C4','C5','C6','D1','D2','D3','D4','QUAI1','QUAI2','QUAI3','BUREAUX','ENTREE','I1','I2','I3']);
-      const depot1MEZZ = new Set(['E1','E2','E3','F','F1','F2','F3','F4','F5','F6','F7','F8','G','G1','G2','G3','H','H1','H2','H3','CUISINE','LOCAL_GELAT','CHAMBRE','SALLE_REU','ARC_INFO']);
-      const depot2RDC = new Set(['J','J1','J2','J3','J4','J5','K','K1','K2','K3','K4','L','L1','L2','N','QUAI1','QUAI2','TOURNEES','WC']);
-      const depot2MEZZ = new Set(['M','M1']);
+      const depot1RDC = new Set([
+        'A1',
+        'A2',
+        'A3',
+        'A4',
+        'A5',
+        'B1',
+        'B2',
+        'B3',
+        'B4',
+        'C',
+        'C1',
+        'C2',
+        'C3',
+        'C4',
+        'C5',
+        'C6',
+        'D1',
+        'D2',
+        'D3',
+        'D4',
+        'QUAI1',
+        'QUAI2',
+        'QUAI3',
+        'BUREAUX',
+        'ENTREE',
+        'I1',
+        'I2',
+        'I3',
+      ]);
+      const depot1MEZZ = new Set([
+        'E1',
+        'E2',
+        'E3',
+        'F',
+        'F1',
+        'F2',
+        'F3',
+        'F4',
+        'F5',
+        'F6',
+        'F7',
+        'F8',
+        'G',
+        'G1',
+        'G2',
+        'G3',
+        'H',
+        'H1',
+        'H2',
+        'H3',
+        'CUISINE',
+        'LOCAL_GELAT',
+        'CHAMBRE',
+        'SALLE_REU',
+        'ARC_INFO',
+      ]);
+      const depot2RDC = new Set([
+        'J',
+        'J1',
+        'J2',
+        'J3',
+        'J4',
+        'J5',
+        'K',
+        'K1',
+        'K2',
+        'K3',
+        'K4',
+        'L',
+        'L1',
+        'L2',
+        'N',
+        'QUAI1',
+        'QUAI2',
+        'TOURNEES',
+        'WC',
+      ]);
+      const depot2MEZZ = new Set(['M', 'M1']);
 
-      const items = db.prepare(
-        "SELECT id, location FROM equipment WHERE location IS NOT NULL AND location != '' AND (location_depot IS NULL OR location_depot = '')"
-      ).all();
+      const items = db
+        .prepare(
+          "SELECT id, location FROM equipment WHERE location IS NOT NULL AND location != '' AND (location_depot IS NULL OR location_depot = '')",
+        )
+        .all();
 
       const updateStmt = db.prepare(
-        "UPDATE equipment SET location_depot = ?, location_zone = ?, location_floor = ? WHERE id = ?"
+        'UPDATE equipment SET location_depot = ?, location_zone = ?, location_floor = ? WHERE id = ?',
       );
 
       const migrateTransaction = db.transaction(() => {
@@ -1765,7 +2079,11 @@ function initializeDatabase() {
 
             updateStmt.run(depot, zone, floor, item.id);
             migrated++;
-          } else if (/^[A-Z]\d?$/i.test(item.location) && item.location !== 'Hors stock' && item.location !== 'Hors-Stock') {
+          } else if (
+            /^[A-Z]\d?$/i.test(item.location) &&
+            item.location !== 'Hors stock' &&
+            item.location !== 'Hors-Stock'
+          ) {
             // Zone seule sans "Entrepôt" (ex: "E3") — essayer de deviner le dépôt
             const zone = item.location.trim();
             if (depot1RDC.has(zone) || depot1MEZZ.has(zone)) {
@@ -1886,7 +2204,9 @@ function initializeDatabase() {
 
     db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_category ON stock_items(category_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_reference ON stock_items(reference)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_item ON stock_movements(stock_item_id)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_stock_movements_item ON stock_movements(stock_item_id)',
+    );
     db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_date ON stock_movements(created_at)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_stock_movements_type ON stock_movements(type)');
   } catch (error) {
@@ -1895,8 +2215,8 @@ function initializeDatabase() {
 
   // ═══ Migration: Localisation dépôt + type pour stock_items ═══
   try {
-    const siCols = db.prepare("PRAGMA table_info(stock_items)").all();
-    const siColNames = siCols.map(c => c.name);
+    const siCols = db.prepare('PRAGMA table_info(stock_items)').all();
+    const siColNames = siCols.map((c) => c.name);
     if (!siColNames.includes('stock_type')) {
       db.prepare("ALTER TABLE stock_items ADD COLUMN stock_type TEXT DEFAULT 'vente'").run();
       logger.info('✅ Migration: ajout colonne stock_type à stock_items');
@@ -1914,8 +2234,12 @@ function initializeDatabase() {
       logger.info('✅ Migration: ajout colonne location_floor à stock_items');
     }
     db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_type ON stock_items(stock_type)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_location_zone ON stock_items(location_zone)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_stock_items_location_depot ON stock_items(location_depot)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_stock_items_location_zone ON stock_items(location_zone)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_stock_items_location_depot ON stock_items(location_depot)',
+    );
   } catch (error) {
     logger.warn('⚠️ Migration stock location/type:', error.message);
   }
@@ -1949,15 +2273,17 @@ function initializeDatabase() {
 
     // Migration : ajout colonne visible si absente
     const ddeColumns = db.pragma('table_info(dynamic_display_events)');
-    if (!ddeColumns.find(c => c.name === 'visible')) {
+    if (!ddeColumns.find((c) => c.name === 'visible')) {
       db.exec('ALTER TABLE dynamic_display_events ADD COLUMN visible INTEGER DEFAULT 1');
       logger.info('✅ Colonne visible ajoutée à dynamic_display_events');
     }
-    if (!ddeColumns.find(c => c.name === 'assigned_person_id')) {
-      db.exec('ALTER TABLE dynamic_display_events ADD COLUMN assigned_person_id INTEGER DEFAULT NULL REFERENCES persons(id)');
+    if (!ddeColumns.find((c) => c.name === 'assigned_person_id')) {
+      db.exec(
+        'ALTER TABLE dynamic_display_events ADD COLUMN assigned_person_id INTEGER DEFAULT NULL REFERENCES persons(id)',
+      );
       logger.info('✅ Colonne assigned_person_id ajoutée à dynamic_display_events');
     }
-    if (!ddeColumns.find(c => c.name === 'status')) {
+    if (!ddeColumns.find((c) => c.name === 'status')) {
       db.exec("ALTER TABLE dynamic_display_events ADD COLUMN status TEXT DEFAULT 'pending'");
       logger.info('✅ Colonne status ajoutée à dynamic_display_events');
     }
@@ -2013,6 +2339,8 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_reservation ON task_assignments(reservation_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_source ON task_assignments(source_type, source_id)');
 
     // Table planning_hidden_affaires: affaires masquées de la planification
     db.exec(`
@@ -2053,18 +2381,20 @@ function initializeDatabase() {
         UNIQUE(entity_type, entity_id, person_id)
       )
     `);
-    db.exec('CREATE INDEX IF NOT EXISTS idx_pa_entity ON planning_assignments(entity_type, entity_id)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_pa_entity ON planning_assignments(entity_type, entity_id)',
+    );
     db.exec('CREATE INDEX IF NOT EXISTS idx_pa_person ON planning_assignments(person_id)');
 
     // Migration : ajout colonne visible si absente
     const taCols = db.pragma('table_info(task_assignments)');
-    if (!taCols.find(c => c.name === 'visible')) {
+    if (!taCols.find((c) => c.name === 'visible')) {
       db.exec('ALTER TABLE task_assignments ADD COLUMN visible INTEGER DEFAULT 1');
       logger.info('✅ Colonne visible ajoutée à task_assignments');
     }
 
     // Migration : colonnes enrichies pour task_assignments (end_time, google_event_title, affaire_num)
-    const taColNames = taCols.map(c => c.name);
+    const taColNames = taCols.map((c) => c.name);
     if (!taColNames.includes('end_time')) {
       db.exec('ALTER TABLE task_assignments ADD COLUMN end_time TEXT');
       logger.info('  + task_assignments.end_time');
@@ -2078,7 +2408,9 @@ function initializeDatabase() {
       logger.info('  + task_assignments.affaire_num');
     }
     if (!taColNames.includes('reservation_id')) {
-      db.exec('ALTER TABLE task_assignments ADD COLUMN reservation_id TEXT REFERENCES reservations(id) ON DELETE SET NULL');
+      db.exec(
+        'ALTER TABLE task_assignments ADD COLUMN reservation_id TEXT REFERENCES reservations(id) ON DELETE SET NULL',
+      );
       logger.info('  + task_assignments.reservation_id');
     }
     if (!taColNames.includes('location_address')) {
@@ -2096,7 +2428,9 @@ function initializeDatabase() {
 
     // Migration : corriger le CHECK constraint section pour inclure rdv et prep_installations
     try {
-      const checkInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+      const checkInfo = db
+        .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'")
+        .get();
       if (checkInfo && checkInfo.sql && !checkInfo.sql.includes("'rdv'")) {
         logger.info('Migration: correction CHECK constraint section de task_assignments...');
         db.exec('BEGIN TRANSACTION');
@@ -2129,10 +2463,12 @@ function initializeDatabase() {
           )
         `);
         // Récupérer les noms de colonnes de l'ancienne table
-        const oldColNames = db.pragma('table_info(task_assignments)').map(c => c.name);
-        const newColNames = db.pragma('table_info(task_assignments_new)').map(c => c.name);
-        const commonCols = oldColNames.filter(c => newColNames.includes(c)).join(', ');
-        db.exec(`INSERT INTO task_assignments_new (${commonCols}) SELECT ${commonCols} FROM task_assignments`);
+        const oldColNames = db.pragma('table_info(task_assignments)').map((c) => c.name);
+        const newColNames = db.pragma('table_info(task_assignments_new)').map((c) => c.name);
+        const commonCols = oldColNames.filter((c) => newColNames.includes(c)).join(', ');
+        db.exec(
+          `INSERT INTO task_assignments_new (${commonCols}) SELECT ${commonCols} FROM task_assignments`,
+        );
         db.exec('DROP TABLE task_assignments');
         db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
@@ -2144,13 +2480,19 @@ function initializeDatabase() {
         logger.info('✅ CHECK constraint section corrigé (ajout rdv, prep_installations)');
       }
     } catch (migErr) {
-      try { db.exec('ROLLBACK'); } catch(e) {}
+      try {
+        db.exec('ROLLBACK');
+      } catch (_e) {
+        /* ignored */
+      }
       logger.warn('Migration CHECK constraint section:', migErr.message);
     }
 
     // Migration : corriger le CHECK constraint source_type pour inclure 'affaire'
     try {
-      const checkInfo2 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+      const checkInfo2 = db
+        .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'")
+        .get();
       if (checkInfo2 && checkInfo2.sql && !checkInfo2.sql.includes("'affaire'")) {
         logger.info('Migration: correction CHECK constraint source_type de task_assignments...');
         db.exec('BEGIN TRANSACTION');
@@ -2182,10 +2524,12 @@ function initializeDatabase() {
             modified_at TEXT
           )
         `);
-        const oldCols2 = db.pragma('table_info(task_assignments)').map(c => c.name);
-        const newCols2 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
-        const commonCols2 = oldCols2.filter(c => newCols2.includes(c)).join(', ');
-        db.exec(`INSERT INTO task_assignments_new (${commonCols2}) SELECT ${commonCols2} FROM task_assignments`);
+        const oldCols2 = db.pragma('table_info(task_assignments)').map((c) => c.name);
+        const newCols2 = db.pragma('table_info(task_assignments_new)').map((c) => c.name);
+        const commonCols2 = oldCols2.filter((c) => newCols2.includes(c)).join(', ');
+        db.exec(
+          `INSERT INTO task_assignments_new (${commonCols2}) SELECT ${commonCols2} FROM task_assignments`,
+        );
         db.exec('DROP TABLE task_assignments');
         db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
@@ -2197,13 +2541,19 @@ function initializeDatabase() {
         logger.info('✅ CHECK constraint source_type corrigé (ajout affaire)');
       }
     } catch (migErr2) {
-      try { db.exec('ROLLBACK'); } catch(e) {}
+      try {
+        db.exec('ROLLBACK');
+      } catch (_e) {
+        /* ignored */
+      }
       logger.warn('Migration CHECK constraint source_type:', migErr2.message);
     }
 
     // Migration : ajouter les sections opérationnelles (chargement, depart, enlevement, retour, recuperation, evenements)
     try {
-      const checkInfo3 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+      const checkInfo3 = db
+        .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'")
+        .get();
       if (checkInfo3 && checkInfo3.sql && !checkInfo3.sql.includes("'chargement'")) {
         logger.info('Migration: ajout sections opérationnelles à task_assignments...');
         db.exec('BEGIN TRANSACTION');
@@ -2235,16 +2585,28 @@ function initializeDatabase() {
             modified_at TEXT
           )
         `);
-        const oldCols3 = db.pragma('table_info(task_assignments)').map(c => c.name);
-        const newCols3 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
-        const commonCols3 = oldCols3.filter(c => newCols3.includes(c)).join(', ');
-        db.exec(`INSERT INTO task_assignments_new (${commonCols3}) SELECT ${commonCols3} FROM task_assignments`);
+        const oldCols3 = db.pragma('table_info(task_assignments)').map((c) => c.name);
+        const newCols3 = db.pragma('table_info(task_assignments_new)').map((c) => c.name);
+        const commonCols3 = oldCols3.filter((c) => newCols3.includes(c)).join(', ');
+        db.exec(
+          `INSERT INTO task_assignments_new (${commonCols3}) SELECT ${commonCols3} FROM task_assignments`,
+        );
         // Migrer les anciennes tâches vers les nouvelles sections
-        db.exec(`UPDATE task_assignments_new SET section = 'chargement' WHERE section = 'taches_prioritaires' AND title LIKE '%Chargement%'`);
-        db.exec(`UPDATE task_assignments_new SET section = 'depart' WHERE section = 'taches_prioritaires' AND title LIKE '%Départ%'`);
-        db.exec(`UPDATE task_assignments_new SET section = 'enlevement' WHERE section = 'taches_prioritaires' AND title LIKE '%Enlèvement%'`);
-        db.exec(`UPDATE task_assignments_new SET section = 'retour' WHERE section = 'taches_secondaires' AND title LIKE '%Retour%'`);
-        db.exec(`UPDATE task_assignments_new SET section = 'recuperation' WHERE section = 'taches_secondaires' AND title LIKE '%Récupération%'`);
+        db.exec(
+          `UPDATE task_assignments_new SET section = 'chargement' WHERE section = 'taches_prioritaires' AND title LIKE '%Chargement%'`,
+        );
+        db.exec(
+          `UPDATE task_assignments_new SET section = 'depart' WHERE section = 'taches_prioritaires' AND title LIKE '%Départ%'`,
+        );
+        db.exec(
+          `UPDATE task_assignments_new SET section = 'enlevement' WHERE section = 'taches_prioritaires' AND title LIKE '%Enlèvement%'`,
+        );
+        db.exec(
+          `UPDATE task_assignments_new SET section = 'retour' WHERE section = 'taches_secondaires' AND title LIKE '%Retour%'`,
+        );
+        db.exec(
+          `UPDATE task_assignments_new SET section = 'recuperation' WHERE section = 'taches_secondaires' AND title LIKE '%Récupération%'`,
+        );
         db.exec('DROP TABLE task_assignments');
         db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
@@ -2253,16 +2615,24 @@ function initializeDatabase() {
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
         db.exec('COMMIT');
-        logger.info('✅ Sections opérationnelles ajoutées (chargement, depart, enlevement, retour, recuperation, evenements)');
+        logger.info(
+          '✅ Sections opérationnelles ajoutées (chargement, depart, enlevement, retour, recuperation, evenements)',
+        );
       }
     } catch (migErr3) {
-      try { db.exec('ROLLBACK'); } catch(e) {}
+      try {
+        db.exec('ROLLBACK');
+      } catch (_e) {
+        /* ignored */
+      }
       logger.warn('Migration sections opérationnelles:', migErr3.message);
     }
 
     // Migration : ajouter la section 'installation' pour les tâches d'affaires de type Installation
     try {
-      const checkInfo4 = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'").get();
+      const checkInfo4 = db
+        .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'")
+        .get();
       if (checkInfo4 && checkInfo4.sql && !checkInfo4.sql.includes("'installation'")) {
         logger.info('Migration: ajout section installation à task_assignments...');
         db.exec('BEGIN TRANSACTION');
@@ -2294,11 +2664,15 @@ function initializeDatabase() {
             modified_at TEXT
           )
         `);
-        const oldCols4 = db.pragma('table_info(task_assignments)').map(c => c.name);
-        const newCols4 = db.pragma('table_info(task_assignments_new)').map(c => c.name);
-        const commonCols4 = oldCols4.filter(c => newCols4.includes(c)).join(', ');
-        db.exec(`INSERT INTO task_assignments_new (${commonCols4}) SELECT ${commonCols4} FROM task_assignments`);
-        db.exec(`UPDATE task_assignments_new SET section = 'installation' WHERE title LIKE '%Installation%' AND source_type = 'affaire'`);
+        const oldCols4 = db.pragma('table_info(task_assignments)').map((c) => c.name);
+        const newCols4 = db.pragma('table_info(task_assignments_new)').map((c) => c.name);
+        const commonCols4 = oldCols4.filter((c) => newCols4.includes(c)).join(', ');
+        db.exec(
+          `INSERT INTO task_assignments_new (${commonCols4}) SELECT ${commonCols4} FROM task_assignments`,
+        );
+        db.exec(
+          `UPDATE task_assignments_new SET section = 'installation' WHERE title LIKE '%Installation%' AND source_type = 'affaire'`,
+        );
         db.exec('DROP TABLE task_assignments');
         db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
@@ -2310,30 +2684,109 @@ function initializeDatabase() {
         logger.info('✅ Section installation ajoutée');
       }
     } catch (migErr4) {
-      try { db.exec('ROLLBACK'); } catch(e) {}
+      try {
+        db.exec('ROLLBACK');
+      } catch (_e) {
+        /* ignored */
+      }
       logger.warn('Migration section installation:', migErr4.message);
     }
 
+    // Migration : ajout section 'intervention' dans task_assignments
+    try {
+      // Vérifie si 'intervention' est déjà dans le CHECK via tentative d'insert
+      const testId = '__check_intervention__';
+      try {
+        db.prepare(
+          `INSERT INTO task_assignments (id, date, section) VALUES (?, '2000-01-01', 'intervention')`,
+        ).run(testId);
+        db.prepare('DELETE FROM task_assignments WHERE id = ?').run(testId);
+        logger.info('✅ Section intervention déjà supportée');
+      } catch {
+        // CHECK constraint rejecte 'intervention' → recréer la table
+        db.exec('BEGIN TRANSACTION');
+        db.exec(`
+          CREATE TABLE task_assignments_new (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            display_event_id TEXT REFERENCES dynamic_display_events(id) ON DELETE SET NULL,
+            person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+            date TEXT NOT NULL,
+            period TEXT CHECK(period IN ('AM', 'PM') OR period IS NULL),
+            time TEXT,
+            end_time TEXT,
+            section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
+              'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+              'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+              'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual',
+              'montage', 'demontage', 'intervention'
+            )),
+            title TEXT,
+            notes TEXT DEFAULT '',
+            source_type TEXT DEFAULT 'manual' CHECK(source_type IN ('display_event', 'manual', 'google_event', 'ical_event', 'affaire', 'recurring')),
+            source_id TEXT,
+            google_event_title TEXT,
+            affaire_num TEXT,
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'in_progress', 'done', 'cancelled')),
+            visible INTEGER DEFAULT 1,
+            reservation_id INTEGER,
+            location_address TEXT,
+            location_lat REAL,
+            location_lng REAL,
+            created_by INTEGER REFERENCES users(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            modified_by INTEGER,
+            modified_at TEXT,
+            deleted_at TEXT
+          )
+        `);
+        const oldCols5 = db.pragma('table_info(task_assignments)').map((c) => c.name);
+        const newCols5 = db.pragma('table_info(task_assignments_new)').map((c) => c.name);
+        const commonCols5 = oldCols5.filter((c) => newCols5.includes(c)).join(', ');
+        db.exec(
+          `INSERT INTO task_assignments_new (${commonCols5}) SELECT ${commonCols5} FROM task_assignments`,
+        );
+        db.exec('DROP TABLE task_assignments');
+        db.exec('ALTER TABLE task_assignments_new RENAME TO task_assignments');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_date ON task_assignments(date)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_person ON task_assignments(person_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+        db.exec('COMMIT');
+        logger.info('✅ Section intervention ajoutée à task_assignments');
+      }
+    } catch (migErr5) {
+      try {
+        db.exec('ROLLBACK');
+      } catch (_e) {
+        /* ignored */
+      }
+      logger.warn('Migration section intervention:', migErr5.message);
+    }
+
     // Migration : colonnes enrichies pour bl_imports (Phase 5)
-    const blCols = db.prepare("PRAGMA table_info(bl_imports)").all().map(c => c.name);
+    const blCols = db
+      .prepare('PRAGMA table_info(bl_imports)')
+      .all()
+      .map((c) => c.name);
     if (!blCols.includes('affaire_type')) {
-      db.prepare("ALTER TABLE bl_imports ADD COLUMN affaire_type TEXT").run();
+      db.prepare('ALTER TABLE bl_imports ADD COLUMN affaire_type TEXT').run();
       logger.info('  + bl_imports.affaire_type');
     }
     if (!blCols.includes('doc_type')) {
-      db.prepare("ALTER TABLE bl_imports ADD COLUMN doc_type TEXT").run();
+      db.prepare('ALTER TABLE bl_imports ADD COLUMN doc_type TEXT').run();
       logger.info('  + bl_imports.doc_type');
     }
     if (!blCols.includes('confidence_score')) {
-      db.prepare("ALTER TABLE bl_imports ADD COLUMN confidence_score REAL").run();
+      db.prepare('ALTER TABLE bl_imports ADD COLUMN confidence_score REAL').run();
       logger.info('  + bl_imports.confidence_score');
     }
     if (!blCols.includes('sections_data')) {
-      db.prepare("ALTER TABLE bl_imports ADD COLUMN sections_data TEXT").run();
+      db.prepare('ALTER TABLE bl_imports ADD COLUMN sections_data TEXT').run();
       logger.info('  + bl_imports.sections_data');
     }
     if (!blCols.includes('field_confidence')) {
-      db.prepare("ALTER TABLE bl_imports ADD COLUMN field_confidence TEXT").run();
+      db.prepare('ALTER TABLE bl_imports ADD COLUMN field_confidence TEXT').run();
       logger.info('  + bl_imports.field_confidence');
     }
   } catch (error) {
@@ -2363,9 +2816,11 @@ function initializeDatabase() {
       )
     `);
     // [AUDIT FIX P0-5] Migration : ajouter equipment_id si absente (AVANT index)
-    const bpCols = db.pragma('table_info(bp_items)').map(c => c.name);
+    const bpCols = db.pragma('table_info(bp_items)').map((c) => c.name);
     if (!bpCols.includes('equipment_id')) {
-      db.exec('ALTER TABLE bp_items ADD COLUMN equipment_id INTEGER REFERENCES equipment(id) ON DELETE SET NULL');
+      db.exec(
+        'ALTER TABLE bp_items ADD COLUMN equipment_id INTEGER REFERENCES equipment(id) ON DELETE SET NULL',
+      );
       logger.info('  ✅ Migration: bp_items.equipment_id ajouté');
     }
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_bl ON bp_items(bl_import_id)');
@@ -2380,11 +2835,15 @@ function initializeDatabase() {
       logger.info('  ✅ Migration: bp_items.item_type ajouté');
     }
     if (!bpCols.includes('supplier_article_id')) {
-      db.exec('ALTER TABLE bp_items ADD COLUMN supplier_article_id INTEGER REFERENCES supplier_articles(id) ON DELETE SET NULL');
+      db.exec(
+        'ALTER TABLE bp_items ADD COLUMN supplier_article_id INTEGER REFERENCES supplier_articles(id) ON DELETE SET NULL',
+      );
       logger.info('  ✅ Migration: bp_items.supplier_article_id ajouté');
     }
     if (!bpCols.includes('stock_item_id')) {
-      db.exec('ALTER TABLE bp_items ADD COLUMN stock_item_id INTEGER REFERENCES stock_items(id) ON DELETE SET NULL');
+      db.exec(
+        'ALTER TABLE bp_items ADD COLUMN stock_item_id INTEGER REFERENCES stock_items(id) ON DELETE SET NULL',
+      );
       logger.info('  ✅ Migration: bp_items.stock_item_id ajouté');
     }
     db.exec('CREATE INDEX IF NOT EXISTS idx_bp_items_item_type ON bp_items(item_type)');
@@ -2456,7 +2915,9 @@ function initializeDatabase() {
       )
     `);
     db.exec('CREATE INDEX IF NOT EXISTS idx_dpi_playlist ON display_playlist_items(playlist_id)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_dpi_sort ON display_playlist_items(playlist_id, sort_order)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_dpi_sort ON display_playlist_items(playlist_id, sort_order)',
+    );
 
     // --- Templates de mise en page ---
     db.exec(`
@@ -2498,7 +2959,9 @@ function initializeDatabase() {
         FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
       )
     `);
-    db.exec('CREATE INDEX IF NOT EXISTS idx_dm_active ON display_messages(is_active, date_start, date_end)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_dm_active ON display_messages(is_active, date_start, date_end)',
+    );
 
     // --- Médias uploadés ---
     db.exec(`
@@ -2711,20 +3174,108 @@ function initializeDatabase() {
 
     db.exec('CREATE INDEX IF NOT EXISTS idx_contacts_client ON annuaire_contacts(client_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_contacts_supplier ON annuaire_contacts(supplier_id)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_contacts_prestataire ON annuaire_contacts(prestataire_id)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_contacts_prestataire ON annuaire_contacts(prestataire_id)',
+    );
+
+    // --- Table de liaison inter-entités (client ↔ fournisseur ↔ prestataire) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_entity_links (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        entity_a_type TEXT NOT NULL CHECK(entity_a_type IN ('client','supplier','prestataire')),
+        entity_a_id INTEGER NOT NULL,
+        entity_b_type TEXT NOT NULL CHECK(entity_b_type IN ('client','supplier','prestataire')),
+        entity_b_id INTEGER NOT NULL,
+        relation_type TEXT NOT NULL DEFAULT 'same_organization',
+        status TEXT NOT NULL DEFAULT 'confirmed' CHECK(status IN ('suggested','confirmed','rejected')),
+        confidence REAL DEFAULT 1.0,
+        notes TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        modified_by INTEGER,
+        modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL,
+        CHECK(NOT (entity_a_type = entity_b_type AND entity_a_id = entity_b_id)),
+        CHECK(entity_a_type < entity_b_type OR (entity_a_type = entity_b_type AND entity_a_id < entity_b_id)),
+        UNIQUE(entity_a_type, entity_a_id, entity_b_type, entity_b_id)
+      )
+    `);
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_entity_links_a ON annuaire_entity_links(entity_a_type, entity_a_id)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_entity_links_b ON annuaire_entity_links(entity_b_type, entity_b_id)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_entity_links_status ON annuaire_entity_links(status)',
+    );
+
+    // --- Table de liaison contacts ↔ entités (many-to-many) ---
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS annuaire_contact_entity_links (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        contact_id INTEGER NOT NULL,
+        entity_type TEXT NOT NULL CHECK(entity_type IN ('client','supplier','prestataire')),
+        entity_id INTEGER NOT NULL,
+        confidence REAL DEFAULT 1.0,
+        source TEXT DEFAULT 'manual',
+        notes TEXT,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        modified_by INTEGER,
+        modified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (contact_id) REFERENCES annuaire_contacts(id) ON DELETE CASCADE,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL,
+        UNIQUE(contact_id, entity_type, entity_id)
+      )
+    `);
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_contact_entity_links_contact ON annuaire_contact_entity_links(contact_id)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_annuaire_contact_entity_links_entity ON annuaire_contact_entity_links(entity_type, entity_id)',
+    );
 
     // Migration : ajouter code_libre sur annuaire_contacts (pour import CSV / déduplication)
-    const contactCols = db.pragma('table_info(annuaire_contacts)').map(c => c.name);
+    const contactCols = db.pragma('table_info(annuaire_contacts)').map((c) => c.name);
     if (!contactCols.includes('code_libre')) {
       db.exec('ALTER TABLE annuaire_contacts ADD COLUMN code_libre TEXT');
       logger.info('  + annuaire_contacts.code_libre');
     }
-    try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_code_libre ON annuaire_contacts(code_libre)'); } catch(_) {}
+    try {
+      db.exec(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_contacts_code_libre ON annuaire_contacts(code_libre)',
+      );
+    } catch (_) {
+      /* ignored */
+    }
+
+    // Seed initial des liaisons contact↔entité depuis les colonnes historiques
+    db.exec(`
+      INSERT OR IGNORE INTO annuaire_contact_entity_links (contact_id, entity_type, entity_id, confidence, source)
+      SELECT id, 'client', client_id, 1.0, 'legacy_column'
+      FROM annuaire_contacts
+      WHERE client_id IS NOT NULL
+    `);
+    db.exec(`
+      INSERT OR IGNORE INTO annuaire_contact_entity_links (contact_id, entity_type, entity_id, confidence, source)
+      SELECT id, 'supplier', supplier_id, 1.0, 'legacy_column'
+      FROM annuaire_contacts
+      WHERE supplier_id IS NOT NULL
+    `);
+    db.exec(`
+      INSERT OR IGNORE INTO annuaire_contact_entity_links (contact_id, entity_type, entity_id, confidence, source)
+      SELECT id, 'prestataire', prestataire_id, 1.0, 'legacy_column'
+      FROM annuaire_contacts
+      WHERE prestataire_id IS NOT NULL
+    `);
 
     logger.info('  ✅ Tables Annuaire (lookup + prestataires + contacts)');
 
     // --- Migration : enrichir la table clients ---
-    const clientCols = db.pragma('table_info(clients)').map(c => c.name);
+    const clientCols = db.pragma('table_info(clients)').map((c) => c.name);
     const clientNewCols = {
       code_libre: 'TEXT',
       postal_code: 'TEXT',
@@ -2740,7 +3291,7 @@ function initializeDatabase() {
       activity_sector: 'TEXT',
       service_types: 'TEXT',
       notes: 'TEXT',
-      is_active: 'INTEGER DEFAULT 1'
+      is_active: 'INTEGER DEFAULT 1',
     };
     for (const [col, def] of Object.entries(clientNewCols)) {
       if (!clientCols.includes(col)) {
@@ -2749,10 +3300,14 @@ function initializeDatabase() {
       }
     }
     // UNIQUE index séparé (ALTER TABLE ADD COLUMN ne supporte pas UNIQUE)
-    try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_code_libre ON clients(code_libre)'); } catch(_) {}
+    try {
+      db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_code_libre ON clients(code_libre)');
+    } catch (_) {
+      /* ignored */
+    }
 
     // --- Migration : enrichir la table suppliers ---
-    const supplierCols = db.pragma('table_info(suppliers)').map(c => c.name);
+    const supplierCols = db.pragma('table_info(suppliers)').map((c) => c.name);
     const supplierNewCols = {
       code_libre: 'TEXT',
       postal_code: 'TEXT',
@@ -2770,7 +3325,7 @@ function initializeDatabase() {
       is_active: 'INTEGER DEFAULT 1',
       created_by: 'INTEGER',
       modified_by: 'INTEGER',
-      modified_at: 'DATETIME'
+      modified_at: 'DATETIME',
     };
     for (const [col, def] of Object.entries(supplierNewCols)) {
       if (!supplierCols.includes(col)) {
@@ -2779,30 +3334,71 @@ function initializeDatabase() {
       }
     }
     // UNIQUE index séparé (ALTER TABLE ADD COLUMN ne supporte pas UNIQUE)
-    try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_suppliers_code_libre ON suppliers(code_libre)'); } catch(_) {}
+    try {
+      db.exec(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_suppliers_code_libre ON suppliers(code_libre)',
+      );
+    } catch (_) {
+      /* ignored */
+    }
 
     // --- Migration : enrichir la table prestataires ---
-    const prestaCols = db.pragma('table_info(prestataires)').map(c => c.name);
+    const prestaCols = db.pragma('table_info(prestataires)').map((c) => c.name);
     if (!prestaCols.includes('naf_code')) {
       db.exec('ALTER TABLE prestataires ADD COLUMN naf_code TEXT');
       logger.info('  + prestataires.naf_code');
     }
 
+    // --- Migration : ajouter location_id aux entités de l'annuaire ---
+    if (!clientCols.includes('location_id')) {
+      db.exec(
+        'ALTER TABLE clients ADD COLUMN location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL',
+      );
+      logger.info('  + clients.location_id');
+    }
+    if (!supplierCols.includes('location_id')) {
+      db.exec(
+        'ALTER TABLE suppliers ADD COLUMN location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL',
+      );
+      logger.info('  + suppliers.location_id');
+    }
+    if (!prestaCols.includes('location_id')) {
+      db.exec(
+        'ALTER TABLE prestataires ADD COLUMN location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL',
+      );
+      logger.info('  + prestataires.location_id');
+    }
+
     // --- Seed lookup tables (si vides) ---
     const lsCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_legal_structures').get();
     if (lsCount.c === 0) {
-      const ins = db.prepare('INSERT INTO annuaire_legal_structures (code, name, sort_order) VALUES (?, ?, ?)');
+      const ins = db.prepare(
+        'INSERT INTO annuaire_legal_structures (code, name, sort_order) VALUES (?, ?, ?)',
+      );
       const structures = [
-        ['EI', 'Entreprise Individuelle'], ['EIRL', 'EIRL'], ['EURL', 'EURL'],
-        ['SARL', 'SARL'], ['SAS', 'SAS'], ['SASU', 'SASU'], ['SA', 'SA'],
-        ['SNC', 'SNC'], ['SCS', 'SCS'], ['SCA', 'SCA'],
-        ['SCOP', 'SCOP'], ['SCI', 'SCI'], ['SCM', 'SCM'],
-        ['SEL', 'SEL (Société d\'exercice libéral)'],
-        ['ASSO', 'Association loi 1901'], ['GIE', 'GIE'],
-        ['EPIC', 'EPIC'], ['EPA', 'EPA'],
+        ['EI', 'Entreprise Individuelle'],
+        ['EIRL', 'EIRL'],
+        ['EURL', 'EURL'],
+        ['SARL', 'SARL'],
+        ['SAS', 'SAS'],
+        ['SASU', 'SASU'],
+        ['SA', 'SA'],
+        ['SNC', 'SNC'],
+        ['SCS', 'SCS'],
+        ['SCA', 'SCA'],
+        ['SCOP', 'SCOP'],
+        ['SCI', 'SCI'],
+        ['SCM', 'SCM'],
+        ['SEL', "SEL (Société d'exercice libéral)"],
+        ['ASSO', 'Association loi 1901'],
+        ['GIE', 'GIE'],
+        ['EPIC', 'EPIC'],
+        ['EPA', 'EPA'],
         ['AE', 'Auto-entrepreneur / Micro-entreprise'],
-        ['PL', 'Profession libérale'], ['COOP', 'Coopérative'],
-        ['FNDN', 'Fondation'], ['AUTRE', 'Autre']
+        ['PL', 'Profession libérale'],
+        ['COOP', 'Coopérative'],
+        ['FNDN', 'Fondation'],
+        ['AUTRE', 'Autre'],
       ];
       structures.forEach(([code, name], i) => ins.run(code, name, i + 1));
       logger.info('  ✅ Seed: annuaire_legal_structures (' + structures.length + ')');
@@ -2810,19 +3406,33 @@ function initializeDatabase() {
 
     const stCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_service_types').get();
     if (stCount.c === 0) {
-      const ins = db.prepare('INSERT INTO annuaire_service_types (code, name, sort_order) VALUES (?, ?, ?)');
+      const ins = db.prepare(
+        'INSERT INTO annuaire_service_types (code, name, sort_order) VALUES (?, ?, ?)',
+      );
       const services = [
-        ['SON', 'Sonorisation'], ['LUM', 'Éclairage / Lumière'], ['VID', 'Vidéo / Projection'],
-        ['SCENE', 'Scénographie / Décor'], ['STRUCT', 'Structure / Gril / Pont'],
-        ['ENERG', 'Énergie / Groupe électrogène'], ['TRANSP', 'Transport / Logistique'],
-        ['LEVAG', 'Levage / Nacelle'], ['SECU', 'Sécurité / Gardiennage'],
-        ['BARR', 'Barrières / Clôtures'], ['TRIB', 'Tribunes / Gradins'],
-        ['MOB', 'Mobilier événementiel'], ['TENT', 'Tente / Chapiteau'],
-        ['SANIT', 'Sanitaires / WC'], ['TRAIT', 'Traiteur / Restauration'],
-        ['COMM', 'Communication / Signalétique'], ['PRINT', 'Impression / Sérigraphie'],
-        ['PHOTO', 'Photo / Vidéo (captation)'], ['ARTIS', 'Artiste / Intermittent'],
-        ['TECHN', 'Technicien spécialisé'], ['FORM', 'Formation / Conseil'],
-        ['ADMIN', 'Administratif / Juridique'], ['AUTRE', 'Autre']
+        ['SON', 'Sonorisation'],
+        ['LUM', 'Éclairage / Lumière'],
+        ['VID', 'Vidéo / Projection'],
+        ['SCENE', 'Scénographie / Décor'],
+        ['STRUCT', 'Structure / Gril / Pont'],
+        ['ENERG', 'Énergie / Groupe électrogène'],
+        ['TRANSP', 'Transport / Logistique'],
+        ['LEVAG', 'Levage / Nacelle'],
+        ['SECU', 'Sécurité / Gardiennage'],
+        ['BARR', 'Barrières / Clôtures'],
+        ['TRIB', 'Tribunes / Gradins'],
+        ['MOB', 'Mobilier événementiel'],
+        ['TENT', 'Tente / Chapiteau'],
+        ['SANIT', 'Sanitaires / WC'],
+        ['TRAIT', 'Traiteur / Restauration'],
+        ['COMM', 'Communication / Signalétique'],
+        ['PRINT', 'Impression / Sérigraphie'],
+        ['PHOTO', 'Photo / Vidéo (captation)'],
+        ['ARTIS', 'Artiste / Intermittent'],
+        ['TECHN', 'Technicien spécialisé'],
+        ['FORM', 'Formation / Conseil'],
+        ['ADMIN', 'Administratif / Juridique'],
+        ['AUTRE', 'Autre'],
       ];
       services.forEach(([code, name], i) => ins.run(code, name, i + 1));
       logger.info('  ✅ Seed: annuaire_service_types (' + services.length + ')');
@@ -2830,16 +3440,26 @@ function initializeDatabase() {
 
     const asCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_activity_sectors').get();
     if (asCount.c === 0) {
-      const ins = db.prepare('INSERT INTO annuaire_activity_sectors (code, name, sort_order) VALUES (?, ?, ?)');
+      const ins = db.prepare(
+        'INSERT INTO annuaire_activity_sectors (code, name, sort_order) VALUES (?, ?, ?)',
+      );
       const sectors = [
-        ['SPEC', 'Spectacle vivant'], ['MUSIC', 'Musique / Concert'], ['FEST', 'Festivals'],
-        ['CORP', 'Événementiel corporate'], ['SPORT', 'Événement sportif'],
-        ['EXPO', 'Exposition / Salon'], ['CINE', 'Cinéma / Audiovisuel'],
-        ['THEATRE', 'Théâtre'], ['COLLECT', 'Collectivités / Institutionnel'],
-        ['INDUS', 'Industrie'], ['BTP', 'BTP / Construction'],
-        ['AUTO', 'Automobile'], ['AGRI', 'Agriculture'],
-        ['SANTE', 'Santé'], ['EDUC', 'Éducation / Formation'],
-        ['AUTRE', 'Autre']
+        ['SPEC', 'Spectacle vivant'],
+        ['MUSIC', 'Musique / Concert'],
+        ['FEST', 'Festivals'],
+        ['CORP', 'Événementiel corporate'],
+        ['SPORT', 'Événement sportif'],
+        ['EXPO', 'Exposition / Salon'],
+        ['CINE', 'Cinéma / Audiovisuel'],
+        ['THEATRE', 'Théâtre'],
+        ['COLLECT', 'Collectivités / Institutionnel'],
+        ['INDUS', 'Industrie'],
+        ['BTP', 'BTP / Construction'],
+        ['AUTO', 'Automobile'],
+        ['AGRI', 'Agriculture'],
+        ['SANTE', 'Santé'],
+        ['EDUC', 'Éducation / Formation'],
+        ['AUTRE', 'Autre'],
       ];
       sectors.forEach(([code, name], i) => ins.run(code, name, i + 1));
       logger.info('  ✅ Seed: annuaire_activity_sectors (' + sectors.length + ')');
@@ -2847,14 +3467,22 @@ function initializeDatabase() {
 
     const ccCount = db.prepare('SELECT COUNT(*) as c FROM annuaire_contact_categories').get();
     if (ccCount.c === 0) {
-      const ins = db.prepare('INSERT INTO annuaire_contact_categories (code, name, sort_order) VALUES (?, ?, ?)');
+      const ins = db.prepare(
+        'INSERT INTO annuaire_contact_categories (code, name, sort_order) VALUES (?, ?, ?)',
+      );
       const categories = [
-        ['DIR', 'Direction / Gérant'], ['COMM', 'Commercial'],
-        ['TECH', 'Technique / Régisseur'], ['ADMIN', 'Administratif'],
-        ['COMPTA', 'Comptabilité'], ['ACHAT', 'Achats'],
-        ['LOGIST', 'Logistique / Livraison'], ['SAV', 'SAV / Support'],
-        ['RH', 'Ressources humaines'], ['PROD', 'Production / Planning'],
-        ['JURIDI', 'Juridique'], ['AUTRE', 'Autre']
+        ['DIR', 'Direction / Gérant'],
+        ['COMM', 'Commercial'],
+        ['TECH', 'Technique / Régisseur'],
+        ['ADMIN', 'Administratif'],
+        ['COMPTA', 'Comptabilité'],
+        ['ACHAT', 'Achats'],
+        ['LOGIST', 'Logistique / Livraison'],
+        ['SAV', 'SAV / Support'],
+        ['RH', 'Ressources humaines'],
+        ['PROD', 'Production / Planning'],
+        ['JURIDI', 'Juridique'],
+        ['AUTRE', 'Autre'],
       ];
       categories.forEach(([code, name], i) => ins.run(code, name, i + 1));
       logger.info('  ✅ Seed: annuaire_contact_categories (' + categories.length + ')');
@@ -2912,16 +3540,171 @@ function initializeDatabase() {
       )
     `);
 
-    db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_supplier ON supplier_articles(supplier_id)');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_supplier_articles_supplier ON supplier_articles(supplier_id)',
+    );
     db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_brand ON supplier_articles(brand)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_family ON supplier_articles(family)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_ref ON supplier_articles(supplier_ref)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_supplier_articles_import ON supplier_articles(import_id)');
-    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_articles_unique ON supplier_articles(supplier_id, supplier_ref) WHERE supplier_ref IS NOT NULL');
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_supplier_articles_ref ON supplier_articles(supplier_ref)',
+    );
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_supplier_articles_import ON supplier_articles(import_id)',
+    );
+    db.exec(
+      'CREATE UNIQUE INDEX IF NOT EXISTS idx_supplier_articles_unique ON supplier_articles(supplier_id, supplier_ref) WHERE supplier_ref IS NOT NULL',
+    );
 
     logger.info('  ✅ Module Articles Fournisseurs initialisé');
   } catch (error) {
     logger.warn('⚠️ Migration Articles Fournisseurs:', error.message);
+  }
+
+  // ── Module Suivi du Personnel ──
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_sheets (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft', 'submitted', 'validated')),
+        validated_by INTEGER REFERENCES users(id),
+        validated_at TEXT,
+        notes TEXT DEFAULT '',
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER REFERENCES users(id),
+        modified_at TEXT,
+        UNIQUE(person_id, date)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_entries (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        sheet_id TEXT NOT NULL REFERENCES tracking_sheets(id) ON DELETE CASCADE,
+        period TEXT NOT NULL CHECK(period IN ('AM', 'PM')),
+        task TEXT NOT NULL DEFAULT '',
+        time_spent REAL DEFAULT 0,
+        comment TEXT DEFAULT '',
+        completed INTEGER DEFAULT NULL,
+        task_assignment_id TEXT REFERENCES task_assignments(id) ON DELETE SET NULL,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_at TEXT
+      )
+    `);
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_tracking_sheets_person_date ON tracking_sheets(person_id, date);
+      CREATE INDEX IF NOT EXISTS idx_tracking_sheets_date ON tracking_sheets(date);
+      CREATE INDEX IF NOT EXISTS idx_tracking_sheets_status ON tracking_sheets(status);
+      CREATE INDEX IF NOT EXISTS idx_tracking_entries_sheet ON tracking_entries(sheet_id);
+      CREATE INDEX IF NOT EXISTS idx_tracking_entries_task_assignment ON tracking_entries(task_assignment_id);
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_recurring_tasks (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        period TEXT NOT NULL CHECK(period IN ('AM', 'PM')),
+        recurrence TEXT NOT NULL CHECK(recurrence IN ('daily', 'weekly', 'monthly')),
+        day_of_week INTEGER,
+        day_of_month INTEGER,
+        default_time_spent REAL DEFAULT 0,
+        default_comment TEXT DEFAULT '',
+        active INTEGER DEFAULT 1,
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now'))
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_incident_tickets (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        week_key TEXT NOT NULL,
+        period_start_date TEXT NOT NULL,
+        period_end_date TEXT NOT NULL,
+        affaire_num TEXT NOT NULL,
+        affaire_name TEXT DEFAULT '',
+        affaire_start_date TEXT,
+        affaire_end_date TEXT,
+        is_tournee INTEGER DEFAULT 0,
+        linked_reservations_json TEXT DEFAULT '[]',
+        linked_personnel_json TEXT DEFAULT '[]',
+        notes TEXT DEFAULT '',
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER REFERENCES users(id),
+        modified_at TEXT,
+        UNIQUE(week_key, affaire_num)
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tracking_incident_entries (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+        ticket_id TEXT NOT NULL REFERENCES tracking_incident_tickets(id) ON DELETE CASCADE,
+        incident_type TEXT NOT NULL CHECK(incident_type IN (
+          'vehicle_problem',
+          'equipment_problem',
+          'equipment_omission',
+          'equipment_error',
+          'other'
+        )),
+        description TEXT NOT NULL DEFAULT '',
+        reporter_person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
+        reporter_name_snapshot TEXT DEFAULT '',
+        vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
+        vehicle_name_snapshot TEXT DEFAULT '',
+        linked_maintenance_id TEXT,
+        created_by INTEGER REFERENCES users(id),
+        created_at TEXT DEFAULT (datetime('now')),
+        modified_by INTEGER REFERENCES users(id),
+        modified_at TEXT
+      )
+    `);
+
+    try {
+      const teCols = db.pragma('table_info(tracking_entries)').map((c) => c.name);
+      if (!teCols.includes('recurring_task_id')) {
+        db.exec(
+          'ALTER TABLE tracking_entries ADD COLUMN recurring_task_id TEXT REFERENCES tracking_recurring_tasks(id) ON DELETE SET NULL',
+        );
+      }
+    } catch (migErr) {
+      logger.warn('⚠️ Migration tracking_entries.recurring_task_id:', migErr.message);
+    }
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_tracking_entries_recurring_task ON tracking_entries(recurring_task_id);
+      CREATE INDEX IF NOT EXISTS idx_tracking_recurring_person_active ON tracking_recurring_tasks(person_id, active);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_tracking_entries_sheet_recurring_unique
+      ON tracking_entries(sheet_id, recurring_task_id)
+      WHERE recurring_task_id IS NOT NULL;
+    `);
+
+    try {
+      safeAddColumn('tracking_incident_entries', 'vehicle_id', 'INTEGER');
+      safeAddColumn('tracking_incident_entries', 'vehicle_name_snapshot', 'TEXT', "''");
+      safeAddColumn('tracking_incident_entries', 'linked_maintenance_id', 'TEXT');
+    } catch (migErr) {
+      logger.warn('⚠️ Migration tracking_incident_entries véhicule/signalement:', migErr.message);
+    }
+
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_week ON tracking_incident_tickets(week_key);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_affaire ON tracking_incident_tickets(affaire_num);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_start ON tracking_incident_tickets(period_start_date);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_ticket ON tracking_incident_entries(ticket_id);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_reporter ON tracking_incident_entries(reporter_person_id);
+      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_vehicle ON tracking_incident_entries(vehicle_id);
+    `);
+
+    logger.info('  ✅ Module Suivi du Personnel initialisé');
+  } catch (error) {
+    logger.warn('⚠️ Migration Suivi du Personnel:', error.message);
   }
 
   // ── Index de performance — Phase 4 ──
@@ -2929,6 +3712,7 @@ function initializeDatabase() {
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_vehicles_type ON vehicles(type);
     CREATE INDEX IF NOT EXISTS idx_vehicles_registration ON vehicles(registration);
+    CREATE INDEX IF NOT EXISTS idx_vehicles_assigned_to ON vehicles(assigned_to);
     CREATE INDEX IF NOT EXISTS idx_reservations_vehicle ON reservations(vehicle_id);
     CREATE INDEX IF NOT EXISTS idx_reservations_dates ON reservations(start_date, end_date);
     CREATE INDEX IF NOT EXISTS idx_reservations_affaire ON reservations(affaire);
@@ -3003,8 +3787,11 @@ export function closeDatabase() {
 }
 
 // Checkpoint automatique toutes les 5 minutes
-const checkpointTimer = setInterval(() => {
-  checkpointDatabase();
-}, 5 * 60 * 1000);
+const checkpointTimer = setInterval(
+  () => {
+    checkpointDatabase();
+  },
+  5 * 60 * 1000,
+);
 
 export default db;

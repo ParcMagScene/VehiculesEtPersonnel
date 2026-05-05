@@ -2,13 +2,15 @@
 // PresetPanel.jsx — Vue preset multi-caméras (1-4 caméras)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback } from 'react';
-import CameraPlayerWebRTC from './CameraPlayerWebRTC';
-import { Plus, Trash2, Save, Edit2, ExternalLink, X } from 'lucide-react';
-import api from '../../utils/api';
+import { Edit2, ExternalLink, Plus, Save, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { Button, Tooltip } from '@/design-system';
-import { useToast } from '../../hooks/useToast';
+
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 
 const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   const toast = useToast();
@@ -19,25 +21,38 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   const [editName, setEditName] = useState('');
   const [editCameraIds, setEditCameraIds] = useState([]);
   const [creating, setCreating] = useState(false);
+  const isMountedRef = useRef(true);
 
-  const enabledCameras = cameras.filter(c => c.enabled);
+  const enabledCameras = cameras.filter((c) => c.enabled);
 
   // Charger les presets
   const loadPresets = useCallback(async () => {
     try {
       const data = await api.getVideoPresets();
+      if (!isMountedRef.current) return;
+
       setPresets(data);
-      if (data.length > 0 && !activePresetId) setActivePresetId(data[0].id);
+      setActivePresetId((currentId) => {
+        if (data.length === 0) return null;
+        const hasCurrent = data.some((preset) => preset.id === currentId);
+        return hasCurrent ? currentId : data[0].id;
+      });
     } catch (err) {
       console.error('Erreur chargement presets:', err);
     }
-  }, [activePresetId]);
+  }, []);
 
-  useEffect(() => { loadPresets(); }, []);
+  useEffect(() => {
+    isMountedRef.current = true;
+    loadPresets();
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [loadPresets]);
 
-  const activePreset = presets.find(p => p.id === activePresetId);
+  const activePreset = presets.find((p) => p.id === activePresetId);
   const presetCameras = activePreset
-    ? activePreset.cameraIds.map(id => cameras.find(c => c.id === id)).filter(Boolean)
+    ? activePreset.cameraIds.map((id) => cameras.find((c) => c.id === id)).filter(Boolean)
     : [];
 
   const cols = presetCameras.length <= 1 ? 1 : 2;
@@ -60,7 +75,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
       console.error('Erreur sauvegarde preset:', err);
       toast.error('Erreur lors de la sauvegarde');
     }
-  }, [editName, editCameraIds, creating, activePresetId, loadPresets]);
+  }, [editName, editCameraIds, creating, activePresetId, loadPresets, toast]);
 
   const handleDelete = useCallback(() => {
     if (!activePresetId) return;
@@ -99,10 +114,12 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
   };
 
   const toggleCameraInEdit = (camId) => {
-    setEditCameraIds(prev =>
+    setEditCameraIds((prev) =>
       prev.includes(camId)
-        ? prev.filter(id => id !== camId)
-        : prev.length < 4 ? [...prev, camId] : prev
+        ? prev.filter((id) => id !== camId)
+        : prev.length < 4
+          ? [...prev, camId]
+          : prev,
     );
   };
 
@@ -113,7 +130,14 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
         <div className="preset-panel__editor">
           <div className="preset-panel__editor-header">
             <h3>{creating ? 'Nouveau preset' : 'Modifier le preset'}</h3>
-            <Button variant="ghost" size="sm" onClick={() => { setEditing(false); setCreating(false); }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setEditing(false);
+                setCreating(false);
+              }}
+            >
               <X size={16} />
             </Button>
           </div>
@@ -123,7 +147,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
             <input
               type="text"
               value={editName}
-              onChange={e => setEditName(e.target.value)}
+              onChange={(e) => setEditName(e.target.value)}
               placeholder="Ex: Entrée principale"
               maxLength={50}
               autoFocus
@@ -133,22 +157,28 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
           <div className="preset-panel__editor-cameras">
             <label>Caméras ({editCameraIds.length}/4)</label>
             <div className="preset-panel__camera-list">
-              {enabledCameras.map(cam => (
-                <button
+              {enabledCameras.map((cam) => (
+                <Button
                   key={cam.id}
-                  type="button"
+                  variant="ghost"
+                  size="sm"
                   className={`preset-panel__camera-chip ${editCameraIds.includes(cam.id) ? 'selected' : ''}`}
                   onClick={() => toggleCameraInEdit(cam.id)}
                   disabled={!editCameraIds.includes(cam.id) && editCameraIds.length >= 4}
                 >
                   {cam.name}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
 
           <div className="preset-panel__editor-actions">
-            <Button variant="primary" size="sm" onClick={handleSave} disabled={!editName.trim() || editCameraIds.length === 0}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSave}
+              disabled={!editName.trim() || editCameraIds.length === 0}
+            >
               <Save size={14} /> Sauvegarder
             </Button>
           </div>
@@ -181,25 +211,41 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
         <select
           className="preset-panel__select"
           value={activePresetId || ''}
-          onChange={e => setActivePresetId(Number(e.target.value))}
+          onChange={(e) => {
+            const nextId = Number.parseInt(e.target.value, 10);
+            setActivePresetId(Number.isInteger(nextId) && nextId > 0 ? nextId : null);
+          }}
         >
-          {presets.map(p => (
-            <option key={p.id} value={p.id}>{p.name} ({p.cameraIds.length} cam)</option>
+          {presets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} ({p.cameraIds.length} cam)
+            </option>
           ))}
         </select>
         <div className="preset-panel__bar-actions">
-          <Tooltip content="Modifier le preset">
-            <Button variant="ghost" size="sm" onClick={startEdit}><Edit2 size={14} /></Button>
+          <Tooltip content="Modifier le preset" position="bottom">
+            <Button variant="ghost" size="sm" onClick={startEdit} disabled={!activePreset}>
+              <Edit2 size={14} />
+            </Button>
           </Tooltip>
-          <Tooltip content="Supprimer le preset">
-            <Button variant="ghost" size="sm" onClick={handleDelete}><Trash2 size={14} /></Button>
+          <Tooltip content="Supprimer le preset" position="bottom">
+            <Button variant="ghost" size="sm" onClick={handleDelete} disabled={!activePreset}>
+              <Trash2 size={14} />
+            </Button>
           </Tooltip>
-          <Tooltip content="Nouveau preset">
-            <Button variant="ghost" size="sm" onClick={startCreate}><Plus size={14} /></Button>
+          <Tooltip content="Nouveau preset" position="bottom">
+            <Button variant="ghost" size="sm" onClick={startCreate}>
+              <Plus size={14} />
+            </Button>
           </Tooltip>
           {onDetach && (
-            <Tooltip content="Détacher dans une fenêtre">
-              <Button variant="ghost" size="sm" onClick={() => onDetach(activePresetId)}>
+            <Tooltip content="Détacher dans une fenêtre" position="bottom">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDetach(activePresetId)}
+                disabled={!activePresetId}
+              >
                 <ExternalLink size={14} />
               </Button>
             </Tooltip>
@@ -217,7 +263,9 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
             connectDelay={idx * 500}
           />
         ))}
-        {Array.from({ length: Math.max(0, (activePreset?.cameraIds?.length || 0) - presetCameras.length) }).map((_, i) => (
+        {Array.from({
+          length: Math.max(0, (activePreset?.cameraIds?.length || 0) - presetCameras.length),
+        }).map((_, i) => (
           <div key={`missing-${i}`} className="camera-player camera-player--empty">
             <div className="camera-player__viewport">
               <div className="camera-player__overlay">

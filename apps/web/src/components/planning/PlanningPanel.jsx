@@ -1,41 +1,65 @@
-import { useState, useEffect, useTransition, lazy, Suspense } from 'react';
-import { ClipboardList, Calendar, Tv2, Users } from 'lucide-react';
-import api from '../../utils/api';
-import { useToast } from '../../hooks/useToast';
-import { Button } from '@/design-system';
 import './PlanningPanel.css';
 
+import { Calendar, ClipboardCheck, ClipboardList, Tv2, Users } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState, useTransition } from 'react';
+
+import { Button } from '@/design-system';
+
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+
 const PersonnelPanel = lazy(() => import('../personnel/PersonnelPanel'));
+const SuiviPanel = lazy(() => import('../suivi/SuiviPanel'));
 const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
 const DisplayDashboardPanel = lazy(() => import('../DisplayDashboard/DisplayDashboardPanel'));
 
 // ═══ Composant Principal ═══
 function PlanningPanel({
-  currentUser, googleEvents = [], onNavigateToEntity,
+  currentUser,
+  googleEvents = [],
+  onNavigateToEntity,
   // Props Personnel (passées au sous-onglet Personnel)
-  personnelRefreshKey, view, setView, currentDate, setCurrentDate,
-  navigateToPersonId, onNavigateToPersonHandled,
-  quickAssignmentSlot, onQuickAssignmentHandled,
+  personnelRefreshKey,
+  view,
+  setView,
+  currentDate,
+  setCurrentDate,
+  navigateToPersonId,
+  onNavigateToPersonHandled,
+  quickAssignmentSlot,
+  onQuickAssignmentHandled,
 }) {
   const _toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('personnel');
-  const [isPending, startTransition] = useTransition();
+  const [_isPending, startTransition] = useTransition();
   const [stats, setStats] = useState(null);
   const [displayRefreshKey, _setDisplayRefreshKey] = useState(0);
+  const [suiviInitialPersonId, setSuiviInitialPersonId] = useState(null);
 
   // Auto-switch vers l'onglet Personnel quand navigation demandée
   useEffect(() => {
     if (navigateToPersonId || quickAssignmentSlot) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveSubTab('personnel');
     }
   }, [navigateToPersonId, quickAssignmentSlot]);
 
+  // Ouvrir l'onglet Suivi depuis le planning (menu clic-droit)
+  const handleOpenSuivi = (person) => {
+    setSuiviInitialPersonId(person?.id ?? null);
+    startTransition(() => setActiveSubTab('suivi'));
+  };
+
   useEffect(() => {
-    api.getPlanningStats().then(setStats).catch(() => null);
+    api
+      .getPlanningStats()
+      .then(setStats)
+      .catch(() => null);
   }, [activeSubTab]);
 
   const subTabs = [
     { id: 'personnel', label: 'Personnel', icon: Users },
+    { id: 'suivi', label: 'Suivi', icon: ClipboardCheck },
     { id: 'tasks', label: 'Planification', icon: ClipboardList, count: stats?.tasksPending || 0 },
     { id: 'dashboard', label: 'Dashboard Écrans', icon: Tv2 },
   ];
@@ -44,10 +68,12 @@ function PlanningPanel({
     <div className="planning-panel">
       {/* Sub-tabs (fusionnés avec stats) */}
       <div className="sub-tabs">
-        {subTabs.map(tab => {
+        {subTabs.map((tab) => {
           const Icon = tab.icon;
           return (
-            <Button variant="ghost"               key={tab.id}
+            <Button
+              variant="ghost"
+              key={tab.id}
               className={`sub-tab ${activeSubTab === tab.id ? 'active' : ''}`}
               onClick={() => startTransition(() => setActiveSubTab(tab.id))}
             >
@@ -86,12 +112,23 @@ function PlanningPanel({
               onNavigateToPersonHandled={onNavigateToPersonHandled}
               quickAssignmentSlot={quickAssignmentSlot}
               onQuickAssignmentHandled={onQuickAssignmentHandled}
+              onOpenSuivi={handleOpenSuivi}
             />
+          </Suspense>
+        )}
+        {activeSubTab === 'suivi' && (
+          <Suspense fallback={null}>
+            <SuiviPanel currentUser={currentUser} initialPersonId={suiviInitialPersonId} />
           </Suspense>
         )}
         {activeSubTab === 'tasks' && (
           <Suspense fallback={null}>
-            <TaskPlanningPanel currentUser={currentUser} refreshKey={displayRefreshKey} googleEvents={googleEvents} onNavigateToEntity={onNavigateToEntity} />
+            <TaskPlanningPanel
+              currentUser={currentUser}
+              refreshKey={displayRefreshKey}
+              googleEvents={googleEvents}
+              onNavigateToEntity={onNavigateToEntity}
+            />
           </Suspense>
         )}
         {activeSubTab === 'dashboard' && (

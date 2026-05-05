@@ -1,26 +1,89 @@
-import { useEffect, useRef } from 'react';
-import { Calendar, GraduationCap, Building2, Wrench, FileCheck, Clock } from 'lucide-react';
-import { Button, Divider, Tag } from '@/design-system';
 import './PersonnelContextMenu.css';
+
+import {
+  Ban,
+  Building2,
+  Calendar,
+  ClipboardCheck,
+  Clock,
+  FileCheck,
+  GraduationCap,
+  Wrench,
+} from 'lucide-react';
+import { useEffect, useRef } from 'react';
+
+import { Button, Divider, Tag } from '@/design-system';
+
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 
 // Types de périodes disponibles dans le menu contextuel
 export const PERIOD_MENU_ITEMS = [
-  { type: 'conge_paye', label: 'Congés', icon: Calendar, color: '#ef4444', emoji: '🏖️', requiresApproval: true },
-  { type: 'formation', label: 'Formation', icon: GraduationCap, color: '#8b5cf6', emoji: '🎓', requiresApproval: false },
-  { type: 'entreprise', label: 'Entreprise', icon: Building2, color: '#3b82f6', emoji: '🏢', requiresApproval: false },
-  { type: 'workshop', label: 'Workshop', icon: Wrench, color: '#f59e0b', emoji: '🔧', requiresApproval: false },
-  { type: 'examen', label: 'Examen', icon: FileCheck, color: '#10b981', emoji: '📝', requiresApproval: false },
-  { type: 'rdv', label: 'RDV', icon: Clock, color: '#06b6d4', emoji: '📅', requiresApproval: false },
+  {
+    type: 'conge_paye',
+    label: 'Congés',
+    icon: Calendar,
+    color: STATUS_COLORS.danger,
+    emoji: '🏖️',
+    requiresApproval: true,
+  },
+  {
+    type: 'absence',
+    label: 'Absence',
+    icon: Ban,
+    color: STATUS_COLORS.danger,
+    emoji: '🚫',
+    requiresApproval: false,
+  },
+  {
+    type: 'formation',
+    label: 'Formation',
+    icon: GraduationCap,
+    color: ACCENT_COLORS.violet,
+    emoji: '🎓',
+    requiresApproval: false,
+  },
+  {
+    type: 'entreprise',
+    label: 'Entreprise',
+    icon: Building2,
+    color: STATUS_COLORS.info,
+    emoji: '🏢',
+    requiresApproval: false,
+  },
+  {
+    type: 'workshop',
+    label: 'Workshop',
+    icon: Wrench,
+    color: STATUS_COLORS.warning,
+    emoji: '🔧',
+    requiresApproval: false,
+  },
+  {
+    type: 'examen',
+    label: 'Examen',
+    icon: FileCheck,
+    color: STATUS_COLORS.success,
+    emoji: '📝',
+    requiresApproval: false,
+  },
+  {
+    type: 'rdv',
+    label: 'RDV',
+    icon: Clock,
+    color: ACCENT_COLORS.cyan,
+    emoji: '📅',
+    requiresApproval: false,
+  },
 ];
 
 const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
   const menuRef = useRef(null);
-  
+
   // Filtrer les items : congés uniquement pour les permanents
   const isPermanent = person?.type === 'permanent';
   const menuItems = isPermanent
     ? PERIOD_MENU_ITEMS
-    : PERIOD_MENU_ITEMS.filter(item => !item.requiresApproval);
+    : PERIOD_MENU_ITEMS.filter((item) => !item.requiresApproval);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -56,14 +119,18 @@ const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
   return (
     <div className="pp-context-menu" ref={menuRef} style={{ left: x, top: y }}>
       <div className="pp-context-menu-header">
-        <span className="pp-context-menu-person">{person.firstName} {person.lastName || ''}</span>
+        <span className="pp-context-menu-person">
+          {person.firstName} {person.lastName || ''}
+        </span>
         <span className="pp-context-menu-subtitle">Ajouter une période</span>
       </div>
       <Divider className="pp-context-menu-divider" />
-      {menuItems.map(item => {
+      {menuItems.map((item) => {
         const Icon = item.icon;
         return (
-          <Button variant="ghost"             key={item.type}
+          <Button
+            variant="ghost"
+            key={item.type}
             className="pp-context-menu-item"
             onClick={() => onSelect(item.type, person)}
           >
@@ -72,11 +139,24 @@ const PersonnelContextMenu = ({ x, y, person, onSelect, onClose }) => {
             </span>
             <span className="pp-context-menu-label">{item.label}</span>
             {item.requiresApproval && (
-              <Tag color="warning" size="sm">Validation requise</Tag>
+              <Tag color="warning" size="sm">
+                Validation requise
+              </Tag>
             )}
           </Button>
         );
       })}
+      <Divider className="pp-context-menu-divider" />
+      <Button
+        variant="ghost"
+        className="pp-context-menu-item pp-context-menu-suivi"
+        onClick={() => onSelect('suivi', person)}
+      >
+        <span className="pp-context-menu-icon" style={{ color: '#38bdf8' }}>
+          <ClipboardCheck size={16} />
+        </span>
+        <span className="pp-context-menu-label">Suivi du personnel</span>
+      </Button>
     </div>
   );
 };

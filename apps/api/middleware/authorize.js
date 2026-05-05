@@ -1,4 +1,27 @@
 import db from '../database.js';
+import logger from '../logger.js';
+
+// [AUDIT FIX B1] Liste blanche des clés de permissions autorisées
+const VALID_PERMISSION_KEYS = new Set([
+  'can_manage_catalog',
+  'can_manage_vehicle_maintenance',
+  'can_manage_maintenance',
+  'can_manage_equipment_maintenance',
+  'can_manage_trucks',
+  'can_manage_stock',
+  'can_manage_orders',
+  'can_manage_inventory',
+  'can_manage_personnel',
+  'can_manage_planning',
+  'can_manage_leaves',
+  'can_manage_affaires',
+  'can_manage_display',
+  'can_manage_mailing',
+  'can_manage_annuaire',
+  'can_manage_video',
+  'can_manage_messaging',
+  'read_only',
+]);
 
 /**
  * Résoudre permissions depuis JWT ou DB (fallback pour anciens tokens)
@@ -7,9 +30,10 @@ function resolvePermissions(req) {
   if (req.user.permissions !== undefined && req.user.isAdmin !== undefined) {
     return {
       is_admin: req.user.isAdmin ? 1 : 0,
-      permissions: typeof req.user.permissions === 'string'
-        ? req.user.permissions
-        : JSON.stringify(req.user.permissions || {})
+      permissions:
+        typeof req.user.permissions === 'string'
+          ? req.user.permissions
+          : JSON.stringify(req.user.permissions || {}),
     };
   }
   // Fallback DB pour anciens tokens sans permissions
@@ -17,12 +41,25 @@ function resolvePermissions(req) {
 }
 
 /**
- * Parse les permissions JSON depuis l'objet user DB
+ * Parse et valide les permissions JSON depuis l'objet user DB
+ * [AUDIT FIX B1] Seules les clés whitelistées sont conservées, valeurs forcées en boolean
  */
 function parsePermissions(user) {
   try {
-    return user.permissions ? JSON.parse(user.permissions) : {};
+    const raw = user.permissions ? JSON.parse(user.permissions) : {};
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+      logger.warn(`[AUTH] Permissions invalides (pas un objet) pour user — reset à {}`);
+      return {};
+    }
+    const sanitized = {};
+    for (const [key, value] of Object.entries(raw)) {
+      if (VALID_PERMISSION_KEYS.has(key)) {
+        sanitized[key] = !!value;
+      }
+    }
+    return sanitized;
   } catch {
+    logger.warn(`[AUTH] Erreur parsing permissions JSON — reset à {}`);
     return {};
   }
 }
@@ -34,7 +71,7 @@ function parsePermissions(user) {
  * @param {string} flagName - Nom du flag à ajouter sur req.user
  */
 export function requirePermission(permissionKey, errorMessage, flagName) {
-  return function(req, res, next) {
+  return function (req, res, next) {
     const user = resolvePermissions(req);
     if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
     const perms = parsePermissions(user);
@@ -68,7 +105,7 @@ export function requireAdmin(req, res, next) {
 export const requireMaintenanceAccess = requirePermission(
   'can_manage_vehicle_maintenance',
   'Accès réservé — permission maintenance véhicules requise',
-  'canManageMaintenance'
+  'canManageMaintenance',
 );
 
 // Backward compat: can_manage_maintenance OU can_manage_vehicle_maintenance
@@ -85,7 +122,9 @@ export function requireMaintenanceAccessCompat(req, res, next) {
     req.user.permissions = perms;
     next();
   } else {
-    return res.status(403).json({ error: 'Accès réservé — permission maintenance véhicules requise' });
+    return res
+      .status(403)
+      .json({ error: 'Accès réservé — permission maintenance véhicules requise' });
   }
 }
 
@@ -95,7 +134,7 @@ export function requireMaintenanceAccessCompat(req, res, next) {
 export const requireEquipmentMaintenanceAccess = requirePermission(
   'can_manage_equipment_maintenance',
   'Accès réservé — permission maintenance matériel requise',
-  'canManageEquipmentMaintenance'
+  'canManageEquipmentMaintenance',
 );
 
 /**
@@ -104,8 +143,25 @@ export const requireEquipmentMaintenanceAccess = requirePermission(
 export const requireCatalogAccess = requirePermission(
   'can_manage_catalog',
   'Accès réservé — permission catalogue requise',
-  'canManageCatalog'
+  'canManageCatalog',
 );
+
+/**
+ * Middleware écriture générale (admin OU utilisateur non read_only)
+ */
+export function requireNotReadOnly(req, res, next) {
+  const user = resolvePermissions(req);
+  if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
+  const perms = parsePermissions(user);
+
+  if (user.is_admin || !perms.read_only) {
+    req.user.isAdmin = !!user.is_admin;
+    req.user.permissions = perms;
+    return next();
+  }
+
+  return res.status(403).json({ error: 'Accès en écriture refusé (compte lecture seule)' });
+}
 
 /**
  * Middleware camions/modèles (admin OU permission spécifique)
@@ -113,5 +169,5 @@ export const requireCatalogAccess = requirePermission(
 export const requireTruckAccess = requirePermission(
   'can_manage_trucks',
   'Accès réservé — permission modèles camions requise',
-  'canManageTrucks'
+  'canManageTrucks',
 );

@@ -56,7 +56,10 @@ export const formatDateFr = (dateStr, fallback = '—') => {
   const d = safeParse(dateStr);
   if (!d) return fallback;
   return d.toLocaleDateString('fr-FR', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   });
 };
 
@@ -72,8 +75,11 @@ export const formatDateTime = (dateStr, fallback = '—') => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return fallback;
     return d.toLocaleDateString('fr-FR', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   } catch {
     return fallback;

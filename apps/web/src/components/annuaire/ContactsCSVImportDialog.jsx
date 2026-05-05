@@ -1,17 +1,22 @@
-import { useState, useRef, useCallback } from 'react';
-import { Upload, FileText, CheckCircle, Download } from 'lucide-react';
-import { Button, ModalLayout, Table, Spinner, InlineAlert } from '@/design-system';
-import api from '../../utils/api';
-import { STATUS } from '../../constants';
-
 import './ContactsCSVImportDialog.css';
+
+import { CheckCircle, Download, FileText, Upload } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+
+import { Button, InlineAlert, ModalLayout, Spinner, Table } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import api from '../../utils/api';
 
 /**
  * Parse un fichier CSV contacts Locmat (séparateur ;).
  * Format attendu : Code Libre;Nom Prénom;Téléphone;Portable;E-Mail;
  */
 function parseCSV(text) {
-  const lines = text.replace(/\r/g, '').split('\n').filter(l => l.trim());
+  const lines = text
+    .replace(/\r/g, '')
+    .split('\n')
+    .filter((l) => l.trim());
 
   // Trouver la ligne d'en-tête (contient "Code Libre" ou "Nom")
   let headerIdx = -1;
@@ -35,23 +40,25 @@ function parseCSV(text) {
 
   const dataLines = lines.slice(headerIdx + 1);
 
-  return dataLines.map(line => {
-    const parts = line.split(';').map(p => p.trim());
-    return {
-      codeFree: parts[0] || '',
-      nom_prenom: parts[1] || '',
-      telephone: parts[2] || '',
-      portable: parts[3] || '',
-      email: parts[4] || '',
-    };
-  }).filter(row => row.codeFree || row.nom_prenom || row.email);
+  return dataLines
+    .map((line) => {
+      const parts = line.split(';').map((p) => p.trim());
+      return {
+        codeFree: parts[0] || '',
+        nom_prenom: parts[1] || '',
+        telephone: parts[2] || '',
+        portable: parts[3] || '',
+        email: parts[4] || '',
+      };
+    })
+    .filter((row) => row.codeFree || row.nom_prenom || row.email);
 }
 
 /**
  * Convertit les rows parsées vers le format attendu par le backend.
  */
 function toBackendFormat(rows) {
-  return rows.map(r => ({
+  return rows.map((r) => ({
     codeFree: r.codeFree,
     name: r.nom_prenom,
     phone: r.telephone,
@@ -97,6 +104,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
       }
     };
     reader.readAsText(file, 'utf-8');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const processText = useCallback(async (text) => {
@@ -114,24 +122,33 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
       setPreview(prev);
       setStep('preview');
     } catch (err) {
-      setError('Erreur lors de l\'analyse du fichier : ' + err.message);
+      setError("Erreur lors de l'analyse du fichier : " + err.message);
     }
   }, []);
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file && (file.name.endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain')) {
-      handleFile(file);
-    } else {
-      setError('Veuillez déposer un fichier .csv');
-    }
-  }, [handleFile]);
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = e.dataTransfer.files[0];
+      if (
+        file &&
+        (file.name.endsWith('.csv') || file.type === 'text/csv' || file.type === 'text/plain')
+      ) {
+        handleFile(file);
+      } else {
+        setError('Veuillez déposer un fichier .csv');
+      }
+    },
+    [handleFile],
+  );
 
-  const handleFileSelect = useCallback((e) => {
-    handleFile(e.target.files[0]);
-  }, [handleFile]);
+  const handleFileSelect = useCallback(
+    (e) => {
+      handleFile(e.target.files[0]);
+    },
+    [handleFile],
+  );
 
   const handleImport = useCallback(async () => {
     setStep('importing');
@@ -143,7 +160,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
       setStep('done');
       if (onSuccess) onSuccess(res);
     } catch (err) {
-      setError('Erreur lors de l\'import : ' + err.message);
+      setError("Erreur lors de l'import : " + err.message);
       setStep('preview');
     }
   }, [parsedRows, onSuccess]);
@@ -156,137 +173,157 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
       icon={<Upload size={20} />}
       size="lg"
       bodyClassName="csv-import-content"
-      footer={<>
-        {step === 'upload' && (
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-        )}
-        {step === 'preview' && (
-          <>
-            <Button variant="ghost" onClick={() => { setStep('upload'); setParsedRows([]); setPreview(null); setError(null); }}>
-              ← Retour
-            </Button>
-            <Button variant="primary" onClick={handleImport}>
-              <Download size={15} /> Importer {parsedRows.length} contacts
-            </Button>
-          </>
-        )}
-        {step === STATUS.DONE && (
-          <Button variant="primary" onClick={onClose}>Fermer</Button>
-        )}
-      </>}
-    >
-          {/* ── ÉTAPE 1 : Upload ── */}
+      footer={
+        <>
           {step === 'upload' && (
-            <div className="csv-upload-zone">
-              <div
-                className={`csv-dropzone ${dragOver ? 'drag-over' : ''}`}
-                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
+            <Button variant="ghost" onClick={onClose}>
+              Annuler
+            </Button>
+          )}
+          {step === 'preview' && (
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setStep('upload');
+                  setParsedRows([]);
+                  setPreview(null);
+                  setError(null);
+                }}
               >
-                <FileText size={40} className="dropzone-icon" />
-                <p className="dropzone-text">
-                  Glissez-déposez un fichier CSV ici<br />
-                  <span className="dropzone-sub">ou cliquez pour sélectionner</span>
-                </p>
-                <p className="dropzone-format">
-                  Format attendu : <code>Code Libre;Nom Prénom;Téléphone;Portable;E-Mail;</code>
-                </p>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,text/csv,text/plain"
-                onChange={handleFileSelect}
-                style={{ display: 'none' }}
-              />
+                ← Retour
+              </Button>
+              <Button variant="primary" onClick={handleImport}>
+                <Download size={15} /> Importer {parsedRows.length} contacts
+              </Button>
+            </>
+          )}
+          {step === STATUS.DONE && (
+            <Button variant="primary" onClick={onClose}>
+              Fermer
+            </Button>
+          )}
+        </>
+      }
+    >
+      {/* ── ÉTAPE 1 : Upload ── */}
+      {step === 'upload' && (
+        <div className="csv-upload-zone">
+          <div
+            className={`csv-dropzone ${dragOver ? 'drag-over' : ''}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <FileText size={40} className="dropzone-icon" />
+            <p className="dropzone-text">
+              Glissez-déposez un fichier CSV ici
+              <br />
+              <span className="dropzone-sub">ou cliquez pour sélectionner</span>
+            </p>
+            <p className="dropzone-format">
+              Format attendu : <code>Code Libre;Nom Prénom;Téléphone;Portable;E-Mail;</code>
+            </p>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv,text/plain"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+        </div>
+      )}
+
+      {/* ── ÉTAPE 2 : Preview ── */}
+      {step === 'preview' && preview && (
+        <div className="csv-preview-zone">
+          <div className="csv-preview-info">
+            <FileText size={16} />
+            <span>
+              <strong>{fileName}</strong> — {parsedRows.length} contacts détectés
+            </span>
+          </div>
+
+          <div className="csv-preview-table-wrapper">
+            <Table className="csv-preview-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Nom</th>
+                  <th>Prénom</th>
+                  <th>Téléphone</th>
+                  <th>Portable</th>
+                  <th>Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.preview.map((row, i) => (
+                  <tr key={i}>
+                    <td className="code-cell">{row.code_libre || '—'}</td>
+                    <td>
+                      <strong>{row.last_name || '—'}</strong>
+                    </td>
+                    <td>{row.first_name || '—'}</td>
+                    <td>{row.phone || '—'}</td>
+                    <td>{row.phone2 || '—'}</td>
+                    <td className="email-cell">{row.email || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+
+          {preview.totalRows > 30 && (
+            <p className="csv-preview-more">
+              … et {preview.totalRows - 30} contacts supplémentaires
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── ÉTAPE 3 : Import en cours ── */}
+      {step === 'importing' && (
+        <div className="csv-importing-zone">
+          <Spinner size="lg" />
+          <p>Import en cours… {parsedRows.length} contacts</p>
+        </div>
+      )}
+
+      {/* ── ÉTAPE 4 : Résultat ── */}
+      {step === STATUS.DONE && result && (
+        <div className="csv-result-zone">
+          <CheckCircle size={40} className="result-icon success" />
+          <h4>Import terminé</h4>
+          <div className="result-stats">
+            <div className="result-stat">
+              <span className="stat-number created">{result.imported}</span>
+              <span className="stat-label">créés</span>
             </div>
-          )}
-
-          {/* ── ÉTAPE 2 : Preview ── */}
-          {step === 'preview' && preview && (
-            <div className="csv-preview-zone">
-              <div className="csv-preview-info">
-                <FileText size={16} />
-                <span><strong>{fileName}</strong> — {parsedRows.length} contacts détectés</span>
-              </div>
-
-              <div className="csv-preview-table-wrapper">
-                <Table className="csv-preview-table">
-                  <thead>
-                    <tr>
-                      <th>Code</th>
-                      <th>Nom</th>
-                      <th>Prénom</th>
-                      <th>Téléphone</th>
-                      <th>Portable</th>
-                      <th>Email</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {preview.preview.map((row, i) => (
-                      <tr key={i}>
-                        <td className="code-cell">{row.code_libre || '—'}</td>
-                        <td><strong>{row.last_name || '—'}</strong></td>
-                        <td>{row.first_name || '—'}</td>
-                        <td>{row.phone || '—'}</td>
-                        <td>{row.phone2 || '—'}</td>
-                        <td className="email-cell">{row.email || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-
-              {preview.totalRows > 30 && (
-                <p className="csv-preview-more">
-                  … et {preview.totalRows - 30} contacts supplémentaires
-                </p>
-              )}
+            <div className="result-stat">
+              <span className="stat-number updated">{result.updated}</span>
+              <span className="stat-label">mis à jour</span>
             </div>
-          )}
-
-          {/* ── ÉTAPE 3 : Import en cours ── */}
-          {step === 'importing' && (
-            <div className="csv-importing-zone">
-              <Spinner size="lg" />
-              <p>Import en cours… {parsedRows.length} contacts</p>
+            <div className="result-stat">
+              <span className="stat-number skipped">{result.skipped}</span>
+              <span className="stat-label">ignorés</span>
             </div>
-          )}
-
-          {/* ── ÉTAPE 4 : Résultat ── */}
-          {step === STATUS.DONE && result && (
-            <div className="csv-result-zone">
-              <CheckCircle size={40} className="result-icon success" />
-              <h4>Import terminé</h4>
-              <div className="result-stats">
-                <div className="result-stat">
-                  <span className="stat-number created">{result.imported}</span>
-                  <span className="stat-label">créés</span>
-                </div>
-                <div className="result-stat">
-                  <span className="stat-number updated">{result.updated}</span>
-                  <span className="stat-label">mis à jour</span>
-                </div>
-                <div className="result-stat">
-                  <span className="stat-number skipped">{result.skipped}</span>
-                  <span className="stat-label">ignorés</span>
-                </div>
-                {result.errors > 0 && (
-                  <div className="result-stat">
-                    <span className="stat-number errored">{result.errors}</span>
-                    <span className="stat-label">erreurs</span>
-                  </div>
-                )}
+            {result.errors > 0 && (
+              <div className="result-stat">
+                <span className="stat-number errored">{result.errors}</span>
+                <span className="stat-label">erreurs</span>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
+      )}
 
-          {/* ── Erreur ── */}
-          {error && (
-            <InlineAlert>{error}</InlineAlert>
-          )}
+      {/* ── Erreur ── */}
+      {error && <InlineAlert>{error}</InlineAlert>}
     </ModalLayout>
   );
 }

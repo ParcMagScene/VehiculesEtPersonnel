@@ -2,26 +2,51 @@
 // CameraPlayerWebRTC.jsx — Lecteur vidéo WebRTC pour une caméra
 // ═══════════════════════════════════════════════════════════════
 
-import { useEffect, useState, useCallback } from 'react';
-import { useWebRTCStream } from '../../hooks/useWebRTCStream';
-import { Maximize, Minimize, Camera, RefreshCw, WifiOff, Film } from 'lucide-react';
-import api from '../../utils/api';
+import { Camera, Film, Maximize, Minimize, RefreshCw, WifiOff } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { Button, Spinner, Tooltip } from '@/design-system';
 
-const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFullscreen, isFullscreen = false, onSelect, isSelected = false, onPlayback }) => {
+import { STATUS_COLORS } from '../../constants/colors';
+import { useWebRTCStream } from '../../hooks/useWebRTCStream';
+import api from '../../utils/api';
+
+const CameraPlayerWebRTC = ({
+  camera,
+  autoConnect = true,
+  connectDelay = 0,
+  onFullscreen,
+  isFullscreen = false,
+  onSelect,
+  isSelected = false,
+  onPlayback,
+}) => {
   const { videoRef, status, error, connect, disconnect } = useWebRTCStream(camera);
-  const [_snapshotUrl, setSnapshotUrl] = useState(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (autoConnect && camera?.enabled) {
       if (connectDelay > 0) {
         const timer = setTimeout(() => connect(), connectDelay);
-        return () => { clearTimeout(timer); disconnect(); };
+        return () => {
+          clearTimeout(timer);
+          disconnect();
+        };
       }
       connect();
     }
-    return () => { disconnect(); };
+    return () => {
+      disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera?.id, autoConnect]);
 
   const handleSnapshot = useCallback(async () => {
@@ -29,18 +54,26 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
     try {
       setSnapshotLoading(true);
       const url = await api.getSnapshot(camera.id);
-      setSnapshotUrl(url);
-      // Ouvrir dans un nouvel onglet
-      window.open(url, '_blank');
+      // Ouvrir dans un nouvel onglet ; fallback sur un lien si popup bloquee.
+      const snapshotWindow = window.open(url, '_blank', 'noopener,noreferrer');
+      if (snapshotWindow) {
+        snapshotWindow.opener = null;
+      } else {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      }
     } catch {
       // Fallback: essayer de capturer le canvas vidéo
-      if (videoRef.current) {
+      if (videoRef.current && videoRef.current.videoWidth > 0) {
         const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth || 640;
-        canvas.height = videoRef.current.videoHeight || 480;
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
         canvas.getContext('2d').drawImage(videoRef.current, 0, 0);
-        canvas.toBlob(blob => {
-          if (blob) {
+        canvas.toBlob((blob) => {
+          if (blob && blob.size > 0) {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -51,8 +84,9 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
         }, 'image/jpeg');
       }
     } finally {
-      setSnapshotLoading(false);
+      if (isMountedRef.current) setSnapshotLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camera?.id, camera?.name]);
 
   const statusLabel = {
@@ -64,9 +98,9 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
 
   const statusColor = {
     idle: '#888',
-    connecting: '#f59e0b',
-    streaming: '#22c55e',
-    error: '#ef4444',
+    connecting: STATUS_COLORS.warning,
+    streaming: STATUS_COLORS.successSoft,
+    error: STATUS_COLORS.danger,
   }[status];
 
   return (
@@ -82,22 +116,59 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
         </div>
         <div className="camera-player__actions">
           {camera?.supportsPlayback && onPlayback && (
-            <Tooltip content="Enregistrements"><Button variant="ghost" onClick={(e) => { e.stopPropagation(); onPlayback(camera); }} className="camera-player__btn">
-              <Film size={16} />
-            </Button></Tooltip>
+            <Tooltip content="Enregistrements">
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlayback(camera);
+                }}
+                className="camera-player__btn"
+              >
+                <Film size={16} />
+              </Button>
+            </Tooltip>
           )}
-          <Tooltip content="Snapshot"><Button variant="ghost" onClick={handleSnapshot} disabled={status !== 'streaming' || snapshotLoading} className="camera-player__btn">
-            <Camera size={16} />
-          </Button></Tooltip>
+          <Tooltip content="Snapshot">
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSnapshot();
+              }}
+              disabled={status !== 'streaming' || snapshotLoading}
+              className="camera-player__btn"
+            >
+              <Camera size={16} />
+            </Button>
+          </Tooltip>
           {status === 'error' || status === 'idle' ? (
-            <Tooltip content="Reconnecter"><Button variant="ghost" onClick={connect} className="camera-player__btn">
-              <RefreshCw size={16} />
-            </Button></Tooltip>
+            <Tooltip content="Reconnecter">
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  connect();
+                }}
+                className="camera-player__btn"
+              >
+                <RefreshCw size={16} />
+              </Button>
+            </Tooltip>
           ) : null}
           {onFullscreen && (
-            <Tooltip content={isFullscreen ? 'Réduire' : 'Plein écran'}><Button variant="ghost" onClick={() => onFullscreen(camera)} className="camera-player__btn">
-              {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-            </Button></Tooltip>
+            <Tooltip content={isFullscreen ? 'Réduire' : 'Plein écran'}>
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFullscreen(camera);
+                }}
+                className="camera-player__btn"
+              >
+                {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+              </Button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -112,7 +183,16 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
           <div className="camera-player__overlay camera-player__overlay--error">
             <WifiOff size={32} />
             <span>{error || 'Flux indisponible'}</span>
-            <Button variant="ghost" onClick={connect} className="camera-player__retry-btn">Réessayer</Button>
+            <Button
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                connect();
+              }}
+              className="camera-player__retry-btn"
+            >
+              Réessayer
+            </Button>
           </div>
         )}
         {status === 'idle' && !autoConnect && (
@@ -121,13 +201,7 @@ const CameraPlayerWebRTC = ({ camera, autoConnect = true, connectDelay = 0, onFu
             <span style={{ opacity: 0.6, fontSize: '0.85em' }}>Proxy vidéo hors-ligne</span>
           </div>
         )}
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="camera-player__video"
-        />
+        <video ref={videoRef} autoPlay playsInline muted className="camera-player__video" />
       </div>
     </div>
   );

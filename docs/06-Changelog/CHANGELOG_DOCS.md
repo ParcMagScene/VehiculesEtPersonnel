@@ -5,6 +5,33 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.2.1] — 2026-04-20
+
+### Added
+- `docs/api/sonos.md` — Documentation module Sonos (`/api/sonos`)
+- `docs/api/suivi.md` — Documentation module Suivi personnel (`/api/suivi`)
+- `docs/api/google.md` — Documentation module Google OAuth2 (`/api/google`)
+- `docs/api/totp.md` — Documentation module 2FA TOTP (`/api/auth/2fa`)
+- `scripts/check-doc-coherence.mjs` — Vérification automatisée docs ↔ code
+
+### Changed
+- `docs/API-INDEX.md` — Alignement des préfixes API actifs, modules manquants, stack et métriques
+- `docs/api/README.md` — Ajout modules API actifs manquants + total endpoints mis à jour
+- `README.md` — Structure monorepo corrigée (`apps/web`, `apps/api`) et commande de tests clarifiée
+- `docs/03-Guides/GUIDE_DEVELOPPEUR.md` — Compteurs backend harmonisés
+- `docs/01-Architecture/ARCHITECTURE.md` — Cohérence monorepo/API/DB, métriques et chemins ajustés
+- `docs/02-Securite/SECURITY.md` — Historique sécurité harmonisé sur les métriques actuelles
+- `docs/docs-index.json` — Regénération des métadonnées globales (date, modules, compteurs)
+- `package.json` — Script `npm run docs:check`
+- `docs/04-Operations/PLAN_MAINTENANCE.md` — Ajout de la vérification documentaire automatisée
+- `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`, `.github/workflows/protect-prod.yml` — Exécution automatique de `npm run docs:check`
+- `.husky/pre-push` — Blocage local du push si `npm run docs:check` échoue
+
+### Notes
+- La référence API exhaustive est désormais `docs/api/README.md` et les pages `docs/api/*.md`.
+
+---
+
 ## [1.2.0] — 2026-04-08
 
 ### Changed

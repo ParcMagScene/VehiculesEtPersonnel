@@ -1,15 +1,15 @@
 {
   "schema_version": "1.0.0",
   "description": "Index centralisé de toutes les versions du projet eM@g",
-  "updated": "2026-04-08",
+  "updated": "2026-04-11",
   "application": {
     "name": "eM@g",
-    "version": "2.1.0",
+    "version": "2.5.0",
     "source": "package.json"
   },
   "packages": {
     "root": {
-      "version": "2.1.0",
+      "version": "2.5.0",
       "path": "package.json"
     },
     "api": {

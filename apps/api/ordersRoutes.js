@@ -1,9 +1,12 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import { resolveBrand } from './brandHelpers.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-import { resolveBrand } from './brandHelpers.js';
+import { orderSchema } from './schemas/crud.js';
+import { validate } from './schemas/imports.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,20 +15,20 @@ const __dirname = path.dirname(__filename);
 // Transitions de statut autorisées
 // ═══════════════════════════════════════════════════════════════
 const ORDER_TRANSITIONS = {
-  draft:     ['sent', 'cancelled'],
-  sent:      ['confirmed', 'cancelled'],
+  draft: ['sent', 'cancelled'],
+  sent: ['confirmed', 'cancelled'],
   confirmed: ['partial', 'received', 'cancelled'],
-  partial:   ['received'],
-  received:  [],
-  cancelled: ['draft']
+  partial: ['received'],
+  received: [],
+  cancelled: ['draft'],
 };
 
 const QUOTE_TRANSITIONS = {
-  draft:    ['sent', 'cancelled'],
-  sent:     ['accepted', 'refused', 'cancelled'],
+  draft: ['sent', 'cancelled'],
+  sent: ['accepted', 'refused', 'cancelled'],
   accepted: [],
-  refused:  ['draft'],
-  cancelled:['draft']
+  refused: ['draft'],
+  cancelled: ['draft'],
 };
 
 function validateStatusTransition(transitions, from, to) {
@@ -42,7 +45,8 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/suppliers', authenticateToken, (req, res) => {
     try {
       const { search } = req.query;
-      let query = 'SELECT s.*, (SELECT COUNT(*) FROM orders WHERE supplier_id = s.id) as order_count FROM suppliers s';
+      let query =
+        'SELECT s.*, (SELECT COUNT(*) FROM orders WHERE supplier_id = s.id) as order_count FROM suppliers s';
       const params = [];
       if (search) {
         query += ' WHERE s.name LIKE ? OR s.contact_name LIKE ? OR s.email LIKE ?';
@@ -53,53 +57,114 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
       res.json(suppliers);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Créer un fournisseur
   app.post('/api/suppliers', authenticateToken, (req, res) => {
     try {
-      const { name, contact_name, email, phone, address, notes } = req.body;
-      if (!name) return res.status(400).json({ error: 'Le nom est requis' });
-      const result = db.prepare(
-        'INSERT INTO suppliers (name, contact_name, email, phone, address, notes) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(name, contact_name || null, email || null, phone || null, address || null, notes || null);
-      const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(result.lastInsertRowid);
+      const {
+        name,
+        contact_name,
+        email,
+        phone,
+        address,
+        notes,
+        website,
+        shipping_flat_rate,
+        shipping_free_threshold,
+        shipping_notes,
+      } = req.body;
+      if (!name) return res.status(400).json({ success: false, error: 'Le nom est requis' });
+      const result = db
+        .prepare(
+          `INSERT INTO suppliers
+            (name, contact_name, email, phone, address, notes, website,
+             shipping_flat_rate, shipping_free_threshold, shipping_notes)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          name,
+          contact_name || null,
+          email || null,
+          phone || null,
+          address || null,
+          notes || null,
+          website || null,
+          shipping_flat_rate != null ? Number(shipping_flat_rate) : null,
+          shipping_free_threshold != null ? Number(shipping_free_threshold) : null,
+          shipping_notes || null,
+        );
+      const supplier = db
+        .prepare('SELECT * FROM suppliers WHERE id = ?')
+        .get(result.lastInsertRowid);
       res.status(201).json(supplier);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Modifier un fournisseur
   app.put('/api/suppliers/:id', authenticateToken, (req, res) => {
     try {
-      const { name, contact_name, email, phone, address, notes } = req.body;
+      const {
+        name,
+        contact_name,
+        email,
+        phone,
+        address,
+        notes,
+        website,
+        shipping_flat_rate,
+        shipping_free_threshold,
+        shipping_notes,
+      } = req.body;
       db.prepare(
-        'UPDATE suppliers SET name = ?, contact_name = ?, email = ?, phone = ?, address = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-      ).run(name, contact_name || null, email || null, phone || null, address || null, notes || null, req.params.id);
+        `UPDATE suppliers SET
+          name = ?, contact_name = ?, email = ?, phone = ?, address = ?, notes = ?,
+          website = ?, shipping_flat_rate = ?, shipping_free_threshold = ?, shipping_notes = ?,
+          updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+      ).run(
+        name,
+        contact_name || null,
+        email || null,
+        phone || null,
+        address || null,
+        notes || null,
+        website || null,
+        shipping_flat_rate != null ? Number(shipping_flat_rate) : null,
+        shipping_free_threshold != null ? Number(shipping_free_threshold) : null,
+        shipping_notes || null,
+        req.params.id,
+      );
       const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(req.params.id);
       res.json(supplier);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Supprimer un fournisseur
   app.delete('/api/suppliers/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const orderCount = db.prepare('SELECT COUNT(*) as count FROM orders WHERE supplier_id = ?').get(req.params.id);
+      const orderCount = db
+        .prepare('SELECT COUNT(*) as count FROM orders WHERE supplier_id = ?')
+        .get(req.params.id);
       if (orderCount.count > 0) {
-        return res.status(400).json({ error: `Ce fournisseur est lié à ${orderCount.count} commande(s)` });
+        return res.status(400).json({
+          success: false,
+          error: `Ce fournisseur est lié à ${orderCount.count} commande(s)`,
+        });
       }
       db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -112,9 +177,9 @@ export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {
 // depuis setupOrdersRoutes ET setupQuotesRoutes (qui contient generate-from-bl)
 function generateReference(prefix) {
   const year = new Date().getFullYear();
-  const last = db.prepare(
-    `SELECT reference FROM orders WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1`
-  ).get(`${prefix}-${year}-%`);
+  const last = db
+    .prepare(`SELECT reference FROM orders WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1`)
+    .get(`${prefix}-${year}-%`);
   let num = 1;
   if (last) {
     const parts = last.reference.split('-');
@@ -124,7 +189,6 @@ function generateReference(prefix) {
 }
 
 export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
-
   // Liste des commandes avec filtres
   app.get('/api/orders', authenticateToken, (req, res) => {
     try {
@@ -140,10 +204,22 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         WHERE 1=1
       `;
       const params = [];
-      if (status) { query += ' AND o.status = ?'; params.push(status); }
-      if (affaire_id) { query += ' AND o.affaire_id = ?'; params.push(affaire_id); }
-      if (supplier_id) { query += ' AND o.supplier_id = ?'; params.push(supplier_id); }
-      if (type) { query += ' AND o.type = ?'; params.push(type); }
+      if (status) {
+        query += ' AND o.status = ?';
+        params.push(status);
+      }
+      if (affaire_id) {
+        query += ' AND o.affaire_id = ?';
+        params.push(affaire_id);
+      }
+      if (supplier_id) {
+        query += ' AND o.supplier_id = ?';
+        params.push(supplier_id);
+      }
+      if (type) {
+        query += ' AND o.type = ?';
+        params.push(type);
+      }
       if (search) {
         query += ' AND (o.reference LIKE ? OR o.notes LIKE ? OR s.name LIKE ?)';
         params.push(`%${search}%`, `%${search}%`, `%${search}%`);
@@ -153,7 +229,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       res.json(orders);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -161,28 +237,36 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/orders/stats', authenticateToken, (req, res) => {
     try {
       const stats = {
-        orders: db.prepare(`SELECT 
+        orders: db
+          .prepare(
+            `SELECT 
           COUNT(*) as total,
           SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft,
           SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
           SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
           SUM(CASE WHEN status IN ('partial','received') THEN 1 ELSE 0 END) as received,
           SUM(total_ht) as total_ht
-        FROM orders WHERE type = 'purchase'`).get(),
-        quotes: db.prepare(`SELECT
+        FROM orders WHERE type = 'purchase'`,
+          )
+          .get(),
+        quotes: db
+          .prepare(
+            `SELECT
           COUNT(*) as total,
           SUM(CASE WHEN status = 'draft' THEN 1 ELSE 0 END) as draft,
           SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
           SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) as accepted,
           SUM(CASE WHEN status = 'refused' THEN 1 ELSE 0 END) as refused,
           SUM(total_ht) as total_ht
-        FROM quotes`).get(),
-        suppliers: db.prepare('SELECT COUNT(*) as total FROM suppliers').get()
+        FROM quotes`,
+          )
+          .get(),
+        suppliers: db.prepare('SELECT COUNT(*) as total FROM suppliers').get(),
       };
       res.json(stats);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -190,7 +274,9 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/orders/my-linked', authenticateToken, (req, res) => {
     try {
       const userId = req.user.id;
-      const orders = db.prepare(`
+      const orders = db
+        .prepare(
+          `
         SELECT DISTINCT o.*, s.name as supplier_name, u.name as created_by_name,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND received_qty >= quantity) as completed_items
@@ -199,18 +285,22 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN suppliers s ON o.supplier_id = s.id
         LEFT JOIN users u ON o.created_by = u.id
         ORDER BY o.created_at DESC
-      `).all(userId);
+      `,
+        )
+        .all(userId);
       res.json(orders);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Détail d'une commande avec ses lignes
   app.get('/api/orders/:id', authenticateToken, (req, res) => {
     try {
-      const order = db.prepare(`
+      const order = db
+        .prepare(
+          `
         SELECT o.*, s.name as supplier_name, s.email as supplier_email,
           s.phone as supplier_phone, s.address as supplier_address,
           u.name as created_by_name,
@@ -220,38 +310,61 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN users u ON o.created_by = u.id
         LEFT JOIN affaires a ON a.numero_affaire = o.affaire_id
         WHERE o.id = ?
-      `).get(req.params.id);
-      if (!order) return res.status(404).json({ error: 'Commande non trouvée' });
-      const items = db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(req.params.id);
+      `,
+        )
+        .get(req.params.id);
+      if (!order) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
+      const items = db
+        .prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC')
+        .all(req.params.id);
       res.json({ ...order, items });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Créer une commande
-  app.post('/api/orders', authenticateToken, (req, res) => {
+  app.post('/api/orders', authenticateToken, validate(orderSchema), (req, res) => {
     try {
-      const { type = 'purchase', affaire_id, supplier_id, status = 'draft', order_date, expected_date, notes, items = [] } = req.body;
+      const {
+        type = 'purchase',
+        affaire_id,
+        supplier_id,
+        status = 'draft',
+        order_date,
+        expected_date,
+        notes,
+        items = [],
+      } = req.body;
 
       // Validation des items
       for (const item of items) {
         if (!item.designation || !item.designation.trim()) {
-          return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+          return res
+            .status(400)
+            .json({ success: false, error: 'Chaque ligne doit avoir une désignation' });
         }
         if (item.quantity !== undefined && (item.quantity <= 0 || isNaN(item.quantity))) {
-          return res.status(400).json({ error: `Quantité invalide pour "${item.designation}"` });
+          return res
+            .status(400)
+            .json({ success: false, error: `Quantité invalide pour "${item.designation}"` });
         }
-        if (item.unit_price_ht !== undefined && (item.unit_price_ht < 0 || isNaN(item.unit_price_ht))) {
-          return res.status(400).json({ error: `Prix invalide pour "${item.designation}"` });
+        if (
+          item.unit_price_ht !== undefined &&
+          (item.unit_price_ht < 0 || isNaN(item.unit_price_ht))
+        ) {
+          return res
+            .status(400)
+            .json({ success: false, error: `Prix invalide pour "${item.designation}"` });
         }
       }
 
       // Vérifier le fournisseur si fourni
       if (supplier_id) {
         const supplier = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(supplier_id);
-        if (!supplier) return res.status(400).json({ error: 'Fournisseur introuvable' });
+        if (!supplier)
+          return res.status(400).json({ success: false, error: 'Fournisseur introuvable' });
       }
 
       const prefix = type === 'purchase' ? 'BC' : 'BV';
@@ -267,27 +380,60 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         }
         const total_ttc = total_ht * (1 + tva_rate / 100);
 
-        const result = db.prepare(`
+        const result = db
+          .prepare(
+            `
           INSERT INTO orders (reference, type, affaire_id, supplier_id, status, order_date, expected_date, total_ht, tva_rate, total_ttc, notes, created_by)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(reference, type, affaire_id || null, supplier_id || null, status,
-          order_date || new Date().toISOString().slice(0, 10), expected_date || null,
-          total_ht, tva_rate, total_ttc, notes || null, req.user.id);
+        `,
+          )
+          .run(
+            reference,
+            type,
+            affaire_id || null,
+            supplier_id || null,
+            status,
+            order_date || new Date().toISOString().slice(0, 10),
+            expected_date || null,
+            total_ht,
+            tva_rate,
+            total_ttc,
+            notes || null,
+            req.user.id,
+          );
 
         const orderId = result.lastInsertRowid;
 
         const insertItem = db.prepare(
-          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes, source_affaire_id, source_requester_id, source_requester_name, source_type, ref_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes, source_affaire_id, source_requester_id, source_requester_name, source_type, ref_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         );
         for (const item of items) {
           const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
-          insertItem.run(orderId, item.designation.trim(), item.quantity || 1, item.unit || 'u',
-            item.unit_price_ht || 0, item.tva_rate || tva_rate, itemTotal, item.notes || null,
-            item.source_affaire_id || null, item.source_requester_id || null,
-            item.source_requester_name || null, item.source_type || null, item.ref_code || null);
+          insertItem.run(
+            orderId,
+            item.designation.trim(),
+            item.quantity || 1,
+            item.unit || 'u',
+            item.unit_price_ht || 0,
+            item.tva_rate || tva_rate,
+            itemTotal,
+            item.notes || null,
+            item.source_affaire_id || null,
+            item.source_requester_id || null,
+            item.source_requester_name || null,
+            item.source_type || null,
+            item.ref_code || null,
+          );
         }
 
-        addToHistory('order', orderId, 'create', JSON.stringify({ reference, type, status }), req.user.id, req.user.name);
+        addToHistory(
+          'order',
+          orderId,
+          'create',
+          JSON.stringify({ reference, type, status }),
+          req.user.id,
+          req.user.name,
+        );
         return orderId;
       });
 
@@ -297,21 +443,34 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json({ ...order, items: orderItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Modifier une commande
   app.put('/api/orders/:id', authenticateToken, (req, res) => {
     try {
-      const { affaire_id, supplier_id, status, order_date, expected_date, received_date, notes, items, tva_rate } = req.body;
+      const {
+        affaire_id,
+        supplier_id,
+        status,
+        order_date,
+        expected_date,
+        received_date,
+        notes,
+        items,
+        tva_rate,
+      } = req.body;
       const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Commande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
 
       // Validation transition de statut
       if (status && status !== existing.status) {
         if (!validateStatusTransition(ORDER_TRANSITIONS, existing.status, status)) {
-          return res.status(400).json({ error: `Transition de statut invalide: ${existing.status} → ${status}` });
+          return res.status(400).json({
+            success: false,
+            error: `Transition de statut invalide: ${existing.status} → ${status}`,
+          });
         }
       }
 
@@ -319,7 +478,9 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       if (items) {
         for (const item of items) {
           if (!item.designation || !item.designation.trim()) {
-            return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+            return res
+              .status(400)
+              .json({ success: false, error: 'Chaque ligne doit avoir une désignation' });
           }
         }
       }
@@ -336,46 +497,71 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         }
         const total_ttc = total_ht * (1 + finalTvaRate / 100);
 
-        db.prepare(`
+        db.prepare(
+          `
           UPDATE orders SET affaire_id = ?, supplier_id = ?, status = ?, order_date = ?, 
           expected_date = ?, received_date = ?, total_ht = ?, tva_rate = ?, total_ttc = ?, 
           notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-        `).run(
+        `,
+        ).run(
           affaire_id !== undefined ? affaire_id : existing.affaire_id,
           supplier_id !== undefined ? supplier_id : existing.supplier_id,
           status || existing.status,
           order_date || existing.order_date,
           expected_date !== undefined ? expected_date : existing.expected_date,
           received_date !== undefined ? received_date : existing.received_date,
-          total_ht, finalTvaRate, total_ttc,
+          total_ht,
+          finalTvaRate,
+          total_ttc,
           notes !== undefined ? notes : existing.notes,
-          req.params.id
+          req.params.id,
         );
 
         if (items) {
           db.prepare('DELETE FROM order_items WHERE order_id = ?').run(req.params.id);
           const insertItem = db.prepare(
-            'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, received_qty, notes, source_affaire_id, source_requester_id, source_requester_name, source_type, ref_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, received_qty, notes, source_affaire_id, source_requester_id, source_requester_name, source_type, ref_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           );
           for (const item of items) {
             const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
-            insertItem.run(req.params.id, item.designation.trim(), item.quantity || 1, item.unit || 'u',
-              item.unit_price_ht || 0, item.tva_rate || finalTvaRate, itemTotal, item.received_qty || 0, item.notes || null,
-              item.source_affaire_id || null, item.source_requester_id || null,
-              item.source_requester_name || null, item.source_type || null, item.ref_code || null);
+            insertItem.run(
+              req.params.id,
+              item.designation.trim(),
+              item.quantity || 1,
+              item.unit || 'u',
+              item.unit_price_ht || 0,
+              item.tva_rate || finalTvaRate,
+              itemTotal,
+              item.received_qty || 0,
+              item.notes || null,
+              item.source_affaire_id || null,
+              item.source_requester_id || null,
+              item.source_requester_name || null,
+              item.source_type || null,
+              item.ref_code || null,
+            );
           }
         }
 
-        addToHistory('order', req.params.id, 'update', JSON.stringify({ status: status || existing.status }), req.user.id, req.user.name);
+        addToHistory(
+          'order',
+          req.params.id,
+          'update',
+          JSON.stringify({ status: status || existing.status }),
+          req.user.id,
+          req.user.name,
+        );
       });
 
       updateOrder();
       const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-      const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(req.params.id);
+      const orderItems = db
+        .prepare('SELECT * FROM order_items WHERE order_id = ?')
+        .all(req.params.id);
       res.json({ ...order, items: orderItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -383,24 +569,36 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/orders/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Commande non trouvée' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
 
       // Vérifier qu'aucun devis n'est lié
-      const linkedQuote = db.prepare('SELECT id, reference FROM quotes WHERE converted_to_order_id = ?').get(req.params.id);
+      const linkedQuote = db
+        .prepare('SELECT id, reference FROM quotes WHERE converted_to_order_id = ?')
+        .get(req.params.id);
       if (linkedQuote) {
-        return res.status(400).json({ error: `Impossible de supprimer : liée au devis ${linkedQuote.reference}` });
+        return res.status(400).json({
+          success: false,
+          error: `Impossible de supprimer : liée au devis ${linkedQuote.reference}`,
+        });
       }
 
       const deleteOrder = db.transaction(() => {
         db.prepare('DELETE FROM order_items WHERE order_id = ?').run(req.params.id);
         db.prepare('DELETE FROM orders WHERE id = ?').run(req.params.id);
-        addToHistory('order', req.params.id, 'delete', JSON.stringify({ reference: existing.reference }), req.user.id, req.user.name);
+        addToHistory(
+          'order',
+          req.params.id,
+          'delete',
+          JSON.stringify({ reference: existing.reference }),
+          req.user.id,
+          req.user.name,
+        );
       });
       deleteOrder();
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -411,9 +609,11 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
 export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   function generateQuoteReference() {
     const year = new Date().getFullYear();
-    const last = db.prepare(
-      `SELECT reference FROM quotes WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1`
-    ).get(`DEV-${year}-%`);
+    const last = db
+      .prepare(
+        `SELECT reference FROM quotes WHERE reference LIKE ? ORDER BY reference DESC LIMIT 1`,
+      )
+      .get(`DEV-${year}-%`);
     let num = 1;
     if (last) {
       const parts = last.reference.split('-');
@@ -436,8 +636,14 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
         WHERE 1=1
       `;
       const params = [];
-      if (status) { query += ' AND q.status = ?'; params.push(status); }
-      if (affaire_id) { query += ' AND q.affaire_id = ?'; params.push(affaire_id); }
+      if (status) {
+        query += ' AND q.status = ?';
+        params.push(status);
+      }
+      if (affaire_id) {
+        query += ' AND q.affaire_id = ?';
+        params.push(affaire_id);
+      }
       if (search) {
         query += ' AND (q.reference LIKE ? OR q.client_name LIKE ? OR q.notes LIKE ?)';
         params.push(`%${search}%`, `%${search}%`, `%${search}%`);
@@ -447,38 +653,56 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.json(quotes);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Détail d'un devis
   app.get('/api/quotes/:id', authenticateToken, (req, res) => {
     try {
-      const quote = db.prepare(`
+      const quote = db
+        .prepare(
+          `
         SELECT q.*, u.name as created_by_name,
           COALESCE(NULLIF(a.nom, ''), NULLIF(a.titre, ''), NULLIF(a.client, ''), '') as affaire_name
         FROM quotes q LEFT JOIN users u ON q.created_by = u.id
         LEFT JOIN affaires a ON a.numero_affaire = q.affaire_id
         WHERE q.id = ?
-      `).get(req.params.id);
-      if (!quote) return res.status(404).json({ error: 'Devis non trouvé' });
-      const items = db.prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY id ASC').all(req.params.id);
+      `,
+        )
+        .get(req.params.id);
+      if (!quote) return res.status(404).json({ success: false, error: 'Devis non trouvé' });
+      const items = db
+        .prepare('SELECT * FROM quote_items WHERE quote_id = ? ORDER BY id ASC')
+        .all(req.params.id);
       res.json({ ...quote, items });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Créer un devis
   app.post('/api/quotes', authenticateToken, (req, res) => {
     try {
-      const { affaire_id, client_name, client_email, client_address, status = 'draft', quote_date, validity_date, notes, items = [] } = req.body;
+      const {
+        affaire_id,
+        client_name,
+        client_email,
+        client_address,
+        status = 'draft',
+        quote_date,
+        validity_date,
+        notes,
+        items = [],
+      } = req.body;
 
       // Validation des items
       for (const item of items) {
         if (!item.designation || !item.designation.trim()) {
-          return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+          return res
+            .status(400)
+            .json({ success: false, error: 'Chaque ligne doit avoir une désignation' });
         }
       }
 
@@ -493,25 +717,56 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
         }
         const total_ttc = total_ht * (1 + tva_rate / 100);
 
-        const result = db.prepare(`
+        const result = db
+          .prepare(
+            `
           INSERT INTO quotes (reference, affaire_id, client_name, client_email, client_address, status, quote_date, validity_date, total_ht, tva_rate, total_ttc, notes, created_by)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(reference, affaire_id || null, client_name || null, client_email || null, client_address || null,
-          status, quote_date || new Date().toISOString().slice(0, 10), validity_date || null,
-          total_ht, tva_rate, total_ttc, notes || null, req.user.id);
+        `,
+          )
+          .run(
+            reference,
+            affaire_id || null,
+            client_name || null,
+            client_email || null,
+            client_address || null,
+            status,
+            quote_date || new Date().toISOString().slice(0, 10),
+            validity_date || null,
+            total_ht,
+            tva_rate,
+            total_ttc,
+            notes || null,
+            req.user.id,
+          );
 
         const quoteId = result.lastInsertRowid;
 
         const insertItem = db.prepare(
-          'INSERT INTO quote_items (quote_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO quote_items (quote_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         );
         for (const item of items) {
           const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
-          insertItem.run(quoteId, item.designation.trim(), item.quantity || 1, item.unit || 'u',
-            item.unit_price_ht || 0, item.tva_rate || tva_rate, itemTotal, item.notes || null);
+          insertItem.run(
+            quoteId,
+            item.designation.trim(),
+            item.quantity || 1,
+            item.unit || 'u',
+            item.unit_price_ht || 0,
+            item.tva_rate || tva_rate,
+            itemTotal,
+            item.notes || null,
+          );
         }
 
-        addToHistory('quote', quoteId, 'create', JSON.stringify({ reference, status }), req.user.id, req.user.name);
+        addToHistory(
+          'quote',
+          quoteId,
+          'create',
+          JSON.stringify({ reference, status }),
+          req.user.id,
+          req.user.name,
+        );
         return quoteId;
       });
 
@@ -521,21 +776,35 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json({ ...quote, items: quoteItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Modifier un devis
   app.put('/api/quotes/:id', authenticateToken, (req, res) => {
     try {
-      const { affaire_id, client_name, client_email, client_address, status, quote_date, validity_date, notes, items, tva_rate } = req.body;
+      const {
+        affaire_id,
+        client_name,
+        client_email,
+        client_address,
+        status,
+        quote_date,
+        validity_date,
+        notes,
+        items,
+        tva_rate,
+      } = req.body;
       const existing = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Devis non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Devis non trouvé' });
 
       // Validation transition de statut
       if (status && status !== existing.status) {
         if (!validateStatusTransition(QUOTE_TRANSITIONS, existing.status, status)) {
-          return res.status(400).json({ error: `Transition de statut invalide: ${existing.status} → ${status}` });
+          return res.status(400).json({
+            success: false,
+            error: `Transition de statut invalide: ${existing.status} → ${status}`,
+          });
         }
       }
 
@@ -543,7 +812,9 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       if (items) {
         for (const item of items) {
           if (!item.designation || !item.designation.trim()) {
-            return res.status(400).json({ error: 'Chaque ligne doit avoir une désignation' });
+            return res
+              .status(400)
+              .json({ success: false, error: 'Chaque ligne doit avoir une désignation' });
           }
         }
       }
@@ -560,11 +831,13 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
         }
         const total_ttc = total_ht * (1 + finalTvaRate / 100);
 
-        db.prepare(`
+        db.prepare(
+          `
           UPDATE quotes SET affaire_id = ?, client_name = ?, client_email = ?, client_address = ?,
           status = ?, quote_date = ?, validity_date = ?, total_ht = ?, tva_rate = ?, total_ttc = ?,
           notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-        `).run(
+        `,
+        ).run(
           affaire_id !== undefined ? affaire_id : existing.affaire_id,
           client_name !== undefined ? client_name : existing.client_name,
           client_email !== undefined ? client_email : existing.client_email,
@@ -572,33 +845,52 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
           status || existing.status,
           quote_date || existing.quote_date,
           validity_date !== undefined ? validity_date : existing.validity_date,
-          total_ht, finalTvaRate, total_ttc,
+          total_ht,
+          finalTvaRate,
+          total_ttc,
           notes !== undefined ? notes : existing.notes,
-          req.params.id
+          req.params.id,
         );
 
         if (items) {
           db.prepare('DELETE FROM quote_items WHERE quote_id = ?').run(req.params.id);
           const insertItem = db.prepare(
-            'INSERT INTO quote_items (quote_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO quote_items (quote_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
           );
           for (const item of items) {
             const itemTotal = (item.quantity || 1) * (item.unit_price_ht || 0);
-            insertItem.run(req.params.id, item.designation.trim(), item.quantity || 1, item.unit || 'u',
-              item.unit_price_ht || 0, item.tva_rate || finalTvaRate, itemTotal, item.notes || null);
+            insertItem.run(
+              req.params.id,
+              item.designation.trim(),
+              item.quantity || 1,
+              item.unit || 'u',
+              item.unit_price_ht || 0,
+              item.tva_rate || finalTvaRate,
+              itemTotal,
+              item.notes || null,
+            );
           }
         }
 
-        addToHistory('quote', req.params.id, 'update', JSON.stringify({ status: status || existing.status }), req.user.id, req.user.name);
+        addToHistory(
+          'quote',
+          req.params.id,
+          'update',
+          JSON.stringify({ status: status || existing.status }),
+          req.user.id,
+          req.user.name,
+        );
       });
 
       updateQuote();
       const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
-      const quoteItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ?').all(req.params.id);
+      const quoteItems = db
+        .prepare('SELECT * FROM quote_items WHERE quote_id = ?')
+        .all(req.params.id);
       res.json({ ...quote, items: quoteItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -606,42 +898,79 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/quotes/:id/convert', authenticateToken, (req, res) => {
     try {
       const quote = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
-      if (!quote) return res.status(404).json({ error: 'Devis non trouvé' });
-      if (quote.status !== 'accepted') return res.status(400).json({ error: 'Seul un devis accepté peut être converti' });
-      if (quote.converted_to_order_id) return res.status(400).json({ error: 'Ce devis a déjà été converti' });
+      if (!quote) return res.status(404).json({ success: false, error: 'Devis non trouvé' });
+      if (quote.status !== 'accepted')
+        return res
+          .status(400)
+          .json({ success: false, error: 'Seul un devis accepté peut être converti' });
+      if (quote.converted_to_order_id)
+        return res.status(400).json({ success: false, error: 'Ce devis a déjà été converti' });
 
-      const quoteItems = db.prepare('SELECT * FROM quote_items WHERE quote_id = ?').all(req.params.id);
+      const quoteItems = db
+        .prepare('SELECT * FROM quote_items WHERE quote_id = ?')
+        .all(req.params.id);
 
       // Transaction atomique pour conversion complète
       const convertQuote = db.transaction(() => {
         // Générer référence commande dans la transaction (atomique)
         const year = new Date().getFullYear();
-        const last = db.prepare('SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1').get(`BC-${year}-%`);
+        const last = db
+          .prepare('SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1')
+          .get(`BC-${year}-%`);
         let num = 1;
-        if (last) { num = parseInt(last.reference.split('-')[2] || '0', 10) + 1; }
+        if (last) {
+          num = parseInt(last.reference.split('-')[2] || '0', 10) + 1;
+        }
         const reference = `BC-${year}-${String(num).padStart(3, '0')}`;
 
-        const orderResult = db.prepare(`
+        const orderResult = db
+          .prepare(
+            `
           INSERT INTO orders (reference, type, affaire_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by)
           VALUES (?, 'purchase', ?, 'draft', ?, ?, ?, ?, ?, ?)
-        `).run(reference, quote.affaire_id, new Date().toISOString().slice(0, 10),
-          quote.total_ht, quote.tva_rate, quote.total_ttc,
-          `Converti depuis devis ${quote.reference}`, req.user.id);
+        `,
+          )
+          .run(
+            reference,
+            quote.affaire_id,
+            new Date().toISOString().slice(0, 10),
+            quote.total_ht,
+            quote.tva_rate,
+            quote.total_ttc,
+            `Converti depuis devis ${quote.reference}`,
+            req.user.id,
+          );
 
         const orderId = orderResult.lastInsertRowid;
 
         const insertItem = db.prepare(
-          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         );
         for (const item of quoteItems) {
-          insertItem.run(orderId, item.designation, item.quantity, item.unit,
-            item.unit_price_ht, item.tva_rate, item.total_ht, item.notes);
+          insertItem.run(
+            orderId,
+            item.designation,
+            item.quantity,
+            item.unit,
+            item.unit_price_ht,
+            item.tva_rate,
+            item.total_ht,
+            item.notes,
+          );
         }
 
-        db.prepare('UPDATE quotes SET converted_to_order_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-          .run(orderId, req.params.id);
+        db.prepare(
+          'UPDATE quotes SET converted_to_order_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ).run(orderId, req.params.id);
 
-        addToHistory('quote', req.params.id, 'convert_to_order', JSON.stringify({ order_id: orderId, reference }), req.user.id, req.user.name);
+        addToHistory(
+          'quote',
+          req.params.id,
+          'convert_to_order',
+          JSON.stringify({ order_id: orderId, reference }),
+          req.user.id,
+          req.user.name,
+        );
         return orderId;
       });
 
@@ -651,7 +980,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       res.status(201).json({ ...order, items: orderItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -659,23 +988,33 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/quotes/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const existing = db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Devis non trouvé' });
+      if (!existing) return res.status(404).json({ success: false, error: 'Devis non trouvé' });
 
       // Empêcher suppression si déjà converti
       if (existing.converted_to_order_id) {
-        return res.status(400).json({ error: 'Impossible de supprimer un devis déjà converti en commande' });
+        return res.status(400).json({
+          success: false,
+          error: 'Impossible de supprimer un devis déjà converti en commande',
+        });
       }
 
       const deleteQuote = db.transaction(() => {
         db.prepare('DELETE FROM quote_items WHERE quote_id = ?').run(req.params.id);
         db.prepare('DELETE FROM quotes WHERE id = ?').run(req.params.id);
-        addToHistory('quote', req.params.id, 'delete', JSON.stringify({ reference: existing.reference }), req.user.id, req.user.name);
+        addToHistory(
+          'quote',
+          req.params.id,
+          'delete',
+          JSON.stringify({ reference: existing.reference }),
+          req.user.id,
+          req.user.name,
+        );
       });
       deleteQuote();
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -686,15 +1025,23 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/orders/prepare-from-affaire', authenticateToken, (req, res) => {
     try {
       const { affaire_id } = req.body;
-      if (!affaire_id) return res.status(400).json({ error: 'affaire_id requis' });
+      if (!affaire_id) return res.status(400).json({ success: false, error: 'affaire_id requis' });
 
       // 1) Récupérer tous les BL de l'affaire
-      const bls = db.prepare('SELECT * FROM bl_imports WHERE affaire_id = ? AND status != ?').all(affaire_id, 'rejected');
+      const bls = db
+        .prepare('SELECT * FROM bl_imports WHERE affaire_id = ? AND status != ?')
+        .all(affaire_id, 'rejected');
       const allItems = [];
       const seen = new Set();
       for (const bl of bls) {
         let pd = bl.parsed_data;
-        if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { continue; } }
+        if (typeof pd === 'string') {
+          try {
+            pd = JSON.parse(pd);
+          } catch {
+            continue;
+          }
+        }
         if (pd?.items && Array.isArray(pd.items)) {
           for (const item of pd.items) {
             // Ne prendre que les articles de la section VENTE/VTE (item_type = 'article')
@@ -717,16 +1064,22 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       //    b) via extraction marque dans la description (après •)
       const brandIndex = {};
       try {
-        db.prepare(`
+        db.prepare(
+          `
           SELECT bp.reference, COALESCE(b.name, e.brand) as brand FROM bp_items bp
           JOIN equipment e ON e.id = bp.equipment_id
           LEFT JOIN brands b ON e.brand_id = b.id
           WHERE bp.bl_import_id IN (SELECT id FROM bl_imports WHERE affaire_id = ?)
             AND (e.brand IS NOT NULL AND e.brand != '')
-        `).all(affaire_id).forEach(r => {
-          if (r.reference && r.brand) brandIndex[r.reference.toUpperCase()] = r.brand;
-        });
-      } catch { /* bp_items may not exist */ }
+        `,
+        )
+          .all(affaire_id)
+          .forEach((r) => {
+            if (r.reference && r.brand) brandIndex[r.reference.toUpperCase()] = r.brand;
+          });
+      } catch {
+        /* bp_items may not exist */
+      }
 
       for (const item of allItems) {
         if (item.fournisseur) continue;
@@ -738,7 +1091,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
         }
         // b) Extraire marque avant ou après • dans la description, puis normaliser
         const desc = item.description || '';
-        const beforeBullet = desc.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'.\/-]{0,30}?)\s*[•·]/);
+        const beforeBullet = desc.match(/^([A-ZÀ-Ÿ][A-ZÀ-Ÿ0-9\s&'./-]{0,30}?)\s*[•·]/);
         if (beforeBullet) {
           const resolved = resolveBrand(beforeBullet[1].trim());
           item.fournisseur = resolved ? resolved.name : beforeBullet[1].trim().toUpperCase();
@@ -763,15 +1116,21 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       // 4) Pour chaque fournisseur, chercher commandes existantes sur cette affaire
       const suppliers = [];
       for (const [name, items] of Object.entries(bySupplier)) {
-        const supplier = db.prepare('SELECT id, name FROM suppliers WHERE UPPER(name) = ?').get(name);
+        const supplier = db
+          .prepare('SELECT id, name FROM suppliers WHERE UPPER(name) = ?')
+          .get(name);
         const existingOrders = supplier
-          ? db.prepare(`
+          ? db
+              .prepare(
+                `
               SELECT o.id, o.reference, o.status, o.order_date, o.total_ht,
                 (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
               FROM orders o
               WHERE o.supplier_id = ? AND o.affaire_id = ? AND o.status NOT IN ('cancelled')
               ORDER BY o.created_at DESC
-            `).all(supplier.id, affaire_id)
+            `,
+              )
+              .all(supplier.id, affaire_id)
           : [];
 
         suppliers.push({
@@ -783,7 +1142,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // 5) Articles sans fournisseur
-      const noSupplierItems = allItems.filter(it => !(it.fournisseur || '').trim());
+      const noSupplierItems = allItems.filter((it) => !(it.fournisseur || '').trim());
 
       res.json({
         affaire_id,
@@ -793,7 +1152,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -805,7 +1164,7 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { affaire_id, affaire_reference, items = [] } = req.body;
       if (!affaire_id || !items || items.length === 0) {
-        return res.status(400).json({ error: 'affaire_id et items sont requis' });
+        return res.status(400).json({ success: false, error: 'affaire_id et items sont requis' });
       }
 
       // Group items by fournisseur
@@ -821,7 +1180,9 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
 
         for (const [supplierName, supplierItems] of Object.entries(bySupplier)) {
           // Find or create supplier
-          let supplier = db.prepare('SELECT id FROM suppliers WHERE UPPER(name) = ?').get(supplierName);
+          let supplier = db
+            .prepare('SELECT id FROM suppliers WHERE UPPER(name) = ?')
+            .get(supplierName);
           if (!supplier) {
             const result = db.prepare('INSERT INTO suppliers (name) VALUES (?)').run(supplierName);
             supplier = { id: result.lastInsertRowid };
@@ -838,16 +1199,23 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
           }
           const total_ttc = total_ht * 1.2; // TVA 20%
 
-          const orderResult = db.prepare(`
+          const orderResult = db
+            .prepare(
+              `
             INSERT INTO orders (reference, type, affaire_id, supplier_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by)
             VALUES (?, 'purchase', ?, ?, 'draft', ?, ?, 20, ?, ?, ?)
-          `).run(
-            reference, affaire_id, supplier.id,
-            new Date().toISOString().slice(0, 10),
-            total_ht, total_ttc,
-            `Généré depuis BL affaire ${affaire_reference || affaire_id}`,
-            req.user.id
-          );
+          `,
+            )
+            .run(
+              reference,
+              affaire_id,
+              supplier.id,
+              new Date().toISOString().slice(0, 10),
+              total_ht,
+              total_ttc,
+              `Généré depuis BL affaire ${affaire_reference || affaire_id}`,
+              req.user.id,
+            );
 
           const orderId = orderResult.lastInsertRowid;
 
@@ -865,15 +1233,26 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
               item.unit_price_ht || 0,
               itemTotal,
               item.code || null,
-              affaire_id
+              affaire_id,
             );
           }
 
-          addToHistory('order', orderId, 'create', JSON.stringify({
-            reference, type: 'purchase', status: 'draft',
-            generated_from: 'bl', affaire_id, supplier: supplierName,
-            item_count: supplierItems.length
-          }), req.user.id, req.user.name);
+          addToHistory(
+            'order',
+            orderId,
+            'create',
+            JSON.stringify({
+              reference,
+              type: 'purchase',
+              status: 'draft',
+              generated_from: 'bl',
+              affaire_id,
+              supplier: supplierName,
+              item_count: supplierItems.length,
+            }),
+            req.user.id,
+            req.user.name,
+          );
 
           createdOrders.push({
             id: orderId,
@@ -896,7 +1275,9 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('generate-from-bl error:', error?.message || error, error?.stack);
-      res.status(500).json({ error: 'Erreur serveur interne', detail: error?.message });
+      res
+        .status(500)
+        .json({ success: false, error: 'Erreur serveur interne', detail: error?.message });
     }
   });
 
@@ -908,10 +1289,10 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { items = [] } = req.body;
       const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-      if (!order) return res.status(404).json({ error: 'Commande non trouvée' });
+      if (!order) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
 
       if (items.length === 0) {
-        return res.status(400).json({ error: 'Aucun article à ajouter' });
+        return res.status(400).json({ success: false, error: 'Aucun article à ajouter' });
       }
 
       const addItems = db.transaction(() => {
@@ -937,28 +1318,39 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
             item.source_affaire_id || null,
             item.source_requester_id || null,
             item.source_requester_name || null,
-            item.source_type || 'affaire'
+            item.source_type || 'affaire',
           );
         }
 
         // Update order totals
         const newTotal = (order.total_ht || 0) + addedTotal;
         const newTtc = newTotal * (1 + (order.tva_rate || 20) / 100);
-        db.prepare('UPDATE orders SET total_ht = ?, total_ttc = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-          .run(newTotal, newTtc, order.id);
+        db.prepare(
+          'UPDATE orders SET total_ht = ?, total_ttc = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ).run(newTotal, newTtc, order.id);
 
-        addToHistory('order', order.id, 'add_items', JSON.stringify({
-          count: items.length, added_total: addedTotal
-        }), req.user.id, req.user.name);
+        addToHistory(
+          'order',
+          order.id,
+          'add_items',
+          JSON.stringify({
+            count: items.length,
+            added_total: addedTotal,
+          }),
+          req.user.id,
+          req.user.name,
+        );
       });
 
       addItems();
       const updatedOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-      const orderItems = db.prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC').all(req.params.id);
+      const orderItems = db
+        .prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC')
+        .all(req.params.id);
       res.json({ ...updatedOrder, items: orderItems });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -967,24 +1359,39 @@ export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
 // Demandes de matériel
 // ═══════════════════════════════════════════════════════════════
 export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin) {
-
   // Liste des demandes (avec filtres)
   app.get('/api/material-requests', authenticateToken, (req, res) => {
     try {
       const { status, affaire_id, requested_by, search, priority } = req.query;
       let query = `SELECT mr.*, u.name as requested_by_name_db FROM material_requests mr LEFT JOIN users u ON u.id = mr.requested_by WHERE 1=1`;
       const params = [];
-      if (status) { query += ' AND mr.status = ?'; params.push(status); }
-      if (affaire_id) { query += ' AND mr.affaire_id = ?'; params.push(affaire_id); }
-      if (requested_by) { query += ' AND mr.requested_by = ?'; params.push(requested_by); }
-      if (priority) { query += ' AND mr.priority = ?'; params.push(priority); }
-      if (search) { query += ' AND (mr.article LIKE ? OR mr.supplier_name LIKE ? OR mr.notes LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`); }
-      query += ' ORDER BY CASE mr.priority WHEN \'urgent\' THEN 0 WHEN \'high\' THEN 1 WHEN \'normal\' THEN 2 ELSE 3 END, mr.created_at DESC';
+      if (status) {
+        query += ' AND mr.status = ?';
+        params.push(status);
+      }
+      if (affaire_id) {
+        query += ' AND mr.affaire_id = ?';
+        params.push(affaire_id);
+      }
+      if (requested_by) {
+        query += ' AND mr.requested_by = ?';
+        params.push(requested_by);
+      }
+      if (priority) {
+        query += ' AND mr.priority = ?';
+        params.push(priority);
+      }
+      if (search) {
+        query += ' AND (mr.article LIKE ? OR mr.supplier_name LIKE ? OR mr.notes LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
+      query +=
+        " ORDER BY CASE mr.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END, mr.created_at DESC";
       const requests = db.prepare(query).all(...params);
       res.json(requests);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -992,91 +1399,145 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
   app.get('/api/material-requests/stats', authenticateToken, (req, res) => {
     try {
       const total = db.prepare('SELECT COUNT(*) as c FROM material_requests').get().c;
-      const pending = db.prepare('SELECT COUNT(*) as c FROM material_requests WHERE status = ?').get('pending').c;
-      const approved = db.prepare('SELECT COUNT(*) as c FROM material_requests WHERE status = ?').get('approved').c;
-      const ordered = db.prepare('SELECT COUNT(*) as c FROM material_requests WHERE status = ?').get('ordered').c;
+      const pending = db
+        .prepare('SELECT COUNT(*) as c FROM material_requests WHERE status = ?')
+        .get('pending').c;
+      const approved = db
+        .prepare('SELECT COUNT(*) as c FROM material_requests WHERE status = ?')
+        .get('approved').c;
+      const ordered = db
+        .prepare('SELECT COUNT(*) as c FROM material_requests WHERE status = ?')
+        .get('ordered').c;
       res.json({ total, pending, approved, ordered });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Créer une demande (tout utilisateur authentifié)
   app.post('/api/material-requests', authenticateToken, (req, res) => {
     try {
-      const { article, supplier_id, supplier_name, quantity, priority, affaire_id, destination, destination_other, notes, ref_code } = req.body;
+      const {
+        article,
+        supplier_id,
+        supplier_name,
+        quantity,
+        priority,
+        affaire_id,
+        destination,
+        destination_other,
+        notes,
+        ref_code,
+      } = req.body;
       if (!article || !article.trim()) {
-        return res.status(400).json({ error: 'L\'article est requis' });
+        return res.status(400).json({ success: false, error: "L'article est requis" });
       }
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         INSERT INTO material_requests (article, supplier_id, supplier_name, quantity, priority, affaire_id, destination, destination_other, notes, ref_code, requested_by, requested_by_name)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        article.trim(),
-        supplier_id || null,
-        supplier_name || null,
-        quantity || 1,
-        priority || 'normal',
-        affaire_id || null,
-        destination || 'Stock',
-        destination_other || null,
-        notes || null,
-        ref_code || null,
+      `,
+        )
+        .run(
+          article.trim(),
+          supplier_id || null,
+          supplier_name || null,
+          quantity || 1,
+          priority || 'normal',
+          affaire_id || null,
+          destination || 'Stock',
+          destination_other || null,
+          notes || null,
+          ref_code || null,
+          req.user.id,
+          req.user.name,
+        );
+      const created = db
+        .prepare('SELECT * FROM material_requests WHERE id = ?')
+        .get(result.lastInsertRowid);
+      addToHistory(
+        'material_request',
+        created.id,
+        'create',
+        JSON.stringify({ article, quantity, priority, destination }),
         req.user.id,
-        req.user.name
+        req.user.name,
       );
-      const created = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(result.lastInsertRowid);
-      addToHistory('material_request', created.id, 'create', JSON.stringify({ article, quantity, priority, destination }), req.user.id, req.user.name);
       res.status(201).json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Modifier une demande
   app.put('/api/material-requests/:id', authenticateToken, (req, res) => {
     try {
-      const existing = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      const existing = db
+        .prepare('SELECT * FROM material_requests WHERE id = ?')
+        .get(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
       // Seul le demandeur ou un admin peut modifier
       if (existing.requested_by !== req.user.id) {
         const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-        if (!user?.is_admin) return res.status(403).json({ error: 'Non autorisé' });
+        if (!user?.is_admin) return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
-      const { article, supplier_id, supplier_name, quantity, priority, affaire_id, destination, destination_other, notes, ref_code } = req.body;
-      db.prepare(`
+      const {
+        article,
+        supplier_id,
+        supplier_name,
+        quantity,
+        priority,
+        affaire_id,
+        destination,
+        destination_other,
+        notes,
+        ref_code,
+      } = req.body;
+      db.prepare(
+        `
         UPDATE material_requests SET article = ?, supplier_id = ?, supplier_name = ?, quantity = ?, priority = ?,
         affaire_id = ?, destination = ?, destination_other = ?, notes = ?, ref_code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-      `).run(
-        article || existing.article, supplier_id ?? existing.supplier_id, supplier_name ?? existing.supplier_name,
-        quantity ?? existing.quantity, priority || existing.priority, affaire_id ?? existing.affaire_id,
-        destination || existing.destination, destination_other ?? existing.destination_other,
-        notes ?? existing.notes, ref_code ?? existing.ref_code, req.params.id
+      `,
+      ).run(
+        article || existing.article,
+        supplier_id ?? existing.supplier_id,
+        supplier_name ?? existing.supplier_name,
+        quantity ?? existing.quantity,
+        priority || existing.priority,
+        affaire_id ?? existing.affaire_id,
+        destination || existing.destination,
+        destination_other ?? existing.destination_other,
+        notes ?? existing.notes,
+        ref_code ?? existing.ref_code,
+        req.params.id,
       );
       const updated = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
       res.json(updated);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Supprimer une demande
   app.delete('/api/material-requests/:id', authenticateToken, (req, res) => {
     try {
-      const existing = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ error: 'Demande non trouvée' });
+      const existing = db
+        .prepare('SELECT * FROM material_requests WHERE id = ?')
+        .get(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
       if (existing.requested_by !== req.user.id) {
         const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
-        if (!user?.is_admin) return res.status(403).json({ error: 'Non autorisé' });
+        if (!user?.is_admin) return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
       db.prepare('DELETE FROM material_requests WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1085,34 +1546,53 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
     try {
       const { action, rejection_reason } = req.body; // action: 'approve' | 'reject'
       const request = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
-      if (!request) return res.status(404).json({ error: 'Demande non trouvée' });
-      if (request.status !== 'pending') return res.status(400).json({ error: 'Cette demande a déjà été traitée' });
+      if (!request) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
+      if (request.status !== 'pending')
+        return res.status(400).json({ success: false, error: 'Cette demande a déjà été traitée' });
 
       if (action === 'reject') {
-        db.prepare(`UPDATE material_requests SET status = 'rejected', approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP, rejection_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-          .run(req.user.id, req.user.name, rejection_reason || null, req.params.id);
-        addToHistory('material_request', req.params.id, 'reject', JSON.stringify({ reason: rejection_reason }), req.user.id, req.user.name);
-        const updated = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
+        db.prepare(
+          `UPDATE material_requests SET status = 'rejected', approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP, rejection_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        ).run(req.user.id, req.user.name, rejection_reason || null, req.params.id);
+        addToHistory(
+          'material_request',
+          req.params.id,
+          'reject',
+          JSON.stringify({ reason: rejection_reason }),
+          req.user.id,
+          req.user.name,
+        );
+        const updated = db
+          .prepare('SELECT * FROM material_requests WHERE id = ?')
+          .get(req.params.id);
         return res.json({ success: true, request: updated, action: 'rejected' });
       }
 
       if (action === 'approve') {
         // Répartir dans une commande existante (même fournisseur, status draft/sent) ou en créer une nouvelle
         const distributeToOrder = db.transaction(() => {
-          let orderId = null;
-          let orderRef = null;
+          let orderId;
+          let orderRef;
           let isNew = false;
 
           const supplierName = (request.supplier_name || 'DIVERS').trim().toUpperCase();
           // Find or create supplier
-          let supplier = db.prepare('SELECT id FROM suppliers WHERE UPPER(name) = ?').get(supplierName);
+          let supplier = db
+            .prepare('SELECT id FROM suppliers WHERE UPPER(name) = ?')
+            .get(supplierName);
           if (!supplier) {
-            const sr = db.prepare('INSERT INTO suppliers (name) VALUES (?)').run(request.supplier_name || 'DIVERS');
+            const sr = db
+              .prepare('INSERT INTO suppliers (name) VALUES (?)')
+              .run(request.supplier_name || 'DIVERS');
             supplier = { id: sr.lastInsertRowid };
           }
 
           // Try to find existing draft order for this supplier
-          const existingOrder = db.prepare(`SELECT id, reference, total_ht, tva_rate FROM orders WHERE supplier_id = ? AND status IN ('draft', 'sent') ORDER BY created_at DESC LIMIT 1`).get(supplier.id);
+          const existingOrder = db
+            .prepare(
+              `SELECT id, reference, total_ht, tva_rate FROM orders WHERE supplier_id = ? AND status IN ('draft', 'sent') ORDER BY created_at DESC LIMIT 1`,
+            )
+            .get(supplier.id);
 
           if (existingOrder) {
             orderId = existingOrder.id;
@@ -1120,43 +1600,78 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
           } else {
             // Create new order
             const year = new Date().getFullYear();
-            const last = db.prepare(`SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1`).get(`BC-${year}-%`);
+            const last = db
+              .prepare(
+                `SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1`,
+              )
+              .get(`BC-${year}-%`);
             let num = 1;
-            if (last) { const parts = last.reference.split('-'); num = parseInt(parts[2] || '0', 10) + 1; }
+            if (last) {
+              const parts = last.reference.split('-');
+              num = parseInt(parts[2] || '0', 10) + 1;
+            }
             orderRef = `BC-${year}-${String(num).padStart(3, '0')}`;
 
-            const or = db.prepare(`INSERT INTO orders (reference, type, supplier_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by) VALUES (?, 'purchase', ?, 'draft', ?, 0, 20, 0, ?, ?)`)
-              .run(orderRef, supplier.id, new Date().toISOString().slice(0, 10), `Commande groupée - demandes matériel`, req.user.id);
+            const or = db
+              .prepare(
+                `INSERT INTO orders (reference, type, supplier_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by) VALUES (?, 'purchase', ?, 'draft', ?, 0, 20, 0, ?, ?)`,
+              )
+              .run(
+                orderRef,
+                supplier.id,
+                new Date().toISOString().slice(0, 10),
+                `Commande groupée - demandes matériel`,
+                req.user.id,
+              );
             orderId = or.lastInsertRowid;
             isNew = true;
           }
 
           // Add item to order
-          const itemTotal = (request.quantity || 1) * 0; // No price on requests
-          db.prepare(`INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, ref_code, source_requester_id, source_requester_name, source_affaire_id, source_type)
-            VALUES (?, ?, ?, 'u', 0, 20, 0, ?, ?, ?, ?, ?)`)
-            .run(orderId, request.article, request.quantity || 1, request.ref_code || null,
-              request.requested_by, request.requested_by_name, request.affaire_id || null,
-              request.affaire_id ? 'affaire' : 'personnel');
+          db.prepare(
+            `INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, ref_code, source_requester_id, source_requester_name, source_affaire_id, source_type)
+            VALUES (?, ?, ?, 'u', 0, 20, 0, ?, ?, ?, ?, ?)`,
+          ).run(
+            orderId,
+            request.article,
+            request.quantity || 1,
+            request.ref_code || null,
+            request.requested_by,
+            request.requested_by_name,
+            request.affaire_id || null,
+            request.affaire_id ? 'affaire' : 'personnel',
+          );
 
           // Update request status
-          db.prepare(`UPDATE material_requests SET status = 'approved', order_id = ?, approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-            .run(orderId, req.user.id, req.user.name, req.params.id);
+          db.prepare(
+            `UPDATE material_requests SET status = 'approved', order_id = ?, approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          ).run(orderId, req.user.id, req.user.name, req.params.id);
 
-          addToHistory('material_request', req.params.id, 'approve', JSON.stringify({ order_id: orderId, order_ref: orderRef }), req.user.id, req.user.name);
+          addToHistory(
+            'material_request',
+            req.params.id,
+            'approve',
+            JSON.stringify({ order_id: orderId, order_ref: orderRef }),
+            req.user.id,
+            req.user.name,
+          );
 
           return { orderId, orderRef, isNew, supplierId: supplier.id };
         });
 
         const result = distributeToOrder();
-        const updated = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
+        const updated = db
+          .prepare('SELECT * FROM material_requests WHERE id = ?')
+          .get(req.params.id);
         return res.json({ success: true, request: updated, action: 'approved', order: result });
       }
 
-      return res.status(400).json({ error: 'Action invalide — approve ou reject attendu' });
+      return res
+        .status(400)
+        .json({ success: false, error: 'Action invalide — approve ou reject attendu' });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1164,49 +1679,83 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
   app.post('/api/material-requests/batch-validate', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { request_ids = [], action } = req.body;
-      if (!request_ids.length) return res.status(400).json({ error: 'Aucune demande sélectionnée' });
+      if (!request_ids.length)
+        return res.status(400).json({ success: false, error: 'Aucune demande sélectionnée' });
 
       const results = [];
       for (const id of request_ids) {
         try {
-          const request = db.prepare('SELECT * FROM material_requests WHERE id = ? AND status = ?').get(id, 'pending');
-          if (!request) { results.push({ id, status: 'skipped' }); continue; }
+          const request = db
+            .prepare('SELECT * FROM material_requests WHERE id = ? AND status = ?')
+            .get(id, 'pending');
+          if (!request) {
+            results.push({ id, status: 'skipped' });
+            continue;
+          }
 
           if (action === 'reject') {
-            db.prepare(`UPDATE material_requests SET status = 'rejected', approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP WHERE id = ?`)
-              .run(req.user.id, req.user.name, id);
+            db.prepare(
+              `UPDATE material_requests SET status = 'rejected', approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            ).run(req.user.id, req.user.name, id);
             results.push({ id, status: 'rejected' });
           } else if (action === 'approve') {
             // Same distribution logic as single validate
             const supplierName = (request.supplier_name || 'DIVERS').trim().toUpperCase();
-            let supplier = db.prepare('SELECT id FROM suppliers WHERE UPPER(name) = ?').get(supplierName);
+            let supplier = db
+              .prepare('SELECT id FROM suppliers WHERE UPPER(name) = ?')
+              .get(supplierName);
             if (!supplier) {
-              const sr = db.prepare('INSERT INTO suppliers (name) VALUES (?)').run(request.supplier_name || 'DIVERS');
+              const sr = db
+                .prepare('INSERT INTO suppliers (name) VALUES (?)')
+                .run(request.supplier_name || 'DIVERS');
               supplier = { id: sr.lastInsertRowid };
             }
 
             let orderId;
-            const existingOrder = db.prepare(`SELECT id FROM orders WHERE supplier_id = ? AND status IN ('draft', 'sent') ORDER BY created_at DESC LIMIT 1`).get(supplier.id);
+            const existingOrder = db
+              .prepare(
+                `SELECT id FROM orders WHERE supplier_id = ? AND status IN ('draft', 'sent') ORDER BY created_at DESC LIMIT 1`,
+              )
+              .get(supplier.id);
             if (existingOrder) {
               orderId = existingOrder.id;
             } else {
               const year = new Date().getFullYear();
-              const last = db.prepare(`SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1`).get(`BC-${year}-%`);
+              const last = db
+                .prepare(
+                  `SELECT reference FROM orders WHERE reference LIKE ? ORDER BY id DESC LIMIT 1`,
+                )
+                .get(`BC-${year}-%`);
               let num = 1;
-              if (last) { const parts = last.reference.split('-'); num = parseInt(parts[2] || '0', 10) + 1; }
+              if (last) {
+                const parts = last.reference.split('-');
+                num = parseInt(parts[2] || '0', 10) + 1;
+              }
               const ref = `BC-${year}-${String(num).padStart(3, '0')}`;
-              const or = db.prepare(`INSERT INTO orders (reference, type, supplier_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by) VALUES (?, 'purchase', ?, 'draft', ?, 0, 20, 0, 'Commande groupée', ?)`)
+              const or = db
+                .prepare(
+                  `INSERT INTO orders (reference, type, supplier_id, status, order_date, total_ht, tva_rate, total_ttc, notes, created_by) VALUES (?, 'purchase', ?, 'draft', ?, 0, 20, 0, 'Commande groupée', ?)`,
+                )
                 .run(ref, supplier.id, new Date().toISOString().slice(0, 10), req.user.id);
               orderId = or.lastInsertRowid;
             }
 
-            db.prepare(`INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, ref_code, source_requester_id, source_requester_name, source_affaire_id, source_type) VALUES (?, ?, ?, 'u', 0, 20, 0, ?, ?, ?, ?, ?)`)
-              .run(orderId, request.article, request.quantity || 1, request.ref_code || null,
-                request.requested_by, request.requested_by_name, request.affaire_id || null,
-                request.affaire_id ? 'affaire' : 'personnel');
+            db.prepare(
+              `INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, ref_code, source_requester_id, source_requester_name, source_affaire_id, source_type) VALUES (?, ?, ?, 'u', 0, 20, 0, ?, ?, ?, ?, ?)`,
+            ).run(
+              orderId,
+              request.article,
+              request.quantity || 1,
+              request.ref_code || null,
+              request.requested_by,
+              request.requested_by_name,
+              request.affaire_id || null,
+              request.affaire_id ? 'affaire' : 'personnel',
+            );
 
-            db.prepare(`UPDATE material_requests SET status = 'approved', order_id = ?, approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP WHERE id = ?`)
-              .run(orderId, req.user.id, req.user.name, id);
+            db.prepare(
+              `UPDATE material_requests SET status = 'approved', order_id = ?, approved_by = ?, approved_by_name = ?, approved_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            ).run(orderId, req.user.id, req.user.name, id);
             results.push({ id, status: 'approved', order_id: orderId });
           }
         } catch (err) {
@@ -1216,7 +1765,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       res.json({ success: true, results });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -1233,16 +1782,26 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
   app.get('/api/supplier-documents', authenticateToken, (req, res) => {
     try {
       const { supplier_id, order_id, doc_type } = req.query;
-      let query = 'SELECT sd.*, s.name as supplier_name FROM supplier_documents sd LEFT JOIN suppliers s ON s.id = sd.supplier_id WHERE 1=1';
+      let query =
+        'SELECT sd.*, s.name as supplier_name FROM supplier_documents sd LEFT JOIN suppliers s ON s.id = sd.supplier_id WHERE 1=1';
       const params = [];
-      if (supplier_id) { query += ' AND sd.supplier_id = ?'; params.push(supplier_id); }
-      if (order_id) { query += ' AND sd.order_id = ?'; params.push(order_id); }
-      if (doc_type) { query += ' AND sd.doc_type = ?'; params.push(doc_type); }
+      if (supplier_id) {
+        query += ' AND sd.supplier_id = ?';
+        params.push(supplier_id);
+      }
+      if (order_id) {
+        query += ' AND sd.order_id = ?';
+        params.push(order_id);
+      }
+      if (doc_type) {
+        query += ' AND sd.doc_type = ?';
+        params.push(doc_type);
+      }
       query += ' ORDER BY sd.created_at DESC';
       res.json(db.prepare(query).all(...params));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1250,27 +1809,49 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
   app.post('/api/supplier-documents', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { supplier_id, order_id, doc_type, filename, notes } = req.body;
-      if (!supplier_id || !doc_type) return res.status(400).json({ error: 'supplier_id et doc_type requis' });
+      if (!supplier_id || !doc_type)
+        return res.status(400).json({ success: false, error: 'supplier_id et doc_type requis' });
       const validTypes = ['acknowledgment', 'delivery_note', 'quote', 'invoice'];
-      if (!validTypes.includes(doc_type)) return res.status(400).json({ error: 'Type document invalide' });
+      if (!validTypes.includes(doc_type))
+        return res.status(400).json({ success: false, error: 'Type document invalide' });
 
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         INSERT INTO supplier_documents (supplier_id, order_id, doc_type, filename, notes, created_by)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(supplier_id, order_id || null, doc_type, filename || `${doc_type}-${Date.now()}`, notes || null, req.user.id);
+      `,
+        )
+        .run(
+          supplier_id,
+          order_id || null,
+          doc_type,
+          filename || `${doc_type}-${Date.now()}`,
+          notes || null,
+          req.user.id,
+        );
 
-      const doc = db.prepare('SELECT * FROM supplier_documents WHERE id = ?').get(result.lastInsertRowid);
+      const doc = db
+        .prepare('SELECT * FROM supplier_documents WHERE id = ?')
+        .get(result.lastInsertRowid);
 
       // If it's a delivery note, auto-validate received items
       if (doc_type === 'delivery_note' && order_id) {
         autoValidateReceivedItems(order_id, result.lastInsertRowid, req.user);
       }
 
-      addToHistory('supplier_document', doc.id, 'create', JSON.stringify({ doc_type, supplier_id, order_id }), req.user.id, req.user.name);
+      addToHistory(
+        'supplier_document',
+        doc.id,
+        'create',
+        JSON.stringify({ doc_type, supplier_id, order_id }),
+        req.user.id,
+        req.user.name,
+      );
       res.status(201).json(doc);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1278,7 +1859,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
   app.delete('/api/supplier-documents/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       const doc = db.prepare('SELECT * FROM supplier_documents WHERE id = ?').get(req.params.id);
-      if (!doc) return res.status(404).json({ error: 'Document non trouvé' });
+      if (!doc) return res.status(404).json({ success: false, error: 'Document non trouvé' });
       if (doc.file_path) {
         const fp = path.join(uploadDir, doc.file_path);
         if (fs.existsSync(fp)) fs.unlinkSync(fp);
@@ -1287,7 +1868,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1297,23 +1878,25 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       const { include_archived } = req.query;
       let statusFilter = `AND o.status IN ('draft','sent','confirmed','partial')`;
       if (include_archived === 'true') statusFilter = '';
-      const suppliers = db.prepare(`
-        SELECT s.*, 
+      const suppliers = db
+        .prepare(
+          `
+        SELECT s.*,
           COUNT(DISTINCT o.id) as active_order_count,
           COALESCE(SUM(o.total_ht), 0) as total_ht,
           GROUP_CONCAT(DISTINCT o.status) as order_statuses,
           (SELECT COUNT(*) FROM catalog_imports ci WHERE ci.supplier_id = s.id) as catalog_count
         FROM suppliers s
         LEFT JOIN orders o ON o.supplier_id = s.id ${statusFilter}
-        WHERE EXISTS (SELECT 1 FROM orders o2 WHERE o2.supplier_id = s.id ${statusFilter})
-           OR EXISTS (SELECT 1 FROM catalog_imports ci WHERE ci.supplier_id = s.id)
         GROUP BY s.id
         ORDER BY active_order_count DESC, s.name ASC
-      `).all();
+      `,
+        )
+        .all();
       res.json(suppliers);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1323,7 +1906,9 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       const { include_archived } = req.query;
       let statusFilter = `AND o.status IN ('draft','sent','confirmed','partial')`;
       if (include_archived === 'true') statusFilter = '';
-      const orders = db.prepare(`
+      const orders = db
+        .prepare(
+          `
         SELECT o.*, u.name as created_by_name,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND received_qty >= quantity) as completed_items,
@@ -1333,13 +1918,17 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
         LEFT JOIN affaires a ON a.numero_affaire = o.affaire_id
         WHERE o.supplier_id = ? ${statusFilter}
         ORDER BY o.created_at DESC
-      `).all(req.params.id);
+      `,
+        )
+        .all(req.params.id);
 
       // Charger les items pour chaque commande
-      const orderIds = orders.map(o => o.id);
+      const orderIds = orders.map((o) => o.id);
       if (orderIds.length > 0) {
         const placeholders = orderIds.map(() => '?').join(',');
-        const allItems = db.prepare(`SELECT * FROM order_items WHERE order_id IN (${placeholders}) ORDER BY id ASC`).all(...orderIds);
+        const allItems = db
+          .prepare(`SELECT * FROM order_items WHERE order_id IN (${placeholders}) ORDER BY id ASC`)
+          .all(...orderIds);
         const itemsByOrder = {};
         for (const item of allItems) {
           if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
@@ -1352,18 +1941,20 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json(orders);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // ═══ Catalogues importés d'un fournisseur ═══
   app.get('/api/suppliers/:id/catalogs', authenticateToken, (req, res) => {
     try {
-      const catalogs = db.prepare('SELECT * FROM catalog_imports WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
+      const catalogs = db
+        .prepare('SELECT * FROM catalog_imports WHERE supplier_id = ? ORDER BY created_at DESC')
+        .all(req.params.id);
       res.json(catalogs);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur' });
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
 
@@ -1371,9 +1962,12 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
   app.get('/api/suppliers/:id/full-detail', authenticateToken, (req, res) => {
     try {
       const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(req.params.id);
-      if (!supplier) return res.status(404).json({ error: 'Fournisseur non trouvé' });
+      if (!supplier)
+        return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
 
-      const orders = db.prepare(`
+      const orders = db
+        .prepare(
+          `
         SELECT o.*, u.name as created_by_name,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count,
           (SELECT COUNT(*) FROM order_items WHERE order_id = o.id AND received_qty >= quantity) as completed_items,
@@ -1381,14 +1975,18 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
         FROM orders o LEFT JOIN users u ON u.id = o.created_by
         LEFT JOIN affaires a ON a.numero_affaire = o.affaire_id
         WHERE o.supplier_id = ? ORDER BY o.created_at DESC
-      `).all(req.params.id);
+      `,
+        )
+        .all(req.params.id);
 
       // Get items for all orders in one query (évite N+1)
-      const orderIds = orders.map(o => o.id);
+      const orderIds = orders.map((o) => o.id);
       const itemsByOrder = {};
       if (orderIds.length > 0) {
         const placeholders = orderIds.map(() => '?').join(',');
-        const allItems = db.prepare(`SELECT * FROM order_items WHERE order_id IN (${placeholders}) ORDER BY id ASC`).all(...orderIds);
+        const allItems = db
+          .prepare(`SELECT * FROM order_items WHERE order_id IN (${placeholders}) ORDER BY id ASC`)
+          .all(...orderIds);
         for (const item of allItems) {
           if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
           itemsByOrder[item.order_id].push(item);
@@ -1398,25 +1996,31 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
         order.items = itemsByOrder[order.id] || [];
       }
 
-      const documents = db.prepare('SELECT * FROM supplier_documents WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
+      const documents = db
+        .prepare('SELECT * FROM supplier_documents WHERE supplier_id = ? ORDER BY created_at DESC')
+        .all(req.params.id);
 
       // Catalog imports for this supplier
-      const catalogs = db.prepare('SELECT * FROM catalog_imports WHERE supplier_id = ? ORDER BY created_at DESC').all(req.params.id);
+      const catalogs = db
+        .prepare('SELECT * FROM catalog_imports WHERE supplier_id = ? ORDER BY created_at DESC')
+        .all(req.params.id);
 
       // BL correspondence: find affaires linked to this supplier's orders
-      const affaireIds = [...new Set(orders.map(o => o.affaire_id).filter(Boolean))];
+      const affaireIds = [...new Set(orders.map((o) => o.affaire_id).filter(Boolean))];
       const blCorrespondence = [];
       for (const affId of affaireIds) {
         const bls = db.prepare('SELECT * FROM bl_imports WHERE affaire_id = ?').all(affId);
-        blCorrespondence.push(...bls.map(bl => ({ ...bl, affaire_id: affId })));
+        blCorrespondence.push(...bls.map((bl) => ({ ...bl, affaire_id: affId })));
       }
 
       // Workflow summary per order
-      const workflow = orders.map(o => {
-        const hasQuote = documents.some(d => d.order_id === o.id && d.doc_type === 'quote');
-        const hasAck = documents.some(d => d.order_id === o.id && d.doc_type === 'acknowledgment');
-        const hasBL = documents.some(d => d.order_id === o.id && d.doc_type === 'delivery_note');
-        const hasInvoice = documents.some(d => d.order_id === o.id && d.doc_type === 'invoice');
+      const workflow = orders.map((o) => {
+        const hasQuote = documents.some((d) => d.order_id === o.id && d.doc_type === 'quote');
+        const hasAck = documents.some(
+          (d) => d.order_id === o.id && d.doc_type === 'acknowledgment',
+        );
+        const hasBL = documents.some((d) => d.order_id === o.id && d.doc_type === 'delivery_note');
+        const hasInvoice = documents.some((d) => d.order_id === o.id && d.doc_type === 'invoice');
         return {
           order_id: o.id,
           reference: o.reference,
@@ -1435,7 +2039,7 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       res.json({ supplier, orders, documents, catalogs, blCorrespondence, workflow });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1448,23 +2052,39 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
 
       for (const item of items) {
         if ((item.received_qty || 0) < item.quantity) {
-          db.prepare('UPDATE order_items SET received_qty = quantity, received_date = ?, delivery_note_id = ? WHERE id = ?')
-            .run(now, deliveryNoteId, item.id);
+          db.prepare(
+            'UPDATE order_items SET received_qty = quantity, received_date = ?, delivery_note_id = ? WHERE id = ?',
+          ).run(now, deliveryNoteId, item.id);
         }
       }
 
       // Check if order is now fully received
-      const remaining = db.prepare('SELECT COUNT(*) as c FROM order_items WHERE order_id = ? AND (received_qty IS NULL OR received_qty < quantity)').get(orderId);
+      const remaining = db
+        .prepare(
+          'SELECT COUNT(*) as c FROM order_items WHERE order_id = ? AND (received_qty IS NULL OR received_qty < quantity)',
+        )
+        .get(orderId);
       if (remaining.c === 0) {
-        db.prepare("UPDATE orders SET status = 'received', received_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(now, orderId);
+        db.prepare(
+          "UPDATE orders SET status = 'received', received_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(now, orderId);
 
         // Check completion and send alerts
         checkOrderCompletion(orderId, user);
       } else {
-        db.prepare("UPDATE orders SET status = 'partial', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(orderId);
+        db.prepare(
+          "UPDATE orders SET status = 'partial', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(orderId);
       }
 
-      addToHistory('order', orderId, 'auto_receive', JSON.stringify({ delivery_note_id: deliveryNoteId, items_count: items.length }), user.id, user.name);
+      addToHistory(
+        'order',
+        orderId,
+        'auto_receive',
+        JSON.stringify({ delivery_note_id: deliveryNoteId, items_count: items.length }),
+        user.id,
+        user.name,
+      );
     } catch (error) {
       logger.error('Auto-validation error:', error);
     }
@@ -1477,13 +2097,24 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       if (!order || order.completion_notified) return;
 
       // Create alert for order completion
-      db.prepare("UPDATE orders SET completion_notified = 1 WHERE id = ?").run(orderId);
+      db.prepare('UPDATE orders SET completion_notified = 1 WHERE id = ?').run(orderId);
 
       // Find all requesters for this order's items
-      const requesters = db.prepare(`SELECT DISTINCT source_requester_id, source_requester_name FROM order_items WHERE order_id = ? AND source_requester_id IS NOT NULL`).all(orderId);
+      const requesters = db
+        .prepare(
+          `SELECT DISTINCT source_requester_id, source_requester_name FROM order_items WHERE order_id = ? AND source_requester_id IS NOT NULL`,
+        )
+        .all(orderId);
       for (const r of requesters) {
-        db.prepare(`INSERT INTO completion_alerts (entity_type, entity_id, entity_reference, alert_type, message, recipient_id, recipient_name) VALUES ('order', ?, ?, 'completion', ?, ?, ?)`)
-          .run(String(orderId), order.reference, `La commande ${order.reference} est entièrement réceptionnée. Vos articles sont disponibles.`, r.source_requester_id, r.source_requester_name);
+        db.prepare(
+          `INSERT INTO completion_alerts (entity_type, entity_id, entity_reference, alert_type, message, recipient_id, recipient_name) VALUES ('order', ?, ?, 'completion', ?, ?, ?)`,
+        ).run(
+          String(orderId),
+          order.reference,
+          `La commande ${order.reference} est entièrement réceptionnée. Vos articles sont disponibles.`,
+          r.source_requester_id,
+          r.source_requester_name,
+        );
       }
 
       // Check if all orders for a linked affaire are complete
@@ -1491,7 +2122,11 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
         checkAffaireCompletion(order.affaire_id, user);
       }
       // Also check affaires linked through items
-      const affaireIds = db.prepare('SELECT DISTINCT source_affaire_id FROM order_items WHERE order_id = ? AND source_affaire_id IS NOT NULL').all(orderId);
+      const affaireIds = db
+        .prepare(
+          'SELECT DISTINCT source_affaire_id FROM order_items WHERE order_id = ? AND source_affaire_id IS NOT NULL',
+        )
+        .all(orderId);
       for (const { source_affaire_id } of affaireIds) {
         checkAffaireCompletion(source_affaire_id, user);
       }
@@ -1500,25 +2135,44 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
     }
   }
 
-  function checkAffaireCompletion(affaireId, user) {
+  function checkAffaireCompletion(affaireId, _user) {
     try {
       // Check if all orders linked to this affaire are received
-      const pendingOrders = db.prepare(`
+      const pendingOrders = db
+        .prepare(
+          `
         SELECT COUNT(*) as c FROM orders WHERE (affaire_id = ? OR id IN (SELECT DISTINCT order_id FROM order_items WHERE source_affaire_id = ?))
         AND status NOT IN ('received', 'cancelled')
-      `).get(affaireId, affaireId);
+      `,
+        )
+        .get(affaireId, affaireId);
 
       if (pendingOrders.c === 0) {
         // All orders are complete — check if we already notified
-        const existingAlert = db.prepare(`SELECT id FROM completion_alerts WHERE entity_type = 'affaire' AND entity_id = ? AND alert_type = 'completion'`).get(affaireId);
+        const existingAlert = db
+          .prepare(
+            `SELECT id FROM completion_alerts WHERE entity_type = 'affaire' AND entity_id = ? AND alert_type = 'completion'`,
+          )
+          .get(affaireId);
         if (!existingAlert) {
           // Find the affaire creator
-          const affaire = db.prepare('SELECT * FROM affaires WHERE numero_affaire = ?').get(affaireId);
+          const affaire = db
+            .prepare('SELECT * FROM affaires WHERE numero_affaire = ?')
+            .get(affaireId);
           if (affaire && affaire.created_by) {
-            const creator = db.prepare('SELECT id, name FROM users WHERE id = ?').get(affaire.created_by);
+            const creator = db
+              .prepare('SELECT id, name FROM users WHERE id = ?')
+              .get(affaire.created_by);
             if (creator) {
-              db.prepare(`INSERT INTO completion_alerts (entity_type, entity_id, entity_reference, alert_type, message, recipient_id, recipient_name) VALUES ('affaire', ?, ?, 'completion', ?, ?, ?)`)
-                .run(affaireId, affaireId, `Tous les articles commandés pour l'affaire ${affaireId} ont été réceptionnés.`, creator.id, creator.name);
+              db.prepare(
+                `INSERT INTO completion_alerts (entity_type, entity_id, entity_reference, alert_type, message, recipient_id, recipient_name) VALUES ('affaire', ?, ?, 'completion', ?, ?, ?)`,
+              ).run(
+                affaireId,
+                affaireId,
+                `Tous les articles commandés pour l'affaire ${affaireId} ont été réceptionnés.`,
+                creator.id,
+                creator.name,
+              );
             }
           }
         }
@@ -1534,32 +2188,39 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
       const { unread_only } = req.query;
       let query = 'SELECT * FROM completion_alerts WHERE recipient_id = ?';
       const params = [req.user.id];
-      if (unread_only === 'true') { query += ' AND is_read = 0'; }
+      if (unread_only === 'true') {
+        query += ' AND is_read = 0';
+      }
       query += ' ORDER BY created_at DESC LIMIT 50';
       res.json(db.prepare(query).all(...params));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   app.put('/api/completion-alerts/:id/read', authenticateToken, (req, res) => {
     try {
-      db.prepare('UPDATE completion_alerts SET is_read = 1 WHERE id = ? AND recipient_id = ?').run(req.params.id, req.user.id);
+      db.prepare('UPDATE completion_alerts SET is_read = 1 WHERE id = ? AND recipient_id = ?').run(
+        req.params.id,
+        req.user.id,
+      );
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   app.put('/api/completion-alerts/mark-all-read', authenticateToken, (req, res) => {
     try {
-      db.prepare('UPDATE completion_alerts SET is_read = 1 WHERE recipient_id = ? AND is_read = 0').run(req.user.id);
+      db.prepare(
+        'UPDATE completion_alerts SET is_read = 1 WHERE recipient_id = ? AND is_read = 0',
+      ).run(req.user.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }

@@ -21,179 +21,227 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-
   /* ─── Surfaces ──────────────────────────────────────── */
-  --surface-page:        var(--theme-bg-page);
-  --surface-primary:     var(--theme-bg-card);
-  --surface-secondary:   var(--theme-bg-secondary);
-  --surface-tertiary:    var(--theme-bg-tertiary);
-  --surface-elevated:    var(--theme-bg-card);
-  --surface-overlay:     var(--theme-overlay);
-  --surface-active:      var(--theme-bg-active);
-  --surface-selected:    var(--theme-bg-selected);
-  --surface-hover:       var(--theme-bg-hover);
-  --surface-code:        var(--theme-bg-code);
+  --surface-page: var(--theme-bg-page);
+  --surface-primary: var(--theme-bg-card);
+  --surface-secondary: var(--theme-bg-secondary);
+  --surface-tertiary: var(--theme-bg-tertiary);
+  --surface-elevated: var(--theme-bg-card);
+  --surface-overlay: var(--theme-overlay);
+  --surface-active: var(--theme-bg-active);
+  --surface-selected: var(--theme-bg-selected);
+  --surface-hover: var(--theme-bg-hover);
+  --surface-code: var(--theme-bg-code);
 
   /* ─── Texte ─────────────────────────────────────────── */
-  --text-heading:        var(--theme-text-heading);
-  --text-body:           var(--theme-text-body);
-  --text-muted:          var(--theme-text-muted);
-  --text-subtle:         var(--theme-text-subtle);
-  --text-disabled:       var(--theme-text-disabled);
-  --text-inverse:        var(--theme-text-inverse);
-  --text-link:           var(--theme-text-link);
-  --text-link-hover:     var(--theme-text-link-hover);
+  --text-heading: var(--theme-text-heading);
+  --text-body: var(--theme-text-body);
+  --text-muted: var(--theme-text-muted);
+  --text-subtle: var(--theme-text-subtle);
+  --text-disabled: var(--theme-text-disabled);
+  --text-inverse: var(--theme-text-inverse);
+  --text-link: var(--theme-text-link);
+  --text-link-hover: var(--theme-text-link-hover);
 
   /* ─── Bordures ──────────────────────────────────────── */
-  --border-default:      var(--theme-border);
-  --border-subtle:       var(--theme-border-light);
-  --border-strong:       var(--theme-border-medium);
-  --border-focus:        var(--theme-border-focus);
-  --border-disabled:     var(--theme-border-disabled);
+  --border-default: var(--theme-border);
+  --border-subtle: var(--theme-border-light);
+  --border-strong: var(--theme-border-medium);
+  --border-focus: var(--theme-border-focus);
+  --border-disabled: var(--theme-border-disabled);
 
   /* ─── Interactifs ───────────────────────────────────── */
   --interactive-primary: var(--theme-primary);
-  --interactive-hover:   var(--theme-primary-hover);
-  --interactive-active:  var(--theme-primary-dark);
-  --interactive-focus:   var(--focus-ring);
+  --interactive-hover: var(--theme-primary-hover);
+  --interactive-active: var(--theme-primary-dark);
+  --interactive-focus: var(--focus-ring);
   --interactive-gradient: var(--theme-gradient);
 
   /* ─── Feedback ──────────────────────────────────────── */
-  --feedback-success:       var(--theme-success);
-  --feedback-success-bg:    var(--theme-success-bg);
-  --feedback-success-text:  var(--theme-success-text);
+  --feedback-success: var(--theme-success);
+  --feedback-success-bg: var(--theme-success-bg);
+  --feedback-success-text: var(--theme-success-text);
   --feedback-success-border: var(--theme-success-border);
 
-  --feedback-error:         var(--theme-danger);
-  --feedback-error-bg:      var(--theme-danger-bg);
-  --feedback-error-text:    var(--theme-danger-text);
-  --feedback-error-border:  var(--theme-danger-border);
+  --feedback-error: var(--theme-danger);
+  --feedback-error-bg: var(--theme-danger-bg);
+  --feedback-error-text: var(--theme-danger-text);
+  --feedback-error-border: var(--theme-danger-border);
 
-  --feedback-warning:       var(--theme-warning);
-  --feedback-warning-bg:    var(--theme-warning-bg);
-  --feedback-warning-text:  var(--theme-warning-text);
+  --feedback-warning: var(--theme-warning);
+  --feedback-warning-bg: var(--theme-warning-bg);
+  --feedback-warning-text: var(--theme-warning-text);
   --feedback-warning-border: var(--theme-warning-border);
 
-  --feedback-info:          var(--theme-info);
-  --feedback-info-bg:       var(--theme-info-bg);
-  --feedback-info-text:     var(--theme-info-text);
-  --feedback-info-border:   var(--theme-info-border);
+  --feedback-info: var(--theme-info);
+  --feedback-info-bg: var(--theme-info-bg);
+  --feedback-info-text: var(--theme-info-text);
+  --feedback-info-border: var(--theme-info-border);
 
   /* ─── Layout ────────────────────────────────────────── */
-  --page-padding:        var(--space-6);
+  --page-padding: var(--space-6);
   --page-padding-mobile: var(--space-4);
-  --section-gap:         var(--space-6);
-  --content-max-width:   1400px;
-  --sidebar-width:       280px;
-  --toolbar-height:      56px;
-  --header-height:       64px;
+  --section-gap: var(--space-6);
+  --content-max-width: 1400px;
+  --sidebar-width: 280px;
+  --toolbar-height: 56px;
+  --header-height: 64px;
+
+  /* ─── Breakpoints (référence canonique) ───────────────
+     À utiliser dans toute nouvelle media query :
+       @media (min-width: 600px)  → tablette portrait
+       @media (min-width: 900px)  → tablette landscape
+       @media (min-width: 1200px) → desktop
+       @media (min-width: 1600px) → large desktop
+     Note : CSS ne permet pas var() dans @media ; ces tokens
+     servent de référence documentaire et pour usages JS. */
+  --bp-sm: 600px;
+  --bp-md: 900px;
+  --bp-lg: 1200px;
+  --bp-xl: 1600px;
+
+  /* ─── Cible tactile minimale (WCAG 2.5.5 / Apple HIG) ─ */
+  --tap-min: 44px;
 
   /* ─── Modals ────────────────────────────────────────── */
-  --modal-width-sm:      400px;
-  --modal-width-md:      600px;
-  --modal-width-lg:      800px;
-  --modal-width-xl:      1000px;
-  --modal-width-full:    calc(100vw - var(--space-8));
-  --modal-max-height:    calc(100vh - var(--space-16));
-  --modal-radius:        var(--radius-xl);
+  --modal-width-sm: 400px;
+  --modal-width-md: 600px;
+  --modal-width-lg: 800px;
+  --modal-width-xl: 1000px;
+  --modal-width-full: calc(100vw - var(--space-8));
+  --modal-max-height: calc(100vh - var(--space-16));
+  --modal-radius: var(--radius-xl);
 
   /* ─── Formulaires ───────────────────────────────────── */
-  --input-height-sm:     var(--btn-height-sm);
-  --input-height-md:     var(--btn-height-md);
-  --input-height-lg:     var(--btn-height-lg);
-  --input-radius:        var(--radius-md);
-  --input-border:        var(--border-default);
-  --input-focus-border:  var(--border-focus);
-  --input-focus-ring:    var(--focus-ring);
-  --input-bg:            var(--surface-primary);
-  --input-disabled-bg:   var(--surface-tertiary);
+  --input-height-sm: var(--btn-height-sm);
+  --input-height-md: var(--btn-height-md);
+  --input-height-lg: var(--btn-height-lg);
+  --input-radius: var(--radius-md);
+  --input-border: var(--border-default);
+  --input-focus-border: var(--border-focus);
+  --input-focus-ring: var(--focus-ring);
+  --input-bg: var(--surface-primary);
+  --input-disabled-bg: var(--surface-tertiary);
 
   /* ─── Glass (white overlays) ──────────────────────── */
-  --glass-subtle:     rgba(255, 255, 255, 0.1);
-  --glass-light:      rgba(255, 255, 255, 0.2);
-  --glass-medium:     rgba(255, 255, 255, 0.35);
-  --glass:            rgba(255, 255, 255, 0.4);
-  --glass-heavy:      rgba(255, 255, 255, 0.5);
-  --glass-strong:     rgba(255, 255, 255, 0.6);
-  --glass-opaque:     rgba(255, 255, 255, 0.7);
-  --glass-bright:     rgba(255, 255, 255, 0.8);
+  --glass-subtle: rgba(255, 255, 255, 0.1);
+  --glass-light: rgba(255, 255, 255, 0.2);
+  --glass-medium: rgba(255, 255, 255, 0.35);
+  --glass: rgba(255, 255, 255, 0.4);
+  --glass-heavy: rgba(255, 255, 255, 0.5);
+  --glass-strong: rgba(255, 255, 255, 0.6);
+  --glass-opaque: rgba(255, 255, 255, 0.7);
+  --glass-bright: rgba(255, 255, 255, 0.8);
 
   /* ─── Dark overlays ────────────────────────────────── */
-  --overlay-subtle:   rgba(0, 0, 0, 0.03);
-  --overlay-faint:    rgba(0, 0, 0, 0.06);
-  --overlay-light:    rgba(0, 0, 0, 0.4);
-  --overlay-medium:   rgba(0, 0, 0, 0.45);
-  --overlay-heavy:    rgba(0, 0, 0, 0.5);
-  --overlay-dark:     rgba(0, 0, 0, 0.6);
-  --overlay-darker:   rgba(0, 0, 0, 0.7);
-  --overlay-deep:     rgba(0, 0, 0, 0.8);
-  --overlay-opaque:   rgba(0, 0, 0, 0.85);
-  --overlay-text:     rgba(17, 24, 39, 0.95);
+  --overlay-subtle: rgba(0, 0, 0, 0.03);
+  --overlay-faint: rgba(0, 0, 0, 0.06);
+  --overlay-light: rgba(0, 0, 0, 0.4);
+  --overlay-medium: rgba(0, 0, 0, 0.45);
+  --overlay-heavy: rgba(0, 0, 0, 0.5);
+  --overlay-dark: rgba(0, 0, 0, 0.6);
+  --overlay-darker: rgba(0, 0, 0, 0.7);
+  --overlay-deep: rgba(0, 0, 0, 0.8);
+  --overlay-opaque: rgba(0, 0, 0, 0.85);
+  --overlay-text: rgba(17, 24, 39, 0.95);
 
   /* ─── Primary tints (blue) ─────────────────────────── */
-  --primary-tint-faint:   rgba(59, 130, 246, 0.04);
-  --primary-tint-subtle:  rgba(59, 130, 246, 0.08);
-  --primary-tint-light:   rgba(59, 130, 246, 0.1);
-  --primary-tint:         rgba(59, 130, 246, 0.12);
-  --primary-tint-medium:  rgba(59, 130, 246, 0.15);
-  --primary-tint-vivid:   rgba(59, 130, 246, 0.25);
-  --primary-tint-strong:  rgba(59, 130, 246, 0.3);
-  --primary-tint-bold:    rgba(59, 130, 246, 0.4);
+  --primary-tint-faint: rgba(59, 130, 246, 0.04);
+  --primary-tint-subtle: rgba(59, 130, 246, 0.08);
+  --primary-tint-light: rgba(59, 130, 246, 0.1);
+  --primary-tint: rgba(59, 130, 246, 0.12);
+  --primary-tint-medium: rgba(59, 130, 246, 0.15);
+  --primary-tint-vivid: rgba(59, 130, 246, 0.25);
+  --primary-tint-strong: rgba(59, 130, 246, 0.3);
+  --primary-tint-bold: rgba(59, 130, 246, 0.4);
 
   /* ─── Accent tints (indigo) ────────────────────────── */
-  --accent-tint-muted:    rgba(99, 102, 241, 0.03);
-  --accent-tint-faint:    rgba(99, 102, 241, 0.04);
-  --accent-tint-extra:    rgba(99, 102, 241, 0.06);
-  --accent-tint-subtle:   rgba(99, 102, 241, 0.08);
-  --accent-tint-light:    rgba(99, 102, 241, 0.1);
-  --accent-tint:          rgba(99, 102, 241, 0.12);
-  --accent-tint-medium:   rgba(99, 102, 241, 0.15);
-  --accent-tint-vivid:    rgba(99, 102, 241, 0.2);
-  --accent-tint-strong:   rgba(99, 102, 241, 0.3);
-  --accent-tint-bold:     rgba(99, 102, 241, 0.4);
-  --accent-tint-heavy:    rgba(99, 102, 241, 0.5);
-  --accent-tint-alt:      rgba(102, 126, 234, 0.1);
+  --accent-tint-muted: rgba(99, 102, 241, 0.03);
+  --accent-tint-faint: rgba(99, 102, 241, 0.04);
+  --accent-tint-extra: rgba(99, 102, 241, 0.06);
+  --accent-tint-subtle: rgba(99, 102, 241, 0.08);
+  --accent-tint-light: rgba(99, 102, 241, 0.1);
+  --accent-tint: rgba(99, 102, 241, 0.12);
+  --accent-tint-medium: rgba(99, 102, 241, 0.15);
+  --accent-tint-vivid: rgba(99, 102, 241, 0.2);
+  --accent-tint-strong: rgba(99, 102, 241, 0.3);
+  --accent-tint-bold: rgba(99, 102, 241, 0.4);
+  --accent-tint-heavy: rgba(99, 102, 241, 0.5);
+  --accent-tint-alt: rgba(102, 126, 234, 0.1);
 
   /* ─── Success tints (green) ────────────────────────── */
-  --success-tint-subtle:  rgba(16, 185, 129, 0.06);
-  --success-tint-faint:   rgba(16, 185, 129, 0.08);
-  --success-tint-light:   rgba(16, 185, 129, 0.1);
-  --success-tint:         rgba(16, 185, 129, 0.12);
-  --success-tint-accent:  rgba(16, 185, 129, 0.15);
-  --success-tint-vivid:   rgba(16, 185, 129, 0.2);
-  --success-tint-medium:  rgba(16, 185, 129, 0.3);
-  --success-tint-bold:    rgba(16, 185, 129, 0.4);
-  --success-tint-strong:  rgba(16, 185, 129, 0.45);
+  --success-tint-subtle: rgba(16, 185, 129, 0.06);
+  --success-tint-faint: rgba(16, 185, 129, 0.08);
+  --success-tint-light: rgba(16, 185, 129, 0.1);
+  --success-tint: rgba(16, 185, 129, 0.12);
+  --success-tint-accent: rgba(16, 185, 129, 0.15);
+  --success-tint-vivid: rgba(16, 185, 129, 0.2);
+  --success-tint-medium: rgba(16, 185, 129, 0.3);
+  --success-tint-bold: rgba(16, 185, 129, 0.4);
+  --success-tint-strong: rgba(16, 185, 129, 0.45);
 
   /* ─── Danger tints (red) ───────────────────────────── */
-  --danger-tint-light:    rgba(239, 68, 68, 0.12);
-  --danger-tint:          rgba(239, 68, 68, 0.2);
-  --danger-tint-accent:   rgba(239, 68, 68, 0.25);
-  --danger-tint-medium:   rgba(239, 68, 68, 0.3);
-  --danger-tint-strong:   rgba(239, 68, 68, 0.5);
-  --danger-tint-dark:     rgba(220, 38, 38, 0.4);
+  --danger-tint-light: rgba(239, 68, 68, 0.12);
+  --danger-tint: rgba(239, 68, 68, 0.2);
+  --danger-tint-accent: rgba(239, 68, 68, 0.25);
+  --danger-tint-medium: rgba(239, 68, 68, 0.3);
+  --danger-tint-strong: rgba(239, 68, 68, 0.5);
+  --danger-tint-dark: rgba(220, 38, 38, 0.4);
 
   /* ─── Warning tints (amber) ────────────────────────── */
-  --warning-tint-light:   rgba(245, 158, 11, 0.1);
-  --warning-tint:         rgba(245, 158, 11, 0.12);
-  --warning-tint-medium:  rgba(245, 158, 11, 0.3);
+  --warning-tint-light: rgba(245, 158, 11, 0.1);
+  --warning-tint: rgba(245, 158, 11, 0.12);
+  --warning-tint-medium: rgba(245, 158, 11, 0.3);
 
   /* ─── Info tints ───────────────────────────────────── */
-  --info-tint-faint:      rgba(66, 133, 244, 0.04);
-  --info-tint-light:      rgba(96, 165, 250, 0.1);
+  --info-tint-faint: rgba(66, 133, 244, 0.04);
+  --info-tint-light: rgba(96, 165, 250, 0.1);
 
   /* ─── Violet tint ──────────────────────────────────── */
-  --violet-tint:          rgba(139, 92, 246, 0.15);
+  --violet-tint: rgba(139, 92, 246, 0.15);
 
   /* ─── Misc overlays ────────────────────────────────── */
-  --gray-overlay:         rgba(120, 120, 120, 0.6);
+  --gray-overlay: rgba(120, 120, 120, 0.6);
+
+  /* ─── Status colors (sémantiques) ────────────────── */
+  --status-success: var(--theme-success-alt, #10b981);
+  --status-success-soft: var(--theme-success, #22c55e);
+  --status-danger: var(--theme-danger, #ef4444);
+  --status-danger-dark: var(--theme-danger-dark, #dc2626);
+  --status-warning: var(--theme-warning, #f59e0b);
+  --status-warning-dark: var(--theme-warning-dark, #d97706);
+  --status-info: var(--theme-info, #3b82f6);
+  --status-info-dark: var(--theme-info-dark, #2563eb);
+  --status-neutral: #64748b;
+  --status-neutral-soft: #6b7280;
+  --status-pending: var(--theme-warning, #f59e0b);
+
+  /* ─── Accent colors (sémantiques) ──────────────── */
+  --color-violet: #8b5cf6;
+  --color-indigo: var(--theme-indigo, #6366f1);
+  --color-indigo-dark: #3730a3;
+  --color-cyan: var(--theme-cyan, #06b6d4);
+  --color-cyan-dark: var(--theme-cyan-dark, #0891b2);
+  --color-pink: #ec4899;
+  --color-orange: #f97316;
+  --color-amber: #eab308;
+
+  /* ─── Entity type colors (annuaire) ────────────── */
+  --entity-client-bg: var(--theme-info-bg-strong, #dbeafe);
+  --entity-client-text: var(--theme-info-text, #1d4ed8);
+  --entity-supplier-bg: #d1fae5;
+  --entity-supplier-text: #047857;
+  --entity-prestataire-bg: #ede9fe;
+  --entity-prestataire-text: #6d28d9;
+  --entity-sous-traitant-bg: #fce7f3;
+  --entity-sous-traitant-text: #9d174d;
 
   /* ─── Animations ────────────────────────────────────── */
-  --motion-fast:         var(--duration-fast) var(--ease-in-out);
-  --motion-normal:       var(--duration-normal) var(--ease-in-out);
-  --motion-smooth:       var(--duration-smooth) var(--ease-in-out);
-  --motion-slow:         var(--duration-slow) var(--ease-in-out);
-  --motion-spring:       var(--duration-smooth) var(--ease-spring);
+  --motion-fast: var(--duration-fast) var(--ease-in-out);
+  --motion-normal: var(--duration-normal) var(--ease-in-out);
+  --motion-smooth: var(--duration-smooth) var(--ease-in-out);
+  --motion-slow: var(--duration-slow) var(--ease-in-out);
+  --motion-spring: var(--duration-smooth) var(--ease-spring);
 }
 
 /* ═══════════════════════════════════════════════════════════════

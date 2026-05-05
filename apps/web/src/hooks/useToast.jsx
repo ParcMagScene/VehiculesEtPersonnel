@@ -3,7 +3,7 @@ import { createContext, useContext } from 'react';
 /**
  * Context pour partager le système de toast à tous les composants enfants.
  * Évite le prop drilling de toast.success/error/warning/info.
- * 
+ *
  * Usage dans un composant enfant :
  *   import { useToast } from '../hooks/useToast';
  *   const toast = useToast();
@@ -15,7 +15,7 @@ const ToastContext = createContext(null);
 
 /**
  * Provider à placer dans App.jsx, en passant l'objet toast de useFeedback().
- * 
+ *
  * Example:
  *   const { toastRef, toast } = useFeedback();
  *   <ToastProvider toast={toast}>
@@ -23,11 +23,7 @@ const ToastContext = createContext(null);
  *   </ToastProvider>
  */
 export function ToastProvider({ toast, children }) {
-  return (
-    <ToastContext.Provider value={toast}>
-      {children}
-    </ToastContext.Provider>
-  );
+  return <ToastContext.Provider value={toast}>{children}</ToastContext.Provider>;
 }
 
 /**

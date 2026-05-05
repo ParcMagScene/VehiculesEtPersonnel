@@ -1,0 +1,196 @@
+/* ═══════════════════════════════════════════════════════════════
+   LabelsPrintPanel — Étiquettes laser LightBurn
+   ═══════════════════════════════════════════════════════════════ */
+
+.lpp-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+.lpp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface-2, #f8f9fa);
+  border-radius: 8px;
+}
+
+.lpp-toolbar-left,
+.lpp-toolbar-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.lpp-counter {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 4px 10px;
+  background: var(--primary-100, #e3f2fd);
+  color: var(--primary-700, #1976d2);
+  border-radius: 12px;
+}
+
+.lpp-counter.lpp-counter-warn {
+  background: var(--warning-100, #fff3e0);
+  color: var(--warning-700, #e65100);
+}
+
+.lpp-filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lpp-table-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+}
+
+.lpp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.lpp-table thead {
+  position: sticky;
+  top: 0;
+  background: var(--surface-2, #f5f5f5);
+  z-index: 1;
+}
+
+.lpp-table th,
+.lpp-table td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border, #eee);
+  white-space: nowrap;
+}
+
+.lpp-table th {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary, #555);
+}
+
+.lpp-table tr.lpp-selected {
+  background: var(--primary-50, #e3f2fd);
+}
+
+.lpp-table tbody tr:hover {
+  background: var(--surface-hover, #f0f0f0);
+}
+
+.lpp-mag-input {
+  width: 90px;
+  padding: 3px 6px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.lpp-mag-input.lpp-mag-invalid {
+  border-color: var(--danger, #d32f2f);
+  background: #fff5f5;
+}
+
+.lpp-mag-input.lpp-mag-saved {
+  border-color: var(--success, #388e3c);
+  background: #f5fff5;
+}
+
+.lpp-mag-input.lpp-mag-suggested {
+  border-color: var(--warning, #f59e0b);
+  background: #fffbeb;
+}
+
+.lpp-mag-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lpp-mag-apply {
+  padding: 3px 6px;
+  font-size: 0.75rem;
+  border: 1px solid var(--warning, #f59e0b);
+  background: #fff3cd;
+  color: #92400e;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: monospace;
+}
+
+.lpp-mag-apply:hover {
+  background: #fde68a;
+}
+
+.lpp-suggested-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #666);
+  margin-top: 2px;
+}
+
+.lpp-pagination {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  font-size: 0.85rem;
+}
+
+.lpp-preview {
+  border: 1px dashed var(--border, #ccc);
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.lpp-preview iframe {
+  width: 100%;
+  max-width: 600px;
+  height: 600px;
+  border: 1px solid var(--border, #ddd);
+  background: #fff;
+}
+
+.lpp-empty,
+.lpp-loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-secondary, #888);
+}
+
+.lpp-error {
+  padding: 8px 12px;
+  background: #ffebee;
+  color: #b71c1c;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}

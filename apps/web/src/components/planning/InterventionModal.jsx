@@ -1,21 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { Save, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { Button, Dialog, FormField, ModalLayout, Input, Textarea, Select } from '@/design-system';
 import './InterventionModal.css';
-import { useToast } from '../../hooks/useToast';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { formatDateSimple } from '../../utils/formatUtils';
+
+import { AlertTriangle, CheckCircle, Clock, Save } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { Button, Dialog, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
+import { useToast } from '../../hooks/useToast';
+import { formatDateSimple } from '../../utils/formatUtils';
 
-const InterventionModal = ({ 
-  intervention, 
-  vehicle,
-  onClose, 
-  onSave,
-  onDelete,
-  currentUser
-}) => {
+const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, currentUser }) => {
   const isAdmin = currentUser?.isAdmin === true;
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
@@ -27,21 +23,13 @@ const InterventionModal = ({
     description: intervention?.description || '',
     garage: intervention?.garage || '',
     cost: intervention?.cost || '',
-    technicalControlType: intervention?.technicalControlType || null
+    technicalControlType: intervention?.technicalControlType || null,
   });
 
-  const initialFormDataRef = useRef(JSON.stringify({
-    date: intervention?.date || '',
-    type: intervention?.type || '',
-    status: intervention?.status || '',
-    description: intervention?.description || '',
-    garage: intervention?.garage || '',
-    cost: intervention?.cost || '',
-    technicalControlType: intervention?.technicalControlType || null
-  }));
+  const { isDirty } = useDirtyForm(formData);
 
   const handleSafeClose = () => {
-    if (JSON.stringify(formData) !== initialFormDataRef.current) {
+    if (isDirty) {
       setShowUnsavedWarning(true);
       return;
     }
@@ -61,7 +49,7 @@ const InterventionModal = ({
         description: intervention.description || '',
         garage: intervention.garage || '',
         cost: intervention.cost || '',
-        technicalControlType: intervention.technicalControlType || null
+        technicalControlType: intervention.technicalControlType || null,
       });
     }
   }, [intervention]);
@@ -69,6 +57,7 @@ const InterventionModal = ({
   // Vérifier la deadline quand la date ou le type change
   useEffect(() => {
     checkDeadline();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.date, formData.technicalControlType]);
 
   const checkDeadline = () => {
@@ -78,24 +67,25 @@ const InterventionModal = ({
     }
 
     try {
-      const controles = typeof vehicle.controlesTechniques === 'string' 
-        ? JSON.parse(vehicle.controlesTechniques) 
-        : vehicle.controlesTechniques;
+      const controles =
+        typeof vehicle.controlesTechniques === 'string'
+          ? JSON.parse(vehicle.controlesTechniques)
+          : vehicle.controlesTechniques;
 
-      const controle = controles.find(c => c.type === formData.technicalControlType);
-      
+      const controle = controles.find((c) => c.type === formData.technicalControlType);
+
       if (controle && controle.deadline) {
         const interventionDate = new Date(formData.date);
         const deadlineDate = new Date(controle.deadline);
-        
+
         if (interventionDate > deadlineDate) {
           const diffTime = interventionDate - deadlineDate;
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
+
           setDeadlineWarning({
             type: 'error',
             message: `⚠️ Cette intervention est programmée ${diffDays} jour(s) après la deadline du contrôle technique ${formData.technicalControlType} (${formatDateSimple(controle.deadline)})`,
-            controleType: formData.technicalControlType
+            controleType: formData.technicalControlType,
           });
         } else {
           setDeadlineWarning(null);
@@ -108,40 +98,40 @@ const InterventionModal = ({
 
   const _getTypeLabel = (type) => {
     const types = {
-      'maintenance': 'Maintenance',
-      'repair': 'Réparation',
-      'inspection': 'Contrôle technique',
-      'technical_inspection': 'Contrôle technique',
-      'breakdown': 'Panne',
-      'revision': 'Révision',
-      'internal': 'Intervention interne',
-      'external': 'Intervention externe',
-      'other': 'Autre'
+      maintenance: 'Maintenance',
+      repair: 'Réparation',
+      inspection: 'Contrôle technique',
+      technical_inspection: 'Contrôle technique',
+      breakdown: 'Panne',
+      revision: 'Révision',
+      internal: 'Intervention interne',
+      external: 'Intervention externe',
+      other: 'Autre',
     };
     return types[type] || type;
   };
 
   const _getStatusLabel = (status) => {
     const statuses = {
-      'planned': 'Planifiée',
-      'scheduled': 'Programmée',
+      planned: 'Planifiée',
+      scheduled: 'Programmée',
       'in-progress': 'En cours',
-      'in_progress': 'En cours',
-      'IN_PROGRESS': 'En cours',
-      'completed': 'Terminée',
-      'COMPLETED': 'Terminée',
-      'cancelled': 'Annulée',
-      'pending': 'En attente',
-      'PENDING': 'En attente',
-      'reported': 'Signalée',
-      'rescheduled': 'Reportée'
+      in_progress: 'En cours',
+      IN_PROGRESS: 'En cours',
+      completed: 'Terminée',
+      COMPLETED: 'Terminée',
+      cancelled: 'Annulée',
+      pending: 'En attente',
+      PENDING: 'En attente',
+      reported: 'Signalée',
+      rescheduled: 'Reportée',
     };
     return statuses[status] || status;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (deadlineWarning && deadlineWarning.type === 'error') {
       confirm({
         message: `⚠️ ATTENTION : Cette intervention dépasse la deadline du contrôle technique.\n\n${deadlineWarning.message}\n\nVoulez-vous continuer quand même ?`,
@@ -149,17 +139,17 @@ const InterventionModal = ({
           onSave({
             ...intervention,
             ...formData,
-            cost: formData.cost ? parseFloat(formData.cost) : null
+            cost: formData.cost ? parseFloat(formData.cost) : null,
           });
-        }
+        },
       });
       return;
     }
-    
+
     onSave({
       ...intervention,
       ...formData,
-      cost: formData.cost ? parseFloat(formData.cost) : null
+      cost: formData.cost ? parseFloat(formData.cost) : null,
     });
   };
 
@@ -168,7 +158,7 @@ const InterventionModal = ({
       message: 'Êtes-vous sûr de vouloir supprimer cette intervention ?',
       onConfirm: () => {
         onDelete(intervention.id);
-      }
+      },
     });
   };
 
@@ -182,7 +172,7 @@ const InterventionModal = ({
             ...formData,
             status: STATUS.COMPLETED,
             cost: formData.cost ? parseFloat(formData.cost) : null,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           });
           onClose();
         } catch (error) {
@@ -191,7 +181,7 @@ const InterventionModal = ({
             toast.error(`Erreur: ${error.message}`);
           }
         }
-      }
+      },
     });
   };
 
@@ -211,7 +201,7 @@ const InterventionModal = ({
     { value: 'revision', label: 'Révision' },
     { value: 'internal', label: 'Intervention interne' },
     { value: 'external', label: 'Intervention externe' },
-    { value: 'other', label: 'Autre' }
+    { value: 'other', label: 'Autre' },
   ];
 
   const statusOptions = [
@@ -221,63 +211,82 @@ const InterventionModal = ({
     { value: 'completed', label: 'Terminée' },
     { value: 'cancelled', label: 'Annulée' },
     { value: 'pending', label: 'En attente' },
-    { value: 'reported', label: 'Signalée' }
+    { value: 'reported', label: 'Signalée' },
   ];
 
   // Types de contrôle technique disponibles
   const technicalControlTypes = [
-    { value: 'VL', label: 'VL (Véhicule Léger)', periodicity: '4 ans après 1ère mise en circulation, puis tous les 2 ans' },
-    { value: 'PL', label: 'PL (Poids Lourd)', periodicity: 'Tous les ans (1ère visite dans les 6 mois suivant la mise en circulation)' },
+    {
+      value: 'VL',
+      label: 'VL (Véhicule Léger)',
+      periodicity: '4 ans après 1ère mise en circulation, puis tous les 2 ans',
+    },
+    {
+      value: 'PL',
+      label: 'PL (Poids Lourd)',
+      periodicity: 'Tous les ans (1ère visite dans les 6 mois suivant la mise en circulation)',
+    },
     { value: 'SEMI', label: 'Semi-remorque', periodicity: 'Tous les ans' },
     { value: 'SCENE', label: 'Scène mobile', periodicity: 'Tous les ans (remorque > 500 kg PTAC)' },
-    { value: 'POLLUTION', label: 'Pollution', periodicity: 'Tous les ans (inclus dans le CT pour les VL, séparé pour les PL)' },
-    { value: 'HAYON', label: 'Hayon', periodicity: 'Tous les 6 mois (Vérification Générale Périodique)' }
+    {
+      value: 'POLLUTION',
+      label: 'Pollution',
+      periodicity: 'Tous les ans (inclus dans le CT pour les VL, séparé pour les PL)',
+    },
+    {
+      value: 'HAYON',
+      label: 'Hayon',
+      periodicity: 'Tous les 6 mois (Vérification Générale Périodique)',
+    },
   ];
 
-  const isTechnicalControl = formData.type === 'inspection' || formData.type === 'technical_inspection';
+  const isTechnicalControl =
+    formData.type === 'inspection' || formData.type === 'technical_inspection';
 
   return (
     <>
-    <ModalLayout
-      open
-      onClose={handleSafeClose}
-      title={
-        <div>
-          Éditer l'intervention
-          {vehicle && (
-            <span className="modal-header-subtitle">
-              {vehicle.name}{vehicle.kilometrage ? ` — ${Number(vehicle.kilometrage).toLocaleString('fr-FR')} km` : ''}
-            </span>
-          )}
-        </div>
-      }
-      size="lg"
-      className="intervention-modal"
-      footer={
-        <>
-          {isAdmin && (
-            <Button variant="danger" onClick={handleDelete}>
-              Supprimer
-            </Button>
-          )}
-          <div className="right-actions">
-            <Button variant="secondary" onClick={handleReschedule}>
-              <Clock size={18} />
-              Reporter
-            </Button>
-            <Button variant="success" onClick={handleMarkCompleted}>
-              <CheckCircle size={18} />
-              Effectuée
-            </Button>
-            <Button variant="primary" type="submit" form="intervention-form">
-              <Save size={18} />
-              Enregistrer
-            </Button>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={
+          <div>
+            Éditer l'intervention
+            {vehicle && (
+              <span className="modal-header-subtitle">
+                {vehicle.name}
+                {vehicle.kilometrage
+                  ? ` — ${Number(vehicle.kilometrage).toLocaleString('fr-FR')} km`
+                  : ''}
+              </span>
+            )}
           </div>
-        </>
-      }
-    >
-
+        }
+        size="lg"
+        className="intervention-modal no-drag-resize"
+        footer={
+          <>
+            {isAdmin && (
+              <Button variant="danger" onClick={handleDelete}>
+                Supprimer
+              </Button>
+            )}
+            <div className="right-actions">
+              <Button variant="secondary" onClick={handleReschedule}>
+                <Clock size={18} />
+                Reporter
+              </Button>
+              <Button variant="success" onClick={handleMarkCompleted}>
+                <CheckCircle size={18} />
+                Effectuée
+              </Button>
+              <Button variant="primary" type="submit" form="intervention-form">
+                <Save size={18} />
+                Enregistrer
+              </Button>
+            </div>
+          </>
+        }
+      >
         <form id="intervention-form" className="intervention-form" onSubmit={handleSubmit}>
           {deadlineWarning && (
             <div className={`deadline-alert ${deadlineWarning.type}`}>
@@ -303,7 +312,7 @@ const InterventionModal = ({
               required
             >
               <option value="">Sélectionner...</option>
-              {interventionTypes.map(type => (
+              {interventionTypes.map((type) => (
                 <option key={type.value} value={type.value}>
                   {type.label}
                 </option>
@@ -315,10 +324,12 @@ const InterventionModal = ({
             <FormField className="form-group" label="Type de contrôle technique">
               <Select
                 value={formData.technicalControlType || ''}
-                onChange={(e) => setFormData({ ...formData, technicalControlType: e.target.value || null })}
+                onChange={(e) =>
+                  setFormData({ ...formData, technicalControlType: e.target.value || null })
+                }
               >
                 <option value="">Aucun (intervention générale)</option>
-                {technicalControlTypes.map(type => (
+                {technicalControlTypes.map((type) => (
                   <option key={type.value} value={type.value}>
                     {type.label}
                   </option>
@@ -327,17 +338,20 @@ const InterventionModal = ({
               <small className="form-hint">
                 Sélectionnez le type de CT pour vérifier la deadline
               </small>
-              {formData.technicalControlType && (() => {
-                const selectedCT = technicalControlTypes.find(ct => ct.value === formData.technicalControlType);
-                return selectedCT?.periodicity ? (
-                  <div className="ct-periodicity-info">
-                    <span className="ct-periodicity-icon">🔄</span>
-                    <span className="ct-periodicity-text">
-                      <strong>Périodicité :</strong> {selectedCT.periodicity}
-                    </span>
-                  </div>
-                ) : null;
-              })()}
+              {formData.technicalControlType &&
+                (() => {
+                  const selectedCT = technicalControlTypes.find(
+                    (ct) => ct.value === formData.technicalControlType,
+                  );
+                  return selectedCT?.periodicity ? (
+                    <div className="ct-periodicity-info">
+                      <span className="ct-periodicity-icon">🔄</span>
+                      <span className="ct-periodicity-text">
+                        <strong>Périodicité :</strong> {selectedCT.periodicity}
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
             </FormField>
           )}
 
@@ -348,7 +362,7 @@ const InterventionModal = ({
               required
             >
               <option value="">Sélectionner...</option>
-              {statusOptions.map(status => (
+              {statusOptions.map((status) => (
                 <option key={status.value} value={status.value}>
                   {status.label}
                 </option>
@@ -386,14 +400,16 @@ const InterventionModal = ({
               placeholder="0.00"
             />
           </FormField>
-
         </form>
-    </ModalLayout>
-    {ConfirmDialogRenderer}
+      </ModalLayout>
+      {ConfirmDialogRenderer}
       <Dialog
         open={showUnsavedWarning}
         onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => { setShowUnsavedWarning(false); onClose(); }}
+        onConfirm={() => {
+          setShowUnsavedWarning(false);
+          onClose();
+        }}
         title="Modifications non enregistrées"
         variant="warning"
         confirmLabel="Ne pas enregistrer"

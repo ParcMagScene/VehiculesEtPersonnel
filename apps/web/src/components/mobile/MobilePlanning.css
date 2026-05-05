@@ -30,6 +30,7 @@
   background: var(--theme-bg-tertiary);
   border: none;
   border-radius: var(--radius-md);
+  color: var(--theme-text-primary);
   width: 36px;
   height: 36px;
   display: flex;
@@ -172,7 +173,7 @@
   position: sticky;
   left: 0;
   right: 0;
-  width: 100vw;
+  width: 100%;
   z-index: var(--z-base);
   pointer-events: none;
 }
@@ -248,7 +249,7 @@
   position: sticky;
   left: 0;
   right: 0;
-  width: 100vw;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -330,7 +331,7 @@
   position: sticky;
   left: 0;
   right: 0;
-  width: 100vw;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -374,7 +375,11 @@
 }
 
 .mobile-maintenance-in_progress {
-  background: linear-gradient(135deg, var(--theme-info-bg-strong) 0%, var(--theme-info-border) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-info-bg-strong) 0%,
+    var(--theme-info-border) 100%
+  );
 }
 
 .mobile-maintenance-in_progress .mobile-item-icon {
@@ -386,7 +391,11 @@
 }
 
 .mobile-maintenance-pending {
-  background: linear-gradient(135deg, var(--theme-purple-bg) 0%, var(--theme-purple-bg-strong) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-purple-bg) 0%,
+    var(--theme-purple-bg-strong) 100%
+  );
 }
 
 .mobile-maintenance-pending .mobile-item-icon {

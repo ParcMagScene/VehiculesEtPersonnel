@@ -32,7 +32,7 @@
 .depot-map-count {
   font-size: var(--font-sm);
   font-weight: 500;
-  background: var(--theme-info)20;
+  background: var(--theme-info) 20;
   color: var(--theme-info);
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-md-lg);
@@ -41,7 +41,7 @@
 .depot-map-unlocated {
   font-size: var(--font-sm);
   font-weight: 500;
-  background: var(--theme-warning)20;
+  background: var(--theme-warning) 20;
   color: var(--theme-warning);
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-md-lg);
@@ -151,7 +151,7 @@
 }
 
 .depot-edit-btn:hover {
-  background: var(--theme-info, var(--theme-info))20;
+  background: var(--theme-info, var(--theme-info)) 20;
   border-color: var(--theme-info, var(--theme-info));
   color: var(--theme-info);
 }
@@ -204,8 +204,13 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .depot-zone-group.highlighted .depot-zone-rect {
@@ -229,8 +234,14 @@
 }
 
 @keyframes tooltip-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .depot-tooltip-header {
@@ -251,7 +262,7 @@
   font-size: var(--font-xs);
   font-weight: 600;
   color: var(--theme-warning);
-  background: var(--theme-warning)20;
+  background: var(--theme-warning) 20;
   padding: 2px 8px;
   border-radius: var(--radius-md-lg);
 }
@@ -336,7 +347,7 @@
 
 .legend-count.search-count {
   color: var(--theme-warning);
-  background: var(--theme-warning)20;
+  background: var(--theme-warning) 20;
   padding: 0 4px;
   border-radius: var(--radius-md);
 }
@@ -347,7 +358,10 @@
 }
 
 .depot-zone-rect {
-  transition: fill-opacity 0.2s, stroke-width 0.2s, stroke 0.2s;
+  transition:
+    fill-opacity 0.2s,
+    stroke-width 0.2s,
+    stroke 0.2s;
 }
 
 .depot-zone-label {
@@ -456,22 +470,39 @@
   animation: focusBorderDash 1.2s linear infinite;
 }
 @keyframes focusBorderDash {
-  to { stroke-dashoffset: -24; }
+  to {
+    stroke-dashoffset: -24;
+  }
 }
 
 /* Pin bounce animation — applied to inner wrapper, not the positioned group */
 .depot-focus-indicator .focus-pin-bounce {
-  animation: pinBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-             pinFloat 2.4s ease-in-out 0.6s infinite;
+  animation:
+    pinBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    pinFloat 2.4s ease-in-out 0.6s infinite;
 }
 @keyframes pinBounce {
-  0% { transform: translateY(-40px); opacity: 0; }
-  60% { transform: translateY(3px); opacity: 1; }
-  100% { transform: translateY(0); opacity: 1; }
+  0% {
+    transform: translateY(-40px);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 @keyframes pinFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 /* Pin shadow pulse */
@@ -479,8 +510,15 @@
   animation: pinShadow 2.4s ease-in-out 0.6s infinite;
 }
 @keyframes pinShadow {
-  0%, 100% { rx: 8; opacity: 0.3; }
-  50% { rx: 6; opacity: 0.2; }
+  0%,
+  100% {
+    rx: 8;
+    opacity: 0.3;
+  }
+  50% {
+    rx: 6;
+    opacity: 0.2;
+  }
 }
 
 /* Pulsing rings at pin base */
@@ -491,8 +529,16 @@
   animation: focusRingPulse 1.6s ease-out 0.4s infinite;
 }
 @keyframes focusRingPulse {
-  0% { r: 3; opacity: 0.8; stroke-width: 2.5; }
-  100% { r: 18; opacity: 0; stroke-width: 0.5; }
+  0% {
+    r: 3;
+    opacity: 0.8;
+    stroke-width: 2.5;
+  }
+  100% {
+    r: 18;
+    opacity: 0;
+    stroke-width: 0.5;
+  }
 }
 
 /* Label appears with fade */
@@ -500,8 +546,14 @@
   animation: labelFadeIn 0.4s ease-out 0.5s both;
 }
 @keyframes labelFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ═══ TOUCH / MOBILE SPECIFIC ═══ */

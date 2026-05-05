@@ -1,3 +1,5 @@
+import { Children, cloneElement, isValidElement, useId } from 'react';
+
 import './ui.css';
 
 /**
@@ -10,6 +12,11 @@ import './ui.css';
  * @param {string}  hint       Texte d'aide sous l'input
  * @param {string}  error      Message d'erreur
  * @param {string}  className  Classes additionnelles
+ *
+ * Accessibilité :
+ * - hint et erreur reçoivent un id stable, et le premier enfant input/select/textarea
+ *   reçoit automatiquement `aria-describedby` les pointant + `aria-invalid` si erreur.
+ * - Sans casser les overrides : si l'enfant a déjà ses propres aria-*, ils gagnent.
  */
 function FormField({
   label,
@@ -22,13 +29,30 @@ function FormField({
   children,
   ...rest
 }) {
-  const cls = [
-    'ui-form-field',
-    horizontal && 'ui-form-field--horizontal',
-    className,
-  ]
+  const cls = ['ui-form-field', horizontal && 'ui-form-field--horizontal', className]
     .filter(Boolean)
     .join(' ');
+
+  const reactId = useId();
+  const baseId = htmlFor || reactId;
+  const errorId = error ? `${baseId}-error` : null;
+  const hintId = hint && !error ? `${baseId}-hint` : null;
+  const describedBy = [errorId, hintId].filter(Boolean).join(' ') || null;
+
+  // Clone le premier enfant éligible pour lui injecter aria-describedby / aria-invalid.
+  let injected = false;
+  const enhancedChildren = Children.map(children, (child) => {
+    if (injected || !isValidElement(child)) return child;
+    injected = true;
+    const next = {};
+    if (describedBy && !child.props['aria-describedby']) {
+      next['aria-describedby'] = describedBy;
+    }
+    if (error && child.props['aria-invalid'] === undefined) {
+      next['aria-invalid'] = true;
+    }
+    return Object.keys(next).length ? cloneElement(child, next) : child;
+  });
 
   return (
     <div className={cls} {...rest}>
@@ -40,9 +64,17 @@ function FormField({
           {label}
         </label>
       )}
-      {children}
-      {error && <span className="ui-form-error">{error}</span>}
-      {hint && !error && <span className="ui-form-hint">{hint}</span>}
+      {enhancedChildren}
+      {error && (
+        <span className="ui-form-error" id={errorId} role="alert">
+          {error}
+        </span>
+      )}
+      {hint && !error && (
+        <span className="ui-form-hint" id={hintId}>
+          {hint}
+        </span>
+      )}
     </div>
   );
 }

@@ -1,0 +1,304 @@
+/* ═══════════════════════════════════════════════════════════════
+   MobileSonos.css — Styles Sonos optimisés tactile / mobile
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Layout shell ─── */
+.mobile-sonos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 0 24px;
+}
+
+/* ─── Zone selector pills (scroll horizontal) ─── */
+.mobile-sonos-zones {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 4px 4px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-sonos-zones::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-sonos-zone-pill {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-secondary);
+  color: var(--theme-text-dark);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+  white-space: nowrap;
+}
+.mobile-sonos-zone-pill:active {
+  transform: scale(0.96);
+}
+.mobile-sonos-zone-pill-active {
+  background: var(--theme-primary);
+  color: var(--color-white);
+  border-color: var(--theme-primary);
+}
+
+/* ─── Now Playing (pochette large) ─── */
+.mobile-sonos-now {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.mobile-sonos-art-wrap {
+  position: relative;
+  width: 70vw;
+  max-width: 300px;
+  aspect-ratio: 1;
+  touch-action: pan-y;
+}
+.mobile-sonos-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-xl, 16px);
+  box-shadow: 0 8px 24px var(--shadow-xl, rgba(0, 0, 0, 0.2));
+}
+.mobile-sonos-art-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--theme-bg-hover);
+  border-radius: var(--radius-xl, 16px);
+  color: var(--theme-text-muted);
+}
+.mobile-sonos-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--theme-text-dark);
+  max-width: 85vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mobile-sonos-artist {
+  font-size: 0.9rem;
+  color: var(--theme-text-secondary);
+}
+.mobile-sonos-album {
+  font-size: 0.8rem;
+  color: var(--theme-text-muted);
+  font-style: italic;
+}
+.mobile-sonos-state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--theme-success-alt);
+}
+
+/* ─── Progress bar ─── */
+.mobile-sonos-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 8px;
+}
+.mobile-sonos-progress-time {
+  font-size: 0.72rem;
+  color: var(--theme-text-muted);
+  min-width: 36px;
+  font-variant-numeric: tabular-nums;
+}
+.mobile-sonos-seek {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--theme-border);
+  border-radius: 3px;
+  outline: none;
+}
+.mobile-sonos-seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--theme-primary);
+  border: none;
+}
+
+/* ─── Transport controls (gros boutons tactiles) ─── */
+.mobile-sonos-transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.mobile-sonos-transport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--theme-border);
+  border-radius: 50%;
+  background: var(--theme-bg-secondary);
+  color: var(--theme-text-dark);
+  cursor: pointer;
+  transition: background 0.15s;
+  /* min 48px pour accessibilité tactile */
+  width: 48px;
+  height: 48px;
+}
+.mobile-sonos-transport-btn:active {
+  background: var(--theme-bg-hover);
+  transform: scale(0.94);
+}
+.mobile-sonos-transport-btn:disabled {
+  opacity: 0.4;
+}
+.mobile-sonos-transport-main {
+  width: 64px;
+  height: 64px;
+  background: var(--theme-primary);
+  color: var(--color-white);
+  border-color: var(--theme-primary);
+}
+.mobile-sonos-transport-main:active {
+  background: var(--theme-primary-hover, var(--theme-primary));
+}
+.mobile-sonos-transport-sm {
+  width: 40px;
+  height: 40px;
+}
+.mobile-sonos-active {
+  color: var(--theme-primary) !important;
+  background: rgba(var(--theme-primary-rgb, 59, 130, 246), 0.15) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+/* ─── Volume ─── */
+.mobile-sonos-volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+}
+.mobile-sonos-volume-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--theme-border);
+  border-radius: 3px;
+  outline: none;
+}
+.mobile-sonos-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--theme-primary);
+  border: none;
+}
+.mobile-sonos-vol-label {
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+  min-width: 32px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.mobile-sonos-muted {
+  color: var(--btn-danger-color);
+}
+
+/* ─── Favoris ─── */
+.mobile-sonos-favorites {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mobile-sonos-fav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--theme-text-dark);
+}
+.mobile-sonos-fav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 50vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-sonos-fav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  background: var(--theme-bg-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+  min-height: 48px;
+}
+.mobile-sonos-fav-item:active {
+  background: var(--theme-bg-hover);
+}
+.mobile-sonos-fav-playing {
+  border-color: var(--theme-primary);
+  background: color-mix(in srgb, var(--theme-primary) 8%, transparent);
+}
+.mobile-sonos-fav-art {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.mobile-sonos-fav-title {
+  font-size: 0.88rem;
+  color: var(--theme-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mobile-sonos-fav-empty {
+  font-size: var(--font-sm);
+  color: var(--theme-text-muted);
+  padding: 16px 0;
+  text-align: center;
+}
+
+/* ─── Stopped / Error ─── */
+.mobile-sonos-stopped {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--theme-text-muted);
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+/* ─── Search input ─── */
+.mobile-sonos-search {
+  padding: 0 4px;
+  margin-bottom: 4px;
+}

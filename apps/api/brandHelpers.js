@@ -8,7 +8,7 @@ import db from './database.js';
 import logger from './logger.js';
 
 // ── Cache interne (rechargé à la demande) ──
-let _brandCache = null;   // Map<lowercase → { id, name }>
+let _brandCache = null; // Map<lowercase → { id, name }>
 let _cacheTs = 0;
 const CACHE_TTL = 60_000; // 1 minute
 
@@ -18,7 +18,7 @@ const CACHE_TTL = 60_000; // 1 minute
  */
 function getBrandCache() {
   const now = Date.now();
-  if (_brandCache && (now - _cacheTs) < CACHE_TTL) return _brandCache;
+  if (_brandCache && now - _cacheTs < CACHE_TTL) return _brandCache;
 
   _brandCache = new Map();
   try {
@@ -26,11 +26,15 @@ function getBrandCache() {
     for (const b of brands) {
       _brandCache.set(b.name.toLowerCase(), { id: b.id, name: b.name });
     }
-    const aliases = db.prepare(`
+    const aliases = db
+      .prepare(
+        `
       SELECT ba.alias, ba.brand_id, b.name
       FROM brand_aliases ba JOIN brands b ON ba.brand_id = b.id
       WHERE b.is_active = 1
-    `).all();
+    `,
+      )
+      .all();
     for (const a of aliases) {
       _brandCache.set(a.alias.toLowerCase(), { id: a.brand_id, name: a.name });
     }
@@ -84,12 +88,16 @@ export function normalizeBrand(brandText) {
  */
 export function resolveUnifiedFamily(article) {
   try {
-    const rules = db.prepare(`
+    const rules = db
+      .prepare(
+        `
       SELECT tfm.pattern, tfm.source_field, ec.name as family_name
       FROM taxonomy_family_mapping tfm
       JOIN equipment_categories ec ON tfm.family_id = ec.id
       ORDER BY tfm.priority DESC, tfm.id ASC
-    `).all();
+    `,
+      )
+      .all();
 
     // Build search string per source_field
     const fields = {
@@ -105,13 +113,16 @@ export function resolveUnifiedFamily(article) {
     for (const rule of rules) {
       try {
         const rx = new RegExp(rule.pattern, 'i');
-        const target = rule.source_field === 'any' ? composite : (fields[rule.source_field] || composite);
+        const target =
+          rule.source_field === 'any' ? composite : fields[rule.source_field] || composite;
         if (rx.test(target)) {
           return rule.family_name;
         }
-      } catch { /* invalid regex, skip */ }
+      } catch {
+        /* invalid regex, skip */
+      }
     }
-  } catch (e) {
+  } catch (_e) {
     // taxonomy_family_mapping may not exist yet
   }
   return null;
@@ -143,9 +154,11 @@ export function linkBrandIds(table) {
   if (!allowed.includes(table)) throw new Error(`Table non autorisée: ${table}`);
 
   const cache = getBrandCache();
-  const rows = db.prepare(
-    `SELECT id, brand FROM ${table} WHERE brand IS NOT NULL AND brand != '' AND brand_id IS NULL`
-  ).all();
+  const rows = db
+    .prepare(
+      `SELECT id, brand FROM ${table} WHERE brand IS NOT NULL AND brand != '' AND brand_id IS NULL`,
+    )
+    .all();
   const stmt = db.prepare(`UPDATE ${table} SET brand_id = ? WHERE id = ?`);
   let linked = 0;
 
@@ -168,9 +181,11 @@ export function linkBrandIds(table) {
  * @returns {{ mapped: number, total: number }}
  */
 export function applyUnifiedFamilyBatch() {
-  const articles = db.prepare(
-    "SELECT id, family, subfamily, category, brand, designation FROM supplier_articles WHERE unified_family IS NULL"
-  ).all();
+  const articles = db
+    .prepare(
+      'SELECT id, family, subfamily, category, brand, designation FROM supplier_articles WHERE unified_family IS NULL',
+    )
+    .all();
 
   const stmt = db.prepare('UPDATE supplier_articles SET unified_family = ? WHERE id = ?');
   let mapped = 0;
@@ -194,12 +209,16 @@ export function applyUnifiedFamilyBatch() {
  * @returns {Array<{id, name, slug, website, country, primary_domain, equipment_count, article_count}>}
  */
 export function listBrandsWithStats() {
-  return db.prepare(`
+  return db
+    .prepare(
+      `
     SELECT b.*,
       (SELECT COUNT(*) FROM equipment WHERE brand_id = b.id) as equipment_count,
       (SELECT COUNT(*) FROM supplier_articles WHERE brand_id = b.id) as article_count
     FROM brands b
     WHERE b.is_active = 1
     ORDER BY b.name
-  `).all();
+  `,
+    )
+    .all();
 }

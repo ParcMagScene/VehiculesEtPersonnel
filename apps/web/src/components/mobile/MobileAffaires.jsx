@@ -1,17 +1,34 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import {
-  ArrowLeft, ChevronLeft, ChevronRight, Calendar, MapPin, User, Phone,
-  FileText, Truck, Package, Users, DollarSign, Briefcase,
-  ClipboardList, CheckCircle, AlertCircle,
-} from 'lucide-react';
-import { format, addDays, startOfDay, parseISO, isSameDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import './MobileAffaires.css';
+
+import { addDays, format, isSameDay, parseISO, startOfDay } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Briefcase,
+  Calendar,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  DollarSign,
+  FileText,
+  MapPin,
+  Package,
+  Phone,
+  Truck,
+  User,
+  Users,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
+import api from '../../utils/api';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 // Statut temporel
 const getAffaireStatus = (a, todayStr) => {
@@ -49,7 +66,11 @@ function MobileAffaires({ onBack }) {
     }
   }, []);
 
-  useEffect(() => { loadAffaires(); }, [loadAffaires]);
+  useEffect(() => {
+    loadAffaires();
+  }, [loadAffaires]);
+
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadAffaires);
 
   // Filtrer : affaires en cours ou à venir dans la semaine suivante depuis la date courante
   const filteredAffaires = useMemo(() => {
@@ -58,7 +79,7 @@ function MobileAffaires({ onBack }) {
     const term = searchTerm.toLowerCase().trim();
 
     return affaires
-      .filter(a => {
+      .filter((a) => {
         const debut = a.dateDebut || '';
         const fin = a.dateFin || a.dateDebut || '';
         if (!debut) return false;
@@ -71,8 +92,17 @@ function MobileAffaires({ onBack }) {
 
         // Recherche texte
         if (term) {
-          const haystack = [a.numeroAffaire, a.client, a.nom, a.titre, a.eventName, a.adresseLivraison]
-            .filter(Boolean).join(' ').toLowerCase();
+          const haystack = [
+            a.numeroAffaire,
+            a.client,
+            a.nom,
+            a.titre,
+            a.eventName,
+            a.adresseLivraison,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
           if (!haystack.includes(term)) return false;
         }
 
@@ -88,46 +118,25 @@ function MobileAffaires({ onBack }) {
   }, [affaires, currentDate, searchTerm, filterType]);
 
   // Navigation par jour
-  const navigate = (dir) => setCurrentDate(prev => addDays(prev, dir));
+  const navigate = (dir) => setCurrentDate((prev) => addDays(prev, dir));
   const isToday = isSameDay(currentDate, new Date());
 
   // Charger les détails quand on sélectionne une affaire
   const openDetail = useCallback(async (affaire) => {
     setSelectedAffaire(affaire);
-    if (!affaire.id) { setDetailData(null); return; }
+    if (!affaire.id) {
+      setDetailData(null);
+      return;
+    }
     setDetailLoading(true);
     try {
-      const [links, personnelCounts, allReservations, tasks, allMissions] = await Promise.all([
-        api.getAffaireLinks(affaire.id).catch(() => ({ children: [], parents: [], total: 0 })),
-        api.getAffairesPersonnelCounts().catch(() => ({})),
-        api.getReservations().catch(() => []),
-        api.getTasks({ affaire_num: affaire.numeroAffaire }).catch(() => []),
-        api.getMissions().catch(() => []),
-      ]);
-
-      // Filtrer les réservations liées
-      const reservations = (Array.isArray(allReservations) ? allReservations : [])
-        .filter(r => r.affaire === affaire.numeroAffaire);
-
-      // Extraire le personnel depuis les missions
-      const linkedMissions = (Array.isArray(allMissions) ? allMissions : [])
-        .filter(m => m.affaire === affaire.numeroAffaire);
-      const personnelMap = new Map();
-      linkedMissions.forEach(m => {
-        (m.assignments || []).forEach(a => {
-          if (a.personId && !personnelMap.has(a.personId)) {
-            personnelMap.set(a.personId, { id: a.personId, name: a.personName || a.name || `Personne #${a.personId}`, role: a.role || '' });
-          }
-        });
-      });
-      const personnel = Array.from(personnelMap.values());
-
+      const detail = await api.getAffaireMobileDetail(affaire.numeroAffaire);
       setDetailData({
-        links,
-        personnelCount: personnelCounts[affaire.numeroAffaire] || personnel.length || 0,
-        reservations,
-        tasks: Array.isArray(tasks) ? tasks : [],
-        personnel,
+        links: detail?.links || { children: [], parents: [], total: 0 },
+        personnelCount: detail?.personnelCount || 0,
+        reservations: Array.isArray(detail?.reservations) ? detail.reservations : [],
+        tasks: Array.isArray(detail?.tasks) ? detail.tasks : [],
+        personnel: Array.isArray(detail?.personnel) ? detail.personnel : [],
       });
     } catch {
       setDetailData(null);
@@ -141,12 +150,27 @@ function MobileAffaires({ onBack }) {
     const a = selectedAffaire;
     const typeInfo = getTypeInfo(a.type);
     const status = getAffaireStatus(a, todayStr);
-    const statusLabel = status === STATUS.ACTIVE ? 'En cours' : status === 'upcoming' ? 'À venir' : status === 'past' ? 'Terminée' : '';
+    const statusLabel =
+      status === STATUS.ACTIVE
+        ? 'En cours'
+        : status === 'upcoming'
+          ? 'À venir'
+          : status === 'past'
+            ? 'Terminée'
+            : '';
 
     return (
       <div className="mobile-affaires">
         <div className="maff-header">
-          <Button variant="ghost" className="maff-back" onClick={() => { setSelectedAffaire(null); setDetailData(null); }}>
+          <Button
+            variant="ghost"
+            className="maff-back"
+            onClick={() => {
+              setSelectedAffaire(null);
+              setDetailData(null);
+            }}
+            aria-label="Retour"
+          >
             <ArrowLeft size={20} />
           </Button>
           <h2>{a.numeroAffaire || 'Affaire'}</h2>
@@ -163,14 +187,14 @@ function MobileAffaires({ onBack }) {
 
           {/* Nom / Titre */}
           {(a.nom || a.titre || a.eventName) && (
-            <div className="maff-detail-title">
-              {a.nom || a.titre || a.eventName}
-            </div>
+            <div className="maff-detail-title">{a.nom || a.titre || a.eventName}</div>
           )}
 
           {/* Dates */}
           <div className="maff-detail-section">
-            <h4><Calendar size={16} /> Période</h4>
+            <h4>
+              <Calendar size={16} /> Période
+            </h4>
             <div className="maff-detail-row">
               {a.dateDebut && format(parseISO(a.dateDebut), 'd MMMM yyyy', { locale: fr })}
               {a.dateFin && a.dateFin !== a.dateDebut && (
@@ -182,11 +206,16 @@ function MobileAffaires({ onBack }) {
           {/* Client & Contact */}
           {(a.client || a.interlocuteur || a.tel) && (
             <div className="maff-detail-section">
-              <h4><User size={16} /> Contact</h4>
+              <h4>
+                <User size={16} /> Contact
+              </h4>
               {a.client && <div className="maff-detail-row maff-client">{a.client}</div>}
               {a.interlocuteur && <div className="maff-detail-row muted">{a.interlocuteur}</div>}
               {a.tel && (
-                <a href={`tel:${a.tel.replace(/[^\d+]/g, '')}`} className="maff-detail-row maff-phone">
+                <a
+                  href={`tel:${a.tel.replace(/[^\d+]/g, '')}`}
+                  className="maff-detail-row maff-phone"
+                >
                   <Phone size={14} /> {a.tel}
                 </a>
               )}
@@ -196,7 +225,9 @@ function MobileAffaires({ onBack }) {
           {/* Adresse */}
           {a.adresseLivraison && (
             <div className="maff-detail-section">
-              <h4><MapPin size={16} /> Lieu</h4>
+              <h4>
+                <MapPin size={16} /> Lieu
+              </h4>
               <div className="maff-detail-row">{a.adresseLivraison}</div>
             </div>
           )}
@@ -204,7 +235,9 @@ function MobileAffaires({ onBack }) {
           {/* Description */}
           {a.description && (
             <div className="maff-detail-section">
-              <h4><FileText size={16} /> Description</h4>
+              <h4>
+                <FileText size={16} /> Description
+              </h4>
               <div className="maff-detail-desc">{a.description}</div>
             </div>
           )}
@@ -212,31 +245,42 @@ function MobileAffaires({ onBack }) {
           {/* Devis */}
           {a.devis && (
             <div className="maff-detail-section">
-              <h4><DollarSign size={16} /> Devis</h4>
+              <h4>
+                <DollarSign size={16} /> Devis
+              </h4>
               <div className="maff-detail-row">{a.devis}</div>
             </div>
           )}
 
           {/* Compteurs */}
           <div className="maff-detail-section">
-            <h4><Package size={16} /> Ressources</h4>
+            <h4>
+              <Package size={16} /> Ressources
+            </h4>
             <div className="maff-detail-counters">
               {a.reservationCount > 0 && (
                 <div className="maff-counter">
                   <Truck size={16} />
-                  <span>{a.reservationCount} réservation{a.reservationCount > 1 ? 's' : ''}</span>
+                  <span>
+                    {a.reservationCount} réservation{a.reservationCount > 1 ? 's' : ''}
+                  </span>
                 </div>
               )}
               {(detailData?.personnelCount > 0 || a.personnelCount > 0) && (
                 <div className="maff-counter">
                   <Users size={16} />
-                  <span>{detailData?.personnelCount || a.personnelCount} personne{(detailData?.personnelCount || a.personnelCount) > 1 ? 's' : ''}</span>
+                  <span>
+                    {detailData?.personnelCount || a.personnelCount} personne
+                    {(detailData?.personnelCount || a.personnelCount) > 1 ? 's' : ''}
+                  </span>
                 </div>
               )}
               {a.vehicleCount > 0 && (
                 <div className="maff-counter">
                   <Truck size={16} />
-                  <span>{a.vehicleCount} véhicule{a.vehicleCount > 1 ? 's' : ''}</span>
+                  <span>
+                    {a.vehicleCount} véhicule{a.vehicleCount > 1 ? 's' : ''}
+                  </span>
                 </div>
               )}
               {a.blImportCount > 0 && (
@@ -248,23 +292,33 @@ function MobileAffaires({ onBack }) {
               {a.orderCount > 0 && (
                 <div className="maff-counter">
                   <DollarSign size={16} />
-                  <span>{a.orderCount} commande{a.orderCount > 1 ? 's' : ''}</span>
+                  <span>
+                    {a.orderCount} commande{a.orderCount > 1 ? 's' : ''}
+                  </span>
                 </div>
               )}
-              {!a.reservationCount && !a.vehicleCount && !a.blImportCount && !a.orderCount && !(detailData?.personnelCount > 0 || a.personnelCount > 0) && (
-                <div className="maff-counter muted">Aucune ressource liée</div>
-              )}
+              {!a.reservationCount &&
+                !a.vehicleCount &&
+                !a.blImportCount &&
+                !a.orderCount &&
+                !(detailData?.personnelCount > 0 || a.personnelCount > 0) && (
+                  <div className="maff-counter muted">Aucune ressource liée</div>
+                )}
             </div>
           </div>
 
           {/* Réservations liées */}
           {detailData?.reservations?.length > 0 && (
             <div className="maff-detail-section">
-              <h4><Truck size={16} /> Réservations</h4>
+              <h4>
+                <Truck size={16} /> Réservations
+              </h4>
               <div className="maff-resa-list">
                 {detailData.reservations.map((r, i) => (
                   <div key={r.id || i} className="maff-resa-card">
-                    <div className="maff-resa-name">{r.vehicleName || r.vehicle || r.vehicleId || 'Véhicule'}</div>
+                    <div className="maff-resa-name">
+                      {r.vehicleName || r.vehicle || r.vehicleId || 'Véhicule'}
+                    </div>
                     <div className="maff-resa-dates">
                       <Calendar size={13} />
                       {r.startDate && format(parseISO(r.startDate), 'd MMM', { locale: fr })}
@@ -282,12 +336,20 @@ function MobileAffaires({ onBack }) {
           {/* Planification / Tâches */}
           {detailData?.tasks?.length > 0 && (
             <div className="maff-detail-section">
-              <h4><ClipboardList size={16} /> Planification</h4>
+              <h4>
+                <ClipboardList size={16} /> Planification
+              </h4>
               <div className="maff-tasks-list">
                 {detailData.tasks.map((t, i) => (
                   <div key={t.id || i} className="maff-task-card">
-                    <span className={`maff-task-status-icon ${t.status === STATUS.DONE ? 'done' : t.status === 'in_progress' ? 'progress' : ''}`}>
-                      {t.status === STATUS.DONE ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+                    <span
+                      className={`maff-task-status-icon ${t.status === STATUS.DONE ? 'done' : t.status === 'in_progress' ? 'progress' : ''}`}
+                    >
+                      {t.status === STATUS.DONE ? (
+                        <CheckCircle size={15} />
+                      ) : (
+                        <AlertCircle size={15} />
+                      )}
                     </span>
                     <div className="maff-task-info">
                       <div className="maff-task-title">{t.title || t.description || 'Tâche'}</div>
@@ -303,7 +365,9 @@ function MobileAffaires({ onBack }) {
           {/* Personnel affecté */}
           {detailData?.personnel?.length > 0 && (
             <div className="maff-detail-section">
-              <h4><Users size={16} /> Personnel affecté</h4>
+              <h4>
+                <Users size={16} /> Personnel affecté
+              </h4>
               <div className="maff-personnel-list">
                 {detailData.personnel.map((p, i) => (
                   <div key={p.id || i} className="maff-person-card">
@@ -319,25 +383,52 @@ function MobileAffaires({ onBack }) {
           )}
 
           {/* Affaires liées (Tournée) */}
-          {detailData?.links && (detailData.links.children.length > 0 || detailData.links.parents.length > 0) && (
-            <div className="maff-detail-section">
-              <h4><Briefcase size={16} /> Affaires liées</h4>
-              {detailData.links.parents.map(p => (
-                <div key={p.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(p)}>
-                  <span className="maff-linked-label">Parent</span>
-                  <span className="maff-linked-num">{p.numeroAffaire}</span>
-                  <span className="maff-linked-name">{p.nom || p.client || ''}</span>
-                </div>
-              ))}
-              {detailData.links.children.map(c => (
-                <div key={c.id} className="maff-linked-card" role="button" tabIndex={0} onClick={() => openDetail(c)}>
-                  <span className="maff-linked-label">Enfant</span>
-                  <span className="maff-linked-num">{c.numeroAffaire}</span>
-                  <span className="maff-linked-name">{c.nom || c.client || ''}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          {detailData?.links &&
+            (detailData.links.children.length > 0 || detailData.links.parents.length > 0) && (
+              <div className="maff-detail-section">
+                <h4>
+                  <Briefcase size={16} /> Affaires liées
+                </h4>
+                {detailData.links.parents.map((p) => (
+                  <div
+                    key={p.id}
+                    className="maff-linked-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openDetail(p)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openDetail(p);
+                      }
+                    }}
+                  >
+                    <span className="maff-linked-label">Parent</span>
+                    <span className="maff-linked-num">{p.numeroAffaire}</span>
+                    <span className="maff-linked-name">{p.nom || p.client || ''}</span>
+                  </div>
+                ))}
+                {detailData.links.children.map((c) => (
+                  <div
+                    key={c.id}
+                    className="maff-linked-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openDetail(c)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openDetail(c);
+                      }
+                    }}
+                  >
+                    <span className="maff-linked-label">Enfant</span>
+                    <span className="maff-linked-num">{c.numeroAffaire}</span>
+                    <span className="maff-linked-name">{c.nom || c.client || ''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
           {detailLoading && (
             <div className="maff-detail-loading">
@@ -351,9 +442,10 @@ function MobileAffaires({ onBack }) {
 
   // ═══ Vue Liste ═══
   return (
-    <div className="mobile-affaires">
+    <div className="mobile-affaires" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="maff-header">
-        <Button variant="ghost" className="maff-back" onClick={onBack}>
+        <Button variant="ghost" className="maff-back" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
         <h2>Affaires</h2>
@@ -361,20 +453,36 @@ function MobileAffaires({ onBack }) {
 
       {/* Navigation date */}
       <div className="maff-date-nav">
-        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(-1)}>
+        <Button
+          variant="ghost"
+          className="maff-nav-btn"
+          onClick={() => navigate(-1)}
+          aria-label="Jour précédent"
+        >
           <ChevronLeft size={20} />
         </Button>
-        <Button variant="ghost"           className={`maff-date-label ${isToday ? 'today' : ''}`}
+        <Button
+          variant="ghost"
+          className={`maff-date-label ${isToday ? 'today' : ''}`}
           onClick={() => setCurrentDate(startOfDay(new Date()))}
         >
           {format(currentDate, 'EEEE d MMMM', { locale: fr })}
         </Button>
-        <Button variant="ghost" className="maff-nav-btn" onClick={() => navigate(1)}>
+        <Button
+          variant="ghost"
+          className="maff-nav-btn"
+          onClick={() => navigate(1)}
+          aria-label="Jour suivant"
+        >
           <ChevronRight size={20} />
         </Button>
       </div>
       {!isToday && (
-        <Button variant="ghost" className="maff-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        <Button
+          variant="ghost"
+          className="maff-today-btn"
+          onClick={() => setCurrentDate(startOfDay(new Date()))}
+        >
           Aujourd'hui
         </Button>
       )}
@@ -389,15 +497,23 @@ function MobileAffaires({ onBack }) {
 
       {/* Filtres par type */}
       <div className="maff-type-filters">
-        <Button variant="ghost"           className={`maff-filter-pill ${filterType === null ? 'active' : ''}`}
+        <Button
+          variant="ghost"
+          className={`maff-filter-pill ${filterType === null ? 'active' : ''}`}
           onClick={() => setFilterType(null)}
         >
           Tous
         </Button>
-        {AFFAIRE_TYPES.map(t => (
-          <Button variant="ghost"             key={t.value}
+        {AFFAIRE_TYPES.map((t) => (
+          <Button
+            variant="ghost"
+            key={t.value}
             className={`maff-filter-pill ${filterType === t.value ? 'active' : ''}`}
-            style={filterType === t.value ? { background: t.color, color: '#fff', borderColor: t.color } : {}}
+            style={
+              filterType === t.value
+                ? { background: t.color, color: '#fff', borderColor: t.color }
+                : {}
+            }
             onClick={() => setFilterType(filterType === t.value ? null : t.value)}
           >
             {t.icon} {t.label}
@@ -423,7 +539,7 @@ function MobileAffaires({ onBack }) {
         </div>
       ) : (
         <div className="maff-list">
-          {filteredAffaires.map(a => {
+          {filteredAffaires.map((a) => {
             const currentStr = format(currentDate, 'yyyy-MM-dd');
             const status = getAffaireStatus(a, currentStr);
             const typeInfo = getTypeInfo(a.type);
@@ -432,7 +548,15 @@ function MobileAffaires({ onBack }) {
               <div
                 key={a.id || a.numeroAffaire}
                 className={`maff-card ${isActive ? 'active' : ''}`}
+                role="button"
+                tabIndex={0}
                 onClick={() => openDetail(a)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openDetail(a);
+                  }
+                }}
               >
                 <div className="maff-card-header">
                   <span className="maff-card-type" style={{ background: typeInfo.color }}>
@@ -444,13 +568,9 @@ function MobileAffaires({ onBack }) {
                   </span>
                 </div>
 
-                <div className="maff-card-title">
-                  {a.nom || a.titre || a.eventName || '—'}
-                </div>
+                <div className="maff-card-title">{a.nom || a.titre || a.eventName || '—'}</div>
 
-                {a.client && (
-                  <div className="maff-card-client">{a.client}</div>
-                )}
+                {a.client && <div className="maff-card-client">{a.client}</div>}
 
                 <div className="maff-card-footer">
                   <span className="maff-card-dates">
@@ -472,13 +592,19 @@ function MobileAffaires({ onBack }) {
                 {(a.reservationCount > 0 || a.personnelCount > 0 || a.blImportCount > 0) && (
                   <div className="maff-card-badges">
                     {a.reservationCount > 0 && (
-                      <span className="maff-badge"><Truck size={12} /> {a.reservationCount}</span>
+                      <span className="maff-badge">
+                        <Truck size={12} /> {a.reservationCount}
+                      </span>
                     )}
                     {a.personnelCount > 0 && (
-                      <span className="maff-badge"><Users size={12} /> {a.personnelCount}</span>
+                      <span className="maff-badge">
+                        <Users size={12} /> {a.personnelCount}
+                      </span>
                     )}
                     {a.blImportCount > 0 && (
-                      <span className="maff-badge"><FileText size={12} /> {a.blImportCount}</span>
+                      <span className="maff-badge">
+                        <FileText size={12} /> {a.blImportCount}
+                      </span>
                     )}
                   </div>
                 )}

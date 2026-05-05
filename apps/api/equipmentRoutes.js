@@ -3,16 +3,29 @@
 // Routes REST : equipment, categories, assignments, SAV tickets
 // ============================================================
 
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'fs';
+import multer from 'multer';
+import { dirname, extname, join } from 'path';
+import PDFDocument from 'pdfkit';
+import { fileURLToPath } from 'url';
+
+import { normalizeBrand } from './brandHelpers.js';
 import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
-import { readFileSync, writeFileSync, readdirSync, existsSync, unlinkSync, mkdirSync, renameSync } from 'fs';
-import { join, dirname, extname } from 'path';
-import { fileURLToPath } from 'url';
-import multer from 'multer';
 import logger from './logger.js';
-import { normalizeBrand } from './brandHelpers.js';
-import PDFDocument from 'pdfkit';
-import { validate, equipmentImportSchema, savImportSchema } from './schemas/imports.js';
+import { equipmentSchema } from './schemas/crud.js';
+import { safeContentDispositionName } from './utils/safeFilename.js';
+import { equipmentImportSchema, validate } from './schemas/imports.js';
+import { getNextUid } from './services/uidCounter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,37 +33,52 @@ const __dirname = dirname(__filename);
 // ============ CATÉGORIES ============
 
 export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin) {
-  
   // GET /api/equipment-categories
   app.get('/api/equipment-categories', authenticateToken, (req, res) => {
     try {
-      const categories = db.prepare('SELECT * FROM equipment_categories ORDER BY level, name').all();
+      const categories = db
+        .prepare('SELECT * FROM equipment_categories ORDER BY level, name')
+        .all();
       res.json(categories);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // GET /api/equipment-categories/tree — hiérarchie complète
+  // [PERF Sprint 3] Construction O(n) via Map<parent_id, children[]> au lieu de
+  // 2 .filter() imbriqués (O(n²) sur n catégories : ~150 actuellement, mais croissance).
   app.get('/api/equipment-categories/tree', authenticateToken, (req, res) => {
     try {
       const all = db.prepare('SELECT * FROM equipment_categories ORDER BY name').all();
-      const families = all.filter(c => c.level === 'family');
-      const subfamilies = all.filter(c => c.level === 'subfamily');
-      const categories = all.filter(c => c.level === 'category');
-      
-      const tree = families.map(f => ({
+
+      // Index 1 passe : parent_id -> liste d'enfants
+      const byParent = new Map();
+      for (const c of all) {
+        const k = c.parent_id == null ? '__root__' : c.parent_id;
+        let bucket = byParent.get(k);
+        if (!bucket) {
+          bucket = [];
+          byParent.set(k, bucket);
+        }
+        bucket.push(c);
+      }
+
+      const families = all.filter((c) => c.level === 'family');
+      const tree = families.map((f) => ({
         ...f,
-        children: subfamilies.filter(sf => sf.parent_id === f.id).map(sf => ({
-          ...sf,
-          children: categories.filter(cat => cat.parent_id === sf.id)
-        }))
+        children: (byParent.get(f.id) || [])
+          .filter((sf) => sf.level === 'subfamily')
+          .map((sf) => ({
+            ...sf,
+            children: (byParent.get(sf.id) || []).filter((cat) => cat.level === 'category'),
+          })),
       }));
       res.json(tree);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -58,16 +86,25 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
   app.post('/api/equipment-categories', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { name, icon, color, description, parent_id, level } = req.body;
-      if (!name) return res.status(400).json({ error: 'Nom requis' });
-      
-      const result = db.prepare(
-        'INSERT INTO equipment_categories (name, icon, color, description, parent_id, level) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(name, icon || '📦', color || '#6366f1', description || null, parent_id || null, level || 'category');
-      
+      if (!name) return res.status(400).json({ success: false, error: 'Nom requis' });
+
+      const result = db
+        .prepare(
+          'INSERT INTO equipment_categories (name, icon, color, description, parent_id, level) VALUES (?, ?, ?, ?, ?, ?)',
+        )
+        .run(
+          name,
+          icon || '📦',
+          color || '#6366f1',
+          description || null,
+          parent_id || null,
+          level || 'category',
+        );
+
       res.json({ id: result.lastInsertRowid, name, icon, color, description, parent_id, level });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -76,12 +113,12 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
     try {
       const { name, icon, color, description, parent_id, level } = req.body;
       db.prepare(
-        'UPDATE equipment_categories SET name = ?, icon = ?, color = ?, description = ?, parent_id = ?, level = ? WHERE id = ?'
+        'UPDATE equipment_categories SET name = ?, icon = ?, color = ?, description = ?, parent_id = ?, level = ? WHERE id = ?',
       ).run(name, icon, color, description, parent_id || null, level || 'category', req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -89,15 +126,19 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
   app.delete('/api/equipment-categories/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
       // Vérifier qu'aucun équipement n'utilise cette catégorie
-      const count = db.prepare('SELECT COUNT(*) as c FROM equipment WHERE category_id = ?').get(req.params.id);
+      const count = db
+        .prepare('SELECT COUNT(*) as c FROM equipment WHERE category_id = ?')
+        .get(req.params.id);
       if (count.c > 0) {
-        return res.status(400).json({ error: `${count.c} équipement(s) utilisent cette catégorie` });
+        return res
+          .status(400)
+          .json({ success: false, error: `${count.c} équipement(s) utilisent cette catégorie` });
       }
       db.prepare('DELETE FROM equipment_categories WHERE id = ?').run(req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
@@ -105,7 +146,6 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
 // ============ ÉQUIPEMENTS ============
 
 export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
-
   // GET /api/equipment
   app.get('/api/equipment', authenticateToken, (req, res) => {
     try {
@@ -121,139 +161,315 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         WHERE 1=1
       `;
       const params = [];
-      
-      if (status) { sql += ' AND e.status = ?'; params.push(status); }
-      if (category_id) { sql += ' AND e.category_id = ?'; params.push(category_id); }
-      if (location_zone) { sql += ' AND e.location_zone = ?'; params.push(location_zone); }
-      if (location_depot) { sql += ' AND e.location_depot = ?'; params.push(location_depot); }
-      if (search) {
-        sql += ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ? OR e.location LIKE ? OR e.location_zone LIKE ?)';
-        const like = `%${search}%`;
-        params.push(like, like, like, like, like);
+
+      if (status) {
+        sql += ' AND e.status = ?';
+        params.push(status);
       }
-      
+      if (category_id) {
+        sql += ' AND e.category_id = ?';
+        params.push(category_id);
+      }
+      if (location_zone) {
+        sql += ' AND e.location_zone = ?';
+        params.push(location_zone);
+      }
+      if (location_depot) {
+        sql += ' AND e.location_depot = ?';
+        params.push(location_depot);
+      }
+      if (search) {
+        sql +=
+          ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ? OR e.location LIKE ? OR e.location_zone LIKE ? OR e.numero_mag LIKE ?)';
+        const like = `%${search}%`;
+        params.push(like, like, like, like, like, like);
+      }
+
       sql += ' ORDER BY e.name';
-      if (limit) { sql += ' LIMIT ?'; params.push(parseInt(limit, 10)); }
+
+      const hasPagination =
+        req.query.limit !== undefined ||
+        req.query.offset !== undefined ||
+        req.query.page !== undefined ||
+        req.query.pageSize !== undefined;
+
+      if (hasPagination) {
+        const parsePositiveInt = (value, fallback) => {
+          const parsed = Number.parseInt(value, 10);
+          return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+        };
+        const parseNonNegativeInt = (value, fallback) => {
+          const parsed = Number.parseInt(value, 10);
+          return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+        };
+
+        const pageSize = Math.min(parsePositiveInt(req.query.pageSize ?? limit, 200), 5000);
+        const page = parsePositiveInt(req.query.page, 1);
+        const hasOffset = req.query.offset !== undefined;
+        const offset = hasOffset ? parseNonNegativeInt(req.query.offset, 0) : (page - 1) * pageSize;
+
+        sql += ' LIMIT ? OFFSET ?';
+        params.push(pageSize, offset);
+      }
+
       const equipment = db.prepare(sql).all(...params);
-      
+
       // Enrichir avec le dernier assignment actif — requête unique au lieu de N+1
-      const activeAssignments = db.prepare(`
+      const activeAssignments = db
+        .prepare(
+          `
         SELECT ea.*, p.first_name, p.last_name
         FROM equipment_assignments ea
         LEFT JOIN persons p ON ea.assigned_to = p.id
         WHERE ea.status = 'active'
         ORDER BY ea.start_date DESC
-      `).all();
-      
+      `,
+        )
+        .all();
+
       const assignMap = {};
       for (const a of activeAssignments) {
         if (!assignMap[a.equipment_id]) assignMap[a.equipment_id] = a;
       }
-      
+
       for (const eq of equipment) {
         eq.currentAssignment = assignMap[eq.id] || null;
       }
-      
+
       res.json(equipment);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // GET /api/equipment/:id
   app.get('/api/equipment/:id', authenticateToken, (req, res) => {
     try {
-      const eq = db.prepare(`
+      const eq = db
+        .prepare(
+          `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color,
                b.name as brand_canonical, b.slug as brand_slug
         FROM equipment e
         LEFT JOIN equipment_categories ec ON e.category_id = ec.id
         LEFT JOIN brands b ON e.brand_id = b.id
         WHERE e.id = ?
-      `).get(req.params.id);
-      
-      if (!eq) return res.status(404).json({ error: 'Équipement non trouvé' });
-      
+      `,
+        )
+        .get(req.params.id);
+
+      if (!eq) return res.status(404).json({ success: false, error: 'Équipement non trouvé' });
+
       // Historique des assignments
-      eq.assignments = db.prepare(`
+      eq.assignments = db
+        .prepare(
+          `
         SELECT ea.*, p.first_name, p.last_name, u.name as assigned_by_name
         FROM equipment_assignments ea
         LEFT JOIN persons p ON ea.assigned_to = p.id
         LEFT JOIN users u ON ea.assigned_by = u.id
         WHERE ea.equipment_id = ?
         ORDER BY ea.start_date DESC
-      `).all(req.params.id);
-      
+      `,
+        )
+        .all(req.params.id);
+
       // Tickets SAV
-      eq.savTickets = db.prepare(`
+      eq.savTickets = db
+        .prepare(
+          `
         SELECT st.*, u.name as reported_by_name, p.first_name as tech_first_name, p.last_name as tech_last_name
         FROM sav_tickets st
         LEFT JOIN users u ON st.reported_by = u.id
         LEFT JOIN persons p ON st.assigned_to = p.id
         WHERE st.equipment_id = ?
         ORDER BY st.created_at DESC
-      `).all(req.params.id);
-      
+      `,
+        )
+        .all(req.params.id);
+
       res.json(eq);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // POST /api/equipment
-  app.post('/api/equipment', authenticateToken, (req, res) => {
+  app.post('/api/equipment', authenticateToken, validate(equipmentSchema), (req, res) => {
     try {
-      const { name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
-      if (!name) return res.status(400).json({ error: 'Nom requis' });
-      
+      const {
+        name,
+        reference,
+        serial_number,
+        category_id,
+        status,
+        location,
+        location_depot,
+        location_zone,
+        location_code,
+        location_floor,
+        purchase_date,
+        purchase_price,
+        warranty_end,
+        notes,
+        photo,
+        brand,
+        stock_quantity,
+        numero_mag,
+      } = req.body;
+      if (!name) return res.status(400).json({ success: false, error: 'Nom requis' });
+
       // Normaliser la marque → brand_id
       const resolved = normalizeBrand(brand);
-      
-      const result = db.prepare(`
-        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, brand_id, stock_quantity, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(name, reference, serial_number, category_id, status || 'available', location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, resolved.brand, resolved.brand_id, stock_quantity || 1, req.user.id);
-      
-      // Générer l'UID unique basé sur l'ID
-      const uid = 'EMAG-' + String(result.lastInsertRowid).padStart(5, '0');
+
+      const result = db
+        .prepare(
+          `
+        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, brand_id, stock_quantity, numero_mag, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+        )
+        .run(
+          name,
+          reference,
+          serial_number,
+          category_id,
+          status || 'available',
+          location,
+          location_depot || null,
+          location_zone || null,
+          location_code || null,
+          location_floor || null,
+          purchase_date,
+          purchase_price,
+          warranty_end,
+          notes,
+          photo,
+          resolved.brand,
+          resolved.brand_id,
+          stock_quantity || 1,
+          numero_mag || null,
+          req.user.id,
+        );
+
+      // Générer l'UID unique (ou synchroniser avec le serial si c'est un EMAG)
+      const emagMatch = serial_number && serial_number.match(/EMAG-\d{5}/i);
+      const uid = emagMatch ? emagMatch[0].toUpperCase() : getNextUid(db);
       db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, result.lastInsertRowid);
-      
-      addToHistory('equipment', result.lastInsertRowid, 'create', { name, reference, serial_number }, req.user.id, req.user.name);
-      
-      const created = db.prepare('SELECT * FROM equipment WHERE id = ?').get(result.lastInsertRowid);
+
+      addToHistory(
+        'equipment',
+        result.lastInsertRowid,
+        'create',
+        { name, reference, serial_number },
+        req.user.id,
+        req.user.name,
+      );
+
+      const created = db
+        .prepare('SELECT * FROM equipment WHERE id = ?')
+        .get(result.lastInsertRowid);
       res.json(created);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // PUT /api/equipment/:id
-  app.put('/api/equipment/:id', authenticateToken, (req, res) => {
+  app.put('/api/equipment/:id', authenticateToken, validate(equipmentSchema), (req, res) => {
     try {
-      const { name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, stock_quantity } = req.body;
-      
+      const {
+        name,
+        reference,
+        serial_number,
+        category_id,
+        status,
+        location,
+        location_depot,
+        location_zone,
+        location_code,
+        location_floor,
+        purchase_date,
+        purchase_price,
+        warranty_end,
+        notes,
+        photo,
+        brand,
+        stock_quantity,
+        numero_mag,
+      } = req.body;
+
       // Normaliser la marque → brand_id
       const resolved = normalizeBrand(brand);
-      
-      db.prepare(`
-        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, brand_id = ?, stock_quantity = ?, updated_at = CURRENT_TIMESTAMP
+
+      db.prepare(
+        `
+        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, brand_id = ?, stock_quantity = ?, numero_mag = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(name, reference, serial_number, category_id, status, location, location_depot || null, location_zone || null, location_code || null, location_floor || null, purchase_date, purchase_price, warranty_end, notes, photo, resolved.brand, resolved.brand_id, stock_quantity, req.params.id);
-      
+      `,
+      ).run(
+        name,
+        reference,
+        serial_number,
+        category_id,
+        status,
+        location,
+        location_depot || null,
+        location_zone || null,
+        location_code || null,
+        location_floor || null,
+        purchase_date,
+        purchase_price,
+        warranty_end,
+        notes,
+        photo,
+        resolved.brand,
+        resolved.brand_id,
+        stock_quantity,
+        numero_mag || null,
+        req.params.id,
+      );
+
+      // Si le serial contient un UID EMAG, synchroniser le champ uid
+      if (serial_number) {
+        const emagMatch = serial_number.match(/EMAG-\d{5}/i);
+        if (emagMatch) {
+          db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
+            emagMatch[0].toUpperCase(),
+            req.params.id,
+          );
+        }
+      }
+      // S'assurer que le uid n'est jamais vide
+      const currentEquip = db.prepare('SELECT uid FROM equipment WHERE id = ?').get(req.params.id);
+      if (!currentEquip?.uid) {
+        const autoUid = getNextUid(db);
+        db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(autoUid, req.params.id);
+      }
+
       // Propager la photo aux équipements ayant la même référence
       if (photo !== undefined && reference) {
-        db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?').run(photo, reference, req.params.id);
+        db.prepare(
+          'UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
+        ).run(photo, reference, req.params.id);
       }
-      
+
+      // Propager la marque aux équipements ayant la même référence
+      if (resolved.brand && reference) {
+        db.prepare(
+          'UPDATE equipment SET brand = ?, brand_id = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
+        ).run(resolved.brand, resolved.brand_id ?? null, reference, req.params.id);
+      }
+
       addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
-      
+
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -262,22 +478,25 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
     try {
       const { photo } = req.body;
       const eq = db.prepare('SELECT id, reference FROM equipment WHERE id = ?').get(req.params.id);
-      if (!eq) return res.status(404).json({ error: 'Équipement introuvable' });
+      if (!eq) return res.status(404).json({ success: false, error: 'Équipement introuvable' });
 
-      db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-        .run(photo || null, req.params.id);
+      db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
+        photo || null,
+        req.params.id,
+      );
 
       // Propager aux équipements de même référence
       if (photo && eq.reference) {
-        db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?')
-          .run(photo, eq.reference, req.params.id);
+        db.prepare(
+          'UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
+        ).run(photo, eq.reference, req.params.id);
       }
 
       addToHistory('equipment', req.params.id, 'update', { photo }, req.user.id, req.user.name);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -288,13 +507,13 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       db.prepare('DELETE FROM equipment_assignments WHERE equipment_id = ?').run(req.params.id);
       db.prepare('DELETE FROM sav_tickets WHERE equipment_id = ?').run(req.params.id);
       db.prepare('DELETE FROM equipment WHERE id = ?').run(req.params.id);
-      
+
       addToHistory('equipment', req.params.id, 'delete', {}, req.user.id, req.user.name);
-      
+
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -302,36 +521,54 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/equipment/:id/serialize', authenticateToken, requireAdmin, (req, res) => {
     try {
       const original = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
-      if (!original) return res.status(404).json({ error: 'Équipement introuvable' });
+      if (!original)
+        return res.status(404).json({ success: false, error: 'Équipement introuvable' });
 
       const qty = original.stock_quantity || 1;
 
-      if (original.uid && qty <= 1) return res.status(400).json({ error: 'Cet équipement possède déjà un UID et sa quantité est de 1' });
+      if (original.uid && qty <= 1)
+        return res.status(400).json({
+          success: false,
+          error: 'Cet équipement possède déjà un UID et sa quantité est de 1',
+        });
 
       // Cas qty = 1 : attribution simple d'un UID sans duplication
       if (qty <= 1) {
-        const uid = 'EMAG-' + String(original.id).padStart(5, '0');
-        db.prepare('UPDATE equipment SET uid = ?, stock_quantity = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(uid, original.id);
+        const uid = getNextUid(db);
+        db.prepare(
+          'UPDATE equipment SET uid = ?, stock_quantity = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ).run(uid, original.id);
 
-        const updated = db.prepare(`
+        const updated = db
+          .prepare(
+            `
           SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
           FROM equipment e
           LEFT JOIN equipment_categories ec ON e.category_id = ec.id
           WHERE e.id = ?
-        `).get(original.id);
+        `,
+          )
+          .get(original.id);
 
-        addToHistory('equipment', original.id, 'serialize', {
-          originalName: original.name,
-          originalQty: 1,
-          createdItems: [uid]
-        }, req.user.id, req.user.name);
+        addToHistory(
+          'equipment',
+          original.id,
+          'serialize',
+          {
+            originalName: original.name,
+            originalQty: 1,
+            createdItems: [uid],
+          },
+          req.user.id,
+          req.user.name,
+        );
 
         return res.json({
           success: true,
           message: `${original.name} sérialisé — UID ${uid}`,
           created: [{ id: original.id, uid, name: original.name }],
           items: [updated],
-          deletedId: null
+          deletedId: null,
         });
       }
 
@@ -347,7 +584,9 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       const run = db.transaction(() => {
         for (let i = 1; i <= qty; i++) {
           const name = original.name;
-          const serial = original.serial_number ? `${original.serial_number}-${String(i).padStart(3, '0')}` : null;
+          const serial = original.serial_number
+            ? `${original.serial_number}-${String(i).padStart(3, '0')}`
+            : null;
 
           const result = insertStmt.run(
             name,
@@ -362,11 +601,11 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
             original.warranty_end,
             original.notes,
             original.photo,
-            req.user.id
+            req.user.id,
           );
 
           const newId = result.lastInsertRowid;
-          const uid = 'EMAG-' + String(newId).padStart(5, '0');
+          const uid = getNextUid(db);
           updateUidStmt.run(uid, newId);
 
           created.push({ id: newId, uid, name });
@@ -375,7 +614,10 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         // Réassigner les tickets SAV au premier exemplaire créé, puis supprimer l'original
         const firstNewId = created[0]?.id;
         if (firstNewId) {
-          db.prepare('UPDATE sav_tickets SET equipment_id = ? WHERE equipment_id = ?').run(firstNewId, original.id);
+          db.prepare('UPDATE sav_tickets SET equipment_id = ? WHERE equipment_id = ?').run(
+            firstNewId,
+            original.id,
+          );
         }
         db.prepare('DELETE FROM equipment_assignments WHERE equipment_id = ?').run(original.id);
         db.prepare('DELETE FROM equipment WHERE id = ?').run(original.id);
@@ -384,273 +626,409 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       run();
 
       // Récupérer les items complets pour le frontend
-      const createdIds = created.map(c => c.id);
-      const fullItems = db.prepare(
-        `SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
+      const createdIds = created.map((c) => c.id);
+      const fullItems = db
+        .prepare(
+          `SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
          FROM equipment e
          LEFT JOIN equipment_categories ec ON e.category_id = ec.id
-         WHERE e.id IN (${createdIds.map(() => '?').join(',')})`
-      ).all(...createdIds);
+         WHERE e.id IN (${createdIds.map(() => '?').join(',')})`,
+        )
+        .all(...createdIds);
 
-      addToHistory('equipment', original.id, 'serialize', {
-        originalName: original.name,
-        originalQty: qty,
-        createdItems: created.map(c => c.uid)
-      }, req.user.id, req.user.name);
+      addToHistory(
+        'equipment',
+        original.id,
+        'serialize',
+        {
+          originalName: original.name,
+          originalQty: qty,
+          createdItems: created.map((c) => c.uid),
+        },
+        req.user.id,
+        req.user.name,
+      );
 
       res.json({
         success: true,
         message: `${original.name} sérialisé en ${qty} entités individuelles`,
         created,
         items: fullItems,
-        deletedId: original.id
+        deletedId: original.id,
       });
     } catch (error) {
       logger.error('Erreur sérialisation:', error);
-      res.status(500).json({ error: 'Erreur serveur lors de la sérialisation' });
+      res.status(500).json({ success: false, error: 'Erreur serveur lors de la sérialisation' });
     }
   });
 
   // POST /api/equipment/import-csv — Import CSV Locmat
-  app.post('/api/equipment/import-csv', authenticateToken, requireAdmin, validate(equipmentImportSchema), (req, res) => {
-    try {
-      const { data, mode } = req.body;
-      // data = tableau d'objets [{code_libre, nom, famille, sous_famille, categorie, zone, stock, marque, numero_serie}, ...]
-      // mode = 'preview' | 'import'
-      
-      if (!data || !Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ error: 'Données CSV vides' });
-      }
+  app.post(
+    '/api/equipment/import-csv',
+    authenticateToken,
+    requireAdmin,
+    validate(equipmentImportSchema),
+    (req, res) => {
+      try {
+        const { data, mode } = req.body;
+        // data = tableau d'objets [{code_libre, nom, famille, sous_famille, categorie, zone, stock, marque, numero_serie}, ...]
+        // mode = 'preview' | 'import'
 
-      // Récupérer les catégories existantes
-      const existingCats = db.prepare('SELECT * FROM equipment_categories').all();
-      
-      // Collecter les familles, sous-familles, catégories uniques du CSV
-      const familiesSet = new Map();
-      const subfamiliesSet = new Map();
-      const categoriesSet = new Map();
-      
-      for (const row of data) {
-        if (row.famille && row.famille.trim()) {
-          const normalizedFamily = row.famille.trim();
-          familiesSet.set(normalizedFamily.toUpperCase(), normalizedFamily);
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          return res.status(400).json({ success: false, error: 'Données CSV vides' });
         }
-        if (row.sous_famille && row.sous_famille.trim()) {
-          const key = `${(row.famille || '').trim().toUpperCase()}||${row.sous_famille.trim()}`;
-          subfamiliesSet.set(key, { name: row.sous_famille.trim(), family: (row.famille || '').trim() });
-        }
-        if (row.categorie && row.categorie.trim()) {
-          const key = `${(row.famille || '').trim().toUpperCase()}||${(row.sous_famille || '').trim()}||${row.categorie.trim()}`;
-          categoriesSet.set(key, { name: row.categorie.trim(), family: (row.famille || '').trim(), subfamily: (row.sous_famille || '').trim() });
-        }
-      }
 
-      // Icons par famille (taxonomie uniformisée)
-      const FAMILY_ICONS = {
-        'Sonorisation': '🔊', 'Éclairage': '💡', 'Structure': '🏗️', 'Audiovisuel': '🎥',
-        'Distribution Électrique': '⚡', 'Backline': '🎸', 'Informatique': '💻',
-        'Rideau-Machinerie': '🎭', 'Accroche': '🔗', 'Motorisation': '⚙️',
-        'Mobilier': '🪑', 'Outillage & EPI': '🔧', 'Divers': '📋',
-      };
-      const FAMILY_COLORS = {
-        'Sonorisation': '#3b82f6', 'Éclairage': '#f59e0b', 'Structure': '#ef4444', 'Audiovisuel': '#8b5cf6',
-        'Distribution Électrique': '#f97316', 'Backline': '#10b981', 'Informatique': '#06b6d4',
-        'Rideau-Machinerie': '#ec4899', 'Accroche': '#14b8a6', 'Motorisation': '#f97316',
-        'Mobilier': '#6b7280', 'Outillage & EPI': '#f59e0b', 'Divers': '#94a3b8',
-      };
-      
-      if (mode === 'preview') {
-        // Mode aperçu : retourner les stats ET l'analyse par item
-        const findExisting = db.prepare(`
+        // Filtre : ignorer les équipements en zone "Hors stock" (matériel déclassé)
+        const isHorsStock = (zone) => {
+          if (!zone) return false;
+          const z = String(zone)
+            .trim()
+            .toLowerCase()
+            .replace(/[\s_-]+/g, '');
+          return z === 'horsstock';
+        };
+
+        // Collecter les familles, sous-familles, catégories uniques du CSV
+        const familiesSet = new Map();
+        const subfamiliesSet = new Map();
+        const categoriesSet = new Map();
+
+        for (const row of data) {
+          if (isHorsStock(row.zone)) continue;
+          if (row.famille && row.famille.trim()) {
+            const normalizedFamily = row.famille.trim();
+            familiesSet.set(normalizedFamily.toUpperCase(), normalizedFamily);
+          }
+          if (row.sous_famille && row.sous_famille.trim()) {
+            const key = `${(row.famille || '').trim().toUpperCase()}||${row.sous_famille.trim()}`;
+            subfamiliesSet.set(key, {
+              name: row.sous_famille.trim(),
+              family: (row.famille || '').trim(),
+            });
+          }
+          if (row.categorie && row.categorie.trim()) {
+            const key = `${(row.famille || '').trim().toUpperCase()}||${(row.sous_famille || '').trim()}||${row.categorie.trim()}`;
+            categoriesSet.set(key, {
+              name: row.categorie.trim(),
+              family: (row.famille || '').trim(),
+              subfamily: (row.sous_famille || '').trim(),
+            });
+          }
+        }
+
+        // Icons par famille (taxonomie uniformisée)
+        const FAMILY_ICONS = {
+          Sonorisation: '🔊',
+          Éclairage: '💡',
+          Structure: '🏗️',
+          Audiovisuel: '🎥',
+          'Distribution Électrique': '⚡',
+          Backline: '🎸',
+          Informatique: '💻',
+          'Rideau-Machinerie': '🎭',
+          Accroche: '🔗',
+          Motorisation: '⚙️',
+          Mobilier: '🪑',
+          'Outillage & EPI': '🔧',
+          Divers: '📋',
+        };
+        const FAMILY_COLORS = {
+          Sonorisation: '#3b82f6',
+          Éclairage: '#f59e0b',
+          Structure: '#ef4444',
+          Audiovisuel: '#8b5cf6',
+          'Distribution Électrique': '#f97316',
+          Backline: '#10b981',
+          Informatique: '#06b6d4',
+          'Rideau-Machinerie': '#ec4899',
+          Accroche: '#14b8a6',
+          Motorisation: '#f97316',
+          Mobilier: '#6b7280',
+          'Outillage & EPI': '#f59e0b',
+          Divers: '#94a3b8',
+        };
+
+        if (mode === 'preview') {
+          // Mode aperçu : retourner les stats ET l'analyse par item
+          const findExisting = db.prepare(`
           SELECT id, name, reference, serial_number FROM equipment
           WHERE (reference = ? AND reference IS NOT NULL AND reference != '')
              OR (serial_number = ? AND serial_number IS NOT NULL AND serial_number != '')
           LIMIT 1
         `);
 
-        let toCreate = 0, toUpdate = 0, toSkip = 0;
-        const collisions = [];
+          let toCreate = 0,
+            toUpdate = 0,
+            toSkip = 0,
+            toSkipHorsStock = 0;
+          const collisions = [];
 
-        for (let i = 0; i < data.length; i++) {
-          const row = data[i];
-          const nom = (row.nom || '').trim();
-          if (!nom) { toSkip++; continue; }
+          for (let i = 0; i < data.length; i++) {
+            const row = data[i];
+            if (isHorsStock(row.zone)) {
+              toSkipHorsStock++;
+              continue;
+            }
+            const nom = (row.nom || '').trim();
+            if (!nom) {
+              toSkip++;
+              continue;
+            }
 
-          const reference = (row.code_libre || '').trim() || null;
-          const serialNumber = (row.numero_serie || '').trim() || null;
-          const existing = (reference || serialNumber) ? findExisting.get(reference, serialNumber) : null;
+            const reference = (row.code_libre || '').trim() || null;
+            const serialNumber = (row.numero_serie || '').trim() || null;
+            const existing =
+              reference || serialNumber ? findExisting.get(reference, serialNumber) : null;
 
-          if (existing) {
-            toUpdate++;
-            collisions.push({
-              index: i,
-              csvName: nom,
-              csvRef: reference,
-              csvSerial: serialNumber,
-              existingId: existing.id,
-              existingName: existing.name,
-              existingRef: existing.reference,
-              existingSerial: existing.serial_number,
-              action: 'update',
-              matchedBy: existing.reference === reference ? 'reference' : 'serial_number',
-            });
-          } else {
-            toCreate++;
+            if (existing) {
+              toUpdate++;
+              collisions.push({
+                index: i,
+                csvName: nom,
+                csvRef: reference,
+                csvSerial: serialNumber,
+                existingId: existing.id,
+                existingName: existing.name,
+                existingRef: existing.reference,
+                existingSerial: existing.serial_number,
+                action: 'update',
+                matchedBy: existing.reference === reference ? 'reference' : 'serial_number',
+              });
+            } else {
+              toCreate++;
+            }
           }
+
+          return res.json({
+            totalRows: data.length,
+            toCreate,
+            toUpdate,
+            toSkip,
+            toSkipHorsStock,
+            collisions,
+            families: [...familiesSet.values()],
+            subfamilies: [...subfamiliesSet.values()].map((v) => v.name),
+            categories: [...categoriesSet.values()].map((v) => v.name),
+            existingEquipmentCount: db.prepare('SELECT COUNT(*) as c FROM equipment').get().c,
+            sample: data.slice(0, 10),
+          });
         }
 
-        return res.json({
-          totalRows: data.length,
-          toCreate,
-          toUpdate,
-          toSkip,
-          collisions,
-          families: [...familiesSet.values()],
-          subfamilies: [...subfamiliesSet.values()].map(v => v.name),
-          categories: [...categoriesSet.values()].map(v => v.name),
-          existingEquipmentCount: db.prepare('SELECT COUNT(*) as c FROM equipment').get().c,
-          sample: data.slice(0, 10),
-        });
-      }
-
-      // Mode import réel
-      const insertFamily = db.prepare('INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, NULL)');
-      const insertSubfamily = db.prepare('INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, ?)');
-      const insertCategory = db.prepare('INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, ?)');
-      const findCat = db.prepare('SELECT id FROM equipment_categories WHERE name = ? AND level = ? AND (parent_id = ? OR (parent_id IS NULL AND ? IS NULL))');
-      const insertEquip = db.prepare(`
+        // Mode import réel
+        const insertFamily = db.prepare(
+          'INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, NULL)',
+        );
+        const insertSubfamily = db.prepare(
+          'INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, ?)',
+        );
+        const insertCategory = db.prepare(
+          'INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, ?)',
+        );
+        const findCat = db.prepare(
+          'SELECT id FROM equipment_categories WHERE name = ? AND level = ? AND (parent_id = ? OR (parent_id IS NULL AND ? IS NULL))',
+        );
+        const insertEquip = db.prepare(`
         INSERT INTO equipment (name, reference, serial_number, category_id, brand, stock_quantity, location, status, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'available', ?)
       `);
 
-      let created = 0, updated = 0, skipped = 0, familiesCreated = 0, subfamiliesCreated = 0, categoriesCreated = 0;
+        let created = 0,
+          updated = 0,
+          skipped = 0,
+          skippedHorsStock = 0,
+          familiesCreated = 0,
+          subfamiliesCreated = 0,
+          categoriesCreated = 0;
 
-      const importAll = db.transaction(() => {
-        // Phase 1 : Créer les familles
-        const familyIdMap = {};
-        for (const [key, name] of familiesSet) {
-          let existing = findCat.get(name, 'family', null, null);
-          if (!existing) {
-            // Vérifier aussi par nom case-insensitive
-            existing = db.prepare('SELECT id FROM equipment_categories WHERE UPPER(name) = ? AND level = ?').get(key, 'family');
+        const importAll = db.transaction(() => {
+          // Phase 1 : Créer les familles
+          const familyIdMap = {};
+          for (const [key, name] of familiesSet) {
+            let existing = findCat.get(name, 'family', null, null);
+            if (!existing) {
+              // Vérifier aussi par nom case-insensitive
+              existing = db
+                .prepare('SELECT id FROM equipment_categories WHERE UPPER(name) = ? AND level = ?')
+                .get(key, 'family');
+            }
+            if (existing) {
+              familyIdMap[key] = existing.id;
+            } else {
+              const icon = FAMILY_ICONS[name] || FAMILY_ICONS[key] || '📦';
+              const color = FAMILY_COLORS[name] || FAMILY_COLORS[key] || '#6366f1';
+              const result = insertFamily.run(name, icon, color, 'family');
+              familyIdMap[key] = result.lastInsertRowid;
+              familiesCreated++;
+            }
           }
-          if (existing) {
-            familyIdMap[key] = existing.id;
-          } else {
-            const icon = FAMILY_ICONS[name] || FAMILY_ICONS[key] || '📦';
-            const color = FAMILY_COLORS[name] || FAMILY_COLORS[key] || '#6366f1';
-            const result = insertFamily.run(name, icon, color, 'family');
-            familyIdMap[key] = result.lastInsertRowid;
-            familiesCreated++;
-          }
-        }
 
-        // Phase 2 : Créer les sous-familles
-        const subfamilyIdMap = {};
-        for (const [key, { name, family }] of subfamiliesSet) {
-          const familyKey = family.toUpperCase();
-          const parentId = familyIdMap[familyKey] || null;
-          let existing = findCat.get(name, 'subfamily', parentId, parentId);
-          if (existing) {
-            subfamilyIdMap[key] = existing.id;
-          } else {
-            const result = insertSubfamily.run(name, '📁', '#64748b', 'subfamily', parentId);
-            subfamilyIdMap[key] = result.lastInsertRowid;
-            subfamiliesCreated++;
+          // Phase 2 : Créer les sous-familles
+          const subfamilyIdMap = {};
+          for (const [key, { name, family }] of subfamiliesSet) {
+            const familyKey = family.toUpperCase();
+            const parentId = familyIdMap[familyKey] || null;
+            let existing = findCat.get(name, 'subfamily', parentId, parentId);
+            if (existing) {
+              subfamilyIdMap[key] = existing.id;
+            } else {
+              const result = insertSubfamily.run(name, '📁', '#64748b', 'subfamily', parentId);
+              subfamilyIdMap[key] = result.lastInsertRowid;
+              subfamiliesCreated++;
+            }
           }
-        }
 
-        // Phase 3 : Créer les catégories
-        const categoryIdMap = {};
-        for (const [key, { name, family, subfamily }] of categoriesSet) {
-          const sfKey = `${family.toUpperCase()}||${subfamily}`;
-          const parentId = subfamilyIdMap[sfKey] || null;
-          let existing = findCat.get(name, 'category', parentId, parentId);
-          if (existing) {
-            categoryIdMap[key] = existing.id;
-          } else {
-            const result = insertCategory.run(name, '📦', '#94a3b8', 'category', parentId);
-            categoryIdMap[key] = result.lastInsertRowid;
-            categoriesCreated++;
+          // Phase 3 : Créer les catégories
+          const categoryIdMap = {};
+          for (const [key, { name, family, subfamily }] of categoriesSet) {
+            const sfKey = `${family.toUpperCase()}||${subfamily}`;
+            const parentId = subfamilyIdMap[sfKey] || null;
+            let existing = findCat.get(name, 'category', parentId, parentId);
+            if (existing) {
+              categoryIdMap[key] = existing.id;
+            } else {
+              const result = insertCategory.run(name, '📦', '#94a3b8', 'category', parentId);
+              categoryIdMap[key] = result.lastInsertRowid;
+              categoriesCreated++;
+            }
           }
-        }
 
-        // Phase 4 : Insérer ou mettre à jour les équipements
-        const findExisting = db.prepare(`
+          // Phase 4 : Insérer ou mettre à jour les équipements
+          const findExisting = db.prepare(`
           SELECT id FROM equipment
           WHERE (reference = ? AND reference IS NOT NULL AND reference != '')
              OR (serial_number = ? AND serial_number IS NOT NULL AND serial_number != '')
           LIMIT 1
         `);
-        const updateEquip = db.prepare(`
-          UPDATE equipment SET name = ?, category_id = ?, brand = ?, stock_quantity = ?, location = ?, modified_at = CURRENT_TIMESTAMP
+          const updateEquip = db.prepare(`
+          UPDATE equipment SET name = ?, category_id = ?, brand = ?, stock_quantity = ?, location = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `);
 
-        for (const row of data) {
-          const nom = (row.nom || '').trim();
-          if (!nom) { skipped++; continue; }
-
-          // Trouver la catégorie
-          const catKey = `${(row.famille || '').trim().toUpperCase()}||${(row.sous_famille || '').trim()}||${(row.categorie || '').trim()}`;
-          const categoryId = categoryIdMap[catKey] || null;
-
-          const reference = (row.code_libre || '').trim() || null;
-          const serialNumber = (row.numero_serie || '').trim() || null;
-          const rawBrand = (row.marque || '').trim() || null;
-          const resolved = normalizeBrand(rawBrand);
-          const stock = parseInt(row.stock) || 1;
-          const zone = (row.zone || '').trim() || null;
-
-          // Détecter un équipement existant par référence ou numéro de série
-          const existing = (reference || serialNumber) ? findExisting.get(reference, serialNumber) : null;
-
-          if (existing) {
-            updateEquip.run(nom, categoryId, resolved.brand, stock, zone, existing.id);
-            if (resolved.brand_id) {
-              db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(resolved.brand_id, existing.id);
+          for (const row of data) {
+            if (isHorsStock(row.zone)) {
+              skippedHorsStock++;
+              continue;
             }
-            updated++;
-          } else {
-            insertEquip.run(nom, reference, serialNumber, categoryId, resolved.brand, stock, zone, req.user.id);
-            if (resolved.brand_id) {
-              db.prepare('UPDATE equipment SET brand_id = ? WHERE id = last_insert_rowid()').run(resolved.brand_id);
+            const nom = (row.nom || '').trim();
+            if (!nom) {
+              skipped++;
+              continue;
             }
-            created++;
+
+            // Trouver la catégorie
+            const catKey = `${(row.famille || '').trim().toUpperCase()}||${(row.sous_famille || '').trim()}||${(row.categorie || '').trim()}`;
+            const categoryId = categoryIdMap[catKey] || null;
+
+            const reference = (row.code_libre || '').trim() || null;
+            const serialNumber = (row.numero_serie || '').trim() || null;
+            const rawBrand = (row.marque || '').trim() || null;
+            const resolved = normalizeBrand(rawBrand);
+            const stock = parseInt(row.stock) || 1;
+            const zone = (row.zone || '').trim() || null;
+
+            // Détecter un équipement existant par référence ou numéro de série
+            const existing =
+              reference || serialNumber ? findExisting.get(reference, serialNumber) : null;
+
+            if (existing) {
+              updateEquip.run(nom, categoryId, resolved.brand, stock, zone, existing.id);
+              if (resolved.brand_id) {
+                db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(
+                  resolved.brand_id,
+                  existing.id,
+                );
+              }
+              // Synchroniser UID si le serial contient un EMAG
+              if (serialNumber) {
+                const emagMatch = serialNumber.match(/EMAG-\d{5}/i);
+                if (emagMatch) {
+                  db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
+                    emagMatch[0].toUpperCase(),
+                    existing.id,
+                  );
+                }
+              }
+              // S'assurer que l'uid n'est jamais vide
+              const existUid = db
+                .prepare('SELECT uid FROM equipment WHERE id = ?')
+                .get(existing.id);
+              if (!existUid?.uid) {
+                db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
+                  getNextUid(db),
+                  existing.id,
+                );
+              }
+              updated++;
+            } else {
+              const insResult = insertEquip.run(
+                nom,
+                reference,
+                serialNumber,
+                categoryId,
+                resolved.brand,
+                stock,
+                zone,
+                req.user.id,
+              );
+              // Générer UID (ou synchroniser avec serial EMAG)
+              const newId = insResult.lastInsertRowid;
+              const emagMatch = serialNumber && serialNumber.match(/EMAG-\d{5}/i);
+              const uid = emagMatch ? emagMatch[0].toUpperCase() : getNextUid(db);
+              db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, newId);
+              if (resolved.brand_id) {
+                db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(
+                  resolved.brand_id,
+                  newId,
+                );
+              }
+              created++;
+            }
           }
-        }
-      });
+        });
 
-      importAll();
+        importAll();
 
-      addToHistory('equipment', null, 'import_csv', {
-        created, updated, skipped,
-        familiesCreated, subfamiliesCreated, categoriesCreated,
-        total: data.length,
-      }, req.user.id, req.user.name);
-      
-      res.json({
-        success: true,
-        created,
-        updated,
-        skipped,
-        familiesCreated,
-        subfamiliesCreated,
-        categoriesCreated,
-        message: `Import terminé : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s), ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
-      });
-    } catch (error) {
-      logger.error('Erreur import CSV:', error);
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
-    }
-  });
+        addToHistory(
+          'equipment',
+          null,
+          'import_csv',
+          {
+            created,
+            updated,
+            skipped,
+            skippedHorsStock,
+            familiesCreated,
+            subfamiliesCreated,
+            categoriesCreated,
+            total: data.length,
+          },
+          req.user.id,
+          req.user.name,
+        );
+
+        res.json({
+          success: true,
+          created,
+          updated,
+          skipped,
+          skippedHorsStock,
+          familiesCreated,
+          subfamiliesCreated,
+          categoriesCreated,
+          message: `Import terminé : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s)${skippedHorsStock ? `, ${skippedHorsStock} hors stock ignoré(s)` : ''}, ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
+        });
+      } catch (error) {
+        logger.error('Erreur import CSV:', error);
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 }
 
 // ============ ASSIGNMENTS ============
 
 export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
-
   // GET /api/equipment-assignments
   app.get('/api/equipment-assignments', authenticateToken, (req, res) => {
     try {
@@ -665,15 +1043,24 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
         WHERE 1=1
       `;
       const params = [];
-      if (equipment_id) { sql += ' AND ea.equipment_id = ?'; params.push(equipment_id); }
-      if (person_id) { sql += ' AND ea.assigned_to = ?'; params.push(person_id); }
-      if (status) { sql += ' AND ea.status = ?'; params.push(status); }
+      if (equipment_id) {
+        sql += ' AND ea.equipment_id = ?';
+        params.push(equipment_id);
+      }
+      if (person_id) {
+        sql += ' AND ea.assigned_to = ?';
+        params.push(person_id);
+      }
+      if (status) {
+        sql += ' AND ea.status = ?';
+        params.push(status);
+      }
       sql += ' ORDER BY ea.start_date DESC';
-      
+
       res.json(db.prepare(sql).all(...params));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -681,61 +1068,91 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
   app.post('/api/equipment-assignments', authenticateToken, (req, res) => {
     try {
       const { equipment_id, assigned_to, start_date, end_date, affaire_id, notes } = req.body;
-      if (!equipment_id || !start_date) return res.status(400).json({ error: 'Équipement et date de début requis' });
-      
+      if (!equipment_id || !start_date)
+        return res
+          .status(400)
+          .json({ success: false, error: 'Équipement et date de début requis' });
+
       // [AUDIT FIX MED-W4] Empêcher la double affectation active
-      const existing = db.prepare(
-        "SELECT id, assigned_to, start_date FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'"
-      ).get(equipment_id);
+      const existing = db
+        .prepare(
+          "SELECT id, assigned_to, start_date FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'",
+        )
+        .get(equipment_id);
       if (existing) {
         return res.status(409).json({
           error: 'Cet équipement est déjà affecté',
-          existing: { id: existing.id, assigned_to: existing.assigned_to, start_date: existing.start_date }
+          existing: {
+            id: existing.id,
+            assigned_to: existing.assigned_to,
+            start_date: existing.start_date,
+          },
         });
       }
-      
-      const result = db.prepare(`
+
+      const result = db
+        .prepare(
+          `
         INSERT INTO equipment_assignments (equipment_id, assigned_to, assigned_by, start_date, end_date, affaire_id, notes, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
-      `).run(equipment_id, assigned_to, req.user.id, start_date, end_date, affaire_id, notes);
-      
+      `,
+        )
+        .run(equipment_id, assigned_to, req.user.id, start_date, end_date, affaire_id, notes);
+
       // Mettre à jour le statut de l'équipement
-      db.prepare("UPDATE equipment SET status = 'in_use', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(equipment_id);
-      
+      db.prepare(
+        "UPDATE equipment SET status = 'in_use', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      ).run(equipment_id);
+
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // PUT /api/equipment-assignments/:id/return
   app.put('/api/equipment-assignments/:id/return', authenticateToken, (req, res) => {
     try {
-      const assignment = db.prepare('SELECT * FROM equipment_assignments WHERE id = ?').get(req.params.id);
-      if (!assignment) return res.status(404).json({ error: 'Assignation non trouvée' });
-      
+      const assignment = db
+        .prepare('SELECT * FROM equipment_assignments WHERE id = ?')
+        .get(req.params.id);
+      if (!assignment)
+        return res.status(404).json({ success: false, error: 'Assignation non trouvée' });
+
       const returnDate = new Date().toISOString().slice(0, 10);
-      db.prepare("UPDATE equipment_assignments SET status = 'returned', end_date = ? WHERE id = ?").run(returnDate, req.params.id);
-      
+      db.prepare(
+        "UPDATE equipment_assignments SET status = 'returned', end_date = ? WHERE id = ?",
+      ).run(returnDate, req.params.id);
+
       // Vérifier s'il y a d'autres assignments actifs
-      const otherActive = db.prepare("SELECT COUNT(*) as c FROM equipment_assignments WHERE equipment_id = ? AND status = 'active' AND id != ?").get(assignment.equipment_id, req.params.id);
+      const otherActive = db
+        .prepare(
+          "SELECT COUNT(*) as c FROM equipment_assignments WHERE equipment_id = ? AND status = 'active' AND id != ?",
+        )
+        .get(assignment.equipment_id, req.params.id);
       if (otherActive.c === 0) {
-        db.prepare("UPDATE equipment SET status = 'available', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(assignment.equipment_id);
+        db.prepare(
+          "UPDATE equipment SET status = 'available', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(assignment.equipment_id);
       }
-      
+
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 }
 
 // ============ TICKETS SAV ============
 
-export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess) {
-
+export function setupSavTicketsRoutes(
+  app,
+  authenticateToken,
+  requireAdmin,
+  requireEquipmentMaintenanceAccess,
+) {
   // GET /api/sav-tickets
   app.get('/api/sav-tickets', authenticateToken, (req, res) => {
     try {
@@ -754,15 +1171,24 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
         WHERE 1=1
       `;
       const params = [];
-      if (equipment_id) { sql += ' AND st.equipment_id = ?'; params.push(equipment_id); }
-      if (status) { sql += ' AND st.status = ?'; params.push(status); }
-      if (priority) { sql += ' AND st.priority = ?'; params.push(priority); }
+      if (equipment_id) {
+        sql += ' AND st.equipment_id = ?';
+        params.push(equipment_id);
+      }
+      if (status) {
+        sql += ' AND st.status = ?';
+        params.push(status);
+      }
+      if (priority) {
+        sql += ' AND st.priority = ?';
+        params.push(priority);
+      }
       sql += ' ORDER BY st.created_at DESC';
-      
+
       res.json(db.prepare(sql).all(...params));
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -771,16 +1197,24 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
     try {
       const stats = {
         open: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'open'").get().c,
-        in_progress: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'in_progress'").get().c,
-        waiting_parts: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'waiting_parts'").get().c,
-        resolved: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'resolved'").get().c,
+        in_progress: db
+          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'in_progress'")
+          .get().c,
+        waiting_parts: db
+          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'waiting_parts'")
+          .get().c,
+        resolved: db
+          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'resolved'")
+          .get().c,
         closed: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'closed'").get().c,
-        total_cost: db.prepare("SELECT COALESCE(SUM(cost), 0) as total FROM sav_tickets WHERE cost IS NOT NULL").get().total,
+        total_cost: db
+          .prepare('SELECT COALESCE(SUM(cost), 0) as total FROM sav_tickets WHERE cost IS NOT NULL')
+          .get().total,
       };
       res.json(stats);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -789,7 +1223,8 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
   app.get('/api/sav-tickets/report', authenticateToken, (req, res) => {
     try {
       const { start, end, type } = req.query;
-      if (!start || !end) return res.status(400).json({ error: 'Paramètres start et end requis' });
+      if (!start || !end)
+        return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
 
       let sql = `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
@@ -808,11 +1243,13 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
         sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
         params.push(start, end);
       } else if (type === 'exits') {
-        sql += ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
+        sql +=
+          ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
         params.push(start, end);
       } else {
         // 'all' : entrées OU sorties dans la période
-        sql += ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
+        sql +=
+          ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
         params.push(start, end, start, end);
       }
       sql += ' ORDER BY st.created_at DESC';
@@ -821,24 +1258,32 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       res.json(rows);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // Helper : recalcule le statut d'un équipement en fonction de ses tickets SAV et assignments
   const refreshEquipmentStatus = (equipmentId) => {
     if (!equipmentId) return;
-    const activeTickets = db.prepare(
-      "SELECT COUNT(*) as c FROM sav_tickets WHERE equipment_id = ? AND status IN ('open', 'in_progress', 'waiting_parts')"
-    ).get(equipmentId);
+    const activeTickets = db
+      .prepare(
+        "SELECT COUNT(*) as c FROM sav_tickets WHERE equipment_id = ? AND status IN ('open', 'in_progress', 'waiting_parts')",
+      )
+      .get(equipmentId);
     if (activeTickets.c > 0) {
-      db.prepare("UPDATE equipment SET status = 'maintenance', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(equipmentId);
+      db.prepare(
+        "UPDATE equipment SET status = 'maintenance', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      ).run(equipmentId);
     } else {
-      const hasAssignment = db.prepare(
-        "SELECT COUNT(*) as c FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'"
-      ).get(equipmentId);
+      const hasAssignment = db
+        .prepare(
+          "SELECT COUNT(*) as c FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'",
+        )
+        .get(equipmentId);
       const newStatus = hasAssignment.c > 0 ? 'in_use' : 'available';
-      db.prepare('UPDATE equipment SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, equipmentId);
+      db.prepare(
+        'UPDATE equipment SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ).run(newStatus, equipmentId);
     }
   };
 
@@ -846,22 +1291,33 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
   app.post('/api/sav-tickets/request', authenticateToken, (req, res) => {
     try {
       const { equipment_id, title, description, type, priority } = req.body;
-      if (!equipment_id || !title) return res.status(400).json({ error: 'Équipement et titre requis' });
+      if (!equipment_id || !title)
+        return res.status(400).json({ success: false, error: 'Équipement et titre requis' });
 
-      const result = db.prepare(`
+      const result = db
+        .prepare(
+          `
         INSERT INTO sav_tickets (equipment_id, reported_by, assigned_to, type, priority, status, title, description)
         VALUES (?, ?, NULL, ?, ?, 'open', ?, ?)
-      `).run(equipment_id, req.user.id, type || 'panne', priority || 'medium', title, description);
+      `,
+        )
+        .run(equipment_id, req.user.id, type || 'panne', priority || 'medium', title, description);
 
       // Alerte email aux admins
       try {
-        alertSavTicketCreated(db, { equipment_id, title, type, priority, description }, req.user.name);
-      } catch (emailErr) { logger.warn('Alerte email SAV:', emailErr.message); }
+        alertSavTicketCreated(
+          db,
+          { equipment_id, title, type, priority, description },
+          req.user.name,
+        );
+      } catch (emailErr) {
+        logger.warn('Alerte email SAV:', emailErr.message);
+      }
 
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -869,25 +1325,44 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
   app.post('/api/sav-tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { equipment_id, assigned_to, type, priority, title, description } = req.body;
-      if (!equipment_id || !title) return res.status(400).json({ error: 'Équipement et titre requis' });
-      
-      const result = db.prepare(`
+      if (!equipment_id || !title)
+        return res.status(400).json({ success: false, error: 'Équipement et titre requis' });
+
+      const result = db
+        .prepare(
+          `
         INSERT INTO sav_tickets (equipment_id, reported_by, assigned_to, type, priority, status, title, description)
         VALUES (?, ?, ?, ?, ?, 'open', ?, ?)
-      `).run(equipment_id, req.user.id, assigned_to, type || 'panne', priority || 'medium', title, description);
-      
+      `,
+        )
+        .run(
+          equipment_id,
+          req.user.id,
+          assigned_to,
+          type || 'panne',
+          priority || 'medium',
+          title,
+          description,
+        );
+
       // Mettre l'équipement en maintenance
       refreshEquipmentStatus(equipment_id);
 
       // Alerte email aux admins
       try {
-        alertSavTicketCreated(db, { equipment_id, title, type, priority, description }, req.user.name);
-      } catch (emailErr) { logger.warn('Alerte email SAV:', emailErr.message); }
-      
+        alertSavTicketCreated(
+          db,
+          { equipment_id, title, type, priority, description },
+          req.user.name,
+        );
+      } catch (emailErr) {
+        logger.warn('Alerte email SAV:', emailErr.message);
+      }
+
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -901,405 +1376,137 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
     closed: ['open'], // réouverture uniquement
   };
 
-  app.put('/api/sav-tickets/:id', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
-    try {
-      const { assigned_to, type, priority, status, title, description, resolution, cost } = req.body;
-      
-      const oldTicket = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
-      if (!oldTicket) return res.status(404).json({ error: 'Ticket non trouvé' });
-      
-      // [AUDIT FIX MED-W1] Valider la transition d'état
-      if (status && status !== oldTicket.status) {
-        const allowed = VALID_SAV_TRANSITIONS[oldTicket.status];
-        if (!allowed || !allowed.includes(status)) {
-          return res.status(400).json({
-            error: `Transition de statut invalide : ${oldTicket.status} → ${status}`,
-            allowed: allowed || []
-          });
+  app.put(
+    '/api/sav-tickets/:id',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const { assigned_to, type, priority, status, title, description, resolution, cost } =
+          req.body;
+
+        const oldTicket = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
+        if (!oldTicket) return res.status(404).json({ success: false, error: 'Ticket non trouvé' });
+
+        // [AUDIT FIX MED-W1] Valider la transition d'état
+        if (status && status !== oldTicket.status) {
+          const allowed = VALID_SAV_TRANSITIONS[oldTicket.status];
+          if (!allowed || !allowed.includes(status)) {
+            return res.status(400).json({
+              error: `Transition de statut invalide : ${oldTicket.status} → ${status}`,
+              allowed: allowed || [],
+            });
+          }
         }
-      }
-      
-      const resolvedAt = (status === 'resolved' || status === 'closed') && oldTicket.status !== 'resolved' && oldTicket.status !== 'closed'
-        ? new Date().toISOString()
-        : oldTicket.resolved_at;
-      
-      db.prepare(`
+
+        const resolvedAt =
+          (status === 'resolved' || status === 'closed') &&
+          oldTicket.status !== 'resolved' &&
+          oldTicket.status !== 'closed'
+            ? new Date().toISOString()
+            : oldTicket.resolved_at;
+
+        db.prepare(
+          `
         UPDATE sav_tickets SET assigned_to = ?, type = ?, priority = ?, status = ?, title = ?, description = ?, resolution = ?, cost = ?, resolved_at = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(assigned_to, type, priority, status, title, description, resolution, cost, resolvedAt, req.params.id);
-      
-      // Recalculer le statut de l'équipement (maintenance ↔ available/in_use)
-      refreshEquipmentStatus(oldTicket.equipment_id);
-      
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
-    }
-  });
+      `,
+        ).run(
+          assigned_to,
+          type,
+          priority,
+          status,
+          title,
+          description,
+          resolution,
+          cost,
+          resolvedAt,
+          req.params.id,
+        );
+
+        // Recalculer le statut de l'équipement (maintenance ↔ available/in_use)
+        refreshEquipmentStatus(oldTicket.equipment_id);
+
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // DELETE /api/sav-tickets/duplicates — Supprimer les doublons existants (garder le plus ancien)
   // NOTE: route spécifique AVANT la route paramétrique /:id
   app.delete('/api/sav-tickets/duplicates', authenticateToken, requireAdmin, (req, res) => {
     try {
       // Doublons = même title (N° intervention + nom article)
-      const dupes = db.prepare(`
+      const dupes = db
+        .prepare(
+          `
         SELECT id FROM sav_tickets WHERE id NOT IN (
           SELECT MIN(id) FROM sav_tickets GROUP BY LOWER(TRIM(title))
         )
-      `).all();
+      `,
+        )
+        .all();
       if (dupes.length === 0) {
         return res.json({ removed: 0, message: 'Aucun doublon trouvé' });
       }
-      const ids = dupes.map(d => d.id);
+      const ids = dupes.map((d) => d.id);
       const placeholders = ids.map(() => '?').join(',');
       db.prepare(`DELETE FROM sav_tickets WHERE id IN (${placeholders})`).run(...ids);
-      addToHistory('sav_tickets', null, 'remove_duplicates', { removed: ids.length }, req.user.id, req.user.name);
+      addToHistory(
+        'sav_tickets',
+        null,
+        'remove_duplicates',
+        { removed: ids.length },
+        req.user.id,
+        req.user.name,
+      );
       res.json({ removed: ids.length, message: `${ids.length} doublon(s) supprimé(s)` });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // DELETE /api/sav-tickets/:id
-  app.delete('/api/sav-tickets/:id', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
-    try {
-      const ticket = db.prepare('SELECT equipment_id FROM sav_tickets WHERE id = ?').get(req.params.id);
-      db.prepare('DELETE FROM sav_tickets WHERE id = ?').run(req.params.id);
-      // Recalculer le statut de l'équipement après suppression
-      if (ticket) refreshEquipmentStatus(ticket.equipment_id);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
-    }
-  });
-
-  // POST /api/sav-tickets/import-csv — Import CSV Interventions Locmat
-  app.post('/api/sav-tickets/import-csv', authenticateToken, requireAdmin, validate(savImportSchema), (req, res) => {
-    try {
-      const { data, mode, manualLinks } = req.body;
-      // data = [{intervention, code_article, nom_article, numero_de_serie, debut, fin, cout, a}, ...]
-      // manualLinks = { rowIndex: equipmentId, ... } — liens manuels optionnels
-      if (!data || !Array.isArray(data) || data.length === 0) {
-        return res.status(400).json({ error: 'Données CSV vides' });
+  app.delete(
+    '/api/sav-tickets/:id',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const ticket = db
+          .prepare('SELECT equipment_id FROM sav_tickets WHERE id = ?')
+          .get(req.params.id);
+        db.prepare('DELETE FROM sav_tickets WHERE id = ?').run(req.params.id);
+        // Recalculer le statut de l'équipement après suppression
+        if (ticket) refreshEquipmentStatus(ticket.equipment_id);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-
-      // Helper pour parser les dates au format "dd/MM/yyyy AM|PM"
-      const parseDate = (str) => {
-        if (!str || !str.trim()) return null;
-        const match = str.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-        if (match) return `${match[3]}-${match[2]}-${match[1]}`;
-        return null;
-      };
-
-      // Parser le coût (format européen)
-      const parseCost = (str) => {
-        if (!str || !str.trim()) return 0;
-        const val = parseFloat(str.trim().replace(',', '.').replace(/[^0-9.]/g, ''));
-        return isNaN(val) ? 0 : val;
-      };
-
-      // Nettoyer un N° série pour matching souple
-      const cleanSerial = (s) => {
-        if (!s) return '';
-        return s.trim()
-          .replace(/\s*-\s*[A-Z]\d+$/i, '') // retirer suffixes comme "- V12"
-          .replace(/^\*/, '')                 // retirer * en début
-          .replace(/\s+/g, '')               // retirer espaces
-          .toUpperCase();
-      };
-
-      // Extraire UID EMAG et serial depuis le champ numero_de_serie
-      const parseSerialField = (raw) => {
-        if (!raw) return { uid: null, serial: null };
-        const str = raw.trim();
-        // Chercher EMAG-XXXXX n'importe où dans le champ
-        const uidMatch = str.match(/EMAG-\d{5}/i);
-        const uid = uidMatch ? uidMatch[0].toUpperCase() : null;
-        // Le serial est la partie restante (sans l'UID) nettoyée
-        const remaining = uid ? str.replace(uidMatch[0], '').replace(/[,;|\/\s]+/g, ' ').trim() : str;
-        const serial = remaining ? cleanSerial(remaining) : null;
-        return { uid, serial };
-      };
-
-      // Préparer les index de lookup
-      const allEquipment = db.prepare('SELECT id, reference, name, serial_number, uid FROM equipment LIMIT 10000').all();
-      
-      // Index exact par reference
-      const equipByRef = {};
-      for (const eq of allEquipment) {
-        if (eq.reference) equipByRef[eq.reference.trim().toUpperCase()] = eq;
-      }
-      
-      // Index par serial nettoyé (peut avoir plusieurs équipements)
-      const equipBySerial = {};
-      for (const eq of allEquipment) {
-        if (eq.serial_number) {
-          const clean = cleanSerial(eq.serial_number);
-          if (clean) {
-            if (!equipBySerial[clean]) equipBySerial[clean] = [];
-            equipBySerial[clean].push(eq);
-          }
-        }
-      }
-
-      // Index par UID
-      const equipByUid = {};
-      for (const eq of allEquipment) {
-        if (eq.uid) equipByUid[eq.uid.toUpperCase()] = eq;
-      }
-
-      // Matching intelligent : manual > UID EMAG > code_article+serial > code_article > serial seul
-      const findEquipment = (row, rowIndex, parsed) => {
-        // 1. Lien manuel prioritaire
-        if (manualLinks && manualLinks[rowIndex] !== undefined) {
-          return manualLinks[rowIndex];
-        }
-        
-        // 2. Match par UID EMAG détecté dans le champ série
-        if (parsed.uid && equipByUid[parsed.uid]) {
-          return equipByUid[parsed.uid].id;
-        }
-
-        // 3. Match par code article (reference)
-        const code = (row.code_article || '').trim().toUpperCase();
-        if (code && equipByRef[code]) {
-          // Si on a aussi un serial, chercher celui avec le bon serial+reference
-          if (parsed.serial && equipBySerial[parsed.serial]) {
-            const candidate = equipBySerial[parsed.serial].find(e => 
-              e.reference && e.reference.trim().toUpperCase() === code
-            );
-            if (candidate) return candidate.id;
-          }
-          return equipByRef[code].id;
-        }
-        
-        // 4. Match par serial nettoyé seul
-        if (parsed.serial && equipBySerial[parsed.serial]) {
-          return equipBySerial[parsed.serial][0].id;
-        }
-        
-        return null;
-      };
-
-      // Index des tickets existants pour détection de doublons (par N° intervention)
-      const existingByIntervention = {};
-      const existingTickets = db.prepare(
-        'SELECT id, title, equipment_id, status, import_code, import_serial FROM sav_tickets'
-      ).all();
-      for (const t of existingTickets) {
-        // Extraire le N° intervention du titre (format "INXXXX — Nom article")
-        const intMatch = t.title.match(/^(IN\d+)/i);
-        if (intMatch) {
-          existingByIntervention[intMatch[1].toUpperCase()] = t;
-        }
-        // Aussi indexer par import_code si présent
-        if (t.import_code) {
-          existingByIntervention[t.import_code.trim().toUpperCase()] = t;
-        }
-      }
-      // Index par titre exact normalisé
-      const existingByTitle = {};
-      for (const t of existingTickets) {
-        existingByTitle[t.title.trim().toLowerCase()] = t;
-      }
-
-      // Analyser les données
-      let matched = 0, unmatched = 0;
-      const unmatchedItems = [];
-      const processed = data.map((row, idx) => {
-        const parsed = parseSerialField(row.numero_de_serie);
-        const equipmentId = findEquipment(row, idx, parsed);
-
-        if (equipmentId) {
-          matched++;
-        } else {
-          unmatched++;
-          unmatchedItems.push({
-            index: idx,
-            intervention: row.intervention,
-            code: row.code_article,
-            nom: row.nom_article,
-            serial: row.numero_de_serie,
-            debut: row.debut,
-            fin: row.fin,
-            cout: row.cout,
-            statut: row.a,
-          });
-        }
-
-        // Détection de doublons par N° intervention ou titre exact
-        const interventionNum = (row.intervention || '').trim().toUpperCase();
-        const title = `${(row.intervention || '').trim()} — ${(row.nom_article || '').trim()}`;
-        const existingTicket = (interventionNum && existingByIntervention[interventionNum])
-          || existingByTitle[title.trim().toLowerCase()]
-          || null;
-
-        return {
-          ...row,
-          _equipmentId: equipmentId,
-          _parsedUid: parsed.uid,
-          _parsedSerial: parsed.serial,
-          _status: 'in_progress', // Tous les tickets importés → en cours
-          _cost: parseCost(row.cout),
-          _startDate: parseDate(row.debut),
-          _endDate: parseDate(row.fin),
-          _existingTicket: existingTicket,
-          _isDuplicate: !!existingTicket,
-          _title: title,
-        };
-      });
-
-      const duplicates = processed
-        .filter(r => r._isDuplicate)
-        .map((r, i) => ({ index: processed.indexOf(r), intervention: r.intervention, nom: r.nom_article, existingId: r._existingTicket?.id, existingStatus: r._existingTicket?.status }));
-
-      if (mode === 'preview') {
-        const statusCounts = {};
-        for (const row of processed) {
-          statusCounts[row._status] = (statusCounts[row._status] || 0) + 1;
-        }
-        const totalCost = processed.reduce((sum, r) => sum + r._cost, 0);
-        const equipmentList = allEquipment.map(e => ({ id: e.id, name: e.name, reference: e.reference, serial_number: e.serial_number, uid: e.uid }));
-
-        return res.json({
-          totalRows: data.length,
-          matched,
-          unmatched,
-          unmatchedItems,
-          duplicatesCount: duplicates.length,
-          duplicates: duplicates.slice(0, 20),
-          statusCounts,
-          totalCost,
-          existingTickets: existingTickets.length,
-          equipmentList,
-          sample: processed.slice(0, 10).map(r => ({
-            intervention: r.intervention,
-            code_article: r.code_article,
-            nom_article: r.nom_article,
-            serial: r.numero_de_serie,
-            parsedUid: r._parsedUid,
-            parsedSerial: r._parsedSerial,
-            status: r._status,
-            cost: r._cost,
-            startDate: r._startDate,
-            endDate: r._endDate,
-            matched: !!r._equipmentId,
-            isDuplicate: r._isDuplicate,
-            existingId: r._existingTicket?.id,
-          })),
-        });
-      }
-
-      // Mode import réel — créer les nouveaux, mettre à jour les doublons
-      const { skipDuplicates, updateDuplicates } = req.body;
-      const insertTicket = db.prepare(`
-        INSERT INTO sav_tickets (equipment_id, type, priority, status, title, description, cost, import_code, import_serial, import_name, created_at, resolved_at, updated_at)
-        VALUES (?, 'reparation', 'medium', ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `);
-      const updateTicket = db.prepare(`
-        UPDATE sav_tickets SET
-          equipment_id = COALESCE(?, equipment_id),
-          status = ?,
-          cost = COALESCE(?, cost),
-          description = COALESCE(?, description),
-          resolved_at = COALESCE(?, resolved_at),
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `);
-
-      let created = 0, createdLinked = 0, createdUnlinked = 0, skippedDuplicates = 0, updatedDuplicates = 0;
-
-      const importAll = db.transaction(() => {
-        for (const row of processed) {
-          const description = [
-            row.code_article ? `Code article: ${row.code_article}` : '',
-            row.numero_de_serie ? `N° série: ${row.numero_de_serie}` : '',
-          ].filter(Boolean).join('\n') || null;
-
-          // Doublon détecté
-          if (row._isDuplicate) {
-            if (updateDuplicates) {
-              // Mettre à jour le ticket existant (status, equipment_id, cost)
-              updateTicket.run(
-                row._equipmentId || null,
-                row._status,
-                row._cost || null,
-                description,
-                row._endDate || null,
-                row._existingTicket.id
-              );
-              updatedDuplicates++;
-            } else if (skipDuplicates) {
-              skippedDuplicates++;
-            } else {
-              // Créer quand même (comportement par défaut si aucune option)
-              skippedDuplicates++;
-            }
-            continue;
-          }
-
-          insertTicket.run(
-            row._equipmentId || null,
-            row._status,
-            row._title,
-            description,
-            row._cost != null ? row._cost : null,
-            (row.code_article || '').trim() || null,
-            (row.numero_de_serie || '').trim() || null,
-            (row.nom_article || '').trim() || null,
-            row._startDate || row._endDate || new Date().toISOString().split('T')[0],
-            row._endDate || null
-          );
-          created++;
-          if (row._equipmentId) createdLinked++; else createdUnlinked++;
-        }
-      });
-
-      importAll();
-
-      // Mettre en maintenance les équipements qui ont des tickets actifs
-      const activeEquipIds = [...new Set(
-        processed.filter(r => r._equipmentId && r._status !== 'closed' && r._status !== 'resolved')
-                 .map(r => r._equipmentId)
-      )];
-      for (const eqId of activeEquipIds) {
-        refreshEquipmentStatus(eqId);
-      }
-
-      addToHistory('sav_tickets', null, 'import_csv', { created, createdLinked, createdUnlinked, skippedDuplicates, updatedDuplicates, total: data.length }, req.user.id, req.user.name);
-
-      res.json({
-        success: true,
-        created,
-        createdLinked,
-        createdUnlinked,
-        skippedDuplicates,
-        updatedDuplicates,
-        total: data.length,
-        message: `Import terminé : ${createdLinked} liée(s), ${createdUnlinked} non liée(s)${updatedDuplicates > 0 ? `, ${updatedDuplicates} mis à jour` : ''}${skippedDuplicates > 0 ? `, ${skippedDuplicates} doublon(s) ignoré(s)` : ''}`,
-      });
-    } catch (error) {
-      logger.error('Erreur import CSV interventions:', error);
-      logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // GET /api/sav-tickets/unlinked — Tickets SAV importés non liés à un équipement
   app.get('/api/sav-tickets/unlinked', authenticateToken, (req, res) => {
     try {
-      const tickets = db.prepare(`
+      const tickets = db
+        .prepare(
+          `
         SELECT id, title, description, status, cost, import_code, import_serial, import_name, created_at, resolved_at
         FROM sav_tickets WHERE equipment_id IS NULL
         ORDER BY created_at DESC
-      `).all();
+      `,
+        )
+        .all();
       res.json(tickets);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1307,16 +1514,19 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
   app.put('/api/sav-tickets/:id/link', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { equipment_id } = req.body;
-      if (!equipment_id) return res.status(400).json({ error: 'equipment_id requis' });
-      
+      if (!equipment_id)
+        return res.status(400).json({ success: false, error: 'equipment_id requis' });
+
       const ticket = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
-      if (!ticket) return res.status(404).json({ error: 'Ticket non trouvé' });
-      
-      db.prepare('UPDATE sav_tickets SET equipment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(equipment_id, req.params.id);
+      if (!ticket) return res.status(404).json({ success: false, error: 'Ticket non trouvé' });
+
+      db.prepare(
+        'UPDATE sav_tickets SET equipment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ).run(equipment_id, req.params.id);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1334,8 +1544,13 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
     }
     doc.moveDown(0.2);
     const now = new Date();
-    doc.fontSize(7).fillColor('#999999')
-      .text(`Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} — ${rows.length} élément${rows.length > 1 ? 's' : ''}`, { align: 'center' });
+    doc
+      .fontSize(7)
+      .fillColor('#999999')
+      .text(
+        `Généré le ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} — ${rows.length} élément${rows.length > 1 ? 's' : ''}`,
+        { align: 'center' },
+      );
     doc.fillColor('#000000');
     doc.moveDown(0.5);
 
@@ -1358,11 +1573,29 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
     ];
     const totalColW = cols.reduce((s, c) => s + c.width, 0);
     const scale = pageW / totalColW;
-    cols.forEach(c => { c.width = Math.floor(c.width * scale); });
+    cols.forEach((c) => {
+      c.width = Math.floor(c.width * scale);
+    });
 
-    const STATUS_LABELS = { open: 'Ouvert', in_progress: 'En cours', waiting_parts: 'Att. pièces', resolved: 'Résolu', closed: 'Fermé' };
-    const fmtDate = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('fr-FR'); } catch { return '—'; } };
-    const fmtCost = (c) => { if (c == null) return '—'; return parseFloat(c).toFixed(2) + ' €'; };
+    const STATUS_LABELS = {
+      open: 'Ouvert',
+      in_progress: 'En cours',
+      waiting_parts: 'Att. pièces',
+      resolved: 'Résolu',
+      closed: 'Fermé',
+    };
+    const fmtDate = (d) => {
+      if (!d) return '—';
+      try {
+        return new Date(d).toLocaleDateString('fr-FR');
+      } catch {
+        return '—';
+      }
+    };
+    const fmtCost = (c) => {
+      if (c == null) return '—';
+      return parseFloat(c).toFixed(2) + ' €';
+    };
 
     const fs = 7;
     const rowH = 14;
@@ -1373,7 +1606,7 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
     const headerY = doc.y;
     doc.rect(leftX, headerY, pageW, headerH).fillColor('#374151').fill();
     doc.font('Helvetica-Bold').fontSize(fs).fillColor('#ffffff');
-    cols.forEach(col => {
+    cols.forEach((col) => {
       doc.text(col.label, x + 2, headerY + 4, { width: col.width - 4, lineBreak: false });
       x += col.width;
     });
@@ -1392,15 +1625,21 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       }
       doc.font('Helvetica').fontSize(fs).fillColor('#333333');
       x = leftX;
-      cols.forEach(col => {
-        let val = '—';
-        if (col.key === 'cost') { val = fmtCost(row.cost); if (row.cost) totalCost += parseFloat(row.cost); }
-        else if (col.key === 'created_at') val = fmtDate(row.created_at);
+      cols.forEach((col) => {
+        let val;
+        if (col.key === 'cost') {
+          val = fmtCost(row.cost);
+          if (row.cost) totalCost += parseFloat(row.cost);
+        } else if (col.key === 'created_at') val = fmtDate(row.created_at);
         else if (col.key === 'resolved_at') val = fmtDate(row.resolved_at);
         else if (col.key === 'status') val = STATUS_LABELS[row.status] || row.status || '—';
-        else if (col.key === 'title') val = (row.title || '') + (row.description ? ` — ${row.description}` : '');
+        else if (col.key === 'title')
+          val = (row.title || '') + (row.description ? ` — ${row.description}` : '');
         else val = row[col.key] || '—';
-        doc.text(String(val).substring(0, 40), x + 2, rowY + 3, { width: col.width - 4, lineBreak: false });
+        doc.text(String(val).substring(0, 40), x + 2, rowY + 3, {
+          width: col.width - 4,
+          lineBreak: false,
+        });
         x += col.width;
       });
       doc.y = rowY + rowH;
@@ -1408,18 +1647,29 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
 
     // Footer
     doc.moveDown(0.3);
-    doc.moveTo(leftX, doc.y).lineTo(leftX + pageW, doc.y).strokeColor('#333333').lineWidth(1).stroke();
+    doc
+      .moveTo(leftX, doc.y)
+      .lineTo(leftX + pageW, doc.y)
+      .strokeColor('#333333')
+      .lineWidth(1)
+      .stroke();
     doc.moveDown(0.3);
     doc.font('Helvetica-Bold').fontSize(9);
     doc.text(`Total : ${rows.length} intervention${rows.length > 1 ? 's' : ''}`, leftX, doc.y);
-    doc.text(`Coût total : ${fmtCost(totalCost)}`, leftX + pageW / 2, doc.y - doc.currentLineHeight(), { width: pageW / 2, align: 'right' });
+    doc.text(
+      `Coût total : ${fmtCost(totalCost)}`,
+      leftX + pageW / 2,
+      doc.y - doc.currentLineHeight(),
+      { width: pageW / 2, align: 'right' },
+    );
   };
 
   // GET /api/sav-tickets/report/pdf — Rapport maintenance en PDF (par période)
   app.get('/api/sav-tickets/report/pdf', authenticateToken, (req, res) => {
     try {
       const { start, end, type } = req.query;
-      if (!start || !end) return res.status(400).json({ error: 'Paramètres start et end requis' });
+      if (!start || !end)
+        return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
 
       let sql = `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
@@ -1437,10 +1687,12 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
         sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
         params.push(start, end);
       } else if (type === 'exits') {
-        sql += ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
+        sql +=
+          ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
         params.push(start, end);
       } else {
-        sql += ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
+        sql +=
+          ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
         params.push(start, end, start, end);
       }
       sql += ' ORDER BY st.created_at DESC';
@@ -1449,10 +1701,16 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       const TYPE_LABELS = { entries: 'Entrées', exits: 'Sorties', all: 'Entrées & Sorties' };
       const subtitle = `Du ${start} au ${end} — ${TYPE_LABELS[type] || 'Tous'}`;
 
-      const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margins: { top: 25, bottom: 20, left: 20, right: 20 },
-        info: { Title: `Rapport Maintenance - ${start} au ${end}`, Author: 'eM@g' }
+      const doc = new PDFDocument({
+        size: 'A4',
+        layout: 'landscape',
+        margins: { top: 25, bottom: 20, left: 20, right: 20 },
+        info: { Title: `Rapport Maintenance - ${start} au ${end}`, Author: 'eM@g' },
       });
-      const filename = `rapport-maintenance-${start}-${end}.pdf`;
+      const filename = safeContentDispositionName(
+        `rapport-maintenance-${start}-${end}.pdf`,
+        'rapport-maintenance.pdf',
+      );
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       doc.pipe(res);
@@ -1460,14 +1718,16 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
       doc.end();
     } catch (error) {
       logger.error('GET /api/sav-tickets/report/pdf error:', error);
-      res.status(500).json({ error: 'Erreur génération PDF' });
+      res.status(500).json({ success: false, error: 'Erreur génération PDF' });
     }
   });
 
   // GET /api/sav-tickets/active/pdf — PDF de tout le matériel en SAV (tickets actifs)
   app.get('/api/sav-tickets/active/pdf', authenticateToken, (req, res) => {
     try {
-      const rows = db.prepare(`
+      const rows = db
+        .prepare(
+          `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
                st.created_at, st.resolved_at,
                e.name as equipment_name, e.reference as equipment_reference,
@@ -1478,32 +1738,43 @@ export function setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requ
         LEFT JOIN users u ON st.reported_by = u.id
         WHERE st.status IN ('open', 'in_progress', 'waiting_parts')
         ORDER BY st.created_at DESC
-      `).all();
+      `,
+        )
+        .all();
 
-      const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margins: { top: 25, bottom: 20, left: 20, right: 20 },
-        info: { Title: 'Matériel en SAV / Maintenance', Author: 'eM@g' }
+      const doc = new PDFDocument({
+        size: 'A4',
+        layout: 'landscape',
+        margins: { top: 25, bottom: 20, left: 20, right: 20 },
+        info: { Title: 'Matériel en SAV / Maintenance', Author: 'eM@g' },
       });
       const today = new Date().toISOString().slice(0, 10);
       const filename = `materiel-en-sav-${today}.pdf`;
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       doc.pipe(res);
-      drawSavPdfTable(doc, rows, 'Matériel en SAV / Maintenance', 'Tickets actifs (ouverts, en cours, en attente de pièces)');
+      drawSavPdfTable(
+        doc,
+        rows,
+        'Matériel en SAV / Maintenance',
+        'Tickets actifs (ouverts, en cours, en attente de pièces)',
+      );
       doc.end();
     } catch (error) {
       logger.error('GET /api/sav-tickets/active/pdf error:', error);
-      res.status(500).json({ error: 'Erreur génération PDF' });
+      res.status(500).json({ success: false, error: 'Erreur génération PDF' });
     }
   });
 }
 
 // ═══ LISTES FAVORIS / SURVEILLANCE ═══
 export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) {
-
   // GET /api/equipment-lists — Listes de l'utilisateur courant
   app.get('/api/equipment-lists', authenticateToken, (req, res) => {
     try {
-      const lists = db.prepare(`
+      const lists = db
+        .prepare(
+          `
         SELECT el.*, e.name as equipment_name, e.reference, e.uid, e.serial_number, e.brand, e.status,
                ec.name as category_name, ec.icon as category_icon, ec.color as category_color
         FROM equipment_lists el
@@ -1511,11 +1782,13 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
         LEFT JOIN equipment_categories ec ON e.category_id = ec.id
         WHERE el.user_id = ?
         ORDER BY el.list_type, el.created_at DESC
-      `).all(req.user.id);
+      `,
+        )
+        .all(req.user.id);
       res.json(lists);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1523,14 +1796,20 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   app.post('/api/equipment-lists', authenticateToken, (req, res) => {
     try {
       const { equipment_id, list_type } = req.body;
-      if (!equipment_id || !list_type) return res.status(400).json({ error: 'equipment_id et list_type requis' });
-      if (!['favorite', 'watch'].includes(list_type)) return res.status(400).json({ error: 'list_type doit être favorite ou watch' });
-      
-      db.prepare('INSERT OR IGNORE INTO equipment_lists (equipment_id, user_id, list_type) VALUES (?, ?, ?)').run(equipment_id, req.user.id, list_type);
+      if (!equipment_id || !list_type)
+        return res.status(400).json({ success: false, error: 'equipment_id et list_type requis' });
+      if (!['favorite', 'watch'].includes(list_type))
+        return res
+          .status(400)
+          .json({ success: false, error: 'list_type doit être favorite ou watch' });
+
+      db.prepare(
+        'INSERT OR IGNORE INTO equipment_lists (equipment_id, user_id, list_type) VALUES (?, ?, ?)',
+      ).run(equipment_id, req.user.id, list_type);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1538,44 +1817,59 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   app.delete('/api/equipment-lists', authenticateToken, (req, res) => {
     try {
       const { equipment_id, list_type } = req.body;
-      if (!equipment_id || !list_type) return res.status(400).json({ error: 'equipment_id et list_type requis' });
-      
-      db.prepare('DELETE FROM equipment_lists WHERE equipment_id = ? AND user_id = ? AND list_type = ?').run(equipment_id, req.user.id, list_type);
+      if (!equipment_id || !list_type)
+        return res.status(400).json({ success: false, error: 'equipment_id et list_type requis' });
+
+      db.prepare(
+        'DELETE FROM equipment_lists WHERE equipment_id = ? AND user_id = ? AND list_type = ?',
+      ).run(equipment_id, req.user.id, list_type);
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // GET /api/equipment/by-uid/:uid — Lookup par UID (pour QR codes)
   app.get('/api/equipment/by-uid/:uid', authenticateToken, (req, res) => {
     try {
-      const eq = db.prepare(`
+      const eq = db
+        .prepare(
+          `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
         FROM equipment e
         LEFT JOIN equipment_categories ec ON e.category_id = ec.id
         WHERE e.uid = ?
-      `).get(req.params.uid);
-      
-      if (!eq) return res.status(404).json({ error: 'Équipement non trouvé' });
-      
-      eq.assignments = db.prepare(`
+      `,
+        )
+        .get(req.params.uid);
+
+      if (!eq) return res.status(404).json({ success: false, error: 'Équipement non trouvé' });
+
+      eq.assignments = db
+        .prepare(
+          `
         SELECT ea.*, p.first_name, p.last_name
         FROM equipment_assignments ea LEFT JOIN persons p ON ea.assigned_to = p.id
         WHERE ea.equipment_id = ? ORDER BY ea.start_date DESC
-      `).all(eq.id);
-      
-      eq.savTickets = db.prepare(`
+      `,
+        )
+        .all(eq.id);
+
+      eq.savTickets = db
+        .prepare(
+          `
         SELECT st.*, u.name as reported_by_name, p.first_name as tech_first_name, p.last_name as tech_last_name
         FROM sav_tickets st LEFT JOIN users u ON st.reported_by = u.id LEFT JOIN persons p ON st.assigned_to = p.id
         WHERE st.equipment_id = ? ORDER BY st.created_at DESC
-      `).all(eq.id);
-      
+      `,
+        )
+        .all(eq.id);
+
       res.json(eq);
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1584,35 +1878,45 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     try {
       const photosDir = join(__dirname, '..', '..', 'public', 'Photos', 'Matériel');
       const logosDir = join(__dirname, '..', '..', 'public', 'Logos');
-      
+
       let photos = [];
       let logos = [];
-      
+
       try {
-        photos = readdirSync(photosDir).filter(f => /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(f)).slice(0, 500);
-      } catch (e) { /* dossier inexistant */ }
-      
+        photos = readdirSync(photosDir)
+          .filter((f) => /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(f))
+          .slice(0, 500);
+      } catch (_e) {
+        /* dossier inexistant */
+      }
+
       try {
-        logos = readdirSync(logosDir).filter(f => /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(f)).slice(0, 500);
-      } catch (e) { /* dossier inexistant */ }
-      
+        logos = readdirSync(logosDir)
+          .filter((f) => /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(f))
+          .slice(0, 500);
+      } catch (_e) {
+        /* dossier inexistant */
+      }
+
       res.json({ photos, logos });
     } catch (error) {
       logger.error(error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
   // ═══ UPLOAD PHOTO MATÉRIEL ═══
   const photosDir = join(__dirname, '..', '..', 'public', 'Photos', 'Matériel');
   if (!existsSync(photosDir)) mkdirSync(photosDir, { recursive: true });
-  
+
   const photoStorage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, photosDir),
     filename: (req, file, cb) => {
       // Utiliser le nom original nettoyé (garder l'extension)
       const ext = extname(file.originalname).toLowerCase();
-      const baseName = file.originalname.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_\-().]/g, '_');
+      const baseName = file.originalname
+        .replace(/\.[^.]+$/, '')
+        .replace(/[^a-zA-Z0-9_\-().]/g, '_');
       // Éviter les doublons : ajouter un suffixe si le fichier existe déjà
       let finalName = baseName + ext;
       let counter = 1;
@@ -1623,13 +1927,16 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
       cb(null, finalName);
     },
   });
-  
+
   const uploadPhoto = multer({
     storage: photoStorage,
     limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
     fileFilter: (req, file, cb) => {
       const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
-      if (/\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.originalname) && allowedMimes.includes(file.mimetype)) {
+      if (
+        /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.originalname) &&
+        allowedMimes.includes(file.mimetype)
+      ) {
         cb(null, true);
       } else {
         cb(new Error('Format non supporté. Formats acceptés : jpg, png, gif, webp, avif'));
@@ -1638,18 +1945,23 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   });
 
   // POST /api/equipment-photos/upload — Upload une ou plusieurs photos
-  app.post('/api/equipment-photos/upload', authenticateToken, uploadPhoto.array('photos', 20), (req, res) => {
-    try {
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({ error: 'Aucun fichier reçu' });
+  app.post(
+    '/api/equipment-photos/upload',
+    authenticateToken,
+    uploadPhoto.array('photos', 20),
+    (req, res) => {
+      try {
+        if (!req.files || req.files.length === 0) {
+          return res.status(400).json({ success: false, error: 'Aucun fichier reçu' });
+        }
+        const uploaded = req.files.map((f) => f.filename);
+        res.json({ success: true, uploaded, count: uploaded.length });
+      } catch (error) {
+        logger.error('POST /api/equipment-photos/upload error:', error);
+        res.status(500).json({ success: false, error: "Erreur lors de l'upload" });
       }
-      const uploaded = req.files.map(f => f.filename);
-      res.json({ success: true, uploaded, count: uploaded.length });
-    } catch (error) {
-      logger.error('POST /api/equipment-photos/upload error:', error);
-      res.status(500).json({ error: 'Erreur lors de l\'upload' });
-    }
-  });
+    },
+  );
 
   // DELETE /api/equipment-photos/:filename — Supprimer une photo
   app.delete('/api/equipment-photos/:filename', authenticateToken, requireAdmin, (req, res) => {
@@ -1657,21 +1969,22 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
       const filename = decodeURIComponent(req.params.filename);
       // Sécurité : interdire les chemins relatifs
       if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
-        return res.status(400).json({ error: 'Nom de fichier invalide' });
+        return res.status(400).json({ success: false, error: 'Nom de fichier invalide' });
       }
       const filePath = join(photosDir, filename);
       try {
         unlinkSync(filePath);
       } catch (err) {
-        if (err.code === 'ENOENT') return res.status(404).json({ error: 'Photo introuvable' });
+        if (err.code === 'ENOENT')
+          return res.status(404).json({ success: false, error: 'Photo introuvable' });
         throw err;
       }
       // Nettoyer le champ photo en DB si un équipement pointait vers ce fichier
-      db.prepare("UPDATE equipment SET photo = NULL WHERE photo LIKE ?").run(`%${filename}%`);
+      db.prepare('UPDATE equipment SET photo = NULL WHERE photo LIKE ?').run(`%${filename}%`);
       res.json({ success: true, deleted: filename });
     } catch (error) {
       logger.error('DELETE /api/equipment-photos error:', error);
-      res.status(500).json({ error: 'Erreur lors de la suppression' });
+      res.status(500).json({ success: false, error: 'Erreur lors de la suppression' });
     }
   });
 
@@ -1679,22 +1992,36 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   app.put('/api/equipment-photos/rename', authenticateToken, requireAdmin, (req, res) => {
     try {
       const { oldName, newName } = req.body;
-      if (!oldName || !newName) return res.status(400).json({ error: 'oldName et newName requis' });
-      if (oldName.includes('/') || newName.includes('/') || oldName.includes('..') || newName.includes('..')) {
-        return res.status(400).json({ error: 'Nom de fichier invalide' });
+      if (!oldName || !newName)
+        return res.status(400).json({ success: false, error: 'oldName et newName requis' });
+      if (
+        oldName.includes('/') ||
+        newName.includes('/') ||
+        oldName.includes('..') ||
+        newName.includes('..')
+      ) {
+        return res.status(400).json({ success: false, error: 'Nom de fichier invalide' });
       }
       const oldPath = join(photosDir, oldName);
       const newPath = join(photosDir, newName);
-      if (!existsSync(oldPath)) return res.status(404).json({ error: 'Photo source introuvable' });
-      if (existsSync(newPath)) return res.status(409).json({ error: 'Un fichier avec ce nom existe déjà' });
-      
+      if (!existsSync(oldPath))
+        return res.status(404).json({ success: false, error: 'Photo source introuvable' });
+      if (existsSync(newPath))
+        return res
+          .status(409)
+          .json({ success: false, error: 'Un fichier avec ce nom existe déjà' });
+
       renameSync(oldPath, newPath);
       // Mettre à jour le champ photo en DB
-      db.prepare("UPDATE equipment SET photo = REPLACE(photo, ?, ?) WHERE photo LIKE ?").run(oldName, newName, `%${oldName}%`);
+      db.prepare('UPDATE equipment SET photo = REPLACE(photo, ?, ?) WHERE photo LIKE ?').run(
+        oldName,
+        newName,
+        `%${oldName}%`,
+      );
       res.json({ success: true, oldName, newName });
     } catch (error) {
       logger.error('PUT /api/equipment-photos/rename error:', error);
-      res.status(500).json({ error: 'Erreur lors du renommage' });
+      res.status(500).json({ success: false, error: 'Erreur lors du renommage' });
     }
   });
 
@@ -1707,15 +2034,34 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     return join(__dirname, '..', '..', 'public', filename);
   };
 
+  // [PERF Sprint 2] Cache des fichiers zones par chemin + mtime.
+  // Évite readFileSync + JSON.parse à chaque requête (zones JSON ~10-50 Ko, lus très souvent).
+  // Invalidation auto par mtime → le PUT qui réécrit le fichier est détecté sans hook explicite.
+  const _zonesCache = new Map(); // path -> { mtimeMs, data }
+  const loadZonesCached = (filename) => {
+    const fullPath = resolveZonesPath(filename);
+    const stat = statSync(fullPath);
+    const cached = _zonesCache.get(fullPath);
+    if (cached && cached.mtimeMs === stat.mtimeMs) return cached.data;
+    const data = JSON.parse(readFileSync(fullPath, 'utf-8'));
+    _zonesCache.set(fullPath, { mtimeMs: stat.mtimeMs, data });
+    return data;
+  };
+
   // ═══ GET /api/equipment-all-depot-zones — Toutes les zones des deux dépôts ═══
   app.get('/api/equipment-all-depot-zones', authenticateToken, (req, res) => {
     try {
-      const depot1 = JSON.parse(readFileSync(resolveZonesPath('depot-zones.json'), 'utf-8'));
-      const depot2 = JSON.parse(readFileSync(resolveZonesPath('depot2-zones.json'), 'utf-8'));
-      res.json({ depots: [ { id: '1', ...depot1 }, { id: '2', ...depot2 } ] });
+      const depot1 = loadZonesCached('depot-zones.json');
+      const depot2 = loadZonesCached('depot2-zones.json');
+      res.json({
+        depots: [
+          { id: '1', ...depot1 },
+          { id: '2', ...depot2 },
+        ],
+      });
     } catch (error) {
       logger.error('GET /api/equipment-all-depot-zones error:', error);
-      res.status(500).json({ error: 'Erreur chargement zones dépôt' });
+      res.status(500).json({ success: false, error: 'Erreur chargement zones dépôt' });
     }
   });
 
@@ -1725,12 +2071,11 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     try {
       const depotId = parseInt(req.query.depot, 10) || 1;
       const filename = depotId === 2 ? 'depot2-zones.json' : 'depot-zones.json';
-      const zonesPath = resolveZonesPath(filename);
-      const data = JSON.parse(readFileSync(zonesPath, 'utf-8'));
+      const data = loadZonesCached(filename);
       res.json(data);
     } catch (error) {
       logger.error('GET /api/equipment-depot-zones error:', error);
-      res.status(500).json({ error: 'Erreur chargement zones dépôt' });
+      res.status(500).json({ success: false, error: 'Erreur chargement zones dépôt' });
     }
   });
 
@@ -1748,17 +2093,20 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
         statsQuery += ' AND location_depot = ?';
         params.push(depot);
       }
-      statsQuery += ' GROUP BY location_depot, location_zone, location_floor ORDER BY location_depot, location_zone';
+      statsQuery +=
+        ' GROUP BY location_depot, location_zone, location_floor ORDER BY location_depot, location_zone';
       const stats = db.prepare(statsQuery).all(...params);
 
-      const unlocated = db.prepare(
-        "SELECT COUNT(*) as count FROM equipment WHERE location_zone IS NULL OR location_zone = ''"
-      ).get();
+      const unlocated = db
+        .prepare(
+          "SELECT COUNT(*) as count FROM equipment WHERE location_zone IS NULL OR location_zone = ''",
+        )
+        .get();
 
       res.json({ stats, unlocated: unlocated.count });
     } catch (error) {
       logger.error('GET /api/equipment-location-stats error:', error);
-      res.status(500).json({ error: 'Erreur serveur interne' });
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
 
@@ -1768,10 +2116,10 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
       const { depot, zones } = req.body;
       const depotId = parseInt(depot, 10);
       if (![1, 2].includes(depotId)) {
-        return res.status(400).json({ error: 'Dépôt invalide (1 ou 2)' });
+        return res.status(400).json({ success: false, error: 'Dépôt invalide (1 ou 2)' });
       }
       if (!zones || !Array.isArray(zones.zones) || !zones.version) {
-        return res.status(400).json({ error: 'Format de données invalide' });
+        return res.status(400).json({ success: false, error: 'Format de données invalide' });
       }
       const filename = depotId === 2 ? 'depot2-zones.json' : 'depot-zones.json';
       const dataDir = join(__dirname, 'data');
@@ -1785,11 +2133,13 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
       }
 
       writeFileSync(zonesPath, JSON.stringify(zones, null, 2), 'utf-8');
-      logger.info(`Depot ${depotId} zones updated by ${req.user.name} (${zones.zones.length} zones)`);
+      logger.info(
+        `Depot ${depotId} zones updated by ${req.user.name} (${zones.zones.length} zones)`,
+      );
       res.json({ success: true, zonesCount: zones.zones.length });
     } catch (error) {
       logger.error('PUT /api/equipment-depot-zones error:', error);
-      res.status(500).json({ error: 'Erreur sauvegarde zones' });
+      res.status(500).json({ success: false, error: 'Erreur sauvegarde zones' });
     }
   });
 }

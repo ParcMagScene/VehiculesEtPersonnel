@@ -20,11 +20,9 @@ export default function EmptyState({
   className = '',
   ...props
 }) {
-  const classes = [
-    'ui-empty-state',
-    `ui-empty-state--${size}`,
-    className
-  ].filter(Boolean).join(' ');
+  const classes = ['ui-empty-state', `ui-empty-state--${size}`, className]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className={classes} {...props}>

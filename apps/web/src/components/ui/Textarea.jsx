@@ -1,5 +1,6 @@
-import { forwardRef } from 'react';
 import './Textarea.css';
+
+import { forwardRef } from 'react';
 
 /**
  * Textarea — Composant atomique Design System
@@ -10,28 +11,18 @@ import './Textarea.css';
  * Mode bare : sans size → rend un <textarea> nu (compatible CSS existant)
  * Mode styled : avec size → applique les styles DS complets
  */
-const Textarea = forwardRef(({
-  size,
-  error = false,
-  className = '',
-  ...props
-}, ref) => {
+const Textarea = forwardRef(({ size, error = false, className = '', ...props }, ref) => {
   const classes = [
     'ui-textarea',
     size && `ui-textarea--${size}`,
     error && 'ui-textarea--error',
     props.disabled && 'ui-textarea--disabled',
-    className
-  ].filter(Boolean).join(' ');
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
-  return (
-    <textarea
-      ref={ref}
-      className={classes}
-      aria-invalid={error || undefined}
-      {...props}
-    />
-  );
+  return <textarea ref={ref} className={classes} aria-invalid={error || undefined} {...props} />;
 });
 
 Textarea.displayName = 'Textarea';

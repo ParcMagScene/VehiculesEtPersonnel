@@ -64,7 +64,9 @@
   display: flex;
 }
 
-.lrp-btn-refresh:hover { background: var(--glass-medium); }
+.lrp-btn-refresh:hover {
+  background: var(--glass-medium);
+}
 
 .lrp-btn-new {
   display: flex;
@@ -80,7 +82,9 @@
   font-weight: 500;
 }
 
-.lrp-btn-new:hover { background: var(--glass-medium); }
+.lrp-btn-new:hover {
+  background: var(--glass-medium);
+}
 
 .lrp-close-btn {
   background: var(--glass-light);
@@ -92,7 +96,9 @@
   display: flex;
 }
 
-.lrp-close-btn:hover { background: var(--glass-medium); }
+.lrp-close-btn:hover {
+  background: var(--glass-medium);
+}
 
 /* ─── BALANCE BAR ─── */
 .lrp-balance-bar {
@@ -118,8 +124,12 @@
   color: var(--theme-text-primary);
 }
 
-.lrp-balance-item.highlight .lrp-balance-num { color: var(--theme-info-dark); }
-.lrp-balance-item.carry .lrp-balance-num { color: var(--btn-success-color); }
+.lrp-balance-item.highlight .lrp-balance-num {
+  color: var(--theme-info-dark);
+}
+.lrp-balance-item.carry .lrp-balance-num {
+  color: var(--btn-success-color);
+}
 
 /* ─── STATS FILTER ─── */
 .lrp-stats {
@@ -141,11 +151,23 @@
   user-select: none;
 }
 
-.lrp-stat:hover { background: var(--theme-border-light); }
-.lrp-stat[data-active="true"] { background: var(--theme-info-text); color: var(--theme-text-inverse); font-weight: 600; }
-.lrp-stat.pending[data-active="true"] { background: var(--theme-warning); }
-.lrp-stat.accepted[data-active="true"] { background: var(--theme-success-alt); }
-.lrp-stat.refused[data-active="true"] { background: var(--theme-danger); }
+.lrp-stat:hover {
+  background: var(--theme-border-light);
+}
+.lrp-stat[data-active='true'] {
+  background: var(--theme-info-text);
+  color: var(--theme-text-inverse);
+  font-weight: 600;
+}
+.lrp-stat.pending[data-active='true'] {
+  background: var(--theme-warning);
+}
+.lrp-stat.accepted[data-active='true'] {
+  background: var(--theme-success-alt);
+}
+.lrp-stat.refused[data-active='true'] {
+  background: var(--theme-danger);
+}
 
 /* ─── ERROR ─── */
 .lrp-error {
@@ -205,7 +227,9 @@
   font-size: var(--font-base);
 }
 
-.lrp-btn-new-empty:hover { background: #1e3a8a; }
+.lrp-btn-new-empty:hover {
+  background: #1e3a8a;
+}
 
 /* ─── CARD ─── */
 .lrp-card {
@@ -218,12 +242,25 @@
   border-left: 4px solid var(--theme-border);
 }
 
-.lrp-card:hover { box-shadow: 0 2px 8px var(--shadow-sm); }
-.lrp-card.pending { border-left-color: var(--theme-warning); }
-.lrp-card.accepted { border-left-color: var(--theme-success-alt); }
-.lrp-card.refused { border-left-color: var(--theme-danger); }
-.lrp-card.modified { border-left-color: var(--theme-info); }
-.lrp-card.cancelled { border-left-color: var(--theme-text-gray); opacity: 0.7; }
+.lrp-card:hover {
+  box-shadow: 0 2px 8px var(--shadow-sm);
+}
+.lrp-card.pending {
+  border-left-color: var(--theme-warning);
+}
+.lrp-card.accepted {
+  border-left-color: var(--theme-success-alt);
+}
+.lrp-card.refused {
+  border-left-color: var(--theme-danger);
+}
+.lrp-card.modified {
+  border-left-color: var(--theme-info);
+}
+.lrp-card.cancelled {
+  border-left-color: var(--theme-text-gray);
+  opacity: 0.7;
+}
 
 .lrp-card-header {
   display: flex;
@@ -334,13 +371,25 @@
   transition: all 0.2s;
 }
 
-.lrp-action-btn:hover { background: var(--theme-bg-page); }
+.lrp-action-btn:hover {
+  background: var(--theme-bg-page);
+}
 
-.lrp-action-btn.pdf { color: var(--theme-info-dark); border-color: var(--theme-info-border); }
-.lrp-action-btn.pdf:hover { background: var(--theme-info-bg); }
+.lrp-action-btn.pdf {
+  color: var(--theme-info-dark);
+  border-color: var(--theme-info-border);
+}
+.lrp-action-btn.pdf:hover {
+  background: var(--theme-info-bg);
+}
 
-.lrp-action-btn.cancel { color: var(--theme-danger); border-color: var(--theme-danger-border); }
-.lrp-action-btn.cancel:hover { background: var(--theme-danger-bg); }
+.lrp-action-btn.cancel {
+  color: var(--theme-danger);
+  border-color: var(--theme-danger-border);
+}
+.lrp-action-btn.cancel:hover {
+  background: var(--theme-danger-bg);
+}
 
 .lrp-cancel-confirm {
   display: flex;
@@ -369,9 +418,23 @@
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 640px) {
-  .lrp-overlay { padding: 0; }
-  .lrp-panel { max-width: 100%; max-height: 100dvh; border-radius: 0; }
-  .lrp-balance-bar { flex-wrap: wrap; gap: 8px; }
-  .lrp-stats { gap: 2px; }
-  .lrp-stat { font-size: var(--font-xs); padding: 3px 8px; }
+  .lrp-overlay {
+    padding: 0;
+  }
+  .lrp-panel {
+    max-width: 100%;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .lrp-balance-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .lrp-stats {
+    gap: 2px;
+  }
+  .lrp-stat {
+    font-size: var(--font-xs);
+    padding: 3px 8px;
+  }
 }

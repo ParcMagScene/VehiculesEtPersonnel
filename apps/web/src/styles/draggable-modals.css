@@ -43,7 +43,7 @@
 /* Le body scrollable du modal : seul le conteneur direct doit scroller.
    On utilise [class$="-body"] (finit par "-body") pour ne pas matcher
    les sous-éléments internes comme .eq-detail-body */
-.modal-draggable-enhanced > [class$="-body"],
+.modal-draggable-enhanced > [class$='-body'],
 .modal-draggable-enhanced > .modal-body,
 .modal-draggable-enhanced > .pdf-export-body,
 .modal-draggable-enhanced > .etm-body,
@@ -179,12 +179,22 @@
 /* Edge handles hover : bande colorée */
 .modal-resize-n:hover,
 .modal-resize-s:hover {
-  background: linear-gradient(to bottom, transparent, var(--drag-handle-color, rgba(100, 149, 237, 0.3)), transparent);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--drag-handle-color, rgba(100, 149, 237, 0.3)),
+    transparent
+  );
 }
 
 .modal-resize-e:hover,
 .modal-resize-w:hover {
-  background: linear-gradient(to right, transparent, var(--drag-handle-color, rgba(100, 149, 237, 0.3)), transparent);
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--drag-handle-color, rgba(100, 149, 237, 0.3)),
+    transparent
+  );
 }
 
 /* Corner handles hover */
@@ -217,12 +227,12 @@
 
 /* --- Dark theme support ------------------------------------------ */
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --drag-handle-color: rgba(180, 180, 180, 0.5);
   --drag-handle-hover: rgba(100, 180, 255, 0.9);
 }
 
-[data-theme="light"],
+[data-theme='light'],
 :root {
   --drag-handle-color: rgba(100, 100, 100, 0.4);
   --drag-handle-hover: rgba(60, 120, 220, 0.9);
@@ -240,8 +250,8 @@
    le body (pas les resize handles) doit prendre l'espace restant.
    On cible les enfants scrollables connus plutôt que :last-child
    qui pointe toujours sur un resize handle. */
-.modal-draggable-enhanced[style*="height"] > [class$="-body"],
-.modal-draggable-enhanced[style*="height"] > .modal-body {
+.modal-draggable-enhanced[style*='height'] > [class$='-body'],
+.modal-draggable-enhanced[style*='height'] > .modal-body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -251,7 +261,11 @@
 /* --- Transition douce pour le reset (double-click) --------------- */
 
 .modal-draggable-enhanced:not(.modal-dragging):not(.modal-resizing) {
-  transition: left 0.3s ease, top 0.3s ease, width 0.3s ease, height 0.3s ease;
+  transition:
+    left 0.3s ease,
+    top 0.3s ease,
+    width 0.3s ease,
+    height 0.3s ease;
 }
 
 /* --- Mini grip bar pour modals sans header ------------------------ */
@@ -278,7 +292,9 @@
   height: 4px;
   border-radius: 2px;
   background: var(--drag-handle-color, rgba(120, 120, 120, 0.35));
-  transition: background 0.2s ease, width 0.2s ease;
+  transition:
+    background 0.2s ease,
+    width 0.2s ease;
 }
 
 .modal-grip-bar:hover::before {

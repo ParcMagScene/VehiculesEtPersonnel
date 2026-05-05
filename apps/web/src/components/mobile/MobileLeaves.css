@@ -641,3 +641,9 @@
   grid-column: 1 / -1;
   padding: var(--space-3) 0;
 }
+
+.ml-header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}

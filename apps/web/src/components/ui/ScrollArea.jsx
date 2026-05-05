@@ -1,5 +1,6 @@
-import React from 'react';
 import './ui.css';
+
+import React from 'react';
 
 /**
  * ScrollArea — Conteneur scrollable avec scrollbars unifiées
@@ -11,8 +12,17 @@ import './ui.css';
  * @param {string}  className  Classes additionnelles
  */
 const ScrollArea = React.forwardRef(function ScrollArea(
-  { maxHeight, thin = false, horizontal = false, both = false, className = '', style, children, ...rest },
-  ref
+  {
+    maxHeight,
+    thin = false,
+    horizontal = false,
+    both = false,
+    className = '',
+    style,
+    children,
+    ...rest
+  },
+  ref,
 ) {
   const cls = [
     'ui-scroll-area',
@@ -24,9 +34,7 @@ const ScrollArea = React.forwardRef(function ScrollArea(
     .filter(Boolean)
     .join(' ');
 
-  const mergedStyle = maxHeight
-    ? { ...style, maxHeight: `${maxHeight}px` }
-    : style;
+  const mergedStyle = maxHeight ? { ...style, maxHeight: `${maxHeight}px` } : style;
 
   return (
     <div ref={ref} className={cls} style={mergedStyle} {...rest}>

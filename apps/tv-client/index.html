@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Dashboard">
 
-    <link rel="stylesheet" href="/tv-client/styles.css">
+    <link rel="stylesheet" href="/tv-client/styles.css?v=20260424">
     <style>
         :root {
             --primary-color: #00e1ff;
@@ -38,12 +38,11 @@
       <h1 id="welcome" class="marquee">Chargement du message...</h1>
       <div id="datetime">
         <div style="display: flex; align-items: center; justify-content: flex-end; gap: 1em;">
-          <div style="display: flex; flex-direction: column; align-items: center;">
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">
             <span id="date"></span>
             <span id="heure"></span>
           </div>
-          <span id="weather" style="margin-right:2em; min-width:180px; display:inline-block;"></span>
-          <button id="btn-test-sound" title="Tester le signal sonore">🔔</button>
+          <span id="weather"></span>
         </div>
       </div>
     </header>
@@ -79,9 +78,14 @@
       </div>
     </div>
 
+    <!-- Indicateur offline -->
+    <div id="offline-indicator" style="display: none;">
+      <span>📡 Connexion perdue — données en cache</span>
+    </div>
+
     <footer></footer>
 
-    <script src="/tv-client/main.js"></script>
+    <script src="/tv-client/main.js?v=20260424"></script>
     <script>
       // Gestion des onglets mobile
       document.querySelectorAll('.tab-btn').forEach(btn => {

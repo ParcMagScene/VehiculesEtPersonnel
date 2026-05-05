@@ -366,11 +366,11 @@
   background: var(--theme-info-bg);
 }
 
-.mode-option input[type="radio"] {
+.mode-option input[type='radio'] {
   cursor: pointer;
 }
 
-.mode-option input[type="radio"]:checked + span {
+.mode-option input[type='radio']:checked + span {
   color: var(--theme-info);
   font-weight: 600;
 }
@@ -390,7 +390,7 @@
   cursor: pointer;
 }
 
-.immobilized-checkbox input[type="checkbox"] {
+.immobilized-checkbox input[type='checkbox'] {
   cursor: pointer;
   width: 18px;
   height: 18px;
@@ -857,8 +857,16 @@
 }
 
 @keyframes slideDown {
-  from { opacity: 0; max-height: 0; transform: translateY(-8px); }
-  to { opacity: 1; max-height: 200px; transform: translateY(0); }
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    max-height: 200px;
+    transform: translateY(0);
+  }
 }
 
 .status-reason-field label {
@@ -1023,53 +1031,53 @@
    DARK THEME OVERRIDES — MaintenanceDialog.css
    ═══════════════════════════════════════════════════════ */
 
-[data-theme="dark"] .immobilized-checkbox {
+[data-theme='dark'] .immobilized-checkbox {
   border-color: var(--theme-danger-border);
 }
 
-[data-theme="dark"] .empty-state {
+[data-theme='dark'] .empty-state {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .maintenance-card.status-pending {
+[data-theme='dark'] .maintenance-card.status-pending {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
 }
 
-[data-theme="dark"] .maintenance-card.status-rescheduled {
+[data-theme='dark'] .maintenance-card.status-rescheduled {
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.05));
   border-color: var(--theme-warning);
 }
 
-[data-theme="dark"] .conflict-warning-header {
+[data-theme='dark'] .conflict-warning-header {
   border-color: var(--theme-warning);
 }
 
-[data-theme="dark"] .conflict-list {
+[data-theme='dark'] .conflict-list {
   background: var(--theme-warning-bg);
   border-color: var(--theme-warning);
 }
 
-[data-theme="dark"] .status-reason-field textarea {
+[data-theme='dark'] .status-reason-field textarea {
   border-color: var(--theme-border);
 }
 
-[data-theme="dark"] .ct-periodicity-info {
+[data-theme='dark'] .ct-periodicity-info {
   background: linear-gradient(135deg, var(--primary-tint-light), rgba(59, 130, 246, 0.05));
   color: var(--theme-info);
 }
 
-[data-theme="dark"] .ct-periodicity-text {
+[data-theme='dark'] .ct-periodicity-text {
   color: var(--theme-text-secondary);
 }
 
-[data-theme="dark"] .ct-periodicity-text strong {
+[data-theme='dark'] .ct-periodicity-text strong {
   color: var(--theme-info);
 }
 
-[data-theme="dark"] .status-changed-indicator {
+[data-theme='dark'] .status-changed-indicator {
   color: var(--theme-text-muted);
 }
 
-[data-theme="dark"] .period-tag {
+[data-theme='dark'] .period-tag {
   color: var(--theme-primary);
 }

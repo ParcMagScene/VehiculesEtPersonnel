@@ -197,12 +197,21 @@ Se référer à [CHECKLIST_PRODUCTION.md](CHECKLIST_PRODUCTION.md) pour la check
 
 ### B. Mise à jour des docs
 
+```bash
+# Vérifier la cohérence docs ↔ code avant merge
+npm run docs:check
+```
+
 | Document | Quand le mettre à jour |
 |----------|----------------------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Nouveau module, route, ou changement de stack |
 | [CHECKLIST_PRODUCTION.md](CHECKLIST_PRODUCTION.md) | Nouveau test ou point de vérification |
 | [SECURITY.md](SECURITY.md) | Tout changement de sécurité |
 | Ce fichier (PLAN_MAINTENANCE.md) | Nouveau seuil, script, ou procédure |
+
+**Règle** : toute modification de routes montées dans `apps/api/server.js`, de modules documentés dans `docs/api/README.md` ou des compteurs globaux de `docs/docs-index.json` doit faire passer `npm run docs:check` avant merge.
+
+**Automatisation** : ce contrôle s’exécute aussi dans un hook local `pre-push`, dans la CI de `dev`, dans la validation pré-déploiement de `main` et dans la protection des PR vers `main`.
 
 ### C. Changelog
 

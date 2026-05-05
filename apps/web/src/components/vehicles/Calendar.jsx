@@ -1,563 +1,28 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, startTransition } from 'react';
+import './Calendar.css';
+
+import { format, isSameDay, isSameMonth, isSameWeek, isSameYear, setMonth } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight, Link, Truck } from 'lucide-react';
+import React, { startTransition, useCallback, useEffect, useState } from 'react';
+
+import { Button, Tooltip } from '@/design-system';
+
+import { TIMING } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import useWindowWidth from '../../hooks/useWindowWidth';
 import { formatDateSimple } from '../../utils/formatUtils';
-import {
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
-  eachDayOfInterval,
-  eachMonthOfInterval,
-  eachWeekOfInterval,
-  format,
-  isSameDay,
-  isWeekend,
-  isToday,
-  getWeek,
-  setMonth,
-  isSameWeek,
-  isSameMonth,
-  isSameYear,
-} from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { Link, Link2, MapPin, Trash2, ChevronLeft, ChevronRight, Truck } from 'lucide-react';
-import api from '../../utils/api';
-import { getPeriodTimestamp, formatLocalDate, capitalizeText } from '../../utils/dateUtils';
-import { hasExpiredTechnicalControl, getExpiredTechnicalControls } from '../../utils/vehicleUtils';
-import { loadFromIndexedDB } from '../../utils/indexedDB';
-import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import YearSelector from '../YearSelector';
+import CalendarHeaders from './CalendarHeaders';
+import { getDriveLinksCount } from './calendarUtils';
+import CalendarVehicleColumn from './CalendarVehicleColumn';
+import CalendarVehicleRow from './CalendarVehicleRow';
 import ReservationModal from './ReservationModal';
 import TripDetailsModal from './TripDetailsModal';
-import './Calendar.css';
-import { Button , Tooltip} from '@/design-system';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-
-import { STATUS, TIMING } from '../../constants';
-
-// Fonction pour obtenir les initiales d'un utilisateur
-const getUserInitials = (userId, currentUser, users = []) => {
-  if (currentUser && userId === currentUser.id && currentUser.name) {
-    return currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  }
-  
-  // Chercher dans la liste des utilisateurs
-  const user = users.find(u => u.id === userId);
-  if (user && user.name) {
-    return user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-  }
-  
-  return `U${userId.toString().slice(-1)}`;
-};
-
-// Helper pour compter les liens Google Drive d'un bloc
-const getDriveLinksCount = (block) => {
-  const raw = block.googleDriveLinks;
-  if (Array.isArray(raw) && raw.length > 0) return raw.length;
-  const link = block.googleDriveLink;
-  if (!link) return 0;
-  try {
-    const parsed = JSON.parse(link);
-    if (Array.isArray(parsed)) return parsed.length;
-  } catch { /* ignore */ }
-  return link.trim() ? 1 : 0;
-};
-
-// Composant Tooltip pour les réservations
-const _ReservationTooltip = ({ block, currentUser, users = [] }) => {
-  let creatorName = `Utilisateur ${block.createdBy}`;
-  
-  if (currentUser && block.createdBy === currentUser.id) {
-    creatorName = currentUser.name;
-  } else {
-    const creator = users.find(u => u.id === block.createdBy);
-    if (creator && creator.name) {
-      creatorName = creator.name;
-    }
-  }
-
-  return (
-    <div className="emag-tooltip">
-      <div className="tooltip-row">
-        <span className="tooltip-label">Type:</span>
-        <span className="tooltip-value">{block.isMaintenance ? 'Intervention' : 'Réservation'}</span>
-      </div>
-      {block.isMaintenance ? (
-        <>
-          <div className="tooltip-row">
-            <span className="tooltip-label">Prestation:</span>
-            <span className="tooltip-value">{block.prestationName || 'Non spécifiée'}</span>
-          </div>
-          <div className="tooltip-row">
-            <span className="tooltip-label">Garage:</span>
-            <span className="tooltip-value">{block.garageName || 'Non spécifié'}</span>
-          </div>
-          <div className="tooltip-row">
-            <span className="tooltip-label">Début:</span>
-            <span className="tooltip-value">{block.start_date || block.startDate || 'Non spécifié'}</span>
-          </div>
-          <div className="tooltip-row">
-            <span className="tooltip-label">Fin:</span>
-            <span className="tooltip-value">{block.end_date || block.endDate || 'Non spécifiée'}</span>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="tooltip-row">
-            <span className="tooltip-label">Client:</span>
-            <span className="tooltip-value">{block.clientName || 'Non spécifié'}</span>
-          </div>
-          <div className="tooltip-row">
-            <span className="tooltip-label">Début:</span>
-            <span className="tooltip-value">{block.startDate || block.date ? `${formatDateSimple(block.startDate || block.date)} ${(block.startPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
-          </div>
-          <div className="tooltip-row">
-            <span className="tooltip-label">Fin:</span>
-            <span className="tooltip-value">{block.endDate || block.date ? `${formatDateSimple(block.endDate || block.date)} ${(block.endPeriod || block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
-          </div>
-        </>
-      )}
-      {block.description && (
-        <div className="tooltip-row">
-          <span className="tooltip-label">Description:</span>
-          <span className="tooltip-value">{block.description}</span>
-        </div>
-      )}
-      <div className="tooltip-row">
-        <span className="tooltip-label">Créé par:</span>
-        <span className="tooltip-value">{creatorName}</span>
-      </div>
-    </div>
-  );
-};
-
-// Helper pour lier deux trajets directement depuis le calendrier
-// Helper pour délier un trajet depuis le calendrier
-const unlinkTripDirectly = async (reservationId, eventId, btn, onLinked) => {
-  try {
-    if (!reservationId) return;
-    if (btn) btn.classList.add('linking');
-    await api.unlinkTrip({ reservationId, eventId });
-    if (btn) btn.classList.remove('linking');
-    if (onLinked) onLinked();
-  } catch (err) {
-    if (btn) btn.classList.remove('linking');
-    console.error('Erreur déliaison trajet:', err);
-  }
-};
-
-const linkTripsDirectly = async (reservationId, eventId1, eventId2, btn, onLinked) => {
-  try {
-    if (!reservationId) return;
-    if (btn) btn.classList.add('linking');
-    await api.linkTrips({ reservationId, eventId1, eventId2 });
-    if (btn) { btn.classList.remove('linking'); btn.classList.add('linked'); }
-    if (onLinked) onLinked();
-  } catch (err) {
-    if (btn) btn.classList.remove('linking');
-    console.error('Erreur liaison trajets:', err);
-  }
-};
-
-// Transformer les trip details de snake_case vers camelCase
-const transformTripSnake = (detail) => {
-  if (!detail) return undefined;
-  return {
-    ...detail,
-    departureLocation: detail.departure_location || detail.departureLocation,
-    departureDate: detail.departure_date || detail.departureDate,
-    departureTime: detail.departure_time || detail.departureTime,
-    arrivalLocation: detail.arrival_location || detail.arrivalLocation,
-    arrivalDate: detail.arrival_date || detail.arrivalDate,
-    arrivalTime: detail.arrival_time || detail.arrivalTime,
-    returnDepartureLocation: detail.return_departure_location || detail.returnDepartureLocation,
-    returnDepartureDate: detail.return_departure_date || detail.returnDepartureDate,
-    returnDepartureTime: detail.return_departure_time || detail.returnDepartureTime,
-    returnArrivalLocation: detail.return_arrival_location || detail.returnArrivalLocation,
-    returnArrivalDate: detail.return_arrival_date || detail.returnArrivalDate,
-    returnArrivalTime: detail.return_arrival_time || detail.returnArrivalTime,
-    driverName: detail.driver_name || detail.driverName,
-    hasJunctionWithNext: detail.has_junction_with_next || detail.hasJunctionWithNext,
-    junctionLocation: detail.junction_location || detail.junctionLocation,
-    outboundDuration: detail.outbound_duration || detail.outboundDuration,
-    returnDuration: detail.return_duration || detail.returnDuration,
-    tripGroupId: detail.trip_group_id || detail.tripGroupId
-  };
-};
-
-// Helper pour afficher les affaires d'une réservation alignées avec leur position
-const renderReservationAffaires = (block, googleEvents, timeSlots, blockStartIndex, tripData, onOpenTrip, onTripLinked) => {
-  // Mode tournée : créer une grille interne alignée sur les slots
-  if (block.isTournee && block.linkedEventIds && Array.isArray(block.linkedEventIds) && googleEvents && timeSlots) {
-    // Pour chaque événement, calculer sa position et son span dans la grille
-    const eventBlocks = [];
-    
-    block.linkedEventIds.forEach(eventId => {
-      const event = googleEvents.find(e => e.id === eventId);
-      if (!event) return;
-      
-      // Récupérer les dates de l'événement
-      const isAllDayEvent = !event.start?.dateTime;
-      let eventStart, eventEnd;
-      
-      if (isAllDayEvent) {
-        const [year, month, day] = event.start.date.split('-').map(Number);
-        const [endYear, endMonth, endDay] = event.end.date.split('-').map(Number);
-        eventStart = new Date(year, month - 1, day, 0, 0, 0);
-        eventEnd = new Date(endYear, endMonth - 1, endDay - 1, 23, 59, 59);
-      } else {
-        eventStart = new Date(event.start.dateTime);
-        eventEnd = new Date(event.end.dateTime);
-      }
-      
-      if (!eventStart || !eventEnd) {
-        return;
-      }
-      
-      // Trouver le premier et le dernier slot que l'événement touche (dans le bloc de la tournée)
-      let firstSlotIdx = -1;
-      let lastSlotIdx = -1;
-      
-      // Parcourir seulement les slots du bloc (de blockStartIndex à blockStartIndex + block.span)
-      for (let i = 0; i < block.span; i++) {
-        const slotIndex = blockStartIndex + i;
-        if (slotIndex >= timeSlots.length) break;
-        
-        const slot = timeSlots[slotIndex];
-        
-        // Extraire la date en heure locale (pas UTC)
-        const slotYear = slot.day.getFullYear();
-        const slotMonth = slot.day.getMonth() + 1;
-        const slotDate = slot.day.getDate();
-        const slotDateISO = `${slotYear}-${String(slotMonth).padStart(2, '0')}-${String(slotDate).padStart(2, '0')}`;
-        
-        // Pour événements toute la journée : comparer les dates ISO (YYYY-MM-DD)
-        if (isAllDayEvent) {
-          const eventStartYear = eventStart.getFullYear();
-          const eventStartMonth = eventStart.getMonth();
-          const eventStartDate = eventStart.getDate();
-          
-          const eventEndYear = eventEnd.getFullYear();
-          const eventEndMonth = eventEnd.getMonth();
-          const eventEndDate = eventEnd.getDate();
-          
-          // Créer les dates ISO pour comparaison
-          const eventStartISO = `${eventStartYear}-${String(eventStartMonth + 1).padStart(2, '0')}-${String(eventStartDate).padStart(2, '0')}`;
-          const eventEndISO = `${eventEndYear}-${String(eventEndMonth + 1).padStart(2, '0')}-${String(eventEndDate).padStart(2, '0')}`;
-          
-          const matches = eventEndISO >= slotDateISO && eventStartISO <= slotDateISO;
-          if (matches) {
-            if (firstSlotIdx === -1) firstSlotIdx = i;
-            lastSlotIdx = i;
-          }
-        } else {
-          // Pour événements avec heure
-          const dayStart = new Date(slot.day);
-          dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(slot.day);
-          dayEnd.setHours(23, 59, 59, 999);
-          
-          const periodStart = new Date(slot.day);
-          const periodEnd = new Date(slot.day);
-          
-          if (slot.period === 'AM') {
-            periodStart.setHours(0, 0, 0, 0);
-            periodEnd.setHours(11, 59, 59, 999);
-          } else if (slot.period === 'PM') {
-            periodStart.setHours(12, 0, 0, 0);
-            periodEnd.setHours(23, 59, 59, 999);
-          } else {
-            periodStart.setHours(0, 0, 0, 0);
-            periodEnd.setHours(23, 59, 59, 999);
-          }
-          
-          const touches = eventStart <= periodEnd && eventEnd >= periodStart;
-          if (touches) {
-            if (firstSlotIdx === -1) firstSlotIdx = i;
-            lastSlotIdx = i;
-          }
-        }
-      }
-      
-      if (firstSlotIdx !== -1) {
-        let cleanTitle = event.summary || '(Sans titre)';
-        if (event.affaire) {
-          cleanTitle = cleanTitle.replace(/\baf\s*\d+\b/gi, '').trim();
-          cleanTitle = cleanTitle.replace(/\s+/g, ' ').replace(/^\s*-\s*|\s*-\s*$/g, '').trim();
-        }
-        if (!cleanTitle) cleanTitle = '(Sans titre)';
-        cleanTitle = capitalizeText(cleanTitle);
-        
-        const eventBlock = {
-          eventId,
-          startSlot: firstSlotIdx,
-          span: lastSlotIdx - firstSlotIdx + 1,
-          affaire: event.affaire,
-          title: cleanTitle,
-          eventStart
-        };
-        eventBlocks.push(eventBlock);
-      }
-    });
-    
-    if (eventBlocks.length > 0) {
-      // Trier les événements par date de début
-      eventBlocks.sort((a, b) => {
-        if (!a.eventStart) return 1;
-        if (!b.eventStart) return -1;
-        return a.eventStart - b.eventStart;
-      });
-
-      // Construire les éléments avec des boutons "lier" entre les événements adjacents
-      // Déterminer les groupes de trajets liés
-      const tripMap = {}; // eventId -> trip_group_id
-      if (tripData && Array.isArray(tripData)) {
-        tripData.forEach(td => {
-          if (td.event_id && td.trip_group_id) {
-            tripMap[td.event_id] = td.trip_group_id;
-          }
-        });
-      }
-
-      // Grouper les eventBlocks par trip_group_id (contigus)
-      const segments = [];
-      let currentGroup = null;
-      let currentGroupItems = [];
-      eventBlocks.forEach((eb) => {
-        const gid = tripMap[eb.eventId];
-        if (gid) {
-          if (gid === currentGroup) {
-            currentGroupItems.push(eb);
-          } else {
-            if (currentGroup && currentGroupItems.length > 0) {
-              segments.push({ type: 'group', groupId: currentGroup, items: currentGroupItems });
-            }
-            currentGroup = gid;
-            currentGroupItems = [eb];
-          }
-        } else {
-          if (currentGroup && currentGroupItems.length > 0) {
-            segments.push({ type: 'group', groupId: currentGroup, items: currentGroupItems });
-            currentGroup = null;
-            currentGroupItems = [];
-          }
-          segments.push({ type: 'solo', items: [eb] });
-        }
-      });
-      if (currentGroup && currentGroupItems.length > 0) {
-        segments.push({ type: 'group', groupId: currentGroup, items: currentGroupItems });
-      }
-
-      const gridElements = [];
-      let prevLastBlock = null;
-      segments.forEach((seg, segIdx) => {
-        seg.items.forEach((eventBlock, itemIdx) => {
-          const isFirstInSeg = itemIdx === 0;
-          const isLastInSeg = itemIdx === seg.items.length - 1;
-
-          // Bouton de liaison entre segments/événements adjacents
-          if (prevLastBlock) {
-            const gapStart = prevLastBlock.startSlot + prevLastBlock.span + 1;
-            const gapEnd = eventBlock.startSlot + 1;
-            const linkCol = gapStart <= gapEnd ? Math.floor((gapStart + gapEnd) / 2) : eventBlock.startSlot + 1;
-            const prevEventId = prevLastBlock.eventId;
-            const curEventId = eventBlock.eventId;
-            // Si dans le même groupe, bouton "délier"
-            if (seg.type === 'group' && !isFirstInSeg) {
-              gridElements.push(
-                <Tooltip content="Délier les trajets" position="bottom">
-                  <Button variant="ghost"                   key={`linked-sep-${segIdx}-${itemIdx}`}
-                  className="tournee-link-btn linked"
-                  style={{ gridColumn: `${linkCol} / span 1` }}
- 
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    unlinkTripDirectly(block.id, curEventId, e.currentTarget, onTripLinked);
-                  }}
-                >
-                  <Link size={12} />
-                </Button>
-                </Tooltip>
-              );
-            } else {
-              // Bouton "dé-lié" (pas encore liés) - icône Link2
-              gridElements.push(
-                <Tooltip content="Lier les trajets" position="bottom">
-                  <Button variant="ghost"                   key={`link-${segIdx}-${itemIdx}`}
-                  className="tournee-link-btn"
-                  style={{ gridColumn: `${linkCol} / span 1` }}
- 
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    linkTripsDirectly(block.id, prevEventId, curEventId, e.currentTarget, onTripLinked);
-                  }}
-                >
-                  <Link2 size={12} />
-                </Button>
-                </Tooltip>
-              );
-            }
-          }
-
-          // Bloc événement (chip) avec bouton trajet intégré
-          if (seg.type === 'solo') {
-            const soloEventId = eventBlock.eventId;
-            gridElements.push(
-              <span key={`ev-${segIdx}-${itemIdx}`} className="tournee-event-chip" style={{
-                gridColumn: `${eventBlock.startSlot + 1} / span ${eventBlock.span}`,
-              }}>
-                <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
-                {onOpenTrip && (
-                  <Tooltip content="Détails du trajet" position="bottom">
-                    <Button variant="ghost"                     className="tournee-trip-btn"
- 
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      onOpenTrip([soloEventId], 'simple');
-                    }}
-                  >
-                    <MapPin size={10} />
-                  </Button>
-                  </Tooltip>
-                )}
-              </span>
-            );
-          } else {
-            // Événement dans un groupe lié
-            const groupEventIds = seg.items.map(it => it.eventId);
-            gridElements.push(
-              <span key={`ev-${segIdx}-${itemIdx}`} className="tournee-event-chip in-trip-group" style={{
-                gridColumn: `${eventBlock.startSlot + 1} / span ${eventBlock.span}`,
-              }}>
-                <span className="tournee-chip-text">{eventBlock.affaire || eventBlock.title}</span>
-                {isLastInSeg && onOpenTrip && (
-                  <Button variant="ghost"                     className="tournee-trip-btn combined"
-                    title={`Trajet combiné (${seg.items.length} événements)`}
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      onOpenTrip(groupEventIds, 'combined');
-                    }}
-                  >
-                    <MapPin size={10} />
-                  </Button>
-                )}
-              </span>
-            );
-          }
-
-          prevLastBlock = eventBlock;
-        });
-      });
-
-      return (
-        <div style={{ 
-          position: 'absolute',
-          top: 'auto',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'grid',
-          gridTemplateColumns: `repeat(${block.span}, 1fr)`,
-          gap: '0.125rem',
-          padding: '0.25rem',
-          pointerEvents: 'auto',
-          zIndex: 10,
-          alignItems: 'center'
-        }}>
-          {gridElements}
-        </div>
-      );
-    }
-    
-    return null;
-  }
-  
-  // Mode normal : affichage standard
-  // Si pas une tournée mais liée à un événement, récupérer l'affaire depuis l'événement
-  let affaires = block.affaires && Array.isArray(block.affaires) 
-    ? block.affaires 
-    : block.affaire ? [block.affaire] : [];
-  
-  // Si pas de tournée et qu'il y a des événements liés, récupérer leurs numéros d'affaire
-  if (!block.isTournee && block.linkedEventIds && Array.isArray(block.linkedEventIds) && block.linkedEventIds.length > 0 && googleEvents) {
-    const eventAffaires = block.linkedEventIds
-      .map(eventId => {
-        const event = googleEvents.find(e => e.id === eventId);
-        return event?.affaire;
-      })
-      .filter(Boolean);
-    
-    if (eventAffaires.length > 0) {
-      affaires = eventAffaires;
-    }
-  }
-  
-  // Pour une réservation simple, un seul événement lié possible
-  const singleEventId = block.googleEventId || (block.linkedEventIds && block.linkedEventIds.length > 0 ? block.linkedEventIds[0] : null);
-  
-  if (affaires.length > 0) {
-    return (
-      <div className="reservation-affaire">
-        <span className="reservation-affaire-text">{affaires[0]}{affaires.length > 1 && <span className="affaire-plus"> +{affaires.length - 1}</span>}</span>
-        {singleEventId && onOpenTrip && (
-          <Tooltip content="Voir le trajet" position="bottom">
-            <Button variant="ghost"             className="reservation-trip-btn"
- 
-            onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
-          >
-            <MapPin size={10} />
-          </Button>
-          </Tooltip>
-        )}
-      </div>
-    );
-  }
-  
-  // Même sans affaire, afficher un bouton trajet si événement lié
-  if (singleEventId && onOpenTrip && !block.isTournee) {
-    return (
-      <div className="reservation-affaire">
-        <Tooltip content="Voir le trajet" position="bottom">
-          <Button variant="ghost"           className="reservation-trip-btn solo"
- 
-          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onOpenTrip([singleEventId], 'simple'); }}
-        >
-          <MapPin size={10} />
-        </Button>
-        </Tooltip>
-      </div>
-    );
-  }
-  
-  return null;
-};
-
-// Couleurs des interventions selon le statut
-const getMaintenanceStatusStyle = (status, hasConflict) => {
-  // Les interventions terminées ou annulées ne montrent pas les conflits
-  if (hasConflict && status !== STATUS.COMPLETED && status !== STATUS.CANCELLED) {
-    return { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger-dark)', icon: '⚠️' };
-  }
-  const styles = {
-    scheduled:   { bg: 'var(--theme-info-bg)', border: '2px dashed var(--theme-info)', icon: '📅' },
-    completed:   { bg: 'var(--theme-success-bg)', border: '2px solid var(--theme-success-alt)', icon: '✅' },
-    reported:    { bg: 'var(--theme-danger-bg)', border: '2px solid var(--theme-danger)', icon: '⚠️' },
-    pending:     { bg: 'var(--theme-purple-bg)', border: '2px dashed var(--theme-primary-light)', icon: '📝' },
-    in_progress: { bg: 'var(--theme-warning-bg)', border: '2px solid var(--theme-warning)', icon: '🔧' },
-    IN_PROGRESS: { bg: 'var(--theme-warning-bg)', border: '2px solid var(--theme-warning)', icon: '🔧' },
-    cancelled:   { bg: 'var(--theme-bg-tertiary)', border: '2px dashed var(--theme-text-gray)', icon: '❌' },
-    rescheduled: { bg: 'var(--theme-orange-bg, #ffedd5)', border: '2px dashed var(--theme-warning, #f97316)', icon: '🔄' },
-  };
-  return styles[status] || { bg: 'var(--theme-bg-tertiary)', border: '2px dashed var(--theme-text-gray)', icon: '🔧' };
-};
+import useCalendarData from './useCalendarData';
+import useCalendarDrag from './useCalendarDrag';
+import useCalendarTrips from './useCalendarTrips';
 
 const Calendar = ({
   view,
@@ -594,53 +59,104 @@ const Calendar = ({
 }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
-  const [dragState, setDragState] = useState(null); // { vehicle, startDay, startPeriod, endDay, endPeriod }
-  const [isDragging, setIsDragging] = useState(false);
-  const [resizeState, setResizeState] = useState(null); // { reservation, edge: 'start' | 'end', currentDay, currentPeriod }
-  const [resizePreview, setResizePreview] = useState(null); // { vehicleId, startDate, startPeriod, endDate, endPeriod }
-  
-  // Drag-to-move pour blocs de réservation
-  const [blockDragState, setBlockDragState] = useState(null); // { block, vehicle, originalStart, originalEnd, currentStart, currentEnd }
-  const [blockDragPreview, setBlockDragPreview] = useState(null); // { vehicleId, startDate, startPeriod, endDate, endPeriod }
-  const pendingBlockDragRef = React.useRef(null); // { block, vehicle, startDay, startPeriod }
-
   const [collapsedSections, setCollapsedSections] = useState({ company: false, location: false });
-  
-  // État pour le tooltip global
   const [tooltipState, setTooltipState] = useState({ visible: false, block: null, x: 0, y: 0 });
-
-  // États pour la navigation de dates (toolbar calendrier)
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const windowWidth = useWindowWidth();
 
-  // Fonctions de navigation (startTransition pour ne pas bloquer l'UI)
+  // ═══ DATA HOOK ═══
+  const {
+    days,
+    periods: _periods,
+    reservationLookup: _reservationLookup,
+    getReservation: _getReservation,
+    getMaintenanceConflicts,
+    vehicleGroups,
+    availabilityCount,
+    allVehicleBlocks,
+    gridColumns,
+  } = useCalendarData({ view, currentDate, reservations, maintenances, vehicles, windowWidth });
+
+  // ═══ DRAG HOOK ═══
+  const {
+    dragState: _dragState,
+    isDragging: _isDragging,
+    resizeState,
+    resizePreview: _resizePreview,
+    blockDragState,
+    blockDragPreview,
+    pendingBlockDragRef,
+    handleSlotMouseDown,
+    handleSlotMouseEnter,
+    handleSlotMouseUp,
+    isInResizePreview,
+    handleResizeStart,
+    handleBlockMouseDown,
+    handleBlockDragMove,
+    isInBlockDragPreview,
+    isInDragSelection,
+    handleSlotClick,
+    handleGlobalMouseMove,
+    handleGlobalMouseUp,
+  } = useCalendarDrag({
+    view,
+    currentUser,
+    days,
+    reservations,
+    onUpdateReservation,
+    onSelectSlot: setSelectedSlot,
+    onSelectReservation: setSelectedReservation,
+  });
+
+  // ═══ TRIPS HOOK ═══
+  const {
+    calendarTripModal,
+    setCalendarTripModal,
+    calendarTripCache,
+    calendarGoogleMapsApiKey,
+    calendarCompanyAddress,
+    handleOpenTripFromCalendar,
+    handleSaveTripFromCalendar,
+    handleTripLinked,
+  } = useCalendarTrips({ vehicles, googleEvents, reservations, googleEvent });
+
+  // ═══ NAVIGATION ═══
   const goToPrevious = useCallback(() => {
-    const newDate = new Date(currentDate);
-    if (view === 'day') newDate.setDate(newDate.getDate() - 1);
-    else if (view === 'week') newDate.setDate(newDate.getDate() - 7);
-    else if (view === 'month') newDate.setMonth(newDate.getMonth() - 1);
-    else newDate.setFullYear(newDate.getFullYear() - 1);
-    startTransition(() => setCurrentDate(newDate));
+    const d = new Date(currentDate);
+    if (view === 'day') d.setDate(d.getDate() - 1);
+    else if (view === 'week') d.setDate(d.getDate() - 7);
+    else if (view === 'month') d.setMonth(d.getMonth() - 1);
+    else d.setFullYear(d.getFullYear() - 1);
+    startTransition(() => setCurrentDate(d));
   }, [currentDate, view, setCurrentDate]);
+
   const goToNext = useCallback(() => {
-    const newDate = new Date(currentDate);
-    if (view === 'day') newDate.setDate(newDate.getDate() + 1);
-    else if (view === 'week') newDate.setDate(newDate.getDate() + 7);
-    else if (view === 'month') newDate.setMonth(newDate.getMonth() + 1);
-    else newDate.setFullYear(newDate.getFullYear() + 1);
-    startTransition(() => setCurrentDate(newDate));
+    const d = new Date(currentDate);
+    if (view === 'day') d.setDate(d.getDate() + 1);
+    else if (view === 'week') d.setDate(d.getDate() + 7);
+    else if (view === 'month') d.setMonth(d.getMonth() + 1);
+    else d.setFullYear(d.getFullYear() + 1);
+    startTransition(() => setCurrentDate(d));
   }, [currentDate, view, setCurrentDate]);
-  const goToToday = useCallback(() => startTransition(() => setCurrentDate(new Date())), [setCurrentDate]);
+
+  const goToToday = useCallback(
+    () => startTransition(() => setCurrentDate(new Date())),
+    [setCurrentDate],
+  );
+
   const getDateLabel = () => {
     let label = '';
-    if (view === 'day') label = format(currentDate, "EEEE d MMMM yyyy", { locale: fr });
-    else if (view === 'week') label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
+    if (view === 'day') label = format(currentDate, 'EEEE d MMMM yyyy', { locale: fr });
+    else if (view === 'week')
+      label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
     else if (view === 'month') label = format(currentDate, 'MMMM yyyy', { locale: fr });
     else label = format(currentDate, 'yyyy', { locale: fr });
     return label.charAt(0).toUpperCase() + label.slice(1);
   };
+
   const isCurrentPeriod = () => {
     const today = new Date();
     if (view === 'day') return isSameDay(currentDate, today);
@@ -650,13 +166,37 @@ const Calendar = ({
   };
   const showTodayHighlight = !isCurrentPeriod();
 
-  // États pour TripDetailsModal ouvert depuis le calendrier
-  const [calendarTripModal, setCalendarTripModal] = useState(null); // { reservation, event, tripDetail, combinedEvents, vehicle }
-  const [calendarTripCache, setCalendarTripCache] = useState({}); // { [reservationId]: tripDetails[] }
-  const [calendarGoogleMapsApiKey, setCalendarGoogleMapsApiKey] = useState('');
-  const [calendarCompanyAddress, setCalendarCompanyAddress] = useState('');
+  const handleMonthClick = useCallback(
+    (monthIndex) => {
+      if (view === 'year') {
+        setCurrentDate(setMonth(currentDate, monthIndex));
+        setView('month');
+      }
+    },
+    [view, currentDate, setCurrentDate, setView],
+  );
 
-  // Réagir au quick-create de réservation depuis le Header
+  const handleWeekClick = useCallback(
+    (weekDate) => {
+      if (view === 'year') {
+        setCurrentDate(weekDate);
+        setView('week');
+      }
+    },
+    [view, setCurrentDate, setView],
+  );
+
+  const handleDayClick = useCallback(
+    (day) => {
+      if (view === 'month') {
+        setCurrentDate(day);
+        setView('day');
+      }
+    },
+    [view, setCurrentDate, setView],
+  );
+
+  // ═══ EFFECTS ═══
   useEffect(() => {
     if (quickReservationSlot) {
       setSelectedSlot(quickReservationSlot);
@@ -665,357 +205,119 @@ const Calendar = ({
     }
   }, [quickReservationSlot, onQuickReservationHandled]);
 
-  // Charger les configs Google Maps au montage (depuis IndexedDB comme ReservationModal)
   useEffect(() => {
-    const loadConfig = async () => {
-      try {
-        const config = await loadFromIndexedDB('calendarConfig', {});
-        if (config.googleMapsApiKey) setCalendarGoogleMapsApiKey(config.googleMapsApiKey);
-        if (config.companyAddress) setCalendarCompanyAddress(config.companyAddress);
-      } catch (err) {
-        console.error('Erreur chargement config calendrier:', err);
-      }
-    };
-    loadConfig();
-  }, []);
-
-  // Fetch trip data pour une réservation (avec cache)
-  const fetchTripData = useCallback(async (reservationId) => {
-    if (calendarTripCache[reservationId]) return calendarTripCache[reservationId];
-    try {
-      const data = await api.getTripDetails(reservationId);
-      const trips = Array.isArray(data) ? data : (data.tripDetails || []);
-      setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
-      return trips;
-    } catch (err) {
-      console.error('Erreur fetch trip data:', err);
-    }
-    return [];
-  }, [calendarTripCache]);
-
-  // Ouvrir le TripDetailsModal depuis le calendrier
-  const handleOpenTripFromCalendar = useCallback(async (block, eventIds, mode) => {
-    // eventIds = [eventId] pour solo, [eventId1, eventId2, ...] pour groupe
-    const trips = await fetchTripData(block.id);
-    const vehicle = vehicles.find(v => v.id === block.vehicleId);
-    
-    // Helper : trouver un événement Google ou créer un objet minimal
-    const findOrCreateEvent = (eid) => {
-      const found = googleEvents.find(e => e.id === eid);
-      if (found) return found;
-      // Fallback : créer un événement minimal depuis les données du bloc
-      return {
-        id: eid,
-        summary: block.affaire || block.clientName || 'Événement',
-        affaire: block.affaire,
-        start: { dateTime: block.startDate || block.date },
-        end: { dateTime: block.endDate || block.date }
-      };
-    };
-    
-    if (mode === 'combined' && eventIds.length > 1) {
-      // Mode combiné : ouvrir avec combinedEvents
-      const combinedEvents = eventIds.map(eid => {
-        const event = findOrCreateEvent(eid);
-        const td = trips.find(t => t.event_id === eid);
-        return { event, tripDetail: td ? transformTripSnake(td) : undefined };
-      }).filter(ce => ce.event);
-      if (combinedEvents.length > 0) {
-        setCalendarTripModal({
-          reservation: block,
-          event: combinedEvents[0].event,
-          tripDetail: combinedEvents[0].tripDetail,
-          combinedEvents: combinedEvents.length > 1 ? combinedEvents : null,
-          vehicle
-        });
-      }
-    } else {
-      // Mode simple
-      const eid = eventIds[0];
-      const event = findOrCreateEvent(eid);
-      const td = trips.find(t => t.event_id === eid);
-      if (event) {
-        setCalendarTripModal({
-          reservation: block,
-          event,
-          tripDetail: td ? transformTripSnake(td) : undefined,
-          combinedEvents: null,
-          vehicle
-        });
-      }
-    }
-  }, [fetchTripData, vehicles, googleEvents]);
-
-  // Handler de sauvegarde trip depuis le calendrier
-  const handleSaveTripFromCalendar = useCallback(async (tripFormData) => {
-    if (!calendarTripModal) return null;
-    try {
-      const savedData = await api.saveTripDetails({
-        reservationId: calendarTripModal.reservation.id,
-        eventId: calendarTripModal.event.id,
-        eventOrder: 0,
-        ...tripFormData
-      });
-      // Invalider le cache pour cette réservation
-      setCalendarTripCache(prev => {
-        const updated = { ...prev };
-        delete updated[calendarTripModal.reservation.id];
-        return updated;
-      });
-      return savedData;
-    } catch (err) {
-      console.error('Erreur sauvegarde trip:', err);
-    }
-    return null;
-  }, [calendarTripModal]);
-
-  // Callback après liaison de trajets : invalider le cache et re-fetcher
-  const handleTripLinked = useCallback((reservationId) => {
-    // Invalider le cache
-    setCalendarTripCache(prev => {
-      const u = { ...prev };
-      delete u[reservationId];
-      return u;
-    });
-    // Re-fetcher immédiatement
-    api.getTripDetails(reservationId).then(data => {
-      const trips = Array.isArray(data) ? data : (data.tripDetails || []);
-      setCalendarTripCache(prev => ({ ...prev, [reservationId]: trips }));
-    }).catch(() => {});
-  }, []);
-
-  // Ouvrir le modal automatiquement quand un événement Google est sélectionné
-  useEffect(() => {
-    if (googleEvent) {
-      setSelectedSlot({ googleEvent });
-    }
+    if (googleEvent) setSelectedSlot({ googleEvent });
   }, [googleEvent]);
 
-  // Pré-charger les trip data pour les réservations tournée visibles
   useEffect(() => {
-    if (!reservations || !Array.isArray(reservations)) return;
-    let aborted = false;
-    const tourneeIds = reservations
-      .filter(r => (r.isTournee || r.is_tournee) && r.id && !calendarTripCache[r.id])
-      .map(r => r.id);
-    // Aussi charger pour les réservations avec googleEventId
-    const singleEventIds = reservations
-      .filter(r => !(r.isTournee || r.is_tournee) && (r.googleEventId || r.google_event_id) && r.id && !calendarTripCache[r.id])
-      .map(r => r.id);
-    const allIds = [...new Set([...tourneeIds, ...singleEventIds])];
-    // Charger par petits lots de 5 avec un délai pour éviter le rate limiting
-    const loadBatch = async (ids) => {
-      const BATCH_SIZE = 5;
-      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-        if (aborted) return;
-        const batch = ids.slice(i, i + BATCH_SIZE);
-        await Promise.allSettled(batch.map(id =>
-          api.getTripDetails(id)
-            .then(data => {
-              if (aborted) return;
-              const trips = Array.isArray(data) ? data : (data.tripDetails || []);
-              setCalendarTripCache(prev => ({ ...prev, [id]: trips }));
-            })
-            .catch(() => {})
-        ));
-        if (i + BATCH_SIZE < ids.length) await new Promise(r => setTimeout(r, 100));
-      }
-    };
-    if (allIds.length > 0) loadBatch(allIds);
-    return () => { aborted = true; };
-  }, [reservations]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Ouvrir le modal automatiquement quand une réservation doit être éditée depuis l'extérieur
-  useEffect(() => {
-    if (reservationToEdit) {
-      setSelectedReservation(reservationToEdit);
-    }
+    if (reservationToEdit) setSelectedReservation(reservationToEdit);
   }, [reservationToEdit]);
 
   const handleScroll = (e) => {
-    if (onScroll) {
-      onScroll(e.target.scrollLeft);
-    }
+    if (onScroll) onScroll(e.target.scrollLeft);
   };
 
-  // Ref pour les données volatiles utilisées dans le mouseup global
-  const reservationsRef = useRef(reservations);
-  useEffect(() => { reservationsRef.current = reservations; }, [reservations]);
-
-  // Gérer le mouseup global pour le drag-and-drop, resize et block-drag
-  useEffect(() => {
-    const handleGlobalMouseUp = () => {
-      // Fin d'un pending block drag (clic simple → ouvrir la réservation)
-      if (pendingBlockDragRef.current) {
-        const { block } = pendingBlockDragRef.current;
-        pendingBlockDragRef.current = null;
-        if (!block.isMaintenance) {
-          const existing = reservationsRef.current.find(r => r.id === block.id);
-          if (existing) setSelectedReservation(existing);
-        }
-        return;
-      }
-      // Fin du drag-to-move d'un bloc
-      if (blockDragState) {
-        handleBlockDragEnd();
-        return;
-      }
-      if (isDragging) {
-        handleSlotMouseUp();
-      }
-      if (resizeState) {
-        handleResizeEnd();
-      }
-    };
-    
-    document.addEventListener('mouseup', handleGlobalMouseUp);
-    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging, dragState, resizeState, blockDragState]);
-
-  // Fonctions de gestion du tooltip
   const handleTooltipShow = useCallback((event, block) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    setTooltipState({
-      visible: true,
-      block,
-      x: rect.left + rect.width / 2,
-      y: rect.top
-    });
+    setTooltipState({ visible: true, block, x: rect.left + rect.width / 2, y: rect.top });
   }, []);
-
   const handleTooltipHide = useCallback(() => {
     setTooltipState({ visible: false, block: null, x: 0, y: 0 });
   }, []);
 
-  // Centrer sur le début du mois/année visible lors des changements, sauf si on revient à aujourd'hui
+  // Scroll-to-position on view/date change
   useEffect(() => {
     if (view === 'month' || view === 'year') {
-      // Utiliser plusieurs timeouts pour s'assurer que tout est bien rendu
-      const timeouts = [];
-      
+      let rafId = null;
+      let timeoutId = null;
       const scrollToPosition = () => {
-        const container = document.querySelector('.calendar-scroll-area');
-        const headersContainer = document.querySelector('.calendar-headers-scroll-area');
-        
-        if (!container) return;
-        
-        // Vérifier si currentDate correspond à aujourd'hui (même jour)
-        const today = new Date();
-        const isToday = currentDate.getDate() === today.getDate() &&
-                       currentDate.getMonth() === today.getMonth() &&
-                       currentDate.getFullYear() === today.getFullYear();
-        
-        if (isToday) {
-          // Si on est aujourd'hui, centrer sur le jour actuel
-          const todayElements = document.querySelectorAll('.calendar-header-cell.today');
-          if (todayElements.length > 0) {
-            const todayElement = todayElements[0];
-            // Calculer la position pour centrer l'élément
-            const containerWidth = container.offsetWidth;
-            const elementLeft = todayElement.offsetLeft;
-            const elementWidth = todayElement.offsetWidth;
-            const scrollLeft = elementLeft - (containerWidth / 2) + (elementWidth / 2);
-            
-            container.scrollLeft = scrollLeft;
-            if (headersContainer) {
-              headersContainer.scrollLeft = scrollLeft;
+        rafId = requestAnimationFrame(() => {
+          const container = document.querySelector('.calendar-scroll-area');
+          const headersContainer = document.querySelector('.calendar-headers-scroll-area');
+          if (!container) return;
+          const today = new Date();
+          const isToday =
+            currentDate.getDate() === today.getDate() &&
+            currentDate.getMonth() === today.getMonth() &&
+            currentDate.getFullYear() === today.getFullYear();
+          if (isToday) {
+            const todayElement = document.querySelector('.calendar-header-cell.today');
+            if (todayElement) {
+              const scrollLeft =
+                todayElement.offsetLeft - container.offsetWidth / 2 + todayElement.offsetWidth / 2;
+              container.scrollLeft = scrollLeft;
+              if (headersContainer) headersContainer.scrollLeft = scrollLeft;
             }
+          } else {
+            container.scrollLeft = 0;
+            if (headersContainer) headersContainer.scrollLeft = 0;
           }
-        } else {
-          // Sinon, scroller au début du mois/année
-          container.scrollLeft = 0;
-          if (headersContainer) {
-            headersContainer.scrollLeft = 0;
-          }
-        }
+        });
       };
-
-      // Essayer plusieurs fois pour s'assurer que le DOM est prêt
-      timeouts.push(setTimeout(scrollToPosition, 50));
-      timeouts.push(setTimeout(scrollToPosition, 150));
-      timeouts.push(setTimeout(scrollToPosition, TIMING.DEBOUNCE_SEARCH));
-
+      timeoutId = setTimeout(scrollToPosition, 100);
       return () => {
-        timeouts.forEach(timeout => clearTimeout(timeout));
+        clearTimeout(timeoutId);
+        if (rafId) cancelAnimationFrame(rafId);
       };
     }
   }, [view, currentDate]);
 
-  // Synchroniser le scroll vertical entre la colonne véhicules et la grille
+  // Scroll sync vertical
   useEffect(() => {
     const vehicleColumn = document.querySelector('.vehicle-column');
     const scrollArea = document.querySelector('.calendar-scroll-area');
     const headersScrollArea = document.querySelector('.calendar-headers-scroll-area');
-    
     if (!vehicleColumn || !scrollArea) return;
-
-    const handleScroll = (e) => {
-      if (e.target === scrollArea) {
-        vehicleColumn.scrollTop = scrollArea.scrollTop;
-        // Synchroniser le scroll horizontal des headers
-        if (headersScrollArea) {
-          headersScrollArea.scrollLeft = scrollArea.scrollLeft;
+    let scrollRaf = null;
+    const onScroll = (e) => {
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = requestAnimationFrame(() => {
+        if (e.target === scrollArea) {
+          vehicleColumn.scrollTop = scrollArea.scrollTop;
+          if (headersScrollArea) headersScrollArea.scrollLeft = scrollArea.scrollLeft;
+        } else if (e.target === vehicleColumn) {
+          scrollArea.scrollTop = vehicleColumn.scrollTop;
         }
-      } else if (e.target === vehicleColumn) {
-        scrollArea.scrollTop = vehicleColumn.scrollTop;
-      }
+      });
     };
-
-    vehicleColumn.addEventListener('scroll', handleScroll);
-    scrollArea.addEventListener('scroll', handleScroll);
-
+    vehicleColumn.addEventListener('scroll', onScroll, { passive: true });
+    scrollArea.addEventListener('scroll', onScroll, { passive: true });
     return () => {
-      vehicleColumn.removeEventListener('scroll', handleScroll);
-      scrollArea.removeEventListener('scroll', handleScroll);
+      vehicleColumn.removeEventListener('scroll', onScroll);
+      scrollArea.removeEventListener('scroll', onScroll);
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
     };
   }, [vehicles]);
 
-  // Synchroniser les hauteurs des lignes
+  // Height sync
   useEffect(() => {
     const syncRowHeights = () => {
-      // Sélectionner les cellules et lignes dans l'ordre d'affichage
       const leftColumn = document.querySelector('.vehicle-column');
       const grid = document.querySelector('.calendar-scroll-area .calendar-grid');
-      
       if (!leftColumn || !grid) return;
-      
-      // Récupérer tous les enfants de la colonne de gauche (cellules et en-têtes)
       const leftChildren = Array.from(leftColumn.children);
-      // Récupérer tous les enfants de la grille (lignes de véhicules et séparateurs)
       const gridChildren = Array.from(grid.children);
-      
-      // Synchroniser chaque élément
+      // Batch reads then writes to avoid forced reflow
+      const heights = leftChildren.map((c) => c.offsetHeight);
       leftChildren.forEach((leftChild, index) => {
         const gridChild = gridChildren[index];
         if (!gridChild) return;
-        
-        // Obtenir la hauteur de l'élément de gauche
-        const leftHeight = leftChild.offsetHeight;
-        
-        // Si c'est une ligne de véhicule dans la grille
+        const leftHeight = heights[index];
         if (gridChild.classList.contains('vehicle-row')) {
-          const timeslots = gridChild.querySelectorAll('.time-slot');
-          timeslots.forEach(slot => {
+          gridChild.querySelectorAll('.time-slot').forEach((slot) => {
             slot.style.height = `${leftHeight}px`;
             slot.style.minHeight = `${leftHeight}px`;
           });
-        }
-        // Si c'est un séparateur de section
-        else if (gridChild.classList.contains('vehicle-section-separator')) {
+        } else if (gridChild.classList.contains('vehicle-section-separator')) {
           gridChild.style.height = `${leftHeight}px`;
           gridChild.style.minHeight = `${leftHeight}px`;
         }
       });
     };
-
-    // Exécuter la synchronisation plusieurs fois pour s'assurer qu'elle prend effet
     const timer1 = setTimeout(syncRowHeights, 50);
     const timer2 = setTimeout(syncRowHeights, TIMING.DOUBLE_CLICK);
     const timer3 = setTimeout(syncRowHeights, TIMING.PRINT_DELAY);
-    
     window.addEventListener('resize', syncRowHeights);
-
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
@@ -1024,795 +326,11 @@ const Calendar = ({
     };
   }, [vehicles, view, reservations, collapsedSections]);
 
-  // Convertir les maintenances programmées en pseudo-réservations pour affichage
-  const maintenancesAsReservations = useMemo(() => {
-    const converted = maintenances
-      .filter(m => {
-        // Afficher les maintenances qui ont des dates définies (exclut reported et pending sans dates)
-        // Inclut: 'scheduled', 'in_progress', 'completed', 'rescheduled', 'cancelled' (si dates)
-        const isValid = m.startDate && m.endDate;
-        return isValid;
-      })
-      .map(m => {
-        const pseudoReservation = {
-          id: `maint-${m.id}`,
-          vehicleId: m.vehicleId,
-          date: m.startDate,
-          endDate: m.endDate,
-          period: 'AM', // Les maintenances occupent toute la journée
-          endPeriod: 'PM',
-          clientName: '',
-          prestationName: `🔧 ${m.description}`,
-          affaires: [],
-          isMaintenance: true,
-          maintenanceId: m.id,
-          maintenanceType: m.type,
-          maintenanceStatus: m.status,
-          createdBy: m.createdBy,
-          description: m.description,
-          garageName: m.garageName,
-          startDate: m.startDate
-        };
-        
-        return pseudoReservation;
-      });
-    
-    return converted;
-  }, [maintenances]);
-
-  // Fusionner réservations et maintenances pour l'affichage
-  // Les maintenances sont placées après pour s'afficher au-dessus (z-index plus élevé en CSS)
-  const allReservations = useMemo(() => {
-    return [...reservations, ...maintenancesAsReservations];
-  }, [reservations, maintenancesAsReservations]);
-
-  // days et periods doivent être définis AVANT reservationLookup qui en dépend
-  const days = useMemo(() => {
-    if (view === 'day') {
-      return [currentDate];
-    } else if (view === 'week') {
-      return eachDayOfInterval({
-        start: startOfWeek(currentDate, { weekStartsOn: 1 }),
-        end: endOfWeek(currentDate, { weekStartsOn: 1 }),
-      });
-    } else if (view === 'month') {
-      return eachDayOfInterval({
-        start: startOfMonth(currentDate),
-        end: endOfMonth(currentDate),
-      });
-    } else {
-      // Vue année - afficher les 12 mois
-      return eachMonthOfInterval({
-        start: startOfYear(currentDate),
-        end: endOfYear(currentDate),
-      });
-    }
-  }, [view, currentDate]);
-
-  // Heures pour la vue jour (référence future si granularité horaire ajoutée)
-  const _dayHours = useMemo(() => {
-    if (view !== 'day') return [];
-    return Array.from({ length: 16 }, (_, i) => i + 6); // 6h à 21h
-  }, [view]);
-
-  const periods = view === 'year' ? ['M'] : ['AM', 'PM'];
-
-  // Index pré-calculé : clé "vehicleId-YYYY-MM-DD-period" → reservation (O(1) lookup)
-  // Élimine le filtrage O(n) par cellule qui était le goulot de performance
-  const reservationLookup = useMemo(() => {
-    const lookup = new Map();
-    // Pré-calculer l'intervalle visible pour ne traiter que les réservations pertinentes
-    const viewStart = days.length > 0 ? days[0] : null;
-    const viewEnd = days.length > 0 ? days[days.length - 1] : null;
-    if (!viewStart || !viewEnd) return lookup;
-
-    const viewStartTs = getPeriodTimestamp(viewStart, 'AM');
-    const viewEndTs = getPeriodTimestamp(viewEnd, 'PM');
-    const currentPeriods = view === 'year' ? ['M'] : ['AM', 'PM'];
-
-    for (const r of allReservations) {
-      const resStart = getPeriodTimestamp(r.date, r.period);
-      const resEnd = getPeriodTimestamp(r.endDate || r.date, r.endPeriod || r.period);
-
-      // Skip si la réservation est entièrement hors de la vue
-      if (resEnd < viewStartTs || resStart > viewEndTs) continue;
-
-      for (const day of days) {
-        for (const period of currentPeriods) {
-          const cellTs = getPeriodTimestamp(day, period);
-          if (cellTs >= resStart && cellTs <= resEnd) {
-            const key = `${r.vehicleId}-${formatLocalDate(day)}-${period}`;
-            const existing = lookup.get(key);
-            // Priorité aux maintenances
-            if (!existing || (r.isMaintenance && !existing.isMaintenance)) {
-              lookup.set(key, r);
-            }
-          }
-        }
-      }
-    }
-
-    return lookup;
-  }, [allReservations, days, view]);
-
-  // Fonction pour détecter les conflits entre une maintenance et les réservations
-  const getMaintenanceConflicts = useCallback((maintenanceBlock) => {
-    if (!maintenanceBlock.isMaintenance || !maintenanceBlock.date) return [];
-    
-    const newStart = getPeriodTimestamp(maintenanceBlock.date, 'AM');
-    const newEnd = getPeriodTimestamp(maintenanceBlock.endDate || maintenanceBlock.date, 'PM');
-    
-    const conflicts = [];
-    for (const r of reservations) {
-      if (String(r.vehicleId) !== String(maintenanceBlock.vehicleId)) continue;
-      
-      const existingStart = getPeriodTimestamp(r.date, r.period);
-      const existingEnd = getPeriodTimestamp(
-        r.endDate || r.date,
-        r.endPeriod || r.period
-      );
-      
-      if (Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd)) {
-        conflicts.push(r);
-      }
-    }
-    return conflicts;
-  }, [reservations]);
-
-  // Séparer les véhicules en deux groupes
-  const vehicleGroups = useMemo(() => {
-    const companyVehicles = vehicles.filter(v => !v.isLocation);
-    const locationVehicles = vehicles.filter(v => v.isLocation);
-    return { companyVehicles, locationVehicles };
-  }, [vehicles]);
-
-  // Compteur de disponibilité (véhicules non occupés aujourd'hui)
-  const availabilityCount = useMemo(() => {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const isOccupied = (vehicleId) => {
-      // Vérifier s'il y a une réservation active aujourd'hui
-      const hasReservation = reservations.some(r => {
-        if (r.vehicleId !== vehicleId) return false;
-        const start = r.startDate?.slice(0, 10) || '';
-        const end = r.endDate?.slice(0, 10) || start;
-        return start <= today && today <= end;
-      });
-      // Vérifier s'il y a une maintenance active aujourd'hui
-      const hasMaintenance = maintenances.some(m => {
-        if (m.vehicleId !== vehicleId) return false;
-        if (m.status === STATUS.COMPLETED) return false;
-        const start = m.startDate?.slice(0, 10) || m.date?.slice(0, 10) || '';
-        const end = m.endDate?.slice(0, 10) || start;
-        return start <= today && today <= end;
-      });
-      return hasReservation || hasMaintenance;
-    };
-    const companyAvail = vehicleGroups.companyVehicles.filter(v => !isOccupied(v.id)).length;
-    const locationAvail = vehicleGroups.locationVehicles.filter(v => !isOccupied(v.id)).length;
-    return {
-      company: { available: companyAvail, total: vehicleGroups.companyVehicles.length },
-      location: { available: locationAvail, total: vehicleGroups.locationVehicles.length },
-      allAvailable: companyAvail,
-      allTotal: vehicleGroups.companyVehicles.length,
-    };
-  }, [vehicleGroups, reservations, maintenances]);
-
-  // Pré-calcul de tous les blocs pour chaque véhicule (élimine le calcul inline dans le render)
-  const allVehicleBlocks = useMemo(() => {
-    const result = new Map();
-    const allVehicles = [...vehicleGroups.companyVehicles, ...vehicleGroups.locationVehicles];
-
-    // Construire les timeSlots une seule fois
-    const timeSlots = [];
-    if (view === 'year') {
-      days.forEach(monthDate => timeSlots.push({ day: monthDate, period: 'M' }));
-    } else {
-      days.forEach(day => periods.forEach(period => timeSlots.push({ day, period })));
-    }
-
-    for (const vehicle of allVehicles) {
-      const blocks = [];
-      let currentBlock = null;
-
-      if (view === 'year') {
-        timeSlots.forEach((slot, index) => {
-          const monthStart = startOfMonth(slot.day);
-          const monthEnd = endOfMonth(slot.day);
-          const hasReservation = reservations.some(r => {
-            const rDate = new Date(r.date);
-            return r.vehicleId === vehicle.id && rDate >= monthStart && rDate <= monthEnd;
-          });
-          if (hasReservation) {
-            if (!currentBlock) {
-              currentBlock = { clientName: 'Occupé', startIndex: index, span: 1 };
-            } else { currentBlock.span++; }
-          } else {
-            if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
-          }
-        });
-      } else {
-        timeSlots.forEach((slot, index) => {
-          const key = `${vehicle.id}-${formatLocalDate(slot.day)}-${slot.period}`;
-          const reservation = reservationLookup.get(key) || null;
-          if (reservation) {
-            const currentName = currentBlock ? (currentBlock.isMaintenance ? currentBlock.prestationName : currentBlock.clientName) : null;
-            const newName = reservation.isMaintenance ? reservation.prestationName : reservation.clientName;
-            if (!currentBlock || currentBlock.id !== reservation.id || currentName !== newName || currentBlock.isMaintenance !== reservation.isMaintenance) {
-              if (currentBlock) blocks.push(currentBlock);
-              currentBlock = { ...reservation, startIndex: index, span: 1 };
-            } else { currentBlock.span++; }
-          } else {
-            if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
-          }
-        });
-      }
-      if (currentBlock) blocks.push(currentBlock);
-      result.set(vehicle.id, { blocks, timeSlots });
-    }
-
-    return result;
-  }, [vehicleGroups, days, view, reservationLookup, reservations]);
-
-  // Handlers pour la navigation depuis la vue année
-  const handleMonthClick = useCallback((monthIndex) => {
-    if (view === 'year') {
-      const newDate = setMonth(currentDate, monthIndex);
-      setCurrentDate(newDate);
-      setView('month');
-    }
-  }, [view, currentDate, setCurrentDate, setView]);
-
-  const handleWeekClick = useCallback((weekDate) => {
-    if (view === 'year') {
-      setCurrentDate(weekDate);
-      setView('week');
-    }
-  }, [view, setCurrentDate, setView]);
-
-  const handleDayClick = useCallback((day) => {
-    if (view === 'month') {
-      setCurrentDate(day);
-      setView('day');
-    }
-  }, [view, setCurrentDate, setView]);
-
-  const handleSlotMouseDown = (vehicle, date, period, e) => {
-    // Ne pas faire de drag si un block drag est en cours
-    if (blockDragState || pendingBlockDragRef.current) return;
-    // Ne pas faire de drag si c'est la vue année
-    if (view === 'year') return;
-    
-    // Vérifier si une réservation existe déjà
-    const existing = reservations.find(
-      (r) =>
-        r.vehicleId === vehicle.id &&
-        isSameDay(new Date(r.date), date) &&
-        r.period === period
-    );
-
-    // Si une réservation existe, l'ouvrir directement (lecture seule pour non-admin)
-    if (existing) {
-      setSelectedReservation(existing);
-      return;
-    }
-
-    // Non-admin : clic simple ou drag → ouvrir la modale en mode demande
-    if (!currentUser?.isAdmin) {
-      e.preventDefault();
-      setIsDragging(true);
-      setDragState({
-        vehicle,
-        startDay: date,
-        startPeriod: period,
-        endDay: date,
-        endPeriod: period
-      });
-      return;
-    }
-
-    // Admin : commencer le drag
-    e.preventDefault();
-    setIsDragging(true);
-    setDragState({
-      vehicle,
-      startDay: date,
-      startPeriod: period,
-      endDay: date,
-      endPeriod: period
-    });
-  };
-
-  const handleSlotMouseEnter = (vehicle, date, period) => {
-    // Activer le drag-to-move si pending et la souris a bougé sur un slot différent
-    if (pendingBlockDragRef.current) {
-      const p = pendingBlockDragRef.current;
-      const isSameSlot = isSameDay(p.startDay, date) && p.startPeriod === period && p.vehicle.id === vehicle.id;
-      if (!isSameSlot) {
-        const block = p.block;
-        const startDate = new Date(block.date); startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(block.endDate || block.date); endDate.setHours(0, 0, 0, 0);
-        setBlockDragState({
-          block, vehicle: p.vehicle, targetVehicle: vehicle,
-          anchorDay: p.startDay, anchorPeriod: p.startPeriod,
-          originalStart: { date: startDate, period: block.period },
-          originalEnd: { date: endDate, period: block.endPeriod || block.period },
-          currentStart: { date: startDate, period: block.period },
-          currentEnd: { date: endDate, period: block.endPeriod || block.period },
-        });
-        pendingBlockDragRef.current = null;
-        // Mettre à jour immédiatement avec la position de la souris
-        const origStartTs = getPeriodTimestamp(startDate, block.period);
-        const origEndTs = getPeriodTimestamp(endDate, block.endPeriod || block.period);
-        const anchorTs = getPeriodTimestamp(p.startDay, p.startPeriod);
-        const currentTs = getPeriodTimestamp(date, period);
-        const delta = currentTs - anchorTs;
-        const tsToDP = (ts) => {
-          const d = new Date(Math.floor(ts / 2));
-          d.setHours(0, 0, 0, 0);
-          return { date: d, period: ts % 2 === 0 ? 'AM' : 'PM' };
-        };
-        const newStart = tsToDP(origStartTs + delta);
-        const newEnd = tsToDP(origEndTs + delta);
-        setBlockDragState(prev => ({ ...prev, targetVehicle: vehicle, currentStart: newStart, currentEnd: newEnd }));
-        setBlockDragPreview({
-          vehicleId: vehicle.id,
-          startDate: newStart.date, startPeriod: newStart.period,
-          endDate: newEnd.date, endPeriod: newEnd.period,
-        });
-        return;
-      }
-    }
-    // Drag-to-move en cours (accepte le déplacement vers un autre véhicule)
-    if (blockDragState) {
-      handleBlockDragMove(vehicle, date, period);
-      return;
-    }
-    // Drag-to-create on empty slots
-    if (!isDragging || !dragState || dragState.vehicle.id !== vehicle.id) return;
-    
-    setDragState({
-      ...dragState,
-      endDay: date,
-      endPeriod: period
-    });
-  };
-
-  const handleSlotMouseUp = () => {
-    if (!isDragging || !dragState) return;
-    
-    setIsDragging(false);
-    
-    // Ouvrir la modal avec la période sélectionnée
-    setSelectedSlot({
-      vehicle: dragState.vehicle,
-      startDate: dragState.startDay,
-      startPeriod: dragState.startPeriod,
-      endDate: dragState.endDay,
-      endPeriod: dragState.endPeriod
-    });
-    
-    setDragState(null);
-  };
-
-  // Fonction helper pour vérifier si une cellule fait partie de l'aperçu de redimensionnement
-  const isInResizePreview = (vehicleId, day, period) => {
-    if (!resizePreview || resizePreview.vehicleId !== vehicleId) return false;
-    
-    // Calculer les timestamps de début et fin de l'aperçu
-    let previewStart = getPeriodTimestamp(resizePreview.startDate, resizePreview.startPeriod);
-    let previewEnd = getPeriodTimestamp(resizePreview.endDate, resizePreview.endPeriod);
-    
-    // Si les timestamps sont inversés (invalide), les normaliser pour afficher quand même l'aperçu
-    if (previewStart > previewEnd) {
-      [previewStart, previewEnd] = [previewEnd, previewStart];
-    }
-    
-    // Calculer le timestamp de la cellule actuelle
-    const cellTimestamp = getPeriodTimestamp(day, period);
-    
-    // La cellule fait partie de l'aperçu si son timestamp est dans l'intervalle [previewStart, previewEnd]
-    return cellTimestamp >= previewStart && cellTimestamp <= previewEnd;
-  };
-
-  // Fonctions de gestion du redimensionnement
-  const handleResizeStart = (e, block, edge) => {
-    if (view === 'year') return; // Pas de resize en vue année
-    if (!currentUser?.isAdmin) return; // Seuls les admins peuvent redimensionner
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Sauvegarder la position initiale pour vérifier si on a vraiment bougé
-    // Convertir les ISO strings en objets Date et normaliser à minuit
-    const initialDate = edge === 'start' 
-      ? new Date(block.date) 
-      : new Date(block.endDate || block.date);
-    // Normaliser à minuit pour éviter les problèmes de comparaison d'heures
-    initialDate.setHours(0, 0, 0, 0);
-    
-    const initialPeriod = edge === 'start' 
-      ? block.period 
-      : (block.endPeriod || block.period);
-    
-    // Stocker TOUTES les positions initiales (début ET fin) pour éviter les bugs
-    const startDate = new Date(block.date);
-    startDate.setHours(0, 0, 0, 0);
-    
-    const endDate = new Date(block.endDate || block.date);
-    endDate.setHours(0, 0, 0, 0);
-    
-    setResizeState({
-      reservation: block,
-      edge,
-      initialDate: initialDate,
-      initialPeriod: initialPeriod,
-      currentDay: initialDate, // Initialiser avec la date de départ
-      currentPeriod: initialPeriod,
-      // Stocker les positions de début et fin ORIGINALES
-      originalStartDate: startDate,
-      originalStartPeriod: block.period,
-      originalEndDate: endDate,
-      originalEndPeriod: block.endPeriod || block.period
-    });
-    
-    // Initialiser l'aperçu avec la position actuelle
-    setResizePreview({
-      vehicleId: block.vehicleId,
-      startDate: startDate,
-      startPeriod: block.period,
-      endDate: endDate,
-      endPeriod: block.endPeriod || block.period
-    });
-  };
-
-  const handleResizeMove = (day, period) => {
-    if (!resizeState) return;
-    
-    // Ne mettre à jour que si la position a réellement changé
-    if (resizeState.currentDay && 
-        isSameDay(resizeState.currentDay, day) && 
-        resizeState.currentPeriod === period) {
-      return; // Même position, pas de mise à jour nécessaire
-    }
-    
-    const { edge, originalStartDate, originalStartPeriod, originalEndDate, originalEndPeriod, reservation } = resizeState;
-    const normalizedDay = new Date(day);
-    normalizedDay.setHours(0, 0, 0, 0);
-    
-    // Calculer l'aperçu de la nouvelle position en utilisant les valeurs ORIGINALES
-    let previewStartDate, previewStartPeriod, previewEndDate, previewEndPeriod;
-    
-    if (edge === 'start') {
-      // Redimensionner le début - garder la fin originale
-      previewStartDate = normalizedDay;
-      previewStartPeriod = period;
-      previewEndDate = originalEndDate;
-      previewEndPeriod = originalEndPeriod;
-    } else {
-      // Redimensionner la fin - garder le début original
-      previewStartDate = originalStartDate;
-      previewStartPeriod = originalStartPeriod;
-      previewEndDate = normalizedDay;
-      previewEndPeriod = period;
-    }
-    
-    // Toujours mettre à jour l'aperçu (même si invalide, la validation se fera dans handleResizeEnd)
-    setResizePreview({
-      vehicleId: reservation.vehicleId,
-      startDate: previewStartDate,
-      startPeriod: previewStartPeriod,
-      endDate: previewEndDate,
-      endPeriod: previewEndPeriod
-    });
-    
-    setResizeState(prev => ({
-      ...prev,
-      currentDay: day,
-      currentPeriod: period
-    }));
-  };
-
-  const handleResizeEnd = () => {
-    if (!resizeState) {
-      return;
-    }
-
-    const { reservation, edge, currentDay, currentPeriod, initialDate, initialPeriod } = resizeState;
-    
-    // Normaliser currentDay à minuit pour comparaison cohérente
-    const normalizedCurrentDay = new Date(currentDay);
-    normalizedCurrentDay.setHours(0, 0, 0, 0);
-    
-    // Vérifier qu'on a vraiment changé de position
-    const hasMoved = !isSameDay(initialDate, normalizedCurrentDay) || initialPeriod !== currentPeriod;
-    
-    if (!hasMoved) {
-      setResizeState(null);
-      return;
-    }
-    
-    // Calculer les nouvelles dates de début et fin en utilisant les valeurs ORIGINALES
-    let newStartDate, newStartPeriod, newEndDate, newEndPeriod;
-    
-    const { originalStartDate, originalStartPeriod, originalEndDate, originalEndPeriod } = resizeState;
-    
-    if (edge === 'start') {
-      // On redimensionne le début - garder la fin originale
-      newStartDate = normalizedCurrentDay;
-      newStartPeriod = currentPeriod;
-      newEndDate = originalEndDate;
-      newEndPeriod = originalEndPeriod;
-      
-      // Vérifier que le début n'est pas après la fin (utiliser les timestamps)
-      const startTimestamp = getPeriodTimestamp(newStartDate, newStartPeriod);
-      const endTimestamp = getPeriodTimestamp(newEndDate, newEndPeriod);
-      
-      if (startTimestamp > endTimestamp) {
-        setResizeState(null);
-        setResizePreview(null);
-        return;
-      }
-    } else {
-      // On redimensionne la fin - garder le début original
-      newStartDate = originalStartDate;
-      newStartPeriod = originalStartPeriod;
-      newEndDate = normalizedCurrentDay;
-      newEndPeriod = currentPeriod;
-      
-      // Vérifier que la fin n'est pas avant le début (utiliser les timestamps)
-      const startTimestamp = getPeriodTimestamp(newStartDate, newStartPeriod);
-      const endTimestamp = getPeriodTimestamp(newEndDate, newEndPeriod);
-      
-      if (endTimestamp < startTimestamp) {
-        setResizeState(null);
-        setResizePreview(null);
-        return;
-      }
-    }
-
-    const updatedReservation = {
-      ...reservation,
-      date: formatLocalDate(newStartDate),
-      period: newStartPeriod,
-      endDate: formatLocalDate(newEndDate),
-      endPeriod: newEndPeriod
-    };
-    
-    // Mettre à jour la réservation
-    onUpdateReservation(reservation.id, updatedReservation);
-
-    setResizeState(null);
-    setResizePreview(null);
-  };
-
-  // ═══ DRAG-TO-MOVE : déplacer un bloc de réservation ═══
-  const handleBlockMouseDown = (e, block, vehicle) => {
-    if (view === 'year' || e.button !== 0) return;
-    if (!currentUser?.isAdmin) return;
-    if (block.isMaintenance) return;
-    if (e.target.closest('.resize-handle, .tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn, .reservation-delete-btn')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    // Calculer la position exacte (demi-journée) du clic dans le bloc
-    const rect = e.currentTarget.getBoundingClientRect();
-    const relX = e.clientX - rect.left;
-    const colWidth = rect.width / block.span;
-    const colOffset = Math.max(0, Math.min(block.span - 1, Math.floor(relX / colWidth)));
-    // Calculer la demi-journée survolée à partir de la position du bloc
-    const blockStartDate = new Date(block.date); blockStartDate.setHours(0, 0, 0, 0);
-    const totalHalfDays = (block.period === 'PM' ? 1 : 0) + colOffset;
-    const clickDate = new Date(blockStartDate);
-    clickDate.setDate(clickDate.getDate() + Math.floor(totalHalfDays / 2));
-    const clickPeriod = totalHalfDays % 2 === 0 ? 'AM' : 'PM';
-    // Ne pas activer le drag immédiatement — enregistrer pour détecter si c'est un clic ou un drag
-    pendingBlockDragRef.current = { block, vehicle, startDay: clickDate, startPeriod: clickPeriod };
-  };
-
-  const handleBlockDragMove = (vehicle, day, period) => {
-    if (!blockDragState) return;
-    
-    const normalizedDay = new Date(day);
-    normalizedDay.setHours(0, 0, 0, 0);
-    
-    // Calculer le delta en demi-journées
-    const origStartTs = getPeriodTimestamp(blockDragState.originalStart.date, blockDragState.originalStart.period);
-    const currentTs = getPeriodTimestamp(normalizedDay, period);
-    const anchorTs = getPeriodTimestamp(blockDragState.anchorDay, blockDragState.anchorPeriod);
-    const delta = currentTs - anchorTs;
-    
-    const origEndTs = getPeriodTimestamp(blockDragState.originalEnd.date, blockDragState.originalEnd.period);
-    const newStartTs = origStartTs + delta;
-    const newEndTs = origEndTs + delta;
-    
-    // Convertir timestamps back to dates/periods
-    const tsToDatePeriod = (ts) => {
-      const d = new Date(Math.floor(ts / 2));
-      d.setHours(0, 0, 0, 0);
-      return { date: d, period: ts % 2 === 0 ? 'AM' : 'PM' };
-    };
-    
-    const newStart = tsToDatePeriod(newStartTs);
-    const newEnd = tsToDatePeriod(newEndTs);
-    
-    // Vérifier les conflits avec les réservations du véhicule cible
-    const targetVehicleId = vehicle.id;
-    const hasConflict = targetVehicleId !== blockDragState.vehicle.id && reservations.some(r => {
-      if (r.id === blockDragState.block.id) return false;
-      if (r.vehicleId !== targetVehicleId) return false;
-      const rStartTs = getPeriodTimestamp(new Date(r.date || r.startDate), r.period || r.startPeriod || 'AM');
-      const rEndTs = getPeriodTimestamp(new Date(r.endDate || r.date || r.startDate), r.endPeriod || r.period || 'PM');
-      return newStartTs <= rEndTs && newEndTs >= rStartTs;
-    });
-    
-    setBlockDragState(prev => ({
-      ...prev,
-      targetVehicle: vehicle,
-      currentStart: newStart,
-      currentEnd: newEnd,
-      hasConflict,
-    }));
-    
-    setBlockDragPreview({
-      vehicleId: vehicle.id,
-      startDate: newStart.date,
-      startPeriod: newStart.period,
-      endDate: newEnd.date,
-      endPeriod: newEnd.period,
-      hasConflict,
-    });
-  };
-
-  const handleBlockDragEnd = () => {
-    if (!blockDragState) return;
-    
-    const { block, vehicle, targetVehicle, currentStart, currentEnd, originalStart, _originalEnd, hasConflict } = blockDragState;
-    
-    // Vérifier si la position a changé
-    const hasMoved = !isSameDay(originalStart.date, currentStart.date) || originalStart.period !== currentStart.period;
-    const hasChangedVehicle = targetVehicle && targetVehicle.id !== vehicle.id;
-    
-    if ((hasMoved || hasChangedVehicle) && !hasConflict) {
-      const existing = reservations.find(r => r.id === block.id);
-      if (existing) {
-        const updatedReservation = {
-          ...existing,
-          date: formatLocalDate(currentStart.date),
-          period: currentStart.period,
-          endDate: formatLocalDate(currentEnd.date),
-          endPeriod: currentEnd.period,
-          ...(hasChangedVehicle ? { vehicleId: targetVehicle.id } : {}),
-        };
-        onUpdateReservation(existing.id, updatedReservation);
-      }
-    }
-    
-    setBlockDragState(null);
-    setBlockDragPreview(null);
-  };
-
-  // Vérifier si une cellule fait partie du preview de déplacement de bloc
-  const isInBlockDragPreview = (vehicleId, day, period) => {
-    if (!blockDragPreview || blockDragPreview.vehicleId !== vehicleId) return false;
-    let previewStart = getPeriodTimestamp(blockDragPreview.startDate, blockDragPreview.startPeriod);
-    let previewEnd = getPeriodTimestamp(blockDragPreview.endDate, blockDragPreview.endPeriod);
-    if (previewStart > previewEnd) [previewStart, previewEnd] = [previewEnd, previewStart];
-    const cellTs = getPeriodTimestamp(day, period);
-    return cellTs >= previewStart && cellTs <= previewEnd;
-  };
-
-  const handleSlotClick = (vehicle, date, period) => {
-    // Cette fonction est maintenant utilisée uniquement pour la vue année
-    if (view !== 'year') return;
-    
-    // Vérifier si une réservation existe déjà
-    const existing = reservations.find(
-      (r) =>
-        r.vehicleId === vehicle.id &&
-        isSameDay(new Date(r.date), date) &&
-        r.period === period
-    );
-
-    if (existing) {
-      setSelectedReservation(existing);
-    } else {
-      setSelectedSlot({ vehicle, date, period });
-    }
-  };
-
-  // Vérifier si un slot fait partie de la sélection en cours
-  const isInDragSelection = useCallback((vehicleId, date, period) => {
-    if (!dragState || dragState.vehicle.id !== vehicleId) return false;
-    
-    const dragPeriods = view === 'year' ? ['M'] : ['AM', 'PM'];
-    
-    // Créer un tableau de tous les slots
-    const allSlots = [];
-    days.forEach(day => {
-      dragPeriods.forEach(p => {
-        allSlots.push({ day, period: p });
-      });
-    });
-    
-    // Trouver les indices de début et fin
-    const startIndex = allSlots.findIndex(s => 
-      isSameDay(s.day, dragState.startDay) && s.period === dragState.startPeriod
-    );
-    const endIndex = allSlots.findIndex(s => 
-      isSameDay(s.day, dragState.endDay) && s.period === dragState.endPeriod
-    );
-    const currentIndex = allSlots.findIndex(s => 
-      isSameDay(s.day, date) && s.period === period
-    );
-    
-    if (startIndex === -1 || endIndex === -1 || currentIndex === -1) return false;
-    
-    const minIndex = Math.min(startIndex, endIndex);
-    const maxIndex = Math.max(startIndex, endIndex);
-    
-    return currentIndex >= minIndex && currentIndex <= maxIndex;
-  }, [dragState, days, view]);
-
-  const getReservation = useCallback((vehicleId, date, period) => {
-    const key = `${vehicleId}-${formatLocalDate(date)}-${period}`;
-    return reservationLookup.get(key) || null;
-  }, [reservationLookup]);
-
-  // Grouper les réservations consécutives pour affichage continu
-  const _getReservationBlocks = (vehicleId, days, period) => {
-    const blocks = [];
-    let currentBlock = null;
-
-    days.forEach((day, dayIndex) => {
-      const reservation = getReservation(vehicleId, day, period);
-      
-      if (reservation) {
-        if (!currentBlock || 
-            currentBlock.id !== reservation.id ||
-            currentBlock.clientName !== reservation.clientName ||
-            currentBlock.endDate !== reservation.endDate ||
-            currentBlock.endPeriod !== reservation.endPeriod) {
-          // Nouveau bloc
-          if (currentBlock) {
-            blocks.push(currentBlock);
-          }
-          currentBlock = {
-            ...reservation,
-            startIndex: dayIndex,
-            endIndex: dayIndex,
-            indices: [dayIndex]
-          };
-        } else {
-          // Continuer le bloc
-          currentBlock.endIndex = dayIndex;
-          currentBlock.indices.push(dayIndex);
-        }
-      } else {
-        if (currentBlock) {
-          blocks.push(currentBlock);
-          currentBlock = null;
-        }
-      }
-    });
-
-    if (currentBlock) {
-      blocks.push(currentBlock);
-    }
-
-    return blocks;
-  };
-
-  const _findBlockForCell = (blocks, dayIndex) => {
-    return blocks.find(block => block.indices.includes(dayIndex));
-  };
-
+  // ═══ HANDLERS ═══
   const handleSaveReservation = (reservationData) => {
     let success = false;
-    if (selectedReservation) {
-      success = onUpdateReservation(selectedReservation.id, reservationData);
-    } else {
-      success = onAddReservation(reservationData);
-    }
-    
-    // Ne fermer la modal que si la sauvegarde a réussi
+    if (selectedReservation) success = onUpdateReservation(selectedReservation.id, reservationData);
+    else success = onAddReservation(reservationData);
     if (success !== false) {
       setSelectedSlot(null);
       setSelectedReservation(null);
@@ -1829,762 +347,237 @@ const Calendar = ({
   const closeModal = () => {
     setSelectedSlot(null);
     setSelectedReservation(null);
-    if (onCloseGoogleEvent) {
-      onCloseGoogleEvent();
-    }
-    if (onReservationEditComplete) {
-      onReservationEditComplete();
-    }
+    if (onCloseGoogleEvent) onCloseGoogleEvent();
+    if (onReservationEditComplete) onReservationEditComplete();
   };
 
-  const windowWidth = useWindowWidth();
-
-  const gridColumns = useMemo(() => {
-    let minWidth;
-    if (view === 'year') {
-      minWidth = windowWidth <= 480 ? 80 : windowWidth <= 768 ? 100 : windowWidth <= 1024 ? 120 : 150;
-      return `repeat(12, minmax(${minWidth}px, 1fr))`;
-    }
-    if (view === 'day') {
-      // Vue jour : 2 colonnes larges (AM/PM)
-      return `repeat(2, 1fr)`;
-    }
-    if (view === 'week') {
-      minWidth = windowWidth <= 480 ? 55 : windowWidth <= 768 ? 65 : windowWidth <= 1024 ? 80 : 100;
-    } else {
-      // month
-      minWidth = windowWidth <= 480 ? 26 : windowWidth <= 768 ? 32 : windowWidth <= 1024 ? 42 : 55;
-    }
-    return `repeat(${days.length * 2}, minmax(${minWidth}px, 1fr))`;
-  }, [view, days.length, windowWidth]);
-
-  // Gestionnaire de mouvement global pour le redimensionnement avec throttle
-  const _throttleTimeoutRef = React.useRef(null);
-  const lastPositionRef = React.useRef({ dayIndex: null, period: null });
-  
-  const handleGlobalMouseMove = (e) => {
-    if (!resizeState) return;
-    
-    // Trouver la grille calendrier
-    const grid = document.querySelector('.calendar-grid');
-    if (!grid) return;
-    
-    // Obtenir les dimensions de la grille
-    const gridRect = grid.getBoundingClientRect();
-    const relativeX = e.clientX - gridRect.left;
-    
-    // Calculer le nombre de colonnes par jour (2 pour AM/PM)
-    const periodsPerDay = view === 'year' ? 1 : 2;
-    const totalColumns = days.length * periodsPerDay;
-    const columnWidth = gridRect.width / totalColumns;
-    
-    // Calculer l'index de colonne
-    const columnIndex = Math.floor(relativeX / columnWidth);
-    
-    // Calculer dayIndex et period
-    const dayIndex = Math.floor(columnIndex / periodsPerDay);
-    const periodIndex = columnIndex % periodsPerDay;
-    const period = periodsPerDay === 1 ? 'M' : (periodIndex === 0 ? 'AM' : 'PM');
-    
-    // Vérifier que l'index est valide
-    if (dayIndex < 0 || dayIndex >= days.length) return;
-    
-    // Vérifier si on est sur une nouvelle cellule
-    if (lastPositionRef.current.dayIndex === dayIndex && 
-        lastPositionRef.current.period === period) {
-      return; // Même cellule, ne rien faire
-    }
-    
-    // Mettre à jour la dernière position
-    lastPositionRef.current = { dayIndex, period };
-    
-    // Trouver le jour correspondant
-    const day = days[dayIndex];
-    handleResizeMove(day, period);
-  };
-
-  const handleGlobalMouseUp = () => {
-    if (resizeState) {
-      handleResizeEnd();
-      lastPositionRef.current = { dayIndex: null, period: null }; // Reset
-    }
-    setResizePreview(null);
+  // ═══ SHARED PROPS for CalendarVehicleRow ═══
+  const rowProps = {
+    days,
+    view,
+    resizeState,
+    blockDragState,
+    blockDragPreview,
+    pendingBlockDragRef,
+    currentUser,
+    users,
+    highlightedReservationIds,
+    googleEvents,
+    calendarTripCache,
+    isInDragSelection,
+    isInResizePreview,
+    isInBlockDragPreview,
+    handleSlotMouseDown,
+    handleSlotMouseEnter,
+    handleSlotMouseUp,
+    handleSlotClick,
+    handleBlockMouseDown,
+    handleBlockDragMove,
+    handleResizeStart,
+    handleTooltipShow,
+    handleTooltipHide,
+    handleOpenTripFromCalendar,
+    handleTripLinked,
+    onDeleteReservation,
+    onMaintenanceClick,
+    confirm,
+    getMaintenanceConflicts,
   };
 
   return (
-    <div 
+    <div
       className="calendar-container"
       onMouseMove={handleGlobalMouseMove}
       onMouseUp={handleGlobalMouseUp}
     >
-      {/* Toolbar de navigation */}
+      {/* Toolbar */}
       <div className="cal-nav-toolbar">
         <div className="cal-nav-views">
-          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'day' ? 'active' : ''}`} onClick={() => setView('day')}>Jour</Button>
-          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`} onClick={() => setView('week')}>Semaine</Button>
-          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`} onClick={() => setView('month')}>Mois</Button>
-          <Button variant="ghost" className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`} onClick={() => setView('year')}>Année</Button>
+          <Button
+            variant="ghost"
+            className={`cal-nav-view-btn ${view === 'day' ? 'active' : ''}`}
+            onClick={() => setView('day')}
+          >
+            Jour
+          </Button>
+          <Button
+            variant="ghost"
+            className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`}
+            onClick={() => setView('week')}
+          >
+            Semaine
+          </Button>
+          <Button
+            variant="ghost"
+            className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`}
+            onClick={() => setView('month')}
+          >
+            Mois
+          </Button>
         </div>
         <div className="cal-nav-date">
-          <Button variant="ghost" className="cal-nav-btn" onClick={goToPrevious} aria-label="Période précédente"><ChevronLeft size={18} /></Button>
-          <Button variant="ghost" className={`cal-nav-btn cal-nav-today ${showTodayHighlight ? 'highlight' : ''}`} onClick={goToToday}>Aujourd'hui</Button>
-          <Button variant="ghost" className="cal-nav-btn" onClick={goToNext} aria-label="Période suivante"><ChevronRight size={18} /></Button>
-          <span 
+          <Button
+            variant="ghost"
+            className="cal-nav-btn"
+            onClick={goToPrevious}
+            aria-label="Période précédente"
+          >
+            <ChevronLeft size={18} />
+          </Button>
+          <Button
+            variant="ghost"
+            className={`cal-nav-btn cal-nav-today ${showTodayHighlight ? 'highlight' : ''}`}
+            onClick={goToToday}
+          >
+            Aujourd'hui
+          </Button>
+          <Button
+            variant="ghost"
+            className="cal-nav-btn"
+            onClick={goToNext}
+            aria-label="Période suivante"
+          >
+            <ChevronRight size={18} />
+          </Button>
+          <span
             className="cal-nav-label clickable"
             onClick={() => {
               if (view === 'day') setShowWeekSelector(true);
               if (view === 'month') setShowMonthSelector(true);
               if (view === 'week') setShowWeekSelector(true);
-              if (view === 'year') setShowYearSelector(true);
             }}
-            title={view === 'day' ? 'Sélectionner une date' : view === 'month' ? 'Sélectionner un mois' : view === 'week' ? 'Sélectionner une semaine' : 'Sélectionner une année'}
+            title={
+              view === 'day'
+                ? 'Sélectionner une date'
+                : view === 'month'
+                  ? 'Sélectionner un mois'
+                  : 'Sélectionner une semaine'
+            }
           >
             {getDateLabel()}
           </span>
         </div>
         {onOpenManagement && (
-          <Button variant="ghost" className="cal-management-btn" onClick={onOpenManagement} aria-label="Ouvrir la gestion">
+          <Button
+            variant="ghost"
+            className="cal-management-btn"
+            onClick={onOpenManagement}
+            aria-label="Ouvrir la gestion"
+          >
             <Truck size={16} /> Gestion
           </Button>
         )}
       </div>
+
       <div className="calendar">
-        {/* Ligne des headers - fixe, non scrollable */}
+        {/* Headers */}
         <div className="calendar-headers-row">
           <div className="vehicle-column-header">
             <span>Véhicules entreprise</span>
- <Tooltip content="Véhicules disponibles aujourd'hui (hors locations)" position="bottom">
-   <span className="vehicle-availability-badge">
-              {availabilityCount.company.available}/{availabilityCount.company.total}
-            </span>
- </Tooltip>
-            <Button variant="ghost" 
-              className="section-toggle-button" 
-              onClick={() => setCollapsedSections(prev => ({ ...prev, company: !prev.company }))}
+            <Tooltip content="Véhicules disponibles aujourd'hui (hors locations)" position="bottom">
+              <span className="vehicle-availability-badge">
+                {availabilityCount.company.available}/{availabilityCount.company.total}
+              </span>
+            </Tooltip>
+            <Button
+              variant="ghost"
+              className="section-toggle-button"
+              onClick={() => setCollapsedSections((prev) => ({ ...prev, company: !prev.company }))}
               title={collapsedSections.company ? 'Développer' : 'Rétracter'}
             >
               {collapsedSections.company ? '▼' : '▲'}
             </Button>
           </div>
-          <div className="calendar-headers-scroll-area">
-            <div className={`calendar-grid-headers ${view}-view`} style={{ gridTemplateColumns: gridColumns }}>
-              {/* En-tête */}
-              {view === 'day' ? (
-                // Vue jour : 2 colonnes Matin/Après-midi
-                <>
-                  <div className="calendar-header">
-                    <div className={`calendar-header-cell day-header day-view-header ${isToday(currentDate) ? 'today' : ''}`}>
-                      <div className="day-name">Matin</div>
-                      <div className="day-number">{format(currentDate, 'EEEE d MMMM', { locale: fr })}</div>
-                    </div>
-                    <div className={`calendar-header-cell day-header day-view-header ${isToday(currentDate) ? 'today' : ''}`}>
-                      <div className="day-name">Après-midi</div>
-                    </div>
-                  </div>
-                </>
-              ) : view === 'year' ? (
-                // Vue année : 12 colonnes pour les 12 mois
-                <>
-                  <div className="calendar-header">
-                    {days.map((monthDate, monthIndex) => {
-                      const monthStart = startOfMonth(monthDate);
-                      const monthEnd = endOfMonth(monthDate);
-                      const weeksInMonth = eachWeekOfInterval({
-                        start: monthStart,
-                        end: monthEnd
-                      }, { weekStartsOn: 1 });
-
-                      return (
-                        <div
-                          key={monthIndex}
-                          className="calendar-header-cell month-header clickable"
-                          onClick={() => handleMonthClick(monthIndex)}
-                          title="Cliquer pour voir le mois"
-                        >
-                          <div className="month-name">{format(monthDate, 'MMMM', { locale: fr })}</div>
-                          <div className="weeks-in-month">
-                            {weeksInMonth.map((weekStart, idx) => {
-                              const weekNum = getWeek(weekStart, { weekStartsOn: 1 });
-                              return (
-                                <Tooltip content="Cliquer pour voir la semaine" position="bottom">
-                                  <span 
-                                  key={idx} 
-                                  className="week-number-small clickable"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleWeekClick(weekStart);
-                                  }}
- 
-                                >
-                                  S{weekNum}
-                                </span>
-                                </Tooltip>
-                              );
-                            })}
-                          </div>
-                        </div>
-                          
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                // Vues semaine et mois : en-têtes standards
-                <>
-                  <div className="calendar-header">
-                    {days.map((day, index) => (
-                      <div
-                        key={index}
-                        className={`calendar-header-cell day-header ${isWeekend(day) ? 'weekend' : ''} ${isToday(day) ? 'today' : ''} ${view === 'month' ? 'clickable' : ''}`}
-                        style={{ gridColumn: 'span 2' }}
-                        data-day-index={index}
-                        onClick={() => view === 'month' && handleDayClick(day)}
-                        title={view === 'month' ? 'Cliquer pour voir la semaine' : undefined}
-                      >
-                        <div>
-                          <div className="day-name">{format(day, 'EEEE', { locale: fr })}</div>
-                          <div className="day-number">{format(day, 'd MMM', { locale: fr })}</div>
-                        </div>
-                      </div>
-                          
-                    ))}
-                  </div>
-
-                  {/* Sous-en-tête AM/PM */}
-                  <div className="calendar-subheader">
-                    {days.map((day, index) => (
-                      <React.Fragment key={index}>
-                        <div className={`calendar-header-cell period-cell ${isWeekend(day) ? 'weekend' : ''} ${isToday(day) ? 'today today-left' : ''}`} data-day-index={index}>
-                          AM
-                        </div>
-                        <div className={`calendar-header-cell period-cell ${isWeekend(day) ? 'weekend' : ''} ${isToday(day) ? 'today today-right' : ''}`} data-day-index={index}>
-                          PM
-                        </div>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-                          
+          <CalendarHeaders
+            view={view}
+            days={days}
+            currentDate={currentDate}
+            gridColumns={gridColumns}
+            handleMonthClick={handleMonthClick}
+            handleWeekClick={handleWeekClick}
+            handleDayClick={handleDayClick}
+          />
         </div>
 
-        {/* Ligne du contenu scrollable */}
+        {/* Content */}
         <div className="calendar-content-row">
-          {/* Colonne véhicules fixe à gauche */}
-          <div className="vehicle-column">
-            {/* Section Véhicules entreprise */}
-            {vehicleGroups.companyVehicles.length > 0 && (
-              <>
-                {!collapsedSections.company && vehicleGroups.companyVehicles.map((vehicle) => {
-                  // Vérifier si le véhicule a une panne signalée
-                  const hasBreakdown = maintenances.some(m => 
-                    m.vehicleId === vehicle.id && 
-                    (m.status === 'reported' || m.type === 'breakdown') &&
-                    m.status !== STATUS.COMPLETED
-                  );
+          <CalendarVehicleColumn
+            vehicleGroups={vehicleGroups}
+            collapsedSections={collapsedSections}
+            setCollapsedSections={setCollapsedSections}
+            availabilityCount={availabilityCount}
+            maintenances={maintenances}
+            onVehicleClick={onVehicleClick}
+            onVehicleDoubleClick={onVehicleDoubleClick}
+          />
 
-                  // Vérifier si le véhicule a un contrôle technique expiré
-                  const hasExpiredControl = hasExpiredTechnicalControl(vehicle, maintenances);
-                  const expiredControls = hasExpiredControl ? getExpiredTechnicalControls(vehicle, maintenances) : [];
-                  
-                  return (
-                  <div 
-                    key={vehicle.id} 
-                    className="vehicle-cell"
-                    onClick={() => onVehicleClick && onVehicleClick(vehicle)}
-                    onDoubleClick={(e) => { e.stopPropagation(); onVehicleDoubleClick && onVehicleDoubleClick(vehicle); }}
-                    style={{ cursor: onVehicleClick ? 'pointer' : 'default' }}
-                  >
-                    <div
-                      className="vehicle-color"
-                      style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
-                    />
-                    <div className="vehicle-photo">
-                      {vehicle.photo ? (
-                        <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" />
-                      ) : (
-                        <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" loading="lazy" />
-                      )}
-                      {hasBreakdown && (
-                        <Tooltip content="Panne signalée" position="bottom"><span className="breakdown-indicator-photo">⚠️</span></Tooltip>
-                      )}
-                      {hasExpiredControl && (
-                        <div 
-                          className="expired-control-indicator" 
-                          title={`Contrôle technique expiré: ${expiredControls.map(c => `${c.type} (${c.daysExpired}j)`).join(', ')}`}
-                        >
-                          🚫
-                        </div>
-                      )}
-                    </div>
-                    <div className="vehicle-info">
-                      <span className="vehicle-name">{vehicle.name}</span>
-                      <span className="vehicle-brand">{vehicle.brand || vehicle.marque || ''}</span>
-                      <span className="vehicle-type">{vehicle.type || ''}</span>
-                      <span className="vehicle-registration">{vehicle.registration || vehicle.immatriculation || ''}</span>
-                    </div>
-                  </div>
-                  );
-                })}
-              </>
-            )}
-            
-            {/* Section Véhicules de location */}
-            {vehicleGroups.locationVehicles.length > 0 && (
-              <>
-                <div 
-                  className="vehicle-section-header"
-                >
-                  <span>Véhicules de location</span>
- <Tooltip content="Véhicules de location disponibles aujourd'hui" position="bottom">
-   <span className="vehicle-availability-badge location">
-                    {availabilityCount.location.available}/{availabilityCount.location.total}
-                  </span>
- </Tooltip>
-                  <Button variant="ghost" 
-                    className="section-toggle-button"
-                    onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
-                  >
-                    {collapsedSections.location ? '▼' : '▲'}
-                  </Button>
-                </div>
-                {!collapsedSections.location && vehicleGroups.locationVehicles.map((vehicle) => {
-                  // Vérifier si le véhicule a une panne signalée
-                  const hasBreakdown = maintenances.some(m => 
-                    m.vehicleId === vehicle.id && 
-                    (m.status === 'reported' || m.type === 'breakdown') &&
-                    m.status !== STATUS.COMPLETED
-                  );
-
-                  // Vérifier si le véhicule a un contrôle technique expiré
-                  const hasExpiredControl = hasExpiredTechnicalControl(vehicle, maintenances);
-                  const expiredControls = hasExpiredControl ? getExpiredTechnicalControls(vehicle, maintenances) : [];
-                  
-                  return (
-                  <div 
-                    key={vehicle.id} 
-                    className="vehicle-cell"
-                    onClick={() => onVehicleClick && onVehicleClick(vehicle)}
-                    onDoubleClick={(e) => { e.stopPropagation(); onVehicleDoubleClick && onVehicleDoubleClick(vehicle); }}
-                    style={{ cursor: onVehicleClick ? 'pointer' : 'default' }}
-                  >
-                    <div
-                      className="vehicle-color"
-                      style={{ backgroundColor: vehicle.displayColor || vehicle.color || '#3b82f6' }}
-                    />
-                    <div className="vehicle-photo">
-                      {vehicle.photo ? (
-                        <img src={`/Photos/${vehicle.photo}`} alt={vehicle.name} loading="lazy" />
-                      ) : (
-                        <img src={getVehicleAvatar(vehicle.type)} alt={vehicle.name} className="vehicle-avatar" loading="lazy" />
-                      )}
-                      {hasBreakdown && (
-                        <Tooltip content="Panne signalée" position="bottom"><span className="breakdown-indicator-photo">⚠️</span></Tooltip>
-                      )}
-                      {hasExpiredControl && (
-                        <div 
-                          className="expired-control-indicator" 
-                          title={`Contrôle technique expiré: ${expiredControls.map(c => `${c.type} (${c.daysExpired}j)`).join(', ')}`}
-                        >
-                          🚫
-                        </div>
-                      )}
-                    </div>
-                    <div className="vehicle-info">
-                      <span className="vehicle-name">{vehicle.name}</span>
-                      <span className="vehicle-brand">{vehicle.brand || vehicle.marque || ''}</span>
-                      <span className="vehicle-type">{vehicle.type || ''}</span>
-                      <span className="vehicle-registration">{vehicle.registration || vehicle.immatriculation || ''}</span>
-                    </div>
-                  </div>
-                  );
-                })}
-              </>
-            )}
-          </div>
-
-          {/* Grille scrollable à droite */}
           <div className="calendar-scroll-area" onScroll={handleScroll}>
-            <div className={`calendar-grid ${view}-view`} style={{ gridTemplateColumns: gridColumns, position: 'relative' }}>
-              {/* Lignes véhicules - Section entreprise */}
-              {!collapsedSections.company && vehicleGroups.companyVehicles.map((vehicle) => {
-            // Utiliser les blocs pré-calculés au lieu de recalculer à chaque render
-            const precomputed = allVehicleBlocks.get(vehicle.id) || { blocks: [], timeSlots: [] };
-            const { blocks, timeSlots } = precomputed;
-
-            return (
-              <div key={vehicle.id} className="vehicle-row">
-                {timeSlots.map((slot, slotIndex) => {
-                  const block = blocks.find(b => b.startIndex === slotIndex);
-                  const isInBlock = blocks.some(b => slotIndex > b.startIndex && slotIndex < b.startIndex + b.span);
-                  
-                  // Vérifier si cette cellule fait partie de la prévisualisation
-                  const _cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
-                  
-                  // Vérifier si cette cellule est dans un bloc en cours de redimensionnement
-                  const inResizingBlock = blocks.some(b => {
-                    const isResizing = resizeState && resizeState.reservation.id === b.id;
-                    return isResizing && slotIndex >= b.startIndex && slotIndex < b.startIndex + b.span;
-                  });
-                  
-                  // Si dans un bloc en cours de redimensionnement, afficher comme cellule normale
-                  if (inResizingBlock) {
-                    const dayIndex = days.findIndex(d => isSameDay(d, slot.day));
-                    const isFirstOfDay = slot.period === 'AM';
-                    const isLastOfDay = slot.period === 'PM';
-                    const isSelected = isInDragSelection(vehicle.id, slot.day, slot.period);
-                    const isInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
-                    
-                    return (
-                      <div
-                        key={`${vehicle.id}-${slotIndex}`}
-                        className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''}`}
-                        data-day-index={dayIndex}
-                      />
-                    );
-                  }
-                  
-                  // Ne pas rendre les cellules dans un bloc (comportement normal)
-                  if (isInBlock) return null;
-                  
-                  if (block) {
-                    const dayIndex = days.findIndex(d => isSameDay(d, slot.day));
-                    const isFirstOfDay = slot.period === 'AM';
-                    const isLastOfDay = slot.period === 'PM' && block.span === 1;
-                    const isBeingResized = resizeState && resizeState.reservation.id === block.id;
-                    const isBeingDragged = blockDragState && blockDragState.block.id === block.id;
-                        // Calculer les slots couverts par ce bloc pour les tournées
-                    
-                    // Si on redimensionne ce bloc, ne pas l'afficher (on affiche uniquement la prévisualisation)
-                    if (isBeingResized) return null;
-                    
-                    return (
-                      <div
-                        key={`${vehicle.id}-${slotIndex}`}
-                        className={`time-slot reserved period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''}`}
-                        style={{ 
-                          gridColumn: `span ${block.span}`, position: 'relative',
-                          cursor: block.isMaintenance ? 'pointer' : (currentUser?.isAdmin ? 'grab' : 'pointer')
-                        }}
-                        onMouseDown={(e) => {
-                          if (e.target.closest('.tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn, .resize-handle, .reservation-delete-btn')) return;
-                          if (e.button === 2) return;
-                          if (block.isMaintenance) {
-                            e.preventDefault();
-                            if (onMaintenanceClick) {
-                              const maintenanceId = block.maintenanceId || block.id.replace('maint-', '');
-                              onMaintenanceClick(vehicle, maintenanceId);
-                            }
-                            return;
-                          }
-                          handleBlockMouseDown(e, block, vehicle);
-                        }}
-                        onMouseMove={(e) => {
-                          if (!blockDragState && !pendingBlockDragRef.current) return;
-                          if ((blockDragState && blockDragState.vehicle.id !== vehicle.id) ||
-                              (pendingBlockDragRef.current && pendingBlockDragRef.current.vehicle.id !== vehicle.id)) return;
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const relX = e.clientX - rect.left;
-                          const colWidth = rect.width / block.span;
-                          const colOffset = Math.max(0, Math.min(block.span - 1, Math.floor(relX / colWidth)));
-                          const slotBase = new Date(slot.day); slotBase.setHours(0, 0, 0, 0);
-                          const totalHalfDays = (slot.period === 'PM' ? 1 : 0) + colOffset;
-                          const hoverDate = new Date(slotBase);
-                          hoverDate.setDate(hoverDate.getDate() + Math.floor(totalHalfDays / 2));
-                          const hoverPeriod = totalHalfDays % 2 === 0 ? 'AM' : 'PM';
-                          if (pendingBlockDragRef.current) {
-                            handleSlotMouseEnter(vehicle, hoverDate, hoverPeriod);
-                          } else {
-                            handleBlockDragMove(vehicle, hoverDate, hoverPeriod);
-                          }
-                        }}
-                        data-day-index={dayIndex}
-                        data-reservation-id={block.id}
-                      >
-                        <div
-                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${isBeingDragged ? 'block-drag-ghost' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
-                          style={{
-                            backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
-                            border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
-                            color: 'var(--theme-text-primary)', position: 'relative',
-                          }}
-                        >
-                          {/* Pastille utilisateur créateur */}
-                          {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : (users.find(u => u.id === block.createdBy)?.name || `Utilisateur ${block.createdBy}`)}`}>
-                              {getUserInitials(block.createdBy, currentUser, users)}
-                            </div>
-                          )}
-                          
-                          
-                          <div className="reservation-content-wrapper">
-                            <div className="reservation-content">
-                              <div className="reservation-name">
-                                {block.isMaintenance && getMaintenanceStatusStyle(block.maintenanceStatus, getMaintenanceConflicts(block).length > 0).icon + ' '}
-                                {block.clientName || block.prestationName}
-                              </div>
-                              {block.locationName && <div className="reservation-location">{block.locationName}</div>}
-                              {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex, calendarTripCache[block.id], (eventIds, mode) => handleOpenTripFromCalendar(block, eventIds, mode), () => handleTripLinked(block.id))}
-                            </div>
-                          </div>
-                          {!block.isMaintenance && onDeleteReservation && (
-                            <Tooltip content="Supprimer cette réservation" position="bottom">
-                              <Button variant="ghost"                               className="reservation-delete-btn"
- 
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); confirm({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onMouseUp={(e) => e.stopPropagation()}
-                            >
-                              <Trash2 size={12} />
-                            </Button>
-                            </Tooltip>
-                          )}
-                          {view !== 'year' && !isBeingResized && (
-                            <>
-                              <div
-                                className="resize-handle resize-handle-start"
-                                onMouseDown={(e) => handleResizeStart(e, block, 'start')}
-                                title="Glisser pour modifier le début"
-                              />
-                              <div
-                                className="resize-handle resize-handle-end"
-                                onMouseDown={(e) => handleResizeStart(e, block, 'end')}
-                                title="Glisser pour modifier la fin"
-                              />
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  const dayIndex = days.findIndex(d => isSameDay(d, slot.day));
-                  const isFirstOfDay = slot.period === 'AM';
-                  const isLastOfDay = slot.period === 'PM';
-                  const isSelected = isInDragSelection(vehicle.id, slot.day, slot.period);
-                  const isInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
-                  const isInMovePreview = isInBlockDragPreview(vehicle.id, slot.day, slot.period);
-                  
+            <div
+              className={`calendar-grid ${view}-view u-relative`}
+              style={{ gridTemplateColumns: gridColumns }}
+            >
+              {!collapsedSections.company &&
+                vehicleGroups.companyVehicles.map((vehicle) => {
+                  const precomputed = allVehicleBlocks.get(vehicle.id) || {
+                    blocks: [],
+                    timeSlots: [],
+                  };
                   return (
-                    <div
-                      key={`${vehicle.id}-${slotIndex}`}
-                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? `block-drag-preview${blockDragPreview?.hasConflict ? ' drag-conflict' : ''}` : ''}`}
-                      onMouseDown={(e) => !resizeState && handleSlotMouseDown(vehicle, slot.day, slot.period, e)}
-                      onMouseEnter={() => !resizeState && handleSlotMouseEnter(vehicle, slot.day, slot.period)}
-                      onMouseUp={handleSlotMouseUp}
-                      onClick={() => handleSlotClick(vehicle, slot.day, slot.period)}
-                      data-day-index={dayIndex}
+                    <CalendarVehicleRow
+                      key={vehicle.id}
+                      vehicle={vehicle}
+                      blocks={precomputed.blocks}
+                      timeSlots={precomputed.timeSlots}
+                      {...rowProps}
                     />
                   );
                 })}
-              </div>
-            );
-          })}
-              
-              {/* En-tête de section Location - ligne pleine largeur */}
+
               {vehicleGroups.locationVehicles.length > 0 && (
-                <div 
-                  className="vehicle-section-separator" 
-                  style={{ gridColumn: '1 / -1' }}
-                >
+                <div className="vehicle-section-separator" style={{ gridColumn: '1 / -1' }}>
                   <span>Véhicules de location</span>
- <Tooltip content="Véhicules de location disponibles aujourd'hui" position="bottom">
-   <span className="vehicle-availability-badge location">
-                    {availabilityCount.location.available}/{availabilityCount.location.total}
-                  </span>
- </Tooltip>
-                  <Button variant="ghost" 
+                  <Tooltip
+                    content="Véhicules de location disponibles aujourd'hui"
+                    position="bottom"
+                  >
+                    <span className="vehicle-availability-badge location">
+                      {availabilityCount.location.available}/{availabilityCount.location.total}
+                    </span>
+                  </Tooltip>
+                  <Button
+                    variant="ghost"
                     className="section-toggle-button"
-                    onClick={() => setCollapsedSections(prev => ({ ...prev, location: !prev.location }))}
+                    onClick={() =>
+                      setCollapsedSections((prev) => ({ ...prev, location: !prev.location }))
+                    }
                   >
                     {collapsedSections.location ? '▼' : '▲'}
                   </Button>
                 </div>
               )}
-              
-              {/* Lignes véhicules - Section Location */}
-              {!collapsedSections.location && vehicleGroups.locationVehicles.map((vehicle) => {
-            // Utiliser les blocs pré-calculés au lieu de recalculer à chaque render
-            const precomputed = allVehicleBlocks.get(vehicle.id) || { blocks: [], timeSlots: [] };
-            const { blocks, timeSlots } = precomputed;
 
-            return (
-              <div key={vehicle.id} className="vehicle-row">
-                {timeSlots.map((slot, slotIndex) => {
-                  const block = blocks.find(b => b.startIndex === slotIndex);
-                  const isInBlock = blocks.some(b => slotIndex > b.startIndex && slotIndex < b.startIndex + b.span);
-                  
-                  // Vérifier si cette cellule fait partie de la prévisualisation
-                  const _cellInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
-                  
-                  // Vérifier si cette cellule est dans un bloc en cours de redimensionnement
-                  const inResizingBlock = blocks.some(b => {
-                    const isResizing = resizeState && resizeState.reservation.id === b.id;
-                    return isResizing && slotIndex >= b.startIndex && slotIndex < b.startIndex + b.span;
-                  });
-                  
-                  // Si dans un bloc en cours de redimensionnement, afficher comme cellule normale
-                  if (inResizingBlock) {
-                    const dayIndex = days.findIndex(d => isSameDay(d, slot.day));
-                    const isFirstOfDay = slot.period === 'AM';
-                    const isLastOfDay = slot.period === 'PM';
-                    const isSelected = isInDragSelection(vehicle.id, slot.day, slot.period);
-                    const isInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
-                    
-                    return (
-                      <div
-                        key={`${vehicle.id}-${slotIndex}`}
-                        className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''}`}
-                        data-day-index={dayIndex}
-                      />
-                    );
-                  }
-                  
-                  // Ne pas rendre les cellules dans un bloc (comportement normal)
-                  if (isInBlock) return null;
-                  
-                  if (block) {
-                    const dayIndex = days.findIndex(d => isSameDay(d, slot.day));
-                    const isFirstOfDay = slot.period === 'AM';
-                    const isLastOfDay = slot.period === 'PM' && block.span === 1;
-                    const isBeingResized = resizeState && resizeState.reservation.id === block.id;
-                    const isBeingDragged = blockDragState && blockDragState.block.id === block.id;
-                        // Calculer les slots couverts par ce bloc pour les tournées
-                    
-                    // Si on redimensionne ce bloc, ne pas l'afficher (on affiche uniquement la prévisualisation)
-                    if (isBeingResized) return null;
-                    
-                    return (
-                      <div
-                        key={`${vehicle.id}-${slotIndex}`}
-                        className={`time-slot reserved period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''}`}
-                        style={{ 
-                          gridColumn: `span ${block.span}`, position: 'relative',
-                          cursor: block.isMaintenance ? 'pointer' : (currentUser?.isAdmin ? 'grab' : 'pointer')
-                        }}
-                        onMouseDown={(e) => {
-                          if (e.target.closest('.tournee-link-btn, .tournee-trip-btn, .reservation-trip-btn, .resize-handle, .reservation-delete-btn')) return;
-                          if (e.button === 2) return;
-                          if (block.isMaintenance) {
-                            e.preventDefault();
-                            if (onMaintenanceClick) {
-                              const maintenanceId = block.maintenanceId || block.id.replace('maint-', '');
-                              onMaintenanceClick(vehicle, maintenanceId);
-                            }
-                            return;
-                          }
-                          handleBlockMouseDown(e, block, vehicle);
-                        }}
-                        onMouseMove={(e) => {
-                          if (!blockDragState && !pendingBlockDragRef.current) return;
-                          if ((blockDragState && blockDragState.vehicle.id !== vehicle.id) ||
-                              (pendingBlockDragRef.current && pendingBlockDragRef.current.vehicle.id !== vehicle.id)) return;
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const relX = e.clientX - rect.left;
-                          const colWidth = rect.width / block.span;
-                          const colOffset = Math.max(0, Math.min(block.span - 1, Math.floor(relX / colWidth)));
-                          const slotBase = new Date(slot.day); slotBase.setHours(0, 0, 0, 0);
-                          const totalHalfDays = (slot.period === 'PM' ? 1 : 0) + colOffset;
-                          const hoverDate = new Date(slotBase);
-                          hoverDate.setDate(hoverDate.getDate() + Math.floor(totalHalfDays / 2));
-                          const hoverPeriod = totalHalfDays % 2 === 0 ? 'AM' : 'PM';
-                          if (pendingBlockDragRef.current) {
-                            handleSlotMouseEnter(vehicle, hoverDate, hoverPeriod);
-                          } else {
-                            handleBlockDragMove(vehicle, hoverDate, hoverPeriod);
-                          }
-                        }}
-                        data-day-index={dayIndex}
-                        data-reservation-id={block.id}
-                      >
-                        <div
-                          className={`reservation ${isBeingResized ? 'resizing' : ''} ${isBeingDragged ? 'block-drag-ghost' : ''} ${highlightedReservationIds.includes(block.id) ? 'highlighted' : ''} ${block.isMaintenance ? `maintenance-block maintenance-status-${block.maintenanceStatus || 'scheduled'} ${getMaintenanceConflicts(block).length > 0 ? 'maintenance-conflict' : ''}` : ''}`} onMouseEnter={(e) => handleTooltipShow(e, block)} onMouseLeave={handleTooltipHide}
-                          style={{
-                            backgroundColor: block.isMaintenance ? undefined : (vehicle.displayColor || vehicle.color || '#3b82f6') + '40',
-                            border: block.isMaintenance ? undefined : `2px solid ${vehicle.displayColor || vehicle.color || '#3b82f6'}`,
-                            color: 'var(--theme-text-primary)', position: 'relative',
-                          }}
-                        >
-                          {/* Pastille utilisateur créateur */}
-                          {block.createdBy && (
-                            <div className="user-badge" title={`Créé par ${currentUser && block.createdBy === currentUser.id ? currentUser.name : (users.find(u => u.id === block.createdBy)?.name || `Utilisateur ${block.createdBy}`)}`}>
-                              {getUserInitials(block.createdBy, currentUser, users)}
-                            </div>
-                          )}
-                          
-                          
-                          <div className="reservation-content-wrapper">
-                            <div className="reservation-content">
-                              <div className="reservation-name">
-                                {block.isMaintenance && getMaintenanceStatusStyle(block.maintenanceStatus, getMaintenanceConflicts(block).length > 0).icon + ' '}
-                                {block.clientName || block.prestationName}
-                              </div>
-                              {block.locationName && <div className="reservation-location">{block.locationName}</div>}
-                              {renderReservationAffaires(block, googleEvents, timeSlots, block.startIndex, calendarTripCache[block.id], (eventIds, mode) => handleOpenTripFromCalendar(block, eventIds, mode), () => handleTripLinked(block.id))}
-                            </div>
-                          </div>
-                          {!block.isMaintenance && onDeleteReservation && (
-                            <Tooltip content="Supprimer cette réservation" position="bottom">
-                              <Button variant="ghost"                               className="reservation-delete-btn"
- 
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); confirm({ title: 'Supprimer la réservation', message: 'Supprimer cette réservation ?', variant: 'danger', confirmLabel: 'Supprimer', onConfirm: () => onDeleteReservation(block.id) }); }}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onMouseUp={(e) => e.stopPropagation()}
-                            >
-                              <Trash2 size={12} />
-                            </Button>
-                            </Tooltip>
-                          )}
-                          {view !== 'year' && !isBeingResized && (
-                            <>
-                              <div
-                                className="resize-handle resize-handle-start"
-                                onMouseDown={(e) => handleResizeStart(e, block, 'start')}
-                                title="Glisser pour modifier le début"
-                              />
-                              <div
-                                className="resize-handle resize-handle-end"
-                                onMouseDown={(e) => handleResizeStart(e, block, 'end')}
-                                title="Glisser pour modifier la fin"
-                              />
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-                  
-                  const dayIndex = days.findIndex(d => isSameDay(d, slot.day));
-                  const isFirstOfDay = slot.period === 'AM';
-                  const isLastOfDay = slot.period === 'PM';
-                  const isSelected = isInDragSelection(vehicle.id, slot.day, slot.period);
-                  const isInPreview = isInResizePreview(vehicle.id, slot.day, slot.period);
-                  const isInMovePreview = isInBlockDragPreview(vehicle.id, slot.day, slot.period);
-                  
+              {!collapsedSections.location &&
+                vehicleGroups.locationVehicles.map((vehicle) => {
+                  const precomputed = allVehicleBlocks.get(vehicle.id) || {
+                    blocks: [],
+                    timeSlots: [],
+                  };
                   return (
-                    <div
-                      key={`${vehicle.id}-${slotIndex}`}
-                      className={`time-slot period-${slot.period.toLowerCase()} ${isWeekend(slot.day) ? 'weekend-slot' : ''} ${isToday(slot.day) ? 'today-slot' : ''} ${isToday(slot.day) && isFirstOfDay ? 'today-left' : ''} ${isToday(slot.day) && isLastOfDay ? 'today-right' : ''} ${isSelected ? 'drag-selected' : ''} ${isInPreview ? 'resize-preview' : ''} ${isInMovePreview ? `block-drag-preview${blockDragPreview?.hasConflict ? ' drag-conflict' : ''}` : ''}`}
-                      onMouseDown={(e) => !resizeState && handleSlotMouseDown(vehicle, slot.day, slot.period, e)}
-                      onMouseEnter={() => !resizeState && handleSlotMouseEnter(vehicle, slot.day, slot.period)}
-                      onMouseUp={handleSlotMouseUp}
-                      onClick={() => handleSlotClick(vehicle, slot.day, slot.period)}
-                      data-day-index={dayIndex}
+                    <CalendarVehicleRow
+                      key={vehicle.id}
+                      vehicle={vehicle}
+                      blocks={precomputed.blocks}
+                      timeSlots={precomputed.timeSlots}
+                      {...rowProps}
                     />
                   );
                 })}
-              </div>
-            );
-          })}
             </div>
           </div>
-                          
         </div>
       </div>
-                          
 
+      {/* Modals */}
       {(selectedSlot || selectedReservation) && (
         <ReservationModal
           slot={selectedSlot}
@@ -2604,7 +597,6 @@ const Calendar = ({
         />
       )}
 
-      {/* TripDetailsModal ouvert depuis le calendrier */}
       {calendarTripModal && !calendarTripModal.combinedEvents && (
         <TripDetailsModal
           event={calendarTripModal.event}
@@ -2630,7 +622,11 @@ const Calendar = ({
           drivers={drivers}
           persons={persons}
           vehicle={calendarTripModal.vehicle}
-          nextEvent={calendarTripModal.combinedEvents.length > 1 ? calendarTripModal.combinedEvents[1].event : null}
+          nextEvent={
+            calendarTripModal.combinedEvents.length > 1
+              ? calendarTripModal.combinedEvents[1].event
+              : null
+          }
           googleMapsApiKey={calendarGoogleMapsApiKey}
           companyAddress={calendarCompanyAddress}
           initialLocations={locations}
@@ -2638,7 +634,7 @@ const Calendar = ({
         />
       )}
 
-      {/* Tooltip global */}
+      {/* Tooltip */}
       {tooltipState.visible && tooltipState.block && (
         <div
           className="emag-tooltip"
@@ -2646,45 +642,65 @@ const Calendar = ({
             left: `${tooltipState.x}px`,
             top: `${tooltipState.y}px`,
             opacity: 1,
-            visibility: 'visible'
+            visibility: 'visible',
           }}
         >
           <div className="tooltip-row">
             <span className="tooltip-label">Type:</span>
-            <span className="tooltip-value">{tooltipState.block.isMaintenance ? 'Intervention' : 'Réservation'}</span>
+            <span className="tooltip-value">
+              {tooltipState.block.isMaintenance ? 'Intervention' : 'Réservation'}
+            </span>
           </div>
           {tooltipState.block.isMaintenance ? (
             <>
               <div className="tooltip-row">
                 <span className="tooltip-label">Prestation:</span>
-                <span className="tooltip-value">{tooltipState.block.prestationName || 'Non spécifiée'}</span>
+                <span className="tooltip-value">
+                  {tooltipState.block.prestationName || 'Non spécifiée'}
+                </span>
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Garage:</span>
-                <span className="tooltip-value">{tooltipState.block.garageName || 'Non spécifié'}</span>
+                <span className="tooltip-value">
+                  {tooltipState.block.garageName || 'Non spécifié'}
+                </span>
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Début:</span>
-                <span className="tooltip-value">{tooltipState.block.start_date || tooltipState.block.startDate || 'Non spécifié'}</span>
+                <span className="tooltip-value">
+                  {tooltipState.block.start_date || tooltipState.block.startDate || 'Non spécifié'}
+                </span>
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Fin:</span>
-                <span className="tooltip-value">{tooltipState.block.end_date || tooltipState.block.endDate || 'Non spécifiée'}</span>
+                <span className="tooltip-value">
+                  {tooltipState.block.end_date || tooltipState.block.endDate || 'Non spécifiée'}
+                </span>
               </div>
             </>
           ) : (
             <>
               <div className="tooltip-row">
                 <span className="tooltip-label">Client:</span>
-                <span className="tooltip-value">{tooltipState.block.clientName || 'Non spécifié'}</span>
+                <span className="tooltip-value">
+                  {tooltipState.block.clientName || 'Non spécifié'}
+                </span>
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Début:</span>
-                <span className="tooltip-value">{tooltipState.block.startDate || tooltipState.block.date ? `${formatDateSimple(tooltipState.block.startDate || tooltipState.block.date)} ${(tooltipState.block.startPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifié'}</span>
+                <span className="tooltip-value">
+                  {tooltipState.block.startDate || tooltipState.block.date
+                    ? `${formatDateSimple(tooltipState.block.startDate || tooltipState.block.date)} ${(tooltipState.block.startPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}`
+                    : 'Non spécifié'}
+                </span>
               </div>
               <div className="tooltip-row">
                 <span className="tooltip-label">Fin:</span>
-                <span className="tooltip-value">{tooltipState.block.endDate || tooltipState.block.date ? `${formatDateSimple(tooltipState.block.endDate || tooltipState.block.date)} ${(tooltipState.block.endPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}` : 'Non spécifiée'}</span>
+                <span className="tooltip-value">
+                  {tooltipState.block.endDate || tooltipState.block.date
+                    ? `${formatDateSimple(tooltipState.block.endDate || tooltipState.block.date)} ${(tooltipState.block.endPeriod || tooltipState.block.period) === 'AM' ? 'Matin' : 'Après-midi'}`
+                    : 'Non spécifiée'}
+                </span>
               </div>
             </>
           )}
@@ -2698,41 +714,56 @@ const Calendar = ({
             const driveCount = getDriveLinksCount(tooltipState.block);
             return driveCount > 0 ? (
               <div className="tooltip-row">
-                <span className="tooltip-label"><Link size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />Drive:</span>
-                <span className="tooltip-value">{driveCount} lien{driveCount > 1 ? 's' : ''}</span>
+                <span className="tooltip-label">
+                  <Link size={12} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                  Drive:
+                </span>
+                <span className="tooltip-value">
+                  {driveCount} lien{driveCount > 1 ? 's' : ''}
+                </span>
               </div>
             ) : null;
           })()}
           <div className="tooltip-row">
             <span className="tooltip-label">Créé par:</span>
             <span className="tooltip-value">
-              {currentUser && tooltipState.block.createdBy === currentUser.id 
-                ? currentUser.name 
-                : users.find(u => u.id === tooltipState.block.createdBy)?.name || `Utilisateur ${tooltipState.block.createdBy}`}
+              {currentUser && tooltipState.block.createdBy === currentUser.id
+                ? currentUser.name
+                : users.find((u) => u.id === tooltipState.block.createdBy)?.name ||
+                  `Utilisateur ${tooltipState.block.createdBy}`}
             </span>
           </div>
         </div>
       )}
 
-      {/* Sélecteurs de dates */}
+      {/* Date selectors */}
       {showMonthSelector && (
         <MonthSelector
           currentDate={currentDate}
-          onSelectMonth={(date) => { setCurrentDate(date); setShowMonthSelector(false); }}
+          onSelectMonth={(date) => {
+            setCurrentDate(date);
+            setShowMonthSelector(false);
+          }}
           onClose={() => setShowMonthSelector(false)}
         />
       )}
       {showWeekSelector && (
         <WeekSelector
           currentDate={currentDate}
-          onSelectWeek={(date) => { setCurrentDate(date); setShowWeekSelector(false); }}
+          onSelectWeek={(date) => {
+            setCurrentDate(date);
+            setShowWeekSelector(false);
+          }}
           onClose={() => setShowWeekSelector(false)}
         />
       )}
       {showYearSelector && (
         <YearSelector
           currentDate={currentDate}
-          onSelectYear={(date) => { setCurrentDate(date); setShowYearSelector(false); }}
+          onSelectYear={(date) => {
+            setCurrentDate(date);
+            setShowYearSelector(false);
+          }}
           onClose={() => setShowYearSelector(false)}
         />
       )}

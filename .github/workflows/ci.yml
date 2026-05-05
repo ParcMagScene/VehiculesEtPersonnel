@@ -10,8 +10,29 @@ permissions:
   contents: read
 
 jobs:
-  lint-test-build:
-    name: Lint + Test + Build
+  # ─── Conventional Commits ─────────────────────────────
+  commitlint:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Vérifier les messages de commit
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  # ─── Lint ─────────────────────────────────────────────
+  lint:
+    name: ESLint + Prettier
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,14 +42,119 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Installer les dépendances
-        run: npm ci
+      - run: npm ci
 
-      - name: Lint
+      - name: ESLint
         run: npm run lint
 
-      - name: Tests unitaires
-        run: npm test
+      - name: Prettier (vérification)
+        run: npm run format:check
 
-      - name: Build frontend
+  # ─── Documentation ──────────────────────────────────
+  docs:
+    name: Documentation coherence
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Vérifier la cohérence docs ↔ code
+        run: npm run docs:check
+
+  # ─── Tests backend ────────────────────────────────────
+  test-backend:
+    name: Tests backend (node:test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Tests unitaires backend avec couverture
+        run: npm run test:coverage 2>&1 | tee /tmp/backend-coverage.txt
+
+      - name: Rapport de couverture backend
+        run: |
+          COVERAGE_LINE=$(grep "^# all files" /tmp/backend-coverage.txt || true)
+          if [ -n "$COVERAGE_LINE" ]; then
+            LINE_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $2); print $2}')
+            BRANCH_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $3); print $3}')
+            FUNC_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $4); print $4}')
+            echo "📊 Backend — Lignes : ${LINE_PCT}% | Branches : ${BRANCH_PCT}% | Fonctions : ${FUNC_PCT}%"
+          fi
+
+  # ─── Tests frontend ───────────────────────────────────
+  test-frontend:
+    name: Tests frontend (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Tests Vitest avec coverage
+        run: npm run test:coverage --workspace=apps/web
+
+      - name: Rapport de couverture
+        run: |
+          COVERAGE_FILE=apps/web/coverage/coverage-summary.json
+          if [ ! -f "$COVERAGE_FILE" ]; then
+            echo "⚠️  Fichier de couverture non trouvé"
+            exit 0
+          fi
+          LINES=$(node -e "const c=JSON.parse(require('fs').readFileSync('$COVERAGE_FILE','utf8'));console.log(c.total.lines.pct)")
+          BRANCHES=$(node -e "const c=JSON.parse(require('fs').readFileSync('$COVERAGE_FILE','utf8'));console.log(c.total.branches.pct)")
+          echo "📊 Couverture lignes : ${LINES}%"
+          echo "📊 Couverture branches : ${BRANCHES}%"
+          echo "ℹ️  Objectif : augmentation progressive (baseline ~3.7%)"
+
+      - name: Upload rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: apps/web/coverage/
+          retention-days: 14
+
+  # ─── Build ────────────────────────────────────────────
+  build:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    needs: [lint, docs, test-backend, test-frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build production
         run: npm run build
+
+      - name: Vérifier le build
+        run: |
+          if [ ! -d "apps/web/dist" ]; then
+            echo "❌ Le dossier dist/ n'a pas été créé"
+            exit 1
+          fi
+          FILE_COUNT=$(find apps/web/dist -type f | wc -l | tr -d ' ')
+          echo "✅ Build réussi : $FILE_COUNT fichiers générés"

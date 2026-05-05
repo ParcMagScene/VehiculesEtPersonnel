@@ -5,7 +5,7 @@
 .pcm-overlay {
   position: fixed;
   inset: 0;
-  background: var(--theme-overlay);
+  background: var(--surface-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -15,7 +15,7 @@
 }
 
 .pcm-modal {
-  background: var(--theme-bg-card);
+  background: var(--surface-primary);
   border-radius: var(--radius-xl);
   width: 420px;
   max-width: 95vw;
@@ -28,8 +28,14 @@
 }
 
 @keyframes pcmSlideUp {
-  from { opacity: 0; transform: translateY(20px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ── Header ── */
@@ -38,7 +44,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
 }
 
 .pcm-header-info {
@@ -70,7 +76,7 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--close-btn-hover-bg);
   background: var(--close-btn-bg);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -101,7 +107,7 @@
 .pcm-cal-month {
   font-weight: 700;
   font-size: 15px;
-  color: var(--theme-text-primary);
+  color: var(--text-body);
   text-transform: capitalize;
 }
 
@@ -111,17 +117,17 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--theme-border);
-  background: var(--theme-bg-card);
+  border: 1px solid var(--border-default);
+  background: var(--surface-primary);
   border-radius: var(--radius-md);
   cursor: pointer;
-  color: var(--theme-text-secondary);
+  color: var(--text-primary);
   transition: all 0.15s;
 }
 
 .pcm-nav-btn:hover {
-  background: var(--theme-border-light);
-  border-color: var(--theme-border);
+  background: var(--surface-tertiary);
+  border-color: var(--border-default);
 }
 
 .pcm-cal-grid {
@@ -134,7 +140,7 @@
   text-align: center;
   font-size: var(--font-xs);
   font-weight: 600;
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   padding: 4px 0;
   text-transform: uppercase;
 }
@@ -151,44 +157,44 @@
   border-radius: var(--radius-md);
   font-size: var(--font-base);
   font-weight: 500;
-  color: var(--theme-text-dark);
+  color: var(--text-body);
   transition: all 0.12s;
   position: relative;
 }
 
 .pcm-cal-day:hover:not(.other-month) {
-  background: var(--theme-border-light);
+  background: var(--surface-tertiary);
 }
 
 .pcm-cal-day.other-month {
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   opacity: 0.5;
 }
 
 .pcm-cal-day.weekend {
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
 }
 
 .pcm-cal-day.today {
   font-weight: 800;
-  box-shadow: inset 0 0 0 2px var(--theme-info);
+  box-shadow: inset 0 0 0 2px var(--feedback-info);
 }
 
 .pcm-cal-day.in-range {
-  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 12%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--feedback-info)) 12%, transparent);
   border-radius: 0;
 }
 
 .pcm-cal-day.range-start {
-  background: var(--range-color, var(--theme-info));
-  color: var(--theme-text-inverse);
+  background: var(--range-color, var(--feedback-info));
+  color: var(--text-inverse);
   font-weight: 700;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
 }
 
 .pcm-cal-day.range-end {
-  background: var(--range-color, var(--theme-info));
-  color: var(--theme-text-inverse);
+  background: var(--range-color, var(--feedback-info));
+  color: var(--text-inverse);
   font-weight: 700;
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
@@ -199,7 +205,7 @@
 
 /* Périodes déjà enregistrées */
 .pcm-cal-day.saved {
-  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 22%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--feedback-info)) 22%, transparent);
   border-radius: 0;
   position: relative;
 }
@@ -213,19 +219,19 @@
   width: 4px;
   height: 4px;
   border-radius: var(--radius-full);
-  background: var(--range-color, var(--theme-info));
+  background: var(--range-color, var(--feedback-info));
   opacity: 0.7;
 }
 
 /* Quand saved + in-range, la sélection active prime */
 .pcm-cal-day.saved.in-range {
-  background: color-mix(in srgb, var(--range-color, var(--theme-info)) 12%, transparent);
+  background: color-mix(in srgb, var(--range-color, var(--feedback-info)) 12%, transparent);
 }
 
 .pcm-cal-day.saved.range-start,
 .pcm-cal-day.saved.range-end {
-  background: var(--range-color, var(--theme-info));
-  color: var(--theme-text-inverse);
+  background: var(--range-color, var(--feedback-info));
+  color: var(--text-inverse);
 }
 
 /* ── Options ── */
@@ -234,7 +240,7 @@
   flex-direction: column;
   gap: 10px;
   padding-top: 12px;
-  border-top: 1px solid var(--theme-border);
+  border-top: 1px solid var(--border-default);
 }
 
 .pcm-option-row {
@@ -246,16 +252,16 @@
 .pcm-option-row > label {
   font-size: var(--font-sm);
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   min-width: 44px;
 }
 
 .pcm-period-toggle {
   display: flex;
-  background: var(--theme-border-light);
+  background: var(--border-subtle);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
 }
 
 .pcm-period-toggle button {
@@ -264,19 +270,19 @@
   background: none;
   font-size: var(--font-xs);
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .pcm-period-toggle button.active {
-  background: var(--theme-info);
-  color: var(--theme-text-inverse);
+  background: var(--feedback-info);
+  color: var(--text-inverse);
 }
 
 .pcm-date-display {
   font-size: var(--font-sm);
-  color: var(--theme-text-muted);
+  color: var(--text-subtle);
   margin-left: auto;
 }
 
@@ -296,12 +302,12 @@
 .pcm-reason label {
   font-size: var(--font-sm);
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
 }
 
 .pcm-reason input {
   padding: 8px 12px;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
   outline: none;
@@ -309,7 +315,7 @@
 }
 
 .pcm-reason input:focus {
-  border-color: var(--theme-info);
+  border-color: var(--feedback-info);
   box-shadow: var(--focus-ring);
 }
 
@@ -318,12 +324,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--theme-warning-bg);
-  border: 1px solid var(--theme-warning-border);
+  background: var(--feedback-warning-bg);
+  border: 1px solid var(--feedback-warning-border);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-warning-text);
+  color: var(--feedback-warning-text);
 }
 
 .pcm-approval-notice {
@@ -331,12 +337,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--theme-info-bg);
-  border: 1px solid var(--theme-info-border);
+  background: var(--feedback-info-bg);
+  border: 1px solid var(--feedback-info-border);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-info-dark);
+  color: var(--feedback-info-text);
 }
 
 .pcm-error {
@@ -344,12 +350,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: var(--theme-danger-bg);
-  border: 1px solid var(--btn-danger-hover-bg);
+  background: var(--feedback-error-bg);
+  border: 1px solid var(--feedback-error-border);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-danger-dark);
+  color: var(--feedback-error-text);
 }
 
 .pcm-success-banner {
@@ -358,12 +364,12 @@
   gap: 8px;
   padding: 10px 14px;
   margin: 0 20px 12px;
-  background: var(--theme-success-bg);
-  border: 1px solid var(--theme-success-border);
+  background: var(--feedback-success-bg);
+  border: 1px solid var(--feedback-success-border);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-success-text-alt);
+  color: var(--feedback-success-text);
   animation: fadeIn 0.2s ease;
 }
 
@@ -374,24 +380,24 @@
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 20px;
-  border-top: 1px solid var(--theme-border);
+  border-top: 1px solid var(--border-default);
 }
 
 .pcm-btn-cancel {
   padding: 8px 16px;
-  border: 1px solid var(--theme-border);
-  background: var(--theme-bg-card);
+  border: 1px solid var(--border-default);
+  background: var(--surface-primary);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .pcm-btn-cancel:hover {
-  background: var(--theme-bg-page);
-  border-color: var(--theme-border);
+  background: var(--surface-page);
+  border-color: var(--border-default);
 }
 
 .pcm-btn-submit {
@@ -403,7 +409,7 @@
   border-radius: var(--radius-md);
   font-size: var(--font-base);
   font-weight: 700;
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -444,10 +450,10 @@
 
 .pcm-time-input {
   padding: 6px 10px;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--theme-bg-card);
-  color: var(--theme-text-primary);
+  background: var(--surface-primary);
+  color: var(--text-body);
   font-size: var(--font-base);
   font-weight: 600;
   width: 110px;
@@ -461,7 +467,7 @@
 }
 
 .pcm-time-sep {
-  color: var(--theme-text-tertiary);
+  color: var(--text-subtle);
   font-size: var(--font-md);
 }
 
@@ -480,10 +486,10 @@
   align-items: center;
   gap: 5px;
   padding: 6px 14px;
-  border: 1px solid var(--theme-border);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--theme-bg-card);
-  color: var(--theme-text-secondary);
+  background: var(--surface-primary);
+  color: var(--text-muted);
   font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
@@ -491,18 +497,18 @@
 }
 
 .pcm-cat-btn:hover {
-  border-color: var(--theme-text-tertiary);
+  border-color: var(--text-subtle);
 }
 
 .pcm-cat-btn.active.pro {
   background: var(--theme-cyan-dark);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   border-color: var(--theme-cyan-dark);
 }
 
 .pcm-cat-btn.active.perso {
   background: var(--theme-primary-light);
-  color: var(--theme-text-inverse);
+  color: var(--text-inverse);
   border-color: var(--theme-primary-light);
 }
 
@@ -516,11 +522,11 @@
   align-items: center;
   gap: 6px;
   font-size: var(--font-base);
-  color: var(--theme-text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
 }
 
-.pcm-checkbox-label input[type="checkbox"] {
+.pcm-checkbox-label input[type='checkbox'] {
   accent-color: var(--theme-cyan);
   width: 16px;
   height: 16px;
@@ -529,6 +535,6 @@
 
 .pcm-google-warn {
   font-size: var(--font-xs);
-  color: var(--theme-warning-text, var(--theme-warning));
+  color: var(--feedback-warning-text, var(--feedback-warning));
   margin-left: auto;
 }

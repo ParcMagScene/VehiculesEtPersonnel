@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { join } from 'path'
+import { defineConfig } from 'vite'
 
 // Plugin : redirection auto quand le navigateur demande un asset périmé (ancien hash)
 function staleAssetReload() {
@@ -11,7 +11,7 @@ function staleAssetReload() {
     configurePreviewServer(server) {
       server.middlewares.use((req, res, next) => {
         // Uniquement pour les fichiers /assets/ avec hash (ex: PlanningPanel-DYyH5a4J.js)
-        if (req.url?.startsWith('/assets/') && /\-[a-zA-Z0-9_]{6,}\.(js|css)$/.test(req.url)) {
+        if (req.url?.startsWith('/assets/') && /-[a-zA-Z0-9_]{6,}\.(js|css)$/.test(req.url)) {
           const filePath = join(distAssets, req.url.replace('/assets/', ''));
           if (!existsSync(filePath)) {
             if (req.url.endsWith('.js')) {
@@ -31,6 +31,32 @@ function staleAssetReload() {
   }
 }
 
+// Plugin : SPA fallback — sert index.html pour toute route sans extension (support F5)
+function spaFallback() {
+  return {
+    name: 'spa-fallback',
+    configurePreviewServer(server) {
+      // Retourner une fonction = middleware post-statique (s'exécute si aucun fichier trouvé)
+      return () => {
+        server.middlewares.use((req, res, next) => {
+          const url = (req.url || '/').split('?')[0];
+          // Laisser passer les ressources avec extension (.js, .css, .png…)
+          if (/\.[a-z0-9]+$/i.test(url)) return next();
+          const indexPath = join(import.meta.dirname, 'dist', 'index.html');
+          if (existsSync(indexPath)) {
+            res.writeHead(200, {
+              'Content-Type': 'text/html; charset=utf-8',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            });
+            return res.end(readFileSync(indexPath));
+          }
+          next();
+        });
+      };
+    },
+  };
+}
+
 // Plugin : headers de cache intelligents (HTML = no-cache, assets hashés = immutable)
 function smartCacheHeaders() {
   return {
@@ -42,7 +68,7 @@ function smartCacheHeaders() {
         res.setHeader = (name, value) => {
           if (name.toLowerCase() === 'cache-control') {
             // Assets avec hash → cache longue durée (le hash change à chaque build)
-            if (url.startsWith('/assets/') && /\-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)) {
+            if (url.startsWith('/assets/') && /-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)) {
               return origSetHeader(name, 'public, max-age=31536000, immutable');
             }
             // HTML et autres → pas de cache
@@ -57,14 +83,27 @@ function smartCacheHeaders() {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), staleAssetReload(), smartCacheHeaders()],
+  plugins: [react(), staleAssetReload(), smartCacheHeaders(), spaFallback()],
   // Le dossier public est à la racine du monorepo
   publicDir: '../../public',
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.js',
+    css: false,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{js,jsx}'],
+      exclude: ['src/test/**', 'src/**/*.test.*', 'src/**/*.stories.*'],
+    },
+  },
   build: {
     // Supprimer console.log et debugger en production
     minify: 'esbuild',
     target: 'es2020',
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 500,
     // Source maps pour le debugging production
     sourcemap: false, // [AUDIT FIX] Désactivé en production pour ne pas exposer le code source
     rollupOptions: {
@@ -96,11 +135,17 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'http://localhost:3003',
         changeOrigin: true
-      }
+      },
+      '/tv-client': {
+        target: 'http://localhost:3003',
+        changeOrigin: true      },
+      '/catalogues': {
+        target: 'http://localhost:3003',
+        changeOrigin: true      }
     }
   },
   preview: {
-    // MODE PROD — proxy vers le backend PROD sur port 3002
+    // MODE PROD — proxy vers le backend PROD (HTTPS :3443)
     host: '0.0.0.0',
     port: 4173,
     allowedHosts: true,
@@ -112,8 +157,10 @@ export default defineConfig(({ mode }) => ({
         "script-src 'self' https://accounts.google.com https://maps.googleapis.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
-        "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com",
-        "connect-src 'self' https://*.googleapis.com https://accounts.google.com",
+        // Tuiles OSM + Carto (subdomaines a/b/c ET domaine racine)
+        "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.basemaps.cartocdn.com https://basemaps.cartocdn.com",
+        // Nominatim (géocodage) + OSRM (routing)
+        "connect-src 'self' https://*.googleapis.com https://accounts.google.com https://nominatim.openstreetmap.org https://router.project-osrm.org",
         "frame-src 'self' blob: https://accounts.google.com",
         "object-src 'none'",
         "base-uri 'self'",
@@ -122,9 +169,18 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      }
+        target: 'https://localhost:3443',
+        changeOrigin: true,
+        secure: false
+      },
+      '/tv-client': {
+        target: 'https://localhost:3443',
+        changeOrigin: true,
+        secure: false      },
+      '/catalogues': {
+        target: 'https://localhost:3443',
+        changeOrigin: true,
+        secure: false      }
     }
   },
   optimizeDeps: {

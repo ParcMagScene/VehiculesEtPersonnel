@@ -19,12 +19,11 @@
      6. flat-cold          — Tons froids, acier bleu
    ═══════════════════════════════════════════════════════════════════════ */
 
-
 /* ═══════════════════════════════════════════════════════
    1. FLAT PASTEL — Light
    Tons doux, féminins, chaleureux
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-pastel"] {
+[data-palette='flat-pastel'] {
   /* ─── Couleurs principales ─── */
   --theme-primary: #7b8fb2;
   --theme-secondary: #a08db8;
@@ -99,11 +98,10 @@
   --focus-ring: 0 0 0 3px rgba(160, 141, 184, 0.2);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    1. FLAT PASTEL — Dark
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-pastel"][data-theme="dark"] {
+[data-palette='flat-pastel'][data-theme='dark'] {
   --theme-primary: #99aed0;
   --theme-secondary: #bca8d4;
   --theme-primary-dark: #7b8fb2;
@@ -165,12 +163,11 @@
   --focus-ring: 0 0 0 3px rgba(188, 168, 212, 0.2);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    2. FLAT MATERIAL — Light
    Inspiré Google Material Design 3
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-material"] {
+[data-palette='flat-material'] {
   --theme-primary: #1976d2;
   --theme-secondary: #455a64;
   --theme-primary-dark: #1565c0;
@@ -229,18 +226,19 @@
   --btn-secondary-border: 1px solid #e0e0e0;
   --btn-secondary-hover-bg: #e0e0e0;
 
-  --shadow-modal: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12);
-  --shadow-card: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
+  --shadow-modal:
+    0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14),
+    0 9px 46px 8px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
   --shadow-hover: 0 4px 12px rgba(25, 118, 210, 0.15);
   --focus-ring: 0 0 0 3px rgba(25, 118, 210, 0.2);
 }
-
 
 /* ═══════════════════════════════════════════════════════
    2. FLAT MATERIAL — Dark
    Material Design Dark Theme
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-material"][data-theme="dark"] {
+[data-palette='flat-material'][data-theme='dark'] {
   --theme-primary: #64b5f6;
   --theme-secondary: #90a4ae;
   --theme-primary-dark: #42a5f5;
@@ -298,18 +296,17 @@
   --btn-secondary-border: 1px solid #424242;
   --btn-secondary-hover-bg: #424242;
 
-  --shadow-modal: 0 11px 15px -7px rgba(0,0,0,.4), 0 24px 38px 3px rgba(0,0,0,.3);
-  --shadow-card: 0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-modal: 0 11px 15px -7px rgba(0, 0, 0, 0.4), 0 24px 38px 3px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-hover: 0 4px 12px rgba(100, 181, 246, 0.2);
   --focus-ring: 0 0 0 3px rgba(100, 181, 246, 0.25);
 }
-
 
 /* ═══════════════════════════════════════════════════════
    3. FLAT MINIMAL — Light
    Monochrome épuré, accent rouge discret
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-minimal"] {
+[data-palette='flat-minimal'] {
   --theme-primary: #37474f;
   --theme-secondary: #78909c;
   --theme-primary-dark: #263238;
@@ -374,11 +371,10 @@
   --focus-ring: 0 0 0 3px rgba(55, 71, 79, 0.15);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    3. FLAT MINIMAL — Dark
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-minimal"][data-theme="dark"] {
+[data-palette='flat-minimal'][data-theme='dark'] {
   --theme-primary: #b0bec5;
   --theme-secondary: #78909c;
   --theme-primary-dark: #90a4ae;
@@ -442,12 +438,11 @@
   --focus-ring: 0 0 0 3px rgba(176, 190, 197, 0.2);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    4. FLAT NEON SOFT — Light
    Cyberpunk adouci, néons atténués
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-neon-soft"] {
+[data-palette='flat-neon-soft'] {
   --theme-primary: #00acc1;
   --theme-secondary: #7b1fa2;
   --theme-primary-dark: #00838f;
@@ -512,11 +507,10 @@
   --focus-ring: 0 0 0 3px rgba(0, 172, 193, 0.2);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    4. FLAT NEON SOFT — Dark
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-neon-soft"][data-theme="dark"] {
+[data-palette='flat-neon-soft'][data-theme='dark'] {
   --theme-primary: #4dd0e1;
   --theme-secondary: #ce93d8;
   --theme-primary-dark: #26c6da;
@@ -580,12 +574,11 @@
   --focus-ring: 0 0 0 3px rgba(77, 208, 225, 0.2);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    5. FLAT WARM — Light
    Terracotta, tons chauds, terre
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-warm"] {
+[data-palette='flat-warm'] {
   --theme-primary: #bf6530;
   --theme-secondary: #795548;
   --theme-primary-dark: #a5541e;
@@ -656,11 +649,10 @@
   --focus-ring: 0 0 0 3px rgba(191, 101, 48, 0.18);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    5. FLAT WARM — Dark
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-warm"][data-theme="dark"] {
+[data-palette='flat-warm'][data-theme='dark'] {
   --theme-primary: #e09060;
   --theme-secondary: #a1887f;
   --theme-primary-dark: #bf6530;
@@ -729,12 +721,11 @@
   --focus-ring: 0 0 0 3px rgba(224, 144, 96, 0.2);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    6. FLAT COLD — Light
    Acier bleu, tons froids
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-cold"] {
+[data-palette='flat-cold'] {
   --theme-primary: #0277bd;
   --theme-secondary: #455a64;
   --theme-primary-dark: #01579b;
@@ -799,11 +790,10 @@
   --focus-ring: 0 0 0 3px rgba(2, 119, 189, 0.18);
 }
 
-
 /* ═══════════════════════════════════════════════════════
    6. FLAT COLD — Dark
    ═══════════════════════════════════════════════════════ */
-[data-palette="flat-cold"][data-theme="dark"] {
+[data-palette='flat-cold'][data-theme='dark'] {
   --theme-primary: #4fc3f7;
   --theme-secondary: #78909c;
   --theme-primary-dark: #29b6f6;

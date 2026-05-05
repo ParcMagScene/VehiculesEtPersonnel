@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
 import './Drawer.css';
+
+import { X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * Drawer — Panneau latéral glissant (slide-panel).
@@ -28,6 +29,7 @@ function Drawer({
   /* ── Open animation ── */
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setVisible(true);
       // rAF to let the DOM paint before triggering CSS transition
       requestAnimationFrame(() => requestAnimationFrame(() => setAnimating(true)));
@@ -53,22 +55,23 @@ function Drawer({
     if (!open || !overlay) return;
     const orig = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = orig; };
+    return () => {
+      document.body.style.overflow = orig;
+    };
   }, [open, overlay]);
 
   const handleOverlayClick = useCallback(
-    (e) => { if (e.target === e.currentTarget) onClose?.(); },
+    (e) => {
+      if (e.target === e.currentTarget) onClose?.();
+    },
     [onClose],
   );
 
   if (!visible) return null;
 
-  const cls = [
-    'ui-drawer',
-    `ui-drawer--${side}`,
-    animating && 'ui-drawer--open',
-    className,
-  ].filter(Boolean).join(' ');
+  const cls = ['ui-drawer', `ui-drawer--${side}`, animating && 'ui-drawer--open', className]
+    .filter(Boolean)
+    .join(' ');
 
   const style = { width: typeof width === 'number' ? `${width}px` : width };
 
@@ -77,7 +80,7 @@ function Drawer({
       className={`ui-drawer-backdrop ${animating ? 'ui-drawer-backdrop--visible' : ''}`}
       onMouseDown={overlay ? handleOverlayClick : undefined}
     >
-      <aside className={cls} ref={panelRef} style={style} role="complementary">
+      <aside className={cls} ref={panelRef} style={style}>
         {title && (
           <div className="ui-drawer-header">
             <div className="ui-drawer-title">
@@ -87,7 +90,12 @@ function Drawer({
             <div className="ui-drawer-header-actions">
               {headerActions}
               {onClose && (
-                <button className="ui-drawer-close" onClick={onClose} aria-label="Fermer" type="button">
+                <button
+                  className="ui-drawer-close"
+                  onClick={onClose}
+                  aria-label="Fermer"
+                  type="button"
+                >
                   <X size={18} />
                 </button>
               )}

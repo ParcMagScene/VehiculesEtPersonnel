@@ -6,21 +6,12 @@ import { Loader as LoaderIcon } from 'lucide-react';
  * Tailles : sm (16) | md (24) | lg (32) | xl (48)
  * Mode    : inline (dans un bouton/texte) | overlay (plein écran/conteneur)
  */
-export function Spinner({
-  size = 'md',
-  className = '',
-  ...props
-}) {
+export function Spinner({ size = 'md', className = '', ...props }) {
   const SIZE_MAP = { sm: 16, md: 24, lg: 32, xl: 48 };
-  const px = typeof size === 'number' ? size : (SIZE_MAP[size] || 24);
+  const px = typeof size === 'number' ? size : SIZE_MAP[size] || 24;
 
   return (
-    <LoaderIcon
-      size={px}
-      className={`ui-spinner ${className}`}
-      aria-hidden="true"
-      {...props}
-    />
+    <LoaderIcon size={px} className={`ui-spinner ${className}`} aria-hidden="true" {...props} />
   );
 }
 
@@ -29,12 +20,7 @@ export function Spinner({
  *
  * Props : label (texte optionnel), visible
  */
-export function LoadingOverlay({
-  label,
-  visible = true,
-  className = '',
-  ...props
-}) {
+export function LoadingOverlay({ label, visible = true, className = '', ...props }) {
   if (!visible) return null;
 
   return (

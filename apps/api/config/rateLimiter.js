@@ -34,3 +34,15 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+/**
+ * Rate limiter pour les endpoints Google Calendar (proxy API Google)
+ * 60 requêtes/min/IP max pour éviter d'épuiser le quota Google
+ */
+export const googleCalendarLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: process.env.NODE_ENV === 'development' ? 120 : 60,
+  message: { error: 'Trop de requêtes Google Calendar. Réessayez dans une minute.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

@@ -1,9 +1,7 @@
 // API — Display Dashboard (Écrans, Playlists, Médias, Messages, Templates, Logs, Stats, TV Config)
-import { API_URL } from './base.js';
 
 export function registerDisplayMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
-
     // Écrans
     async getDisplayScreens() {
       return this.request('/display/screens');
@@ -35,13 +33,19 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/playlists', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateDisplayPlaylist(id, data) {
-      return this.request(`/display/playlists/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      return this.request(`/display/playlists/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
     },
     async deleteDisplayPlaylist(id) {
       return this.request(`/display/playlists/${id}`, { method: 'DELETE' });
     },
     async updateDisplayPlaylistItems(id, items) {
-      return this.request(`/display/playlists/${id}/items`, { method: 'PUT', body: JSON.stringify({ items }) });
+      return this.request(`/display/playlists/${id}/items`, {
+        method: 'PUT',
+        body: JSON.stringify({ items }),
+      });
     },
 
     // Médias
@@ -50,16 +54,7 @@ export function registerDisplayMethods(ApiClient) {
       return this.request(`/display/media${query}`);
     },
     async uploadDisplayMedia(formData) {
-      const response = await fetch(`${API_URL}/display/media`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || `Erreur ${response.status}`);
-      }
-      return response.json();
+      return this.requestFormData('/display/media', formData);
     },
     async deleteDisplayMedia(id) {
       return this.request(`/display/media/${id}`, { method: 'DELETE' });
@@ -88,7 +83,10 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/templates', { method: 'POST', body: JSON.stringify(data) });
     },
     async updateDisplayTemplate(id, data) {
-      return this.request(`/display/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+      return this.request(`/display/templates/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
     },
     async deleteDisplayTemplate(id) {
       return this.request(`/display/templates/${id}`, { method: 'DELETE' });
@@ -116,7 +114,10 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/welcome-messages');
     },
     async saveDisplayWelcomeMessages(data) {
-      return this.request('/display/welcome-messages', { method: 'POST', body: JSON.stringify(data) });
+      return this.request('/display/welcome-messages', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
     },
     async getDisplayWelcomeMessage() {
       return this.request('/display/welcome-message');
@@ -127,7 +128,10 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/color-rules');
     },
     async saveDisplayColorRules(rules) {
-      return this.request('/display/color-rules', { method: 'POST', body: JSON.stringify({ rules }) });
+      return this.request('/display/color-rules', {
+        method: 'POST',
+        body: JSON.stringify({ rules }),
+      });
     },
 
     // Sidebar config
@@ -135,7 +139,10 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/sidebar-config');
     },
     async saveDisplaySidebarConfig(sections) {
-      return this.request('/display/sidebar-config', { method: 'POST', body: JSON.stringify({ sections }) });
+      return this.request('/display/sidebar-config', {
+        method: 'POST',
+        body: JSON.stringify({ sections }),
+      });
     },
 
     // GIFs / Icônes de lieux
@@ -143,18 +150,21 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/location-gifs');
     },
     async uploadDisplayLocationGif(formData) {
-      const response = await fetch(`${API_URL}/display/location-gifs`, { method: 'POST', credentials: 'include', body: formData });
-      if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
-      return response.json();
+      return this.requestFormData('/display/location-gifs', formData);
     },
     async deleteDisplayLocationGif(filename) {
-      return this.request(`/display/location-gifs/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      return this.request(`/display/location-gifs/${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+      });
     },
     async getDisplayLocationIconRules() {
       return this.request('/display/location-icon-rules');
     },
     async saveDisplayLocationIconRules(rules) {
-      return this.request('/display/location-icon-rules', { method: 'POST', body: JSON.stringify({ rules }) });
+      return this.request('/display/location-icon-rules', {
+        method: 'POST',
+        body: JSON.stringify({ rules }),
+      });
     },
 
     // Logo
@@ -162,16 +172,12 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/logo');
     },
     async uploadDisplayLogo(formData) {
-      const response = await fetch(`${API_URL}/display/logo`, { method: 'POST', credentials: 'include', body: formData });
-      if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
-      return response.json();
+      return this.requestFormData('/display/logo', formData);
     },
 
     // Photo furtive
     async uploadDisplaySneakyPhoto(formData) {
-      const response = await fetch(`${API_URL}/display/sneaky-photo`, { method: 'POST', credentials: 'include', body: formData });
-      if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Erreur ${response.status}`); }
-      return response.json();
+      return this.requestFormData('/display/sneaky-photo', formData);
     },
     async getDisplaySneakyPhotoStatus() {
       return this.request('/display/sneaky-photo/status');
@@ -182,7 +188,10 @@ export function registerDisplayMethods(ApiClient) {
 
     // Message furtif
     async activateDisplaySneakyMessage(message, duration) {
-      return this.request('/display/sneaky-message', { method: 'POST', body: JSON.stringify({ message, duration }) });
+      return this.request('/display/sneaky-message', {
+        method: 'POST',
+        body: JSON.stringify({ message, duration }),
+      });
     },
     async getDisplaySneakyMessageStatus() {
       return this.request('/display/sneaky-message/status');
@@ -196,18 +205,13 @@ export function registerDisplayMethods(ApiClient) {
       return this.request('/display/weather');
     },
 
-    // Sonos
-    async getDisplaySonosConfig() {
-      return this.request('/display/sonos-config');
-    },
-    async saveDisplaySonosConfig(sonosIP) {
-      return this.request('/display/sonos-config', { method: 'POST', body: JSON.stringify({ sonosIP }) });
-    },
-    async getDisplaySonosNowPlaying() {
-      return this.request('/display/sonos-now-playing');
-    },
+    // Sonos → voir api/sonos.js
+
     async getDisplayTVState() {
       return this.request('/display/tv-state');
+    },
+    async getDisplayTVPublicState() {
+      return this.request('/display/tv-public-state');
     },
     async triggerTVAlarmTest() {
       return this.request('/display/tv/test-alarm', { method: 'POST' });

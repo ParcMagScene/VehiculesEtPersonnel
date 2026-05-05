@@ -2,7 +2,8 @@
 // CameraGrid.jsx — Grille multi-caméras (1/4/9/16)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 
 const GRID_LAYOUTS = [
@@ -12,15 +13,35 @@ const GRID_LAYOUTS = [
   { id: 16, cols: 4 },
 ];
 
-const CameraGrid = ({ cameras = [], proxyAvailable = false, gridSize = 4, page = 0, onSelectCamera, selectedCameraId, onPlayback }) => {
+const CameraGrid = ({
+  cameras = [],
+  proxyAvailable = false,
+  gridSize = 4,
+  page = 0,
+  onSelectCamera,
+  selectedCameraId,
+  onPlayback,
+}) => {
   const [fullscreenCamera, setFullscreenCamera] = useState(null);
 
-  const layout = GRID_LAYOUTS.find(l => l.id === gridSize) || GRID_LAYOUTS[1];
-  const enabledCameras = cameras.filter(c => c.enabled);
-  const visibleCameras = enabledCameras.slice(page * gridSize, (page + 1) * gridSize);
+  const layout = GRID_LAYOUTS.find((l) => l.id === gridSize) || GRID_LAYOUTS[1];
+  const enabledCameras = useMemo(() => cameras.filter((c) => c.enabled), [cameras]);
+  const visibleCameras = useMemo(
+    () => enabledCameras.slice(page * gridSize, (page + 1) * gridSize),
+    [enabledCameras, page, gridSize],
+  );
+
+  useEffect(() => {
+    setFullscreenCamera((current) => {
+      if (!current) return current;
+      const stillAvailable = enabledCameras.find((cam) => cam.id === current.id);
+      if (!stillAvailable) return null;
+      return stillAvailable === current ? current : stillAvailable;
+    });
+  }, [enabledCameras]);
 
   const handleFullscreen = useCallback((camera) => {
-    setFullscreenCamera(prev => prev?.id === camera.id ? null : camera);
+    setFullscreenCamera((prev) => (prev?.id === camera.id ? null : camera));
   }, []);
 
   if (fullscreenCamera) {

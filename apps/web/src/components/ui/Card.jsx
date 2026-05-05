@@ -1,9 +1,10 @@
-import React from 'react';
 import './ui.css';
+
+import React from 'react';
 
 /**
  * Card — Conteneur générique avec fond, bordure, ombre
- * 
+ *
  * @param {string}  className  Classes additionnelles
  * @param {boolean} flat       Sans ombre
  * @param {boolean} compact    Padding réduit
@@ -12,7 +13,7 @@ import './ui.css';
  */
 const Card = React.forwardRef(function Card(
   { className = '', flat = false, compact = false, onClick, style, children, ...rest },
-  ref
+  ref,
 ) {
   const cls = [
     'ui-card',
@@ -25,7 +26,15 @@ const Card = React.forwardRef(function Card(
     .join(' ');
 
   return (
-    <div ref={ref} className={cls} style={style} onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined} {...rest}>
+    <div
+      ref={ref}
+      className={cls}
+      style={style}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      {...rest}
+    >
       {children}
     </div>
   );

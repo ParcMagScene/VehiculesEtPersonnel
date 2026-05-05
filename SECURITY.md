@@ -81,6 +81,16 @@ Nous nous engageons à :
 
 Voir [SECURITY_AUDIT.md](docs/02-Securite/SECURITY_AUDIT.md) pour le rapport complet.
 
+## Risques acceptés (Known Accepted Risks)
+
+| CVE / Advisory | Package | Sévérité | Raison de l'acceptation | Atténuation |
+|---|---|---|---|---|
+| GHSA-67mh-4wv8-2f99 | esbuild ≤0.24.2 (via vite@5.4.21) | Moderate | Affecte uniquement le serveur de dev local, aucun impact en production | Vite 5.4.21 est la dernière v5 ; la montée en v6/v8 est un breaking change majeur. Correction prévue lors de la migration Vite majeure. |
+| GHSA-2p57-rm9w-gvfp | ip@* (via sonos@1.14.3) | High | Toutes versions affectées — pas de fix disponible. Sonos utilise ip pour la découverte réseau locale uniquement. | Protection SSRF applicative dans `displayRoutes.js` (Phase B). Blocage des IPs privées/localhost au niveau applicatif. |
+| GHSA-5v7r-6r5c-r473 | file-type 13.0-21.3 | Moderate | Le fix (v22) est un breaking change ESM. Parser ASF touché par boucle infinie sur input malformé. | Les fichiers sont validés par taille max (50MB) et type MIME avant parsing. Risque limité aux uploads admin. |
+
+> **Date de revue** : 9 avril 2026 — Prochaine revue prévue : 9 juillet 2026
+
 ## Dépendances
 
 Exécutez `npm audit` régulièrement. Voir la section dépendances du rapport d'audit pour l'état actuel.

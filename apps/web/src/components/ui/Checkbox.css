@@ -40,7 +40,7 @@
 }
 
 .ui-checkbox__input:checked + .ui-checkbox__box,
-.ui-checkbox__input[aria-checked="mixed"] + .ui-checkbox__box {
+.ui-checkbox__input[aria-checked='mixed'] + .ui-checkbox__box {
   background: var(--theme-primary);
   border-color: var(--theme-primary);
 }

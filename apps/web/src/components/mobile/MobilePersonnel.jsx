@@ -1,38 +1,68 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Phone, Mail, Star, Shield, Truck, User, Calendar } from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, isSameDay, isWithinInterval, startOfDay, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import api from '../../utils/api';
-import { formatPhoneDisplay } from '../PhoneInput';
 import './MobilePersonnel.css';
-import { Avatar, Button, Spinner } from '@/design-system';
+
+import {
+  addDays,
+  endOfWeek,
+  format,
+  isSameDay,
+  isWithinInterval,
+  parseISO,
+  startOfDay,
+  startOfWeek,
+} from 'date-fns';
+import { fr } from 'date-fns/locale';
+import {
+  ArrowLeft,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  Phone,
+  Shield,
+  Star,
+  Truck,
+  User,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { Avatar, Button, Skeleton } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import usePullToRefresh from '../../hooks/usePullToRefresh';
+import api from '../../utils/api';
+import { formatPhoneDisplay } from '../PhoneInput';
+import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 const skillIcon = (skillName) => {
   if (!skillName) return <Star size={12} />;
   const n = skillName.toLowerCase();
   if (n.includes('conduite')) return <Truck size={12} />;
-  if (n.includes('sécurité') || n.includes('securite') || n.includes('habilitation')) return <Shield size={12} />;
+  if (n.includes('sécurité') || n.includes('securite') || n.includes('habilitation'))
+    return <Shield size={12} />;
   return <Star size={12} />;
 };
 
 const MISSION_COLORS = {
-  confirmed: '#10b981',
+  confirmed: STATUS_COLORS.success,
   draft: '#94a3b8',
-  cancelled: '#ef4444',
+  cancelled: STATUS_COLORS.danger,
 };
 
 const TASK_SOURCE_COLORS = {
-  affaire: '#3b82f6',
-  manual: '#f59e0b',
-  display_event: '#8b5cf6',
-  google_event: '#06b6d4',
+  affaire: STATUS_COLORS.info,
+  manual: STATUS_COLORS.warning,
+  display_event: ACCENT_COLORS.violet,
+  google_event: ACCENT_COLORS.cyan,
 };
 
 function MobilePersonnel({ onBack, currentUser }) {
   const [persons, setPersons] = useState([]);
-  const [planning, setPlanning] = useState({ missions: [], availabilities: [], taskAssignments: [] });
+  const [planning, setPlanning] = useState({
+    missions: [],
+    availabilities: [],
+    taskAssignments: [],
+  });
   const [loading, setLoading] = useState(true);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [viewMode, setViewMode] = useState('day'); // 'day' | 'week'
@@ -43,8 +73,8 @@ function MobilePersonnel({ onBack, currentUser }) {
 
   // Personnes permanentes actives uniquement
   const permanentPersons = useMemo(
-    () => persons.filter(p => p.status === STATUS.ACTIVE && p.type === 'permanent'),
-    [persons]
+    () => persons.filter((p) => p.status === STATUS.ACTIVE && p.type === 'permanent'),
+    [persons],
   );
 
   // Plage de dates selon le mode
@@ -82,7 +112,9 @@ function MobilePersonnel({ onBack, currentUser }) {
       // Pour un utilisateur simple, trouver son person_id
       let personId = myPersonId;
       if (isSimpleUser && !personId && currentUser?.id) {
-        const myPerson = persData.find(p => p.userId == currentUser.id || p.user_id == currentUser.id);
+        const myPerson = persData.find(
+          (p) => p.userId == currentUser.id || p.user_id == currentUser.id,
+        );
         if (myPerson) {
           personId = myPerson.id;
           setMyPersonId(myPerson.id);
@@ -101,46 +133,83 @@ function MobilePersonnel({ onBack, currentUser }) {
     }
   }, [dateRange, isSimpleUser, currentUser?.id, myPersonId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadData);
 
   // Missions d'une personne pour un jour
-  const getMissionsForPersonDay = useCallback((personId, day) => {
-    return planning.missions.filter(m => {
-      const hasAssignment = m.assignments?.some(a => a.personId === personId || a.person_id === personId);
-      if (!hasAssignment) return false;
-      if (m.status === STATUS.CANCELLED) return false;
-      try {
-        const mStart = startOfDay(parseISO(m.startDate || m.start_date));
-        const mEnd = startOfDay(parseISO(m.endDate || m.end_date));
-        return isWithinInterval(startOfDay(day), { start: mStart, end: mEnd });
-      } catch { return false; }
-    });
-  }, [planning.missions]);
+  const getMissionsForPersonDay = useCallback(
+    (personId, day) => {
+      return planning.missions.filter((m) => {
+        const hasAssignment = m.assignments?.some(
+          (a) => a.personId === personId || a.person_id === personId,
+        );
+        if (!hasAssignment) return false;
+        if (m.status === STATUS.CANCELLED) return false;
+        try {
+          const mStart = startOfDay(parseISO(m.startDate || m.start_date));
+          const mEnd = startOfDay(parseISO(m.endDate || m.end_date));
+          return isWithinInterval(startOfDay(day), { start: mStart, end: mEnd });
+        } catch {
+          return false;
+        }
+      });
+    },
+    [planning.missions],
+  );
 
   // Indisponibilités d'une personne pour un jour
-  const getUnavailForPersonDay = useCallback((personId, day) => {
-    return planning.availabilities.filter(a => {
-      if ((a.personId || a.person_id) !== personId) return false;
-      try {
-        const aStart = startOfDay(parseISO(a.startDate || a.start_date));
-        const aEnd = startOfDay(parseISO(a.endDate || a.end_date));
-        return isWithinInterval(startOfDay(day), { start: aStart, end: aEnd });
-      } catch { return false; }
-    });
-  }, [planning.availabilities]);
+  const getUnavailForPersonDay = useCallback(
+    (personId, day) => {
+      return planning.availabilities.filter((a) => {
+        if ((a.personId || a.person_id) !== personId) return false;
+        if ((a.type || '').toLowerCase() === 'entreprise') return false;
+        try {
+          const aStart = startOfDay(parseISO(a.startDate || a.start_date));
+          const aEnd = startOfDay(parseISO(a.endDate || a.end_date));
+          return isWithinInterval(startOfDay(day), { start: aStart, end: aEnd });
+        } catch {
+          return false;
+        }
+      });
+    },
+    [planning.availabilities],
+  );
+
+  const getEnterpriseForPersonDay = useCallback(
+    (personId, day) => {
+      return planning.availabilities.filter((a) => {
+        if ((a.personId || a.person_id) !== personId) return false;
+        if ((a.type || '').toLowerCase() !== 'entreprise') return false;
+        try {
+          const aStart = startOfDay(parseISO(a.startDate || a.start_date));
+          const aEnd = startOfDay(parseISO(a.endDate || a.end_date));
+          return isWithinInterval(startOfDay(day), { start: aStart, end: aEnd });
+        } catch {
+          return false;
+        }
+      });
+    },
+    [planning.availabilities],
+  );
 
   // Tâches assignées d'une personne pour un jour
-  const getTasksForPersonDay = useCallback((personId, day) => {
-    const dayStr = format(day, 'yyyy-MM-dd');
-    return (planning.taskAssignments || []).filter(ta => {
-      if ((ta.person_id || ta.personId) !== personId) return false;
-      return ta.date === dayStr;
-    });
-  }, [planning.taskAssignments]);
+  const getTasksForPersonDay = useCallback(
+    (personId, day) => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      return (planning.taskAssignments || []).filter((ta) => {
+        if ((ta.person_id || ta.personId) !== personId) return false;
+        return ta.date === dayStr;
+      });
+    },
+    [planning.taskAssignments],
+  );
 
   const navigate = (dir) => {
     const delta = viewMode === 'day' ? 1 : 7;
-    setCurrentDate(prev => addDays(prev, dir * delta));
+    setCurrentDate((prev) => addDays(prev, dir * delta));
   };
 
   // Vue détail personne
@@ -150,7 +219,12 @@ function MobilePersonnel({ onBack, currentUser }) {
     return (
       <div className="mobile-personnel">
         <div className="mpers-header">
-          <Button variant="ghost" className="mpers-back" onClick={() => setSelectedPerson(null)}>
+          <Button
+            variant="ghost"
+            className="mpers-back"
+            onClick={() => setSelectedPerson(null)}
+            aria-label="Retour"
+          >
             <ArrowLeft size={20} />
           </Button>
           <h2>{fullName || `Personnel #${p.id}`}</h2>
@@ -159,17 +233,22 @@ function MobilePersonnel({ onBack, currentUser }) {
         <div className="mpers-detail">
           <div className="mpers-detail-top">
             {p.photo ? (
-              <img src={`/avatars/${p.photo}`} alt="" loading="lazy" className="mpers-detail-photo" />
+              <img
+                src={`/avatars/${p.photo}`}
+                alt=""
+                loading="lazy"
+                className="mpers-detail-photo"
+              />
             ) : (
               <Avatar name={fullName} size="xl" />
             )}
             <h3>{fullName}</h3>
-            <span className={`mpers-status-tag ${p.status === STATUS.ACTIVE ? 'active' : 'inactive'}`}>
+            <span
+              className={`mpers-status-tag ${p.status === STATUS.ACTIVE ? 'active' : 'inactive'}`}
+            >
               {p.status === STATUS.ACTIVE ? 'Actif' : 'Inactif'}
             </span>
-            {p.contractType && (
-              <span className="mpers-contract">{p.contractType}</span>
-            )}
+            {p.contractType && <span className="mpers-contract">{p.contractType}</span>}
           </div>
 
           {/* Coordonnées */}
@@ -216,7 +295,9 @@ function MobilePersonnel({ onBack, currentUser }) {
               <h4>Postes par défaut</h4>
               <div className="mpers-positions">
                 {p.defaultPositions.map((pos, i) => (
-                  <span key={i} className="mpers-position-tag">{pos}</span>
+                  <span key={i} className="mpers-position-tag">
+                    {pos}
+                  </span>
                 ))}
               </div>
             </div>
@@ -238,15 +319,28 @@ function MobilePersonnel({ onBack, currentUser }) {
   const isToday = isSameDay(currentDate, new Date());
 
   return (
-    <div className="mobile-personnel">
+    <div className="mobile-personnel" {...ptrProps}>
+      <PullToRefreshIndicator indicator={ptrIndicator} />
       <div className="mpers-header">
-        <Button variant="ghost" className="mpers-back" onClick={onBack}>
+        <Button variant="ghost" className="mpers-back" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
         <h2>{isSimpleUser ? 'Mon planning' : 'Personnel'}</h2>
         <div className="mpers-view-toggle">
-          <Button variant="ghost" className={viewMode === 'day' ? 'active' : ''} onClick={() => setViewMode('day')}>Jour</Button>
-          <Button variant="ghost" className={viewMode === 'week' ? 'active' : ''} onClick={() => setViewMode('week')}>Semaine</Button>
+          <Button
+            variant="ghost"
+            className={viewMode === 'day' ? 'active' : ''}
+            onClick={() => setViewMode('day')}
+          >
+            Jour
+          </Button>
+          <Button
+            variant="ghost"
+            className={viewMode === 'week' ? 'active' : ''}
+            onClick={() => setViewMode('week')}
+          >
+            Semaine
+          </Button>
         </div>
       </div>
 
@@ -255,31 +349,39 @@ function MobilePersonnel({ onBack, currentUser }) {
         <Button variant="ghost" className="mpers-nav-btn" onClick={() => navigate(-1)}>
           <ChevronLeft size={20} />
         </Button>
-        <Button variant="ghost" className={`mpers-date-label ${isToday ? 'today' : ''}`} onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        <Button
+          variant="ghost"
+          className={`mpers-date-label ${isToday ? 'today' : ''}`}
+          onClick={() => setCurrentDate(startOfDay(new Date()))}
+        >
           {viewMode === 'day'
             ? format(currentDate, 'EEEE d MMMM', { locale: fr })
-            : `${format(dateRange.start, 'd MMM', { locale: fr })} — ${format(dateRange.end, 'd MMM', { locale: fr })}`
-          }
+            : `${format(dateRange.start, 'd MMM', { locale: fr })} — ${format(dateRange.end, 'd MMM', { locale: fr })}`}
         </Button>
         <Button variant="ghost" className="mpers-nav-btn" onClick={() => navigate(1)}>
           <ChevronRight size={20} />
         </Button>
       </div>
       {!isToday && (
-        <Button variant="ghost" className="mpers-today-btn" onClick={() => setCurrentDate(startOfDay(new Date()))}>
+        <Button
+          variant="ghost"
+          className="mpers-today-btn"
+          onClick={() => setCurrentDate(startOfDay(new Date()))}
+        >
           Aujourd'hui
         </Button>
       )}
 
       {loading ? (
         <div className="mpers-loading">
-          <Spinner size="lg" />
-          <p>Chargement...</p>
+          <Skeleton variant="circle" width={48} height={48} style={{ margin: '0 auto 12px' }} />
+          <Skeleton width="50%" height={18} style={{ margin: '0 auto 16px' }} />
+          <Skeleton count={5} width="100%" height={52} gap={8} style={{ borderRadius: 10 }} />
         </div>
       ) : isSimpleUser ? (
         /* ═══ VUE UTILISATEUR SIMPLE — Mon planning ═══ */
         (() => {
-          const myPerson = persons.find(p => p.id === myPersonId);
+          const myPerson = persons.find((p) => p.id === myPersonId);
           if (!myPerson) {
             return (
               <div className="mpers-empty-list">
@@ -293,15 +395,22 @@ function MobilePersonnel({ onBack, currentUser }) {
           if (viewMode === 'day') {
             const missions = getMissionsForPersonDay(myPersonId, currentDate);
             const unavail = getUnavailForPersonDay(myPersonId, currentDate);
+            const enterprisePresence = getEnterpriseForPersonDay(myPersonId, currentDate);
             const tasks = getTasksForPersonDay(myPersonId, currentDate);
             const isUnavailable = unavail.length > 0;
-            const hasContent = missions.length > 0 || tasks.length > 0;
+            const hasContent =
+              missions.length > 0 || tasks.length > 0 || enterprisePresence.length > 0;
             return (
               <div className="mpers-my-planning">
                 {/* En-tête profil */}
                 <div className="mpers-my-profile">
                   {myPerson.photo ? (
-                    <img src={`/avatars/${myPerson.photo}`} alt="" loading="lazy" className="mpers-my-avatar-img" />
+                    <img
+                      src={`/avatars/${myPerson.photo}`}
+                      alt=""
+                      loading="lazy"
+                      className="mpers-my-avatar-img"
+                    />
                   ) : (
                     <Avatar name={fullName} size={48} />
                   )}
@@ -314,10 +423,34 @@ function MobilePersonnel({ onBack, currentUser }) {
                     <h4>Indisponibilité</h4>
                     {unavail.map((u, i) => (
                       <div key={i} className="mpers-my-unavail-card">
-                        <span className="mpers-my-unavail-reason">{u.reason || 'Indisponible'}</span>
+                        <span className="mpers-my-unavail-reason">
+                          {u.reason || 'Indisponible'}
+                        </span>
                         {(u.startDate || u.start_date) && (
                           <span className="mpers-my-unavail-dates">
-                            Du {format(parseISO(u.startDate || u.start_date), 'd MMM', { locale: fr })} au {format(parseISO(u.endDate || u.end_date), 'd MMM', { locale: fr })}
+                            Du{' '}
+                            {format(parseISO(u.startDate || u.start_date), 'd MMM', { locale: fr })}{' '}
+                            au {format(parseISO(u.endDate || u.end_date), 'd MMM', { locale: fr })}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {enterprisePresence.length > 0 ? (
+                  <div className="mpers-my-section">
+                    <h4>Présence entreprise</h4>
+                    {enterprisePresence.map((u, i) => (
+                      <div key={i} className="mpers-my-enterprise-card">
+                        <span className="mpers-my-enterprise-reason">
+                          {u.reason || 'Présence entreprise'}
+                        </span>
+                        {(u.startDate || u.start_date) && (
+                          <span className="mpers-my-unavail-dates">
+                            Du{' '}
+                            {format(parseISO(u.startDate || u.start_date), 'd MMM', { locale: fr })}{' '}
+                            au {format(parseISO(u.endDate || u.end_date), 'd MMM', { locale: fr })}
                           </span>
                         )}
                       </div>
@@ -329,15 +462,24 @@ function MobilePersonnel({ onBack, currentUser }) {
                 {missions.length > 0 && (
                   <div className="mpers-my-section">
                     <h4>Missions</h4>
-                    {missions.map(m => (
-                      <div key={m.id} className="mpers-my-mission-card" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
-                        <div className="mpers-my-mission-title">{m.title || m.affaire || 'Mission'}</div>
+                    {missions.map((m) => (
+                      <div
+                        key={m.id}
+                        className="mpers-my-mission-card"
+                        style={{ borderLeftColor: MISSION_COLORS[m.status] || STATUS_COLORS.info }}
+                      >
+                        <div className="mpers-my-mission-title">
+                          {m.title || m.affaire || 'Mission'}
+                        </div>
                         {(m.clientName || m.client_name) && (
-                          <div className="mpers-my-mission-client">{m.clientName || m.client_name}</div>
+                          <div className="mpers-my-mission-client">
+                            {m.clientName || m.client_name}
+                          </div>
                         )}
                         {(m.startTime || m.start_time) && (
                           <div className="mpers-my-mission-time">
-                            <Calendar size={14} /> {m.startTime || m.start_time}{(m.endTime || m.end_time) ? ` — ${m.endTime || m.end_time}` : ''}
+                            <Calendar size={14} /> {m.startTime || m.start_time}
+                            {m.endTime || m.end_time ? ` — ${m.endTime || m.end_time}` : ''}
                           </div>
                         )}
                         {(m.location || m.address) && (
@@ -352,9 +494,18 @@ function MobilePersonnel({ onBack, currentUser }) {
                 {tasks.length > 0 && (
                   <div className="mpers-my-section">
                     <h4>Tâches</h4>
-                    {tasks.map(ta => (
-                      <div key={ta.id} className="mpers-my-task-card" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
-                        <div className="mpers-my-task-title">{ta.title || ta.affaire_num || 'Tâche'}</div>
+                    {tasks.map((ta) => (
+                      <div
+                        key={ta.id}
+                        className="mpers-my-task-card"
+                        style={{
+                          borderLeftColor:
+                            TASK_SOURCE_COLORS[ta.source_type] || STATUS_COLORS.warning,
+                        }}
+                      >
+                        <div className="mpers-my-task-title">
+                          {ta.title || ta.affaire_num || 'Tâche'}
+                        </div>
                         {ta.section && <div className="mpers-my-task-section">{ta.section}</div>}
                         {ta.period && <div className="mpers-my-task-period">{ta.period}</div>}
                       </div>
@@ -378,7 +529,12 @@ function MobilePersonnel({ onBack, currentUser }) {
             <div className="mpers-my-planning">
               <div className="mpers-my-profile">
                 {myPerson.photo ? (
-                  <img src={`/avatars/${myPerson.photo}`} alt="" loading="lazy" className="mpers-my-avatar-img" />
+                  <img
+                    src={`/avatars/${myPerson.photo}`}
+                    alt=""
+                    loading="lazy"
+                    className="mpers-my-avatar-img"
+                  />
                 ) : (
                   <Avatar name={fullName} size={48} />
                 )}
@@ -386,36 +542,63 @@ function MobilePersonnel({ onBack, currentUser }) {
               </div>
 
               <div className="mpers-my-week-grid">
-                {weekDays.map(d => {
+                {weekDays.map((d) => {
                   const missions = getMissionsForPersonDay(myPersonId, d);
                   const unavail = getUnavailForPersonDay(myPersonId, d);
+                  const enterprisePresence = getEnterpriseForPersonDay(myPersonId, d);
                   const tasks = getTasksForPersonDay(myPersonId, d);
                   const isUnavailable = unavail.length > 0;
-                  const hasContent = missions.length > 0 || tasks.length > 0;
+                  const hasContent =
+                    missions.length > 0 || tasks.length > 0 || enterprisePresence.length > 0;
                   const isDayToday = isSameDay(d, new Date());
                   return (
                     <div
                       key={d.toISOString()}
                       className={`mpers-my-week-day ${isUnavailable ? 'unavail' : ''} ${isDayToday ? 'today' : ''}`}
-                      onClick={() => { setCurrentDate(d); setViewMode('day'); }}
+                      onClick={() => {
+                        setCurrentDate(d);
+                        setViewMode('day');
+                      }}
                     >
                       <div className="mpers-my-week-day-header">
-                        <span className="mpers-my-week-day-name">{format(d, 'EEE', { locale: fr })}</span>
+                        <span className="mpers-my-week-day-name">
+                          {format(d, 'EEE', { locale: fr })}
+                        </span>
                         <span className="mpers-my-week-day-num">{format(d, 'd')}</span>
                       </div>
                       <div className="mpers-my-week-day-content">
                         {isUnavailable ? (
-                          <div className="mpers-my-week-unavail">{unavail[0].reason || 'Absent'}</div>
+                          <div className="mpers-my-week-unavail">
+                            {unavail[0].reason || 'Absent'}
+                          </div>
                         ) : hasContent ? (
                           <>
-                            {missions.map(m => (
-                              <div key={m.id} className="mpers-my-week-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
+                            {missions.map((m) => (
+                              <div
+                                key={m.id}
+                                className="mpers-my-week-mission"
+                                style={{
+                                  borderLeftColor: MISSION_COLORS[m.status] || STATUS_COLORS.info,
+                                }}
+                              >
                                 {m.title || m.affaire || 'Mission'}
                               </div>
                             ))}
-                            {tasks.map(ta => (
-                              <div key={ta.id} className="mpers-my-week-task" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
+                            {tasks.map((ta) => (
+                              <div
+                                key={ta.id}
+                                className="mpers-my-week-task"
+                                style={{
+                                  borderLeftColor:
+                                    TASK_SOURCE_COLORS[ta.source_type] || STATUS_COLORS.warning,
+                                }}
+                              >
                                 {ta.title || ta.affaire_num || 'Tâche'}
+                              </div>
+                            ))}
+                            {enterprisePresence.map((ep) => (
+                              <div key={ep.id} className="mpers-my-week-enterprise">
+                                {ep.reason || 'Entreprise'}
                               </div>
                             ))}
                           </>
@@ -438,49 +621,96 @@ function MobilePersonnel({ onBack, currentUser }) {
               <User size={40} />
               <p>Aucun personnel permanent</p>
             </div>
-          ) : permanentPersons.map(p => {
-            const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
-            const missions = getMissionsForPersonDay(p.id, currentDate);
-            const unavail = getUnavailForPersonDay(p.id, currentDate);
-            const tasks = getTasksForPersonDay(p.id, currentDate);
-            const isUnavailable = unavail.length > 0;
-            return (
-              <div key={p.id} className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`} role="button" tabIndex={0} onClick={() => setSelectedPerson(p)}>
-                {p.photo ? (
-                  <img src={`/avatars/${p.photo}`} alt="" className="mpers-avatar-img" loading="lazy" />
-                ) : (
-                  <Avatar name={fullName} size="md" />
-                )}
-                <div className="mpers-day-info">
-                  <div className="mpers-day-name">{fullName}</div>
-                  {isUnavailable ? (
-                    <span className="mpers-unavail-tag">{unavail[0].reason || 'Indisponible'}</span>
-                  ) : (missions.length > 0 || tasks.length > 0) ? (
-                    <div className="mpers-day-missions">
-                      {missions.map(m => (
-                        <div key={m.id} className="mpers-mission-chip" style={{ '--mission-color': MISSION_COLORS[m.status] || '#3b82f6' }}>
-                          <span className="mpers-mission-dot" />
-                          <span className="mpers-mission-title">{m.title || m.affaire || 'Mission'}</span>
-                          {(m.startTime || m.start_time) && (
-                            <span className="mpers-mission-time">{m.startTime || m.start_time}</span>
-                          )}
-                        </div>
-                      ))}
-                      {tasks.map(ta => (
-                        <div key={ta.id} className="mpers-task-chip" style={{ '--task-color': TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
-                          <span className="mpers-task-dot" />
-                          <span className="mpers-mission-title">{ta.title || ta.affaire_num || 'Tâche'}</span>
-                          {ta.period && <span className="mpers-mission-time">{ta.period}</span>}
-                        </div>
-                      ))}
-                    </div>
+          ) : (
+            permanentPersons.map((p) => {
+              const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
+              const missions = getMissionsForPersonDay(p.id, currentDate);
+              const unavail = getUnavailForPersonDay(p.id, currentDate);
+              const enterprisePresence = getEnterpriseForPersonDay(p.id, currentDate);
+              const tasks = getTasksForPersonDay(p.id, currentDate);
+              const isUnavailable = unavail.length > 0;
+              return (
+                <div
+                  key={p.id}
+                  className={`mpers-day-row ${isUnavailable ? 'unavailable' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedPerson(p)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedPerson(p);
+                    }
+                  }}
+                >
+                  {p.photo ? (
+                    <img
+                      src={`/avatars/${p.photo}`}
+                      alt=""
+                      className="mpers-avatar-img"
+                      loading="lazy"
+                    />
                   ) : (
-                    <span className="mpers-free-tag">Disponible</span>
+                    <Avatar name={fullName} size="md" />
                   )}
+                  <div className="mpers-day-info">
+                    <div className="mpers-day-name">{fullName}</div>
+                    {isUnavailable ? (
+                      <span className="mpers-unavail-tag">
+                        {unavail[0].reason || 'Indisponible'}
+                      </span>
+                    ) : missions.length > 0 || tasks.length > 0 || enterprisePresence.length > 0 ? (
+                      <div className="mpers-day-missions">
+                        {enterprisePresence.map((ep) => (
+                          <div key={ep.id} className="mpers-enterprise-chip">
+                            <span className="mpers-enterprise-dot" />
+                            <span className="mpers-mission-title">{ep.reason || 'Entreprise'}</span>
+                          </div>
+                        ))}
+                        {missions.map((m) => (
+                          <div
+                            key={m.id}
+                            className="mpers-mission-chip"
+                            style={{
+                              '--mission-color': MISSION_COLORS[m.status] || STATUS_COLORS.info,
+                            }}
+                          >
+                            <span className="mpers-mission-dot" />
+                            <span className="mpers-mission-title">
+                              {m.title || m.affaire || 'Mission'}
+                            </span>
+                            {(m.startTime || m.start_time) && (
+                              <span className="mpers-mission-time">
+                                {m.startTime || m.start_time}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                        {tasks.map((ta) => (
+                          <div
+                            key={ta.id}
+                            className="mpers-task-chip"
+                            style={{
+                              '--task-color':
+                                TASK_SOURCE_COLORS[ta.source_type] || STATUS_COLORS.warning,
+                            }}
+                          >
+                            <span className="mpers-task-dot" />
+                            <span className="mpers-mission-title">
+                              {ta.title || ta.affaire_num || 'Tâche'}
+                            </span>
+                            {ta.period && <span className="mpers-mission-time">{ta.period}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="mpers-free-tag">Disponible</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       ) : (
         /* ═══ VUE SEMAINE ═══ */
@@ -489,12 +719,29 @@ function MobilePersonnel({ onBack, currentUser }) {
             {/* Colonne fixe noms */}
             <div className="mpers-week-names">
               <div className="mpers-week-names-header">Équipe</div>
-              {permanentPersons.map(p => {
+              {permanentPersons.map((p) => {
                 const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
                 return (
-                  <div key={p.id} className="mpers-week-person" role="button" tabIndex={0} onClick={() => setSelectedPerson(p)}>
+                  <div
+                    key={p.id}
+                    className="mpers-week-person"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedPerson(p)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedPerson(p);
+                      }
+                    }}
+                  >
                     {p.photo ? (
-                      <img src={`/avatars/${p.photo}`} alt="" loading="lazy" className="mpers-week-avatar-img" />
+                      <img
+                        src={`/avatars/${p.photo}`}
+                        alt=""
+                        loading="lazy"
+                        className="mpers-week-avatar-img"
+                      />
                     ) : (
                       <Avatar name={fullName} size={30} />
                     )}
@@ -511,11 +758,14 @@ function MobilePersonnel({ onBack, currentUser }) {
             <div className="mpers-week-grid-scroll">
               {/* En-tête jours */}
               <div className="mpers-week-days-header">
-                {weekDays.map(d => (
+                {weekDays.map((d) => (
                   <div
                     key={d.toISOString()}
                     className={`mpers-week-day-col ${isSameDay(d, new Date()) ? 'today' : ''}`}
-                    onClick={() => { setCurrentDate(d); setViewMode('day'); }}
+                    onClick={() => {
+                      setCurrentDate(d);
+                      setViewMode('day');
+                    }}
                   >
                     <span className="mpers-week-day-name">{format(d, 'EEE', { locale: fr })}</span>
                     <span className="mpers-week-day-num">{format(d, 'd')}</span>
@@ -524,14 +774,16 @@ function MobilePersonnel({ onBack, currentUser }) {
               </div>
               {/* Lignes grille */}
               <div className="mpers-week-grid">
-                {permanentPersons.map(p => (
+                {permanentPersons.map((p) => (
                   <div key={p.id} className="mpers-week-grid-row">
-                    {weekDays.map(d => {
+                    {weekDays.map((d) => {
                       const missions = getMissionsForPersonDay(p.id, d);
                       const unavail = getUnavailForPersonDay(p.id, d);
+                      const enterprisePresence = getEnterpriseForPersonDay(p.id, d);
                       const tasks = getTasksForPersonDay(p.id, d);
                       const isUnavailable = unavail.length > 0;
-                      const hasContent = missions.length > 0 || tasks.length > 0;
+                      const hasContent =
+                        missions.length > 0 || tasks.length > 0 || enterprisePresence.length > 0;
                       return (
                         <div
                           key={d.toISOString()}
@@ -543,17 +795,46 @@ function MobilePersonnel({ onBack, currentUser }) {
                             </div>
                           ) : hasContent ? (
                             <>
-                              {missions.map(m => (
-                                <div key={m.id} className="mpers-cell-mission" style={{ borderLeftColor: MISSION_COLORS[m.status] || '#3b82f6' }}>
-                                  <span className="mpers-cell-mission-title">{m.title || m.affaire || 'Mission'}</span>
+                              {missions.map((m) => (
+                                <div
+                                  key={m.id}
+                                  className="mpers-cell-mission"
+                                  style={{
+                                    borderLeftColor: MISSION_COLORS[m.status] || STATUS_COLORS.info,
+                                  }}
+                                >
+                                  <span className="mpers-cell-mission-title">
+                                    {m.title || m.affaire || 'Mission'}
+                                  </span>
                                   {(m.clientName || m.client_name) && (
-                                    <span className="mpers-cell-mission-client">{m.clientName || m.client_name}</span>
+                                    <span className="mpers-cell-mission-client">
+                                      {m.clientName || m.client_name}
+                                    </span>
                                   )}
                                 </div>
                               ))}
-                              {tasks.map(ta => (
-                                <div key={ta.id} className="mpers-cell-mission" style={{ borderLeftColor: TASK_SOURCE_COLORS[ta.source_type] || '#f59e0b' }}>
-                                  <span className="mpers-cell-mission-title">{ta.title || ta.affaire_num || 'Tâche'}</span>
+                              {tasks.map((ta) => (
+                                <div
+                                  key={ta.id}
+                                  className="mpers-cell-mission"
+                                  style={{
+                                    borderLeftColor:
+                                      TASK_SOURCE_COLORS[ta.source_type] || STATUS_COLORS.warning,
+                                  }}
+                                >
+                                  <span className="mpers-cell-mission-title">
+                                    {ta.title || ta.affaire_num || 'Tâche'}
+                                  </span>
+                                </div>
+                              ))}
+                              {enterprisePresence.map((ep) => (
+                                <div
+                                  key={ep.id}
+                                  className="mpers-cell-mission mpers-cell-enterprise"
+                                >
+                                  <span className="mpers-cell-mission-title">
+                                    {ep.reason || 'Entreprise'}
+                                  </span>
                                 </div>
                               ))}
                             </>
@@ -573,10 +854,18 @@ function MobilePersonnel({ onBack, currentUser }) {
 
           {/* Légende */}
           <div className="mpers-week-legend">
-            <span><span className="mpers-legend-dot busy" /> Mission</span>
-            <span><span className="mpers-legend-dot task" /> Tâche</span>
-            <span><span className="mpers-legend-dot unavail" /> Indisponible</span>
-            <span><span className="mpers-legend-dot free" /> Disponible</span>
+            <span>
+              <span className="mpers-legend-dot busy" /> Mission
+            </span>
+            <span>
+              <span className="mpers-legend-dot task" /> Tâche
+            </span>
+            <span>
+              <span className="mpers-legend-dot unavail" /> Indisponible
+            </span>
+            <span>
+              <span className="mpers-legend-dot free" /> Disponible
+            </span>
           </div>
         </div>
       )}

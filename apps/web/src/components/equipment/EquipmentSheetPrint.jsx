@@ -1,19 +1,28 @@
-import { safeDate, formatDateSimple } from '../../utils/formatUtils';
+import QRCode from 'qrcode';
+
 import { STATUS } from '../../constants';
+import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { formatDateSimple, safeDate } from '../../utils/formatUtils';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
 // Échappement HTML anti-XSS
-const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const esc = (s) =>
+  String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 // URL de base pour les QR codes
 const APP_BASE_URL = window.location.origin;
 
 const SAV_STATUS = {
-  open: { label: 'Ouvert', color: '#3b82f6' },
-  in_progress: { label: 'En cours', color: '#f59e0b' },
-  waiting_parts: { label: 'Attente pièces', color: '#8b5cf6' },
-  resolved: { label: 'Résolu', color: '#10b981' },
+  open: { label: 'Ouvert', color: STATUS_COLORS.info },
+  in_progress: { label: 'En cours', color: STATUS_COLORS.warning },
+  waiting_parts: { label: 'Attente pièces', color: ACCENT_COLORS.violet },
+  resolved: { label: 'Résolu', color: STATUS_COLORS.success },
   closed: { label: 'Clôturé', color: 'var(--theme-text-gray)' },
 };
 
@@ -26,19 +35,19 @@ const SAV_TYPES = {
 
 const SAV_PRIORITY = {
   low: { label: 'Basse', color: 'var(--theme-text-gray)' },
-  medium: { label: 'Moyenne', color: '#f59e0b' },
-  high: { label: 'Haute', color: '#ef4444' },
-  urgent: { label: 'Urgente', color: '#dc2626' },
+  medium: { label: 'Moyenne', color: STATUS_COLORS.warning },
+  high: { label: 'Haute', color: STATUS_COLORS.danger },
+  urgent: { label: 'Urgente', color: STATUS_COLORS.dangerDark },
 };
 
 const EQUIPMENT_STATUS = {
-  available: { label: 'Disponible', color: '#10b981', icon: '✅' },
-  in_use: { label: 'En service', color: '#3b82f6', icon: '🔄' },
-  maintenance: { label: 'En maintenance', color: '#f59e0b', icon: '🔧' },
+  available: { label: 'Disponible', color: STATUS_COLORS.success, icon: '✅' },
+  in_use: { label: 'En service', color: STATUS_COLORS.info, icon: '🔄' },
+  maintenance: { label: 'En maintenance', color: STATUS_COLORS.warning, icon: '🔧' },
   retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 
-export function printEquipmentSheet(eq, photosList = [], logosList = []) {
+export async function printEquipmentSheet(eq, photosList = [], logosList = []) {
   if (!eq) return;
 
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
@@ -76,6 +85,8 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
   const tickets = eq.savTickets || [];
 
   const today = formatDateSimple(new Date().toISOString());
+
+  const qrDataUrl = qrUrl ? await QRCode.toDataURL(qrUrl, { width: 120, margin: 1 }) : null;
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -143,11 +154,15 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
       </div>
       ${logoPath ? `<img src="${esc(logoPath)}" class="sheet-logo" style="margin-top: 8px;" alt="Logo marque" />` : ''}
     </div>
-    ${qrUrl ? `
+    ${
+      qrUrl
+        ? `
     <div class="sheet-qr">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrUrl)}" width="120" height="120" alt="QR Code" />
+      <img src="${qrDataUrl}" width="120" height="120" alt="QR Code" />
       <span>${esc(eq.uid || '')}</span>
-    </div>` : ''}
+    </div>`
+        : ''
+    }
   </div>
 
   <div class="sheet-section">
@@ -155,20 +170,24 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
     <div class="sheet-fields">
       ${eq.reference ? `<div class="sheet-field"><span class="label">Référence</span><span class="value">${esc(eq.reference)}</span></div>` : ''}
       ${eq.uid ? `<div class="sheet-field"><span class="label">UID</span><span class="value" style="font-family: monospace">${esc(eq.uid)}</span></div>` : ''}
-      ${(eq.serialNumber || eq.serial_number) ? `<div class="sheet-field"><span class="label">N° de série</span><span class="value">${esc(eq.serialNumber || eq.serial_number)}</span></div>` : ''}
+      ${eq.serialNumber || eq.serial_number ? `<div class="sheet-field"><span class="label">N° de série</span><span class="value">${esc(eq.serialNumber || eq.serial_number)}</span></div>` : ''}
+      ${eq.numeroMag || eq.numero_mag ? `<div class="sheet-field"><span class="label">N° MAG</span><span class="value">${esc(eq.numeroMag || eq.numero_mag)}</span></div>` : ''}
       ${eq.brand ? `<div class="sheet-field"><span class="label">Marque</span><span class="value">${esc(eq.brand)}</span></div>` : ''}
       ${eq.location ? `<div class="sheet-field"><span class="label">Localisation</span><span class="value">${esc(eq.location)}</span></div>` : ''}
       ${(eq.stockQuantity || eq.stock_quantity) > 1 ? `<div class="sheet-field"><span class="label">Quantité</span><span class="value">${eq.stockQuantity || eq.stock_quantity}</span></div>` : ''}
-      ${(eq.purchaseDate || eq.purchase_date) ? `<div class="sheet-field"><span class="label">Date d'achat</span><span class="value">${safeDate(eq.purchaseDate || eq.purchase_date)}</span></div>` : ''}
-      ${(eq.purchasePrice || eq.purchase_price) ? `<div class="sheet-field"><span class="label">Prix d'achat</span><span class="value">${parseFloat(eq.purchasePrice || eq.purchase_price).toFixed(2)} €</span></div>` : ''}
-      ${(eq.warrantyEnd || eq.warranty_end) ? `<div class="sheet-field"><span class="label">Fin de garantie</span><span class="value">${safeDate(eq.warrantyEnd || eq.warranty_end)}</span></div>` : ''}
+      ${eq.purchaseDate || eq.purchase_date ? `<div class="sheet-field"><span class="label">Date d'achat</span><span class="value">${safeDate(eq.purchaseDate || eq.purchase_date)}</span></div>` : ''}
+      ${eq.purchasePrice || eq.purchase_price ? `<div class="sheet-field"><span class="label">Prix d'achat</span><span class="value">${parseFloat(eq.purchasePrice || eq.purchase_price).toFixed(2)} €</span></div>` : ''}
+      ${eq.warrantyEnd || eq.warranty_end ? `<div class="sheet-field"><span class="label">Fin de garantie</span><span class="value">${safeDate(eq.warrantyEnd || eq.warranty_end)}</span></div>` : ''}
     </div>
     ${eq.notes ? `<div class="sheet-notes">${esc(eq.notes)}</div>` : ''}
   </div>
 
   <div class="sheet-section">
     <h2>👤 Historique des attributions (${assignments.length})</h2>
-    ${assignments.length === 0 ? '<p class="sheet-empty">Aucune attribution enregistrée</p>' : `
+    ${
+      assignments.length === 0
+        ? '<p class="sheet-empty">Aucune attribution enregistrée</p>'
+        : `
     <Table>
       <thead>
         <tr>
@@ -180,21 +199,29 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
         </tr>
       </thead>
       <tbody>
-        ${assignments.map(a => `
+        ${assignments
+          .map(
+            (a) => `
         <tr>
           <td>${esc(a.firstName || a.first_name || '')} ${esc(a.lastName || a.last_name || '')}</td>
           <td>${safeDate(a.startDate || a.start_date)}</td>
-          <td>${(a.endDate || a.end_date) ? safeDate(a.endDate || a.end_date) : 'En cours'}</td>
+          <td>${a.endDate || a.end_date ? safeDate(a.endDate || a.end_date) : 'En cours'}</td>
           <td><span class="sheet-badge ${a.status}">${a.status === STATUS.ACTIVE ? 'Actif' : 'Retourné'}</span></td>
           <td>${esc(a.notes || '—')}</td>
-        </tr>`).join('')}
+        </tr>`,
+          )
+          .join('')}
       </tbody>
-    </Table>`}
+    </Table>`
+    }
   </div>
 
   <div class="sheet-section">
     <h2>🔧 Historique des interventions SAV (${tickets.length})</h2>
-    ${tickets.length === 0 ? '<p class="sheet-empty">Aucune intervention enregistrée</p>' : `
+    ${
+      tickets.length === 0
+        ? '<p class="sheet-empty">Aucune intervention enregistrée</p>'
+        : `
     <Table>
       <thead>
         <tr>
@@ -208,10 +235,11 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
         </tr>
       </thead>
       <tbody>
-        ${tickets.map(t => {
-          const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
-          const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
-          return `
+        ${tickets
+          .map((t) => {
+            const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
+            const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
+            return `
         <tr>
           <td><strong>${esc(t.title)}</strong>${t.description ? `<br><small style="color:#64748b">${esc(t.description.substring(0, 80))}${t.description.length > 80 ? '...' : ''}</small>` : ''}</td>
           <td>${SAV_TYPES[t.type] || t.type}</td>
@@ -221,9 +249,11 @@ export function printEquipmentSheet(eq, photosList = [], logosList = []) {
           <td>${safeDate(t.resolvedAt || t.resolved_at)}</td>
           <td>${t.cost != null && t.cost > 0 ? parseFloat(t.cost).toFixed(2) + ' €' : '—'}</td>
         </tr>`;
-        }).join('')}
+          })
+          .join('')}
       </tbody>
-    </Table>`}
+    </Table>`
+    }
   </div>
 
   <div class="sheet-footer">

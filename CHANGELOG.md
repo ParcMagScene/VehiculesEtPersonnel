@@ -8,6 +8,368 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Locmat — Détections additionnelles** : doublons stricts dans `Serialise.csv`, collisions intra-CSV (même serial sur 2 codes), collisions DB cross-équipement, suppressions (refs en DB absentes des CSV). Trois nouveaux onglets dans `LocmatImportModal` : **Suppressions**, **Doublons**, **Collisions** (consultatifs, n'écrivent rien automatiquement). Schéma `locmatConfirmSchema` étendu (`missingProducts`, `duplicates`, `collisions`). 4 tests supplémentaires (13/13 ✅).
+- **Équipements — `Numéro MAG`** : nouvelle propriété libre par équipement, visible dans le formulaire, le détail (dialog + volet), la grille (colonne triable) et la fiche imprimable. Migration idempotente `apps/api/migrations/equipment-numero-mag-v1.js` ajoutant `equipment.numero_mag TEXT` + `idx_equipment_numero_mag`. Recherche serveur étendue (`e.numero_mag LIKE ?`). Schéma Zod et routes `POST/PUT /api/equipment` mis à jour.
+
+---
+
+## [2.8.0] — 2026-05-04
+
+### Added — Module Import intelligent Locmat (Locations.csv + Serialise.csv) → Equipement
+
+Nouveau module d'import différentiel reliant les exports Locmat à la table
+`equipment` / `equipment_serials` (parc matériel inventoriel). Aucune écriture
+sans validation utilisateur, suppression soft-only des numéros de série,
+génération d'UID + QR Code par référence créée.
+
+- **Migration** `apps/api/migrations/locmat-import-v1.js` (idempotente) :
+  - `equipment` ← colonnes `qrcode`, `is_serialized` + index unique partiel `idx_equipment_uid_unique` (la colonne `uid` existait déjà)
+  - Nouvelle table `equipment_serials (id, equipment_id, serial, status='active'|'removed', source, notes, created_at, removed_at)`
+  - Nouvelle table `import_logs (type, source, summary, details, user_id, user_name, created_at)`
+  - Cleanup best-effort des colonnes/tables ajoutées par erreur sur `stock_items` (v1 initiale)
+- **Service backend** `apps/api/services/locmatImport.js` (logique pure testée) :
+  `normalizeLocationRow`, `normalizeSerialRow`, `diffWithDatabase`
+- **Routes API** `apps/api/locmatImportRoutes.js` (admin only) :
+  - `POST /api/import/locmat/preview` — calcule le diff (read-only)
+  - `POST /api/import/locmat/confirm` — applique sous transaction (UID + QR
+    générés pour les nouveautés, quantités ajustées, serials soft-removed)
+  - `GET  /api/import/locmat/logs[/{id}]` — historique + détail
+- **Schémas Zod** `locmatPreviewSchema`, `locmatConfirmSchema`
+- **Client API** `apps/web/src/utils/api/locmatImport.js` :
+  `previewLocmatImport`, `confirmLocmatImport`, `getLocmatImportLogs`,
+  `getLocmatImportLogDetail`
+- **UI** `apps/web/src/components/equipment/import/LocmatImportModal.jsx` (lazy) :
+  parsing CSV client (PapaParse) → preview multi-onglets (nouveaux équipements /
+  modifiés / quantités / nouveaux N° série / N° série retirés / erreurs) →
+  validation + téléchargement rapport JSON. Bouton "Import intelligent Locmat"
+  ajouté dans `EquipmentPanel` → onglet *Gestion → Imports*.
+- **Tests** `tests/locmat-import.test.js` (7/7 ✅)
+- **Dépendance** `papaparse@^5` (front)
+
+### Garanties (cf. cahier des charges §8)
+
+- Aucune écriture avant validation utilisateur (étape preview obligatoire)
+- Suppression de numéro de série = soft (`status = 'removed'`, `removed_at` daté)
+- Aucun UID régénéré pour une référence existante
+- Aucun impact sur les modules existants (Catalogue, Commandes, Stock, TV client,
+  SAV) — extensions uniquement, pas de breaking change
+
+
+
+### Added — Sprint accessibilité (a11y) WCAG 2.1 AA
+
+Première passe d'audit et corrections accessibilité, posant les fondations
+pour un suivi pérenne via ESLint.
+
+#### L1 — Reduced motion + skip link
+- Classes globales `.a11y-skip-link`, `.sr-only` dans `apps/web/src/App.css`
+- `@media (prefers-reduced-motion: reduce)` neutralise animations/transitions
+
+#### L2 — Alt text sur images critiques
+- `TVScreenMini.jsx` : alt dynamique basé sur `task.sectionLabel`
+- `EquipmentFormModal.jsx` : alt photo + image générique catégorie
+- `EquipmentBatchLabels.jsx` : alt logo (template HTML + JSX)
+
+#### L3 — Modal `aria-labelledby` automatique
+- Refonte `Modal.jsx` avec `useId()` + contexte interne
+- `ModalHeader > h3` reçoit automatiquement l'`id` partagé
+- Nouvelles props `ariaLabel` / `ariaLabelledBy`
+
+#### L4 — FormField `aria-describedby` + `aria-invalid`
+- Refonte `FormField.jsx` : `useId()` + `Children.map` + `cloneElement`
+- Le premier enfant valide reçoit auto `aria-describedby` + `aria-invalid`
+- Span d'erreur porte `role="alert"`
+
+#### L5 — Labels associés StockPanel
+- `StockPanel.jsx` : 35 → 0 warnings `label-has-associated-control`
+- 20 champs : `<label htmlFor>` + `id` injectés (codemod)
+- 9 zones lecture-seule : `<label>` → `<span class="stock-detail-label">`
+- 6 groupes de boutons : `<span class="stock-form-group-label">`
+
+#### L6 — eslint-plugin-jsx-a11y
+- Plugin installé en dev (`eslint-plugin-jsx-a11y`)
+- `apps/web/.eslintrc.cjs` étendu avec `plugin:jsx-a11y/recommended`
+- Posture permissive : `warn` par défaut, `error` strict pour `aria-props`,
+  `aria-proptypes`, `aria-unsupported-elements`, `role-has-required-aria-props`
+- Désactivés : `no-autofocus` (modales), `media-has-caption` (flux NVR live)
+- 4 erreurs initiales corrigées (`MapSearchControl.jsx`, `Drawer.jsx`)
+
+### Documentation
+- Nouveau guide [docs/02-Securite/A11Y.md](docs/02-Securite/A11Y.md)
+
+### Tests
+- 530 tests Vitest verts après refonte FormField + Modal
+
+### Métriques
+- Erreurs `jsx-a11y` : 4 → 0
+- Warnings a11y globaux : 730 → 693 (chantier itératif pour la suite)
+
+---
+
+## [2.7.0] — 2026-05-04
+
+### Added — Refonte navigation (Sprints A → D)
+
+Migration de la navigation desktop vers React Router 6 + URL = source de vérité,
+unification des tables de routes desktop/mobile, garde formulaires anti-perte.
+
+#### Sprint A — Fondation
+- Ajout `react-router-dom@6.30.3` + `<BrowserRouter>` racine
+- Suppression du module mort `catalog` (raccourci, `VALID_TABS`, préférences)
+- Nouveau hook `ScrollToTopOnModuleChange` (skip mobile)
+
+#### Sprint B — Routes desktop
+- Nouveau fichier [`apps/web/src/router/routes.config.js`](apps/web/src/router/routes.config.js) — table unique
+  des modules desktop (`DESKTOP_MODULES`, `ALLOWED_MODULES`, `STOCK_SUBTABS`,
+  `CALENDAR_VIEWS`)
+- Nouveau hook `useSearchParamState(key, default, { allowed, replace })` —
+  remplace `useState` + sync `window.history.replaceState` manuelle
+- `?module=`, `?tab=`, `?view=` deviennent la source de vérité (F5 sûr)
+- Header consomme `DESKTOP_MODULES` (plus de liste hardcodée inline)
+- `localStorage.emag_last_module` rétrogradé à fallback nouvel onglet
+
+#### Sprint C — Routes mobile (consolidation)
+- `MOBILE_ROUTES`, `MOBILE_TAB_SCREENS`, `MOBILE_BACK_TARGET`,
+  `MOBILE_QR_PATTERN`, `MOBILE_ACTIVE_TAB_KEY` migrés dans `routes.config.js`
+- `useMobileRouter` consomme la table centrale (back-compat des exports nommés
+  préservée pour les tests)
+- Pattern QR `EMAG-XXXXX` documenté et importable par les scripts d'étiquettes
+- Listener `hashchange` redondant retiré dans `App.jsx` (matchMedia suffit)
+- Hash router conservé : QR codes physiques imprimés non cassés
+
+#### Sprint D — Garde + tests + doc
+- Nouveau hook [`useUnsavedChangesGuard`](apps/web/src/hooks/useUnsavedChangesGuard.js)
+  (listener `beforeunload`) branché sur `UserPreferencesModal`,
+  `MaintenanceDialog`, `TripDetailsModal`
+- 7 tests Vitest sur `useSearchParamState`
+  (validation hostile, setter, updater, propreté URL)
+- Documentation centralisée [`docs/01-Architecture/NAVIGATION.md`](docs/01-Architecture/NAVIGATION.md)
+- PWA volontairement non réactivée (cf. `public/sw-cleanup.js`)
+
+### Changed
+- `apps/web/src/main.jsx` — racine wrappée dans `<BrowserRouter>`
+- `apps/web/src/App.jsx` — `activeModule` / `view` / `stockSubTab` migrés vers
+  `useSearchParamState`
+- `apps/web/src/components/Header.jsx` — `module-tabs` consomme `DESKTOP_MODULES`
+
+### Removed
+- Module `catalog` (mort) : raccourci clavier, `VALID_TABS`, option préférences
+- Liste de modules hardcodée inline dans `Header.jsx`
+- Listener `hashchange` desktop redondant
+
+### Tests
+- 13 tests `useMobileRouter` (préexistants, toujours verts)
+- 7 nouveaux tests `useSearchParamState`
+- 0 régression ESLint introduite
+
+---
+
+## [2.6.0] — 2026-04-13
+
+### Added — GUI Sonos complète (Desktop + Mobile)
+
+Refactoring complet du module Sonos : architecture modulaire, hook partagé, composants desktop et mobile dédiés.
+
+#### Architecture
+- **`useSonos.js`** (nouveau hook) : logique centralisée (config, zones, polling 5s, contrôles, favoris, busy-lock)
+- **Barrel `sonos/index.js`** : export unifié des 7 composants desktop
+- **`SonosPanel.css`** : CSS dédié (migration `dtv-sonos-*` → `sonos-*`)
+
+#### Desktop (7 composants)
+- `SonosPanel` — Container principal, orchestre le hook + sous-composants
+- `SonosZoneSelector` — Sélecteur de zones avec cards expandable
+- `SonosNowPlaying` — Pochette, titre, artiste, progression, disque animé
+- `SonosControls` — Transport (play/pause/prev/next), seek bar, shuffle/repeat
+- `SonosVolumeSlider` — Volume + mute, état local synchronisé
+- `SonosFavorites` — Liste pliable avec recherche et indicateur lecture
+- `SonosSources` — Catégorisation Radio/Playlist/Autre par heuristique URI
+
+#### Mobile (5 composants)
+- `MobileSonos` — Shell mobile avec header, zone pills scroll-snap, refresh
+- `MobileSonosNowPlaying` — Pochette 70vw, swipe gauche/droite pour next/prev
+- `MobileSonosControls` — Touch targets 48px+, bouton principal 64px, seek
+- `MobileSonosVolume` — Slider pleine largeur, mute 40px
+- `MobileSonosFavorites` — Liste scrollable, chargement auto, recherche
+
+#### Tests
+- 47 nouveaux tests Vitest (hook + composants desktop + composants mobile)
+- Suite complète : 402 tests, 0 échec
+
+---
+
+## [2.5.0] — 2026-04-11
+
+### Added — Synchronisation bidirectionnelle Google Calendar
+
+Implémentation complète de la synchronisation bidirectionnelle entre les réservations eM@g et Google Calendar, avec session persistante pour une expérience sans flash.
+
+#### Phase 2.9.1 — Push eM@g → Google Calendar
+- **`googleBidirectionalSync.js`** (nouveau) : service de synchronisation bidirectionnelle avec feature flag `GOOGLE_BIDIRECTIONAL_SYNC`
+- `syncReservationToGoogle()` : création/mise à jour automatique d'événements Google Calendar lors du CRUD réservations
+- `deleteReservationFromGoogle()` : suppression de l'événement Google lié lors de la suppression d'une réservation
+- `buildGoogleEventPayload()` : mapping intelligent réservation → événement Google (all-day vs dateTime, périodes AM/PM)
+- Propriétés privées `emagReservationId` + `emagSource` pour traçabilité
+- Intégration best-effort (try/catch) dans `vehicleRoutes.js` — un échec Google ne bloque pas le CRUD local
+
+#### Phase 2.9.2 — Pull Google → eM@g (réconciliation)
+- `pullReservationsFromGoogle()` : moteur de réconciliation — fenêtre -7j / +90j avec pagination
+- Stratégie Google-wins : si les dates divergent, la réservation locale est mise à jour
+- Nettoyage d'orphelins : si l'événement Google a été supprimé, le `google_event_id` est effacé sans supprimer la réservation
+- Endpoint `POST /api/google/sync/pull-reservations` avec authentification
+- Bouton « Réconcilier depuis Google » dans `GoogleCalendarConfig.jsx` avec badges de résultat (updated/orphaned/errors)
+- Client API `syncPullReservations(days)` dans `admin.js`
+
+#### Phase 2.10 — Session Google persistante
+- Persistance `isSignedIn` / `googleEmail` / `calendarId` dans `localStorage` (clé `emag_google_state`)
+- `GoogleCalendarBanner.jsx` : initialisation instantanée depuis le cache, confirmation async via `/api/google/status`
+- Plus de flash « Connectez-vous à Google » au chargement de page
+- Nettoyage du cache lors de la révocation OAuth
+
+### Changed
+- Plan d'action complet (12 étapes, 49 findings) marqué 100% terminé
+- Bump version 2.4.1 → 2.5.0
+
+---
+
+## [2.4.1] — 2026-04-10
+
+### Fixed
+- Réservations véhicules : correction du crash backend sur validation (`error.issues` avec fallback `error.errors`) dans `apps/api/schemas/imports.js`.
+- Réservations véhicules : correction du `400 Données invalides` à la modification via normalisation du payload (`startDate/startPeriod`) dans `apps/web/src/hooks/useAppData.js`.
+- Droits collaborateurs : édition des réservations autorisée aux comptes non `read_only` (backend `requireNotReadOnly` + garde frontend alignée).
+- Build frontend : suppression warning JSX `Duplicate className` (`apps/web/src/components/vehicles/DepotMap.jsx`).
+- Build frontend : suppression erreur CSS de minification (`Unexpected "}"`) dans `apps/web/src/components/management/ManagementPanel.css`.
+
+### Changed
+- Plan de phases mis à jour : vérification infra TV `magsav.duckdns.org:3003/tv` validée (`curl` + `nc`).
+- Plan vidéo actualisé : onglet Preset multi-caméras et vue détachable marqués implémentés.
+
+---
+
+## [2.4.0] — 2026-04-09
+
+### Added — Module Sonos complet
+
+Extraction et enrichissement complet du module Sonos : passage d'un simple « now playing » lecture seule à un module autonome avec contrôles complets, gestion multi-zone, favoris, et widget TV enrichi.
+
+#### Phase A — Backend (`sonosRoutes.js`, ~730 lignes)
+- **`apps/api/sonosRoutes.js`** (nouveau) : module autonome extrait de `displayRoutes.js`
+- 18 endpoints dédiés `/api/sonos/*` : config, now-playing, zones, state, play/pause/next/previous, volume, mute/unmute, seek, shuffle, repeat, favorites
+- Rate limiting : `sonosReadLimiter` (120/min), `sonosCommandLimiter` (60/min)
+- Auth : `requireAdmin` pour commandes, `authenticateToken` pour config, `optionalTvToken` pour now-playing
+- Export `getSonosNowPlaying()` partagé avec `displayRoutes.js` (tv-state)
+- Routes compat `/api/display/sonos-*` conservées avec headers `X-Deprecated` + `Sunset: 2026-07-01`
+
+#### Phase B — API Client (`api/sonos.js`)
+- **`apps/web/src/utils/api/sonos.js`** (nouveau) : 20 méthodes client
+- Enregistrement via `registerSonosMethods(ApiClient)` dans `index.js`
+- Suppression des 3 méthodes legacy de `display.js`
+
+#### Phase C — Frontend
+- **`SonosTab.jsx`** : réécriture complète (139→290 lignes) — `PlaybackControls`, `ZoneCard`, `FavoritesList`
+- Contrôles transport (play/pause/next/prev), volume slider, mute/unmute, sélection de zone, favoris 1-click
+- **`AppearanceTab.jsx`** : suppression section Sonos IP (doublon éliminé)
+- CSS : ~170 lignes ajoutées (contrôles, zones, favoris, responsive)
+
+#### Phase D — TV-client & Dashboard
+- **`tv-client/main.js`** : migration vers `/api/sonos/now-playing`, gestion volume
+- **`tv-client/index.html`** + **`styles.css`** : barre de volume verticale animée dans le widget Sonos
+- **`sonosRoutes.js`** : `getSonosNowPlaying()` retourne maintenant le volume
+- **`DashboardTasksSidebar.jsx`** : migration `getDisplaySonosNowPlaying` → `getSonosNowPlaying`
+
+#### Phase E — Sécurité & robustesse
+- Validation IPv4 stricte (`isValidIPv4` regex, bloque `999.999`, `1.2.3.4.5`)
+- Timeout UPnP 8s (`withTimeout()`) sur tous les appels Sonos — plus de hang
+- Parsing radio « Artiste - Titre » centralisé backend, supprimé de TV-client et TVScreenMini
+- Limites entrées : URI favori 2048 car., titre 256 car., seek 0-86400s
+- Protection SSRF sur `getRadioFavicon()` (IP privées/locales bloquées)
+
+### Changed
+- `displayRoutes.js` : ~250 lignes Sonos retirées, import `getSonosNowPlaying` depuis `sonosRoutes`
+- `server.js` : enregistrement `setupSonosRoutes`
+
+### Removed
+- 3 méthodes API legacy Sonos dans `display.js` (`getDisplaySonosConfig`, `saveDisplaySonosConfig`, `getDisplaySonosNowPlaying`)
+- Section config IP Sonos dans `AppearanceTab.jsx` (doublon)
+- Parsing radio dupliqué côté client (TV-client, TVScreenMini)
+
+---
+
+## [2.3.0] — 2026-04-09
+
+### Changed — Refactoring Google Calendar OAuth2
+
+Migration complète du flux d'authentification Google Calendar : passage du flux implicite GIS (frontend) à l'Authorization Code Flow (backend). Les tokens sont désormais gérés côté serveur avec chiffrement AES-256-GCM.
+
+#### Phase A — Infrastructure
+- **`apps/api/googleTokenManager.js`** (nouveau) : chiffrement AES-256-GCM des refresh_tokens, OAuth2 client factory via `googleapis`, cache access_token en mémoire (5 min), auto-refresh transparent
+- **`apps/api/migrations.js`** : table `google_oauth_tokens` (user_id PK, refresh_token chiffré, email, scopes, timestamps)
+- **`apps/api/config/rateLimiter.js`** : `googleCalendarLimiter` — 60 req/min (120 en dev)
+- Dépendance : `googleapis@^171.4.0`
+
+#### Phase B — Backend Authorization Code Flow
+- **`apps/api/googleRoutes.js`** (nouveau) : 10 routes `/api/google/*`
+  - `/auth` — URL d'autorisation avec state CSRF (TTL 10 min)
+  - `/callback` — échange code, stockage refresh_token, redirect `/?google_connected=true`
+  - `/status`, `/configured` — état de connexion et configuration
+  - `/disconnect` — révocation + suppression tokens
+  - `/events`, `/events/:id`, `/calendars` — proxy avec auto-refresh
+
+#### Phase C — Simplification frontend
+- **`GoogleCalendarBanner.jsx`** : supprimé ~120 lignes (chargement script GIS, tokenClient, renewAccessToken, initializeGIS, retry 401, 6 refs). Nouveau flux : redirect OAuth2 backend
+- **`GoogleCalendarConfig.jsx`** : v2 disconnect, URI redirect backend
+- **`admin.js`** : 12 méthodes API v2 ajoutées
+
+#### Phase D — Sync intelligente multi-tab
+- **`apps/web/src/hooks/useGoogleSync.js`** (nouveau, ~300 lignes) :
+  - Leader election via `BroadcastChannel` (heartbeat 15s, timeout 30s)
+  - Cache IndexedDB dédié (`emagGoogleSync`) — survit aux reloads
+  - Diff engine : pas de re-render si les événements n'ont pas changé
+  - Polling silencieux toutes les 5 min (leader seulement)
+  - Broadcast des événements frais aux autres onglets
+- **`GoogleCalendarBanner.jsx`** : intégration du hook, suppression du fetchEvents interne, enrichissement via `useMemo`
+
+#### Phase E — Stabilisation & sécurité
+- Migration des 4 consommateurs restants (`PeriodCalendarModal`, `AffairesPanel`, `AffaireDetailPanel`, `GoogleCalendarConfig`) de legacy → v2
+- Suppression des 11 méthodes API legacy (`storeGoogleToken`, `getGoogleTokenStatus`, etc.)
+- Retrait de `googleCalendarRoutes.js` du serveur (archivé en `.legacy.js`)
+- Migration : suppression automatique de la table `google_tokens` (remplacée par `google_oauth_tokens`)
+- Hardening routes v2 : sanitisation `calendarId` (regex email), validation `eventId` (path traversal), nettoyage périodique states CSRF
+
+### Removed
+- Flux implicite GIS (Google Identity Services) frontend
+- Table `google_tokens` (access_token en clair, non chiffré)
+- 11 méthodes API legacy `/api/google-calendar/*`
+- `oauthLogger` (références orphelines nettoyées)
+
+### Security
+- Refresh tokens chiffrés AES-256-GCM (IV + auth tag) — plus jamais de tokens en clair en DB
+- CSRF state sur le callback OAuth2 (TTL 10 min, in-memory)
+- Validation `eventId` contre path traversal
+- Sanitisation `calendarId` (format email ou 'primary')
+
+---
+
+## [2.2.0] — 2026-04-08
+
+### Added
+- **Module Cartographie des lieux** — nouvelle fonctionnalité complète
+  - **Carte générale** : affichage de tous les lieux géolocalisés avec `fitBounds` automatique
+  - **Carte locale** : vue centrée sur le dépôt Mag Scène dans un rayon de 2 km (Haversine)
+  - **Marqueurs SVG stylisés** : icônes colorées par type de lieu (Dépôt, Salle de spectacle, Prestataire, Garage, Autre) + marqueur gradient pour le siège
+  - **Popups DS** : affichage nom, type, adresse, coordonnées, lien Google Maps, bouton modifier
+  - **Impression/Export** : impression A4/A3 (portrait/paysage) avec en-tête eM@g, export PNG
+  - **Mode sombre** : bascule entre tiles OpenStreetMap (clair) et CartoDB dark matter
+  - **Légende** intégrée, responsive mobile
+  - **Intégration ManagementPanel** : bouton 🗺️ dans l'onglet Lieux pour ouvrir la cartographie
+- Dépendances : `leaflet@^1.9.4`, `react-leaflet@^4.2.1`
+- 8 fichiers créés dans `apps/web/src/components/locations/`
+
+---
+
 ## [2.1.12] — 2026-04-07
 
 ### Changed

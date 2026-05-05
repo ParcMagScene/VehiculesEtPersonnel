@@ -69,7 +69,7 @@
   background: var(--theme-danger-bg);
 }
 
-[data-theme="dark"] .user-menu-btn.danger:hover {
+[data-theme='dark'] .user-menu-btn.danger:hover {
   background: rgba(220, 38, 38, 0.15);
 }
 

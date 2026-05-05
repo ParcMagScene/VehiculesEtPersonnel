@@ -1,6 +1,6 @@
 {
   "name": "emag",
-  "version": "2.1.0",
+  "version": "2.5.0",
   "private": true,
   "description": "eM@g - Gestion de parc matériel et personnel (monorepo)",
   "type": "module",
@@ -16,20 +16,41 @@
     "build": "npm run build --workspace=apps/web",
     "preview": "npm run preview --workspace=apps/web",
     "deploy": "bash scripts/safe-deploy.sh",
-    "lint": "npm run lint --workspace=apps/web",
-    "lint:fix": "npm run lint:fix --workspace=apps/web",
-    "format": "npm run format --workspace=apps/web",
-    "format:check": "npm run format:check --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web && npm run lint --workspace=apps/api",
+    "lint:fix": "npm run lint:fix --workspace=apps/web && npm run lint:fix --workspace=apps/api",
+    "format": "npm run format --workspace=apps/web && npm run format --workspace=apps/api",
+    "format:check": "npm run format:check --workspace=apps/web && npm run format:check --workspace=apps/api",
     "update-photos": "node scripts/generate-photo-list.js",
     "watch-photos": "node scripts/watch-photos.js",
     "smoke-test": "node scripts/smoke-test.js",
-    "test": "node --test --test-force-exit tests/unit.test.js tests/schemas.test.js tests/db-init.test.js tests/audit-fixes.test.js",
+    "docs:check": "node scripts/check-doc-coherence.mjs",
+    "test": "node --test --test-force-exit tests/unit.test.js tests/schemas.test.js tests/db-init.test.js tests/audit-fixes.test.js tests/sav-comparator.test.js",
     "test:api": "node --test tests/api-integration.test.js",
     "test:all": "node --test tests/",
-    "test:coverage": "node --test --experimental-test-coverage --test-force-exit tests/unit.test.js tests/schemas.test.js tests/db-init.test.js tests/audit-fixes.test.js"
+    "test:coverage": "node --test --experimental-test-coverage --test-force-exit tests/unit.test.js tests/schemas.test.js tests/db-init.test.js tests/audit-fixes.test.js tests/sprint4.test.js",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@storybook/react": "^8.6.18",
+    "@storybook/react-vite": "^8.6.18",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "md-to-pdf": "^5.2.5"
+  },
+  "lint-staged": {
+    "apps/web/src/**/*.{js,jsx}": [
+      "prettier --write",
+      "eslint --quiet --fix"
+    ],
+    "apps/web/src/**/*.css": [
+      "prettier --write"
+    ],
+    "apps/api/**/*.js": [
+      "prettier --write",
+      "apps/api/node_modules/.bin/eslint --quiet --fix"
+    ]
   },
   "dependencies": {
     "file-type": "^19.6.0"

@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { Lock, Save, Eye, EyeOff, Shield, KeyRound } from 'lucide-react';
-import api from '../../utils/api';
-import { Button, FormField, Input } from '@/design-system';
 import './ChangePassword.css';
+
+import { Eye, EyeOff, KeyRound, Lock, Save, Shield } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button, FormField, Input } from '@/design-system';
+
 import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
 
 const ChangePassword = ({ currentUser }) => {
   const toast = useToast();
@@ -75,11 +78,32 @@ const ChangePassword = ({ currentUser }) => {
       {isAdmin && (
         <div className="admin-password-section">
           <div className="admin-password-header">
-            <h3><Shield size={20} /> Mon mot de passe administrateur</h3>
-            <p className="admin-password-hint">Définissez directement un nouveau mot de passe sans saisir l’ancien</p>
+            <h3>
+              <Shield size={20} /> Mon mot de passe administrateur
+            </h3>
+            <p className="admin-password-hint">
+              Définissez directement un nouveau mot de passe sans saisir l’ancien
+            </p>
           </div>
-          <div className="admin-password-form">
-            <FormField className="form-group" label="Nouveau mot de passe" htmlFor="adminNewPassword">
+          <form
+            className="admin-password-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAdminSetPassword();
+            }}
+          >
+            <input
+              type="text"
+              autoComplete="username"
+              value={currentUser?.email || ''}
+              readOnly
+              hidden
+            />
+            <FormField
+              className="form-group"
+              label="Nouveau mot de passe"
+              htmlFor="adminNewPassword"
+            >
               <div className="password-input-wrapper">
                 <Input
                   id="adminNewPassword"
@@ -89,10 +113,13 @@ const ChangePassword = ({ currentUser }) => {
                   placeholder="Saisir le nouveau mot de passe"
                   autoComplete="new-password"
                 />
-                <Button variant="ghost"                   type="button"
+                <Button
+                  variant="ghost"
+                  type="button"
                   className="password-toggle-btn"
                   onClick={() => setShowAdminPassword(!showAdminPassword)}
                   title={showAdminPassword ? 'Masquer' : 'Afficher'}
+                  aria-pressed={showAdminPassword}
                 >
                   {showAdminPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </Button>
@@ -102,23 +129,37 @@ const ChangePassword = ({ currentUser }) => {
             <div className="form-actions">
               <Button
                 variant="primary"
-                onClick={handleAdminSetPassword}
+                type="submit"
                 disabled={isSavingAdmin || adminNewPassword.length < 10}
               >
                 <KeyRound size={16} />
                 {isSavingAdmin ? 'Application...' : 'Appliquer le mot de passe'}
               </Button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
       <div className="change-password-header">
-        <h3><Lock size={20} /> Changer mon mot de passe</h3>
+        <h3>
+          <Lock size={20} /> Changer mon mot de passe
+        </h3>
       </div>
 
       <form onSubmit={handleSubmit} className="change-password-form">
-        <FormField className="form-group" label="Mot de passe actuel" htmlFor="currentPassword" required>
+        <input
+          type="text"
+          autoComplete="username"
+          value={currentUser?.email || ''}
+          readOnly
+          hidden
+        />
+        <FormField
+          className="form-group"
+          label="Mot de passe actuel"
+          htmlFor="currentPassword"
+          required
+        >
           <Input
             id="currentPassword"
             type="password"
@@ -129,55 +170,67 @@ const ChangePassword = ({ currentUser }) => {
           />
         </FormField>
 
-        <FormField className="form-group" label="Nouveau mot de passe" htmlFor="newPassword" required>
+        <FormField
+          className="form-group"
+          label="Nouveau mot de passe"
+          htmlFor="newPassword"
+          required
+        >
           <div className="password-input-wrapper">
-          <Input
-            id="newPassword"
-            type={showNewPassword ? 'text' : 'password'}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            minLength={10}
-            autoComplete="new-password"
-          />
-          <Button variant="ghost"             type="button"
-            className="password-toggle-btn"
-            onClick={() => setShowNewPassword(!showNewPassword)}
-            title={showNewPassword ? 'Masquer' : 'Afficher'}
-          >
-            {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </Button>
+            <Input
+              id="newPassword"
+              type={showNewPassword ? 'text' : 'password'}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              minLength={10}
+              autoComplete="new-password"
+            />
+            <Button
+              variant="ghost"
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowNewPassword(!showNewPassword)}
+              title={showNewPassword ? 'Masquer' : 'Afficher'}
+              aria-pressed={showNewPassword}
+            >
+              {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </Button>
           </div>
           <p className="field-hint">Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial</p>
         </FormField>
 
-        <FormField className="form-group" label="Confirmer le nouveau mot de passe" htmlFor="confirmPassword" required>
+        <FormField
+          className="form-group"
+          label="Confirmer le nouveau mot de passe"
+          htmlFor="confirmPassword"
+          required
+        >
           <div className="password-input-wrapper">
-          <Input
-            id="confirmPassword"
-            type={showConfirmPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            minLength={10}
-            autoComplete="new-password"
-          />
-          <Button variant="ghost"             type="button"
-            className="password-toggle-btn"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            title={showConfirmPassword ? 'Masquer' : 'Afficher'}
-          >
-            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </Button>
+            <Input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={10}
+              autoComplete="new-password"
+            />
+            <Button
+              variant="ghost"
+              type="button"
+              className="password-toggle-btn"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              title={showConfirmPassword ? 'Masquer' : 'Afficher'}
+              aria-pressed={showConfirmPassword}
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </Button>
           </div>
         </FormField>
 
         <div className="form-actions">
-          <Button 
-            variant="primary"
-            type="submit"
-            disabled={isSaving}
-          >
+          <Button variant="primary" type="submit" disabled={isSaving}>
             <Save size={18} />
             {isSaving ? 'Enregistrement...' : 'Modifier le mot de passe'}
           </Button>

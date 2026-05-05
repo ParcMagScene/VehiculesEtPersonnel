@@ -1,0 +1,50 @@
+.swipeable-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.swipeable-row-content {
+  position: relative;
+  z-index: 1;
+  background: var(--card-bg, #fff);
+}
+
+.swipeable-action {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--color-white);
+  font-weight: 600;
+  font-size: 0.8rem;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.swipeable-action-left {
+  left: 0;
+  border-radius: 10px 0 0 10px;
+}
+
+.swipeable-action-right {
+  right: 0;
+  border-radius: 0 10px 10px 0;
+}
+
+.swipeable-action-icon {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.swipeable-action-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}

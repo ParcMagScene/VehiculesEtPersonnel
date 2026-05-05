@@ -1,47 +1,57 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import {
-  X, Plus, Search, Unlink, MapPin, Clock, User, Briefcase, Truck, ChevronDown
-} from 'lucide-react';
-import api from '../../utils/api';
-import AffaireBadge from '../AffaireBadge';
-import AddressAutocomplete from '../AddressAutocomplete';
-import { useToast } from '../../hooks/useToast';
-import { safeParseDate } from '../../utils/dateUtils';
-import { Button, Input, Select } from '@/design-system';
-import { STATUS } from '../../constants';
-
 import './AddTaskModal.css';
 
-// ═══ Constantes (miroir de TaskPlanningPanel) ═══
-const SECTIONS = {
-  taches_prioritaires: { label: 'Tâches Prioritaires', emoji: '🔴', color: '#ef4444' },
-  courses:             { label: 'Courses',              emoji: '🚗', color: '#8b5cf6' },
-  prep_locations:      { label: 'Préparations Locations',      emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  prep_prestations:    { label: 'Préparations Prestations',    emoji: '🎤', color: '#3b82f6', affaireOnly: true },
-  prep_ventes:         { label: 'Préparations Ventes',         emoji: '🏷️', color: '#10b981', affaireOnly: true },
-  prep_installations:  { label: 'Préparations Installations',  emoji: '⚙️', color: '#8b5cf6', affaireOnly: true },
-  prep_tournees:       { label: 'Préparations Tournées',       emoji: '🚐', color: '#ec4899', affaireOnly: true },
-  chargement:          { label: 'Chargement',           emoji: '📦', color: '#f59e0b', affaireOnly: true },
-  depart:              { label: 'Départ',               emoji: '🚀', color: '#3b82f6', affaireOnly: true },
-  installation:        { label: 'Installation',         emoji: '🛠️', color: '#10b981', affaireOnly: true },
-  montage:             { label: 'Montage',              emoji: '🔩', color: '#0891b2', affaireOnly: true },
-  demontage:           { label: 'Démontage',            emoji: '🔧', color: '#dc2626', affaireOnly: true },
-  taches_secondaires:  { label: 'Tâches Secondaires',   emoji: '🟡', color: '#f59e0b' },
-  manual:              { label: 'Autres',               emoji: '📋', color: '#64748b' },
-};
+import {
+  Briefcase,
+  ChevronDown,
+  Clock,
+  MapPin,
+  Plus,
+  Search,
+  Truck,
+  Unlink,
+  User,
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
+
+import { STATUS } from '../../constants';
+import { PLANNING_SECTIONS } from '../../constants/colors';
+import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
+import { useToast } from '../../hooks/useToast';
+import api from '../../utils/api';
+import { safeParseDate } from '../../utils/dateUtils';
+import AddressAutocomplete from '../AddressAutocomplete';
+import AffaireBadge from '../AffaireBadge';
+
+// ═══ Constantes (depuis colorConstants) ═══
+const {
+  rdv: _rdv,
+  evenements: _evenements,
+  depot: _depot,
+  ...ADD_TASK_SECTIONS
+} = PLANNING_SECTIONS;
+const SECTIONS = ADD_TASK_SECTIONS;
 
 const EVENT_TYPES = {
-  preparation:  { label: 'Préparation',  emoji: '🔧' },
-  enlevement:   { label: 'Enlèvement',   emoji: '📦' },
-  livraison:    { label: 'Livraison',     emoji: '🚚' },
-  depart:       { label: 'Départ',        emoji: '🚀' },
-  retour:       { label: 'Retour',        emoji: '↩️' },
-  recuperation: { label: 'Récupération',  emoji: '📥' },
-  montage:      { label: 'Montage',       emoji: '🔩' },
-  demontage:    { label: 'Démontage',     emoji: '🔧' },
+  preparation: { label: 'Préparation', emoji: '🔧' },
+  enlevement: { label: 'Enlèvement', emoji: '📦' },
+  livraison: { label: 'Livraison', emoji: '🚚' },
+  depart: { label: 'Départ', emoji: '🚀' },
+  retour: { label: 'Retour', emoji: '↩️' },
+  recuperation: { label: 'Récupération', emoji: '📥' },
+  montage: { label: 'Montage', emoji: '🔩' },
+  demontage: { label: 'Démontage', emoji: '🔧' },
 };
 
-const VEHICLE_SECTIONS = new Set(['courses', 'chargement', 'depart', 'enlevement', 'retour', 'recuperation']);
+const VEHICLE_SECTIONS = new Set([
+  'courses',
+  'chargement',
+  'depart',
+  'enlevement',
+  'retour',
+  'recuperation',
+]);
 const COURSE_SECTION = 'courses';
 
 export default function AddTaskModal({
@@ -59,6 +69,11 @@ export default function AddTaskModal({
   loadVehiclesAndReservations,
 }) {
   const toast = useToast();
+  const { getFavoriteDisplayName, sortPersonsByFavorites } = usePersonnelFavorites();
+  const sortedPersons = useMemo(
+    () => sortPersonsByFavorites(persons || []),
+    [persons, sortPersonsByFavorites],
+  );
 
   // Form state
   const [section, setSection] = useState('manual');
@@ -78,15 +93,23 @@ export default function AddTaskModal({
   // Affaire autocomplete
   const [affaireSearch, setAffaireSearch] = useState('');
   const [affaireOpen, setAffaireOpen] = useState(false);
+  const [loadedAllAffaires, setLoadedAllAffaires] = useState([]);
   const affaireRef = useRef(null);
 
   // Locations eMag (enregistrées)
   const [emagLocations, setEmagLocations] = useState([]);
 
-  // Load eMag locations
+  // Load eMag locations + all affaires
   useEffect(() => {
     if (isOpen) {
-      api.getLocations().then(setEmagLocations).catch(() => {});
+      api
+        .getLocations()
+        .then(setEmagLocations)
+        .catch(() => {});
+      api
+        .getAffaires()
+        .then((data) => setLoadedAllAffaires(Array.isArray(data) ? data : []))
+        .catch(() => {});
     }
   }, [isOpen]);
 
@@ -121,41 +144,67 @@ export default function AddTaskModal({
   }, [affaireOpen]);
 
   // Filtered affaires
-  const allAffairesList = allAffaires || affaires || [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const allAffairesList =
+    loadedAllAffaires.length > 0 ? loadedAllAffaires : allAffaires || affaires || [];
   const filteredAffaires = useMemo(() => {
     if (!affaireSearch.trim()) return allAffairesList.slice(0, 30);
     const q = affaireSearch.toLowerCase();
-    return allAffairesList.filter(a =>
-      (a.numeroAffaire || '').toLowerCase().includes(q) ||
-      (a.client || '').toLowerCase().includes(q) ||
-      (a.nom || '').toLowerCase().includes(q) ||
-      (a.titre || '').toLowerCase().includes(q)
-    ).slice(0, 30);
+    return allAffairesList
+      .filter(
+        (a) =>
+          (a.numeroAffaire || '').toLowerCase().includes(q) ||
+          (a.client || '').toLowerCase().includes(q) ||
+          (a.nom || '').toLowerCase().includes(q) ||
+          (a.titre || '').toLowerCase().includes(q),
+      )
+      .slice(0, 30);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAffairesList, affaireSearch]);
 
   const selectedAffaire = useMemo(() => {
-    return affaireNum ? allAffairesList.find(a => a.numeroAffaire === affaireNum) : null;
+    return affaireNum ? allAffairesList.find((a) => a.numeroAffaire === affaireNum) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAffairesList, affaireNum]);
 
+  const clientSuggestions = useMemo(() => {
+    const seen = new Set();
+    return allAffairesList
+      .map((a) => (a.client || '').trim())
+      .filter((name) => {
+        if (!name) return false;
+        const key = name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+  }, [allAffairesList]);
+
   // All events for dropdown
-  const allEvents = useMemo(() => [...(googleEvents || []), ...(icalEvents || [])], [googleEvents, icalEvents]);
+  const allEvents = useMemo(
+    () => [...(googleEvents || []), ...(icalEvents || [])],
+    [googleEvents, icalEvents],
+  );
 
   // Reservations filtered for date
   const dayReservations = useMemo(() => {
-    return (reservations || []).filter(r => r.startDate <= selectedDate && r.endDate >= selectedDate);
+    return (reservations || []).filter(
+      (r) => r.startDate <= selectedDate && r.endDate >= selectedDate,
+    );
   }, [reservations, selectedDate]);
 
   // Location suggestions from eMag (deduplicated, name + address)
   const locationSuggestions = useMemo(() => {
     const seen = new Set();
     return emagLocations
-      .filter(l => {
+      .filter((l) => {
         const key = (l.address || l.name || '').toLowerCase().trim();
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       })
-      .map(l => ({
+      .map((l) => ({
         name: l.name || '',
         address: l.address || '',
         value: l.address || l.name,
@@ -168,7 +217,8 @@ export default function AddTaskModal({
   useEffect(() => {
     if (!locationDropdownOpen) return;
     const handle = (e) => {
-      if (locationRef.current && !locationRef.current.contains(e.target)) setLocationDropdownOpen(false);
+      if (locationRef.current && !locationRef.current.contains(e.target))
+        setLocationDropdownOpen(false);
     };
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
@@ -177,8 +227,8 @@ export default function AddTaskModal({
   const filteredLocationSuggestions = useMemo(() => {
     if (!locationAddress.trim()) return locationSuggestions;
     const q = locationAddress.toLowerCase();
-    return locationSuggestions.filter(s =>
-      s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)
+    return locationSuggestions.filter(
+      (s) => s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q),
     );
   }, [locationSuggestions, locationAddress]);
 
@@ -214,7 +264,9 @@ export default function AddTaskModal({
             end_date: selectedDate,
             end_period: period || 'PM',
             client_name: client || selectedAffaire?.client || '',
-            driver_name: personId ? persons.find(p => String(p.id) === String(personId))?.firstName || '' : '',
+            driver_name: personId
+              ? persons.find((p) => String(p.id) === String(personId))?.firstName || ''
+              : '',
             prestation_name: finalTitle,
             affaire: affaireNum || '',
             notes: '',
@@ -229,10 +281,16 @@ export default function AddTaskModal({
       }
 
       // Source type
-      const selectedGoogEvent = googleEventId ? allEvents.find(e => e.id === googleEventId) : null;
+      const selectedGoogEvent = googleEventId
+        ? allEvents.find((e) => e.id === googleEventId)
+        : null;
       const sourceType = selectedGoogEvent
-        ? (selectedGoogEvent._source === 'ical' ? 'ical_event' : 'google_event')
-        : selectedAffaire ? 'affaire' : 'manual';
+        ? selectedGoogEvent._source === 'ical'
+          ? 'ical_event'
+          : 'google_event'
+        : selectedAffaire
+          ? 'affaire'
+          : 'manual';
 
       await api.createTask({
         date: selectedDate,
@@ -272,7 +330,9 @@ export default function AddTaskModal({
   // ESC to close
   useEffect(() => {
     if (!isOpen) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
@@ -284,97 +344,120 @@ export default function AddTaskModal({
   const showVehicle = VEHICLE_SECTIONS.has(section);
 
   return (
-    <div className="atm-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="atm-modal" role="dialog" aria-modal="true">
-        {/* Header */}
-        <div className="atm-header">
-          <h3><Plus size={18} /> Nouvelle tâche</h3>
-          <Button variant="ghost" className="atm-close" onClick={onClose} aria-label="Fermer"><X size={18} /></Button>
+    <Modal open onClose={onClose} size="lg" className="atm-modal no-drag-resize">
+      <ModalHeader icon={<Plus size={18} />} onClose={onClose}>
+        Nouvelle tâche
+      </ModalHeader>
+
+      <ModalBody className="atm-body">
+        {/* Section / Type de tâche */}
+        <div className="atm-field">
+          <label>Type de tâche</label>
+          <Select
+            value={section}
+            onChange={(e) => {
+              const key = e.target.value;
+              setSection(key);
+              if (key !== COURSE_SECTION) setCourseType('');
+              if (!VEHICLE_SECTIONS.has(key)) {
+                setReservationId('');
+                setVehicleId('');
+              }
+              if (key !== COURSE_SECTION) setLocationAddress('');
+            }}
+          >
+            {Object.entries(SECTIONS).map(([key, info]) => (
+              <option key={key} value={key}>
+                {info.emoji} {info.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
-        {/* Body */}
-        <div className="atm-body">
-
-          {/* Section / Type de tâche */}
+        {/* Course type (sous-type) */}
+        {showCourseType && (
           <div className="atm-field">
-            <label>Type de tâche</label>
-            <Select
-              value={section}
-              onChange={e => {
-                const key = e.target.value;
-                setSection(key);
-                if (key !== COURSE_SECTION) setCourseType('');
-                if (!VEHICLE_SECTIONS.has(key)) { setReservationId(''); setVehicleId(''); }
-                if (key !== COURSE_SECTION) setLocationAddress('');
-              }}
-            >
-              {Object.entries(SECTIONS).map(([key, info]) => (
-                <option key={key} value={key}>{info.emoji} {info.label}</option>
+            <label>Type de course</label>
+            <Select value={courseType} onChange={(e) => setCourseType(e.target.value)}>
+              <option value="">— Sélectionner —</option>
+              {Object.entries(EVENT_TYPES).map(([key, info]) => (
+                <option key={key} value={key}>
+                  {info.emoji} {info.label}
+                </option>
               ))}
             </Select>
           </div>
+        )}
 
-          {/* Course type (sous-type) */}
-          {showCourseType && (
-            <div className="atm-field">
-              <label>Type de course</label>
-              <Select value={courseType} onChange={e => setCourseType(e.target.value)}>
-                <option value="">— Sélectionner —</option>
-                {Object.entries(EVENT_TYPES).map(([key, info]) => (
-                  <option key={key} value={key}>{info.emoji} {info.label}</option>
-                ))}
-              </Select>
+        {/* Titre */}
+        <div className="atm-field">
+          <label>
+            Titre <span className="atm-required">*</span>
+          </label>
+          <Input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v) setTitle(v.charAt(0).toUpperCase() + v.slice(1));
+            }}
+            placeholder="Titre de la tâche..."
+            autoFocus
+            spellCheck
+            lang="fr"
+            autoComplete="off"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) handleSubmit();
+            }}
+          />
+        </div>
+
+        {/* Affaire */}
+        <div className="atm-field" ref={affaireRef}>
+          <label>
+            <Briefcase size={13} /> Affaire
+          </label>
+          {affaireNum ? (
+            <div className="atm-affaire-selected">
+              <AffaireBadge numero={affaireNum} type={selectedAffaire?.type} />
+              <span className="atm-affaire-client">{selectedAffaire?.client || ''}</span>
+              <Button
+                variant="ghost"
+                type="button"
+                className="atm-affaire-clear"
+                onClick={() => {
+                  setAffaireNum('');
+                  setClient('');
+                  setAffaireSearch('');
+                }}
+              >
+                <Unlink size={12} />
+              </Button>
             </div>
-          )}
-
-          {/* Titre */}
-          <div className="atm-field">
-            <label>Titre <span className="atm-required">*</span></label>
-            <Input
-              type="text"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              onBlur={e => {
-                const v = e.target.value.trim();
-                if (v) setTitle(v.charAt(0).toUpperCase() + v.slice(1));
-              }}
-              placeholder="Titre de la tâche..."
-              autoFocus
-              spellCheck
-              lang="fr"
-              autoComplete="off"
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleSubmit(); }}
-            />
-          </div>
-
-          {/* Affaire */}
-          <div className="atm-field" ref={affaireRef}>
-            <label><Briefcase size={13} /> Affaire</label>
-            {affaireNum ? (
-              <div className="atm-affaire-selected">
-                <AffaireBadge numero={affaireNum} type={selectedAffaire?.type} />
-                <span className="atm-affaire-client">{selectedAffaire?.client || ''}</span>
-                <Button variant="ghost" type="button" className="atm-affaire-clear" onClick={() => { setAffaireNum(''); setClient(''); setAffaireSearch(''); }}>
-                  <Unlink size={12} />
-                </Button>
-              </div>
-            ) : (
-              <div className="atm-affaire-wrap">
-                <Search size={13} className="atm-affaire-icon" />
-                <Input
-                  type="text"
-                  value={affaireSearch}
-                  onChange={e => { setAffaireSearch(e.target.value); setAffaireOpen(true); }}
-                  onFocus={() => setAffaireOpen(true)}
-                  placeholder="N° affaire, client…"
-                  className="atm-affaire-input"
-                />
-                {affaireOpen && (
-                  <div className="atm-affaire-dropdown">
-                    {filteredAffaires.length === 0 ? (
-                      <div className="atm-affaire-empty">Aucune affaire trouvée</div>
-                    ) : filteredAffaires.map(a => (
-                      <Button variant="ghost"                         key={a.numeroAffaire}
+          ) : (
+            <div className="atm-affaire-wrap">
+              <Search size={13} className="atm-affaire-icon" />
+              <Input
+                type="text"
+                value={affaireSearch}
+                onChange={(e) => {
+                  setAffaireSearch(e.target.value);
+                  setAffaireOpen(true);
+                }}
+                onFocus={() => setAffaireOpen(true)}
+                placeholder="N° affaire, client…"
+                className="atm-affaire-input"
+              />
+              {affaireOpen && (
+                <div className="atm-affaire-dropdown">
+                  {filteredAffaires.length === 0 ? (
+                    <div className="atm-affaire-empty">Aucune affaire trouvée</div>
+                  ) : (
+                    filteredAffaires.map((a) => (
+                      <Button
+                        variant="ghost"
+                        key={a.numeroAffaire}
                         type="button"
                         className="atm-affaire-option"
                         onClick={() => {
@@ -389,157 +472,207 @@ export default function AddTaskModal({
                         <span className="atm-affaire-opt-num">{a.numeroAffaire}</span>
                         <span className="atm-affaire-opt-client">{a.client || a.nom || ''}</span>
                       </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Google / iCal Event */}
-          {allEvents.length > 0 && (
-            <div className="atm-field">
-              <label>Événement associé</label>
-              <Select
-                value={googleEventId}
-                onChange={e => {
-                  const evId = e.target.value;
-                  setGoogleEventId(evId);
-                  setAffaireNum('');
-                  if (evId) {
-                    const ev = allEvents.find(ev2 => ev2.id === evId);
-                    if (ev) {
-                      setTitle(ev.summary || ev.title || '');
-                      const startDT = ev._source === 'ical' ? (ev.start || '') : (ev.start?.dateTime || '');
-                      if (startDT && startDT.includes('T')) {
-                        const d = safeParseDate(startDT);
-                        if (d) {
-                          setTime(d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
-                          setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
-                        }
-                      }
-                    }
-                  }
-                }}
-              >
-                <option value="">— Événement Google / iCal —</option>
-                {allEvents.map(ev => (
-                  <option key={ev.id} value={ev.id}>{ev.summary || ev.title || '(sans titre)'}</option>
-                ))}
-              </Select>
-            </div>
-          )}
-
-          {/* Lieu (courses) */}
-          {showLocation && (
-            <div className="atm-field atm-field-location" ref={locationRef}>
-              <label><MapPin size={13} /> Lieu</label>
-              <AddressAutocomplete
-                value={locationAddress}
-                onChange={(val) => { setLocationAddress(val); setLocationDropdownOpen(true); }}
-                placeholder="Adresse ou lieu de la course…"
-                className="atm-location-input"
-              />
-              {locationSuggestions.length > 0 && (
-                <Button variant="ghost"                   type="button"
-                  className="atm-location-toggle"
-                  onClick={() => setLocationDropdownOpen(v => !v)}
-                >
-                  <MapPin size={12} /> Lieux enregistrés <ChevronDown size={12} />
-                </Button>
-              )}
-              {locationDropdownOpen && filteredLocationSuggestions.length > 0 && (
-                <div className="atm-location-dropdown">
-                  {filteredLocationSuggestions.map((s, i) => (
-                    <Button variant="ghost"                       key={i}
-                      type="button"
-                      className="atm-location-option"
-                      onClick={() => {
-                        setLocationAddress(s.value);
-                        setLocationDropdownOpen(false);
-                      }}
-                    >
-                      <strong>{s.name}</strong>
-                      {s.address && s.address !== s.name && (
-                        <span className="atm-location-addr"> — {s.address}</span>
-                      )}
-                    </Button>
-                  ))}
+                    ))
+                  )}
                 </div>
               )}
             </div>
           )}
+        </div>
 
-          {/* Responsable + Client (row) */}
-          <div className="atm-row">
-            <div className="atm-field atm-field-half">
-              <label><User size={13} /> Responsable</label>
-              <Select value={personId} onChange={e => setPersonId(e.target.value)}>
-                <option value="">— Aucun —</option>
-                {persons.map(p => (
-                  <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
-                ))}
-              </Select>
-            </div>
-            <div className="atm-field atm-field-half">
-              <label>Client</label>
-              <Input
-                type="text"
-                value={client}
-                onChange={e => setClient(e.target.value)}
-                placeholder="Client..."
-              />
-            </div>
+        {/* Google / iCal Event */}
+        {allEvents.length > 0 && (
+          <div className="atm-field">
+            <label>Événement associé</label>
+            <Select
+              value={googleEventId}
+              onChange={(e) => {
+                const evId = e.target.value;
+                setGoogleEventId(evId);
+                setAffaireNum('');
+                if (evId) {
+                  const ev = allEvents.find((ev2) => ev2.id === evId);
+                  if (ev) {
+                    setTitle(ev.summary || ev.title || '');
+                    const startDT =
+                      ev._source === 'ical' ? ev.start || '' : ev.start?.dateTime || '';
+                    if (startDT && startDT.includes('T')) {
+                      const d = safeParseDate(startDT);
+                      if (d) {
+                        setTime(
+                          d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                        );
+                        setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
+                      }
+                    }
+                  }
+                }
+              }}
+            >
+              <option value="">— Événement Google / iCal —</option>
+              {allEvents.map((ev) => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.summary || ev.title || '(sans titre)'}
+                </option>
+              ))}
+            </Select>
           </div>
+        )}
 
-          {/* Véhicule (si section compatible) */}
-          {showVehicle && (
-            <div className="atm-field">
-              <label><Truck size={13} /> Réservation véhicule</label>
-              <Select value={reservationId} onChange={e => { setReservationId(e.target.value); if (e.target.value !== '__new__') setVehicleId(''); }}>
-                <option value="">— Aucune —</option>
-                {dayReservations.map(r => (
-                  <option key={r.id} value={r.id}>
-                    🚗 {r.vehicleName || '?'} {r.immatriculation ? `(${r.immatriculation})` : ''} — {r.clientName || r.prestationName || r.driverName || 'Sans nom'}
+        {/* Lieu (courses) */}
+        {showLocation && (
+          <div className="atm-field atm-field-location" ref={locationRef}>
+            <label>
+              <MapPin size={13} /> Lieu
+            </label>
+            <AddressAutocomplete
+              value={locationAddress}
+              onChange={(val) => {
+                setLocationAddress(val);
+                setLocationDropdownOpen(true);
+              }}
+              placeholder="Adresse ou lieu de la course…"
+              className="atm-location-input"
+            />
+            {locationSuggestions.length > 0 && (
+              <Button
+                variant="ghost"
+                type="button"
+                className="atm-location-toggle"
+                onClick={() => setLocationDropdownOpen((v) => !v)}
+              >
+                <MapPin size={12} /> Lieux enregistrés <ChevronDown size={12} />
+              </Button>
+            )}
+            {locationDropdownOpen && filteredLocationSuggestions.length > 0 && (
+              <div className="atm-location-dropdown">
+                {filteredLocationSuggestions.map((s, i) => (
+                  <Button
+                    variant="ghost"
+                    key={i}
+                    type="button"
+                    className="atm-location-option"
+                    onClick={() => {
+                      setLocationAddress(s.value);
+                      setLocationDropdownOpen(false);
+                    }}
+                  >
+                    <strong>{s.name}</strong>
+                    {s.address && s.address !== s.name && (
+                      <span className="atm-location-addr"> — {s.address}</span>
+                    )}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Responsable + Client (row) */}
+        <div className="atm-row">
+          <div className="atm-field atm-field-half">
+            <label>
+              <User size={13} /> Responsable
+            </label>
+            <Select value={personId} onChange={(e) => setPersonId(e.target.value)}>
+              <option value="">— Aucun —</option>
+              {sortedPersons.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {getFavoriteDisplayName(p)}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="atm-field atm-field-half">
+            <label>Client</label>
+            <Input
+              type="text"
+              value={client}
+              onChange={(e) => setClient(e.target.value)}
+              placeholder="Client..."
+              list="atm-client-suggestions"
+            />
+            {clientSuggestions.length > 0 && (
+              <datalist id="atm-client-suggestions">
+                {clientSuggestions.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+            )}
+          </div>
+        </div>
+
+        {/* Véhicule (si section compatible) */}
+        {showVehicle && (
+          <div className="atm-field">
+            <label>
+              <Truck size={13} /> Réservation véhicule
+            </label>
+            <Select
+              value={reservationId}
+              onChange={(e) => {
+                setReservationId(e.target.value);
+                if (e.target.value !== '__new__') setVehicleId('');
+              }}
+            >
+              <option value="">— Aucune —</option>
+              {dayReservations.map((r) => (
+                <option key={r.id} value={r.id}>
+                  🚗 {r.vehicleName || '?'} {r.immatriculation ? `(${r.immatriculation})` : ''} —{' '}
+                  {r.clientName || r.prestationName || r.driverName || 'Sans nom'}
+                </option>
+              ))}
+              <option value="__new__">＋ Nouvelle réservation…</option>
+            </Select>
+            {reservationId === '__new__' && (
+              <Select
+                className="atm-vehicle-select"
+                value={vehicleId}
+                onChange={(e) => setVehicleId(e.target.value)}
+              >
+                <option value="">— Véhicule —</option>
+                {(vehicles || []).map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name} {v.registration ? `(${v.registration})` : ''}
                   </option>
                 ))}
-                <option value="__new__">＋ Nouvelle réservation…</option>
               </Select>
-              {reservationId === '__new__' && (
-                <Select className="atm-vehicle-select" value={vehicleId} onChange={e => setVehicleId(e.target.value)}>
-                  <option value="">— Véhicule —</option>
-                  {(vehicles || []).map(v => (
-                    <option key={v.id} value={v.id}>{v.name} {v.registration ? `(${v.registration})` : ''}</option>
-                  ))}
-                </Select>
-              )}
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {/* Heure + Période */}
-          <div className="atm-row">
-            <div className="atm-field atm-field-half">
-              <label><Clock size={13} /> Heure</label>
-              <input type="time" value={time} onChange={e => handleTimeChange(e.target.value)} />
-            </div>
-            <div className="atm-field atm-field-half">
-              <label>Période</label>
-              <Select value={period} onChange={e => setPeriod(e.target.value)}>
-                <option value="AM">AM (Matin)</option>
-                <option value="PM">PM (Après-midi)</option>
-              </Select>
-            </div>
+        {/* Heure + Période */}
+        <div className="atm-row">
+          <div className="atm-field atm-field-half">
+            <label>
+              <Clock size={13} /> Heure
+            </label>
+            <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} />
+          </div>
+          <div className="atm-field atm-field-half">
+            <label>Période</label>
+            <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+              <option value="AM">AM (Matin)</option>
+              <option value="PM">PM (Après-midi)</option>
+            </Select>
           </div>
         </div>
+      </ModalBody>
 
-        {/* Footer */}
-        <div className="atm-footer">
-          <Button variant="ghost" onClick={onClose}>Annuler</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={submitting || !title.trim()}>
-            {submitting ? 'Ajout…' : <><Plus size={15} /> Ajouter</>}
-          </Button>
-        </div>
-      </div>
-    </div>
+      <ModalFooter className="atm-footer">
+        <Button variant="ghost" onClick={onClose}>
+          Annuler
+        </Button>
+        <Button variant="primary" onClick={handleSubmit} disabled={submitting || !title.trim()}>
+          {submitting ? (
+            'Ajout…'
+          ) : (
+            <>
+              <Plus size={15} /> Ajouter
+            </>
+          )}
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }

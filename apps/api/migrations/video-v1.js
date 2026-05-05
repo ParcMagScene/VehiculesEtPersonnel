@@ -6,7 +6,6 @@
 import logger from '../logger.js';
 
 export function runVideoMigrations(db) {
-
   // ─── 1. Table cameras ───
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS cameras (
@@ -55,7 +54,8 @@ export function runVideoMigrations(db) {
     )`);
     logger.info('  ✅ Migration video: table video_access_logs OK');
   } catch (e) {
-    if (!e.message.includes('already exists')) logger.warn('Migration video_access_logs:', e.message);
+    if (!e.message.includes('already exists'))
+      logger.warn('Migration video_access_logs:', e.message);
   }
 
   // ─── 3. Table video_sessions (sessions WebRTC actives) ───
@@ -94,7 +94,9 @@ export function runVideoMigrations(db) {
     db.exec(`ALTER TABLE cameras ADD COLUMN channel INTEGER DEFAULT 1`);
     logger.info('  ✅ Migration video: colonne channel ajoutée');
   } catch (e) {
-    if (!e.message.includes('duplicate column')) { /* déjà présente, OK */ }
+    if (!e.message.includes('duplicate column')) {
+      /* déjà présente, OK */
+    }
   }
 
   // ─── 6. Table camera_presets (vues multi-caméras) ───
@@ -115,6 +117,10 @@ export function runVideoMigrations(db) {
 
   // ─── 7. Nettoyage sessions expirées (> 24h) ───
   try {
-    db.exec(`DELETE FROM video_sessions WHERE status != 'active' AND started_at < datetime('now', '-1 day')`);
-  } catch (_) { /* ignore */ }
+    db.exec(
+      `DELETE FROM video_sessions WHERE status != 'active' AND started_at < datetime('now', '-1 day')`,
+    );
+  } catch (_) {
+    /* ignore */
+  }
 }

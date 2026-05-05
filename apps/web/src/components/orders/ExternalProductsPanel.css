@@ -1,0 +1,490 @@
+/* ============================================================
+   ExternalProductsPanel.css — Module E-shops eM@g
+   ============================================================ */
+
+.eshop-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  height: 100%;
+  overflow: auto;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────── */
+.eshop-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.eshop-search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.eshop-filter-select {
+  min-width: 160px;
+}
+
+/* ── Compteur ────────────────────────────────────────────────── */
+.eshop-count {
+  font-size: 0.8rem;
+  color: var(--color-text-muted, #6b7280);
+  margin: 0;
+}
+
+/* ── Grille de cartes ────────────────────────────────────────── */
+.eshop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.eshop-card {
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.5rem;
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.eshop-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-primary, #1a56db);
+}
+
+.eshop-card-img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.eshop-card-body {
+  padding: 0.75rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eshop-card-head {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.eshop-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text, #111827);
+}
+
+.eshop-card-desc {
+  font-size: 0.75rem;
+  color: var(--color-text-muted, #6b7280);
+  margin: 0;
+}
+
+.eshop-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.eshop-card-sups {
+  color: var(--color-text-muted, #6b7280);
+}
+
+.eshop-card-price {
+  font-weight: 600;
+  color: var(--color-primary, #1a56db);
+}
+
+.eshop-card-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.eshop-card:hover .eshop-card-actions {
+  opacity: 1;
+}
+
+/* ── État vide ────────────────────────────────────────────────── */
+.eshop-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.eshop-empty-icon {
+  opacity: 0.4;
+}
+
+.eshop-empty {
+  text-align: center;
+  color: var(--color-text-muted, #6b7280);
+  padding: 1rem;
+}
+
+.eshop-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+/* ── Boutons icône ────────────────────────────────────────────── */
+.eshop-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  color: var(--color-text-muted, #6b7280);
+  transition: all 0.15s;
+}
+
+.eshop-btn-icon:hover {
+  background: var(--color-muted, #f3f4f6);
+  color: var(--color-text, #111827);
+}
+
+.eshop-btn-danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+/* ── Fiche détail ─────────────────────────────────────────────── */
+.eshop-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.eshop-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.eshop-detail-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text, #111827);
+  flex: 1;
+}
+
+.eshop-detail-head-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.eshop-detail-desc {
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* ── Tableau comparaison ─────────────────────────────────────── */
+.eshop-compare {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.eshop-compare-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+}
+
+.eshop-compare-table-wrap {
+  overflow-x: auto;
+}
+
+.eshop-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.eshop-compare-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--color-border, #e5e7eb);
+  color: var(--color-text-muted, #6b7280);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.eshop-compare-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-border, #f3f4f6);
+  vertical-align: middle;
+}
+
+.eshop-row--best {
+  background: #f0fdf4 !important;
+}
+
+.eshop-row--best .eshop-total {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.eshop-sup-name {
+  font-weight: 600;
+}
+
+.eshop-star {
+  color: #f59e0b;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.eshop-num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.eshop-total {
+  font-weight: 600;
+}
+
+.eshop-mono {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.eshop-ext-link {
+  color: var(--color-primary, #1a56db);
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.eshop-ext-link:hover {
+  color: #1e40af;
+}
+
+/* ── Actions fournisseurs (liste éditable) ───────────────────── */
+.eshop-supplier-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.eshop-sup-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  background: var(--color-muted, #f9fafb);
+  font-size: 0.85rem;
+}
+
+.eshop-sup-action-row > div {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* ── Formulaires ─────────────────────────────────────────────── */
+.eshop-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.eshop-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eshop-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.eshop-field--full {
+  grid-column: 1 / -1;
+}
+
+.eshop-input {
+  border: 1px solid var(--color-border, #d1d5db);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #111827);
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.eshop-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #1a56db);
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+}
+
+textarea.eshop-input {
+  resize: vertical;
+}
+
+/* ── Actions modal ───────────────────────────────────────────── */
+.eshop-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* ── FAB devis ───────────────────────────────────────────────── */
+.eshop-quote-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary, #1a56db);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(26, 86, 219, 0.4);
+  z-index: 100;
+  transition: transform 0.15s;
+}
+
+.eshop-quote-fab:hover {
+  transform: scale(1.08);
+}
+
+.eshop-quote-fab-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+/* ── Liste devis ─────────────────────────────────────────────── */
+.eshop-quote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.eshop-quote-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-muted, #f9fafb);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.eshop-quote-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 120px;
+}
+
+.eshop-quote-sup {
+  color: var(--color-text-muted, #6b7280);
+}
+
+.eshop-quote-nums {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.eshop-qty {
+  width: 56px;
+  text-align: center;
+}
+
+.eshop-quote-total {
+  text-align: right;
+  font-size: 0.95rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .eshop-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eshop-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eshop-compare-table th,
+  .eshop-compare-table td {
+    padding: 0.35rem 0.4rem;
+    font-size: 0.75rem;
+  }
+}

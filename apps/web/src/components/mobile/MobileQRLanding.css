@@ -4,7 +4,12 @@
   min-height: 100vh;
   min-height: 100dvh;
   min-height: 100dvh;
-  background: linear-gradient(135deg, var(--theme-bg-darker) 0%, var(--theme-text-dark) 50%, var(--theme-text-primary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--theme-bg-darker) 0%,
+    var(--theme-text-dark) 50%,
+    var(--theme-text-primary) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,8 +33,14 @@
 }
 
 @keyframes qrLandingSlideUp {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ── Header ── */
@@ -85,8 +96,12 @@
 }
 
 @keyframes qrSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .qr-landing-error {

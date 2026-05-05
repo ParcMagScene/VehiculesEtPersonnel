@@ -2,10 +2,12 @@
 // PresetDetachedView.jsx — Vue preset détachée (fenêtre indépendante)
 // ═══════════════════════════════════════════════════════════════
 
-import { useState, useEffect, useCallback } from 'react';
-import CameraPlayerWebRTC from './CameraPlayerWebRTC';
-import api from '../../utils/api';
 import './VideoPanel.css';
+
+import { useEffect, useState } from 'react';
+
+import api from '../../utils/api';
+import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 
 const PresetDetachedView = ({ presetId }) => {
   const [preset, setPreset] = useState(null);
@@ -13,25 +15,42 @@ const PresetDetachedView = ({ presetId }) => {
   const [proxyAvailable, setProxyAvailable] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [allPresets, allCameras, proxyStatus] = await Promise.all([
-        api.getVideoPresets(),
-        api.getVideoCameras(),
-        api.getVideoProxyStatus().catch(() => ({ running: false })),
-      ]);
-      const found = allPresets.find(p => p.id === Number(presetId));
-      if (!found) { setError('Preset introuvable'); return; }
-      setPreset(found);
-      setCameras(allCameras);
-      setProxyAvailable(proxyStatus?.running === true);
-      document.title = `Preset — ${found.name}`;
-    } catch (err) {
-      setError(err.message || 'Erreur de chargement');
-    }
-  }, [presetId]);
+  useEffect(() => {
+    let cancelled = false;
 
-  useEffect(() => { loadData(); }, [loadData]);
+    const loadData = async () => {
+      setError(null);
+      try {
+        const [allPresets, allCameras, proxyStatus] = await Promise.all([
+          api.getVideoPresets(),
+          api.getVideoCameras(),
+          api.getVideoProxyStatus().catch(() => ({ running: false })),
+        ]);
+        if (cancelled) return;
+
+        const found = allPresets.find((p) => p.id === Number(presetId));
+        if (!found) {
+          setPreset(null);
+          setError('Preset introuvable');
+          return;
+        }
+
+        setPreset(found);
+        setCameras(allCameras);
+        setProxyAvailable(proxyStatus?.running === true);
+        document.title = `Preset — ${found.name}`;
+      } catch (err) {
+        if (cancelled) return;
+        setPreset(null);
+        setError(err.message || 'Erreur de chargement');
+      }
+    };
+
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, [presetId]);
 
   if (error) {
     return (
@@ -50,7 +69,7 @@ const PresetDetachedView = ({ presetId }) => {
   }
 
   const presetCameras = preset.cameraIds
-    .map(id => cameras.find(c => c.id === id))
+    .map((id) => cameras.find((c) => c.id === id))
     .filter(Boolean);
   const cols = presetCameras.length <= 1 ? 1 : 2;
 
@@ -58,9 +77,14 @@ const PresetDetachedView = ({ presetId }) => {
     <div className="preset-detached">
       <div className="preset-detached__header">
         <span className="preset-detached__title">{preset.name}</span>
-        <span className="preset-detached__count">{presetCameras.length} caméra{presetCameras.length !== 1 ? 's' : ''}</span>
+        <span className="preset-detached__count">
+          {presetCameras.length} caméra{presetCameras.length !== 1 ? 's' : ''}
+        </span>
       </div>
-      <div className="preset-detached__grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+      <div
+        className="preset-detached__grid"
+        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+      >
         {presetCameras.map((cam, idx) => (
           <CameraPlayerWebRTC
             key={cam.id}

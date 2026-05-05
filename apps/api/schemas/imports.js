@@ -49,30 +49,8 @@ export const personnelImportSchema = z.object({
 });
 
 // ── SAV Tickets Import CSV ──
-export const savImportSchema = z.object({
-  data: z
-    .array(
-      z
-        .object({
-          intervention: optStr(255),
-          code_article: optStr(100),
-          nom_article: optStr(255),
-          numero_de_serie: optStr(255),
-          debut: optStr(50),
-          fin: optStr(50),
-          cout: z.coerce.number().nonnegative().optional(),
-          a: optStr(255),
-        })
-        .passthrough(),
-    )
-    .min(1)
-    .max(10000),
-  mode: z.enum(['preview', 'import']),
-  manualLinks: z.record(z.string(), z.number()).nullish(),
-  serialUpdates: z.record(z.string(), z.string()).nullish(),
-  skipDuplicates: z.boolean().optional(),
-  updateDuplicates: z.boolean().optional(),
-});
+// Schéma legacy supprimé : voir savRoutes.js + services/savComparator.js
+// pour la nouvelle pipeline d'import LocMat (multipart/form-data).
 
 // ── Affaire Create/Update ──
 export const affaireSchema = z

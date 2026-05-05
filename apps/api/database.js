@@ -1578,6 +1578,95 @@ function initializeDatabase() {
       logger.warn('⚠️ Migration sav_tickets import:', e.message);
     }
 
+    // ═══ Migration SAV LocMat sync (Phase 3 — module SAV unifié) ═══
+    // Ajoute colonnes nécessaires à la synchro bidirectionnelle eM@g ↔ LocMat :
+    //  - locmat_code     : ID ticket côté LocMat (ex. "IN0000000123") — match prioritaire
+    //  - serial_number   : SN brut décodé du CSV (peut différer de equipment.serial_number)
+    //  - uid             : UID eM@g décodé du CSV (ex. "EMAG-00042")
+    //  - opened_at       : date d'entrée SAV (depuis colonne « Début » du CSV)
+    //  - closed_at       : date de sortie SAV (depuis colonne « Fin » du CSV)
+    //  - last_modified_source : 'emag' | 'locmat' — source de la dernière modif
+    //  - last_modified_at     : timestamp de la dernière modif (pour résolution collisions)
+    //  - notes           : notes libres internes (si non déjà présent)
+    try {
+      const savCols = db
+        .prepare('PRAGMA table_info(sav_tickets)')
+        .all()
+        .map((c) => c.name);
+      const addCol = (name, type) => {
+        if (!savCols.includes(name)) {
+          db.prepare(`ALTER TABLE sav_tickets ADD COLUMN ${name} ${type}`).run();
+          logger.info(`✅ Migration SAV: colonne ${name} ajoutée`);
+        }
+      };
+      addCol('locmat_code', 'TEXT');
+      addCol('serial_number', 'TEXT');
+      addCol('uid', 'TEXT');
+      addCol('opened_at', 'DATETIME');
+      addCol('closed_at', 'DATETIME');
+      addCol('last_modified_source', "TEXT DEFAULT 'emag'");
+      addCol('last_modified_at', 'DATETIME');
+      addCol('notes', 'TEXT');
+
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_sav_locmat_code ON sav_tickets(locmat_code);
+        CREATE INDEX IF NOT EXISTS idx_sav_uid ON sav_tickets(uid);
+        CREATE INDEX IF NOT EXISTS idx_sav_serial ON sav_tickets(serial_number);
+        CREATE INDEX IF NOT EXISTS idx_sav_status ON sav_tickets(status);
+      `);
+
+      // Backfill last_modified_* pour tickets historiques (créés avant la sync LocMat)
+      db.prepare(
+        `UPDATE sav_tickets
+           SET last_modified_source = 'emag',
+               last_modified_at = COALESCE(updated_at, created_at)
+         WHERE last_modified_at IS NULL`,
+      ).run();
+    } catch (e) {
+      logger.warn('⚠️ Migration sav_tickets LocMat sync:', e.message);
+    }
+
+    // ═══ Table d'historique des imports SAV (audit + rapport PDF) ═══
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS sav_imports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        imported_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        imported_by INTEGER,
+        filename TEXT,
+        rows_total INTEGER DEFAULT 0,
+        rows_new INTEGER DEFAULT 0,
+        rows_updated INTEGER DEFAULT 0,
+        rows_closed INTEGER DEFAULT 0,
+        rows_collisions INTEGER DEFAULT 0,
+        rows_duplicates INTEGER DEFAULT 0,
+        rows_errors INTEGER DEFAULT 0,
+        summary TEXT,        -- JSON résumé compact
+        details TEXT,        -- JSON détaillé pour rapport PDF
+        FOREIGN KEY (imported_by) REFERENCES users(id) ON DELETE SET NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_sav_imports_date ON sav_imports(imported_at DESC);
+    `);
+
+    // ═══ Historique des modifications de tickets SAV (audit field-level) ═══
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS sav_ticket_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ticket_id INTEGER NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        field TEXT NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        source TEXT NOT NULL DEFAULT 'emag',  -- 'emag' | 'locmat'
+        user_id INTEGER,
+        import_id INTEGER,
+        FOREIGN KEY (ticket_id) REFERENCES sav_tickets(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (import_id) REFERENCES sav_imports(id) ON DELETE SET NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_sav_history_ticket ON sav_ticket_history(ticket_id);
+      CREATE INDEX IF NOT EXISTS idx_sav_history_import ON sav_ticket_history(import_id);
+    `);
+
     // Catégories par défaut
     const catCount = db.prepare('SELECT COUNT(*) as c FROM equipment_categories').get();
     if (catCount.c === 0) {

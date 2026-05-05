@@ -7,7 +7,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { equipmentImportSchema, personnelImportSchema, savImportSchema, affaireSchema } from '../apps/api/schemas/imports.js';
+import { equipmentImportSchema, personnelImportSchema, affaireSchema } from '../apps/api/schemas/imports.js';
 
 // ══════════════════════════════════════════
 // equipmentImportSchema
@@ -75,31 +75,9 @@ describe('personnelImportSchema', () => {
 });
 
 // ══════════════════════════════════════════
-// savImportSchema
+// savImportSchema — supprimé : voir tests/sav-comparator.test.js
+// pour la nouvelle pipeline d'import LocMat.
 // ══════════════════════════════════════════
-describe('savImportSchema', () => {
-  it('accepte un import SAV avec manualLinks', () => {
-    const result = savImportSchema.safeParse({
-      data: [{ intervention: 'Réparation', code_article: 'ART01', nom_article: 'Enceinte', numero_de_serie: 'SN001' }],
-      mode: 'import',
-      manualLinks: { '0': 42 },
-    });
-    assert.ok(result.success);
-  });
-
-  it('accepte sans manualLinks', () => {
-    const result = savImportSchema.safeParse({
-      data: [{ intervention: 'Test' }],
-      mode: 'preview',
-    });
-    assert.ok(result.success);
-  });
-
-  it('rejette si data vide', () => {
-    const result = savImportSchema.safeParse({ data: [], mode: 'preview' });
-    assert.ok(!result.success);
-  });
-});
 
 // ══════════════════════════════════════════
 // affaireSchema

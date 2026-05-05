@@ -94,26 +94,6 @@ export function registerEquipmentMethods(ApiClient) {
     async deleteSavTicket(id) {
       return this.request(`/sav-tickets/${id}`, { method: 'DELETE' });
     },
-    async importSavTicketsCsv(
-      data,
-      mode = 'import',
-      manualLinks = null,
-      skipDuplicates = false,
-      updateDuplicates = false,
-      serialUpdates = null,
-    ) {
-      return this.request('/sav-tickets/import-csv', {
-        method: 'POST',
-        body: JSON.stringify({
-          data,
-          mode,
-          manualLinks,
-          skipDuplicates,
-          updateDuplicates,
-          serialUpdates,
-        }),
-      });
-    },
     async removeSavDuplicates() {
       return this.request('/sav-tickets/duplicates', { method: 'DELETE' });
     },
@@ -134,6 +114,43 @@ export function registerEquipmentMethods(ApiClient) {
     },
     async exportSavActivePdf() {
       return this.requestBlob('/sav-tickets/active/pdf');
+    },
+
+    // ───────────────────────────────────────────────────────
+    // Module SAV unifié — synchro LocMat (Phase 3)
+    // ───────────────────────────────────────────────────────
+    async savImportPreview(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      return this.requestFormData('/sav/import/preview', formData);
+    },
+    async savImportConfirm(file, decisions) {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('decisions', JSON.stringify(decisions || {}));
+      return this.requestFormData('/sav/import/confirm', formData);
+    },
+    async getSavImports() {
+      return this.request('/sav/imports');
+    },
+    async getSavImport(id) {
+      return this.request(`/sav/imports/${id}`);
+    },
+    async exportSavImportPdf(id) {
+      return this.requestBlob(`/sav/imports/${id}/pdf`);
+    },
+    async getSavTicketsV2(params = {}) {
+      const qs = new URLSearchParams(params).toString();
+      return this.request(`/sav/tickets${qs ? '?' + qs : ''}`);
+    },
+    async getSavTicketV2(id) {
+      return this.request(`/sav/tickets/${id}`);
+    },
+    async patchSavTicket(id, data) {
+      return this.request(`/sav/tickets/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
     },
 
     // Listes Favoris / Surveillance

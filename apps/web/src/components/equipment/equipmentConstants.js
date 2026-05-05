@@ -12,6 +12,7 @@ export const SAV_STATUS = {
   in_progress: { label: 'En cours', color: STATUS_COLORS.warning },
   waiting_parts: { label: 'Attente pièces', color: ACCENT_COLORS.violet },
   resolved: { label: 'Résolu', color: STATUS_COLORS.success },
+  sortie_sav: { label: 'Sortie SAV', color: STATUS_COLORS.info },
   closed: { label: 'Clôturé', color: 'var(--theme-text-gray)' },
 };
 

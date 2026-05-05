@@ -69,6 +69,7 @@ import { setupLeaveRoutes } from './leaveRoutes.js';
 import logger from './logger.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
+import { setupSavRoutes } from './savRoutes.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
 import {
   requireAdmin,
@@ -359,6 +360,8 @@ setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentAssignmentsRoutes(app, authenticateToken);
 setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess);
+// Module SAV unifié (Phase 3 — synchro LocMat)
+setupSavRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Commandes & Ventes

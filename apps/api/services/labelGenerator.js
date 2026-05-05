@@ -16,6 +16,39 @@
 // ═══════════════════════════════════════════════════════════════
 
 import QRCode from 'qrcode';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// ─── Logo Mag Scène intégré au centre du QR ──────────────────────────────
+// Lecture paresseuse + cache : le PNG (~550 ko) n'est lu qu'une seule fois.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOGO_PATH = path.resolve(__dirname, '../../../public/Logos/Logo_MAGSCENE_Noir_Crop.png');
+let __logoDataUriCache = null;
+let __logoAspectCache = 1; // largeur / hauteur (le logo Mag Scène croppe à ~1.21)
+function getLogoDataUri() {
+  if (__logoDataUriCache !== null) return __logoDataUriCache;
+  try {
+    const buf = fs.readFileSync(LOGO_PATH);
+    __logoDataUriCache = `data:image/png;base64,${buf.toString('base64')}`;
+    // Lecture manuelle des dimensions PNG (chunk IHDR à l'offset 16, big-endian).
+    if (buf.length >= 24 && buf[0] === 0x89 && buf[1] === 0x50) {
+      const w = buf.readUInt32BE(16);
+      const h = buf.readUInt32BE(20);
+      if (w > 0 && h > 0) __logoAspectCache = w / h;
+    }
+  } catch {
+    __logoDataUriCache = ''; // logo absent → pas d'overlay (QR reste valide)
+  }
+  return __logoDataUriCache;
+}
+// Fraction du côté du QR occupée par le logo (largeur).
+// 0.40 = très visible ; on reste lisible grâce à ECC 'H' + padding blanc qui
+// "découpe" proprement les pixels masqués (l'algo de scan tolère mieux des
+// blancs nets que des modules abîmés). Validé par jsQR sur 4 cas.
+// Fraction du côté du QR occupée par le logo (largeur).
+// 0.30 = bien visible ; ECC 'H' tolère ~30% de pertes — validé par jsQR.
+const LOGO_RATIO = 0.3;
 
 // ─── Constantes plaque (toutes en millimètres) ────────────────────────────
 //
@@ -82,7 +115,9 @@ function xmlEscape(s) {
  * @returns {{ rectsSvg: (size:number)=>string, modules: number }}
  */
 function qrModules(value) {
-  const qr = QRCode.create(String(value || ' '), { errorCorrectionLevel: 'M' });
+  // ECC 'H' (~30%) : indispensable pour pouvoir masquer un logo central
+  // sans perdre la lisibilité du QR.
+  const qr = QRCode.create(String(value || ' '), { errorCorrectionLevel: 'H' });
   const modules = qr.modules.size;
   const data = qr.modules.data; // Uint8Array length = modules*modules ; 1=dark
   return {
@@ -134,6 +169,26 @@ async function buildLabelInner(item, labelW, labelH) {
   const qrInnerSize = qrSize - 2 * QR_QUIET_ZONE;
   const qr = qrModules(item.qrPayload || item.uid || item.serial || '');
   const qrRects = qr.rectsSvg(qrInnerSize);
+
+  // Overlay logo au centre du QR (bg blanc rectangulaire au ratio du logo + image).
+  const logoUri = getLogoDataUri();
+  let logoSvg = '';
+  if (logoUri) {
+    const logoW = qrInnerSize * LOGO_RATIO;
+    const logoH = logoW / __logoAspectCache;
+    const logoX = (qrInnerSize - logoW) / 2;
+    const logoY = (qrInnerSize - logoH) / 2;
+    // Padding blanc autour du logo (10% de la dimension max) pour bien le détacher
+    // des modules QR — améliore la reconnaissance visuelle sans gêner le scan.
+    const pad = Math.max(logoW, logoH) * 0.1;
+    const bgW = logoW + 2 * pad;
+    const bgH = logoH + 2 * pad;
+    const bgX = (qrInnerSize - bgW) / 2;
+    const bgY = (qrInnerSize - bgH) / 2;
+    logoSvg =
+      `<rect x="${bgX.toFixed(4)}" y="${bgY.toFixed(4)}" width="${bgW.toFixed(4)}" height="${bgH.toFixed(4)}" fill="#FFFFFF"/>` +
+      `<image x="${logoX.toFixed(4)}" y="${logoY.toFixed(4)}" width="${logoW.toFixed(4)}" height="${logoH.toFixed(4)}" href="${logoUri}" preserveAspectRatio="xMidYMid meet"/>`;
+  }
 
   // Zone texte à droite du QR.
   const textX = qrX + qrSize + LABEL_PADDING;
@@ -360,6 +415,7 @@ async function buildLabelInner(item, labelW, labelH) {
       <rect x="${BORDER_INSET}" y="${BORDER_INSET}" width="${(labelW - BORDER_W).toFixed(3)}" height="${(labelH - BORDER_W).toFixed(3)}" fill="none" stroke="#000000" stroke-width="${BORDER_W}"/>
       <g transform="translate(${qrTx.toFixed(3)},${qrTy.toFixed(3)})" fill="#000000">
         ${qrRects}
+        ${logoSvg}
       </g>
       <g>${textSvg}</g>
     </g>

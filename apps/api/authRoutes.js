@@ -20,6 +20,11 @@ import {
 } from './schemas/auth.js';
 import { validate } from './schemas/imports.js';
 
+// [AUTH] Nom du cookie JWT — paramétrable via COOKIE_NAME (défaut: auth_token).
+// Permet d'éviter les collisions cross-port sur localhost (les cookies sont partagés
+// entre tous les ports d'un même hôte). Configurer COOKIE_NAME=auth_token_dev en dev.
+const COOKIE_NAME = process.env.COOKIE_NAME || 'auth_token';
+
 export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev }) {
   // Options cookie httpOnly pour les tokens JWT
   // secure=true seulement si les clients accèdent via HTTPS
@@ -363,7 +368,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
       });
 
       // [AUDIT Phase 3] Token envoyé en cookie httpOnly (plus sûr que localStorage)
-      res.cookie('auth_token', token, cookieOptions);
+      res.cookie(COOKIE_NAME, token, cookieOptions);
       res.json({
         user: {
           id: user.id,
@@ -445,7 +450,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
       });
 
       // [AUDIT Phase 3] Token envoyé en cookie httpOnly
-      res.cookie('auth_token', token, cookieOptions);
+      res.cookie(COOKIE_NAME, token, cookieOptions);
       res.json({
         user: {
           id: user.id,
@@ -489,7 +494,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
       });
 
       // [AUDIT Phase 3] Effacer le cookie httpOnly
-      res.clearCookie('auth_token', { path: '/' });
+      res.clearCookie(COOKIE_NAME, { path: '/' });
       res.json({ success: true, message: 'Déconnexion réussie', sessionsClosed: result.changes });
     } catch (error) {
       logger.error('Erreur logout:', error);
@@ -537,7 +542,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
 
       // Récupérer le hash du token actuel pour mettre à jour la session
       const authHeader = req.headers['authorization'];
-      const currentToken = (authHeader && authHeader.split(' ')[1]) || req.cookies?.auth_token;
+      const currentToken = (authHeader && authHeader.split(' ')[1]) || req.cookies?.[COOKIE_NAME];
       const oldTokenHash = crypto
         .createHash('sha256')
         .update(currentToken)
@@ -585,7 +590,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
       authCache.invalidate(oldTokenHash);
 
       // Envoyer le nouveau cookie
-      res.cookie('auth_token', newToken, cookieOptions);
+      res.cookie(COOKIE_NAME, newToken, cookieOptions);
       logger.info(`🔄 Refresh réussi pour user ${userId}`);
       res.json({
         user: {
@@ -678,7 +683,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         req,
       });
 
-      res.cookie('auth_token', token, cookieOptions);
+      res.cookie(COOKIE_NAME, token, cookieOptions);
       res.json({
         user: {
           id: user.id,

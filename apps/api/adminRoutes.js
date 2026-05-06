@@ -23,6 +23,8 @@ export function setupAdminRoutes(
   requireAdmin,
   { JWT_SECRET, JWT_EXPIRY_DAYS },
 ) {
+  // Nom du cookie JWT — paramétrable via COOKIE_NAME (défaut: auth_token).
+  const COOKIE_NAME = process.env.COOKIE_NAME || 'auth_token';
   // Options cookie httpOnly pour les tokens JWT
   const cookieOptions = {
     httpOnly: true,
@@ -828,7 +830,7 @@ export function setupAdminRoutes(
       logger.info('✅ Nouveau mot de passe défini');
 
       // [AUDIT Phase 3] Token envoyé en cookie httpOnly
-      res.cookie('auth_token', token, cookieOptions);
+      res.cookie(COOKIE_NAME, token, cookieOptions);
       res.json({
         success: true,
         user: {

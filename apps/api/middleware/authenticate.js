@@ -5,6 +5,9 @@ import { authCache } from '../cache.js';
 import db from '../database.js';
 import logger from '../logger.js';
 
+// Nom du cookie JWT — paramétrable via COOKIE_NAME (défaut: auth_token).
+const COOKIE_NAME = process.env.COOKIE_NAME || 'auth_token';
+
 /**
  * Middleware d'authentification — vérifie JWT + session active en DB
  * [PERF] Cache LRU/TTL sur la vérification session (30s)
@@ -13,7 +16,7 @@ export function createAuthenticateToken(JWT_SECRET) {
   return function authenticateToken(req, res, next) {
     // [AUDIT Phase 3] Lire le token depuis le header Authorization OU le cookie httpOnly
     const authHeader = req.headers['authorization'];
-    const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.auth_token;
+    const token = (authHeader && authHeader.split(' ')[1]) || req.cookies?.[COOKIE_NAME];
 
     if (!token) {
       logger.warn(`🔒 Token manquant sur ${req.method} ${req.path}`);

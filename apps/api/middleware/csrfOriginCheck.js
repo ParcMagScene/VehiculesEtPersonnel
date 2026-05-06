@@ -51,7 +51,8 @@ export function csrfOriginCheck(req, res, next) {
 
   // Pas de cookie d'auth → caller hors-navigateur (Bearer/curl/server) : pas de risque CSRF
   const cookieHeader = req.headers.cookie || '';
-  if (!cookieHeader.includes('auth_token=')) return next();
+  const COOKIE_NAME = process.env.COOKIE_NAME || 'auth_token';
+  if (!cookieHeader.includes(`${COOKIE_NAME}=`)) return next();
 
   // Cookie d'auth présent : exiger Origin OU Referer cohérent
   const origin = req.headers.origin || null;

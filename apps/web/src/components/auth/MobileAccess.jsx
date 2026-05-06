@@ -3,7 +3,7 @@ import './MobileAccess.css';
 import { Check, Copy, Link as LinkIcon, Printer, QrCode } from 'lucide-react';
 import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { Button, Input } from '@/design-system';
 
@@ -27,42 +27,12 @@ function MobileAccess() {
   const [copied, setCopied] = useState(false);
   const [posterCount, setPosterCount] = useState(1);
   const [posterFormat, setPosterFormat] = useState('A4');
-  const [lanIps, setLanIps] = useState([]);
-  const [selectedIp, setSelectedIp] = useState('');
 
-  // Si l'admin consulte l'app via http://localhost ou 127.0.0.1, le QR
-  // doit pointer vers une IP LAN du serveur (sinon le téléphone ne peut
-  // pas s'y connecter). On récupère les IPs disponibles via le backend.
-  const isLocalHost = useMemo(() => {
-    const h = window.location.hostname;
-    return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-  }, []);
-
-  useEffect(() => {
-    if (!isLocalHost) return;
-    let cancelled = false;
-    fetch('/api/network-info', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.success || !Array.isArray(data.ips)) return;
-        setLanIps(data.ips);
-        if (data.ips.length > 0) setSelectedIp(data.ips[0].address);
-      })
-      .catch(() => {
-        /* fallback silencieux : on garde l'URL localhost */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isLocalHost]);
-
-  // URL de l'interface mobile (utilise l'IP LAN si on est sur localhost)
-  const mobileUrl = useMemo(() => {
-    if (isLocalHost && selectedIp) {
-      return `${window.location.protocol}//${selectedIp}:${window.location.port || (window.location.protocol === 'https:' ? '443' : '80')}/#/mobile`;
-    }
-    return `${window.location.origin}/#/mobile`;
-  }, [isLocalHost, selectedIp]);
+  // URL publique de l'interface mobile : on utilise toujours le domaine
+  // public (DuckDNS) pour que le QR fonctionne aussi bien depuis le LAN
+  // que depuis l'extérieur (4G/Wi-Fi invité). Configurable via VITE_PUBLIC_URL.
+  const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_URL || 'https://magsav.duckdns.org';
+  const mobileUrl = `${PUBLIC_BASE}/#/mobile`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(mobileUrl).then(() => {
@@ -245,31 +215,6 @@ function MobileAccess() {
             </Button>
           </div>
           <p className="url-hint">Cliquez pour copier l'URL</p>
-          {isLocalHost && lanIps.length > 1 && (
-            <div style={{ marginTop: 8 }}>
-              <label style={{ fontSize: 12, opacity: 0.7 }}>
-                Adresse réseau du serveur (à utiliser pour le QR)
-              </label>
-              <select
-                value={selectedIp}
-                onChange={(e) => setSelectedIp(e.target.value)}
-                style={{ display: 'block', marginTop: 4, padding: '4px 8px', width: '100%' }}
-              >
-                {lanIps.map((ip) => (
-                  <option key={ip.address} value={ip.address}>
-                    {ip.address} ({ip.iface})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          {isLocalHost && lanIps.length === 0 && (
-            <p className="url-hint" style={{ color: '#dc2626', marginTop: 6 }}>
-              ⚠️ Vous consultez l'app via <code>localhost</code>. Les téléphones ne pourront pas
-              ouvrir cette URL. Utilisez l'IP LAN du serveur (ex.{' '}
-              <code>http://192.168.x.x:{window.location.port || '4173'}/#/mobile</code>).
-            </p>
-          )}
         </div>
 
         {/* Fonctionnalités */}

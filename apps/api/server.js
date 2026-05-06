@@ -26,6 +26,7 @@ import express from 'express';
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -189,6 +190,26 @@ app.get('/api/health', (req, res) => {
     res.json({ ok: true, uptime: Math.floor((Date.now() - startedAt) / 1000), db: 'connected' });
   } catch (err) {
     res.status(503).json({ ok: false, db: 'error', error: err.message });
+  }
+});
+
+// Renvoie les IPv4 LAN du serveur (utilisé par l'écran "Accès mobile"
+// pour générer un QR code utilisable depuis un téléphone, même quand
+// l'admin consulte l'app via http://localhost).
+app.get('/api/network-info', (req, res) => {
+  try {
+    const ifaces = os.networkInterfaces();
+    const ips = [];
+    for (const name of Object.keys(ifaces)) {
+      for (const info of ifaces[name] || []) {
+        if (info.family === 'IPv4' && !info.internal) {
+          ips.push({ iface: name, address: info.address });
+        }
+      }
+    }
+    res.json({ success: true, ips });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

@@ -28,6 +28,42 @@ const SEED_TYPES = [
     default_periodicity_days: 365,
     missed_after_days: 60,
   },
+  // Sous-catégories CT (legacy → conservées pour compat. import historique)
+  {
+    code: 'VL',
+    name: 'CT Véhicule Léger',
+    is_vehicle_specific: 1,
+    default_periodicity_days: 730,
+    missed_after_days: 60,
+  },
+  {
+    code: 'PL',
+    name: 'CT Poids Lourd',
+    is_vehicle_specific: 1,
+    default_periodicity_days: 365,
+    missed_after_days: 60,
+  },
+  {
+    code: 'SEMI',
+    name: 'CT Semi-remorque',
+    is_vehicle_specific: 1,
+    default_periodicity_days: 365,
+    missed_after_days: 60,
+  },
+  {
+    code: 'SCENE',
+    name: 'CT Scène mobile',
+    is_vehicle_specific: 1,
+    default_periodicity_days: 365,
+    missed_after_days: 60,
+  },
+  {
+    code: 'POLLUTION',
+    name: 'Contrôle pollution',
+    is_vehicle_specific: 1,
+    default_periodicity_days: 365,
+    missed_after_days: 30,
+  },
   {
     code: 'TACHYGRAPHE',
     name: 'Tachygraphe',
@@ -349,6 +385,50 @@ export function runControlesPeriodiquesMigrations(db) {
     }
   } catch (e) {
     logger.warn('Contrôles périodiques migration véhicules:', e.message);
+  }
+
+  // ─── 7. Reclassif idempotente : entrées migrées en AUTRE → vrai code ───
+  // Corrige les lignes que la première version de la migration v1 avait
+  // mises en AUTRE faute de codes VL/PL/SEMI/SCENE/POLLUTION dans control_types.
+  try {
+    const typeAutreId = db.prepare("SELECT id FROM control_types WHERE code = 'AUTRE'").get()?.id;
+    if (typeAutreId) {
+      const rows = db
+        .prepare(
+          `SELECT id, notes FROM equipment_controls
+             WHERE entity_type = 'vehicle'
+               AND control_type_id = ?
+               AND notes LIKE '[migrated:v1]%'`,
+        )
+        .all(typeAutreId);
+      const upd = db.prepare(
+        'UPDATE equipment_controls SET control_type_id = ?, periodicity_days = ? WHERE id = ?',
+      );
+      const typeByCode = (code) =>
+        db
+          .prepare('SELECT id, default_periodicity_days FROM control_types WHERE code = ?')
+          .get(code);
+      let reclassified = 0;
+      const tx = db.transaction(() => {
+        for (const r of rows) {
+          const m = String(r.notes || '').match(/^\[migrated:v1\]\s+([A-Z0-9_]+)\s/);
+          if (!m) continue;
+          const code = m[1];
+          if (code === 'AUTRE') continue;
+          const t = typeByCode(code);
+          if (!t || t.id === typeAutreId) continue;
+          upd.run(t.id, t.default_periodicity_days || 365, r.id);
+          reclassified++;
+        }
+      });
+      tx();
+      if (reclassified > 0)
+        logger.info(
+          `  ✅ Contrôles périodiques: ${reclassified} contrôles reclassifiés (AUTRE → code spécifique)`,
+        );
+    }
+  } catch (e) {
+    logger.warn('Contrôles périodiques reclassif:', e.message);
   }
 
   logger.info('✅ Migration controles-periodiques-v1 terminée');

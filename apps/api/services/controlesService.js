@@ -54,7 +54,15 @@ export function computeStatus(control, now = new Date()) {
 /**
  * Effectue un contrôle (insère history, met à jour next_due_date, last_done_date, status).
  * Retourne { control, history }.
+ *
+ * Cooldown : refuse 409 si un performControl a déjà été enregistré pour ce contrôle
+ * dans les `cooldownMs` dernières millisecondes (anti double-clic + anti-spam UI).
+ * Le cooldown s'évalue sur `control_history.created_at` (timestamp serveur),
+ * et non sur `performed_at` (date métier saisie). Désactivable via `payload.skipCooldown`
+ * pour les usages internes (scheduler MANQUE, scripts d'import).
  */
+const PERFORM_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 h
+
 export function performControl(db, controlId, payload, userId = null) {
   const ctrl = db
     .prepare(
@@ -68,6 +76,28 @@ export function performControl(db, controlId, payload, userId = null) {
     const err = new Error('Contrôle introuvable');
     err.statusCode = 404;
     throw err;
+  }
+
+  // ─── Cooldown anti-doublon (par défaut 24 h, bypass via skipCooldown) ───
+  if (!payload.skipCooldown) {
+    const last = db
+      .prepare(
+        `SELECT created_at FROM control_history
+          WHERE equipment_control_id = ?
+          ORDER BY id DESC LIMIT 1`,
+      )
+      .get(controlId);
+    if (last && last.created_at) {
+      const lastMs = new Date(last.created_at.replace(' ', 'T') + 'Z').getTime();
+      if (!Number.isNaN(lastMs) && Date.now() - lastMs < PERFORM_COOLDOWN_MS) {
+        const err = new Error(
+          'Contrôle déjà effectué dans les dernières 24 h. ' +
+            "Pour corriger une erreur, modifiez la dernière entrée d'historique.",
+        );
+        err.statusCode = 409;
+        throw err;
+      }
+    }
   }
 
   const performedAt = payload.performed_at;

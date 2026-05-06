@@ -323,7 +323,11 @@ export class ApiClient {
       endpoint === '/auth/login' ||
       endpoint === '/auth/register' ||
       endpoint === '/auth/force-login' ||
-      endpoint === '/auth/refresh';
+      endpoint === '/auth/refresh' ||
+      endpoint === '/auth/forgot-password' ||
+      endpoint === '/auth/self-reset-password' ||
+      endpoint === '/auth/check-reset' ||
+      endpoint === '/auth/set-new-password';
     if (isAuthEndpoint) return false;
 
     console.warn(`[Auth] 401 reçu sur ${endpoint} — tentative de refresh silencieux`);
@@ -380,7 +384,11 @@ export class ApiClient {
       endpoint === '/auth/login' ||
       endpoint === '/auth/register' ||
       endpoint === '/auth/force-login' ||
-      endpoint === '/auth/refresh';
+      endpoint === '/auth/refresh' ||
+      endpoint === '/auth/forgot-password' ||
+      endpoint === '/auth/self-reset-password' ||
+      endpoint === '/auth/check-reset' ||
+      endpoint === '/auth/set-new-password';
 
     // 401 : tenter refresh silencieux puis retry (une seule fois)
     if (response.status === 401 && !isAuthEndpoint && !_isRetry) {

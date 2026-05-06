@@ -74,7 +74,9 @@ export function setupAdminRoutes(
         const user = stmt.get(req.user.id);
 
         if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) {
-          return res.status(401).json({ success: false, error: 'Mot de passe actuel incorrect' });
+          // 400 (et pas 401) : erreur métier de validation, pas de problème de session.
+          // Un 401 déclencherait un reload de page côté client (handler global d'auth).
+          return res.status(400).json({ success: false, error: 'Mot de passe actuel incorrect' });
         }
 
         // [AUDIT FIX HIGH-2] Politique de mot de passe renforcée

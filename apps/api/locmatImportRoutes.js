@@ -1,19 +1,19 @@
 // ═══════════════════════════════════════════════════════════════
 // locmatImportRoutes.js
-// Import intelligent Locmat (Locations.csv + Serialise.csv)
-// → cible la table `equipment` + `equipment_serials`
+// Import intelligent Locmat (Locations.csv + Serialise.csv) — Modèle A pur :
+// 1 ligne `equipment` = 1 unité physique (ref + serial_number + uid uniques).
+// La table `equipment_serials` n'est plus utilisée.
 //
 // Flux :
 //   1. POST /api/import/locmat/preview  → calcule le diff (read-only)
 //   2. POST /api/import/locmat/confirm  → applique sous transaction
-//                                          (création UID+QR pour newProducts,
-//                                           upsert serials, log)
+//                                          (création UID+QR pour newProducts
+//                                           et chaque newSerial = 1 equipment)
 //   3. GET  /api/import/locmat/logs     → historique des imports
 //
-// Contraintes (cf. brief utilisateur §8) :
+// Contraintes :
 //   • Aucune écriture sans validation
-//   • Suppression des numéros de série = soft (status='removed')
-//   • Pas de génération d'UID pour une référence existante
+//   • Suppression = soft (status='removed')
 // ═══════════════════════════════════════════════════════════════
 
 import db, { addToHistory } from './database.js';
@@ -23,47 +23,66 @@ import { diffWithDatabase } from './services/locmatImport.js';
 import { buildEquipmentQrPayload, generateQrDataUrl } from './services/qrcodeGenerator.js';
 import { getNextUid } from './services/uidCounter.js';
 
-// ─── Helpers DB ───
-// On retourne les colonnes equipment renommées avec les clés génériques
-// attendues par diffWithDatabase (unit_price/quantity/description/...).
-function buildDbItemsByCode() {
+// ─── Helpers DB (Modèle A) ───
+// Représentant equipment par reference (UPPER) — choisit en priorité une ligne
+// "catalogue" (sans serial_number), sinon la 1ère unité trouvée. Les lignes
+// `[archive]` issues de la migration sont ignorées.
+function buildDbCatalogByCode() {
   const rows = db
     .prepare(
       `SELECT id, reference, name,
               notes          AS description,
               purchase_price AS unit_price,
-              NULL           AS sell_price,
               stock_quantity AS quantity,
-              NULL           AS barcode,
-              location, uid, qrcode, is_serialized
+              location, serial_number
        FROM equipment
-       WHERE reference IS NOT NULL AND reference != ''`,
+       WHERE reference IS NOT NULL AND reference != ''
+         AND (name IS NULL OR name NOT LIKE '%[archive]%')`,
     )
     .all();
   const map = new Map();
-  for (const r of rows) map.set(String(r.reference || '').toUpperCase(), r);
-  return map;
-}
-
-function buildDbSerialsByEquipmentId() {
-  const rows = db
-    .prepare("SELECT equipment_id, serial FROM equipment_serials WHERE status = 'active'")
-    .all();
-  const map = new Map();
   for (const r of rows) {
-    if (!map.has(r.equipment_id)) map.set(r.equipment_id, new Set());
-    map.get(r.equipment_id).add(r.serial);
+    const key = String(r.reference || '').toUpperCase();
+    const prev = map.get(key);
+    // priorité au "catalogue" (serial_number vide)
+    if (!prev || (!r.serial_number && prev.serial_number)) {
+      map.set(key, r);
+    }
   }
   return map;
 }
 
-// Index inverse : serial actif → equipment_id propriétaire (collision DB cross-équipement)
-function buildDbSerialOwnerBySerial() {
+// Index serials existants par code de référence
+function buildDbSerialsByCode() {
   const rows = db
-    .prepare("SELECT equipment_id, serial FROM equipment_serials WHERE status = 'active'")
+    .prepare(
+      `SELECT reference, serial_number FROM equipment
+       WHERE serial_number IS NOT NULL AND serial_number != ''
+         AND reference IS NOT NULL AND reference != ''
+         AND (status IS NULL OR status != 'removed')`,
+    )
     .all();
   const map = new Map();
-  for (const r of rows) map.set(r.serial, r.equipment_id);
+  for (const r of rows) {
+    const key = String(r.reference || '').toUpperCase();
+    if (!map.has(key)) map.set(key, new Set());
+    map.get(key).add(r.serial_number);
+  }
+  return map;
+}
+
+// Index inverse : serial → refUpper propriétaire (collision cross-ref)
+function buildDbOwnerCodeBySerial() {
+  const rows = db
+    .prepare(
+      `SELECT reference, serial_number FROM equipment
+       WHERE serial_number IS NOT NULL AND serial_number != ''
+         AND reference IS NOT NULL AND reference != ''
+         AND (status IS NULL OR status != 'removed')`,
+    )
+    .all();
+  const map = new Map();
+  for (const r of rows) map.set(r.serial_number, String(r.reference).toUpperCase());
   return map;
 }
 
@@ -78,16 +97,16 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
       try {
         const { locations, serials } = req.body;
 
-        const dbItemsByCode = buildDbItemsByCode();
-        const dbSerialsByItemId = buildDbSerialsByEquipmentId();
-        const dbSerialOwnerBySerial = buildDbSerialOwnerBySerial();
+        const dbCatalogByCode = buildDbCatalogByCode();
+        const dbSerialsByCode = buildDbSerialsByCode();
+        const dbOwnerCodeBySerial = buildDbOwnerCodeBySerial();
 
         const diff = diffWithDatabase({
           locations,
           serials,
-          dbItemsByCode,
-          dbSerialsByItemId,
-          dbSerialOwnerBySerial,
+          dbCatalogByCode,
+          dbSerialsByCode,
+          dbOwnerCodeBySerial,
         });
 
         res.json({
@@ -96,7 +115,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
             newProducts: diff.newProducts.length,
             updatedProducts: diff.updatedProducts.length,
             quantityChanges: diff.quantityChanges.length,
-            serializationChanges: diff.serializationChanges?.length || 0,
             newSerials: diff.newSerials.length,
             removedSerials: diff.removedSerials.length,
             missingProducts: diff.missingProducts?.length || 0,
@@ -127,7 +145,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           newProducts,
           updatedProducts,
           quantityChanges,
-          serializationChanges = [],
           newSerials,
           removedSerials,
           missingProducts = [],
@@ -135,21 +152,22 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           collisions = [],
         } = req.body;
 
-        // 1) Pré-générer placeholder pour les newProducts (UID sera attribué
-        // après INSERT pour respecter le format EMAG-XXXXX basé sur l'id).
-        const productsWithIds = [];
-        for (const p of newProducts) {
-          productsWithIds.push({ ...p, uid: null, qrcode: null });
-        }
-
-        const insertEquip = db.prepare(`
+        // INSERT pour un "catalogue" (1 ligne sans serial — produit non sérialisé
+        // ou tête de gondole d'une famille sérialisée).
+        const insertCatalog = db.prepare(`
           INSERT INTO equipment
             (name, reference, notes, purchase_price, stock_quantity,
-             location, status, uid, qrcode, is_serialized, created_by)
-          VALUES (?, ?, ?, ?, ?, ?, 'available', ?, ?, ?, ?)
+             location, status, uid, qrcode, is_serialized, serial_number, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, 'available', ?, ?, 0, NULL, ?)
+        `);
+        // INSERT pour une unité sérialisée (1 ligne = 1 SN, stock=1).
+        const insertUnit = db.prepare(`
+          INSERT INTO equipment
+            (name, reference, notes, purchase_price, stock_quantity,
+             location, status, uid, qrcode, is_serialized, serial_number, created_by)
+          VALUES (?, ?, ?, ?, 1, ?, 'available', ?, ?, 0, ?, ?)
         `);
         const updateEquipUid = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
-        const updateSerialUid = db.prepare('UPDATE equipment_serials SET uid = ? WHERE id = ?');
         const updateEquip = db.prepare(`
           UPDATE equipment SET
             name           = COALESCE(?, name),
@@ -162,34 +180,36 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         const updateQty = db.prepare(`
           UPDATE equipment SET stock_quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
         `);
-        const updateSerializedFlag = db.prepare(`
-          UPDATE equipment SET is_serialized = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?
-        `);
-        const insertSerial = db.prepare(`
-          INSERT INTO equipment_serials (equipment_id, serial, status, source)
-          VALUES (?, ?, 'active', 'locmat')
-        `);
-        const findSerial = db.prepare(
-          'SELECT id, status FROM equipment_serials WHERE equipment_id = ? AND serial = ?',
+        // Recherche d'un "catalogue parent" pour cloner les champs lors d'une
+        // création d'unité (priorité au catalogue sans serial, sinon n'importe
+        // quelle unité de la même reference).
+        const findParentByCode = db.prepare(
+          `SELECT id, name, reference, notes, purchase_price, location
+           FROM equipment
+           WHERE UPPER(reference) = UPPER(?)
+             AND (name IS NULL OR name NOT LIKE '%[archive]%')
+           ORDER BY (CASE WHEN serial_number IS NULL OR serial_number = '' THEN 0 ELSE 1 END), id
+           LIMIT 1`,
         );
-        const findSerialGlobal = db.prepare(
-          "SELECT id, equipment_id FROM equipment_serials WHERE serial = ? AND status = 'active' LIMIT 1",
+        // Soft-delete d'une unité par (ref, serial)
+        const softRemoveUnit = db.prepare(
+          `UPDATE equipment SET status = 'removed', updated_at = CURRENT_TIMESTAMP
+           WHERE UPPER(reference) = UPPER(?) AND serial_number = ?
+             AND (status IS NULL OR status != 'removed')`,
         );
-        const reactivateSerial = db.prepare(
-          "UPDATE equipment_serials SET status = 'active', removed_at = NULL WHERE id = ?",
+        // Vérifier qu'une (ref, serial) n'existe pas déjà avant INSERT unité
+        const findUnitByRefSerial = db.prepare(
+          `SELECT id, status FROM equipment
+           WHERE UPPER(reference) = UPPER(?) AND serial_number = ? LIMIT 1`,
         );
-        const removeSerial = db.prepare(
-          "UPDATE equipment_serials SET status = 'removed', removed_at = CURRENT_TIMESTAMP WHERE equipment_id = ? AND serial = ? AND status = 'active'",
-        );
-        const findEquipByCode = db.prepare(
-          'SELECT id FROM equipment WHERE UPPER(reference) = UPPER(?) LIMIT 1',
+        const reactivateUnit = db.prepare(
+          `UPDATE equipment SET status = 'available', updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         );
 
         const result = {
           createdProducts: 0,
           updatedProducts: 0,
           quantityAdjusted: 0,
-          serializationActivated: 0,
           serialsAdded: 0,
           serialsRemoved: 0,
           serialsReactivated: 0,
@@ -197,15 +217,22 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           errors: [],
         };
 
-        const newProductIdByCode = new Map(); // code → new id
-        const newEquipmentIds = []; // pour générer UID/QR après INSERT
-        const newSerialIds = []; // pour générer UID après INSERT
+        // Map code → données catalogue (utile pour cloner lors des newSerials)
+        const newCatalogByCode = new Map();
+        const newEquipmentIds = []; // pour QR async post-transaction
 
         const apply = db.transaction(() => {
           // ── A. nouveaux produits ──
-          for (const p of productsWithIds) {
+          // Un newProduct sérialisé ne crée PAS de ligne catalogue ; les unités
+          // seront créées dans la phase D (newSerials). On mémorise juste les
+          // métadonnées pour le clone.
+          for (const p of newProducts) {
             try {
-              const insRes = insertEquip.run(
+              if (p.isSerialized) {
+                newCatalogByCode.set(String(p.code).toUpperCase(), p);
+                continue;
+              }
+              const insRes = insertCatalog.run(
                 p.name || p.code,
                 p.code,
                 p.description || (p.fromSerialiseOnly ? 'Créé depuis Serialise.csv' : null),
@@ -213,14 +240,12 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
                 p.quantity || 0,
                 p.location || null,
                 null, // uid attribué juste après
-                null, // qrcode généré après transaction (await)
-                p.isSerialized ? 1 : 0,
+                null, // qrcode généré après transaction
                 req.user.id,
               );
               const newId = insRes.lastInsertRowid;
               const uid = getNextUid(db);
               updateEquipUid.run(uid, newId);
-              newProductIdByCode.set(p.code.toUpperCase(), newId);
               newEquipmentIds.push({ id: newId, uid });
               result.createdProducts++;
             } catch (e) {
@@ -245,7 +270,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
             }
           }
 
-          // ── C. quantités ──
+          // ── C. quantités (uniquement pour produits non sérialisés) ──
           for (const q of quantityChanges) {
             try {
               updateQty.run(q.to, q.id);
@@ -255,74 +280,67 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
             }
           }
 
-          // ── C-bis. activation `is_serialized` (sérialisation externe via Locmat) ──
-          // Cas : équipement existant dans eMag avec is_serialized=0 mais des numéros
-          // de série fournis dans Serialise.csv → on bascule le flag à 1.
-          // (La quantité a déjà été alignée sur le nombre de serials actifs en C.)
-          for (const sc of serializationChanges) {
-            try {
-              const info = updateSerializedFlag.run(sc.id);
-              if (info.changes > 0) result.serializationActivated++;
-            } catch (e) {
-              result.errors.push(`Sérialisation ${sc.code}: ${e.message}`);
-            }
-          }
-
-          // ── D. nouveaux serials ──
+          // ── D. nouveaux serials → 1 ligne equipment / SN ──
           for (const s of newSerials) {
             try {
-              let equipmentId = s.equipmentId;
-              if (!equipmentId) {
-                equipmentId = newProductIdByCode.get(String(s.code).toUpperCase());
-                if (!equipmentId) {
-                  const found = findEquipByCode.get(s.code);
-                  equipmentId = found?.id;
-                }
-              }
-              if (!equipmentId) {
-                result.errors.push(`Serial ${s.serial}: équipement ${s.code} introuvable`);
-                continue;
-              }
-              const existing = findSerial.get(equipmentId, s.serial);
-              if (existing) {
-                if (existing.status !== 'active') {
-                  reactivateSerial.run(existing.id);
+              // Vérifier idempotence : (ref, serial) déjà présent ?
+              const existingUnit = findUnitByRefSerial.get(s.code, s.serial);
+              if (existingUnit) {
+                if (existingUnit.status === 'removed') {
+                  reactivateUnit.run(existingUnit.id);
                   result.serialsReactivated++;
                 }
-              } else {
-                // Vérifier qu'aucun autre équipement n'a déjà ce serial actif
-                // (l'index UNIQUE partiel sur serial WHERE status='active' ferait sinon crasher l'INSERT)
-                const conflict = findSerialGlobal.get(s.serial);
-                if (conflict && conflict.equipment_id !== equipmentId) {
-                  result.serialsSkippedCollision++;
-                  result.errors.push(
-                    `Serial ${s.serial} (code ${s.code}): déjà actif sur équipement #${conflict.equipment_id} — ignoré`,
-                  );
-                  continue;
-                }
-                insertSerial.run(equipmentId, s.serial);
-                // Récupérer l'id du serial créé pour lui attribuer un UID EMAG-XXXXX
-                const created = db
-                  .prepare(
-                    "SELECT id FROM equipment_serials WHERE equipment_id = ? AND serial = ? AND status = 'active' ORDER BY id DESC LIMIT 1",
-                  )
-                  .get(equipmentId, s.serial);
-                if (created?.id) {
-                  const sUid = getNextUid(db);
-                  updateSerialUid.run(sUid, created.id);
-                  newSerialIds.push({ id: created.id, uid: sUid });
-                }
-                result.serialsAdded++;
+                continue;
               }
+              // Récupérer le catalogue parent (DB existant ou newCatalogByCode)
+              let parent = findParentByCode.get(s.code);
+              if (!parent) {
+                const newCat = newCatalogByCode.get(String(s.code).toUpperCase());
+                if (newCat) {
+                  parent = {
+                    id: null,
+                    name: newCat.name || newCat.code,
+                    reference: newCat.code,
+                    notes: newCat.description || 'Créé depuis Serialise.csv',
+                    purchase_price: newCat.price || 0,
+                    location: newCat.location || null,
+                  };
+                }
+              }
+              if (!parent) {
+                result.errors.push(`Serial ${s.serial}: référence ${s.code} introuvable`);
+                continue;
+              }
+              const insRes = insertUnit.run(
+                parent.name || s.code,
+                parent.reference || s.code,
+                parent.notes || null,
+                parent.purchase_price || 0,
+                parent.location || null,
+                null, // uid alloué juste après
+                null, // qrcode async
+                s.serial,
+                req.user.id,
+              );
+              const newId = insRes.lastInsertRowid;
+              const uid = getNextUid(db);
+              updateEquipUid.run(uid, newId);
+              newEquipmentIds.push({ id: newId, uid });
+              result.serialsAdded++;
             } catch (e) {
-              result.errors.push(`Ajout serial ${s.serial}: ${e.message}`);
+              if (/UNIQUE/i.test(e.message || '')) {
+                result.serialsSkippedCollision++;
+                result.errors.push(`Serial ${s.serial} (${s.code}): collision unicité — ignoré`);
+              } else {
+                result.errors.push(`Ajout serial ${s.serial}: ${e.message}`);
+              }
             }
           }
 
           // ── E. serials supprimés (soft) ──
           for (const s of removedSerials) {
             try {
-              const info = removeSerial.run(s.equipmentId, s.serial);
+              const info = softRemoveUnit.run(s.code, s.serial);
               if (info.changes > 0) result.serialsRemoved++;
             } catch (e) {
               result.errors.push(`Suppression serial ${s.serial}: ${e.message}`);
@@ -339,7 +357,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
               createdProducts: result.createdProducts,
               updatedProducts: result.updatedProducts,
               quantityAdjusted: result.quantityAdjusted,
-              serializationActivated: result.serializationActivated,
               serialsAdded: result.serialsAdded,
               serialsRemoved: result.serialsRemoved,
               serialsReactivated: result.serialsReactivated,
@@ -350,10 +367,9 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
               errorsCount: result.errors.length,
             }),
             JSON.stringify({
-              newProducts: productsWithIds.map((p) => ({ code: p.code, uid: p.uid })),
+              newProducts: newProducts.map((p) => ({ code: p.code })),
               updatedProducts: updatedProducts.map((u) => ({ id: u.id, code: u.code })),
               quantityChanges,
-              serializationChanges,
               newSerials: newSerials.map((s) => ({ code: s.code, serial: s.serial })),
               removedSerials,
               missingProducts,
@@ -384,7 +400,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
 
         addToHistory('locmat_import', null, 'import', result, req.user.id, req.user.name);
         logger.info(
-          `Import Locmat (equipment): +${result.createdProducts} créés, ${result.updatedProducts} MAJ, ${result.quantityAdjusted} qtés, ${result.serializationActivated} sérialisations activées, +${result.serialsAdded} serials, -${result.serialsRemoved} serials`,
+          `Import Locmat (equipment): +${result.createdProducts} créés, ${result.updatedProducts} MAJ, ${result.quantityAdjusted} qtés, +${result.serialsAdded} serials, -${result.serialsRemoved} serials`,
         );
 
         res.json({ success: true, ...result });

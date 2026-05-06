@@ -130,36 +130,39 @@ export function normalizeSerialRow(row) {
 }
 
 /**
- * Compare des données CSV normalisées avec un snapshot DB.
+ * Compare des données CSV normalisées avec un snapshot DB (Modèle A pur :
+ * 1 ligne `equipment` = 1 unité physique, pas de table `equipment_serials`).
  *
  * @param {object} args
  * @param {Array} args.locations Lignes normalisées de Locations.csv
  * @param {Array} args.serials   Lignes normalisées de Serialise.csv
- * @param {Map<string,object>} args.dbItemsByCode    equipment existants indexés par reference (UPPER) ;
- *                                                  doit inclure le champ `is_serialized` (0/1) pour
- *                                                  détecter une activation externe via Locmat.
- * @param {Map<string,Set<string>>} args.dbSerialsByItemId  serial actifs par equipment.id
- * @param {Map<string,number>}      [args.dbSerialOwnerBySerial]  index inverse serial actif → equipment.id
- *                                                                (utilisé pour détecter les collisions
- *                                                                cross-équipement)
- * @returns Diff complet { newProducts, updatedProducts, quantityChanges, serializationChanges,
- *                         newSerials, removedSerials, missingProducts, duplicates, collisions, errors }
+ * @param {Map<string,object>} args.dbCatalogByCode  Représentant equipment par reference (UPPER) :
+ *                                                  { id, name, description, unit_price, location, quantity }
+ * @param {Map<string,Set<string>>} args.dbSerialsByCode  serials existants (equipment.serial_number) par refUpper
+ * @param {Map<string,string>}      [args.dbOwnerCodeBySerial]  index inverse serial → refUpper (collision cross-ref)
+ * @returns Diff { newProducts, updatedProducts, quantityChanges, newSerials,
+ *                 removedSerials, missingProducts, duplicates, collisions, errors }
  */
 export function diffWithDatabase({
   locations,
   serials,
+  dbCatalogByCode,
+  dbSerialsByCode,
+  dbOwnerCodeBySerial,
+  // back-compat : tolère l'ancien nom dbItemsByCode
   dbItemsByCode,
-  dbSerialsByItemId,
-  dbSerialOwnerBySerial,
 }) {
+  if (!dbCatalogByCode && dbItemsByCode) dbCatalogByCode = dbItemsByCode;
+  if (!dbSerialsByCode) dbSerialsByCode = new Map();
+  if (!dbOwnerCodeBySerial) dbOwnerCodeBySerial = new Map();
+
   const newProducts = [];
   const updatedProducts = [];
   const quantityChanges = [];
-  const serializationChanges = []; // équipements existants à passer en is_serialized=1
   const newSerials = [];
   const removedSerials = [];
-  const missingProducts = []; // références présentes en DB mais absentes des CSV (suppressions)
-  const duplicates = { locations: [], serials: [] }; // doublons détectés dans les CSV
+  const missingProducts = []; // références DB absentes des CSV (signalement)
+  const duplicates = { locations: [], serials: [] };
   const collisions = []; // serial sur plusieurs codes / déjà attribué ailleurs en DB
   const errors = [];
 
@@ -217,7 +220,7 @@ export function diffWithDatabase({
     }
     seenCodes.add(key);
 
-    const existing = dbItemsByCode.get(key);
+    const existing = dbCatalogByCode.get(key);
     if (!existing) {
       newProducts.push(loc);
       continue;
@@ -255,13 +258,14 @@ export function diffWithDatabase({
     }
   }
 
-  // ─── 2. Serialise.csv ───
+  // ─── 2. Serialise.csv (Modèle A : 1 ligne equipment par numéro de série) ───
   for (const [code, csvSerials] of serialsByCode.entries()) {
-    const existing = dbItemsByCode.get(code);
+    const existing = dbCatalogByCode.get(code);
     const csvSet = new Set(csvSerials.map((s) => s.serial));
 
     if (!existing) {
-      // Référence inconnue : créer le produit + tous les serials nouveaux
+      // Référence inconnue : signaler comme nouveau produit (1 entrée newProducts
+      // pour permettre au confirm() de créer les unités sérialisées via newSerials).
       const isAlreadyInNew = newProducts.some((p) => p.code.toUpperCase() === code);
       if (!isAlreadyInNew) {
         newProducts.push({
@@ -279,15 +283,13 @@ export function diffWithDatabase({
         });
       }
       for (const s of csvSerials) {
-        // Collision DB sur ref nouvelle : serial déjà actif ailleurs
-        const ownerId = dbSerialOwnerBySerial?.get(s.serial);
-        if (ownerId) {
+        const ownerCode = dbOwnerCodeBySerial.get(s.serial);
+        if (ownerCode) {
           collisions.push({
-            scope: 'db-cross-equipment',
+            scope: 'db-cross-ref',
             serial: s.serial,
             csvCode: s.code,
-            csvEquipmentId: null, // produit pas encore créé
-            dbEquipmentId: ownerId,
+            dbCode: ownerCode,
           });
           continue;
         }
@@ -296,24 +298,21 @@ export function diffWithDatabase({
       continue;
     }
 
-    const dbSet = dbSerialsByItemId.get(existing.id) || new Set();
+    const dbSet = dbSerialsByCode.get(code) || new Set();
     // nouveaux : dans CSV mais pas en DB
     for (const s of csvSerials) {
       if (!dbSet.has(s.serial)) {
-        // collision DB : ce serial est déjà actif sur un AUTRE équipement
-        const ownerId = dbSerialOwnerBySerial?.get(s.serial);
-        if (ownerId && ownerId !== existing.id) {
+        const ownerCode = dbOwnerCodeBySerial.get(s.serial);
+        if (ownerCode && ownerCode !== code) {
           collisions.push({
-            scope: 'db-cross-equipment',
+            scope: 'db-cross-ref',
             serial: s.serial,
             csvCode: s.code,
-            csvEquipmentId: existing.id,
-            dbEquipmentId: ownerId,
+            dbCode: ownerCode,
           });
-          continue; // on n'ajoute pas un newSerial qui violerait l'unicité partielle
+          continue;
         }
         newSerials.push({
-          equipmentId: existing.id,
           code: s.code,
           serial: s.serial,
           productExisting: true,
@@ -324,48 +323,8 @@ export function diffWithDatabase({
     for (const dbSer of dbSet) {
       if (!csvSet.has(dbSer)) {
         removedSerials.push({
-          equipmentId: existing.id,
           code,
           serial: dbSer,
-        });
-      }
-    }
-
-    // ⚠️ Cas sérialisation externe : l'équipement n'était pas marqué sérialisé
-    // dans eMag, mais Locmat fournit des numéros de série pour cette réf.
-    // → On planifie l'activation `is_serialized = 1` ET on aligne la quantité
-    //   sur le nombre de serials actifs après import (= csvSet.size).
-    const wasSerialized = Number(existing.is_serialized) === 1;
-    if (!wasSerialized && csvSet.size > 0) {
-      const targetQty = csvSet.size;
-      serializationChanges.push({
-        id: existing.id,
-        code: csvSerials[0].code,
-        name: existing.name,
-        from: false,
-        to: true,
-        serialCount: targetQty,
-      });
-
-      // Override / insert quantityChange pour aligner stock_quantity = nb serials actifs
-      const dbQty = Math.round(Number(existing.quantity) || 0);
-      const idx = quantityChanges.findIndex((q) => q.id === existing.id);
-      if (idx >= 0) {
-        quantityChanges[idx] = {
-          ...quantityChanges[idx],
-          to: targetQty,
-          delta: targetQty - quantityChanges[idx].from,
-          reason: 'serialization-sync',
-        };
-      } else if (dbQty !== targetQty) {
-        quantityChanges.push({
-          id: existing.id,
-          code: csvSerials[0].code,
-          name: existing.name,
-          from: dbQty,
-          to: targetQty,
-          delta: targetQty - dbQty,
-          reason: 'serialization-sync',
         });
       }
     }
@@ -374,7 +333,7 @@ export function diffWithDatabase({
   // ─── 3. Suppressions : refs présentes en DB mais absentes des deux CSV ───
   // (signalement seulement, pas d'écriture côté serveur sans confirmation)
   const csvCodes = new Set([...seenCodes, ...serialsByCode.keys()]);
-  for (const [dbCode, dbItem] of dbItemsByCode.entries()) {
+  for (const [dbCode, dbItem] of dbCatalogByCode.entries()) {
     if (!csvCodes.has(dbCode)) {
       missingProducts.push({
         id: dbItem.id,
@@ -389,7 +348,6 @@ export function diffWithDatabase({
     newProducts,
     updatedProducts,
     quantityChanges,
-    serializationChanges,
     newSerials,
     removedSerials,
     missingProducts,

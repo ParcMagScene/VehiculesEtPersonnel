@@ -223,7 +223,7 @@ export const locmatConfirmSchema = z.object({
   serializationChanges: z
     .array(
       z.object({
-        id: z.coerce.number().int().positive(),
+        id: z.coerce.number().int().positive().optional(),
         code: str(100),
         name: optStr(255).optional(),
         from: z.boolean().optional(),
@@ -231,6 +231,7 @@ export const locmatConfirmSchema = z.object({
         serialCount: z.coerce.number().int().nonnegative().optional(),
       }),
     )
+    .optional()
     .default([]),
   newSerials: z
     .array(
@@ -245,7 +246,7 @@ export const locmatConfirmSchema = z.object({
   removedSerials: z
     .array(
       z.object({
-        equipmentId: z.coerce.number().int().positive(),
+        equipmentId: z.coerce.number().int().positive().optional(),
         code: str(100),
         serial: str(100),
       }),

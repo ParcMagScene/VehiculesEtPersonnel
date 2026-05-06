@@ -584,6 +584,7 @@ function DiffTable({ tabKey, rows }) {
             label: 'Détail',
             render: (_, r) => {
               if (r.scope === 'csv-cross-code') return `Codes CSV : ${(r.codes || []).join(', ')}`;
+              if (r.scope === 'db-cross-ref') return `CSV: ${r.csvCode} vs DB ref ${r.dbCode}`;
               if (r.scope === 'db-cross-equipment')
                 return `CSV: ${r.csvCode} (eq #${r.csvEquipmentId ?? '—'}) vs DB eq #${r.dbEquipmentId}`;
               return JSON.stringify(r);

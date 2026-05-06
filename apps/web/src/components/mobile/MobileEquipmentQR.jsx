@@ -76,16 +76,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
       try {
         setLoading(true);
         const data = await api.getEquipmentByUid(uid);
-        // L'UID scanné peut être celui d'une unité sérialisée
-        // (`equipment_serials.uid`) — l'API renvoie alors l'équipement parent
-        // enrichi de `scanned_uid` / `scanned_serial` / `scanned_mag_number`.
-        // On expose toujours l'UID scanné comme `uid` pour cohérence d'affichage.
-        if (data && data.scanned_uid) {
-          data.uid = data.scanned_uid;
-          if (data.scanned_serial && !data.serial_number) {
-            data.serial_number = data.scanned_serial;
-          }
-        }
+        // Modèle A : 1 ligne equipment = 1 unité physique avec uid+serial uniques.
         setEquipment(data);
       } catch (err) {
         setError(err.message || 'Équipement introuvable');

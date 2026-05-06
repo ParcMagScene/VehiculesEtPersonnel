@@ -48,6 +48,27 @@ const SER_FIELDS = {
   brand: ['Marque', 'Brand'],
 };
 
+// Format Locmat des SN : `<core> - <mag>` ou `<mag> - <core>` où mag = lettre + 1à 3 chiffres.
+// Ex : `T01 -  2400953513` (TETRA2), `0788770045   - V12` (VIPER).
+const MAG_NUMBER_RE = /^[A-Z]\d{1,3}$/;
+
+/**
+ * Parse un SN Locmat brut. Extrait un éventuel numéro MAG (T01, V12...).
+ * @param {string} rawSerial
+ * @returns {{ coreSerial: string, magNumber: string|null }}
+ */
+export function parseLocmatSerial(rawSerial) {
+  const raw = String(rawSerial || '').trim();
+  if (!raw) return { coreSerial: '', magNumber: null };
+  const parts = raw.split(/\s+-\s+/);
+  if (parts.length === 2) {
+    const [a, b] = parts.map((s) => s.trim());
+    if (MAG_NUMBER_RE.test(a) && !MAG_NUMBER_RE.test(b)) return { coreSerial: b, magNumber: a };
+    if (MAG_NUMBER_RE.test(b) && !MAG_NUMBER_RE.test(a)) return { coreSerial: a, magNumber: b };
+  }
+  return { coreSerial: raw, magNumber: null };
+}
+
 function normalizeKey(k) {
   return String(k || '')
     .normalize('NFD')
@@ -120,46 +141,59 @@ export function normalizeLocationRow(row) {
  */
 export function normalizeSerialRow(row) {
   const code = String(pick(row, SER_FIELDS.code) || '').trim();
-  const serial = String(pick(row, SER_FIELDS.serial) || '').trim();
-  if (!serial) return null;
+  const rawSerial = String(pick(row, SER_FIELDS.serial) || '').trim();
+  if (!rawSerial) return null;
+  const { coreSerial, magNumber } = parseLocmatSerial(rawSerial);
   return {
     code,
-    serial,
+    serial: coreSerial,
+    rawSerial,
+    magNumber,
     name: String(pick(row, SER_FIELDS.name) || '').trim() || null,
   };
 }
 
 /**
- * Compare des données CSV normalisées avec un snapshot DB.
+ * Compare des données CSV normalisées avec un snapshot DB (Modèle A pur :
+ * 1 ligne `equipment` = 1 unité physique, pas de table `equipment_serials`).
  *
  * @param {object} args
  * @param {Array} args.locations Lignes normalisées de Locations.csv
  * @param {Array} args.serials   Lignes normalisées de Serialise.csv
- * @param {Map<string,object>} args.dbItemsByCode    equipment existants indexés par reference (UPPER) ;
- *                                                  doit inclure le champ `is_serialized` (0/1) pour
- *                                                  détecter une activation externe via Locmat.
- * @param {Map<string,Set<string>>} args.dbSerialsByItemId  serial actifs par equipment.id
- * @param {Map<string,number>}      [args.dbSerialOwnerBySerial]  index inverse serial actif → equipment.id
- *                                                                (utilisé pour détecter les collisions
- *                                                                cross-équipement)
- * @returns Diff complet { newProducts, updatedProducts, quantityChanges, serializationChanges,
- *                         newSerials, removedSerials, missingProducts, duplicates, collisions, errors }
+ * @param {Map<string,object>} args.dbCatalogByCode  Représentant equipment par reference (UPPER) :
+ *                                                  { id, name, description, unit_price, location, quantity }
+ * @param {Map<string,Set<string>>} args.dbSerialsByCode  serials existants (equipment.serial_number) par refUpper
+ * @param {Map<string,string>}      [args.dbOwnerCodeBySerial]  index inverse serial → refUpper (collision cross-ref)
+ * @param {Map<string,{magNumber:string|null, equipmentId:number}>} [args.dbMagBySerial]
+ *        Index serial → numéro mag actuel + id, pour détecter les mises à jour de N° MAG.
+ * @returns Diff { newProducts, updatedProducts, quantityChanges, newSerials, serialUpdates,
+ *                 removedSerials, missingProducts, duplicates, collisions, errors,
+ *                 legacyCatalogToDelete }
  */
 export function diffWithDatabase({
   locations,
   serials,
+  dbCatalogByCode,
+  dbSerialsByCode,
+  dbOwnerCodeBySerial,
+  dbMagBySerial,
+  // back-compat : tolère l'ancien nom dbItemsByCode
   dbItemsByCode,
-  dbSerialsByItemId,
-  dbSerialOwnerBySerial,
 }) {
+  if (!dbCatalogByCode && dbItemsByCode) dbCatalogByCode = dbItemsByCode;
+  if (!dbSerialsByCode) dbSerialsByCode = new Map();
+  if (!dbOwnerCodeBySerial) dbOwnerCodeBySerial = new Map();
+  if (!dbMagBySerial) dbMagBySerial = new Map();
+
   const newProducts = [];
   const updatedProducts = [];
   const quantityChanges = [];
-  const serializationChanges = []; // équipements existants à passer en is_serialized=1
   const newSerials = [];
+  const serialUpdates = []; // { code, serial, magNumber, fromMag, equipmentId }
   const removedSerials = [];
-  const missingProducts = []; // références présentes en DB mais absentes des CSV (suppressions)
-  const duplicates = { locations: [], serials: [] }; // doublons détectés dans les CSV
+  const missingProducts = []; // références DB absentes des CSV (signalement)
+  const legacyCatalogToDelete = []; // lignes catalogue à supprimer (modele A pur)
+  const duplicates = { locations: [], serials: [] };
   const collisions = []; // serial sur plusieurs codes / déjà attribué ailleurs en DB
   const errors = [];
 
@@ -217,7 +251,7 @@ export function diffWithDatabase({
     }
     seenCodes.add(key);
 
-    const existing = dbItemsByCode.get(key);
+    const existing = dbCatalogByCode.get(key);
     if (!existing) {
       newProducts.push(loc);
       continue;
@@ -255,13 +289,14 @@ export function diffWithDatabase({
     }
   }
 
-  // ─── 2. Serialise.csv ───
+  // ─── 2. Serialise.csv (Modèle A : 1 ligne equipment par numéro de série) ───
   for (const [code, csvSerials] of serialsByCode.entries()) {
-    const existing = dbItemsByCode.get(code);
+    const existing = dbCatalogByCode.get(code);
     const csvSet = new Set(csvSerials.map((s) => s.serial));
 
     if (!existing) {
-      // Référence inconnue : créer le produit + tous les serials nouveaux
+      // Référence inconnue : signaler comme nouveau produit (1 entrée newProducts
+      // pour permettre au confirm() de créer les unités sérialisées via newSerials).
       const isAlreadyInNew = newProducts.some((p) => p.code.toUpperCase() === code);
       if (!isAlreadyInNew) {
         newProducts.push({
@@ -279,102 +314,87 @@ export function diffWithDatabase({
         });
       }
       for (const s of csvSerials) {
-        // Collision DB sur ref nouvelle : serial déjà actif ailleurs
-        const ownerId = dbSerialOwnerBySerial?.get(s.serial);
-        if (ownerId) {
+        const ownerCode = dbOwnerCodeBySerial.get(s.serial);
+        if (ownerCode) {
           collisions.push({
-            scope: 'db-cross-equipment',
+            scope: 'db-cross-ref',
             serial: s.serial,
             csvCode: s.code,
-            csvEquipmentId: null, // produit pas encore créé
-            dbEquipmentId: ownerId,
+            dbCode: ownerCode,
           });
           continue;
         }
-        newSerials.push({ code: s.code, serial: s.serial, productExisting: false });
+        newSerials.push({
+          code: s.code,
+          serial: s.serial,
+          magNumber: s.magNumber || null,
+          productExisting: false,
+        });
       }
       continue;
     }
 
-    const dbSet = dbSerialsByItemId.get(existing.id) || new Set();
-    // nouveaux : dans CSV mais pas en DB
+    const dbSet = dbSerialsByCode.get(code) || new Set();
+    // nouveaux : dans CSV mais pas en DB ; existants : maj du numéro MAG si différent
     for (const s of csvSerials) {
-      if (!dbSet.has(s.serial)) {
-        // collision DB : ce serial est déjà actif sur un AUTRE équipement
-        const ownerId = dbSerialOwnerBySerial?.get(s.serial);
-        if (ownerId && ownerId !== existing.id) {
-          collisions.push({
-            scope: 'db-cross-equipment',
+      if (dbSet.has(s.serial)) {
+        const dbInfo = dbMagBySerial.get(s.serial);
+        const currentMag = dbInfo?.magNumber || null;
+        if (s.magNumber && s.magNumber !== currentMag) {
+          serialUpdates.push({
+            code,
             serial: s.serial,
-            csvCode: s.code,
-            csvEquipmentId: existing.id,
-            dbEquipmentId: ownerId,
+            magNumber: s.magNumber,
+            fromMag: currentMag,
+            equipmentId: dbInfo?.equipmentId || null,
           });
-          continue; // on n'ajoute pas un newSerial qui violerait l'unicité partielle
         }
-        newSerials.push({
-          equipmentId: existing.id,
-          code: s.code,
-          serial: s.serial,
-          productExisting: true,
-        });
+        continue;
       }
+      const ownerCode = dbOwnerCodeBySerial.get(s.serial);
+      if (ownerCode && ownerCode !== code) {
+        collisions.push({
+          scope: 'db-cross-ref',
+          serial: s.serial,
+          csvCode: s.code,
+          dbCode: ownerCode,
+        });
+        continue;
+      }
+      newSerials.push({
+        code: s.code,
+        serial: s.serial,
+        magNumber: s.magNumber || null,
+        productExisting: true,
+      });
     }
     // supprimés : dans DB mais plus dans CSV
     for (const dbSer of dbSet) {
       if (!csvSet.has(dbSer)) {
         removedSerials.push({
-          equipmentId: existing.id,
           code,
           serial: dbSer,
         });
       }
     }
 
-    // ⚠️ Cas sérialisation externe : l'équipement n'était pas marqué sérialisé
-    // dans eMag, mais Locmat fournit des numéros de série pour cette réf.
-    // → On planifie l'activation `is_serialized = 1` ET on aligne la quantité
-    //   sur le nombre de serials actifs après import (= csvSet.size).
-    const wasSerialized = Number(existing.is_serialized) === 1;
-    if (!wasSerialized && csvSet.size > 0) {
-      const targetQty = csvSet.size;
-      serializationChanges.push({
-        id: existing.id,
-        code: csvSerials[0].code,
-        name: existing.name,
-        from: false,
-        to: true,
-        serialCount: targetQty,
+    // Modèle A pur : si une ligne catalogue (sans serial_number) existe pour un
+    // code qui a des unités sérialisées dans le CSV, elle doit être supprimée.
+    const catalog = dbCatalogByCode.get(code);
+    if (catalog && (!catalog.serial_number || catalog.serial_number === '')) {
+      legacyCatalogToDelete.push({
+        equipmentId: catalog.id,
+        code: catalog.reference || code,
+        name: catalog.name || null,
+        quantity: Math.round(Number(catalog.quantity) || 0),
       });
-
-      // Override / insert quantityChange pour aligner stock_quantity = nb serials actifs
-      const dbQty = Math.round(Number(existing.quantity) || 0);
-      const idx = quantityChanges.findIndex((q) => q.id === existing.id);
-      if (idx >= 0) {
-        quantityChanges[idx] = {
-          ...quantityChanges[idx],
-          to: targetQty,
-          delta: targetQty - quantityChanges[idx].from,
-          reason: 'serialization-sync',
-        };
-      } else if (dbQty !== targetQty) {
-        quantityChanges.push({
-          id: existing.id,
-          code: csvSerials[0].code,
-          name: existing.name,
-          from: dbQty,
-          to: targetQty,
-          delta: targetQty - dbQty,
-          reason: 'serialization-sync',
-        });
-      }
     }
   }
 
   // ─── 3. Suppressions : refs présentes en DB mais absentes des deux CSV ───
   // (signalement seulement, pas d'écriture côté serveur sans confirmation)
   const csvCodes = new Set([...seenCodes, ...serialsByCode.keys()]);
-  for (const [dbCode, dbItem] of dbItemsByCode.entries()) {
+  for (const [dbCode, dbItem] of dbCatalogByCode.entries()) {
     if (!csvCodes.has(dbCode)) {
       missingProducts.push({
         id: dbItem.id,
@@ -389,10 +409,11 @@ export function diffWithDatabase({
     newProducts,
     updatedProducts,
     quantityChanges,
-    serializationChanges,
     newSerials,
+    serialUpdates,
     removedSerials,
     missingProducts,
+    legacyCatalogToDelete,
     duplicates,
     collisions,
     errors,

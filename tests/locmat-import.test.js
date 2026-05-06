@@ -11,6 +11,7 @@ import {
   diffWithDatabase,
   normalizeLocationRow,
   normalizeSerialRow,
+  parseLocmatSerial,
 } from '../apps/api/services/locmatImport.js';
 
 describe('normalizeLocationRow', () => {
@@ -38,7 +39,44 @@ describe('normalizeSerialRow', () => {
   it('exige un numéro de série', () => {
     assert.equal(normalizeSerialRow({ Code: 'X' }), null);
     const r = normalizeSerialRow({ Code: 'X', 'Numéro de Série': 'SN001' });
-    assert.deepEqual(r, { code: 'X', serial: 'SN001', name: null });
+    assert.deepEqual(r, {
+      code: 'X',
+      serial: 'SN001',
+      rawSerial: 'SN001',
+      magNumber: null,
+      name: null,
+    });
+  });
+
+  it('extrait le numéro MAG en préfixe (TETRA2)', () => {
+    const r = normalizeSerialRow({ Code: 'TETRA2', 'Numéro de Série': 'T01 -  2400953513' });
+    assert.equal(r.serial, '2400953513');
+    assert.equal(r.magNumber, 'T01');
+    assert.equal(r.rawSerial, 'T01 -  2400953513');
+  });
+
+  it('extrait le numéro MAG en suffixe (VIPER)', () => {
+    const r = normalizeSerialRow({ Code: 'VIPER', 'Numéro de Série': '0788770045   - V12' });
+    assert.equal(r.serial, '0788770045');
+    assert.equal(r.magNumber, 'V12');
+  });
+});
+
+describe('parseLocmatSerial', () => {
+  it('reconnait préfixe / suffixe / aucun mag', () => {
+    assert.deepEqual(parseLocmatSerial('T01 -  2400953513'), {
+      coreSerial: '2400953513',
+      magNumber: 'T01',
+    });
+    assert.deepEqual(parseLocmatSerial('0788770045 - V12'), {
+      coreSerial: '0788770045',
+      magNumber: 'V12',
+    });
+    assert.deepEqual(parseLocmatSerial('B884971'), {
+      coreSerial: 'B884971',
+      magNumber: null,
+    });
+    assert.deepEqual(parseLocmatSerial(''), { coreSerial: '', magNumber: null });
   });
 });
 
@@ -56,7 +94,7 @@ describe('diffWithDatabase', () => {
       locations,
       serials: [],
       dbItemsByCode,
-      dbSerialsByItemId: new Map(),
+      dbSerialsByCode: new Map(),
     });
 
     assert.equal(r.newProducts.length, 1);
@@ -71,13 +109,13 @@ describe('diffWithDatabase', () => {
 
   it('détecte newSerials / removedSerials', () => {
     const dbItemsByCode = new Map([['REF-1', { id: 7, name: 'Caméra', quantity: 3 }]]);
-    const dbSerialsByItemId = new Map([[7, new Set(['SN-A', 'SN-B'])]]);
+    const dbSerialsByCode = new Map([['REF-1', new Set(['SN-A', 'SN-B'])]]);
     const serials = [
       { code: 'REF-1', serial: 'SN-A' },
       { code: 'REF-1', serial: 'SN-C' }, // nouveau
     ];
 
-    const r = diffWithDatabase({ locations: [], serials, dbItemsByCode, dbSerialsByItemId });
+    const r = diffWithDatabase({ locations: [], serials, dbItemsByCode, dbSerialsByCode });
     assert.deepEqual(
       r.newSerials.map((s) => s.serial),
       ['SN-C'],
@@ -96,7 +134,7 @@ describe('diffWithDatabase', () => {
         { code: 'ORPHAN', serial: 'SN-2' },
       ],
       dbItemsByCode: new Map(),
-      dbSerialsByItemId: new Map(),
+      dbSerialsByCode: new Map(),
     });
     assert.equal(r.newProducts.length, 1);
     assert.equal(r.newProducts[0].code, 'ORPHAN');
@@ -112,55 +150,19 @@ describe('diffWithDatabase', () => {
       ],
       serials: [],
       dbItemsByCode: new Map(),
-      dbSerialsByItemId: new Map(),
+      dbSerialsByCode: new Map(),
     });
     assert.ok(r.errors.some((e) => /dupliqué/i.test(e.message)));
   });
 
-  it('active is_serialized + aligne la quantité quand un équipement non sérialisé reçoit des serials externes (Locmat)', () => {
-    // équipement existant marqué non sérialisé dans eMag, quantité 1
-    const dbItemsByCode = new Map([
-      ['CAM-1', { id: 42, name: 'Caméra X', quantity: 1, is_serialized: 0 }],
-    ]);
-    const r = diffWithDatabase({
-      locations: [
-        { code: 'CAM-1', name: 'Caméra X', quantity: 1, price: 0, value: 0,
-          description: null, category: null, barcode: null, location: null,
-          isMagScene: false, isSerialized: false },
-      ],
-      serials: [
-        { code: 'CAM-1', serial: 'SN-1' },
-        { code: 'CAM-1', serial: 'SN-2' },
-        { code: 'CAM-1', serial: 'SN-3' },
-      ],
-      dbItemsByCode,
-      dbSerialsByItemId: new Map(),
-    });
-
-    assert.equal(r.serializationChanges.length, 1);
-    assert.equal(r.serializationChanges[0].id, 42);
-    assert.equal(r.serializationChanges[0].to, true);
-    assert.equal(r.serializationChanges[0].serialCount, 3);
-
-    // Quantité forcée à 3 (= nb serials actifs après import), pas à la valeur Locations.csv
-    assert.equal(r.quantityChanges.length, 1);
-    assert.equal(r.quantityChanges[0].id, 42);
-    assert.equal(r.quantityChanges[0].to, 3);
-    assert.equal(r.quantityChanges[0].reason, 'serialization-sync');
-    assert.equal(r.newSerials.length, 3);
-  });
-
-  it("ne génère pas de serializationChange si l'équipement est déjà sérialisé", () => {
-    const dbItemsByCode = new Map([
-      ['CAM-2', { id: 5, name: 'Caméra Y', quantity: 2, is_serialized: 1 }],
-    ]);
+  it('Modèle A : pas de serializationChanges dans le diff', () => {
     const r = diffWithDatabase({
       locations: [],
-      serials: [{ code: 'CAM-2', serial: 'SN-9' }],
-      dbItemsByCode,
-      dbSerialsByItemId: new Map([[5, new Set(['SN-9'])]]),
+      serials: [{ code: 'CAM', serial: 'SN1' }],
+      dbItemsByCode: new Map([['CAM', { id: 1, name: 'Cam', quantity: 1 }]]),
+      dbSerialsByCode: new Map(),
     });
-    assert.equal(r.serializationChanges.length, 0);
+    assert.equal(r.serializationChanges, undefined);
   });
 
   it('détecte les doublons stricts dans Serialise.csv', () => {
@@ -173,7 +175,7 @@ describe('diffWithDatabase', () => {
         { code: 'CAM-1', serial: 'SN1' }, // doublon
       ],
       dbItemsByCode: new Map(),
-      dbSerialsByItemId: new Map(),
+      dbSerialsByCode: new Map(),
     });
     assert.equal(r.duplicates.serials.length, 1);
     assert.equal(r.duplicates.serials[0].serial, 'SN1');
@@ -190,35 +192,35 @@ describe('diffWithDatabase', () => {
         { code: 'CAM-2', serial: 'SN-X' }, // collision
       ],
       dbItemsByCode: new Map(),
-      dbSerialsByItemId: new Map(),
+      dbSerialsByCode: new Map(),
     });
     const c = r.collisions.find((x) => x.scope === 'csv-cross-code');
     assert.ok(c, 'collision csv-cross-code attendue');
     assert.deepEqual(c.codes.sort(), ['CAM-1', 'CAM-2']);
   });
 
-  it('détecte les collisions DB cross-équipement', () => {
+  it('Modèle A : détecte les collisions DB cross-référence', () => {
     const r = diffWithDatabase({
       locations: [{ code: 'CAM-1', name: 'A', quantity: 1, isSerialized: true }],
       serials: [{ code: 'CAM-1', serial: 'SN-EXIST' }],
       dbItemsByCode: new Map([
-        ['CAM-1', { id: 7, name: 'A', quantity: 1, is_serialized: 1 }],
+        ['CAM-1', { id: 7, name: 'A', quantity: 1 }],
       ]),
-      dbSerialsByItemId: new Map(),
-      // SN-EXIST appartient déjà à un AUTRE équipement (#42)
-      dbSerialOwnerBySerial: new Map([['SN-EXIST', 42]]),
+      dbSerialsByCode: new Map(),
+      // SN-EXIST appartient déjà à une AUTRE référence
+      dbOwnerCodeBySerial: new Map([['SN-EXIST', 'OTHER-REF']]),
     });
-    const c = r.collisions.find((x) => x.scope === 'db-cross-equipment');
-    assert.ok(c, 'collision db-cross-equipment attendue');
-    assert.equal(c.dbEquipmentId, 42);
-    assert.equal(c.csvEquipmentId, 7);
+    const c = r.collisions.find((x) => x.scope === 'db-cross-ref');
+    assert.ok(c, 'collision db-cross-ref attendue');
+    assert.equal(c.dbCode, 'OTHER-REF');
+    assert.equal(c.csvCode, 'CAM-1');
     assert.equal(r.newSerials.length, 0);
   });
 
   it('liste les suppressions (refs en DB absentes des CSV)', () => {
     const dbItemsByCode = new Map([
-      ['OLD-1', { id: 11, name: 'Vieux', reference: 'OLD-1', quantity: 3, is_serialized: 0 }],
-      ['KEEP-1', { id: 12, name: 'Gardé', reference: 'KEEP-1', quantity: 1, is_serialized: 0 }],
+      ['OLD-1', { id: 11, name: 'Vieux', reference: 'OLD-1', quantity: 3 }],
+      ['KEEP-1', { id: 12, name: 'Gardé', reference: 'KEEP-1', quantity: 1 }],
     ]);
     const r = diffWithDatabase({
       locations: [
@@ -226,10 +228,62 @@ describe('diffWithDatabase', () => {
       ],
       serials: [],
       dbItemsByCode,
-      dbSerialsByItemId: new Map(),
+      dbSerialsByCode: new Map(),
     });
     assert.equal(r.missingProducts.length, 1);
     assert.equal(r.missingProducts[0].code, 'OLD-1');
     assert.equal(r.missingProducts[0].quantity, 3);
+  });
+
+  it('émet serialUpdates quand le N° MAG diffère (CSV vs DB)', () => {
+    const dbCatalogByCode = new Map([['TETRA2', { id: 100, reference: 'TETRA2', name: 'Bar', quantity: 1, serial_number: '2400953513' }]]);
+    const dbSerialsByCode = new Map([['TETRA2', new Set(['2400953513', '2400954278'])]]);
+    const dbMagBySerial = new Map([
+      ['2400953513', { magNumber: null, equipmentId: 100 }],
+      ['2400954278', { magNumber: 'T99', equipmentId: 101 }],
+    ]);
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [
+        { code: 'TETRA2', serial: '2400953513', magNumber: 'T01' }, // était NULL → MAJ
+        { code: 'TETRA2', serial: '2400954278', magNumber: 'T02' }, // était T99  → MAJ
+      ],
+      dbCatalogByCode,
+      dbSerialsByCode,
+      dbMagBySerial,
+    });
+    assert.equal(r.newSerials.length, 0);
+    assert.equal(r.serialUpdates.length, 2);
+    const u1 = r.serialUpdates.find((u) => u.serial === '2400953513');
+    assert.equal(u1.magNumber, 'T01');
+    assert.equal(u1.fromMag, null);
+    assert.equal(u1.equipmentId, 100);
+  });
+
+  it('skip serialUpdate quand le N° MAG est déjà à jour', () => {
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [{ code: 'X', serial: 'SN1', magNumber: 'T01' }],
+      dbCatalogByCode: new Map([['X', { id: 1, reference: 'X', name: 'X', quantity: 1, serial_number: 'SN1' }]]),
+      dbSerialsByCode: new Map([['X', new Set(['SN1'])]]),
+      dbMagBySerial: new Map([['SN1', { magNumber: 'T01', equipmentId: 1 }]]),
+    });
+    assert.equal(r.serialUpdates.length, 0);
+    assert.equal(r.newSerials.length, 0);
+  });
+
+  it('signale legacyCatalogToDelete quand une ligne sans serial existe pour un code sérialisé', () => {
+    const dbCatalogByCode = new Map([
+      ['CAM', { id: 50, reference: 'CAM', name: 'Cam', quantity: 5, serial_number: null }],
+    ]);
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [{ code: 'CAM', serial: 'SN-A' }],
+      dbCatalogByCode,
+      dbSerialsByCode: new Map([['CAM', new Set([])]]),
+    });
+    assert.equal(r.legacyCatalogToDelete.length, 1);
+    assert.equal(r.legacyCatalogToDelete[0].equipmentId, 50);
+    assert.equal(r.legacyCatalogToDelete[0].quantity, 5);
   });
 });

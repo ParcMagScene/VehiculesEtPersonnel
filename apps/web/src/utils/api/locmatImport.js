@@ -34,5 +34,16 @@ export function registerLocmatImportMethods(ApiClient) {
     async getLocmatImportLogDetail(id) {
       return this.request(`/import/locmat/logs/${id}`, { skipCamelCase: true });
     },
+
+    /**
+     * Re-propage catégorie / marque / localisation depuis la "meilleure" unité
+     * existante de chaque référence vers les autres unités vides — sans CSV.
+     */
+    async backfillLocmatReferences() {
+      return this.request('/import/locmat/backfill-references', {
+        method: 'POST',
+        skipCamelCase: true,
+      });
+    },
   });
 }

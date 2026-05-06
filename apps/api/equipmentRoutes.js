@@ -749,13 +749,29 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         };
 
         if (mode === 'preview') {
-          // Mode aperçu : retourner les stats ET l'analyse par item
-          const findExisting = db.prepare(`
-          SELECT id, name, reference, serial_number FROM equipment
-          WHERE (reference = ? AND reference IS NOT NULL AND reference != '')
-             OR (serial_number = ? AND serial_number IS NOT NULL AND serial_number != '')
-          LIMIT 1
-        `);
+          // Modèle A : matching prioritaire par serial_number (1 ligne = 1 unité).
+          // Fallback reference uniquement si la référence est unique en DB.
+          const findBySerial = db.prepare(
+            'SELECT id, name, reference, serial_number FROM equipment' +
+              " WHERE serial_number = ? AND serial_number IS NOT NULL AND serial_number != '' LIMIT 2",
+          );
+          const findByRef = db.prepare(
+            'SELECT id, name, reference, serial_number FROM equipment' +
+              " WHERE reference = ? AND reference IS NOT NULL AND reference != ''" +
+              " AND (serial_number IS NULL OR serial_number = '') LIMIT 2",
+          );
+          const findExistingStrict = (reference, serialNumber) => {
+            if (serialNumber) {
+              const matches = findBySerial.all(serialNumber);
+              if (matches.length === 1) return { row: matches[0], by: 'serial_number' };
+              if (matches.length > 1) return null; // ambigu
+            }
+            if (reference) {
+              const matches = findByRef.all(reference);
+              if (matches.length === 1) return { row: matches[0], by: 'reference' };
+            }
+            return null;
+          };
 
           let toCreate = 0,
             toUpdate = 0,
@@ -777,8 +793,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
             const reference = (row.code_libre || '').trim() || null;
             const serialNumber = (row.numero_serie || '').trim() || null;
-            const existing =
-              reference || serialNumber ? findExisting.get(reference, serialNumber) : null;
+            const matched = findExistingStrict(reference, serialNumber);
+            const existing = matched?.row || null;
 
             if (existing) {
               toUpdate++;
@@ -792,7 +808,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
                 existingRef: existing.reference,
                 existingSerial: existing.serial_number,
                 action: 'update',
-                matchedBy: existing.reference === reference ? 'reference' : 'serial_number',
+                matchedBy: matched.by,
               });
             } else {
               toCreate++;
@@ -893,12 +909,26 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           }
 
           // Phase 4 : Insérer ou mettre à jour les équipements
-          const findExisting = db.prepare(`
-          SELECT id FROM equipment
-          WHERE (reference = ? AND reference IS NOT NULL AND reference != '')
-             OR (serial_number = ? AND serial_number IS NOT NULL AND serial_number != '')
-          LIMIT 1
-        `);
+          // Modèle A : matching prioritaire par serial_number ; reference fallback si unique.
+          const findBySerialApply = db.prepare(
+            "SELECT id FROM equipment WHERE serial_number = ? AND serial_number IS NOT NULL AND serial_number != '' LIMIT 2",
+          );
+          const findByRefApply = db.prepare(
+            "SELECT id FROM equipment WHERE reference = ? AND reference IS NOT NULL AND reference != ''" +
+              " AND (serial_number IS NULL OR serial_number = '') LIMIT 2",
+          );
+          const findExistingApply = (reference, serialNumber) => {
+            if (serialNumber) {
+              const m = findBySerialApply.all(serialNumber);
+              if (m.length === 1) return m[0];
+              if (m.length > 1) return null;
+            }
+            if (reference) {
+              const m = findByRefApply.all(reference);
+              if (m.length === 1) return m[0];
+            }
+            return null;
+          };
           const updateEquip = db.prepare(`
           UPDATE equipment SET name = ?, category_id = ?, brand = ?, stock_quantity = ?, location = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
@@ -926,9 +956,9 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
             const stock = parseInt(row.stock) || 1;
             const zone = (row.zone || '').trim() || null;
 
-            // Détecter un équipement existant par référence ou numéro de série
+            // Détecter un équipement existant (matching strict modèle A)
             const existing =
-              reference || serialNumber ? findExisting.get(reference, serialNumber) : null;
+              reference || serialNumber ? findExistingApply(reference, serialNumber) : null;
 
             if (existing) {
               updateEquip.run(nom, categoryId, resolved.brand, stock, zone, existing.id);
@@ -1831,14 +1861,11 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   });
 
   // GET /api/equipment/by-uid/:uid — Lookup par UID (pour QR codes)
-  // Accepte 2 formats d'UID :
-  //   - equipment.uid           → équipement non sérialisé (1 UID = 1 référence)
-  //   - equipment_serials.uid   → unité physique d'un équipement sérialisé
-  //                                (renvoie l'équipement parent + infos serial)
+  // Modèle A : 1 ligne equipment = 1 unité physique avec uid+serial uniques.
   app.get('/api/equipment/by-uid/:uid', authenticateToken, (req, res) => {
     try {
       const uid = req.params.uid;
-      let eq = db
+      const eq = db
         .prepare(
           `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
@@ -1849,41 +1876,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
         )
         .get(uid);
 
-      // Fallback : UID d'unité sérialisée → résoudre vers l'équipement parent
-      let matchedSerial = null;
-      if (!eq) {
-        matchedSerial = db
-          .prepare(
-            `SELECT id, equipment_id, serial, mag_number, uid, status
-             FROM equipment_serials WHERE uid = ?`,
-          )
-          .get(uid);
-        if (matchedSerial) {
-          eq = db
-            .prepare(
-              `
-            SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
-            FROM equipment e
-            LEFT JOIN equipment_categories ec ON e.category_id = ec.id
-            WHERE e.id = ?
-          `,
-            )
-            .get(matchedSerial.equipment_id);
-        }
-      }
-
       if (!eq) return res.status(404).json({ success: false, error: 'Équipement non trouvé' });
-
-      if (matchedSerial) {
-        // Expose les infos de l'unité physique scannée pour que la fiche mobile
-        // puisse afficher l'UID sérialisé (et non celui du modèle).
-        eq.scanned_uid = matchedSerial.uid;
-        eq.scanned_serial = matchedSerial.serial;
-        eq.scanned_mag_number = matchedSerial.mag_number;
-        eq.scanned_serial_id = matchedSerial.id;
-      } else {
-        eq.scanned_uid = eq.uid;
-      }
 
       eq.assignments = db
         .prepare(

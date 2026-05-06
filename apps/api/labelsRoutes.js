@@ -1,11 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
 // labelsRoutes.js
 //
-// Routes pour la génération d'étiquettes laser (LightBurn) à partir des
-// numéros de série de la table `equipment_serials`.
+// Routes pour la génération d'étiquettes laser (LightBurn).
+// Modèle A : 1 ligne `equipment` = 1 unité physique avec uid + serial_number
+// uniques. Les anciennes routes `serialId` désignent maintenant `equipment.id`.
 //
-//   • GET  /api/labels/serialized        → liste des serials + equipment
-//   • PUT  /api/labels/serial/:id        → édite mag_number d'un serial
+//   • GET  /api/labels/serialized        → liste des equipment avec serial_number
+//   • PUT  /api/labels/serial/:id        → édite numero_mag d'un equipment
 //   • POST /api/labels/generate          → SVG plaque 200×200 mm (download)
 //   • POST /api/labels/generate-one      → SVG d'une seule étiquette (preview)
 //
@@ -58,18 +59,24 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
   //   ?search=…        → texte libre (serial, mag, nom, référence, uid)
   app.get('/api/labels/serialized', authenticateToken, (req, res) => {
     try {
-      const where = ["s.status = 'active'"];
+      // Modèle A : on cible les equipment qui ont un serial_number (= unités
+      // physiques migrées) et qui ne sont pas des catalogues archivés.
+      const where = [
+        'e.serial_number IS NOT NULL',
+        "e.serial_number != ''",
+        "e.name NOT LIKE '%[archive]%'",
+      ];
       const params = {};
       if (req.query.equipmentId) {
-        where.push('s.equipment_id = @equipmentId');
+        where.push('e.id = @equipmentId');
         params.equipmentId = Number(req.query.equipmentId);
       }
       if (req.query.withoutMag === '1' || req.query.withoutMag === 'true') {
-        where.push('(s.mag_number IS NULL OR s.mag_number = "")');
+        where.push("(e.numero_mag IS NULL OR e.numero_mag = '')");
       }
       if (req.query.search) {
         where.push(
-          '(UPPER(s.serial) LIKE @q OR UPPER(s.mag_number) LIKE @q' +
+          '(UPPER(e.serial_number) LIKE @q OR UPPER(e.numero_mag) LIKE @q' +
             ' OR UPPER(e.name) LIKE @q OR UPPER(e.reference) LIKE @q OR UPPER(e.uid) LIKE @q)',
         );
         params.q = `%${String(req.query.search).toUpperCase()}%`;
@@ -77,21 +84,20 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
 
       const rows = db
         .prepare(
-          `SELECT s.id            AS serial_id,
-                  s.equipment_id  AS equipment_id,
-                  s.serial        AS serial,
-                  s.mag_number    AS mag_number,
-                  s.uid           AS serial_uid,
-                  s.status        AS status,
-                  s.created_at    AS created_at,
+          `SELECT e.id            AS serial_id,
+                  e.id            AS equipment_id,
+                  e.serial_number AS serial,
+                  e.numero_mag    AS mag_number,
+                  e.uid           AS serial_uid,
+                  'active'        AS status,
+                  e.created_at    AS created_at,
                   e.uid           AS equipment_uid,
                   e.reference     AS equipment_reference,
                   e.name          AS equipment_name,
                   e.numero_mag    AS equipment_numero_mag
-           FROM equipment_serials s
-           INNER JOIN equipment e ON e.id = s.equipment_id
+           FROM equipment e
            WHERE ${where.join(' AND ')}
-           ORDER BY e.name COLLATE NOCASE ASC, s.serial COLLATE NOCASE ASC
+           ORDER BY e.name COLLATE NOCASE ASC, e.serial_number COLLATE NOCASE ASC
            LIMIT 5000`,
         )
         .all(params);
@@ -130,10 +136,12 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
           detail: 'Attendu : 1 lettre + 2 à 4 chiffres (ex: A12, B003)',
         });
       }
-      const exists = db.prepare('SELECT id FROM equipment_serials WHERE id = ?').get(id);
-      if (!exists) return res.status(404).json({ error: 'Numéro de série introuvable' });
+      const exists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(id);
+      if (!exists) return res.status(404).json({ error: 'Équipement introuvable' });
 
-      db.prepare('UPDATE equipment_serials SET mag_number = ? WHERE id = ?').run(mag, id);
+      db.prepare(
+        'UPDATE equipment SET numero_mag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ).run(mag, id);
       res.json({ success: true, id, mag_number: mag });
     } catch (e) {
       logger.error('PUT /api/labels/serial/:id:', e.message);
@@ -163,12 +171,11 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
       const placeholders = ids.map(() => '?').join(',');
       const rows = db
         .prepare(
-          `SELECT s.id, s.serial, s.mag_number, s.uid AS serial_uid,
+          `SELECT e.id, e.serial_number AS serial, e.numero_mag AS mag_number, e.uid AS serial_uid,
                   e.uid AS equipment_uid, e.name AS equipment_name,
                   e.reference AS equipment_reference
-           FROM equipment_serials s
-           INNER JOIN equipment e ON e.id = s.equipment_id
-           WHERE s.id IN (${placeholders})`,
+           FROM equipment e
+           WHERE e.id IN (${placeholders})`,
         )
         .all(...ids);
       const byId = new Map(rows.map((r) => [r.id, r]));
@@ -263,12 +270,11 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
       const placeholders = ids.map(() => '?').join(',');
       const rows = db
         .prepare(
-          `SELECT s.id, s.serial, s.mag_number, s.uid AS serial_uid,
+          `SELECT e.id, e.serial_number AS serial, e.numero_mag AS mag_number, e.uid AS serial_uid,
                   e.uid AS equipment_uid, e.name AS equipment_name,
                   e.reference AS equipment_reference
-           FROM equipment_serials s
-           INNER JOIN equipment e ON e.id = s.equipment_id
-           WHERE s.id IN (${placeholders})`,
+           FROM equipment e
+           WHERE e.id IN (${placeholders})`,
         )
         .all(...ids);
       const byId = new Map(rows.map((r) => [r.id, r]));

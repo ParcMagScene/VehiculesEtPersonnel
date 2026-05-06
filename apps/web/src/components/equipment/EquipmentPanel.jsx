@@ -914,7 +914,10 @@ const EquipmentPanel = ({
                           try {
                             const r = await api.backfillLocmatReferences();
                             toast.success(
-                              `Mise à jour : ${r.updatedRows} ligne(s) complétée(s) sur ${r.processedRefs} référence(s).`,
+                              `Mise à jour : ${r.updatedRows} ligne(s) complétée(s) sur ${r.processedRefs} référence(s)` +
+                                (r.normalizedSerials
+                                  ? `, ${r.normalizedSerials} sérialisé(s) ramené(s) à qté=1.`
+                                  : '.'),
                             );
                             await loadData?.();
                           } catch (e) {

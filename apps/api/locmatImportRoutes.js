@@ -665,9 +665,26 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
 
         let processedRefs = 0;
         let updatedRows = 0;
+        let normalizedSerials = 0;
         const errors = [];
 
+        const fixSerialQty = db.prepare(`
+          UPDATE equipment
+             SET stock_quantity = 1,
+                 is_serialized  = 1,
+                 updated_at     = CURRENT_TIMESTAMP
+           WHERE serial_number IS NOT NULL
+             AND TRIM(serial_number) != ''
+             AND (stock_quantity != 1 OR is_serialized != 1)
+             AND (status IS NULL OR status != 'removed')
+        `);
+
         const apply = db.transaction(() => {
+          // 5a. Normaliser toutes les unités sérialisées : qty=1 + is_serialized=1
+          //     (corrige héritage de l'ancien modèle agrégé)
+          const fixInfo = fixSerialQty.run();
+          normalizedSerials = fixInfo.changes || 0;
+
           for (const { ref } of refsRows) {
             try {
               const parent = findParent.get(ref);
@@ -708,13 +725,14 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         apply();
 
         logger.info(
-          `Backfill cat/marque/loc: ${processedRefs} refs traitées, ${updatedRows} lignes MAJ`,
+          `Backfill cat/marque/loc: ${processedRefs} refs traitées, ${updatedRows} lignes MAJ, ${normalizedSerials} sérialisés normalisés (qty=1)`,
         );
         res.json({
           success: true,
           totalRefs: refsRows.length,
           processedRefs,
           updatedRows,
+          normalizedSerials,
           errors,
         });
       } catch (error) {

@@ -615,4 +615,112 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });
+
+  // ─── 5. BACKFILL — propage cat/marque/loc depuis la "meilleure" unité
+  //        existante vers toutes les unités vides de la même reference,
+  //        sans aucun import CSV.
+  app.post(
+    '/api/import/locmat/backfill-references',
+    authenticateToken,
+    requireAdmin,
+    (req, res) => {
+      try {
+        const findParent = db.prepare(
+          `SELECT category_id, brand, brand_id, model, photo,
+                  location, location_zone, location_code, location_floor, location_depot
+           FROM equipment
+           WHERE UPPER(reference) = UPPER(?)
+             AND (name IS NULL OR name NOT LIKE '%[archive]%')
+             AND (status IS NULL OR status != 'removed')
+           ORDER BY
+             (CASE WHEN category_id IS NOT NULL THEN 0 ELSE 1 END),
+             (CASE WHEN serial_number IS NULL OR serial_number = '' THEN 0 ELSE 1 END),
+             id
+           LIMIT 1`,
+        );
+        const backfill = db.prepare(`
+          UPDATE equipment SET
+            category_id     = COALESCE(category_id, ?),
+            brand           = COALESCE(NULLIF(brand, ''), ?),
+            brand_id        = COALESCE(brand_id, ?),
+            model           = COALESCE(NULLIF(model, ''), ?),
+            photo           = COALESCE(NULLIF(photo, ''), ?),
+            location        = COALESCE(NULLIF(location, ''), ?),
+            location_zone   = COALESCE(NULLIF(location_zone, ''), ?),
+            location_code   = COALESCE(NULLIF(location_code, ''), ?),
+            location_floor  = COALESCE(NULLIF(location_floor, ''), ?),
+            location_depot  = COALESCE(NULLIF(location_depot, ''), ?),
+            updated_at      = CURRENT_TIMESTAMP
+          WHERE UPPER(reference) = UPPER(?)
+            AND (status IS NULL OR status != 'removed')
+        `);
+        const refsRows = db
+          .prepare(
+            `SELECT DISTINCT UPPER(reference) AS ref
+             FROM equipment
+             WHERE reference IS NOT NULL AND reference != ''
+               AND (status IS NULL OR status != 'removed')`,
+          )
+          .all();
+
+        let processedRefs = 0;
+        let updatedRows = 0;
+        const errors = [];
+
+        const apply = db.transaction(() => {
+          for (const { ref } of refsRows) {
+            try {
+              const parent = findParent.get(ref);
+              if (!parent) continue;
+              // Inutile d'écrire si le parent n'a rien à propager
+              const hasAny =
+                parent.category_id ||
+                parent.brand ||
+                parent.brand_id ||
+                parent.model ||
+                parent.photo ||
+                parent.location ||
+                parent.location_zone ||
+                parent.location_code ||
+                parent.location_floor ||
+                parent.location_depot;
+              if (!hasAny) continue;
+              processedRefs++;
+              const info = backfill.run(
+                parent.category_id ?? null,
+                parent.brand || null,
+                parent.brand_id ?? null,
+                parent.model || null,
+                parent.photo || null,
+                parent.location || null,
+                parent.location_zone || null,
+                parent.location_code || null,
+                parent.location_floor || null,
+                parent.location_depot || null,
+                ref,
+              );
+              if (info.changes > 0) updatedRows += info.changes;
+            } catch (e) {
+              errors.push(`Ref ${ref}: ${e.message}`);
+            }
+          }
+        });
+        apply();
+
+        logger.info(
+          `Backfill cat/marque/loc: ${processedRefs} refs traitées, ${updatedRows} lignes MAJ`,
+        );
+        res.json({
+          success: true,
+          totalRefs: refsRows.length,
+          processedRefs,
+          updatedRows,
+          errors,
+        });
+      } catch (error) {
+        logger.error('Erreur backfill references:', error);
+        res.status(500).json({ success: false, error: error.message || 'Erreur serveur' });
+      }
+    },
+  );
 }

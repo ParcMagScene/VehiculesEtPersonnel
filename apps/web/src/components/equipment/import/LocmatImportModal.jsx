@@ -38,7 +38,14 @@ const TABS = [
   { key: 'quantityChanges', label: 'Quantités', icon: Hash, color: 'warning' },
   { key: 'serializationChanges', label: 'Sérialisation', icon: ShieldCheck, color: 'info' },
   { key: 'newSerials', label: 'Nouveaux N° série', icon: Plus, color: 'success' },
+  { key: 'serialUpdates', label: 'N° MAG mis à jour', icon: RefreshCw, color: 'info' },
   { key: 'removedSerials', label: 'N° série retirés', icon: Minus, color: 'danger' },
+  {
+    key: 'legacyCatalogToDelete',
+    label: 'Catalogues legacy à supprimer',
+    icon: Trash2,
+    color: 'danger',
+  },
   { key: 'missingProducts', label: 'Suppressions ?', icon: Trash2, color: 'warning' },
   { key: 'duplicates', label: 'Doublons CSV', icon: Copy, color: 'warning' },
   { key: 'collisions', label: 'Collisions', icon: ShieldAlert, color: 'danger' },
@@ -161,9 +168,23 @@ function normalizeLocations(rows) {
 }
 
 function normalizeSerials(rows) {
+  // Format Locmat des SN : `T01 -  2400953513` (mag préfixe TETRA2)
+  // ou `0788770045   - V12` (mag suffixe VIPER). Mag = lettre + 1à 3 chiffres.
+  const MAG_RE = /^[A-Z]\d{1,3}$/;
+  function parseSerial(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return { coreSerial: '', magNumber: null };
+    const parts = s.split(/\s+-\s+/);
+    if (parts.length === 2) {
+      const [a, b] = parts.map((x) => x.trim());
+      if (MAG_RE.test(a) && !MAG_RE.test(b)) return { coreSerial: b, magNumber: a };
+      if (MAG_RE.test(b) && !MAG_RE.test(a)) return { coreSerial: a, magNumber: b };
+    }
+    return { coreSerial: s, magNumber: null };
+  }
   return rows
     .map((row) => {
-      const serial = String(
+      const rawSerial = String(
         pick(row, [
           'Numéro de série',
           'Numéro de Série',
@@ -173,13 +194,16 @@ function normalizeSerials(rows) {
           'NumSerie',
         ]) || '',
       ).trim();
-      if (!serial) return null;
+      if (!rawSerial) return null;
+      const { coreSerial, magNumber } = parseSerial(rawSerial);
       return {
         code: String(
           pick(row, ['Code libre générique', 'Code Libre', 'Code Article', 'Code', 'Référence']) ||
             '',
         ).trim(),
-        serial,
+        serial: coreSerial,
+        rawSerial,
+        magNumber,
         name: String(pick(row, ['Nom', 'Désignation', 'Designation']) || '').trim() || null,
       };
     })
@@ -206,7 +230,9 @@ export default function LocmatImportModal({ onDone, onClose }) {
       updatedProducts: diff.updatedProducts.length,
       quantityChanges: diff.quantityChanges.length,
       newSerials: diff.newSerials.length,
+      serialUpdates: (diff.serialUpdates || []).length,
       removedSerials: diff.removedSerials.length,
+      legacyCatalogToDelete: (diff.legacyCatalogToDelete || []).length,
       errors: diff.errors.length,
     };
   }, [diff]);
@@ -254,7 +280,9 @@ export default function LocmatImportModal({ onDone, onClose }) {
         quantityChanges: diff.quantityChanges,
         serializationChanges: diff.serializationChanges || [],
         newSerials: diff.newSerials,
+        serialUpdates: diff.serialUpdates || [],
         removedSerials: diff.removedSerials,
+        legacyCatalogToDelete: diff.legacyCatalogToDelete || [],
         // signalements (sans action automatique côté serveur)
         missingProducts: diff.missingProducts || [],
         duplicates: diff.duplicates || { locations: [], serials: [] },
@@ -334,7 +362,9 @@ export default function LocmatImportModal({ onDone, onClose }) {
                   counts.quantityChanges +
                   (counts.serializationChanges || 0) +
                   counts.newSerials +
-                  counts.removedSerials ===
+                  (counts.serialUpdates || 0) +
+                  counts.removedSerials +
+                  (counts.legacyCatalogToDelete || 0) ===
                   0
               }
             >
@@ -438,6 +468,16 @@ export default function LocmatImportModal({ onDone, onClose }) {
               <li>
                 N° série retirés : <strong>{result.serialsRemoved}</strong>
               </li>
+              {result.serialsMagUpdated > 0 && (
+                <li>
+                  N° MAG mis à jour : <strong>{result.serialsMagUpdated}</strong>
+                </li>
+              )}
+              {result.legacyCatalogDeleted > 0 && (
+                <li>
+                  Catalogues legacy supprimés : <strong>{result.legacyCatalogDeleted}</strong>
+                </li>
+              )}
               {result.serialsSkippedCollision > 0 && (
                 <li>
                   N° série ignorés (collision) : <strong>{result.serialsSkippedCollision}</strong>
@@ -548,16 +588,38 @@ function DiffTable({ tabKey, rows }) {
         return [
           { key: 'code', label: 'Code', render: (_, r) => r.code },
           { key: 'serial', label: 'N° série', render: (_, r) => r.serial },
+          { key: 'magNumber', label: 'N° MAG', render: (_, r) => r.magNumber || '—' },
           {
             key: 'productExisting',
             label: 'Produit',
             render: (_, r) => (r.productExisting ? 'Existant' : 'Nouveau'),
           },
         ];
+      case 'serialUpdates':
+        return [
+          { key: 'code', label: 'Code', render: (_, r) => r.code },
+          { key: 'serial', label: 'N° série', render: (_, r) => r.serial },
+          {
+            key: 'mag',
+            label: 'N° MAG',
+            render: (_, r) => (
+              <>
+                <s>{r.fromMag || '∅'}</s> → <strong>{r.magNumber || '∅'}</strong>
+              </>
+            ),
+          },
+        ];
       case 'removedSerials':
         return [
           { key: 'code', label: 'Code', render: (_, r) => r.code },
           { key: 'serial', label: 'N° série retiré', render: (_, r) => r.serial },
+        ];
+      case 'legacyCatalogToDelete':
+        return [
+          { key: 'code', label: 'Code', render: (_, r) => r.code },
+          { key: 'name', label: 'Nom', render: (_, r) => r.name || '—' },
+          { key: 'quantity', label: 'Qté DB', render: (_, r) => r.quantity ?? '—' },
+          { key: 'equipmentId', label: 'ID', render: (_, r) => r.equipmentId },
         ];
       case 'errors':
         return [

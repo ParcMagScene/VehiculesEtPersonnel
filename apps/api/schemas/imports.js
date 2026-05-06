@@ -239,9 +239,22 @@ export const locmatConfirmSchema = z.object({
         equipmentId: z.coerce.number().int().positive().optional(),
         code: str(100),
         serial: str(100),
+        magNumber: optStr(50).optional().nullable(),
         productExisting: z.boolean().optional(),
       }),
     )
+    .default([]),
+  serialUpdates: z
+    .array(
+      z.object({
+        equipmentId: z.coerce.number().int().positive().optional().nullable(),
+        code: str(100),
+        serial: str(100),
+        magNumber: optStr(50).optional().nullable(),
+        fromMag: optStr(50).optional().nullable(),
+      }),
+    )
+    .optional()
     .default([]),
   removedSerials: z
     .array(
@@ -251,6 +264,17 @@ export const locmatConfirmSchema = z.object({
         serial: str(100),
       }),
     )
+    .default([]),
+  legacyCatalogToDelete: z
+    .array(
+      z.object({
+        equipmentId: z.coerce.number().int().positive(),
+        code: str(100),
+        name: optStr(255).optional().nullable(),
+        quantity: z.coerce.number().int().nonnegative().optional(),
+      }),
+    )
+    .optional()
     .default([]),
   // Champs de signalement (advisory) : retournés par le preview, renvoyés tels quels
   // pour traçabilité dans import_logs. Aucune écriture automatique côté serveur.

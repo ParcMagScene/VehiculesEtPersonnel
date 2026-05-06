@@ -86,6 +86,25 @@ function buildDbOwnerCodeBySerial() {
   return map;
 }
 
+// Index serial → { magNumber, equipmentId } (pour détecter MAJ N° MAG)
+function buildDbMagBySerial() {
+  const rows = db
+    .prepare(
+      `SELECT id, serial_number, numero_mag FROM equipment
+       WHERE serial_number IS NOT NULL AND serial_number != ''
+         AND (status IS NULL OR status != 'removed')`,
+    )
+    .all();
+  const map = new Map();
+  for (const r of rows) {
+    map.set(r.serial_number, {
+      magNumber: r.numero_mag || null,
+      equipmentId: r.id,
+    });
+  }
+  return map;
+}
+
 export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
   // ─── 1. PREVIEW (read-only, calcule le diff) ───
   app.post(
@@ -100,6 +119,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         const dbCatalogByCode = buildDbCatalogByCode();
         const dbSerialsByCode = buildDbSerialsByCode();
         const dbOwnerCodeBySerial = buildDbOwnerCodeBySerial();
+        const dbMagBySerial = buildDbMagBySerial();
 
         const diff = diffWithDatabase({
           locations,
@@ -107,6 +127,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           dbCatalogByCode,
           dbSerialsByCode,
           dbOwnerCodeBySerial,
+          dbMagBySerial,
         });
 
         res.json({
@@ -116,7 +137,9 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
             updatedProducts: diff.updatedProducts.length,
             quantityChanges: diff.quantityChanges.length,
             newSerials: diff.newSerials.length,
+            serialUpdates: diff.serialUpdates?.length || 0,
             removedSerials: diff.removedSerials.length,
+            legacyCatalogToDelete: diff.legacyCatalogToDelete?.length || 0,
             missingProducts: diff.missingProducts?.length || 0,
             duplicates:
               (diff.duplicates?.locations?.length || 0) + (diff.duplicates?.serials?.length || 0),
@@ -146,7 +169,9 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           updatedProducts,
           quantityChanges,
           newSerials,
+          serialUpdates = [],
           removedSerials,
+          legacyCatalogToDelete = [],
           missingProducts = [],
           duplicates = { locations: [], serials: [] },
           collisions = [],
@@ -164,9 +189,21 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         const insertUnit = db.prepare(`
           INSERT INTO equipment
             (name, reference, notes, purchase_price, stock_quantity,
-             location, status, uid, qrcode, is_serialized, serial_number, created_by)
-          VALUES (?, ?, ?, ?, 1, ?, 'available', ?, ?, 0, ?, ?)
+             location, status, uid, qrcode, is_serialized, serial_number, numero_mag, created_by)
+          VALUES (?, ?, ?, ?, 1, ?, 'available', ?, ?, 0, ?, ?, ?)
         `);
+        // MAJ N° MAG (et force qty=1 pour nettoyer toute ligne legacy qty>1)
+        const updateMagAndForceQty1 = db.prepare(`
+          UPDATE equipment SET
+            numero_mag     = ?,
+            stock_quantity = 1,
+            is_serialized  = 0,
+            updated_at     = CURRENT_TIMESTAMP
+          WHERE UPPER(reference) = UPPER(?) AND serial_number = ?
+            AND (status IS NULL OR status != 'removed')
+        `);
+        // Suppression définitive d'une ligne catalogue legacy (modèle A pur)
+        const deleteLegacyCatalog = db.prepare('DELETE FROM equipment WHERE id = ?');
         const updateEquipUid = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
         const updateEquip = db.prepare(`
           UPDATE equipment SET
@@ -213,6 +250,8 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           serialsAdded: 0,
           serialsRemoved: 0,
           serialsReactivated: 0,
+          serialsMagUpdated: 0,
+          legacyCatalogDeleted: 0,
           serialsSkippedCollision: 0,
           errors: [],
         };
@@ -320,6 +359,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
                 null, // uid alloué juste après
                 null, // qrcode async
                 s.serial,
+                s.magNumber || null,
                 req.user.id,
               );
               const newId = insRes.lastInsertRowid;
@@ -347,6 +387,27 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
             }
           }
 
+          // ── E2. mises à jour N° MAG (+ force stock_quantity=1) ──
+          for (const u of serialUpdates) {
+            try {
+              const info = updateMagAndForceQty1.run(u.magNumber || null, u.code, u.serial);
+              if (info.changes > 0) result.serialsMagUpdated++;
+            } catch (e) {
+              result.errors.push(`MAJ N° MAG ${u.serial} (${u.code}): ${e.message}`);
+            }
+          }
+
+          // ── E3. suppression des lignes catalogue legacy (modèle A pur) ──
+          for (const l of legacyCatalogToDelete) {
+            try {
+              if (!l.equipmentId) continue;
+              const info = deleteLegacyCatalog.run(l.equipmentId);
+              if (info.changes > 0) result.legacyCatalogDeleted++;
+            } catch (e) {
+              result.errors.push(`Suppression catalogue legacy ${l.code}: ${e.message}`);
+            }
+          }
+
           // ── F. journal ──
           db.prepare(
             `INSERT INTO import_logs (type, source, summary, details, user_id, user_name)
@@ -360,6 +421,8 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
               serialsAdded: result.serialsAdded,
               serialsRemoved: result.serialsRemoved,
               serialsReactivated: result.serialsReactivated,
+              serialsMagUpdated: result.serialsMagUpdated,
+              legacyCatalogDeleted: result.legacyCatalogDeleted,
               missingProductsCount: missingProducts.length,
               duplicatesCount:
                 (duplicates?.locations?.length || 0) + (duplicates?.serials?.length || 0),
@@ -370,8 +433,14 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
               newProducts: newProducts.map((p) => ({ code: p.code })),
               updatedProducts: updatedProducts.map((u) => ({ id: u.id, code: u.code })),
               quantityChanges,
-              newSerials: newSerials.map((s) => ({ code: s.code, serial: s.serial })),
+              newSerials: newSerials.map((s) => ({
+                code: s.code,
+                serial: s.serial,
+                magNumber: s.magNumber || null,
+              })),
+              serialUpdates,
               removedSerials,
+              legacyCatalogToDelete,
               missingProducts,
               duplicates,
               collisions,
@@ -400,7 +469,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
 
         addToHistory('locmat_import', null, 'import', result, req.user.id, req.user.name);
         logger.info(
-          `Import Locmat (equipment): +${result.createdProducts} créés, ${result.updatedProducts} MAJ, ${result.quantityAdjusted} qtés, +${result.serialsAdded} serials, -${result.serialsRemoved} serials`,
+          `Import Locmat (equipment): +${result.createdProducts} créés, ${result.updatedProducts} MAJ, ${result.quantityAdjusted} qtés, +${result.serialsAdded} serials, -${result.serialsRemoved} serials, ${result.serialsMagUpdated} N°MAG, -${result.legacyCatalogDeleted} catalogues legacy`,
         );
 
         res.json({ success: true, ...result });

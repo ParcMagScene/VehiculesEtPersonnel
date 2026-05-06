@@ -11,6 +11,7 @@ import {
   diffWithDatabase,
   normalizeLocationRow,
   normalizeSerialRow,
+  parseLocmatSerial,
 } from '../apps/api/services/locmatImport.js';
 
 describe('normalizeLocationRow', () => {
@@ -38,7 +39,44 @@ describe('normalizeSerialRow', () => {
   it('exige un numéro de série', () => {
     assert.equal(normalizeSerialRow({ Code: 'X' }), null);
     const r = normalizeSerialRow({ Code: 'X', 'Numéro de Série': 'SN001' });
-    assert.deepEqual(r, { code: 'X', serial: 'SN001', name: null });
+    assert.deepEqual(r, {
+      code: 'X',
+      serial: 'SN001',
+      rawSerial: 'SN001',
+      magNumber: null,
+      name: null,
+    });
+  });
+
+  it('extrait le numéro MAG en préfixe (TETRA2)', () => {
+    const r = normalizeSerialRow({ Code: 'TETRA2', 'Numéro de Série': 'T01 -  2400953513' });
+    assert.equal(r.serial, '2400953513');
+    assert.equal(r.magNumber, 'T01');
+    assert.equal(r.rawSerial, 'T01 -  2400953513');
+  });
+
+  it('extrait le numéro MAG en suffixe (VIPER)', () => {
+    const r = normalizeSerialRow({ Code: 'VIPER', 'Numéro de Série': '0788770045   - V12' });
+    assert.equal(r.serial, '0788770045');
+    assert.equal(r.magNumber, 'V12');
+  });
+});
+
+describe('parseLocmatSerial', () => {
+  it('reconnait préfixe / suffixe / aucun mag', () => {
+    assert.deepEqual(parseLocmatSerial('T01 -  2400953513'), {
+      coreSerial: '2400953513',
+      magNumber: 'T01',
+    });
+    assert.deepEqual(parseLocmatSerial('0788770045 - V12'), {
+      coreSerial: '0788770045',
+      magNumber: 'V12',
+    });
+    assert.deepEqual(parseLocmatSerial('B884971'), {
+      coreSerial: 'B884971',
+      magNumber: null,
+    });
+    assert.deepEqual(parseLocmatSerial(''), { coreSerial: '', magNumber: null });
   });
 });
 
@@ -195,5 +233,57 @@ describe('diffWithDatabase', () => {
     assert.equal(r.missingProducts.length, 1);
     assert.equal(r.missingProducts[0].code, 'OLD-1');
     assert.equal(r.missingProducts[0].quantity, 3);
+  });
+
+  it('émet serialUpdates quand le N° MAG diffère (CSV vs DB)', () => {
+    const dbCatalogByCode = new Map([['TETRA2', { id: 100, reference: 'TETRA2', name: 'Bar', quantity: 1, serial_number: '2400953513' }]]);
+    const dbSerialsByCode = new Map([['TETRA2', new Set(['2400953513', '2400954278'])]]);
+    const dbMagBySerial = new Map([
+      ['2400953513', { magNumber: null, equipmentId: 100 }],
+      ['2400954278', { magNumber: 'T99', equipmentId: 101 }],
+    ]);
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [
+        { code: 'TETRA2', serial: '2400953513', magNumber: 'T01' }, // était NULL → MAJ
+        { code: 'TETRA2', serial: '2400954278', magNumber: 'T02' }, // était T99  → MAJ
+      ],
+      dbCatalogByCode,
+      dbSerialsByCode,
+      dbMagBySerial,
+    });
+    assert.equal(r.newSerials.length, 0);
+    assert.equal(r.serialUpdates.length, 2);
+    const u1 = r.serialUpdates.find((u) => u.serial === '2400953513');
+    assert.equal(u1.magNumber, 'T01');
+    assert.equal(u1.fromMag, null);
+    assert.equal(u1.equipmentId, 100);
+  });
+
+  it('skip serialUpdate quand le N° MAG est déjà à jour', () => {
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [{ code: 'X', serial: 'SN1', magNumber: 'T01' }],
+      dbCatalogByCode: new Map([['X', { id: 1, reference: 'X', name: 'X', quantity: 1, serial_number: 'SN1' }]]),
+      dbSerialsByCode: new Map([['X', new Set(['SN1'])]]),
+      dbMagBySerial: new Map([['SN1', { magNumber: 'T01', equipmentId: 1 }]]),
+    });
+    assert.equal(r.serialUpdates.length, 0);
+    assert.equal(r.newSerials.length, 0);
+  });
+
+  it('signale legacyCatalogToDelete quand une ligne sans serial existe pour un code sérialisé', () => {
+    const dbCatalogByCode = new Map([
+      ['CAM', { id: 50, reference: 'CAM', name: 'Cam', quantity: 5, serial_number: null }],
+    ]);
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [{ code: 'CAM', serial: 'SN-A' }],
+      dbCatalogByCode,
+      dbSerialsByCode: new Map([['CAM', new Set([])]]),
+    });
+    assert.equal(r.legacyCatalogToDelete.length, 1);
+    assert.equal(r.legacyCatalogToDelete[0].equipmentId, 50);
+    assert.equal(r.legacyCatalogToDelete[0].quantity, 5);
   });
 });

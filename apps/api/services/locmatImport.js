@@ -48,6 +48,27 @@ const SER_FIELDS = {
   brand: ['Marque', 'Brand'],
 };
 
+// Format Locmat des SN : `<core> - <mag>` ou `<mag> - <core>` où mag = lettre + 1à 3 chiffres.
+// Ex : `T01 -  2400953513` (TETRA2), `0788770045   - V12` (VIPER).
+const MAG_NUMBER_RE = /^[A-Z]\d{1,3}$/;
+
+/**
+ * Parse un SN Locmat brut. Extrait un éventuel numéro MAG (T01, V12...).
+ * @param {string} rawSerial
+ * @returns {{ coreSerial: string, magNumber: string|null }}
+ */
+export function parseLocmatSerial(rawSerial) {
+  const raw = String(rawSerial || '').trim();
+  if (!raw) return { coreSerial: '', magNumber: null };
+  const parts = raw.split(/\s+-\s+/);
+  if (parts.length === 2) {
+    const [a, b] = parts.map((s) => s.trim());
+    if (MAG_NUMBER_RE.test(a) && !MAG_NUMBER_RE.test(b)) return { coreSerial: b, magNumber: a };
+    if (MAG_NUMBER_RE.test(b) && !MAG_NUMBER_RE.test(a)) return { coreSerial: a, magNumber: b };
+  }
+  return { coreSerial: raw, magNumber: null };
+}
+
 function normalizeKey(k) {
   return String(k || '')
     .normalize('NFD')
@@ -120,11 +141,14 @@ export function normalizeLocationRow(row) {
  */
 export function normalizeSerialRow(row) {
   const code = String(pick(row, SER_FIELDS.code) || '').trim();
-  const serial = String(pick(row, SER_FIELDS.serial) || '').trim();
-  if (!serial) return null;
+  const rawSerial = String(pick(row, SER_FIELDS.serial) || '').trim();
+  if (!rawSerial) return null;
+  const { coreSerial, magNumber } = parseLocmatSerial(rawSerial);
   return {
     code,
-    serial,
+    serial: coreSerial,
+    rawSerial,
+    magNumber,
     name: String(pick(row, SER_FIELDS.name) || '').trim() || null,
   };
 }
@@ -140,8 +164,11 @@ export function normalizeSerialRow(row) {
  *                                                  { id, name, description, unit_price, location, quantity }
  * @param {Map<string,Set<string>>} args.dbSerialsByCode  serials existants (equipment.serial_number) par refUpper
  * @param {Map<string,string>}      [args.dbOwnerCodeBySerial]  index inverse serial → refUpper (collision cross-ref)
- * @returns Diff { newProducts, updatedProducts, quantityChanges, newSerials,
- *                 removedSerials, missingProducts, duplicates, collisions, errors }
+ * @param {Map<string,{magNumber:string|null, equipmentId:number}>} [args.dbMagBySerial]
+ *        Index serial → numéro mag actuel + id, pour détecter les mises à jour de N° MAG.
+ * @returns Diff { newProducts, updatedProducts, quantityChanges, newSerials, serialUpdates,
+ *                 removedSerials, missingProducts, duplicates, collisions, errors,
+ *                 legacyCatalogToDelete }
  */
 export function diffWithDatabase({
   locations,
@@ -149,19 +176,23 @@ export function diffWithDatabase({
   dbCatalogByCode,
   dbSerialsByCode,
   dbOwnerCodeBySerial,
+  dbMagBySerial,
   // back-compat : tolère l'ancien nom dbItemsByCode
   dbItemsByCode,
 }) {
   if (!dbCatalogByCode && dbItemsByCode) dbCatalogByCode = dbItemsByCode;
   if (!dbSerialsByCode) dbSerialsByCode = new Map();
   if (!dbOwnerCodeBySerial) dbOwnerCodeBySerial = new Map();
+  if (!dbMagBySerial) dbMagBySerial = new Map();
 
   const newProducts = [];
   const updatedProducts = [];
   const quantityChanges = [];
   const newSerials = [];
+  const serialUpdates = []; // { code, serial, magNumber, fromMag, equipmentId }
   const removedSerials = [];
   const missingProducts = []; // références DB absentes des CSV (signalement)
+  const legacyCatalogToDelete = []; // lignes catalogue à supprimer (modele A pur)
   const duplicates = { locations: [], serials: [] };
   const collisions = []; // serial sur plusieurs codes / déjà attribué ailleurs en DB
   const errors = [];
@@ -293,31 +324,49 @@ export function diffWithDatabase({
           });
           continue;
         }
-        newSerials.push({ code: s.code, serial: s.serial, productExisting: false });
+        newSerials.push({
+          code: s.code,
+          serial: s.serial,
+          magNumber: s.magNumber || null,
+          productExisting: false,
+        });
       }
       continue;
     }
 
     const dbSet = dbSerialsByCode.get(code) || new Set();
-    // nouveaux : dans CSV mais pas en DB
+    // nouveaux : dans CSV mais pas en DB ; existants : maj du numéro MAG si différent
     for (const s of csvSerials) {
-      if (!dbSet.has(s.serial)) {
-        const ownerCode = dbOwnerCodeBySerial.get(s.serial);
-        if (ownerCode && ownerCode !== code) {
-          collisions.push({
-            scope: 'db-cross-ref',
+      if (dbSet.has(s.serial)) {
+        const dbInfo = dbMagBySerial.get(s.serial);
+        const currentMag = dbInfo?.magNumber || null;
+        if (s.magNumber && s.magNumber !== currentMag) {
+          serialUpdates.push({
+            code,
             serial: s.serial,
-            csvCode: s.code,
-            dbCode: ownerCode,
+            magNumber: s.magNumber,
+            fromMag: currentMag,
+            equipmentId: dbInfo?.equipmentId || null,
           });
-          continue;
         }
-        newSerials.push({
-          code: s.code,
-          serial: s.serial,
-          productExisting: true,
-        });
+        continue;
       }
+      const ownerCode = dbOwnerCodeBySerial.get(s.serial);
+      if (ownerCode && ownerCode !== code) {
+        collisions.push({
+          scope: 'db-cross-ref',
+          serial: s.serial,
+          csvCode: s.code,
+          dbCode: ownerCode,
+        });
+        continue;
+      }
+      newSerials.push({
+        code: s.code,
+        serial: s.serial,
+        magNumber: s.magNumber || null,
+        productExisting: true,
+      });
     }
     // supprimés : dans DB mais plus dans CSV
     for (const dbSer of dbSet) {
@@ -327,6 +376,18 @@ export function diffWithDatabase({
           serial: dbSer,
         });
       }
+    }
+
+    // Modèle A pur : si une ligne catalogue (sans serial_number) existe pour un
+    // code qui a des unités sérialisées dans le CSV, elle doit être supprimée.
+    const catalog = dbCatalogByCode.get(code);
+    if (catalog && (!catalog.serial_number || catalog.serial_number === '')) {
+      legacyCatalogToDelete.push({
+        equipmentId: catalog.id,
+        code: catalog.reference || code,
+        name: catalog.name || null,
+        quantity: Math.round(Number(catalog.quantity) || 0),
+      });
     }
   }
 
@@ -349,8 +410,10 @@ export function diffWithDatabase({
     updatedProducts,
     quantityChanges,
     newSerials,
+    serialUpdates,
     removedSerials,
     missingProducts,
+    legacyCatalogToDelete,
     duplicates,
     collisions,
     errors,

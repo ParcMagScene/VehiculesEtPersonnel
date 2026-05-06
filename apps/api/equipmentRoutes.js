@@ -573,6 +573,53 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       }
 
       // Cas qty > 1 : scinder en N entités individuelles
+      // Si la ligne porte déjà un numéro de série, le client DOIT fournir N numéros
+      // de série distincts (un par exemplaire) afin d'éviter la création de doublons
+      // synthétiques type "<SN>-001" qui ne correspondent à aucun matériel réel.
+      const rawSerials = Array.isArray(req.body?.serials) ? req.body.serials : null;
+      const providedSerials = rawSerials
+        ? rawSerials.map((s) => (s == null ? '' : String(s).trim())).filter((s) => s.length > 0)
+        : null;
+
+      if (original.serial_number) {
+        if (
+          !providedSerials ||
+          providedSerials.length !== qty ||
+          new Set(providedSerials).size !== qty
+        ) {
+          return res.status(400).json({
+            success: false,
+            error: `Cette ligne a déjà un numéro de série (${original.serial_number}). Le split en ${qty} exemplaires exige ${qty} numéros de série distincts et non vides (champ "serials").`,
+          });
+        }
+      } else if (providedSerials) {
+        // Pas de SN sur la ligne d'origine mais le client en fournit : valider quand même
+        if (providedSerials.length !== qty || new Set(providedSerials).size !== qty) {
+          return res.status(400).json({
+            success: false,
+            error: `Le tableau "serials" doit contenir ${qty} numéros de série distincts et non vides.`,
+          });
+        }
+      }
+
+      // Vérifier qu'aucun SN fourni n'entre en collision avec un équipement existant
+      // (autre que la ligne d'origine, qui sera supprimée).
+      if (providedSerials && providedSerials.length > 0) {
+        const placeholders = providedSerials.map(() => '?').join(',');
+        const collisions = db
+          .prepare(
+            `SELECT id, serial_number FROM equipment
+             WHERE serial_number IN (${placeholders}) AND id != ?`,
+          )
+          .all(...providedSerials, original.id);
+        if (collisions.length > 0) {
+          return res.status(409).json({
+            success: false,
+            error: `Numéro(s) de série déjà utilisé(s) en base : ${collisions.map((c) => c.serial_number).join(', ')}`,
+          });
+        }
+      }
+
       const insertStmt = db.prepare(`
         INSERT INTO equipment (name, reference, serial_number, category_id, brand, status, location, purchase_date, purchase_price, warranty_end, notes, photo, stock_quantity, created_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
@@ -584,9 +631,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       const run = db.transaction(() => {
         for (let i = 1; i <= qty; i++) {
           const name = original.name;
-          const serial = original.serial_number
-            ? `${original.serial_number}-${String(i).padStart(3, '0')}`
-            : null;
+          const serial = providedSerials ? providedSerials[i - 1] : null;
 
           const result = insertStmt.run(
             name,

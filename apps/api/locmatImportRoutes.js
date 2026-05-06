@@ -186,11 +186,19 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           VALUES (?, ?, ?, ?, ?, ?, 'available', ?, ?, 0, NULL, ?)
         `);
         // INSERT pour une unité sérialisée (1 ligne = 1 SN, stock=1).
+        // Hérite category_id/brand/brand_id/model/photo + champs localisation
+        // depuis le "parent" (ligne existante de la même reference).
         const insertUnit = db.prepare(`
           INSERT INTO equipment
             (name, reference, notes, purchase_price, stock_quantity,
-             location, status, uid, qrcode, is_serialized, serial_number, numero_mag, created_by)
-          VALUES (?, ?, ?, ?, 1, ?, 'available', ?, ?, 0, ?, ?, ?)
+             location, status, uid, qrcode, is_serialized, serial_number, numero_mag,
+             category_id, brand, brand_id, model, photo,
+             location_zone, location_code, location_floor, location_depot,
+             created_by)
+          VALUES (?, ?, ?, ?, 1, ?, 'available', ?, ?, 0, ?, ?,
+                  ?, ?, ?, ?, ?,
+                  ?, ?, ?, ?,
+                  ?)
         `);
         // MAJ N° MAG (et force qty=1 pour nettoyer toute ligne legacy qty>1)
         const updateMagAndForceQty1 = db.prepare(`
@@ -230,16 +238,42 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           UPDATE equipment SET stock_quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
         `);
         // Recherche d'un "catalogue parent" pour cloner les champs lors d'une
-        // création d'unité (priorité au catalogue sans serial, sinon n'importe
-        // quelle unité de la même reference).
+        // création d'unité. Priorité :
+        //  1) ligne avec category_id renseignée (la mieux décrite)
+        //  2) catalogue sans serial
+        //  3) plus petit id (la plus ancienne, souvent la "référence")
         const findParentByCode = db.prepare(
-          `SELECT id, name, reference, notes, purchase_price, location
+          `SELECT id, name, reference, notes, purchase_price, location,
+                  category_id, brand, brand_id, model, photo,
+                  location_zone, location_code, location_floor, location_depot
            FROM equipment
            WHERE UPPER(reference) = UPPER(?)
              AND (name IS NULL OR name NOT LIKE '%[archive]%')
-           ORDER BY (CASE WHEN serial_number IS NULL OR serial_number = '' THEN 0 ELSE 1 END), id
+             AND (status IS NULL OR status != 'removed')
+           ORDER BY
+             (CASE WHEN category_id IS NOT NULL THEN 0 ELSE 1 END),
+             (CASE WHEN serial_number IS NULL OR serial_number = '' THEN 0 ELSE 1 END),
+             id
            LIMIT 1`,
         );
+        // Backfill : propage category/brand/model/photo/location vers toutes
+        // les unités d'une même reference qui ont ces champs vides.
+        const backfillUnitsByRef = db.prepare(`
+          UPDATE equipment SET
+            category_id     = COALESCE(category_id, ?),
+            brand           = COALESCE(NULLIF(brand, ''), ?),
+            brand_id        = COALESCE(brand_id, ?),
+            model           = COALESCE(NULLIF(model, ''), ?),
+            photo           = COALESCE(NULLIF(photo, ''), ?),
+            location        = COALESCE(NULLIF(location, ''), ?),
+            location_zone   = COALESCE(NULLIF(location_zone, ''), ?),
+            location_code   = COALESCE(NULLIF(location_code, ''), ?),
+            location_floor  = COALESCE(NULLIF(location_floor, ''), ?),
+            location_depot  = COALESCE(NULLIF(location_depot, ''), ?),
+            updated_at      = CURRENT_TIMESTAMP
+          WHERE UPPER(reference) = UPPER(?)
+            AND (status IS NULL OR status != 'removed')
+        `);
         // Soft-delete d'une unité par (ref, serial)
         const softRemoveUnit = db.prepare(
           `UPDATE equipment SET status = 'removed', updated_at = CURRENT_TIMESTAMP
@@ -264,6 +298,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           serialsReactivated: 0,
           serialsMagUpdated: 0,
           legacyCatalogDeleted: 0,
+          backfilled: 0,
           serialsSkippedCollision: 0,
           errors: [],
         };
@@ -372,6 +407,15 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
                 null, // qrcode async
                 s.serial,
                 s.magNumber || null,
+                parent.category_id ?? null,
+                parent.brand || null,
+                parent.brand_id ?? null,
+                parent.model || null,
+                parent.photo || null,
+                parent.location_zone || null,
+                parent.location_code || null,
+                parent.location_floor || null,
+                parent.location_depot || null,
                 req.user.id,
               );
               const newId = insRes.lastInsertRowid;
@@ -423,6 +467,36 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
             }
           }
 
+          // ── E4. backfill catégorie/marque/localisation pour toutes les
+          //       références touchées (newSerials + serialUpdates). On relit
+          //       le parent APRÈS les suppressions legacy pour être certain
+          //       de prendre la meilleure source disponible.
+          const refsToBackfill = new Set();
+          for (const s of newSerials) refsToBackfill.add(String(s.code).toUpperCase());
+          for (const u of serialUpdates) refsToBackfill.add(String(u.code).toUpperCase());
+          for (const ref of refsToBackfill) {
+            try {
+              const parent = findParentByCode.get(ref);
+              if (!parent) continue;
+              const info = backfillUnitsByRef.run(
+                parent.category_id ?? null,
+                parent.brand || null,
+                parent.brand_id ?? null,
+                parent.model || null,
+                parent.photo || null,
+                parent.location || null,
+                parent.location_zone || null,
+                parent.location_code || null,
+                parent.location_floor || null,
+                parent.location_depot || null,
+                ref,
+              );
+              if (info.changes > 0) result.backfilled += info.changes;
+            } catch (e) {
+              result.errors.push(`Backfill catégorie ${ref}: ${e.message}`);
+            }
+          }
+
           // ── F. journal ──
           db.prepare(
             `INSERT INTO import_logs (type, source, summary, details, user_id, user_name)
@@ -438,6 +512,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
               serialsReactivated: result.serialsReactivated,
               serialsMagUpdated: result.serialsMagUpdated,
               legacyCatalogDeleted: result.legacyCatalogDeleted,
+              backfilled: result.backfilled,
               missingProductsCount: missingProducts.length,
               duplicatesCount:
                 (duplicates?.locations?.length || 0) + (duplicates?.serials?.length || 0),
@@ -484,7 +559,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
 
         addToHistory('locmat_import', null, 'import', result, req.user.id, req.user.name);
         logger.info(
-          `Import Locmat (equipment): +${result.createdProducts} créés, ${result.updatedProducts} MAJ, ${result.quantityAdjusted} qtés, +${result.serialsAdded} serials, -${result.serialsRemoved} serials, ${result.serialsMagUpdated} N°MAG, -${result.legacyCatalogDeleted} catalogues legacy`,
+          `Import Locmat (equipment): +${result.createdProducts} créés, ${result.updatedProducts} MAJ, ${result.quantityAdjusted} qtés, +${result.serialsAdded} serials, -${result.serialsRemoved} serials, ${result.serialsMagUpdated} N°MAG, -${result.legacyCatalogDeleted} catalogues legacy, ${result.backfilled} backfillés`,
         );
 
         res.json({ success: true, ...result });

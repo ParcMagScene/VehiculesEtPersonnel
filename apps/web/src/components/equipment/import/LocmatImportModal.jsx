@@ -478,6 +478,12 @@ export default function LocmatImportModal({ onDone, onClose }) {
                   Catalogues legacy supprimés : <strong>{result.legacyCatalogDeleted}</strong>
                 </li>
               )}
+              {result.backfilled > 0 && (
+                <li>
+                  Champs catégorie/marque/localisation propagés :{' '}
+                  <strong>{result.backfilled}</strong>
+                </li>
+              )}
               {result.serialsSkippedCollision > 0 && (
                 <li>
                   N° série ignorés (collision) : <strong>{result.serialsSkippedCollision}</strong>

@@ -473,7 +473,7 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
               <div className="modal-body">
                 <p className="login-modal-text">
                   {resetStep === 1
-                    ? 'Entrez votre adresse email et votre nom complet. Un code vous sera envoye par email.'
+                    ? 'Entrez votre adresse email. Un code de vérification vous sera envoyé par email.'
                     : 'Saisissez le code recu par email avec votre nouveau mot de passe.'}
                 </p>
 
@@ -481,7 +481,7 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                   {resetStep === 1 ? (
                     <>
                       <FormField
-                        className="form-group login-form-field-spacing"
+                        className="form-group login-form-field-spacing-last"
                         label="Adresse email"
                         htmlFor="reset-email"
                       >
@@ -493,22 +493,6 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                           placeholder="email@exemple.com"
                           required
                           autoFocus
-                          className="login-reset-input"
-                        />
-                      </FormField>
-
-                      <FormField
-                        className="form-group login-form-field-spacing-last"
-                        label="Nom complet"
-                        htmlFor="reset-name"
-                      >
-                        <Input
-                          id="reset-name"
-                          type="text"
-                          value={resetFormName}
-                          onChange={(e) => setResetFormName(e.target.value)}
-                          placeholder="Prenom Nom"
-                          required
                           className="login-reset-input"
                         />
                       </FormField>
@@ -597,7 +581,7 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                       type="submit"
                       disabled={
                         loading ||
-                        (resetStep === 1 && (!resetFormEmail || !resetFormName)) ||
+                        (resetStep === 1 && !resetFormEmail) ||
                         (resetStep === 2 &&
                           (resetOtp.length !== 6 ||
                             newPassword.length < 10 ||

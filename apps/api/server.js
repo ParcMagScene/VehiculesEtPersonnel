@@ -225,14 +225,12 @@ app.use('/api/auth/login-pin', authLimiter);
 // [SEC PHASE 2] Auth personnelle (PIN/password vérifié côté serveur) sur /suivi/personal-auth
 app.use('/api/suivi/personal-auth', authLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
-app.use('/api/auth/forgot-password', sensitiveEndpointLimiter);
-app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
-app.use('/api/auth/set-new-password', sensitiveEndpointLimiter);
-app.use('/api/auth/self-reset-password', sensitiveEndpointLimiter);
+// NOTE: les endpoints de réinitialisation de mot de passe ne sont volontairement
+// PAS rate-limités (demande utilisateur) — le contrôle d'accès se fait par OTP
+// 6 chiffres + expiration 15 min + email obligatoire d'un compte autorisé.
 // Les GET /api/access-requests/* sont protégés par authenticateToken+requireAdmin
 app.post('/api/access-requests', sensitiveEndpointLimiter);
 app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);
-app.use('/api/admin/reset-password', sensitiveEndpointLimiter);
 
 // Créer le middleware d'authentification avec le secret JWT
 const authenticateToken = createAuthenticateToken(JWT_SECRET);

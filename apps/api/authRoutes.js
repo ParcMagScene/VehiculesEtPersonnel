@@ -157,10 +157,10 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
   // Étape 2: /api/auth/verify-reset-otp avec OTP + newPassword
   app.post('/api/auth/self-reset-password', validate(selfResetPasswordSchema), async (req, res) => {
     try {
-      const { email, name } = req.body;
+      const { email } = req.body;
 
-      if (!email || !name) {
-        return res.status(400).json({ success: false, error: 'Email et nom requis' });
+      if (!email) {
+        return res.status(400).json({ success: false, error: 'Email requis' });
       }
 
       const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
@@ -168,16 +168,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         // Message générique pour ne pas révéler si le compte existe
         return res.status(400).json({
           success: false,
-          error: 'Les informations saisies ne correspondent à aucun compte',
-        });
-      }
-
-      // Vérifier que le nom correspond (insensible à la casse, trim)
-      const nameMatch = user.name.trim().toLowerCase() === name.trim().toLowerCase();
-      if (!nameMatch) {
-        return res.status(400).json({
-          success: false,
-          error: 'Les informations saisies ne correspondent à aucun compte',
+          error: 'Aucun compte associé à cette adresse email',
         });
       }
 

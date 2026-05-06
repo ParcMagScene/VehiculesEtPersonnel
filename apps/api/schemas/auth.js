@@ -24,9 +24,11 @@ export const forgotPasswordSchema = z.object({
 });
 
 // ── Self reset password ──
+// `name` rendu optionnel : la réinitialisation se base uniquement sur l'email
+// (compte autorisé) et l'OTP envoyé par email. Plus simple côté utilisateur.
 export const selfResetPasswordSchema = z.object({
   email,
-  name,
+  name: name.optional(),
   newPassword: password.optional(),
 });
 

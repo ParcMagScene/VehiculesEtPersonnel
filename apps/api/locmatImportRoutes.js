@@ -668,6 +668,9 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         let normalizedSerials = 0;
         const errors = [];
 
+        // Invariant: 1 numéro de série = 1 unité, indépendamment du status
+        // (les lignes 'removed' restent visibles dans les listings et doivent
+        // également respecter qty=1).
         const fixSerialQty = db.prepare(`
           UPDATE equipment
              SET stock_quantity = 1,
@@ -676,7 +679,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
            WHERE serial_number IS NOT NULL
              AND TRIM(serial_number) != ''
              AND (stock_quantity != 1 OR is_serialized != 1)
-             AND (status IS NULL OR status != 'removed')
         `);
 
         const apply = db.transaction(() => {

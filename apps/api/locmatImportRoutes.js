@@ -202,7 +202,19 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           WHERE UPPER(reference) = UPPER(?) AND serial_number = ?
             AND (status IS NULL OR status != 'removed')
         `);
-        // Suppression définitive d'une ligne catalogue legacy (modèle A pur)
+        // Suppression définitive d'une ligne catalogue legacy (modèle A pur).
+        // FK pointant vers equipment.id :
+        //   - equipment_lists      (NOT NULL, CASCADE)         → géré par SQLite
+        //   - bp_items             (nullable, SET NULL)        → géré par SQLite
+        //   - equipment_serials    (NOT NULL, CASCADE)         → géré par SQLite
+        //   - sav_tickets          (nullable, NO ACTION)       → SET NULL manuel
+        //   - equipment_assignments(NOT NULL, NO ACTION)       → DELETE manuel
+        const detachSavTicketsLegacy = db.prepare(
+          'UPDATE sav_tickets SET equipment_id = NULL WHERE equipment_id = ?',
+        );
+        const deleteAssignmentsLegacy = db.prepare(
+          'DELETE FROM equipment_assignments WHERE equipment_id = ?',
+        );
         const deleteLegacyCatalog = db.prepare('DELETE FROM equipment WHERE id = ?');
         const updateEquipUid = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
         const updateEquip = db.prepare(`
@@ -401,6 +413,9 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           for (const l of legacyCatalogToDelete) {
             try {
               if (!l.equipmentId) continue;
+              // Détacher / nettoyer FK non-cascade avant DELETE
+              detachSavTicketsLegacy.run(l.equipmentId);
+              deleteAssignmentsLegacy.run(l.equipmentId);
               const info = deleteLegacyCatalog.run(l.equipmentId);
               if (info.changes > 0) result.legacyCatalogDeleted++;
             } catch (e) {

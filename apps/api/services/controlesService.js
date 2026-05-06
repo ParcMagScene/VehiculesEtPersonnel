@@ -17,8 +17,14 @@ export const STATUS = {
 };
 
 export function todayIso(now = new Date()) {
+  // Heure LOCALE du serveur (pas UTC) : évite que les utilisateurs voient
+  // la « date d'hier » entre minuit local et minuit UTC. Le serveur de prod
+  // doit tourner dans la TZ des opérateurs (Indian/Reunion ou Europe/Paris).
   const d = new Date(now);
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export function addDays(isoDate, days) {

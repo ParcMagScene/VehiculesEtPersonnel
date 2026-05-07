@@ -3747,94 +3747,25 @@ initializeDatabase();
 import { runPostInitMigrations } from './migrations.js';
 runPostInitMigrations(db);
 
-// Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
+// ─────────────────────────────────────────────────────────────
+// [S2-1 step 2] WAL management extrait dans database/wal.js
+// On garde des wrappers locaux qui figent `db` pour rétro-compat
+// des appelants existants (server.js : checkpointDatabase(), closeDatabase()).
+// ─────────────────────────────────────────────────────────────
+import {
+  checkpointDatabase as checkpointDatabaseImpl,
+  setupWALScheduling,
+  closeDatabase as closeDatabaseImpl,
+} from './database/wal.js';
+
+const walScheduling = setupWALScheduling(db);
+
 export function checkpointDatabase() {
-  try {
-    db.pragma('wal_checkpoint(FULL)');
-    logger.info('✅ Checkpoint WAL effectué');
-  } catch (error) {
-    logger.error('❌ Erreur checkpoint WAL:', error);
-  }
+  return checkpointDatabaseImpl(db);
 }
 
-// Fonction pour fermer proprement la base de données
 export function closeDatabase() {
-  try {
-    clearInterval(checkpointTimer);
-    clearInterval(restartTimer);
-    if (truncateTimer) clearInterval(truncateTimer);
-    if (truncateBootstrap) clearTimeout(truncateBootstrap);
-    // S1-01 — Checkpoint TRUNCATE final pour libérer le WAL avant close
-    try {
-      db.pragma('wal_checkpoint(TRUNCATE)');
-    } catch (_) {
-      checkpointDatabase();
-    }
-    db.close();
-    logger.info('✅ Base de données fermée proprement');
-  } catch (error) {
-    logger.error('❌ Erreur fermeture DB:', error);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// S1-01 — Stratégie WAL renforcée
-// PASSIVE  : 5 min  — non bloquant, peut ne rien tronquer si readers
-// RESTART  : 30 min — force la rotation du fichier WAL
-// TRUNCATE : 1×/jour à 03:00 — libère réellement l'espace disque
-// Affine également wal_autocheckpoint à 500 pages (≈ 2 Mo)
-// ─────────────────────────────────────────────────────────────
-const checkpointTimer = setInterval(
-  () => {
-    checkpointDatabase();
-  },
-  5 * 60 * 1000,
-);
-
-const restartTimer = setInterval(
-  () => {
-    try {
-      const r = db.pragma('wal_checkpoint(RESTART)');
-      logger.info(`🔁 WAL RESTART: ${JSON.stringify(r)}`);
-    } catch (e) {
-      logger.warn('⚠️ WAL RESTART échec (readers actifs):', e.message);
-    }
-  },
-  30 * 60 * 1000,
-);
-
-let truncateTimer = null;
-let truncateBootstrap = null;
-function scheduleDailyTruncate() {
-  const now = new Date();
-  const next = new Date(now);
-  next.setHours(3, 0, 0, 0);
-  if (next <= now) next.setDate(next.getDate() + 1);
-  truncateBootstrap = setTimeout(() => {
-    try {
-      const r = db.pragma('wal_checkpoint(TRUNCATE)');
-      logger.info(`🧹 WAL TRUNCATE quotidien: ${JSON.stringify(r)}`);
-    } catch (e) {
-      logger.error('❌ WAL TRUNCATE échec:', e);
-    }
-    truncateTimer = setInterval(
-      () => {
-        try {
-          db.pragma('wal_checkpoint(TRUNCATE)');
-        } catch (_) {
-          /* noop : sera retenté demain */
-        }
-      },
-      24 * 60 * 60 * 1000,
-    );
-  }, next - now);
-}
-scheduleDailyTruncate();
-
-try {
-  db.pragma('wal_autocheckpoint = 500');
-} catch (_) {
-  /* noop : pragma non critique */
+  return closeDatabaseImpl(db, walScheduling);
 }
 
 export default db;

@@ -1503,6 +1503,28 @@ function initializeDatabase() {
       /* colonnes déjà présentes */
     }
 
+    // ═══ [FIX 7] Soft-archive du matériel (flag dédié, pas de marqueur dans le name) ═══
+    // Compatibilité ascendante : les consommateurs filtrent désormais sur COALESCE(archived,0)=0.
+    // Le DELETE physique reste inchangé.
+    try {
+      const addedArchived = safeAddColumn('equipment', 'archived', 'INTEGER', 0);
+      safeAddColumn('equipment', 'archived_at', 'DATETIME');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_equipment_archived ON equipment(archived)');
+      if (addedArchived) {
+        // Backfill : tout équipement marqué historiquement "[archive]" dans son nom passe archived=1
+        const upd = db
+          .prepare(
+            "UPDATE equipment SET archived=1, archived_at=COALESCE(archived_at, datetime('now')) WHERE archived IS NULL OR (archived=0 AND name LIKE '%[archive]%')",
+          )
+          .run();
+        if (upd.changes > 0) {
+          logger.info(`✅ Migration: ${upd.changes} équipements archivés via flag (FIX 7)`);
+        }
+      }
+    } catch (e) {
+      logger.warn(`⚠️  Migration archived equipment ignorée : ${e.message}`);
+    }
+
     // ═══ Table favoris/surveillance matériel ═══
     db.exec(`
       CREATE TABLE IF NOT EXISTS equipment_lists (

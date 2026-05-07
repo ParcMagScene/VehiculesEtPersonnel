@@ -78,7 +78,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   );
   const [collapsedPastEvents, setCollapsedPastEvents] = useState(true),
     [collapsedFutureEvents, setCollapsedFutureEvents] = useState(true);
-  const [eventStatuses, setEventStatuses] = useState(new Map());
+  const [_eventStatuses, setEventStatuses] = useState(new Map());
   const [icalCalendars, setIcalCalendars] = useState([]),
     [icalEvents, setIcalEvents] = useState([]);
   const [showIcalManager, setShowIcalManager] = useState(false),
@@ -698,7 +698,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     },
     [loadTasks, toast],
   );
-  const handleCycleDisplayEventStatus = useCallback(
+  const _handleCycleDisplayEventStatus = useCallback(
     async (ev) => {
       try {
         await api.cycleDisplayEventStatus(ev.id);
@@ -709,7 +709,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     },
     [loadTasks, toast],
   );
-  const handleCycleAffaireStatus = useCallback(
+  const _handleCycleAffaireStatus = useCallback(
     async (num) => {
       try {
         await api.cycleAffaireStatus(num);

@@ -46,7 +46,7 @@
   "lint-staged": {
     "apps/web/src/**/*.{js,jsx}": [
       "prettier --write",
-      "eslint --quiet --fix"
+      "npm exec --workspace=apps/web -- eslint --quiet --fix"
     ],
     "apps/web/src/**/*.css": [
       "prettier --write"

@@ -21,6 +21,41 @@ function isValidTime(str) {
   return typeof str === 'string' && TIME_RE.test(str);
 }
 
+// ─── Helpers planning_assignments (FIX 3) ─────────────────────────
+// Maintient la cohérence entre task_assignments.person_id (assignation
+// directe legacy) et planning_assignments (multi-affectation générique).
+// Toutes les vues consommatrices (suivi, affaires, banner) lisent depuis
+// planning_assignments → toute création/édition/suppression de tâche doit
+// y refléter l'évolution de person_id.
+
+const upsertTaskPersonAssignmentStmt = () =>
+  db.prepare(
+    `INSERT OR IGNORE INTO planning_assignments (id, entity_type, entity_id, person_id)
+     VALUES (lower(hex(randomblob(16))), 'task', ?, ?)`,
+  );
+
+const deleteTaskAssignmentsStmt = () =>
+  db.prepare(`DELETE FROM planning_assignments WHERE entity_type = 'task' AND entity_id = ?`);
+
+/**
+ * Sync planning_assignments pour une tâche : remplace toutes les lignes
+ * (entity_type='task', entity_id) par {person_id} si fourni, sinon vide.
+ * Idempotent. Sans effet si person_id est null/undefined.
+ */
+function syncTaskPersonAssignment(taskId, personId) {
+  if (!taskId) return;
+  // Politique : on ne supprime QUE si on a une nouvelle valeur (évite d'effacer
+  // des affectations multiples ajoutées via /api/planning/planning-assignments).
+  // Si personId nul → on ne touche pas (compatibilité backward).
+  if (personId == null) return;
+  upsertTaskPersonAssignmentStmt().run(taskId, personId);
+}
+
+function clearTaskAssignments(taskId) {
+  if (!taskId) return;
+  deleteTaskAssignmentsStmt().run(taskId);
+}
+
 export function setupTaskRoutes(app, authenticateToken) {
   // ═══════════════════════════════════════════════
   // PLANIFICATION — TÂCHES — CRUD
@@ -1159,6 +1194,9 @@ export function setupTaskRoutes(app, authenticateToken) {
         req.user.id,
       );
 
+      // [FIX 3] Synchroniser planning_assignments si person_id fourni
+      syncTaskPersonAssignment(id, person_id);
+
       // Retourner avec les JOINs
       const created = db
         .prepare(
@@ -1234,6 +1272,10 @@ export function setupTaskRoutes(app, authenticateToken) {
               req.user.id,
             );
             createdIds.push(id);
+            // [FIX 3] Sync planning_assignments si person_id fourni
+            if (t.person_id) {
+              upsertTaskPersonAssignmentStmt().run(id, t.person_id);
+            }
           }
         });
 
@@ -1356,6 +1398,19 @@ export function setupTaskRoutes(app, authenticateToken) {
         req.params.id,
       );
 
+      // [FIX 3] Synchroniser planning_assignments si person_id a changé
+      // - Si person_id explicitement passé (même null) → on remplace l'assignation directe
+      // - Si non fourni → on ne touche pas
+      if (person_id !== undefined) {
+        // Retire l'ancienne assignation directe (le multi-affect via /planning-assignments reste)
+        if (existing.person_id && existing.person_id !== person_id) {
+          db.prepare(
+            `DELETE FROM planning_assignments WHERE entity_type='task' AND entity_id=? AND person_id=?`,
+          ).run(req.params.id, existing.person_id);
+        }
+        syncTaskPersonAssignment(req.params.id, person_id);
+      }
+
       // Retourner avec les JOINs
       const updated = db
         .prepare(
@@ -1456,6 +1511,10 @@ export function setupTaskRoutes(app, authenticateToken) {
       db.prepare(
         "UPDATE task_assignments SET deleted_at = datetime('now'), modified_by = ?, modified_at = datetime('now') WHERE id = ?",
       ).run(req.user.id, req.params.id);
+
+      // [FIX 3] Nettoyer toutes les multi-affectations associées
+      clearTaskAssignments(req.params.id);
+
       res.json({ success: true, message: 'Tâche supprimée' });
     } catch (error) {
       logger.error('DELETE /api/planning/tasks/:id error:', error);

@@ -9,7 +9,9 @@ const MAP_TILE_SOURCES = [
   'https://basemaps.cartocdn.com',
 ];
 const MAP_API_SOURCES = ['https://nominatim.openstreetmap.org', 'https://router.project-osrm.org'];
-const GOOGLE_SOURCES = [
+// Préfixé `_` : conservé à titre documentaire (sources Google potentielles à
+// réinjecter dans la CSP si besoin), non utilisé actuellement.
+const _GOOGLE_SOURCES = [
   'https://*.googleapis.com',
   'https://*.gstatic.com',
   'https://accounts.google.com',

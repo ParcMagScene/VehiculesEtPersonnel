@@ -7,7 +7,6 @@
 import crypto from 'crypto';
 
 import db from '../database.js';
-import logger from '../logger.js';
 
 // ═══════════════════════════════════════
 // HELPERS

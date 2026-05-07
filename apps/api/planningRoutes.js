@@ -4,33 +4,24 @@
 // ═══════════════════════════════════════════════════════════════
 
 import crypto from 'crypto';
-import fs from 'fs';
 import path from 'path';
-import PDFDocument from 'pdfkit';
 import { fileURLToPath } from 'url';
 
-import { cacheMiddleware, icalCache, invalidateEntity, listCache, statsCache } from './cache.js';
+import { cacheMiddleware, icalCache, listCache, statsCache } from './cache.js';
 import db from './database.js';
 import logger from './logger.js';
-import { uploadBL } from './middleware/upload.js';
 import { validate } from './schemas/imports.js';
 import {
   assignPersonSchema,
-  bpItemMatchArticleSchema,
-  bpItemMatchSchema,
   dateBodySchema,
   displayEventCreateSchema,
   displayEventUpdateSchema,
-  exportPdfSchema,
   fromDateBodySchema,
   icalCalendarCreateSchema,
   icalCalendarUpdateSchema,
   planningAssignmentSchema,
   recurringTaskCreateSchema,
   recurringTaskUpdateSchema,
-  taskBatchSchema,
-  taskCreateSchema,
-  taskUpdateSchema,
 } from './schemas/planning.js';
 
 const __filename = fileURLToPath(import.meta.url);

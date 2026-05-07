@@ -18,9 +18,6 @@ import {
   sheetUpdateSchema,
   suiviRecurringTaskCreateSchema,
   suiviRecurringTaskUpdateSchema,
-  syntheseDateSchema,
-  syntheseMonthSchema,
-  syntheseWeekSchema,
   syntheseYearSchema,
 } from './schemas/suivi.js';
 // [S2-1 step 3] Helpers et PDF generation extraits dans des sous-modules
@@ -36,7 +33,6 @@ import {
   getWeekBounds,
   getWeekDates,
   getYearDates,
-  isRecurringDueOnDate,
   safeJsonParseArray,
 } from './suiviRoutes/_helpers.js';
 import {

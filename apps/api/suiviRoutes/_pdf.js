@@ -222,7 +222,7 @@ export function drawPdfWatermarkRows(doc, startY, maxY) {
   return y;
 }
 
-export function drawPdfFooter(doc, entries, label) {
+export function drawPdfFooter(doc, entries, _label) {
   const totalTime = entries.reduce((s, e) => s + (e.time_spent || 0), 0);
   const totalDone = entries.filter((e) => e.completed === 1).length;
 

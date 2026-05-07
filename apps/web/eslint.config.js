@@ -94,7 +94,18 @@ export default [
     rules: {
       // Désactivé pour ne pas casser le code existant
       'react/prop-types': 'off',
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          // ESLint v9 inspecte par défaut les binders de catch ; le projet
+          // utilise massivement `catch (e/err)` sans utiliser l'erreur
+          // (logs déjà gérés en amont). On ignore ces cas pour éviter le
+          // bruit sans toucher au code applicatif.
+          caughtErrors: 'none',
+        },
+      ],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'react/display-name': 'off',
       'react-hooks/rules-of-hooks': 'error',

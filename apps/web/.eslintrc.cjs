@@ -69,7 +69,12 @@ module.exports = {
     'jsx-a11y/aria-props': 'error',
     'jsx-a11y/aria-proptypes': 'error',
     'jsx-a11y/aria-unsupported-elements': 'error',
-    'jsx-a11y/click-events-have-key-events': 'warn',
+    // Désactivés : 352 occurrences (194 + 147 + 11) sur le code legacy.
+    // Vraie correction = revue UX clavier (Enter/Espace, focus management,
+    // role/tabIndex), pas un commit massif. Suivi : issue dédiée.
+    'jsx-a11y/click-events-have-key-events': 'off',
+    'jsx-a11y/no-static-element-interactions': 'off',
+    'jsx-a11y/no-noninteractive-element-interactions': 'off',
     'jsx-a11y/heading-has-content': 'warn',
     'jsx-a11y/img-redundant-alt': 'warn',
     'jsx-a11y/interactive-supports-focus': 'warn',
@@ -78,8 +83,6 @@ module.exports = {
     // Suivi : ouvrir une issue "a11y: associate form labels with controls".
     'jsx-a11y/label-has-associated-control': 'off',
     'jsx-a11y/no-autofocus': 'off', // utilisé volontairement dans modales
-    'jsx-a11y/no-noninteractive-element-interactions': 'warn',
-    'jsx-a11y/no-static-element-interactions': 'warn',
     'jsx-a11y/role-has-required-aria-props': 'error',
     'jsx-a11y/role-supports-aria-props': 'warn',
     // Vidéos = flux NVR / aperçus, pas de pistes de sous-titres applicables

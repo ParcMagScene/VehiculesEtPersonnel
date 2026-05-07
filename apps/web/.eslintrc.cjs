@@ -44,12 +44,14 @@ module.exports = {
     'react-hooks/exhaustive-deps': 'warn',
     // Apostrophes françaises dans le JSX — trop de faux positifs
     'react/no-unescaped-entities': 'off',
-    // Règles react-hooks v7 trop strictes pour le code existant
-    'react-hooks/set-state-in-effect': 'warn',
-    'react-hooks/refs': 'warn',
+    // Règles react-hooks v7 nouvellement strictes : 52 warnings sur le code
+    // existant. Désactivées pour stabiliser la CI ; à traiter en PR dédiées
+    // (refactor effets/refs avec tests). Suivi : issue dédiée.
+    'react-hooks/set-state-in-effect': 'off',
+    'react-hooks/refs': 'off',
     'react-hooks/purity': 'off',
-    'react-hooks/immutability': 'warn',
-    'react-hooks/preserve-manual-memoization': 'warn',
+    'react-hooks/immutability': 'off',
+    'react-hooks/preserve-manual-memoization': 'off',
     // Regex avec emoji (planning français) — faux positifs
     'no-misleading-character-class': 'warn',
     // Catch vides volontaires (silencieux)

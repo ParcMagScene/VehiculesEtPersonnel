@@ -81,6 +81,7 @@ import {
 } from './middleware/authorize.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { httpLogger } from './middleware/httpLogger.js';
+import { initSentry, sentryErrorHandler, sentryRequestHandler } from './observability/sentry.js';
 import { xssSanitize } from './middleware/sanitize.js';
 import { csrfOriginCheck } from './middleware/csrfOriginCheck.js';
 import { logSecurityEvent } from './securityLog.js';
@@ -167,6 +168,9 @@ if (_jwtSecretMissing) {
 }
 
 // ── Middlewares globaux (configs extraites) ──
+// [S2-4] Sentry init + requestHandler en tout début de stack (no-op si SENTRY_DSN absent)
+await initSentry();
+app.use(sentryRequestHandler());
 app.use(compression({ threshold: 1024 }));
 app.use(helmetConditional);
 app.use(corsMiddleware);
@@ -524,6 +528,8 @@ if (isDev) {
 }
 
 // Middleware centralisé de gestion d'erreurs (doit être APRÈS toutes les routes)
+// [S2-4] Sentry errorHandler AVANT le notre pour capturer toutes les exceptions
+app.use(sentryErrorHandler());
 app.use(errorHandler);
 
 const SERVER_HOST = process.env.SERVER_HOST || '0.0.0.0';

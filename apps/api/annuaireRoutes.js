@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { annuaireRefCache, cacheMiddleware, invalidateOnSuccess } from './cache.js';
 import db, { addToHistory } from './database.js';
-import { cacheMiddleware, invalidateOnSuccess, annuaireRefCache } from './cache.js';
 import logger from './logger.js';
 import { contactsImportSchema, validate } from './schemas/imports.js';
 

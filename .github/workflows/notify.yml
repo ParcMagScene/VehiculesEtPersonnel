@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────
+# notify.yml — Notifications CI restreintes à main / prod
+# ─────────────────────────────────────────────────────────────
+# Objectif : ne plus recevoir d'emails GitHub Actions sur chaque
+# échec de la branche dev. Ce workflow se déclenche uniquement
+# en cas d'échec d'un workflow CI sur les branches sensibles
+# (main, prod) et journalise l'événement.
+#
+# Branchements optionnels (à activer au besoin) :
+#   - Slack  : https://github.com/marketplace/actions/slack-notify
+#   - Discord: https://github.com/marketplace/actions/actions-status-discord
+#   - Email  : nécessite un secret SMTP_* (mailjet, sendgrid, ...).
+#
+# Action côté utilisateur (hors code) :
+#   GitHub Settings → Notifications → Actions → désactiver
+#   "Send notifications for failed workflows on my own pushes"
+#   pour toutes les branches sauf main/prod.
+# ─────────────────────────────────────────────────────────────
+
+name: Notify on main/prod failures
+
+on:
+  workflow_run:
+    workflows: ['CI — Branche dev']
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    # Filtrage strict : uniquement échec, uniquement main/prod.
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      (github.event.workflow_run.head_branch == 'main' ||
+       github.event.workflow_run.head_branch == 'prod')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Journaliser l'échec critique
+        run: |
+          echo "::warning::Échec CI sur branche critique : ${{ github.event.workflow_run.head_branch }}"
+          echo "Workflow : ${{ github.event.workflow_run.name }}"
+          echo "Run URL  : ${{ github.event.workflow_run.html_url }}"
+          echo "Commit   : ${{ github.event.workflow_run.head_sha }}"
+
+      # TODO : brancher Slack / Discord / Email ici quand les secrets seront définis.
+      # Exemple Slack :
+      # - uses: slackapi/slack-github-action@v1
+      #   with:
+      #     payload: |
+      #       { "text": "❌ CI cassée sur ${{ github.event.workflow_run.head_branch }}" }
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

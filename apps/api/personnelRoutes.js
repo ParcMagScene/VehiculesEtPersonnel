@@ -3,8 +3,8 @@
 // Routes REST : persons, skills, availabilities, missions, assignments
 // ============================================================
 
-import db, { addToHistory } from './database.js';
 import { cacheMiddleware, invalidateOnSuccess, personnelPlanningCache } from './cache.js';
+import db, { addToHistory } from './database.js';
 import { alertAssignmentCreated } from './emailService.js';
 import logger from './logger.js';
 import { personSchema } from './schemas/crud.js';
@@ -991,12 +991,10 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
         if (!existing)
           return res.status(404).json({ success: false, error: 'Demande non trouvée' });
         if (existing.status !== 'pending') {
-          return res
-            .status(400)
-            .json({
-              success: false,
-              error: 'Seules les demandes en attente peuvent être refusées',
-            });
+          return res.status(400).json({
+            success: false,
+            error: 'Seules les demandes en attente peuvent être refusées',
+          });
         }
 
         db.prepare(

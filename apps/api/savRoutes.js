@@ -16,8 +16,8 @@ import multer from 'multer';
 import PDFDocument from 'pdfkit';
 
 import db from './database.js';
-import logger from './logger.js';
 import { addToHistory } from './db-helpers.js';
+import logger from './logger.js';
 import {
   applyConfirm,
   comparePreview,

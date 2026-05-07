@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# FIX CI : annule les runs précédents sur le même ref (push successifs / PR force-push)
+# → réduit le bruit email + accélère la CI.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ─── Conventional Commits ─────────────────────────────
   commitlint:
@@ -31,6 +37,9 @@ jobs:
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
   # ─── Lint ─────────────────────────────────────────────
+  # FIX CI : génère un rapport HTML lisible (artefact) même en cas d'échec.
+  # Le build (cf. job `build`) est découplé du lint pour ne plus être skippé
+  # sur erreurs cosmétiques.
   lint:
     name: ESLint + Prettier
     runs-on: ubuntu-latest
@@ -44,11 +53,28 @@ jobs:
 
       - run: npm ci
 
-      - name: ESLint
+      - name: ESLint — génération rapport HTML (non bloquant)
+        # Toujours produire un rapport, même si le lint plus bas échoue.
+        run: |
+          mkdir -p reports
+          npx --workspace=apps/web eslint . --ext js,jsx \
+            -f html -o ../../reports/eslint-web.html || true
+          npx --workspace=apps/api eslint . --ext js \
+            -f html -o ../../reports/eslint-api.html || true
+
+      - name: ESLint — vérification stricte (échec si erreurs)
         run: npm run lint
 
       - name: Prettier (vérification)
         run: npm run format:check
+
+      - name: Upload rapport ESLint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-report
+          path: reports/
+          retention-days: 14
 
   # ─── Documentation ──────────────────────────────────
   docs:
@@ -133,10 +159,12 @@ jobs:
           retention-days: 14
 
   # ─── Build ────────────────────────────────────────────
+  # FIX CI : build découplé du lint pour ne plus être skippé sur erreurs
+  # cosmétiques. Reste dépendant des tests pour ne pas livrer du code cassé.
   build:
     name: Build frontend
     runs-on: ubuntu-latest
-    needs: [lint, docs, test-backend, test-frontend]
+    needs: [test-backend, test-frontend]
     steps:
       - uses: actions/checkout@v4
 
@@ -146,6 +174,17 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
+
+      # FIX CI : cache du répertoire .vite pour accélérer les rebuilds.
+      - name: Cache Vite
+        uses: actions/cache@v4
+        with:
+          path: |
+            apps/web/node_modules/.vite
+            apps/web/.vite
+          key: vite-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json', 'apps/web/vite.config.*') }}
+          restore-keys: |
+            vite-${{ runner.os }}-
 
       - name: Build production
         run: npm run build

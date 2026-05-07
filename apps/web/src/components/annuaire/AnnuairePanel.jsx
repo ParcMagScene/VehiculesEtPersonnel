@@ -44,9 +44,9 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
+import LocationsTab from './LocationsTab';
 import MatchingContactEntitiesModal from './MatchingContactEntitiesModal';
 import MatchingEntitiesModal from './MatchingEntitiesModal';
-import LocationsTab from './LocationsTab';
 import MatchingLocationsModal from './MatchingLocationsModal';
 
 // ═══ Constantes ═══

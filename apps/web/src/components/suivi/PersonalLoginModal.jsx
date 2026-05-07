@@ -9,7 +9,7 @@ import './PersonalLoginModal.css';
 import { Eye, EyeOff, Lock, LogIn } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, Input, Dialog } from '@/design-system';
+import { Button, Dialog, Input } from '@/design-system';
 
 import { usePersonalAuth } from '../../contexts/PersonalAuthContext.jsx';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';

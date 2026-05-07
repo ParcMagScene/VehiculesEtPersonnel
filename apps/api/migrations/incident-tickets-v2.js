@@ -19,7 +19,7 @@ export function runIncidentTicketsV2Migration(db) {
       db.exec('ALTER TABLE tracking_incident_tickets ADD COLUMN incident_date TEXT');
       // Backfill : utiliser period_start_date comme valeur initiale
       db.exec(
-        "UPDATE tracking_incident_tickets SET incident_date = period_start_date WHERE incident_date IS NULL",
+        'UPDATE tracking_incident_tickets SET incident_date = period_start_date WHERE incident_date IS NULL',
       );
       logger.info('  ✅ Incident tickets v2: colonne incident_date ajoutée + backfill');
     }
@@ -34,7 +34,10 @@ export function runIncidentTicketsV2Migration(db) {
     for (const idx of indexes) {
       if (!idx.unique) continue;
       const info = db.pragma(`index_info(${JSON.stringify(idx.name)})`);
-      const colNames = info.map((c) => c.name).sort().join(',');
+      const colNames = info
+        .map((c) => c.name)
+        .sort()
+        .join(',');
       if (colNames === 'affaire_num,week_key') {
         uniqueIdxToDrop = idx.name;
         break;
@@ -86,9 +89,7 @@ export function runIncidentTicketsV2Migration(db) {
           `);
 
           db.exec('DROP TABLE tracking_incident_tickets');
-          db.exec(
-            'ALTER TABLE tracking_incident_tickets_new RENAME TO tracking_incident_tickets',
-          );
+          db.exec('ALTER TABLE tracking_incident_tickets_new RENAME TO tracking_incident_tickets');
 
           // Recréer les index non-uniques utiles
           db.exec(`
@@ -106,9 +107,7 @@ export function runIncidentTicketsV2Migration(db) {
         logger.info('  ✅ Incident tickets v2: contrainte UNIQUE retirée (multi-tickets autorisé)');
       } else {
         db.exec(`DROP INDEX IF EXISTS ${JSON.stringify(uniqueIdxToDrop)}`);
-        logger.info(
-          `  ✅ Incident tickets v2: index unique ${uniqueIdxToDrop} supprimé`,
-        );
+        logger.info(`  ✅ Incident tickets v2: index unique ${uniqueIdxToDrop} supprimé`);
       }
     }
   } catch (e) {

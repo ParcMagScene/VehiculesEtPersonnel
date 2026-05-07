@@ -6,8 +6,8 @@
 import { Disc, Music, Pause } from 'lucide-react';
 import { memo, useRef } from 'react';
 
-import { InlineAlert } from '@/design-system';
 import RadioLogo from '@/components/sonos/RadioLogo';
+import { InlineAlert } from '@/design-system';
 
 function MobileSonosNowPlaying({ displayState, onNext, onPrevious }) {
   const touchStartX = useRef(null);

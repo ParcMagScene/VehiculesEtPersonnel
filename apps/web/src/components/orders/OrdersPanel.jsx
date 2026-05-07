@@ -396,9 +396,7 @@ function OrdersPanel({ currentUser, isMobile }) {
         const created = await api.createMaterialRequest(data);
         const count = Array.isArray(created?.lines) ? created.lines.length : 1;
         toast.success(
-          count > 1
-            ? `Demande créée (${count} références)`
-            : 'Demande créée avec succès',
+          count > 1 ? `Demande créée (${count} références)` : 'Demande créée avec succès',
         );
       }
       setShowRequestModal(false);
@@ -461,9 +459,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   const handleConfirmApproval = async (assignments) => {
     if (!approvingRequest) return;
     const { request } = approvingRequest;
-    const newOnes = assignments.filter(
-      (a) => !a.target_order_id || a.target_order_id === 'new',
-    );
+    const newOnes = assignments.filter((a) => !a.target_order_id || a.target_order_id === 'new');
 
     // Aucune nouvelle commande → dispatch direct.
     if (newOnes.length === 0) {

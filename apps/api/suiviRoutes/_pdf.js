@@ -4,7 +4,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import PDFDocument from 'pdfkit';
-import { formatDateFR, isPastPeriod, hasOccupationContext, decToHM } from './_helpers.js';
+
+import { decToHM, formatDateFR, hasOccupationContext, isPastPeriod } from './_helpers.js';
 
 export const PDF_MARGIN = 40;
 export const PDF_TABLE_LEFT = 40;
@@ -221,7 +222,7 @@ export function drawPdfWatermarkRows(doc, startY, maxY) {
   return y;
 }
 
-export function drawPdfFooter(doc, entries, label) {
+export function drawPdfFooter(doc, entries, _label) {
   const totalTime = entries.reduce((s, e) => s + (e.time_spent || 0), 0);
   const totalDone = entries.filter((e) => e.completed === 1).length;
 

@@ -1,7 +1,8 @@
 # ─────────────────────────────────────────────────────────────
-# .prettierignore — racine du monorepo eM@g
-# Consolidé pour couvrir tous les workspaces (web + api).
-# Les .prettierignore par workspace restent valides (additifs).
+# .eslintignore — racine du monorepo eM@g
+# ESLint v8 (apps/web) le respecte ; ESLint v9+ flat (apps/api)
+# utilise sa propre clé `ignores` dans eslint.config.js.
+# Ce fichier est un garde-fou supplémentaire racine.
 # ─────────────────────────────────────────────────────────────
 
 # Build & deps
@@ -11,33 +12,29 @@ node_modules/
 **/build/
 **/coverage/
 **/.vite/
+**/.storybook/
 
-# Données / sauvegardes / DB
+# Public / assets statiques
+public/
+apps/web/public/
+**/public/
+
+# Archives & docs
+**/_archive/
+docs/
+prompts/
+
+# Données / sauvegardes
 backups/
 **/backups/
 **/*.db
-**/*.sqlite
 **/*.sqlite*
 apps/api/display-data/
 apps/api/logs/
 apps/api/_*
 
-# Public statique (assets binaires/livrés, jamais formatés)
-public/
-apps/web/public/
-**/public/
+# Scripts internes "_*"
+scripts/_*
 
-# Documentation gérée séparément
-docs/
-prompts/
-**/_archive/
-*.md
-**/CHANGELOG.md
-
-# Lockfiles & generated
-package-lock.json
-**/package-lock.json
-*.json
-
-# TV CLIENT — JAMAIS TOUCHÉ (contrainte projet)
+# TV CLIENT — JAMAIS LINTÉ (contrainte projet)
 apps/tv-client/

@@ -9,15 +9,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
+import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
 import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
 import { runEquipmentSerialsMagNumberMigration } from './migrations/equipment-serials-mag-number-v1.js';
 import { runEquipmentSerialsUidMigration } from './migrations/equipment-serials-uid-v1.js';
 import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serials-uid-v2.js';
+import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
-import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
-import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
 import { runVideoMigrations } from './migrations/video-v1.js';
@@ -144,9 +144,7 @@ export function runPostInitMigrations(db) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (request_id) REFERENCES material_requests(id) ON DELETE CASCADE
     )`);
-    db.exec(
-      'CREATE INDEX IF NOT EXISTS idx_mrl_request ON material_request_lines(request_id)',
-    );
+    db.exec('CREATE INDEX IF NOT EXISTS idx_mrl_request ON material_request_lines(request_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_mrl_order ON material_request_lines(order_id)');
 
     // Backfill : pour chaque demande sans ligne associée, insérer une ligne miroir.
@@ -171,7 +169,14 @@ export function runPostInitMigrations(db) {
               : r.status === 'rejected'
                 ? 'rejected'
                 : 'pending';
-          insertLine.run(r.id, r.article, r.ref_code, r.quantity || 1, r.order_id || null, lineStatus);
+          insertLine.run(
+            r.id,
+            r.article,
+            r.ref_code,
+            r.quantity || 1,
+            r.order_id || null,
+            lineStatus,
+          );
         }
       });
       tx(orphanRequests);

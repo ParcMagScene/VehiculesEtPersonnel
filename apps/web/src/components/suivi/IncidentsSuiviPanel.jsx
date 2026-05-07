@@ -829,9 +829,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
             <input
               type="date"
               value={form.incident_date || ''}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, incident_date: e.target.value }))
-              }
+              onChange={(e) => setForm((prev) => ({ ...prev, incident_date: e.target.value }))}
             />
           </div>
 

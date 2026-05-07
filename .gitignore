@@ -24,6 +24,11 @@ server/*.db.backup-*
 *.sqlite-shm
 *.sqlite-wal
 
+# S1-03 — Backups locaux de DB (jamais versionnés)
+*.db.bak-*
+*.db.backup-*
+apps/api/_backups_local/
+
 # Backups
 server/backups/
 

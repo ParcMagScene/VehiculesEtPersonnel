@@ -110,7 +110,9 @@ function MaintenanceDialog({
               let parsed = {};
               try {
                 parsed = typeof h.changes === 'string' ? JSON.parse(h.changes) : h.changes || {};
-              } catch (e) {}
+              } catch {
+                /* JSON malformé : fallback {} (ignoré volontairement) */
+              }
               return { ...h, parsed };
             });
           setMileageHistory(kmEntries);

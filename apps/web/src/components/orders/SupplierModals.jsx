@@ -33,19 +33,12 @@ import {
   Tooltip,
 } from '@/design-system';
 
-import { STATUS as _STATUS } from '../../constants';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
 import AddressAutocomplete from '../AddressAutocomplete';
 import PhoneInput from '../PhoneInput';
-import {
-  DESTINATIONS,
-  DOC_TYPES,
-  ORDER_STATUS,
-  QUOTE_STATUS as _QUOTE_STATUS,
-  REQUEST_PRIORITY,
-} from './ordersConstants';
+import { DESTINATIONS, DOC_TYPES, ORDER_STATUS, REQUEST_PRIORITY } from './ordersConstants';
 
 // ═══ Modal fournisseur (création / édition) ═══
 export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {

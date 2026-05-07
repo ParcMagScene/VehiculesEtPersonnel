@@ -26,7 +26,7 @@ import {
   Upload,
 } from 'lucide-react';
 import Papa from 'papaparse';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, EmptyState, InlineAlert, ModalLayout, Table } from '@/design-system';
 

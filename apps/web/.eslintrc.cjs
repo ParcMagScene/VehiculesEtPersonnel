@@ -5,7 +5,7 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  plugins: ['simple-import-sort'],
+  plugins: ['simple-import-sort', 'unused-imports'],
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',
@@ -45,6 +45,9 @@ module.exports = {
     // Import sorting automatique
     'simple-import-sort/imports': 'warn',
     'simple-import-sort/exports': 'warn',
+    // Suppression automatique des imports inutilisés (autofix)
+    // → désactive no-unused-vars pour les imports (géré par unused-imports/no-unused-imports)
+    'unused-imports/no-unused-imports': 'warn',
     // ─── A11Y ─────────────────────────────────────────────────────────
     // Mode permissif au démarrage : tout en `warn` pour ne pas bloquer
     // le build pendant la résorption du backlog.

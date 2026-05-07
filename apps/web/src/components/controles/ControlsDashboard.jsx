@@ -7,7 +7,6 @@ import {
   Clock,
   History,
   Pencil,
-  Plus,
   RefreshCw,
   ShieldAlert,
   Trash2,

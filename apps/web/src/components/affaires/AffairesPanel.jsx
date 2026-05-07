@@ -11,7 +11,6 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
-  BarChart2,
   Briefcase,
   Calendar,
   ChevronLeft,
@@ -22,7 +21,6 @@ import {
   PackagePlus,
   Paperclip,
   Plus,
-  TrendingUp,
 } from 'lucide-react';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 

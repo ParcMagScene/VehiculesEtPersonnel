@@ -1137,6 +1137,17 @@
   max-width: 180px;
 }
 
+/* [FIX 6] >3 personnes : empilement vertical pour rester lisible */
+.task-planning-panel .multi-assign-chips.multi-assign-chips--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 140px;
+}
+
+.task-planning-panel .multi-assign-chips.multi-assign-chips--stacked .task-person.assigned {
+  width: 100%;
+}
+
 .task-planning-panel .btn-assign {
   display: flex;
   align-items: center;

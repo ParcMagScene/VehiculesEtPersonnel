@@ -29,7 +29,10 @@ export const MultiAssignWidget = React.memo(function MultiAssignWidget({
 
   return (
     <div className="event-assign-container">
-      <div className="multi-assign-chips">
+      {/* [FIX 6] stack en colonne dès qu'il y a >3 personnes pour éviter le débordement horizontal */}
+      <div
+        className={`multi-assign-chips${assignments.length > 3 ? ' multi-assign-chips--stacked' : ''}`}
+      >
         {assignments.map((a) => (
           <span
             key={a.id}

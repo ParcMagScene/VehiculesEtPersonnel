@@ -754,16 +754,20 @@ export function setupTaskRoutes(app, authenticateToken) {
 
             // Multi-affectations ou personne unique
             const multiAssign = assignmentsByEntity.get(`task:${t.id}`) || [];
-            const personStr =
+            // [FIX 6] Au-delà de 2 personnes, on empile sur plusieurs lignes
+            // pour que les noms ne soient plus tronqués (lisibilité fiche du jour).
+            const personNames =
               multiAssign.length > 0
-                ? multiAssign
-                    .map((a) =>
-                      `${a.first_name || ''} ${a.last_name ? a.last_name.charAt(0) + '.' : ''}`.trim(),
-                    )
-                    .join(', ')
+                ? multiAssign.map((a) =>
+                    `${a.first_name || ''} ${a.last_name ? a.last_name.charAt(0) + '.' : ''}`.trim(),
+                  )
                 : t.person_first_name || t.person_last_name
-                  ? `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim()
-                  : '';
+                  ? [
+                      `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim(),
+                    ]
+                  : [];
+            const personStacked = personNames.length >= 3;
+            const personStr = personStacked ? personNames.join('\n') : personNames.join(', ');
 
             // Détection doublons client/lieu vs titre (éviter affichage double pour les courses)
             const titleLower = titleStr.toLowerCase();
@@ -779,8 +783,15 @@ export function setupTaskRoutes(app, authenticateToken) {
             const showLocation = !showClient && displayLocation && !locationAlreadyInTitle;
 
             const rowY = doc.y;
+            // [FIX 6] hauteur dynamique si personnel empilé sur plusieurs lignes
+            let dynRowH = rowH;
+            if (personStacked && personStr) {
+              doc.font('Helvetica').fontSize(fsSmall);
+              const measured = doc.heightOfString(personStr, { width: 58 });
+              dynRowH = Math.max(rowH, Math.ceil(measured) + 4);
+            }
             if (i % 2 === 0) {
-              doc.rect(leftX, rowY, pageW, rowH).fillColor('#f8f9fa').fill();
+              doc.rect(leftX, rowY, pageW, dynRowH).fillColor('#f8f9fa').fill();
             }
             // Case à cocher
             const cbX = leftX + 3;
@@ -857,7 +868,11 @@ export function setupTaskRoutes(app, authenticateToken) {
                 .font('Helvetica')
                 .fontSize(fsSmall)
                 .fillColor('#555555')
-                .text(personStr, rightX, rowY + 2, { width: 58, lineBreak: false });
+                .text(personStr, rightX, rowY + 2, {
+                  width: 58,
+                  // [FIX 6] autorise le retour à la ligne quand personnel empilé
+                  lineBreak: personStacked,
+                });
             }
             // Client/Lieu ensuite (plus à gauche)
             if (showClient) {
@@ -882,12 +897,28 @@ export function setupTaskRoutes(app, authenticateToken) {
                 });
             }
             doc.fillColor('#000000');
-            doc.y = rowY + rowH;
+            doc.y = rowY + dynRowH;
           } else if (item.type === 'affaire' || item.type === 'affaire-rdv') {
             const a = item.data;
             const rowY = doc.y;
+            // [FIX 6] hauteur dynamique pour personnel empilé (≥3)
+            const affAssignNames = (assignmentsByEntity.get(`affaire:${a.id}`) || []).map((as) =>
+              `${as.first_name || ''} ${as.last_name ? as.last_name.charAt(0) + '.' : ''}`.trim(),
+            );
+            const affStacked = affAssignNames.length >= 3;
+            const affPersonStr = affStacked
+              ? affAssignNames.join('\n')
+              : affAssignNames.length > 0
+                ? affAssignNames.join(', ')
+                : (a.interlocuteur || '').slice(0, 18);
+            let dynRowH = rowH;
+            if (affStacked && affPersonStr) {
+              doc.font('Helvetica').fontSize(fsSmall);
+              const measured = doc.heightOfString(affPersonStr, { width: 52 });
+              dynRowH = Math.max(rowH, Math.ceil(measured) + 4);
+            }
             if (i % 2 === 0) {
-              doc.rect(leftX, rowY, pageW, rowH).fillColor('#f8f9fa').fill();
+              doc.rect(leftX, rowY, pageW, dynRowH).fillColor('#f8f9fa').fill();
             }
             // Badge N° affaire
             let contentX = leftX + 4;
@@ -897,15 +928,6 @@ export function setupTaskRoutes(app, authenticateToken) {
             }
             // Détail
             const detail = `${a.type || ''} - ${a.client || 'Sans client'}${a.adresse_livraison ? ' - ' + a.adresse_livraison.split('\n')[0].slice(0, 35) : ''}`;
-            const affAssign = assignmentsByEntity.get(`affaire:${a.id}`) || [];
-            const affPersonStr =
-              affAssign.length > 0
-                ? affAssign
-                    .map((as) =>
-                      `${as.first_name || ''} ${as.last_name ? as.last_name.charAt(0) + '.' : ''}`.trim(),
-                    )
-                    .join(', ')
-                : (a.interlocuteur || '').slice(0, 18);
             doc
               .font('Helvetica')
               .fontSize(fs)
@@ -921,12 +943,12 @@ export function setupTaskRoutes(app, authenticateToken) {
                 .fillColor('#555555')
                 .text(affPersonStr, leftX + pageW - 55, rowY + 2, {
                   width: 52,
-                  lineBreak: false,
+                  lineBreak: affStacked,
                   align: 'right',
                 });
             }
             doc.fillColor('#000000');
-            doc.y = rowY + rowH;
+            doc.y = rowY + dynRowH;
           } else if (item.type === 'event') {
             const ev = item.data;
             const typeLabel = EVENT_TYPE_LABELS[ev.type] || ev.type || 'Evenement';

@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --max-warnings=64",
+    "lint": "eslint . --max-warnings=29",
     "lint:fix": "eslint . --fix",
     "lint:strict": "eslint . --max-warnings=0",
     "lint:css": "stylelint \"src/**/*.css\" --formatter compact",

@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "NODE_ENV=development nodemon server.js -- --dev",
-    "lint": "eslint . --ext js",
+    "lint": "eslint . --ext js --max-warnings=0",
     "lint:fix": "eslint . --ext js --fix",
     "format": "prettier --write \"**/*.js\"",
     "format:check": "prettier --check \"**/*.js\""

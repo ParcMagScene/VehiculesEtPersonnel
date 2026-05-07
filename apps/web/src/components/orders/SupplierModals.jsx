@@ -197,18 +197,21 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
 export const ApproveRequestModal = React.memo(({ request, eligibleData, onConfirm, onClose }) => {
   const sameSupplier = eligibleData?.same_supplier || [];
   const otherSupplier = eligibleData?.other_supplier || [];
-  const requestLines = Array.isArray(request?.lines) && request.lines.length > 0
-    ? request.lines
-    : [
-        {
-          id: `legacy-${request?.id}`,
-          article: request?.article,
-          ref_code: request?.ref_code,
-          quantity: request?.quantity || 1,
-          status: 'pending',
-        },
-      ];
-  const pendingLines = requestLines.filter((l) => l.status !== 'approved' && l.status !== 'rejected');
+  const requestLines =
+    Array.isArray(request?.lines) && request.lines.length > 0
+      ? request.lines
+      : [
+          {
+            id: `legacy-${request?.id}`,
+            article: request?.article,
+            ref_code: request?.ref_code,
+            quantity: request?.quantity || 1,
+            status: 'pending',
+          },
+        ];
+  const pendingLines = requestLines.filter(
+    (l) => l.status !== 'approved' && l.status !== 'rejected',
+  );
   const defaultTarget = sameSupplier[0] ? String(sameSupplier[0].id) : 'new';
 
   // Map line.id -> target ('new' | order_id string)
@@ -338,11 +341,7 @@ export const ApproveRequestModal = React.memo(({ request, eligibleData, onConfir
         <Button variant="ghost" onClick={onClose} disabled={submitting}>
           Annuler
         </Button>
-        <Button
-          variant="primary"
-          onClick={handleConfirm}
-          disabled={submitting || !allAssigned}
-        >
+        <Button variant="primary" onClick={handleConfirm} disabled={submitting || !allAssigned}>
           <Check size={16} /> Approuver et répartir
         </Button>
       </ModalFooter>
@@ -361,6 +360,8 @@ export const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
   const [familyFilter, setFamilyFilter] = useState('');
   const [filterOptions, setFilterOptions] = useState({ suppliers: [], brands: [], families: [] });
   const [page, setPage] = useState(0);
+  // FIX CI : déclaration manquante (régression). Liste paginée des articles du catalogue.
+  const [articles, setArticles] = useState([]);
   const searchTimer = useRef(null);
   const LIMIT = 30;
 
@@ -722,9 +723,7 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
               <Input
                 type="text"
                 value={common.destination_other}
-                onChange={(e) =>
-                  setCommon((c) => ({ ...c, destination_other: e.target.value }))
-                }
+                onChange={(e) => setCommon((c) => ({ ...c, destination_other: e.target.value }))}
                 placeholder="Destination..."
               />
             </div>
@@ -788,9 +787,7 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
                     type="number"
                     min="1"
                     value={line.quantity}
-                    onChange={(e) =>
-                      updateLine(idx, { quantity: parseInt(e.target.value) || 1 })
-                    }
+                    onChange={(e) => updateLine(idx, { quantity: parseInt(e.target.value) || 1 })}
                   />
                 </div>
                 {lines.length > 1 && (
@@ -820,16 +817,13 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
           {isEditing
             ? 'Enregistrer'
             : validLines.length > 1
-            ? `Créer la demande (${validLines.length} références)`
-            : 'Créer la demande'}
+              ? `Créer la demande (${validLines.length} références)`
+              : 'Créer la demande'}
         </Button>
       </ModalFooter>
 
       {pickerForLine !== null && (
-        <CatalogPickerModal
-          onSelect={handleCatalogSelect}
-          onClose={() => setPickerForLine(null)}
-        />
+        <CatalogPickerModal onSelect={handleCatalogSelect} onClose={() => setPickerForLine(null)} />
       )}
     </Modal>
   );

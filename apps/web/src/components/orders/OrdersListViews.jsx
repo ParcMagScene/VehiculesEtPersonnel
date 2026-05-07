@@ -394,7 +394,13 @@ export const MaterialRequestsList = React.memo(
                     >
                       {req.article}
                       {Array.isArray(req.lines) && req.lines.length > 1 && (
-                        <span style={{ marginLeft: 6, fontSize: '0.7rem', color: 'var(--theme-text-muted)' }}>
+                        <span
+                          style={{
+                            marginLeft: 6,
+                            fontSize: '0.7rem',
+                            color: 'var(--theme-text-muted)',
+                          }}
+                        >
                           +{req.lines.length - 1} réf.
                         </span>
                       )}
@@ -481,7 +487,10 @@ export const MaterialRequestsList = React.memo(
                     <td className="article-cell">
                       <strong>{req.article}</strong>
                       {Array.isArray(req.lines) && req.lines.length > 1 && (
-                        <span className="ref-small" title={req.lines.map((l) => l.article).join(', ')}>
+                        <span
+                          className="ref-small"
+                          title={req.lines.map((l) => l.article).join(', ')}
+                        >
                           +{req.lines.length - 1} autre{req.lines.length - 1 > 1 ? 's' : ''} réf.
                         </span>
                       )}

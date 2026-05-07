@@ -69,7 +69,11 @@ export const incidentTicketUpsertSchema = z.object({
   affaire_num: z.string().min(1).max(64),
   affaire_name: z.string().max(255).optional(),
   // Date de l'incident (YYYY-MM-DD). Optionnel : si absent, défaut = today.
-  incident_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  incident_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
   affaire_start_date: z.string().max(30).nullable().optional(),
   affaire_end_date: z.string().max(30).nullable().optional(),
   is_tournee: z.union([z.boolean(), z.literal(0), z.literal(1)]).optional(),

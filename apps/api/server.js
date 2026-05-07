@@ -182,6 +182,33 @@ app.use(httpLogger);
 // Rate limiting
 app.use('/api/', generalLimiter);
 
+// ─────────────────────────────────────────────────────────────
+// S1-05 — Timeout global par requête (30s)
+// Évite les connexions zombies qui saturent l'event loop SQLite single-thread.
+// Exclusions : SSE, uploads, imports volumineux (long polling légitime).
+// ─────────────────────────────────────────────────────────────
+const REQ_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 30_000;
+app.use((req, res, next) => {
+  const p = req.path || '';
+  if (
+    p.startsWith('/api/messaging/stream') ||
+    p.startsWith('/api/sse') ||
+    p.startsWith('/api/uploads/') ||
+    p.startsWith('/api/imports/') ||
+    p.startsWith('/api/sav/import') ||
+    p.startsWith('/api/locmat/import')
+  ) {
+    return next();
+  }
+  req.setTimeout(REQ_TIMEOUT_MS, () => {
+    if (!res.headersSent) {
+      logger.warn(`⏱ Request timeout (${REQ_TIMEOUT_MS}ms): ${req.method} ${p}`);
+      res.status(408).json({ error: 'Request timeout' });
+    }
+  });
+  next();
+});
+
 // [PHASE 6] Health check — pas d'auth, utilisé par PM2/monitoring
 const startedAt = Date.now();
 app.get('/api/health', (req, res) => {
@@ -507,6 +534,21 @@ const sslKeyPath = path.join(sslDir, 'privkey.pem');
 const sslCertPath = path.join(sslDir, 'fullchain.pem');
 const hasSSL = !isDev && fs.existsSync(sslKeyPath) && fs.existsSync(sslCertPath);
 
+// S1-02 — Initialisation des tâches de fond extraite, appelée dès qu'un
+// listener (HTTPS ou HTTP fallback) est opérationnel. Idempotente.
+let backgroundJobsBooted = false;
+function bootBackgroundJobs() {
+  if (backgroundJobsBooted) return;
+  backgroundJobsBooted = true;
+  initEmailTransporter(db);
+  cleanTempFiles();
+  setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
+  cleanExpiredSessions();
+  setInterval(cleanExpiredSessions, 30 * 60 * 1000);
+  startEshopCatalogAutoSync();
+  startControlesScheduler(db);
+}
+
 if (hasSSL) {
   const sslOptions = {
     key: fs.readFileSync(sslKeyPath),
@@ -514,17 +556,45 @@ if (hasSSL) {
   };
   const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
   const httpsServer = https.createServer(sslOptions, app);
-  httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
+
+  // S1-02 — Démarrage HTTPS résilient : retry sur EADDRINUSE puis fallback HTTP-only
+  const MAX_HTTPS_ATTEMPTS = Number(process.env.HTTPS_MAX_RETRIES) || 3;
+  let httpsAttempts = 0;
+  let httpsListening = false;
+
+  function tryListenHttps() {
+    httpsServer.listen(HTTPS_PORT, '0.0.0.0');
+  }
+
+  httpsServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && httpsAttempts < MAX_HTTPS_ATTEMPTS) {
+      const delay = 2000 * 2 ** httpsAttempts;
+      httpsAttempts += 1;
+      logger.warn(
+        `⚠️ HTTPS :${HTTPS_PORT} occupé (tentative ${httpsAttempts}/${MAX_HTTPS_ATTEMPTS}) — retry dans ${delay}ms`,
+      );
+      setTimeout(tryListenHttps, delay);
+      return;
+    }
+    if (err.code === 'EADDRINUSE') {
+      logger.error(
+        `❌ HTTPS :${HTTPS_PORT} toujours occupé après ${MAX_HTTPS_ATTEMPTS} tentatives — bascule HTTP-only`,
+      );
+      // Démarre les jobs pour ne pas bloquer le reste de l'API si HTTP répond.
+      bootBackgroundJobs();
+      return;
+    }
+    logger.error('❌ Erreur serveur HTTPS:', err);
+  });
+
+  httpsServer.once('listening', () => {
+    httpsListening = true;
     logger.info(`🔒 Serveur HTTPS démarré sur https://0.0.0.0:${HTTPS_PORT}`);
     logger.info(`📡 Accessible sur https://${SERVER_HOST}:${HTTPS_PORT}`);
-    initEmailTransporter(db);
-    cleanTempFiles();
-    setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
-    cleanExpiredSessions();
-    setInterval(cleanExpiredSessions, 30 * 60 * 1000);
-    startEshopCatalogAutoSync();
-    startControlesScheduler(db);
+    bootBackgroundJobs();
   });
+
+  tryListenHttps();
 
   // HTTP → HTTPS redirect (port 3002 redirige vers HTTPS)
   const redirectApp = express();
@@ -532,23 +602,34 @@ if (hasSSL) {
     const host = req.headers.host?.replace(`:${PORT}`, HTTPS_PORT === 443 ? '' : `:${HTTPS_PORT}`);
     res.redirect(301, `https://${host}${req.url}`);
   });
-  redirectApp.listen(PORT, '0.0.0.0', () => {
+  const redirectServer = redirectApp.listen(PORT, '0.0.0.0', () => {
     logger.info(`🔀 HTTP :${PORT} → HTTPS :${HTTPS_PORT} (redirection)`);
+  });
+  // S1-02 — Si le port redirect est occupé, on log mais on ne tue pas le process.
+  redirectServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.warn(`⚠️ Port HTTP redirect :${PORT} occupé — redirection désactivée`);
+      // S'assurer que les jobs démarrent même si HTTPS aussi est occupé.
+      if (!httpsListening) bootBackgroundJobs();
+      return;
+    }
+    logger.error('❌ Erreur serveur HTTP redirect:', err);
   });
 } else {
   logger.warn('⚠️  Certificats SSL non trouvés dans ssl/ — démarrage en HTTP uniquement');
   logger.warn(`   Attendus : ${sslKeyPath}`);
   logger.warn(`              ${sslCertPath}`);
-  app.listen(PORT, '0.0.0.0', () => {
+  const httpServer = app.listen(PORT, '0.0.0.0', () => {
     logger.info(`🚀 Serveur HTTP démarré sur http://0.0.0.0:${PORT}`);
     logger.info(`📡 Accessible depuis le réseau sur http://${SERVER_HOST}:${PORT}`);
-    initEmailTransporter(db);
-    cleanTempFiles();
-    setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
-    cleanExpiredSessions();
-    setInterval(cleanExpiredSessions, 30 * 60 * 1000);
-    startEshopCatalogAutoSync();
-    startControlesScheduler(db);
+    bootBackgroundJobs();
+  });
+  httpServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`❌ Port HTTP :${PORT} occupé — abandon (process exit 1)`);
+      process.exit(1);
+    }
+    logger.error('❌ Erreur serveur HTTP:', err);
   });
 }
 

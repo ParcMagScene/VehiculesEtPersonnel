@@ -1,1 +1,9 @@
-npm run docs:check
+#!/usr/bin/env sh
+# ─────────────────────────────────────────────────────────────
+# pre-push — garde-fou rapide pour éviter les push cassés en CI
+# Lance : Prettier check + ESLint + cohérence docs.
+# Tests et build NE sont PAS rejoués ici (déjà au pre-commit /
+# laissés à la CI) pour garder un push < 30 s.
+# Bypass exceptionnel : git push --no-verify
+# ─────────────────────────────────────────────────────────────
+npm run ci:local:fast

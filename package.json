@@ -23,6 +23,7 @@
     "fix": "npm run format && npm run lint:fix",
     "ci:fix": "npm run format && npm run lint:fix",
     "ci:local": "npm run format:check && npm run lint && npm run docs:check && npm run test && npm run build",
+    "ci:local:fast": "npm run format:check && npm run lint && npm run docs:check",
     "update-photos": "node scripts/generate-photo-list.js",
     "watch-photos": "node scripts/watch-photos.js",
     "smoke-test": "node scripts/smoke-test.js",

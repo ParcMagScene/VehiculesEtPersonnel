@@ -17,6 +17,7 @@ import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
+import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
 import { runVideoMigrations } from './migrations/video-v1.js';
@@ -127,6 +128,58 @@ export function runPostInitMigrations(db) {
     logger.info('✅ Table material_requests vérifiée/créée');
   } catch (error) {
     logger.warn('⚠️ Migration material_requests:', error.message);
+  }
+
+  // ═══ Migration : material_request_lines — N références par demande ═══
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS material_request_lines (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      request_id INTEGER NOT NULL,
+      article TEXT NOT NULL,
+      ref_code TEXT,
+      quantity REAL DEFAULT 1,
+      order_id INTEGER,
+      order_item_id INTEGER,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (request_id) REFERENCES material_requests(id) ON DELETE CASCADE
+    )`);
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_mrl_request ON material_request_lines(request_id)',
+    );
+    db.exec('CREATE INDEX IF NOT EXISTS idx_mrl_order ON material_request_lines(order_id)');
+
+    // Backfill : pour chaque demande sans ligne associée, insérer une ligne miroir.
+    const orphanRequests = db
+      .prepare(
+        `SELECT mr.id, mr.article, mr.ref_code, mr.quantity, mr.order_id, mr.status
+         FROM material_requests mr
+         LEFT JOIN material_request_lines mrl ON mrl.request_id = mr.id
+         WHERE mrl.id IS NULL`,
+      )
+      .all();
+    if (orphanRequests.length > 0) {
+      const insertLine = db.prepare(
+        `INSERT INTO material_request_lines (request_id, article, ref_code, quantity, order_id, status)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      );
+      const tx = db.transaction((rows) => {
+        for (const r of rows) {
+          const lineStatus =
+            r.status === 'approved' || r.status === 'ordered'
+              ? 'approved'
+              : r.status === 'rejected'
+                ? 'rejected'
+                : 'pending';
+          insertLine.run(r.id, r.article, r.ref_code, r.quantity || 1, r.order_id || null, lineStatus);
+        }
+      });
+      tx(orphanRequests);
+      logger.info(`✅ Backfill material_request_lines: ${orphanRequests.length} lignes créées`);
+    }
+    logger.info('✅ Table material_request_lines vérifiée/créée');
+  } catch (error) {
+    logger.warn('⚠️ Migration material_request_lines:', error.message);
   }
 
   // ═══ Migration : supplier_documents — table pour documents fournisseurs ═══
@@ -820,6 +873,9 @@ export function runPostInitMigrations(db) {
 
   // ═══ Module Surveillance Vidéo ═══
   runVideoMigrations(db);
+
+  // ═══ Suivi/Incidents v2 (multi-tickets + date) ═══
+  runIncidentTicketsV2Migration(db);
 
   // ═══ Uniformisation Taxonomie ═══
   runTaxonomyMigrations(db);

@@ -2036,7 +2036,9 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
           `SELECT *
            FROM tracking_incident_tickets
            WHERE week_key = ?
-           ORDER BY affaire_num ASC`,
+           ORDER BY COALESCE(incident_date, period_start_date) DESC,
+                    created_at DESC,
+                    affaire_num ASC`,
         )
         .all(weekKey)
         .map((t) => ({
@@ -2100,13 +2102,20 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         }
 
         const bounds = getWeekBounds(weekKey);
-        const existing = db
-          .prepare(
-            `SELECT *
-             FROM tracking_incident_tickets
-             WHERE week_key = ? AND affaire_num = ?`,
-          )
-          .get(weekKey, affaireNum);
+
+        // Mode édition explicite : id fourni ⇒ on met à jour CE ticket précis.
+        // Sinon : on crée toujours un nouveau ticket (plusieurs tickets autorisés
+        // pour une même semaine + affaire, chacun étant daté).
+        const requestedId = String(data.id || '').trim();
+        const existing = requestedId
+          ? db
+              .prepare(
+                `SELECT *
+                 FROM tracking_incident_tickets
+                 WHERE id = ?`,
+              )
+              .get(requestedId)
+          : null;
 
         const base = getAffaireIncidentBase(affaireNum);
         const linkedReservations = Array.isArray(data.linked_reservations)
@@ -2118,12 +2127,19 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
 
         const ticketId = existing?.id || crypto.randomUUID().replace(/-/g, '');
 
+        // incident_date : valeur fournie OU date du jour par défaut
+        const incidentDate =
+          data.incident_date && /^\d{4}-\d{2}-\d{2}$/.test(data.incident_date)
+            ? data.incident_date
+            : new Date().toISOString().slice(0, 10);
+
         if (existing) {
           db.prepare(
             `UPDATE tracking_incident_tickets
              SET period_start_date = ?,
                  period_end_date = ?,
                  affaire_name = ?,
+                 incident_date = ?,
                  affaire_start_date = ?,
                  affaire_end_date = ?,
                  is_tournee = ?,
@@ -2137,6 +2153,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
             bounds.start,
             bounds.end,
             data.affaire_name || base.affaire_name || affaireNum,
+            incidentDate,
             data.affaire_start_date ?? base.affaire_start_date,
             data.affaire_end_date ?? base.affaire_end_date,
             data.is_tournee === undefined ? (base.is_tournee ? 1 : 0) : data.is_tournee ? 1 : 0,
@@ -2150,11 +2167,12 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
           db.prepare(
             `INSERT INTO tracking_incident_tickets (
                id, week_key, period_start_date, period_end_date,
-               affaire_num, affaire_name, affaire_start_date, affaire_end_date,
+               affaire_num, affaire_name, incident_date,
+               affaire_start_date, affaire_end_date,
                is_tournee, linked_reservations_json, linked_personnel_json, notes,
                created_by, modified_by
              )
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           ).run(
             ticketId,
             weekKey,
@@ -2162,6 +2180,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
             bounds.end,
             affaireNum,
             data.affaire_name || base.affaire_name || affaireNum,
+            incidentDate,
             data.affaire_start_date ?? base.affaire_start_date,
             data.affaire_end_date ?? base.affaire_end_date,
             data.is_tournee === undefined ? (base.is_tournee ? 1 : 0) : data.is_tournee ? 1 : 0,

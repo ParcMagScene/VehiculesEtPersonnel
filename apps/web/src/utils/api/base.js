@@ -6,6 +6,14 @@ import { clearAllIndexedDB, loadAuthFromIDB, saveAuthToIDB } from '../indexedDB.
 const NETWORK_BACKOFF_BASE_MS = 2000;
 const NETWORK_BACKOFF_MAX_MS = 60000;
 const NETWORK_NOTICE_MIN_INTERVAL_MS = 15000;
+// Nombre d'échecs consécutifs avant d'afficher la bannière "Service indisponible".
+// Évite de signaler un simple hiccup réseau ou un AbortError lié à une navigation.
+const NETWORK_UNAVAILABLE_THRESHOLD = 2;
+
+function isPageDormant() {
+  if (typeof document === 'undefined') return false;
+  return document.visibilityState === 'hidden' || document.hidden === true;
+}
 
 const networkStatusListeners = new Set();
 const networkState = {
@@ -51,7 +59,7 @@ function emitNetworkStatus() {
   });
 }
 
-function markNetworkFailure(message = 'Service indisponible') {
+function markNetworkFailure(message = 'Service indisponible', { silent = false } = {}) {
   const now = Date.now();
   networkState.consecutiveFailures += 1;
   networkState.backoffMs = Math.min(
@@ -60,20 +68,26 @@ function markNetworkFailure(message = 'Service indisponible') {
   );
   networkState.retryAt = now + networkState.backoffMs;
   networkState.lastError = message;
-  if (!networkState.unavailable) {
-    networkState.outageStartedAt = now;
-  }
-  networkState.unavailable = true;
 
-  if (
-    now - networkState.lastNoticeAt >=
-    Math.max(NETWORK_NOTICE_MIN_INTERVAL_MS, networkState.backoffMs)
-  ) {
-    const retrySec = Math.ceil(networkState.backoffMs / 1000);
-    console.warn(
-      `[API] Service local indisponible (${message}). Backoff ${retrySec}s avant nouvelle tentative.`,
-    );
-    networkState.lastNoticeAt = now;
+  // N'affiche la bannière qu'à partir du seuil. silent=true (page masquée, navigation
+  // annulée…) garde le compteur mais ne déclenche jamais l'UI.
+  const shouldFlag = !silent && networkState.consecutiveFailures >= NETWORK_UNAVAILABLE_THRESHOLD;
+  if (shouldFlag) {
+    if (!networkState.unavailable) {
+      networkState.outageStartedAt = now;
+    }
+    networkState.unavailable = true;
+
+    if (
+      now - networkState.lastNoticeAt >=
+      Math.max(NETWORK_NOTICE_MIN_INTERVAL_MS, networkState.backoffMs)
+    ) {
+      const retrySec = Math.ceil(networkState.backoffMs / 1000);
+      console.warn(
+        `[API] Service local indisponible (${message}). Backoff ${retrySec}s avant nouvelle tentative.`,
+      );
+      networkState.lastNoticeAt = now;
+    }
   }
 
   emitNetworkStatus();
@@ -372,8 +386,11 @@ export class ApiClient {
       markNetworkSuccess();
     } catch (networkError) {
       clearTimeout(timeoutId);
-      markNetworkFailure(networkError?.name === 'AbortError' ? 'délai dépassé' : 'erreur réseau');
-      if (networkError.name === 'AbortError') {
+      const isAbort = networkError?.name === 'AbortError';
+      // Un AbortError quand l'onglet est masqué = navigation/HMR, pas une vraie panne.
+      const silent = isAbort && isPageDormant();
+      markNetworkFailure(isAbort ? 'délai dépassé' : 'erreur réseau', { silent });
+      if (isAbort) {
         const error = createServiceUnavailableError();
         error.message = 'Service local indisponible (délai dépassé)';
         error.isTimeoutError = true;
@@ -613,8 +630,10 @@ export class ApiClient {
       markNetworkSuccess();
     } catch (err) {
       clearTimeout(timeoutId);
-      markNetworkFailure(err?.name === 'AbortError' ? 'délai dépassé' : 'erreur réseau');
-      if (err.name === 'AbortError') {
+      const isAbort = err?.name === 'AbortError';
+      const silent = isAbort && isPageDormant();
+      markNetworkFailure(isAbort ? 'délai dépassé' : 'erreur réseau', { silent });
+      if (isAbort) {
         const error = createServiceUnavailableError();
         error.message = 'Upload impossible — service local indisponible (délai dépassé)';
         error.isTimeoutError = true;
@@ -656,8 +675,10 @@ export class ApiClient {
       markNetworkSuccess();
     } catch (err) {
       clearTimeout(timeoutId);
-      markNetworkFailure(err?.name === 'AbortError' ? 'délai dépassé' : 'erreur réseau');
-      if (err.name === 'AbortError') {
+      const isAbort = err?.name === 'AbortError';
+      const silent = isAbort && isPageDormant();
+      markNetworkFailure(isAbort ? 'délai dépassé' : 'erreur réseau', { silent });
+      if (isAbort) {
         const error = createServiceUnavailableError();
         error.message = 'Téléchargement impossible — service local indisponible (délai dépassé)';
         error.isTimeoutError = true;

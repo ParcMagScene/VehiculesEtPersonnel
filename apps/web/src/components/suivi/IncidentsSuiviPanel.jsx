@@ -1,11 +1,12 @@
 import './IncidentsSuiviPanel.css';
 
-import { Calendar, ClipboardList, Loader2, Plus, Save, Trash2 } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { Calendar, ClipboardList, Loader2, Pencil, Plus, Save, Trash2 } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import api from '../../utils/api';
 import Button from '../ui/Button';
 import EntityCombobox from '../ui/EntityCombobox';
+import { Modal, ModalBody, ModalFooter, ModalHeader } from '../ui/Modal';
 
 const INCIDENT_TYPE_OPTIONS = [
   { value: 'vehicle_problem', label: 'Problème sur véhicule' },
@@ -64,10 +65,15 @@ function makeEmptyIncident() {
   };
 }
 
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function makeEmptyTicketForm(affaireNum = '') {
   return {
     affaire_num: affaireNum,
     affaire_name: '',
+    incident_date: todayISO(),
     affaire_start_date: '',
     affaire_end_date: '',
     is_tournee: false,
@@ -82,6 +88,7 @@ function buildFormFromTicket(ticket) {
   return {
     affaire_num: ticket.affaire_num,
     affaire_name: ticket.affaire_name || ticket.affaire_num,
+    incident_date: ticket.incident_date || ticket.period_start_date || todayISO(),
     affaire_start_date: ticket.affaire_start_date || '',
     affaire_end_date: ticket.affaire_end_date || '',
     is_tournee: !!ticket.is_tournee,
@@ -122,9 +129,15 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   const [ticketMode, setTicketMode] = useState('affaire'); // 'affaire' | 'contexte'
   const [selectedContextType, setSelectedContextType] = useState(CONTEXT_OPTIONS[0].value);
   const [selectedTicketId, setSelectedTicketId] = useState(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deletingTicketId, setDeletingTicketId] = useState(null);
   const [error, setError] = useState('');
+
+  // Lorsque true, le prochain useEffect de préremplissage est sauté
+  // (utilisé quand on charge un ticket existant via startEditingTicket).
+  const skipPrefillRef = useRef(false);
 
   const [form, setForm] = useState(makeEmptyTicketForm());
 
@@ -277,17 +290,19 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   }, [loadWeekTickets]);
 
   useEffect(() => {
+    if (skipPrefillRef.current) {
+      skipPrefillRef.current = false;
+      return;
+    }
     if (!selectedAffaireNum) {
       resetForm();
       return;
     }
 
-    const existing = tickets.find((t) => t.affaire_num === selectedAffaireNum);
-    if (existing) {
-      setSelectedTicketId(existing.id);
-      setForm(buildFormFromTicket(existing));
-      return;
-    }
+    // NB : on n'auto-charge plus un ticket existant pour la même affaire/contexte.
+    // Plusieurs tickets sont autorisés par semaine + affaire/contexte. Pour éditer
+    // un ticket existant, l'utilisateur clique dessus dans la liste « Tickets de
+    // la semaine » (handler startEditingTicket).
 
     // Pour les tickets contexte (sans affaire), initialiser un formulaire vide
     if (isContextKey(selectedAffaireNum)) {
@@ -307,6 +322,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
         setForm({
           affaire_num: base.affaire_num || selectedAffaireNum,
           affaire_name: base.affaire_name || selectedAffaireNum,
+          incident_date: todayISO(),
           affaire_start_date: base.affaire_start_date || '',
           affaire_end_date: base.affaire_end_date || '',
           is_tournee: !!base.is_tournee,
@@ -321,7 +337,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
         setError(err?.message || 'Erreur préremplissage affaire');
       }
     })();
-  }, [selectedAffaireNum, tickets, resetForm]);
+  }, [selectedAffaireNum, resetForm]);
 
   const loadSynthese = useCallback(async () => {
     setSynthLoading(true);
@@ -379,6 +395,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   const startEditingTicket = useCallback((ticket) => {
     if (!ticket) return;
     const isCtx = isContextKey(ticket.affaire_num);
+    skipPrefillRef.current = true; // évite l'écrasement par le prefill effect
     setTicketMode(isCtx ? 'contexte' : 'affaire');
     if (isCtx) {
       setSelectedContextType(String(ticket.affaire_num || '').slice(CTX_PREFIX.length));
@@ -387,6 +404,22 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
     setSelectedTicketId(ticket.id || null);
     setForm(buildFormFromTicket(ticket));
     setError('');
+    setEditorOpen(true);
+  }, []);
+
+  const handleOpenCreate = useCallback(() => {
+    skipPrefillRef.current = true;
+    setSelectedTicketId(null);
+    setTicketMode('affaire');
+    setSelectedContextType(CONTEXT_OPTIONS[0].value);
+    setSelectedAffaireNum('');
+    setForm(makeEmptyTicketForm());
+    setError('');
+    setEditorOpen(true);
+  }, []);
+
+  const handleCloseEditor = useCallback(() => {
+    setEditorOpen(false);
   }, []);
 
   const handleSave = async () => {
@@ -426,9 +459,11 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
     setError('');
     try {
       await api.upsertSuiviIncidentTicket({
+        id: selectedTicketId || undefined,
         week_key: weekKey,
         affaire_num: form.affaire_num,
         affaire_name: form.affaire_name,
+        incident_date: form.incident_date || todayISO(),
         affaire_start_date: form.affaire_start_date || null,
         affaire_end_date: form.affaire_end_date || null,
         is_tournee: !!form.is_tournee,
@@ -438,6 +473,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
         incidents: incidentsPayload,
       });
       await Promise.all([loadWeekTickets(), loadSynthese()]);
+      setEditorOpen(false);
       clearEditorForNewTicket();
     } catch (err) {
       setError(err?.message || 'Erreur sauvegarde ticket incident');
@@ -453,11 +489,31 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
     try {
       await api.deleteSuiviIncidentTicket(selectedTicketId);
       await Promise.all([loadWeekTickets(), loadSynthese()]);
+      setEditorOpen(false);
       resetForm();
     } catch (err) {
       setError(err?.message || 'Erreur suppression ticket incident');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId) => {
+    if (!ticketId) return;
+    if (!window.confirm('Supprimer définitivement ce ticket incident ?')) return;
+    setDeletingTicketId(ticketId);
+    setError('');
+    try {
+      await api.deleteSuiviIncidentTicket(ticketId);
+      if (selectedTicketId === ticketId) {
+        setEditorOpen(false);
+        resetForm();
+      }
+      await Promise.all([loadWeekTickets(), loadSynthese()]);
+    } catch (err) {
+      setError(err?.message || 'Erreur suppression ticket incident');
+    } finally {
+      setDeletingTicketId(null);
     }
   };
 
@@ -467,220 +523,18 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
       <div className="si-grid">
         <section className="si-editor-card">
-          <div className="si-card-header">
+          <div className="si-card-header si-card-header--actions">
             <h4>
-              <ClipboardList size={15} /> Ticket hebdomadaire
+              <ClipboardList size={15} /> Tickets incidents
             </h4>
+            <Button variant="primary" size="sm" onClick={handleOpenCreate}>
+              <Plus size={13} /> Nouveau ticket
+            </Button>
           </div>
 
           <div className="si-field-row">
             <label>Semaine</label>
             <input type="week" value={weekKey} onChange={(e) => setWeekKey(e.target.value)} />
-          </div>
-
-          <div className="si-field-row">
-            <label>Type</label>
-            <div className="si-mode-toggle">
-              <button
-                type="button"
-                className={ticketMode === 'affaire' ? 'active' : ''}
-                onClick={() => handleTicketModeChange('affaire')}
-              >
-                Affaire
-              </button>
-              <button
-                type="button"
-                className={ticketMode === 'contexte' ? 'active' : ''}
-                onClick={() => handleTicketModeChange('contexte')}
-              >
-                Contexte
-              </button>
-            </div>
-          </div>
-
-          {ticketMode === 'affaire' ? (
-            <div className="si-field-row">
-              <label>Affaire</label>
-              <EntityCombobox
-                value={selectedAffaireNum}
-                onChange={setSelectedAffaireNum}
-                options={affaireOptions}
-                placeholder="— Rechercher une affaire —"
-                className="si-affaire-combobox"
-                disabled={loadingLists}
-              />
-            </div>
-          ) : (
-            <div className="si-field-row">
-              <label>Contexte</label>
-              <select
-                value={selectedContextType}
-                onChange={(e) => handleContextTypeChange(e.target.value)}
-                className="si-context-select"
-              >
-                {CONTEXT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {ticketMode === 'affaire' && (
-            <div className="si-prefill">
-              <div>
-                <strong>Numéro:</strong> {form.affaire_num || '—'}
-              </div>
-              <div>
-                <strong>Nom:</strong> {form.affaire_name || '—'}
-              </div>
-              <div>
-                <strong>Dates:</strong> {form.affaire_start_date || '—'} →{' '}
-                {form.affaire_end_date || '—'}
-              </div>
-              <div>
-                <strong>Tournée:</strong> {form.is_tournee ? 'Oui' : 'Non'}
-              </div>
-              <div>
-                <strong>Réservations liées:</strong> {form.linked_reservations.length}
-              </div>
-              <div>
-                <strong>Personnels liés:</strong> {form.linked_personnel.length}
-              </div>
-            </div>
-          )}
-
-          {form.linked_reservations.length > 0 && (
-            <div className="si-linked-block">
-              <div className="si-linked-title">Réservations liées</div>
-              <ul>
-                {form.linked_reservations.slice(0, 10).map((r) => (
-                  <li key={r.id}>
-                    {r.vehicle_name || r.vehicle_id || 'Véhicule'} — {r.start_date || '—'} →{' '}
-                    {r.end_date || '—'}
-                    {r.is_tournee ? ' [Tournée]' : ''}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {form.linked_personnel.length > 0 && (
-            <div className="si-linked-block">
-              <div className="si-linked-title">Personnels liés</div>
-              <ul>
-                {form.linked_personnel.slice(0, 12).map((p, idx) => (
-                  <li key={`${p.id || 'x'}-${idx}`}>
-                    {[p.first_name, p.last_name].filter(Boolean).join(' ') || 'Personnel'}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="si-field-row">
-            <label>Notes ticket</label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-              rows={2}
-              placeholder="Contexte global du ticket incident"
-            />
-          </div>
-
-          <div className="si-incidents-head">
-            <span>Incidents</span>
-            <Button variant="secondary" size="sm" onClick={addIncident}>
-              <Plus size={13} /> Ajouter
-            </Button>
-          </div>
-
-          <div className="si-incidents-list">
-            {form.incidents.map((inc, idx) => (
-              <div key={idx} className="si-incident-row">
-                <div className="si-incident-row-top">
-                  <select
-                    value={inc.incident_type}
-                    onChange={(e) => handleIncidentChange(idx, { incident_type: e.target.value })}
-                  >
-                    {INCIDENT_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <EntityCombobox
-                    value={String(inc.reporter_person_id || '')}
-                    onChange={(value) => handleIncidentChange(idx, { reporter_person_id: value })}
-                    options={personnelOptions}
-                    placeholder="— Rechercher le signaleur —"
-                    className="si-reporter-combobox"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="si-danger"
-                    onClick={() => removeIncident(idx)}
-                    title="Supprimer incident"
-                  >
-                    <Trash2 size={13} />
-                  </Button>
-                </div>
-                <textarea
-                  rows={2}
-                  value={inc.description}
-                  onChange={(e) => handleIncidentChange(idx, { description: e.target.value })}
-                  placeholder="Décrivez l'incident"
-                />
-
-                {inc.incident_type === 'vehicle_problem' && (
-                  <div className="si-incident-extra">
-                    <EntityCombobox
-                      value={String(inc.vehicle_id || '')}
-                      onChange={(value) => {
-                        const selected = vehicleById.get(String(value));
-                        handleIncidentChange(idx, {
-                          vehicle_id: value,
-                          vehicle_name_snapshot: selected?.name || '',
-                        });
-                      }}
-                      options={vehicleOptions}
-                      placeholder="— Choisir le véhicule concerné —"
-                      className="si-vehicle-combobox"
-                      disabled={loadingLists}
-                    />
-                    {inc.linked_maintenance_id ? (
-                      <div className="si-incident-help">
-                        Signalement panne lié: {inc.linked_maintenance_id}
-                      </div>
-                    ) : (
-                      <div className="si-incident-help">
-                        Un signalement de panne sera créé automatiquement à l'enregistrement.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="si-actions">
-            <Button variant="primary" onClick={handleSave} disabled={saving || !form.affaire_num}>
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}{' '}
-              Enregistrer ticket
-            </Button>
-            {selectedTicketId && (
-              <Button
-                variant="ghost"
-                className="si-danger"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}{' '}
-                Supprimer ticket
-              </Button>
-            )}
           </div>
 
           <div className="si-week-list">
@@ -692,21 +546,47 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
             ) : tickets.length === 0 ? (
               <div className="si-empty">Aucun ticket cette semaine</div>
             ) : (
-              <ul>
+              <ul className="si-ticket-list">
                 {tickets.map((t) => (
-                  <li key={t.id}>
+                  <li key={t.id} className="si-ticket-item">
                     <button
                       type="button"
-                      className={`si-ticket-pick ${selectedAffaireNum === t.affaire_num ? 'active' : ''}`}
+                      className="si-ticket-pick"
                       onClick={() => startEditingTicket(t)}
+                      title="Modifier ce ticket"
                     >
                       <span>
+                        {t.incident_date ? `[${t.incident_date}] ` : ''}
                         {isContextKey(t.affaire_num)
                           ? `[${getContextLabel(t.affaire_num)}]`
                           : `${t.affaire_num} — ${t.affaire_name || t.affaire_num}`}
                       </span>
                       <span>{Array.isArray(t.incidents) ? t.incidents.length : 0} incident(s)</span>
                     </button>
+                    <div className="si-ticket-row-actions">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEditingTicket(t)}
+                        title="Modifier le ticket"
+                      >
+                        <Pencil size={13} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="si-danger"
+                        onClick={() => handleDeleteTicket(t.id)}
+                        disabled={deletingTicketId === t.id}
+                        title="Supprimer le ticket"
+                      >
+                        {deletingTicketId === t.id ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={13} />
+                        )}
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -835,6 +715,237 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
           )}
         </section>
       </div>
+
+      <Modal open={editorOpen} onClose={handleCloseEditor} size="lg">
+        <ModalHeader icon={<ClipboardList size={18} />} onClose={handleCloseEditor}>
+          {selectedTicketId ? 'Modifier le ticket incident' : 'Nouveau ticket incident'}
+        </ModalHeader>
+        <ModalBody>
+          {error && <div className="si-error">{error}</div>}
+
+          <div className="si-field-row">
+            <label>Type</label>
+            <div className="si-mode-toggle">
+              <button
+                type="button"
+                className={ticketMode === 'affaire' ? 'active' : ''}
+                onClick={() => handleTicketModeChange('affaire')}
+              >
+                Affaire
+              </button>
+              <button
+                type="button"
+                className={ticketMode === 'contexte' ? 'active' : ''}
+                onClick={() => handleTicketModeChange('contexte')}
+              >
+                Contexte
+              </button>
+            </div>
+          </div>
+
+          {ticketMode === 'affaire' ? (
+            <div className="si-field-row">
+              <label>Affaire</label>
+              <EntityCombobox
+                value={selectedAffaireNum}
+                onChange={setSelectedAffaireNum}
+                options={affaireOptions}
+                placeholder="— Rechercher une affaire —"
+                className="si-affaire-combobox"
+                disabled={loadingLists}
+              />
+            </div>
+          ) : (
+            <div className="si-field-row">
+              <label>Contexte</label>
+              <select
+                value={selectedContextType}
+                onChange={(e) => handleContextTypeChange(e.target.value)}
+                className="si-context-select"
+              >
+                {CONTEXT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {ticketMode === 'affaire' && (
+            <div className="si-prefill">
+              <div>
+                <strong>Numéro:</strong> {form.affaire_num || '—'}
+              </div>
+              <div>
+                <strong>Nom:</strong> {form.affaire_name || '—'}
+              </div>
+              <div>
+                <strong>Dates:</strong> {form.affaire_start_date || '—'} →{' '}
+                {form.affaire_end_date || '—'}
+              </div>
+              <div>
+                <strong>Tournée:</strong> {form.is_tournee ? 'Oui' : 'Non'}
+              </div>
+              <div>
+                <strong>Réservations liées:</strong> {form.linked_reservations.length}
+              </div>
+              <div>
+                <strong>Personnels liés:</strong> {form.linked_personnel.length}
+              </div>
+            </div>
+          )}
+
+          {form.linked_reservations.length > 0 && (
+            <div className="si-linked-block">
+              <div className="si-linked-title">Réservations liées</div>
+              <ul>
+                {form.linked_reservations.slice(0, 10).map((r) => (
+                  <li key={r.id}>
+                    {r.vehicle_name || r.vehicle_id || 'Véhicule'} — {r.start_date || '—'} →{' '}
+                    {r.end_date || '—'}
+                    {r.is_tournee ? ' [Tournée]' : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {form.linked_personnel.length > 0 && (
+            <div className="si-linked-block">
+              <div className="si-linked-title">Personnels liés</div>
+              <ul>
+                {form.linked_personnel.slice(0, 12).map((p, idx) => (
+                  <li key={`${p.id || 'x'}-${idx}`}>
+                    {[p.first_name, p.last_name].filter(Boolean).join(' ') || 'Personnel'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="si-field-row">
+            <label>Date incident</label>
+            <input
+              type="date"
+              value={form.incident_date || ''}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, incident_date: e.target.value }))
+              }
+            />
+          </div>
+
+          <div className="si-field-row">
+            <label>Notes ticket</label>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+              rows={2}
+              placeholder="Contexte global du ticket incident"
+            />
+          </div>
+
+          <div className="si-incidents-head">
+            <span>Incidents</span>
+            <Button variant="secondary" size="sm" onClick={addIncident}>
+              <Plus size={13} /> Ajouter
+            </Button>
+          </div>
+
+          <div className="si-incidents-list">
+            {form.incidents.map((inc, idx) => (
+              <div key={idx} className="si-incident-row">
+                <div className="si-incident-row-top">
+                  <select
+                    value={inc.incident_type}
+                    onChange={(e) => handleIncidentChange(idx, { incident_type: e.target.value })}
+                  >
+                    {INCIDENT_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <EntityCombobox
+                    value={String(inc.reporter_person_id || '')}
+                    onChange={(value) => handleIncidentChange(idx, { reporter_person_id: value })}
+                    options={personnelOptions}
+                    placeholder="— Rechercher le signaleur —"
+                    className="si-reporter-combobox"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="si-danger"
+                    onClick={() => removeIncident(idx)}
+                    title="Supprimer incident"
+                  >
+                    <Trash2 size={13} />
+                  </Button>
+                </div>
+                <textarea
+                  rows={2}
+                  value={inc.description}
+                  onChange={(e) => handleIncidentChange(idx, { description: e.target.value })}
+                  placeholder="Décrivez l'incident"
+                />
+
+                {inc.incident_type === 'vehicle_problem' && (
+                  <div className="si-incident-extra">
+                    <EntityCombobox
+                      value={String(inc.vehicle_id || '')}
+                      onChange={(value) => {
+                        const selected = vehicleById.get(String(value));
+                        handleIncidentChange(idx, {
+                          vehicle_id: value,
+                          vehicle_name_snapshot: selected?.name || '',
+                        });
+                      }}
+                      options={vehicleOptions}
+                      placeholder="— Choisir le véhicule concerné —"
+                      className="si-vehicle-combobox"
+                      disabled={loadingLists}
+                    />
+                    {inc.linked_maintenance_id ? (
+                      <div className="si-incident-help">
+                        Signalement panne lié: {inc.linked_maintenance_id}
+                      </div>
+                    ) : (
+                      <div className="si-incident-help">
+                        Un signalement de panne sera créé automatiquement à l'enregistrement.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ModalBody>
+        <ModalFooter align="between">
+          <div>
+            {selectedTicketId && (
+              <Button
+                variant="ghost"
+                className="si-danger"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}{' '}
+                Supprimer
+              </Button>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Button variant="secondary" onClick={handleCloseEditor} disabled={saving}>
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleSave} disabled={saving || !form.affaire_num}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}{' '}
+              {selectedTicketId ? 'Mettre à jour' : 'Créer ticket'}
+            </Button>
+          </div>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }

@@ -63,9 +63,13 @@ const incidentEntrySchema = z.object({
 });
 
 export const incidentTicketUpsertSchema = z.object({
+  // Si fourni, l'API met à jour ce ticket précis ; sinon elle en crée un nouveau.
+  id: z.string().min(1).max(64).optional(),
   week_key: z.string().regex(/^\d{4}-W\d{2}$/, 'Format semaine invalide (YYYY-Wnn)'),
   affaire_num: z.string().min(1).max(64),
   affaire_name: z.string().max(255).optional(),
+  // Date de l'incident (YYYY-MM-DD). Optionnel : si absent, défaut = today.
+  incident_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   affaire_start_date: z.string().max(30).nullable().optional(),
   affaire_end_date: z.string().max(30).nullable().optional(),
   is_tournee: z.union([z.boolean(), z.literal(0), z.literal(1)]).optional(),

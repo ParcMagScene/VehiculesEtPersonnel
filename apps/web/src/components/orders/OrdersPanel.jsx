@@ -49,7 +49,12 @@ import {
   RequestSlidePanel,
   SupplierSlidePanel,
 } from './OrdersSlidePanels';
-import { MaterialRequestModal, SupplierDetailModal, SupplierFormModal } from './SupplierModals';
+import {
+  ApproveRequestModal,
+  MaterialRequestModal,
+  SupplierDetailModal,
+  SupplierFormModal,
+} from './SupplierModals';
 
 function OrdersPanel({ currentUser, isMobile }) {
   const toast = useToast();
@@ -84,6 +89,8 @@ function OrdersPanel({ currentUser, isMobile }) {
   const [requestStats, setRequestStats] = useState(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [editingRequest, setEditingRequest] = useState(null);
+  const [approvingRequest, setApprovingRequest] = useState(null); // { request, eligibleData }
+  const [dispatchPrefill, setDispatchPrefill] = useState(null); // { request, assignments, prefillOrder, newLineIds }
 
   const [suppliersWithOrders, setSuppliersWithOrders] = useState([]);
   const [showArchivedSuppliers, setShowArchivedSuppliers] = useState(false);
@@ -386,8 +393,13 @@ function OrdersPanel({ currentUser, isMobile }) {
         setEditingRequest(null);
         toast.success('Demande modifiée');
       } else {
-        await api.createMaterialRequest(data);
-        toast.success('Demande créée avec succès');
+        const created = await api.createMaterialRequest(data);
+        const count = Array.isArray(created?.lines) ? created.lines.length : 1;
+        toast.success(
+          count > 1
+            ? `Demande créée (${count} références)`
+            : 'Demande créée avec succès',
+        );
       }
       setShowRequestModal(false);
       loadData();
@@ -400,6 +412,16 @@ function OrdersPanel({ currentUser, isMobile }) {
     setShowRequestModal(true);
   };
   const handleValidateRequest = async (request, action, reason = null) => {
+    if (action === 'approve') {
+      // Ouvrir le modal de choix : commande existante ou nouvelle
+      try {
+        const data = await api.getEligibleOrdersForRequest(request.id);
+        setApprovingRequest({ request, eligibleData: data });
+      } catch (error) {
+        toast.error('Erreur chargement commandes: ' + error.message);
+      }
+      return;
+    }
     try {
       const result = await api.validateMaterialRequest(request.id, action, reason);
       if (result.action === STATUS.APPROVED)
@@ -410,10 +432,117 @@ function OrdersPanel({ currentUser, isMobile }) {
       toast.error('Erreur: ' + error.message);
     }
   };
+
+  const finalizeApproval = async (requestId, assignments) => {
+    try {
+      const result = await api.validateMaterialRequest(requestId, 'approve', null, assignments);
+      const dispatched = result?.dispatched || [];
+      const distinctOrders = [...new Set(dispatched.map((d) => d.order_ref))];
+      if (distinctOrders.length === 1) {
+        const isNew = dispatched[0]?.isNew;
+        toast.success(
+          isNew
+            ? `Demande approuvée → nouvelle commande ${distinctOrders[0]}`
+            : `Demande approuvée → ajoutée à ${distinctOrders[0]}`,
+        );
+      } else {
+        toast.success(
+          `Demande approuvée → répartie sur ${distinctOrders.length} commandes (${distinctOrders.join(', ')})`,
+        );
+      }
+      setApprovingRequest(null);
+      setDispatchPrefill(null);
+      loadData();
+    } catch (error) {
+      toast.error('Erreur: ' + error.message);
+    }
+  };
+
+  const handleConfirmApproval = async (assignments) => {
+    if (!approvingRequest) return;
+    const { request } = approvingRequest;
+    const newOnes = assignments.filter(
+      (a) => !a.target_order_id || a.target_order_id === 'new',
+    );
+
+    // Aucune nouvelle commande → dispatch direct.
+    if (newOnes.length === 0) {
+      return finalizeApproval(request.id, assignments);
+    }
+
+    // Pré-remplir OrderFormModal avec les lignes assignées "new".
+    const newLineIds = new Set(newOnes.map((a) => a.line_id));
+    const requestLines = Array.isArray(request.lines) ? request.lines : [];
+    const linesForOrder = requestLines.filter((l) => newLineIds.has(l.id));
+    if (linesForOrder.length === 0) {
+      // Cas legacy (pas de table lines) : laisser le backend gérer.
+      return finalizeApproval(request.id, assignments);
+    }
+    const prefillOrder = {
+      type: 'purchase',
+      supplier_id: request.supplier_id || '',
+      affaire_id: request.affaire_id || '',
+      status: 'draft',
+      order_date: new Date().toISOString().slice(0, 10),
+      tva_rate: 20,
+      notes: `Commande issue de la demande matériel #${request.id} (${request.requested_by_name || ''})`,
+      items: linesForOrder.map((l) => ({
+        designation: l.article,
+        quantity: l.quantity || 1,
+        unit: 'u',
+        unit_price_ht: 0,
+        ref_code: l.ref_code || '',
+      })),
+    };
+    setApprovingRequest(null);
+    setDispatchPrefill({
+      request,
+      assignments,
+      prefillOrder,
+      newLineIds: linesForOrder.map((l) => l.id), // ordre des items === ordre des lignes
+    });
+  };
+
+  const handleSaveDispatchOrder = async (orderData) => {
+    if (!dispatchPrefill) return;
+    try {
+      const created = await api.createOrder(orderData);
+      const newOrderId = created?.id;
+      const createdItems = Array.isArray(created?.items) ? created.items : [];
+      if (!newOrderId) throw new Error('Réponse création commande invalide');
+
+      // Mapper chaque newLineId au order_item_id correspondant (même ordre).
+      const lineToItem = new Map();
+      dispatchPrefill.newLineIds.forEach((lineId, idx) => {
+        const item = createdItems[idx];
+        if (item?.id) lineToItem.set(lineId, item.id);
+      });
+
+      const finalAssignments = dispatchPrefill.assignments.map((a) => {
+        const isNew = !a.target_order_id || a.target_order_id === 'new';
+        if (isNew) {
+          return {
+            line_id: a.line_id,
+            target_order_id: String(newOrderId),
+            order_item_id: lineToItem.get(a.line_id) || null,
+          };
+        }
+        return a;
+      });
+      await finalizeApproval(dispatchPrefill.request.id, finalAssignments);
+    } catch (error) {
+      toast.error('Erreur création commande: ' + error.message);
+    }
+  };
   const handleDeleteRequest = (request) => {
+    const lineCount = Array.isArray(request.lines) ? request.lines.length : 1;
+    const label =
+      lineCount > 1
+        ? `Supprimer la demande "${request.article}" et ses ${lineCount} références ?`
+        : `Supprimer la demande "${request.article}" ?`;
     confirm({
       title: 'Supprimer la demande',
-      message: `Supprimer la demande "${request.article}" ?`,
+      message: label,
       onConfirm: async () => {
         try {
           await api.deleteMaterialRequest(request.id);
@@ -971,6 +1100,14 @@ function OrdersPanel({ currentUser, isMobile }) {
           }}
         />
       )}
+      {dispatchPrefill && (
+        <OrderFormModal
+          order={dispatchPrefill.prefillOrder}
+          suppliers={suppliers}
+          onSave={handleSaveDispatchOrder}
+          onClose={() => setDispatchPrefill(null)}
+        />
+      )}
       {showQuoteForm && (
         <QuoteFormModal
           quote={editingQuote}
@@ -1001,6 +1138,14 @@ function OrdersPanel({ currentUser, isMobile }) {
             setShowRequestModal(false);
             setEditingRequest(null);
           }}
+        />
+      )}
+      {approvingRequest && (
+        <ApproveRequestModal
+          request={approvingRequest.request}
+          eligibleData={approvingRequest.eligibleData}
+          onConfirm={handleConfirmApproval}
+          onClose={() => setApprovingRequest(null)}
         />
       )}
       {supplierDetailData && (

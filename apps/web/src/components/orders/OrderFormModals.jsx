@@ -58,7 +58,7 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
       open
       onClose={onClose}
       size="lg"
-      title={order ? `Modifier ${order.reference}` : 'Nouvelle commande'}
+      title={order?.id ? `Modifier ${order.reference}` : 'Nouvelle commande'}
       className="order-form-modal"
       footer={
         <>
@@ -70,7 +70,7 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
             onClick={() => onSave(form)}
             disabled={!form.items.some((i) => i.designation)}
           >
-            <Check size={16} /> {order ? 'Enregistrer' : 'Créer la commande'}
+            <Check size={16} /> {order?.id ? 'Enregistrer' : 'Créer la commande'}
           </Button>
         </>
       }
@@ -121,7 +121,7 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
               }
             />
           </div>
-          {order && (
+          {order?.id && (
             <div className="form-field">
               <label>Statut</label>
               <Select

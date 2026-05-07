@@ -193,7 +193,7 @@
 }
 
 .si-ticket-pick {
-  width: 100%;
+  flex: 1;
   text-align: left;
   border: 1px solid rgba(148, 163, 184, 0.24);
   background: rgba(2, 6, 23, 0.4);
@@ -203,11 +203,39 @@
   display: flex;
   justify-content: space-between;
   gap: 8px;
+  cursor: pointer;
 }
 
 .si-ticket-pick.active {
   border-color: rgba(59, 130, 246, 0.6);
   background: rgba(59, 130, 246, 0.15);
+}
+
+.si-ticket-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.si-ticket-item {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.si-ticket-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.si-card-header--actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .si-synth-controls {

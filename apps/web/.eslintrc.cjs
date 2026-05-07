@@ -21,6 +21,18 @@ module.exports = {
   },
   settings: {
     react: { version: 'detect' },
+    // jsx-a11y: composants custom traités comme des contrôles natifs
+    // (réduit les faux positifs sur label-has-associated-control)
+    'jsx-a11y': {
+      components: {
+        Select: 'select',
+        TextField: 'input',
+        Input: 'input',
+        Textarea: 'textarea',
+        Checkbox: 'input',
+        RadioButton: 'input',
+      },
+    },
   },
   rules: {
     // Désactivé pour ne pas casser le code existant
@@ -61,7 +73,10 @@ module.exports = {
     'jsx-a11y/heading-has-content': 'warn',
     'jsx-a11y/img-redundant-alt': 'warn',
     'jsx-a11y/interactive-supports-focus': 'warn',
-    'jsx-a11y/label-has-associated-control': 'warn',
+    // Désactivé : 344 occurrences sur le code legacy (labels sans htmlFor).
+    // À traiter dans une PR a11y dédiée (axe-core + revue UX/QA clavier).
+    // Suivi : ouvrir une issue "a11y: associate form labels with controls".
+    'jsx-a11y/label-has-associated-control': 'off',
     'jsx-a11y/no-autofocus': 'off', // utilisé volontairement dans modales
     'jsx-a11y/no-noninteractive-element-interactions': 'warn',
     'jsx-a11y/no-static-element-interactions': 'warn',

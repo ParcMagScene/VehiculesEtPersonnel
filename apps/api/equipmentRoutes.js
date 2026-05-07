@@ -21,17 +21,17 @@ import { fileURLToPath } from 'url';
 import { normalizeBrand } from './brandHelpers.js';
 import {
   cacheMiddleware,
-  invalidateOnSuccess,
-  equipmentTreeCache,
   equipmentListCache,
+  equipmentTreeCache,
+  invalidateOnSuccess,
 } from './cache.js';
 import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
 import logger from './logger.js';
 import { equipmentSchema } from './schemas/crud.js';
-import { safeContentDispositionName } from './utils/safeFilename.js';
 import { equipmentImportSchema, validate } from './schemas/imports.js';
 import { getNextUid } from './services/uidCounter.js';
+import { safeContentDispositionName } from './utils/safeFilename.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

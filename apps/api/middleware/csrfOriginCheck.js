@@ -12,8 +12,8 @@
 // Bloque les attaques CSRF classiques par formulaire/fetch cross-site même si le
 // cookie httpOnly est attaché par le navigateur.
 
-import logger from '../logger.js';
 import { allowedOrigins } from '../config/cors.js';
+import logger from '../logger.js';
 import { logSecurityEvent } from '../securityLog.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

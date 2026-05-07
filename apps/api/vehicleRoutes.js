@@ -1,6 +1,6 @@
 import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
-import db, { addToHistory, getHistory } from './database.js';
 import { reservationsDao } from './dao/reservations.dao.js';
+import db, { addToHistory, getHistory } from './database.js';
 import { alertMaintenanceCreated, alertReservationCreated } from './emailService.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';

@@ -24,11 +24,12 @@
 //    Donc QR noir/blanc = lecture correcte (jamais inversé).
 // ═══════════════════════════════════════════════════════════════
 
-import QRCode from 'qrcode';
-import { PNG } from 'pngjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { PNG } from 'pngjs';
+import QRCode from 'qrcode';
 
 // ─── Constantes LightBurn ───────────────────────────────────────────
 export const LB_PLATE_W = 200; // mm

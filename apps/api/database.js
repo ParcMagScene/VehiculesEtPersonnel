@@ -3,9 +3,9 @@ import dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
-import logger from './logger.js';
 // [S2-1] Helper extrait dans un module pur — voir database/_helpers.js
 import { safeAddColumn as safeAddColumnImpl } from './database/_helpers.js';
+import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -3754,8 +3754,8 @@ runPostInitMigrations(db);
 // ─────────────────────────────────────────────────────────────
 import {
   checkpointDatabase as checkpointDatabaseImpl,
-  setupWALScheduling,
   closeDatabase as closeDatabaseImpl,
+  setupWALScheduling,
 } from './database/wal.js';
 
 const walScheduling = setupWALScheduling(db);

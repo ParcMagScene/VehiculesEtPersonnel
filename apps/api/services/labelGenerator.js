@@ -15,10 +15,11 @@
 // ou converti en PNG 300 DPI côté client (canvas drawImage).
 // ═══════════════════════════════════════════════════════════════
 
-import QRCode from 'qrcode';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import QRCode from 'qrcode';
 
 // ─── Logo Mag Scène intégré au centre du QR ──────────────────────────────
 // Lecture paresseuse + cache : le PNG (~550 ko) n'est lu qu'une seule fois.
@@ -394,7 +395,7 @@ async function buildLabelInner(item, labelW, labelH) {
   ].join('');
 
   // (suppression de l'ancien bloc unique sized/textY)
-  // eslint-disable-next-line no-unused-vars
+
   const _unused = { lineHeight: valLH };
 
   // QR : translate vers (qrX+quiet, qrY+quiet)
@@ -457,7 +458,7 @@ export async function buildPlateSvg(items, opts = {}) {
     const row = Math.floor(i / layout.cols);
     const x = layout.margin + col * (layout.labelW + layout.colGap);
     const y = layout.margin + row * (layout.labelH + layout.rowGap);
-    // eslint-disable-next-line no-await-in-loop
+
     const inner = await buildLabelInner(slots[i], layout.labelW, layout.labelH);
     groups.push(
       `<g transform="translate(${x.toFixed(3)},${y.toFixed(3)})" data-label-index="${i}">${inner}</g>`,

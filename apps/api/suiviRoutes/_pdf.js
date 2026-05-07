@@ -4,7 +4,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 import PDFDocument from 'pdfkit';
-import { formatDateFR, isPastPeriod, hasOccupationContext, decToHM } from './_helpers.js';
+
+import { decToHM, formatDateFR, hasOccupationContext, isPastPeriod } from './_helpers.js';
 
 export const PDF_MARGIN = 40;
 export const PDF_TABLE_LEFT = 40;

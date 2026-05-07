@@ -7,8 +7,8 @@
 //     On ne s'appuie pas sur lastInsertRowid pour les insertions.
 //   - Le mapping camelCase ↔ snake_case est encapsulé ici.
 
-import { BaseDao } from './_base.dao.js';
 import db from '../database.js';
+import { BaseDao } from './_base.dao.js';
 
 function parseDriveLinks(value) {
   if (!value) return [];

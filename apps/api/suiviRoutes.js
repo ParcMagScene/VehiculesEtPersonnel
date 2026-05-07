@@ -8,8 +8,8 @@
 //   - apps/api/suiviRoutes/_pdf.js     (~937L : génération PDF)
 // ═══════════════════════════════════════════════════════════════
 
-import db from './database.js';
 import { cacheMiddleware, invalidateOnSuccess, suiviPersonnelCache } from './cache.js';
+import db from './database.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';
 import {
@@ -23,27 +23,26 @@ import {
   syntheseWeekSchema,
   syntheseYearSchema,
 } from './schemas/suivi.js';
-
 // [S2-1 step 3] Helpers et PDF generation extraits dans des sous-modules
 import {
+  buildSynthese,
+  canManagePerson,
+  computeIncidentSynthese,
+  enrichSheetWithDayContext,
+  getAffaireIncidentBase,
+  getMonthDates,
   getOrCreateSheet,
   getSheetWithEntries,
-  isRecurringDueOnDate,
-  canManagePerson,
-  enrichSheetWithDayContext,
-  getWeekDates,
-  getMonthDates,
-  getYearDates,
   getWeekBounds,
+  getWeekDates,
+  getYearDates,
+  isRecurringDueOnDate,
   safeJsonParseArray,
-  getAffaireIncidentBase,
-  computeIncidentSynthese,
-  buildSynthese,
 } from './suiviRoutes/_helpers.js';
 import {
-  generateSheetPdf,
   generateBatchPdf,
   generateBatchPrintPdf,
+  generateSheetPdf,
   generateSynthesePdf,
 } from './suiviRoutes/_pdf.js';
 

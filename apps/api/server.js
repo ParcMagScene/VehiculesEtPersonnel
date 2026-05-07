@@ -54,6 +54,7 @@ import {
   googleCalendarLimiter,
   sensitiveEndpointLimiter,
 } from './config/rateLimiter.js';
+import { setupControlesPeriodiquesRoutes } from './controlesPeriodiquesRoutes.js';
 import db, { checkpointDatabase, closeDatabase } from './database.js';
 import { setupDisplayRoutes } from './displayRoutes.js';
 import { initEmailTransporter } from './emailService.js';
@@ -64,13 +65,16 @@ import {
   setupEquipmentRoutes,
   setupSavTicketsRoutes,
 } from './equipmentRoutes.js';
+import { startEshopCatalogAutoSync, stopEshopCatalogAutoSync } from './eshopCatalogSync.js';
+import { setupEshopRoutes } from './eshopRoutes.js';
 import { setupGoogleRoutes } from './googleRoutes.js';
 import { setupInventoryRoutes } from './inventoryRoutes.js';
+import { setupLabelsRoutes } from './labelsRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
+import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
 import logger from './logger.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
-import { setupSavRoutes } from './savRoutes.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
 import {
   requireAdmin,
@@ -79,12 +83,11 @@ import {
   requireMaintenanceAccessCompat as requireMaintenanceAccess,
   requireNotReadOnly,
 } from './middleware/authorize.js';
+import { csrfOriginCheck } from './middleware/csrfOriginCheck.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { httpLogger } from './middleware/httpLogger.js';
-import { initSentry, sentryErrorHandler, sentryRequestHandler } from './observability/sentry.js';
 import { xssSanitize } from './middleware/sanitize.js';
-import { csrfOriginCheck } from './middleware/csrfOriginCheck.js';
-import { logSecurityEvent } from './securityLog.js';
+import { initSentry, sentryErrorHandler, sentryRequestHandler } from './observability/sentry.js';
 import {
   setupMaterialRequestsRoutes,
   setupOrdersRoutes,
@@ -100,6 +103,7 @@ import {
   setupSkillsRoutes,
 } from './personnelRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
+import { stopPlanningRolloverCron } from './planningRoutes.js';
 import { setupProfileRoutes } from './profileRoutes.js';
 // ── Routes ──
 import {
@@ -109,9 +113,10 @@ import {
   setupGaragesRoutes,
   setupLocationsRoutes,
 } from './routes.js';
+import { setupSavRoutes } from './savRoutes.js';
+import { logSecurityEvent } from './securityLog.js';
+import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';
 import { setupSonosRoutes } from './sonosRoutes.js';
-import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
-import { setupLabelsRoutes } from './labelsRoutes.js';
 import {
   setupStockCategoriesRoutes,
   setupStockImportRoutes,
@@ -122,13 +127,8 @@ import {
 import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
-import { setupEshopRoutes } from './eshopRoutes.js';
-import { startEshopCatalogAutoSync, stopEshopCatalogAutoSync } from './eshopCatalogSync.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
-import { setupControlesPeriodiquesRoutes } from './controlesPeriodiquesRoutes.js';
-import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';
-import { stopPlanningRolloverCron } from './planningRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

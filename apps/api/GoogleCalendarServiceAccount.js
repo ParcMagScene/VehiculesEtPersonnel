@@ -1,5 +1,4 @@
 import fs from 'fs';
-
 import { google } from 'googleapis';
 
 import db from './database.js';

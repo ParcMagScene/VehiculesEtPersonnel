@@ -5,6 +5,8 @@
 // Parsing CSV côté client via PapaParse, diff calculé côté serveur (preview),
 // puis confirmation transactionnelle.
 // ═══════════════════════════════════════════════════════════════
+import './LocmatImportModal.css';
+
 import {
   AlertTriangle,
   Boxes,
@@ -30,7 +32,6 @@ import { Button, EmptyState, InlineAlert, ModalLayout, Table } from '@/design-sy
 
 import { useToast } from '../../../hooks/useToast';
 import api from '../../../utils/api';
-import './LocmatImportModal.css';
 
 const TABS = [
   { key: 'newProducts', label: 'Nouvelles réfs', icon: Plus, color: 'success' },

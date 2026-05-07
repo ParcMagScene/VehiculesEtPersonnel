@@ -6,6 +6,7 @@ import { Info, Music } from 'lucide-react';
 import { memo } from 'react';
 
 import { InlineAlert } from '@/design-system';
+
 import RadioLogo from './RadioLogo';
 
 function SonosNowPlaying({ displayState }) {

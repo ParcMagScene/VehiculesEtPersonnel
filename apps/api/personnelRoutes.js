@@ -3,8 +3,8 @@
 // Routes REST : persons, skills, availabilities, missions, assignments
 // ============================================================
 
-import db, { addToHistory } from './database.js';
 import { cacheMiddleware, invalidateOnSuccess, personnelPlanningCache } from './cache.js';
+import db, { addToHistory } from './database.js';
 import { alertAssignmentCreated } from './emailService.js';
 import logger from './logger.js';
 import { personSchema } from './schemas/crud.js';

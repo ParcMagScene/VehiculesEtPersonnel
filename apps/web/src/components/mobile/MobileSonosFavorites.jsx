@@ -5,8 +5,8 @@
 import { Heart, Music } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-import { Input } from '@/design-system';
 import RadioLogo from '@/components/sonos/RadioLogo';
+import { Input } from '@/design-system';
 
 function MobileSonosFavorites({
   favorites,

@@ -123,11 +123,12 @@ import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupEshopRoutes } from './eshopRoutes.js';
-import { startEshopCatalogAutoSync } from './eshopCatalogSync.js';
+import { startEshopCatalogAutoSync, stopEshopCatalogAutoSync } from './eshopCatalogSync.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
 import { setupControlesPeriodiquesRoutes } from './controlesPeriodiquesRoutes.js';
-import { startControlesScheduler } from './services/controlesScheduler.js';
+import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';
+import { stopPlanningRolloverCron } from './planningRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -542,17 +543,47 @@ const hasSSL = !isDev && fs.existsSync(sslKeyPath) && fs.existsSync(sslCertPath)
 
 // S1-02 — Initialisation des tâches de fond extraite, appelée dès qu'un
 // listener (HTTPS ou HTTP fallback) est opérationnel. Idempotente.
+// S3-1 — handles capturés pour cleanup SIGTERM/SIGINT.
 let backgroundJobsBooted = false;
+let cleanTempFilesTimer = null;
+let cleanExpiredSessionsTimer = null;
 function bootBackgroundJobs() {
   if (backgroundJobsBooted) return;
   backgroundJobsBooted = true;
   initEmailTransporter(db);
   cleanTempFiles();
-  setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
+  cleanTempFilesTimer = setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
   cleanExpiredSessions();
-  setInterval(cleanExpiredSessions, 30 * 60 * 1000);
+  cleanExpiredSessionsTimer = setInterval(cleanExpiredSessions, 30 * 60 * 1000);
   startEshopCatalogAutoSync();
   startControlesScheduler(db);
+}
+
+function stopBackgroundJobs() {
+  if (cleanTempFilesTimer) {
+    clearInterval(cleanTempFilesTimer);
+    cleanTempFilesTimer = null;
+  }
+  if (cleanExpiredSessionsTimer) {
+    clearInterval(cleanExpiredSessionsTimer);
+    cleanExpiredSessionsTimer = null;
+  }
+  try {
+    stopEshopCatalogAutoSync();
+  } catch {
+    /* noop */
+  }
+  try {
+    stopControlesScheduler();
+  } catch {
+    /* noop */
+  }
+  try {
+    stopPlanningRolloverCron();
+  } catch {
+    /* noop */
+  }
+  backgroundJobsBooted = false;
 }
 
 if (hasSSL) {
@@ -729,16 +760,34 @@ function cleanTempFiles() {
   }
 }
 
-// Gestion de l'arrêt propre du serveur
+// Gestion de l'arrêt propre du serveur (S3-1 : stop schedulers + DB).
+let shuttingDown = false;
 function gracefulShutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.info(`\n⚠️  Signal ${signal} reçu - Arrêt en cours...`);
+
+  // Stop tous les schedulers (intervals) avant le close DB.
+  try {
+    stopBackgroundJobs();
+  } catch (e) {
+    logger.error('stopBackgroundJobs:', e);
+  }
 
   // Faire un dernier checkpoint de la base de données
   logger.info('💾 Sauvegarde finale de la base de données...');
-  checkpointDatabase();
+  try {
+    checkpointDatabase();
+  } catch (e) {
+    logger.error('checkpointDatabase:', e);
+  }
 
-  // Fermer proprement la base de données
-  closeDatabase();
+  // Fermer proprement la base de données (clear aussi le scheduling WAL)
+  try {
+    closeDatabase();
+  } catch (e) {
+    logger.error('closeDatabase:', e);
+  }
 
   logger.info('✅ Arrêt propre terminé');
   process.exit(0);

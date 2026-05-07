@@ -1018,7 +1018,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
           updated_comment: updatedComment,
         });
       } catch (err) {
-        console.error('Erreur route postpone entry:', err);
+        logger.error('Erreur route postpone entry:', err);
         res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
     },

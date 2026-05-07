@@ -26,6 +26,7 @@ import { Button, InlineAlert, ModalLayout, SearchBar, Select, Spinner, Tag } fro
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import logger from '../../utils/logger';
 
 const fmt = (v) =>
   v != null
@@ -441,7 +442,9 @@ export function ExternalProductsPanel({ currentUser }) {
     try {
       const data = await api.compareExternalProduct(product.id);
       setCompareData(data);
-    } catch (_) {}
+    } catch (err) {
+      logger.warn('compareExternalProduct echec:', err?.message || err);
+    }
     setCompareLoading(false);
   };
 

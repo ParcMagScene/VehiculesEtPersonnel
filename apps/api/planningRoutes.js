@@ -45,6 +45,16 @@ import { setupTaskRoutes } from './planning/taskRoutes.js';
 const DATE_RE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 const TIME_RE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
+// S3-1/S3-2 — Singleton timer du cron rollover (clearable au shutdown).
+let rolloverCronTimer = null;
+
+export function stopPlanningRolloverCron() {
+  if (rolloverCronTimer) {
+    clearInterval(rolloverCronTimer);
+    rolloverCronTimer = null;
+  }
+}
+
 function isValidDate(str) {
   return typeof str === 'string' && DATE_RE.test(str);
 }
@@ -1341,7 +1351,9 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
       }
     };
     // Vérifier toutes les 30 secondes (pour capter 18:00 sans timer compliqué)
-    setInterval(check, 30000);
+    if (rolloverCronTimer) clearInterval(rolloverCronTimer);
+    rolloverCronTimer = setInterval(check, 30000);
+    if (typeof rolloverCronTimer.unref === 'function') rolloverCronTimer.unref();
     logger.info('⏰ Cron report tâches 00h00 activé');
 
     // Au démarrage : reporter les tâches pending des jours précédents + générer récurrentes

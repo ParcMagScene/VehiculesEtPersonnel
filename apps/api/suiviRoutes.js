@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import PDFDocument from 'pdfkit';
 
 import db from './database.js';
+import { cacheMiddleware, invalidateOnSuccess, suiviPersonnelCache } from './cache.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';
 import {
@@ -1716,11 +1717,16 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────────────────────────────────────────
 
   // ─── GET /api/suivi/personnel ─── Liste du personnel avec stats suivi
-  app.get('/api/suivi/personnel', authenticateToken, (req, res) => {
-    try {
-      const persons = db
-        .prepare(
-          `SELECT p.id, p.first_name, p.last_name, p.type, p.status, p.user_id,
+  // [S2-3] Cache 60s — invalidé par mutations tracking_sheets / persons
+  app.get(
+    '/api/suivi/personnel',
+    authenticateToken,
+    cacheMiddleware(suiviPersonnelCache, () => 'list'),
+    (req, res) => {
+      try {
+        const persons = db
+          .prepare(
+            `SELECT p.id, p.first_name, p.last_name, p.type, p.status, p.user_id,
                   COUNT(ts.id) AS total_sheets,
                   SUM(CASE WHEN ts.status = 'validated' THEN 1 ELSE 0 END) AS validated_sheets
            FROM persons p
@@ -1728,14 +1734,15 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
            WHERE p.status = 'active' AND p.type IN ('permanent', 'contractuel', 'stagiaire', 'apprenti')
            GROUP BY p.id
            ORDER BY p.last_name, p.first_name`,
-        )
-        .all();
-      res.json(persons);
-    } catch (error) {
-      logger.error('GET /api/suivi/personnel error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+          )
+          .all();
+        res.json(persons);
+      } catch (error) {
+        logger.error('GET /api/suivi/personnel error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ─── GET /api/suivi/planning-tasks/:date ─── Tâches planifiées du jour (inclut terminées)
   app.get('/api/suivi/planning-tasks/:date', authenticateToken, (req, res) => {
@@ -2604,72 +2611,81 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   // Routes avec paramètres dynamiques (après les statiques)
 
   // ─── POST /api/suivi/entries/:entryId/postpone ─── Reporter une tâche récurrente
-  app.post('/api/suivi/entries/:entryId/postpone', authenticateToken, (req, res) => {
-    try {
-      const entryId = parseInt(req.params.entryId, 10);
-      const { target_date, target_period } = req.body;
+  app.post(
+    '/api/suivi/entries/:entryId/postpone',
+    authenticateToken,
+    invalidateOnSuccess(suiviPersonnelCache),
+    (req, res) => {
+      try {
+        const entryId = parseInt(req.params.entryId, 10);
+        const { target_date, target_period } = req.body;
 
-      if (!entryId || isNaN(entryId)) {
-        return res.status(400).json({ success: false, error: 'ID entrée invalide' });
-      }
-      if (!target_date || !/^\d{4}-\d{2}-\d{2}$/.test(target_date)) {
-        return res.status(400).json({ success: false, error: 'Date cible invalide (YYYY-MM-DD)' });
-      }
-      if (!target_period || !['AM', 'PM'].includes(target_period)) {
-        return res.status(400).json({ success: false, error: 'Période cible invalide (AM ou PM)' });
-      }
+        if (!entryId || isNaN(entryId)) {
+          return res.status(400).json({ success: false, error: 'ID entrée invalide' });
+        }
+        if (!target_date || !/^\d{4}-\d{2}-\d{2}$/.test(target_date)) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Date cible invalide (YYYY-MM-DD)' });
+        }
+        if (!target_period || !['AM', 'PM'].includes(target_period)) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'Période cible invalide (AM ou PM)' });
+        }
 
-      const entry = db.prepare('SELECT * FROM tracking_entries WHERE id = ?').get(entryId);
-      if (!entry) return res.status(404).json({ success: false, error: 'Entrée introuvable' });
+        const entry = db.prepare('SELECT * FROM tracking_entries WHERE id = ?').get(entryId);
+        if (!entry) return res.status(404).json({ success: false, error: 'Entrée introuvable' });
 
-      const sheet = db.prepare('SELECT * FROM tracking_sheets WHERE id = ?').get(entry.sheet_id);
-      if (!sheet) return res.status(404).json({ success: false, error: 'Fiche introuvable' });
+        const sheet = db.prepare('SELECT * FROM tracking_sheets WHERE id = ?').get(entry.sheet_id);
+        if (!sheet) return res.status(404).json({ success: false, error: 'Fiche introuvable' });
 
-      const personnel = db.prepare('SELECT * FROM personnel WHERE id = ?').get(sheet.person_id);
-      if (!canManagePerson(personnel, req.user)) {
-        return res.status(403).json({ success: false, error: 'Accès refusé' });
-      }
+        const personnel = db.prepare('SELECT * FROM personnel WHERE id = ?').get(sheet.person_id);
+        if (!canManagePerson(personnel, req.user)) {
+          return res.status(403).json({ success: false, error: 'Accès refusé' });
+        }
 
-      // Récupérer ou créer la fiche cible
-      const targetSheet = getOrCreateSheet(sheet.person_id, target_date, req.user.id);
-      if (!targetSheet) {
-        return res
-          .status(500)
-          .json({ success: false, error: 'Impossible de créer la fiche cible' });
-      }
+        // Récupérer ou créer la fiche cible
+        const targetSheet = getOrCreateSheet(sheet.person_id, target_date, req.user.id);
+        if (!targetSheet) {
+          return res
+            .status(500)
+            .json({ success: false, error: 'Impossible de créer la fiche cible' });
+        }
 
-      // Insérer la nouvelle entrée sur la fiche cible
-      const newComment = `Reporté depuis ${sheet.date} (${entry.period || target_period})${entry.comment ? ' — ' + entry.comment : ''}`;
-      const insertResult = db
-        .prepare(
-          `INSERT INTO tracking_entries (sheet_id, period, title, time_spent, comment, completed, recurring_task_id, created_at, updated_at)
+        // Insérer la nouvelle entrée sur la fiche cible
+        const newComment = `Reporté depuis ${sheet.date} (${entry.period || target_period})${entry.comment ? ' — ' + entry.comment : ''}`;
+        const insertResult = db
+          .prepare(
+            `INSERT INTO tracking_entries (sheet_id, period, title, time_spent, comment, completed, recurring_task_id, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, 0, NULL, datetime('now'), datetime('now'))`,
-        )
-        .run(targetSheet.id, target_period, entry.title, entry.time_spent || 0, newComment);
+          )
+          .run(targetSheet.id, target_period, entry.title, entry.time_spent || 0, newComment);
 
-      // Mettre à jour l'entrée originale pour indiquer le report
-      const updatedComment = `→ Reporté au ${target_date} (${target_period})${entry.comment ? ' — ' + entry.comment : ''}`;
-      db.prepare(
-        `UPDATE tracking_entries SET comment = ?, completed = 0, updated_at = datetime('now') WHERE id = ?`,
-      ).run(updatedComment, entryId);
+        // Mettre à jour l'entrée originale pour indiquer le report
+        const updatedComment = `→ Reporté au ${target_date} (${target_period})${entry.comment ? ' — ' + entry.comment : ''}`;
+        db.prepare(
+          `UPDATE tracking_entries SET comment = ?, completed = 0, updated_at = datetime('now') WHERE id = ?`,
+        ).run(updatedComment, entryId);
 
-      // Mettre à jour modified_at de la fiche source
-      db.prepare(`UPDATE tracking_sheets SET modified_at = datetime('now') WHERE id = ?`).run(
-        sheet.id,
-      );
+        // Mettre à jour modified_at de la fiche source
+        db.prepare(`UPDATE tracking_sheets SET modified_at = datetime('now') WHERE id = ?`).run(
+          sheet.id,
+        );
 
-      res.json({
-        success: true,
-        new_entry_id: insertResult.lastInsertRowid,
-        target_date,
-        target_period,
-        updated_comment: updatedComment,
-      });
-    } catch (err) {
-      console.error('Erreur route postpone entry:', err);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+        res.json({
+          success: true,
+          new_entry_id: insertResult.lastInsertRowid,
+          target_date,
+          target_period,
+          updated_comment: updatedComment,
+        });
+      } catch (err) {
+        console.error('Erreur route postpone entry:', err);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // ─── GET /api/suivi/:personnelId/:date ─── Récupérer ou créer la fiche du jour
   app.get('/api/suivi/:personnelId/:date', authenticateToken, (req, res) => {
@@ -2812,24 +2828,30 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ─── PUT /api/suivi/:ficheId/validate ─── Valider une fiche (admin)
-  app.put('/api/suivi/:ficheId/validate', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const sheet = db
-        .prepare('SELECT * FROM tracking_sheets WHERE id = ?')
-        .get(req.params.ficheId);
-      if (!sheet) {
-        return res.status(404).json({ success: false, error: 'Fiche non trouvée' });
+  app.put(
+    '/api/suivi/:ficheId/validate',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(suiviPersonnelCache),
+    (req, res) => {
+      try {
+        const sheet = db
+          .prepare('SELECT * FROM tracking_sheets WHERE id = ?')
+          .get(req.params.ficheId);
+        if (!sheet) {
+          return res.status(404).json({ success: false, error: 'Fiche non trouvée' });
+        }
+
+        db.prepare(
+          `UPDATE tracking_sheets SET status = 'validated', validated_by = ?, validated_at = datetime('now'), modified_by = ?, modified_at = datetime('now') WHERE id = ?`,
+        ).run(req.user.id, req.user.id, sheet.id);
+
+        const full = getSheetWithEntries(sheet.id);
+        res.json(full);
+      } catch (error) {
+        logger.error('PUT /api/suivi/:ficheId/validate error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-
-      db.prepare(
-        `UPDATE tracking_sheets SET status = 'validated', validated_by = ?, validated_at = datetime('now'), modified_by = ?, modified_at = datetime('now') WHERE id = ?`,
-      ).run(req.user.id, req.user.id, sheet.id);
-
-      const full = getSheetWithEntries(sheet.id);
-      res.json(full);
-    } catch (error) {
-      logger.error('PUT /api/suivi/:ficheId/validate error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 }

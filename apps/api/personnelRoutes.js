@@ -4,6 +4,7 @@
 // ============================================================
 
 import db, { addToHistory } from './database.js';
+import { cacheMiddleware, invalidateOnSuccess, personnelPlanningCache } from './cache.js';
 import { alertAssignmentCreated } from './emailService.js';
 import logger from './logger.js';
 import { personSchema } from './schemas/crud.js';
@@ -761,106 +762,115 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
   // sont désormais gérées par leaveRoutes.js (/api/leaves/*).
 
   // POST /api/availabilities — Créer une dispo/indispo/demande de congé
-  app.post('/api/availabilities', authenticateToken, (req, res) => {
-    try {
-      const a = req.body;
-      if (!a.person_id || !a.start_date || !a.end_date) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'person_id, start_date et end_date sont requis' });
-      }
+  app.post(
+    '/api/availabilities',
+    authenticateToken,
+    invalidateOnSuccess(personnelPlanningCache),
+    (req, res) => {
+      try {
+        const a = req.body;
+        if (!a.person_id || !a.start_date || !a.end_date) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'person_id, start_date et end_date sont requis' });
+        }
 
-      const person = db.prepare('SELECT id FROM persons WHERE id = ?').get(a.person_id);
-      if (!person) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
+        const person = db.prepare('SELECT id FROM persons WHERE id = ?').get(a.person_id);
+        if (!person) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
-      // Détection de conflits — vérifier les périodes existantes qui se chevauchent
-      const conflicting = db
-        .prepare(
-          `
+        // Détection de conflits — vérifier les périodes existantes qui se chevauchent
+        const conflicting = db
+          .prepare(
+            `
         SELECT id, type, start_date, end_date, status FROM availabilities
         WHERE person_id = ? AND status != 'rejected'
           AND start_date <= ? AND end_date >= ?
       `,
-        )
-        .all(a.person_id, a.end_date, a.start_date);
+          )
+          .all(a.person_id, a.end_date, a.start_date);
 
-      if (conflicting.length > 0) {
-        const conflictDescs = conflicting
-          .map((c) => `${LEAVE_TYPES[c.type] || c.type} (${c.start_date} → ${c.end_date})`)
-          .join(', ');
-        // Avertissement mais pas bloquant — on informe dans la réponse
-        // Pour les congés payés, on bloque si conflit avec un autre congé approuvé
-        const blockers = conflicting.filter(
-          (c) => c.status === 'approved' && APPROVAL_REQUIRED_TYPES.includes(c.type),
-        );
-        if (blockers.length > 0 && APPROVAL_REQUIRED_TYPES.includes(a.type || 'unavailable')) {
-          return res.status(409).json({
-            error: `Conflit avec une période existante : ${conflictDescs}`,
-            conflicts: conflicting,
-          });
+        if (conflicting.length > 0) {
+          const conflictDescs = conflicting
+            .map((c) => `${LEAVE_TYPES[c.type] || c.type} (${c.start_date} → ${c.end_date})`)
+            .join(', ');
+          // Avertissement mais pas bloquant — on informe dans la réponse
+          // Pour les congés payés, on bloque si conflit avec un autre congé approuvé
+          const blockers = conflicting.filter(
+            (c) => c.status === 'approved' && APPROVAL_REQUIRED_TYPES.includes(c.type),
+          );
+          if (blockers.length > 0 && APPROVAL_REQUIRED_TYPES.includes(a.type || 'unavailable')) {
+            return res.status(409).json({
+              error: `Conflit avec une période existante : ${conflictDescs}`,
+              conflicts: conflicting,
+            });
+          }
         }
-      }
 
-      // Déterminer le statut selon le type et la source
-      // Types auto-approuvés : absence, formation, entreprise, workshop, examen, rdv → toujours approved
-      // Types nécessitant approbation : conge_paye, rtt, maladie, sans_solde → pending si source='request'
-      const typeVal = a.type || 'unavailable';
-      const isAutoApproved = AUTO_APPROVED_TYPES.includes(typeVal);
-      const isAdminSource = a.source === 'admin';
-      const status = isAutoApproved || isAdminSource ? 'approved' : 'pending';
-      const approvedBy = status === 'approved' ? req.user.id : null;
-      const approvedAt = status === 'approved' ? new Date().toISOString() : null;
+        // Déterminer le statut selon le type et la source
+        // Types auto-approuvés : absence, formation, entreprise, workshop, examen, rdv → toujours approved
+        // Types nécessitant approbation : conge_paye, rtt, maladie, sans_solde → pending si source='request'
+        const typeVal = a.type || 'unavailable';
+        const isAutoApproved = AUTO_APPROVED_TYPES.includes(typeVal);
+        const isAdminSource = a.source === 'admin';
+        const status = isAutoApproved || isAdminSource ? 'approved' : 'pending';
+        const approvedBy = status === 'approved' ? req.user.id : null;
+        const approvedAt = status === 'approved' ? new Date().toISOString() : null;
 
-      const result = db
-        .prepare(
-          `
+        const result = db
+          .prepare(
+            `
         INSERT INTO availabilities (person_id, start_date, end_date, start_period, end_period,
           type, reason, source, is_recurring, recurrence_rule, status, approved_by, approved_at, created_by,
           start_time, end_time, rdv_category, google_event_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
-        )
-        .run(
-          a.person_id,
-          a.start_date,
-          a.end_date,
-          a.start_period || 'AM',
-          a.end_period || 'PM',
-          a.type || 'unavailable',
-          a.reason || null,
-          a.source || 'admin',
-          a.is_recurring ? 1 : 0,
-          a.recurrence_rule ? JSON.stringify(a.recurrence_rule) : null,
-          status,
-          approvedBy,
-          approvedAt,
-          req.user.id,
-          a.start_time || null,
-          a.end_time || null,
-          a.rdv_category || null,
-          a.google_event_id || null,
-        );
+          )
+          .run(
+            a.person_id,
+            a.start_date,
+            a.end_date,
+            a.start_period || 'AM',
+            a.end_period || 'PM',
+            a.type || 'unavailable',
+            a.reason || null,
+            a.source || 'admin',
+            a.is_recurring ? 1 : 0,
+            a.recurrence_rule ? JSON.stringify(a.recurrence_rule) : null,
+            status,
+            approvedBy,
+            approvedAt,
+            req.user.id,
+            a.start_time || null,
+            a.end_time || null,
+            a.rdv_category || null,
+            a.google_event_id || null,
+          );
 
-      const created = db
-        .prepare('SELECT * FROM availabilities WHERE id = ?')
-        .get(result.lastInsertRowid);
-      res.json(created);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        const created = db
+          .prepare('SELECT * FROM availabilities WHERE id = ?')
+          .get(result.lastInsertRowid);
+        res.json(created);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // PUT /api/availabilities/:id — Modifier une dispo
-  app.put('/api/availabilities/:id', authenticateToken, (req, res) => {
-    try {
-      const a = req.body;
-      const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      if (!existing)
-        return res.status(404).json({ success: false, error: 'Disponibilité non trouvée' });
+  app.put(
+    '/api/availabilities/:id',
+    authenticateToken,
+    invalidateOnSuccess(personnelPlanningCache),
+    (req, res) => {
+      try {
+        const a = req.body;
+        const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Disponibilité non trouvée' });
 
-      db.prepare(
-        `
+        db.prepare(
+          `
         UPDATE availabilities SET
           start_date = ?, end_date = ?, start_period = ?, end_period = ?,
           type = ?, reason = ?, source = ?,
@@ -868,151 +878,174 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
           start_time = ?, end_time = ?, rdv_category = ?, google_event_id = ?
         WHERE id = ?
       `,
-      ).run(
-        a.start_date || existing.start_date,
-        a.end_date || existing.end_date,
-        a.start_period || existing.start_period,
-        a.end_period || existing.end_period,
-        a.type || existing.type,
-        a.reason ?? existing.reason,
-        a.source || existing.source,
-        a.is_recurring !== undefined ? (a.is_recurring ? 1 : 0) : existing.is_recurring,
-        a.recurrence_rule ? JSON.stringify(a.recurrence_rule) : existing.recurrence_rule,
-        a.start_time !== undefined ? a.start_time : existing.start_time || null,
-        a.end_time !== undefined ? a.end_time : existing.end_time || null,
-        a.rdv_category !== undefined ? a.rdv_category : existing.rdv_category || null,
-        a.google_event_id !== undefined ? a.google_event_id : existing.google_event_id || null,
-        req.params.id,
-      );
+        ).run(
+          a.start_date || existing.start_date,
+          a.end_date || existing.end_date,
+          a.start_period || existing.start_period,
+          a.end_period || existing.end_period,
+          a.type || existing.type,
+          a.reason ?? existing.reason,
+          a.source || existing.source,
+          a.is_recurring !== undefined ? (a.is_recurring ? 1 : 0) : existing.is_recurring,
+          a.recurrence_rule ? JSON.stringify(a.recurrence_rule) : existing.recurrence_rule,
+          a.start_time !== undefined ? a.start_time : existing.start_time || null,
+          a.end_time !== undefined ? a.end_time : existing.end_time || null,
+          a.rdv_category !== undefined ? a.rdv_category : existing.rdv_category || null,
+          a.google_event_id !== undefined ? a.google_event_id : existing.google_event_id || null,
+          req.params.id,
+        );
 
-      const updated = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      res.json(updated);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        const updated = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
+        res.json(updated);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // POST /api/availabilities/:id/approve — Approuver une demande de congé (admin)
-  app.post('/api/availabilities/:id/approve', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
-      if (existing.status !== 'pending') {
-        return res.status(400).json({
-          success: false,
-          error: 'Seules les demandes en attente peuvent être approuvées',
-        });
-      }
+  app.post(
+    '/api/availabilities/:id/approve',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(personnelPlanningCache),
+    (req, res) => {
+      try {
+        const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Demande non trouvée' });
+        if (existing.status !== 'pending') {
+          return res.status(400).json({
+            success: false,
+            error: 'Seules les demandes en attente peuvent être approuvées',
+          });
+        }
 
-      db.prepare(
-        `
+        db.prepare(
+          `
         UPDATE availabilities SET status = 'approved', approved_by = ?, approved_at = datetime('now')
         WHERE id = ?
       `,
-      ).run(req.user.id, req.params.id);
+        ).run(req.user.id, req.params.id);
 
-      // Mettre à jour le solde de congés si c'est un type suivi
-      const trackedTypes = ['conge_paye', 'rtt'];
-      if (trackedTypes.includes(existing.type)) {
-        const start = new Date(existing.start_date);
-        const end = new Date(existing.end_date);
-        const daysTaken = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
-        const year = start.getFullYear();
+        // Mettre à jour le solde de congés si c'est un type suivi
+        const trackedTypes = ['conge_paye', 'rtt'];
+        if (trackedTypes.includes(existing.type)) {
+          const start = new Date(existing.start_date);
+          const end = new Date(existing.end_date);
+          const daysTaken = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+          const year = start.getFullYear();
 
-        // Upsert le solde
-        const balance = db
-          .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
-          .get(existing.person_id, year, existing.type);
-        if (balance) {
-          db.prepare('UPDATE leave_balances SET days_taken = days_taken + ? WHERE id = ?').run(
-            daysTaken,
-            balance.id,
-          );
-        } else {
-          db.prepare(
-            'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, ?)',
-          ).run(
-            existing.person_id,
-            year,
-            existing.type,
-            existing.type === 'conge_paye' ? 25 : 10,
-            daysTaken,
-          );
+          // Upsert le solde
+          const balance = db
+            .prepare('SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?')
+            .get(existing.person_id, year, existing.type);
+          if (balance) {
+            db.prepare('UPDATE leave_balances SET days_taken = days_taken + ? WHERE id = ?').run(
+              daysTaken,
+              balance.id,
+            );
+          } else {
+            db.prepare(
+              'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, ?)',
+            ).run(
+              existing.person_id,
+              year,
+              existing.type,
+              existing.type === 'conge_paye' ? 25 : 10,
+              daysTaken,
+            );
+          }
         }
-      }
 
-      const updated = db
-        .prepare(
-          `
+        const updated = db
+          .prepare(
+            `
         SELECT a.*, p.first_name, p.last_name, u.name AS approved_by_name
         FROM availabilities a
         JOIN persons p ON p.id = a.person_id
         LEFT JOIN users u ON u.id = a.approved_by
         WHERE a.id = ?
       `,
-        )
-        .get(req.params.id);
-      res.json(updated);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+          )
+          .get(req.params.id);
+        res.json(updated);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // POST /api/availabilities/:id/reject — Refuser une demande (admin)
-  app.post('/api/availabilities/:id/reject', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const { reason } = req.body;
-      const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
-      if (existing.status !== 'pending') {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Seules les demandes en attente peuvent être refusées' });
-      }
+  app.post(
+    '/api/availabilities/:id/reject',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(personnelPlanningCache),
+    (req, res) => {
+      try {
+        const { reason } = req.body;
+        const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Demande non trouvée' });
+        if (existing.status !== 'pending') {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              error: 'Seules les demandes en attente peuvent être refusées',
+            });
+        }
 
-      db.prepare(
-        `
+        db.prepare(
+          `
         UPDATE availabilities SET status = 'rejected', approved_by = ?, approved_at = datetime('now'), rejection_reason = ?
         WHERE id = ?
       `,
-      ).run(req.user.id, reason || null, req.params.id);
+        ).run(req.user.id, reason || null, req.params.id);
 
-      const updated = db
-        .prepare(
-          `
+        const updated = db
+          .prepare(
+            `
         SELECT a.*, p.first_name, p.last_name, u.name AS approved_by_name
         FROM availabilities a
         JOIN persons p ON p.id = a.person_id
         LEFT JOIN users u ON u.id = a.approved_by
         WHERE a.id = ?
       `,
-        )
-        .get(req.params.id);
-      res.json(updated);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+          )
+          .get(req.params.id);
+        res.json(updated);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // DELETE /api/availabilities/:id — Supprimer une dispo
-  app.delete('/api/availabilities/:id', authenticateToken, (req, res) => {
-    try {
-      const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
-      if (!existing)
-        return res.status(404).json({ success: false, error: 'Disponibilité non trouvée' });
+  app.delete(
+    '/api/availabilities/:id',
+    authenticateToken,
+    invalidateOnSuccess(personnelPlanningCache),
+    (req, res) => {
+      try {
+        const existing = db.prepare('SELECT * FROM availabilities WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Disponibilité non trouvée' });
 
-      db.prepare('DELETE FROM availabilities WHERE id = ?').run(req.params.id);
-      // Supprimer aussi les votes associés
-      db.prepare('DELETE FROM leave_votes WHERE availability_id = ?').run(req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        db.prepare('DELETE FROM availabilities WHERE id = ?').run(req.params.id);
+        // Supprimer aussi les votes associés
+        db.prepare('DELETE FROM leave_votes WHERE availability_id = ?').run(req.params.id);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ═══ Note : ancien système de votes supprimé, remplacé par leaveRoutes.js ═══
 }
@@ -1153,74 +1186,86 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/missions — Créer une mission
-  app.post('/api/missions', authenticateToken, (req, res) => {
-    try {
-      const m = req.body;
-      if (!m.title || !m.start_date || !m.end_date) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'title, start_date et end_date sont requis' });
-      }
+  app.post(
+    '/api/missions',
+    authenticateToken,
+    invalidateOnSuccess(personnelPlanningCache),
+    (req, res) => {
+      try {
+        const m = req.body;
+        if (!m.title || !m.start_date || !m.end_date) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'title, start_date et end_date sont requis' });
+        }
 
-      // Vérifier la réservation liée si fournie
-      if (m.reservation_id) {
-        const reservation = db
-          .prepare('SELECT id FROM reservations WHERE id = ?')
-          .get(m.reservation_id);
-        if (!reservation)
-          return res.status(400).json({ success: false, error: 'Réservation non trouvée' });
-      }
+        // Vérifier la réservation liée si fournie
+        if (m.reservation_id) {
+          const reservation = db
+            .prepare('SELECT id FROM reservations WHERE id = ?')
+            .get(m.reservation_id);
+          if (!reservation)
+            return res.status(400).json({ success: false, error: 'Réservation non trouvée' });
+        }
 
-      const result = db
-        .prepare(
-          `
+        const result = db
+          .prepare(
+            `
         INSERT INTO missions (title, reservation_id, affaire, client_name, location_name,
           start_date, end_date, start_time, end_time, position,
           required_skills, vehicle_id, status, notes, day_states,
           created_by, modified_by)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
-        )
-        .run(
-          m.title,
-          m.reservation_id || null,
-          m.affaire || null,
-          m.client_name || null,
-          m.location_name || null,
-          m.start_date,
-          m.end_date,
-          m.start_time || null,
-          m.end_time || null,
-          m.position || null,
-          m.required_skills || m.required_skill_id || null,
-          m.vehicle_id || null,
-          m.status || 'draft',
-          m.notes || null,
-          m.day_states || null,
-          req.user.id,
-          req.user.id,
-        );
+          )
+          .run(
+            m.title,
+            m.reservation_id || null,
+            m.affaire || null,
+            m.client_name || null,
+            m.location_name || null,
+            m.start_date,
+            m.end_date,
+            m.start_time || null,
+            m.end_time || null,
+            m.position || null,
+            m.required_skills || m.required_skill_id || null,
+            m.vehicle_id || null,
+            m.status || 'draft',
+            m.notes || null,
+            m.day_states || null,
+            req.user.id,
+            req.user.id,
+          );
 
-      addToHistory('mission', result.lastInsertRowid, 'created', m, req.user.id, req.user.name);
+        addToHistory('mission', result.lastInsertRowid, 'created', m, req.user.id, req.user.name);
 
-      const created = db.prepare('SELECT * FROM missions WHERE id = ?').get(result.lastInsertRowid);
-      created.assignments = [];
-      res.json(created);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        const created = db
+          .prepare('SELECT * FROM missions WHERE id = ?')
+          .get(result.lastInsertRowid);
+        created.assignments = [];
+        res.json(created);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // PUT /api/missions/:id — Modifier une mission
-  app.put('/api/missions/:id', authenticateToken, (req, res) => {
-    try {
-      const m = req.body;
-      const existing = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Mission non trouvée' });
+  app.put(
+    '/api/missions/:id',
+    authenticateToken,
+    invalidateOnSuccess(personnelPlanningCache),
+    (req, res) => {
+      try {
+        const m = req.body;
+        const existing = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Mission non trouvée' });
 
-      db.prepare(
-        `
+        db.prepare(
+          `
         UPDATE missions SET
           title = ?, reservation_id = ?, affaire = ?, client_name = ?, location_name = ?,
           start_date = ?, end_date = ?, start_time = ?, end_time = ?,
@@ -1229,66 +1274,74 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
-      ).run(
-        m.title || existing.title,
-        m.reservation_id !== undefined ? m.reservation_id : existing.reservation_id,
-        m.affaire !== undefined ? m.affaire : existing.affaire,
-        m.client_name ?? existing.client_name,
-        m.location_name ?? existing.location_name,
-        m.start_date || existing.start_date,
-        m.end_date || existing.end_date,
-        m.start_time ?? existing.start_time,
-        m.end_time ?? existing.end_time,
-        m.position ?? existing.position,
-        m.required_skills !== undefined
-          ? m.required_skills
-          : m.required_skill_id !== undefined
-            ? m.required_skill_id
-            : existing.required_skills,
-        m.vehicle_id !== undefined ? m.vehicle_id : existing.vehicle_id,
-        m.status || existing.status,
-        m.notes ?? existing.notes,
-        m.day_states !== undefined ? m.day_states : existing.day_states,
-        req.user.id,
-        req.params.id,
-      );
+        ).run(
+          m.title || existing.title,
+          m.reservation_id !== undefined ? m.reservation_id : existing.reservation_id,
+          m.affaire !== undefined ? m.affaire : existing.affaire,
+          m.client_name ?? existing.client_name,
+          m.location_name ?? existing.location_name,
+          m.start_date || existing.start_date,
+          m.end_date || existing.end_date,
+          m.start_time ?? existing.start_time,
+          m.end_time ?? existing.end_time,
+          m.position ?? existing.position,
+          m.required_skills !== undefined
+            ? m.required_skills
+            : m.required_skill_id !== undefined
+              ? m.required_skill_id
+              : existing.required_skills,
+          m.vehicle_id !== undefined ? m.vehicle_id : existing.vehicle_id,
+          m.status || existing.status,
+          m.notes ?? existing.notes,
+          m.day_states !== undefined ? m.day_states : existing.day_states,
+          req.user.id,
+          req.params.id,
+        );
 
-      addToHistory('mission', req.params.id, 'updated', m, req.user.id, req.user.name);
+        addToHistory('mission', req.params.id, 'updated', m, req.user.id, req.user.name);
 
-      const updated = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
-      updated.assignments = db
-        .prepare(
-          `
+        const updated = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
+        updated.assignments = db
+          .prepare(
+            `
         SELECT ma.*, p.first_name, p.last_name
         FROM mission_assignments ma
         JOIN persons p ON p.id = ma.person_id
         WHERE ma.mission_id = ?
       `,
-        )
-        .all(updated.id);
+          )
+          .all(updated.id);
 
-      res.json(updated);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json(updated);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // DELETE /api/missions/:id — Supprimer une mission (admin)
-  app.delete('/api/missions/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const existing = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Mission non trouvée' });
+  app.delete(
+    '/api/missions/:id',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(personnelPlanningCache),
+    (req, res) => {
+      try {
+        const existing = db.prepare('SELECT * FROM missions WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Mission non trouvée' });
 
-      db.prepare('DELETE FROM missions WHERE id = ?').run(req.params.id);
-      addToHistory('mission', req.params.id, 'deleted', null, req.user.id, req.user.name);
+        db.prepare('DELETE FROM missions WHERE id = ?').run(req.params.id);
+        addToHistory('mission', req.params.id, 'deleted', null, req.user.id, req.user.name);
 
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 }
 
 // ============ ASSIGNMENTS (AFFECTATIONS) ============
@@ -1554,18 +1607,27 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
   });
 
   // GET /api/personnel/planning — Planning global du personnel (vue calendrier)
-  app.get('/api/personnel/planning', authenticateToken, (req, res) => {
-    try {
-      const { start_date, end_date, person_id, skill_id } = req.query;
+  // [S2-3] Cache 30s sur (start_date, end_date, person_id, skill_id) — invalidé par mutations missions/availabilities/assignments
+  app.get(
+    '/api/personnel/planning',
+    authenticateToken,
+    cacheMiddleware(personnelPlanningCache, (req) => {
+      const q = req.query || {};
+      if (!q.start_date || !q.end_date) return null;
+      return [q.start_date, q.end_date, q.person_id || '', q.skill_id || ''].join('|');
+    }),
+    (req, res) => {
+      try {
+        const { start_date, end_date, person_id, skill_id } = req.query;
 
-      if (!start_date || !end_date) {
-        return res
-          .status(400)
-          .json({ success: false, error: 'start_date et end_date sont requis' });
-      }
+        if (!start_date || !end_date) {
+          return res
+            .status(400)
+            .json({ success: false, error: 'start_date et end_date sont requis' });
+        }
 
-      // Récupérer les missions + affectations dans la plage
-      let missionsSql = `
+        // Récupérer les missions + affectations dans la plage
+        let missionsSql = `
         SELECT m.*,
           (SELECT GROUP_CONCAT(
             json_object(
@@ -1579,81 +1641,82 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
         FROM missions m
         WHERE m.start_date <= ? AND m.end_date >= ?
       `;
-      const mParams = [end_date, start_date];
+        const mParams = [end_date, start_date];
 
-      if (person_id) {
-        missionsSql += ` AND m.id IN (SELECT mission_id FROM mission_assignments WHERE person_id = ?)`;
-        mParams.push(person_id);
-      }
-      if (skill_id) {
-        missionsSql += ` AND (m.required_skills LIKE ? OR m.required_skill_id = ?)`;
-        mParams.push(`%${skill_id}%`, skill_id);
-      }
-      missionsSql += ' ORDER BY m.start_date, m.start_time';
+        if (person_id) {
+          missionsSql += ` AND m.id IN (SELECT mission_id FROM mission_assignments WHERE person_id = ?)`;
+          mParams.push(person_id);
+        }
+        if (skill_id) {
+          missionsSql += ` AND (m.required_skills LIKE ? OR m.required_skill_id = ?)`;
+          mParams.push(`%${skill_id}%`, skill_id);
+        }
+        missionsSql += ' ORDER BY m.start_date, m.start_time';
 
-      const missions = db.prepare(missionsSql).all(...mParams);
+        const missions = db.prepare(missionsSql).all(...mParams);
 
-      // Parser le JSON d'affectations
-      const parsedMissions = missions.map((m) => ({
-        ...m,
-        assignments: m.assignments_json
-          ? m.assignments_json
-              .split(',{')
-              .map((s, i) => {
-                try {
-                  return JSON.parse(i > 0 ? '{' + s : s);
-                } catch {
-                  return null;
-                }
-              })
-              .filter(Boolean)
-          : [],
-      }));
-      // Supprimer le champ temporaire
-      parsedMissions.forEach((m) => delete m.assignments_json);
+        // Parser le JSON d'affectations
+        const parsedMissions = missions.map((m) => ({
+          ...m,
+          assignments: m.assignments_json
+            ? m.assignments_json
+                .split(',{')
+                .map((s, i) => {
+                  try {
+                    return JSON.parse(i > 0 ? '{' + s : s);
+                  } catch {
+                    return null;
+                  }
+                })
+                .filter(Boolean)
+            : [],
+        }));
+        // Supprimer le champ temporaire
+        parsedMissions.forEach((m) => delete m.assignments_json);
 
-      // Récupérer les indisponibilités dans la plage
-      let availSql = `
+        // Récupérer les indisponibilités dans la plage
+        let availSql = `
         SELECT a.*, p.first_name, p.last_name
         FROM availabilities a
         JOIN persons p ON p.id = a.person_id
         WHERE a.start_date <= ? AND a.end_date >= ?
       `;
-      const aParams = [end_date, start_date];
+        const aParams = [end_date, start_date];
 
-      if (person_id) {
-        availSql += ' AND a.person_id = ?';
-        aParams.push(person_id);
-      }
+        if (person_id) {
+          availSql += ' AND a.person_id = ?';
+          aParams.push(person_id);
+        }
 
-      const availabilities = db.prepare(availSql).all(...aParams);
+        const availabilities = db.prepare(availSql).all(...aParams);
 
-      // Récupérer les tâches assignées dans la plage (task_assignments liées aux affaires ou manuelles)
-      let tasksSql = `
+        // Récupérer les tâches assignées dans la plage (task_assignments liées aux affaires ou manuelles)
+        let tasksSql = `
         SELECT ta.*, p.first_name, p.last_name
         FROM task_assignments ta
         JOIN persons p ON p.id = ta.person_id
         WHERE ta.date >= ? AND ta.date <= ?
           AND (ta.deleted_at IS NULL)
       `;
-      const tParams = [start_date, end_date];
+        const tParams = [start_date, end_date];
 
-      if (person_id) {
-        tasksSql += ' AND ta.person_id = ?';
-        tParams.push(person_id);
+        if (person_id) {
+          tasksSql += ' AND ta.person_id = ?';
+          tParams.push(person_id);
+        }
+        tasksSql += ' ORDER BY ta.date, ta.period';
+
+        const taskAssignments = db.prepare(tasksSql).all(...tParams);
+
+        res.json({
+          missions: parsedMissions,
+          availabilities,
+          taskAssignments,
+        });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-      tasksSql += ' ORDER BY ta.date, ta.period';
-
-      const taskAssignments = db.prepare(tasksSql).all(...tParams);
-
-      res.json({
-        missions: parsedMissions,
-        availabilities,
-        taskAssignments,
-      });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 }

@@ -2325,6 +2325,11 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_reservation ON task_assignments(reservation_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_source ON task_assignments(source_type, source_id)');
+    // [FIX 4] Indices supplémentaires pour requêtes fréquentes
+    db.exec(
+      'CREATE INDEX IF NOT EXISTS idx_ta_date_section ON task_assignments(date, section, deleted_at)',
+    );
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_deleted_at ON task_assignments(deleted_at)');
 
     // Table planning_hidden_affaires: affaires masquées de la planification
     db.exec(`

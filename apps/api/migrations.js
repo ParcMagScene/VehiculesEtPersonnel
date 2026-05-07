@@ -144,9 +144,7 @@ export function runPostInitMigrations(db) {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (request_id) REFERENCES material_requests(id) ON DELETE CASCADE
     )`);
-    db.exec(
-      'CREATE INDEX IF NOT EXISTS idx_mrl_request ON material_request_lines(request_id)',
-    );
+    db.exec('CREATE INDEX IF NOT EXISTS idx_mrl_request ON material_request_lines(request_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_mrl_order ON material_request_lines(order_id)');
 
     // Backfill : pour chaque demande sans ligne associée, insérer une ligne miroir.
@@ -171,7 +169,14 @@ export function runPostInitMigrations(db) {
               : r.status === 'rejected'
                 ? 'rejected'
                 : 'pending';
-          insertLine.run(r.id, r.article, r.ref_code, r.quantity || 1, r.order_id || null, lineStatus);
+          insertLine.run(
+            r.id,
+            r.article,
+            r.ref_code,
+            r.quantity || 1,
+            r.order_id || null,
+            lineStatus,
+          );
         }
       });
       tx(orphanRequests);
@@ -500,6 +505,8 @@ export function runPostInitMigrations(db) {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+    // [FIX 4] Index sur active pour accélérer SELECT * FROM recurring_tasks WHERE active=1
+    db.exec('CREATE INDEX IF NOT EXISTS idx_recurring_tasks_active ON recurring_tasks(active)');
     logger.info('✅ Table recurring_tasks vérifiée/créée');
   } catch (error) {
     logger.warn('⚠️ recurring_tasks:', error.message);

@@ -387,11 +387,18 @@
 }
 
 .banner-grid.week-view {
-  grid-template-columns: repeat(14, minmax(100px, 1fr));
+  /* [FIX 2] Consomme les tokens grid-tokens.css */
+  grid-template-columns: repeat(
+    var(--cal-cols-week, 14),
+    minmax(var(--cal-day-min-width, 100px), 1fr)
+  );
 }
 
 .banner-grid.month-view {
-  grid-template-columns: repeat(62, minmax(55px, 1fr));
+  grid-template-columns: repeat(
+    var(--cal-cols-month, 62),
+    minmax(var(--cal-day-min-width-month, 55px), 1fr)
+  );
 }
 
 /* Lignes de grille avec subgrid */
@@ -402,12 +409,12 @@
   grid-template-columns: subgrid;
   pointer-events: none;
   z-index: var(--z-dropdown);
-  min-height: 50px;
+  min-height: var(--cal-row-min-height, 50px);
 }
 
 .grid-line {
   border-right: 1px solid rgba(226, 232, 240, 0.6);
-  min-height: 50px;
+  min-height: var(--cal-row-min-height, 50px);
 }
 
 .grid-line.today {

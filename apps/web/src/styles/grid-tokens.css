@@ -1,0 +1,37 @@
+/* ═══════════════════════════════════════════════════════════════════
+ * eM@g — Tokens grille calendrier (FIX 2)
+ * ═══════════════════════════════════════════════════════════════════
+ * Source unique de vérité pour les grilles "calendrier" (Banner Google,
+ * PlanningPanel, MailingPanel, ManagementPanel). Les composants
+ * définissent les colonnes via --cal-cols et la hauteur via --cal-row-min-height.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Largeur min d'une colonne jour (semaine) */
+  --cal-day-min-width: 100px;
+  /* Largeur min d'une colonne en vue mois (62 cols ≈ 2 mois en demi-jours) */
+  --cal-day-min-width-month: 55px;
+  /* Hauteur min d'une ligne (slot) */
+  --cal-row-min-height: 50px;
+  /* Hauteur min d'un événement */
+  --cal-event-min-height: 24px;
+  /* Padding interne événement */
+  --cal-event-padding: 2px 6px;
+  /* Espacement inter-cellules */
+  --cal-gap: 0;
+  /* Nombre de colonnes par défaut (mode semaine = 14 demi-jours, mode mois = 62) */
+  --cal-cols-week: 14;
+  --cal-cols-month: 62;
+}
+
+/* Helpers utilitaires consommables par les composants. */
+.cal-grid-week {
+  display: grid;
+  grid-template-columns: repeat(var(--cal-cols-week), minmax(var(--cal-day-min-width), 1fr));
+  gap: var(--cal-gap);
+}
+.cal-grid-month {
+  display: grid;
+  grid-template-columns: repeat(var(--cal-cols-month), minmax(var(--cal-day-min-width-month), 1fr));
+  gap: var(--cal-gap);
+}

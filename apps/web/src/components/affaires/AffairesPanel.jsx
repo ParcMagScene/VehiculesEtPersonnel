@@ -128,7 +128,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   // BL Import modal
   const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
   const [showMultiImport, setShowMultiImport] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
+  const [showDashboard, _setShowDashboard] = useState(false);
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

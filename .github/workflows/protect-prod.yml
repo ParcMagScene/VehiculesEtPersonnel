@@ -95,11 +95,19 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
+      - name: ESLint + Prettier (api + web)
+        run: |
+          npm run lint
+          npm run format:check
+
       - name: Vérifier la cohérence docs ↔ code
         run: npm run docs:check
 
-      - name: Lancer les tests unitaires
+      - name: Lancer les tests unitaires backend
         run: npm test
+
+      - name: Lancer les tests unitaires frontend (Vitest)
+        run: npm run test --workspace=apps/web
 
       - name: Build frontend
         run: cd apps/web && npx vite build

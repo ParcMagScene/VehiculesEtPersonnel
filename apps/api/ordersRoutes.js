@@ -7,6 +7,7 @@ import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { orderSchema } from './schemas/crud.js';
 import { validate } from './schemas/imports.js';
+import { parsePagination, sendPaginated } from './utils/pagination.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -226,7 +227,12 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       }
       query += ' ORDER BY o.created_at DESC';
       const orders = db.prepare(query).all(...params);
-      res.json(orders);
+
+      // [S2-2] Pagination opt-in : si ?page= ou ?limit=, retour {data,pagination}
+      // Sinon comportement legacy (tableau brut). Slice côté Node : OK tant que
+      // la liste reste raisonnable (<10k commandes), évite refactor SQL.
+      const p = parsePagination(req);
+      return sendPaginated(res, orders, p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1452,28 +1458,29 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       } = req.body;
 
       // Normaliser : toujours un tableau de lignes en interne.
-      const inputLines = Array.isArray(lines) && lines.length > 0
-        ? lines
-            .map((l) => ({
-              article: (l.article || '').trim(),
-              ref_code: l.ref_code || null,
-              quantity: Number(l.quantity) || 1,
-            }))
-            .filter((l) => l.article)
-        : article && article.trim()
-          ? [
-              {
-                article: article.trim(),
-                ref_code: ref_code || null,
-                quantity: Number(quantity) || 1,
-              },
-            ]
-          : [];
+      const inputLines =
+        Array.isArray(lines) && lines.length > 0
+          ? lines
+              .map((l) => ({
+                article: (l.article || '').trim(),
+                ref_code: l.ref_code || null,
+                quantity: Number(l.quantity) || 1,
+              }))
+              .filter((l) => l.article)
+          : article && article.trim()
+            ? [
+                {
+                  article: article.trim(),
+                  ref_code: ref_code || null,
+                  quantity: Number(quantity) || 1,
+                },
+              ]
+            : [];
 
       if (inputLines.length === 0) {
         return res
           .status(400)
-          .json({ success: false, error: "Au moins une référence (article) est requise" });
+          .json({ success: false, error: 'Au moins une référence (article) est requise' });
       }
 
       const createTx = db.transaction(() => {
@@ -1509,9 +1516,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       });
 
       const requestId = createTx();
-      const created = db
-        .prepare('SELECT * FROM material_requests WHERE id = ?')
-        .get(requestId);
+      const created = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(requestId);
       created.lines = db
         .prepare(
           `SELECT id, request_id, article, ref_code, quantity, order_id, order_item_id, status
@@ -1570,15 +1575,16 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         lines,
       } = req.body;
 
-      const normalisedLines = Array.isArray(lines) && lines.length > 0
-        ? lines
-            .map((l) => ({
-              article: (l.article || '').trim(),
-              ref_code: l.ref_code || null,
-              quantity: Number(l.quantity) || 1,
-            }))
-            .filter((l) => l.article)
-        : null;
+      const normalisedLines =
+        Array.isArray(lines) && lines.length > 0
+          ? lines
+              .map((l) => ({
+                article: (l.article || '').trim(),
+                ref_code: l.ref_code || null,
+                quantity: Number(l.quantity) || 1,
+              }))
+              .filter((l) => l.article)
+          : null;
 
       const updateTx = db.transaction(() => {
         const first = normalisedLines?.[0];
@@ -1600,9 +1606,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         );
 
         if (normalisedLines) {
-          db.prepare('DELETE FROM material_request_lines WHERE request_id = ?').run(
-            req.params.id,
-          );
+          db.prepare('DELETE FROM material_request_lines WHERE request_id = ?').run(req.params.id);
           const insertLine = db.prepare(
             `INSERT INTO material_request_lines (request_id, article, ref_code, quantity)
              VALUES (?, ?, ?, ?)`,
@@ -1657,8 +1661,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         const request = db
           .prepare('SELECT * FROM material_requests WHERE id = ?')
           .get(req.params.id);
-        if (!request)
-          return res.status(404).json({ success: false, error: 'Demande non trouvée' });
+        if (!request) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
 
         const supplierName = (request.supplier_name || '').trim().toUpperCase();
         const supplier = supplierName

@@ -17,6 +17,8 @@ import logger from '../logger.js';
 const FIVE_MIN = 5 * 60 * 1000;
 const THIRTY_MIN = 30 * 60 * 1000;
 const ONE_DAY = 24 * 60 * 60 * 1000;
+// S3-4 — ANALYZE périodique pour rafraîchir les statistiques du planificateur.
+const ANALYZE_INTERVAL = 6 * 60 * 60 * 1000; // 6 h
 
 /**
  * Effectue un checkpoint WAL FULL (synchronise les données sur disque).
@@ -79,12 +81,33 @@ export function setupWALScheduling(db) {
     /* noop : pragma non critique */
   }
 
+  // S3-4 — ANALYZE toutes les 6 h (planificateur SQLite à jour).
+  // 1er ANALYZE différé pour ne pas peser sur le boot.
+  const analyzeBootstrap = setTimeout(() => {
+    try {
+      db.exec('ANALYZE');
+    } catch (_) {
+      /* noop */
+    }
+  }, 60 * 1000);
+  const analyzeTimer = setInterval(() => {
+    try {
+      db.exec('ANALYZE');
+    } catch (_) {
+      /* noop */
+    }
+  }, ANALYZE_INTERVAL);
+  if (typeof analyzeBootstrap.unref === 'function') analyzeBootstrap.unref();
+  if (typeof analyzeTimer.unref === 'function') analyzeTimer.unref();
+
   return {
     stop() {
       clearInterval(checkpointTimer);
       clearInterval(restartTimer);
       if (truncateTimer) clearInterval(truncateTimer);
       if (truncateBootstrap) clearTimeout(truncateBootstrap);
+      clearInterval(analyzeTimer);
+      clearTimeout(analyzeBootstrap);
     },
   };
 }

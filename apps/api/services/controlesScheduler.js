@@ -16,7 +16,7 @@ let timer = null;
 
 function shouldRunNow(now = new Date()) {
   if (now.getHours() !== RUN_HOUR) return false;
-  const day = now.toISOString().slice(0, 10);
+  const day = todayIso(now);
   if (lastRunDay === day) return false;
   return true;
 }
@@ -148,7 +148,7 @@ export function startControlesScheduler(db) {
   const tick = async () => {
     const now = new Date();
     if (!shouldRunNow(now)) return;
-    lastRunDay = now.toISOString().slice(0, 10);
+    lastRunDay = todayIso(now);
     try {
       const r = await runControlesDailyTask(db, now);
       logger.info(

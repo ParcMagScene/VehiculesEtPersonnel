@@ -393,6 +393,17 @@ export const MaterialRequestsList = React.memo(
                       style={{ fontSize: '0.9rem', color: 'var(--theme-text-primary)' }}
                     >
                       {req.article}
+                      {Array.isArray(req.lines) && req.lines.length > 1 && (
+                        <span
+                          style={{
+                            marginLeft: 6,
+                            fontSize: '0.7rem',
+                            color: 'var(--theme-text-muted)',
+                          }}
+                        >
+                          +{req.lines.length - 1} réf.
+                        </span>
+                      )}
                     </div>
                     {req.ref_code && (
                       <div className="u-text-muted" style={{ fontSize: '0.7rem' }}>
@@ -475,6 +486,14 @@ export const MaterialRequestsList = React.memo(
                   >
                     <td className="article-cell">
                       <strong>{req.article}</strong>
+                      {Array.isArray(req.lines) && req.lines.length > 1 && (
+                        <span
+                          className="ref-small"
+                          title={req.lines.map((l) => l.article).join(', ')}
+                        >
+                          +{req.lines.length - 1} autre{req.lines.length - 1 > 1 ? 's' : ''} réf.
+                        </span>
+                      )}
                       {req.ref_code && <span className="ref-small">Réf: {req.ref_code}</span>}
                       {req.affaire_id && (
                         <span className="affaire-small">Aff: {req.affaire_id}</span>

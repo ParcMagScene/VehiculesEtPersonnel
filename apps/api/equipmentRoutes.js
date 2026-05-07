@@ -19,13 +19,19 @@ import PDFDocument from 'pdfkit';
 import { fileURLToPath } from 'url';
 
 import { normalizeBrand } from './brandHelpers.js';
+import {
+  cacheMiddleware,
+  equipmentListCache,
+  equipmentTreeCache,
+  invalidateOnSuccess,
+} from './cache.js';
 import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
 import logger from './logger.js';
 import { equipmentSchema } from './schemas/crud.js';
-import { safeContentDispositionName } from './utils/safeFilename.js';
 import { equipmentImportSchema, validate } from './schemas/imports.js';
 import { getNextUid } from './services/uidCounter.js';
+import { safeContentDispositionName } from './utils/safeFilename.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -49,38 +55,44 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
   // GET /api/equipment-categories/tree — hiérarchie complète
   // [PERF Sprint 3] Construction O(n) via Map<parent_id, children[]> au lieu de
   // 2 .filter() imbriqués (O(n²) sur n catégories : ~150 actuellement, mais croissance).
-  app.get('/api/equipment-categories/tree', authenticateToken, (req, res) => {
-    try {
-      const all = db.prepare('SELECT * FROM equipment_categories ORDER BY name').all();
+  // [S2-3] Cache 5 min — invalidé sur POST/PUT/DELETE /api/equipment-categories
+  app.get(
+    '/api/equipment-categories/tree',
+    authenticateToken,
+    cacheMiddleware(equipmentTreeCache, () => 'tree'),
+    (req, res) => {
+      try {
+        const all = db.prepare('SELECT * FROM equipment_categories ORDER BY name').all();
 
-      // Index 1 passe : parent_id -> liste d'enfants
-      const byParent = new Map();
-      for (const c of all) {
-        const k = c.parent_id == null ? '__root__' : c.parent_id;
-        let bucket = byParent.get(k);
-        if (!bucket) {
-          bucket = [];
-          byParent.set(k, bucket);
+        // Index 1 passe : parent_id -> liste d'enfants
+        const byParent = new Map();
+        for (const c of all) {
+          const k = c.parent_id == null ? '__root__' : c.parent_id;
+          let bucket = byParent.get(k);
+          if (!bucket) {
+            bucket = [];
+            byParent.set(k, bucket);
+          }
+          bucket.push(c);
         }
-        bucket.push(c);
-      }
 
-      const families = all.filter((c) => c.level === 'family');
-      const tree = families.map((f) => ({
-        ...f,
-        children: (byParent.get(f.id) || [])
-          .filter((sf) => sf.level === 'subfamily')
-          .map((sf) => ({
-            ...sf,
-            children: (byParent.get(sf.id) || []).filter((cat) => cat.level === 'category'),
-          })),
-      }));
-      res.json(tree);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        const families = all.filter((c) => c.level === 'family');
+        const tree = families.map((f) => ({
+          ...f,
+          children: (byParent.get(f.id) || [])
+            .filter((sf) => sf.level === 'subfamily')
+            .map((sf) => ({
+              ...sf,
+              children: (byParent.get(sf.id) || []).filter((cat) => cat.level === 'category'),
+            })),
+        }));
+        res.json(tree);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // POST /api/equipment-categories (admin)
   app.post('/api/equipment-categories', authenticateToken, requireAdmin, (req, res) => {
@@ -101,6 +113,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
           level || 'category',
         );
 
+      equipmentTreeCache.clear();
       res.json({ id: result.lastInsertRowid, name, icon, color, description, parent_id, level });
     } catch (error) {
       logger.error(error);
@@ -115,6 +128,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
       db.prepare(
         'UPDATE equipment_categories SET name = ?, icon = ?, color = ?, description = ?, parent_id = ?, level = ? WHERE id = ?',
       ).run(name, icon, color, description, parent_id || null, level || 'category', req.params.id);
+      equipmentTreeCache.clear();
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
@@ -135,6 +149,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
           .json({ success: false, error: `${count.c} équipement(s) utilisent cette catégorie` });
       }
       db.prepare('DELETE FROM equipment_categories WHERE id = ?').run(req.params.id);
+      equipmentTreeCache.clear();
       res.json({ success: true });
     } catch (error) {
       logger.error(error);
@@ -147,10 +162,29 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
 
 export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/equipment
-  app.get('/api/equipment', authenticateToken, (req, res) => {
-    try {
-      const { status, category_id, search, location_zone, location_depot, limit } = req.query;
-      let sql = `
+  // [S2-3] Cache 60s — clé = query string ; invalidé sur mutations equipment/assignments
+  app.get(
+    '/api/equipment',
+    authenticateToken,
+    cacheMiddleware(equipmentListCache, (req) => {
+      const q = req.query || {};
+      // clé déterministe sur les filtres connus (pas req.url — ordre des params instable)
+      return [
+        q.status || '',
+        q.category_id || '',
+        q.search || '',
+        q.location_zone || '',
+        q.location_depot || '',
+        q.limit || '',
+        q.offset || '',
+        q.page || '',
+        q.pageSize || '',
+      ].join('|');
+    }),
+    (req, res) => {
+      try {
+        const { status, category_id, search, location_zone, location_depot, limit } = req.query;
+        let sql = `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color,
                u.name as created_by_name,
                b.name as brand_canonical, b.slug as brand_slug
@@ -160,88 +194,91 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         LEFT JOIN brands b ON e.brand_id = b.id
         WHERE 1=1
       `;
-      const params = [];
+        const params = [];
 
-      if (status) {
-        sql += ' AND e.status = ?';
-        params.push(status);
-      }
-      if (category_id) {
-        sql += ' AND e.category_id = ?';
-        params.push(category_id);
-      }
-      if (location_zone) {
-        sql += ' AND e.location_zone = ?';
-        params.push(location_zone);
-      }
-      if (location_depot) {
-        sql += ' AND e.location_depot = ?';
-        params.push(location_depot);
-      }
-      if (search) {
-        sql +=
-          ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ? OR e.location LIKE ? OR e.location_zone LIKE ? OR e.numero_mag LIKE ?)';
-        const like = `%${search}%`;
-        params.push(like, like, like, like, like, like);
-      }
+        if (status) {
+          sql += ' AND e.status = ?';
+          params.push(status);
+        }
+        if (category_id) {
+          sql += ' AND e.category_id = ?';
+          params.push(category_id);
+        }
+        if (location_zone) {
+          sql += ' AND e.location_zone = ?';
+          params.push(location_zone);
+        }
+        if (location_depot) {
+          sql += ' AND e.location_depot = ?';
+          params.push(location_depot);
+        }
+        if (search) {
+          sql +=
+            ' AND (e.name LIKE ? OR e.reference LIKE ? OR e.serial_number LIKE ? OR e.location LIKE ? OR e.location_zone LIKE ? OR e.numero_mag LIKE ?)';
+          const like = `%${search}%`;
+          params.push(like, like, like, like, like, like);
+        }
 
-      sql += ' ORDER BY e.name';
+        sql += ' ORDER BY e.name';
 
-      const hasPagination =
-        req.query.limit !== undefined ||
-        req.query.offset !== undefined ||
-        req.query.page !== undefined ||
-        req.query.pageSize !== undefined;
+        const hasPagination =
+          req.query.limit !== undefined ||
+          req.query.offset !== undefined ||
+          req.query.page !== undefined ||
+          req.query.pageSize !== undefined;
 
-      if (hasPagination) {
-        const parsePositiveInt = (value, fallback) => {
-          const parsed = Number.parseInt(value, 10);
-          return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-        };
-        const parseNonNegativeInt = (value, fallback) => {
-          const parsed = Number.parseInt(value, 10);
-          return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-        };
+        if (hasPagination) {
+          const parsePositiveInt = (value, fallback) => {
+            const parsed = Number.parseInt(value, 10);
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+          };
+          const parseNonNegativeInt = (value, fallback) => {
+            const parsed = Number.parseInt(value, 10);
+            return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+          };
 
-        const pageSize = Math.min(parsePositiveInt(req.query.pageSize ?? limit, 200), 5000);
-        const page = parsePositiveInt(req.query.page, 1);
-        const hasOffset = req.query.offset !== undefined;
-        const offset = hasOffset ? parseNonNegativeInt(req.query.offset, 0) : (page - 1) * pageSize;
+          const pageSize = Math.min(parsePositiveInt(req.query.pageSize ?? limit, 200), 5000);
+          const page = parsePositiveInt(req.query.page, 1);
+          const hasOffset = req.query.offset !== undefined;
+          const offset = hasOffset
+            ? parseNonNegativeInt(req.query.offset, 0)
+            : (page - 1) * pageSize;
 
-        sql += ' LIMIT ? OFFSET ?';
-        params.push(pageSize, offset);
-      }
+          sql += ' LIMIT ? OFFSET ?';
+          params.push(pageSize, offset);
+        }
 
-      const equipment = db.prepare(sql).all(...params);
+        const equipment = db.prepare(sql).all(...params);
 
-      // Enrichir avec le dernier assignment actif — requête unique au lieu de N+1
-      const activeAssignments = db
-        .prepare(
-          `
+        // Enrichir avec le dernier assignment actif — requête unique au lieu de N+1
+        const activeAssignments = db
+          .prepare(
+            `
         SELECT ea.*, p.first_name, p.last_name
         FROM equipment_assignments ea
         LEFT JOIN persons p ON ea.assigned_to = p.id
         WHERE ea.status = 'active'
         ORDER BY ea.start_date DESC
       `,
-        )
-        .all();
+          )
+          .all();
 
-      const assignMap = {};
-      for (const a of activeAssignments) {
-        if (!assignMap[a.equipment_id]) assignMap[a.equipment_id] = a;
+        const assignMap = {};
+        for (const a of activeAssignments) {
+          if (!assignMap[a.equipment_id]) assignMap[a.equipment_id] = a;
+        }
+
+        for (const eq of equipment) {
+          eq.currentAssignment = assignMap[eq.id] || null;
+        }
+
+        res.json(equipment);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-
-      for (const eq of equipment) {
-        eq.currentAssignment = assignMap[eq.id] || null;
-      }
-
-      res.json(equipment);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // GET /api/equipment/:id
   app.get('/api/equipment/:id', authenticateToken, (req, res) => {
@@ -297,46 +334,136 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // POST /api/equipment
-  app.post('/api/equipment', authenticateToken, validate(equipmentSchema), (req, res) => {
-    try {
-      const {
-        name,
-        reference,
-        serial_number,
-        category_id,
-        status,
-        location,
-        location_depot,
-        location_zone,
-        location_code,
-        location_floor,
-        purchase_date,
-        purchase_price,
-        warranty_end,
-        notes,
-        photo,
-        brand,
-        stock_quantity,
-        numero_mag,
-      } = req.body;
-      if (!name) return res.status(400).json({ success: false, error: 'Nom requis' });
-
-      // Normaliser la marque → brand_id
-      const resolved = normalizeBrand(brand);
-
-      const result = db
-        .prepare(
-          `
-        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, brand_id, stock_quantity, numero_mag, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-        )
-        .run(
+  app.post(
+    '/api/equipment',
+    authenticateToken,
+    validate(equipmentSchema),
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const {
           name,
           reference,
           serial_number,
           category_id,
-          status || 'available',
+          status,
+          location,
+          location_depot,
+          location_zone,
+          location_code,
+          location_floor,
+          purchase_date,
+          purchase_price,
+          warranty_end,
+          notes,
+          photo,
+          brand,
+          stock_quantity,
+          numero_mag,
+        } = req.body;
+        if (!name) return res.status(400).json({ success: false, error: 'Nom requis' });
+
+        // Normaliser la marque → brand_id
+        const resolved = normalizeBrand(brand);
+
+        const result = db
+          .prepare(
+            `
+        INSERT INTO equipment (name, reference, serial_number, category_id, status, location, location_depot, location_zone, location_code, location_floor, purchase_date, purchase_price, warranty_end, notes, photo, brand, brand_id, stock_quantity, numero_mag, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+          )
+          .run(
+            name,
+            reference,
+            serial_number,
+            category_id,
+            status || 'available',
+            location,
+            location_depot || null,
+            location_zone || null,
+            location_code || null,
+            location_floor || null,
+            purchase_date,
+            purchase_price,
+            warranty_end,
+            notes,
+            photo,
+            resolved.brand,
+            resolved.brand_id,
+            stock_quantity || 1,
+            numero_mag || null,
+            req.user.id,
+          );
+
+        // Générer l'UID unique (ou synchroniser avec le serial si c'est un EMAG)
+        const emagMatch = serial_number && serial_number.match(/EMAG-\d{5}/i);
+        const uid = emagMatch ? emagMatch[0].toUpperCase() : getNextUid(db);
+        db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, result.lastInsertRowid);
+
+        addToHistory(
+          'equipment',
+          result.lastInsertRowid,
+          'create',
+          { name, reference, serial_number },
+          req.user.id,
+          req.user.name,
+        );
+
+        const created = db
+          .prepare('SELECT * FROM equipment WHERE id = ?')
+          .get(result.lastInsertRowid);
+        res.json(created);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
+
+  // PUT /api/equipment/:id
+  app.put(
+    '/api/equipment/:id',
+    authenticateToken,
+    validate(equipmentSchema),
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const {
+          name,
+          reference,
+          serial_number,
+          category_id,
+          status,
+          location,
+          location_depot,
+          location_zone,
+          location_code,
+          location_floor,
+          purchase_date,
+          purchase_price,
+          warranty_end,
+          notes,
+          photo,
+          brand,
+          stock_quantity,
+          numero_mag,
+        } = req.body;
+
+        // Normaliser la marque → brand_id
+        const resolved = normalizeBrand(brand);
+
+        db.prepare(
+          `
+        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, brand_id = ?, stock_quantity = ?, numero_mag = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `,
+        ).run(
+          name,
+          reference,
+          serial_number,
+          category_id,
+          status,
           location,
           location_depot || null,
           location_zone || null,
@@ -349,206 +476,278 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           photo,
           resolved.brand,
           resolved.brand_id,
-          stock_quantity || 1,
+          stock_quantity,
           numero_mag || null,
-          req.user.id,
+          req.params.id,
         );
 
-      // Générer l'UID unique (ou synchroniser avec le serial si c'est un EMAG)
-      const emagMatch = serial_number && serial_number.match(/EMAG-\d{5}/i);
-      const uid = emagMatch ? emagMatch[0].toUpperCase() : getNextUid(db);
-      db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, result.lastInsertRowid);
-
-      addToHistory(
-        'equipment',
-        result.lastInsertRowid,
-        'create',
-        { name, reference, serial_number },
-        req.user.id,
-        req.user.name,
-      );
-
-      const created = db
-        .prepare('SELECT * FROM equipment WHERE id = ?')
-        .get(result.lastInsertRowid);
-      res.json(created);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
-
-  // PUT /api/equipment/:id
-  app.put('/api/equipment/:id', authenticateToken, validate(equipmentSchema), (req, res) => {
-    try {
-      const {
-        name,
-        reference,
-        serial_number,
-        category_id,
-        status,
-        location,
-        location_depot,
-        location_zone,
-        location_code,
-        location_floor,
-        purchase_date,
-        purchase_price,
-        warranty_end,
-        notes,
-        photo,
-        brand,
-        stock_quantity,
-        numero_mag,
-      } = req.body;
-
-      // Normaliser la marque → brand_id
-      const resolved = normalizeBrand(brand);
-
-      db.prepare(
-        `
-        UPDATE equipment SET name = ?, reference = ?, serial_number = ?, category_id = ?, status = ?, location = ?, location_depot = ?, location_zone = ?, location_code = ?, location_floor = ?, purchase_date = ?, purchase_price = ?, warranty_end = ?, notes = ?, photo = ?, brand = ?, brand_id = ?, stock_quantity = ?, numero_mag = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `,
-      ).run(
-        name,
-        reference,
-        serial_number,
-        category_id,
-        status,
-        location,
-        location_depot || null,
-        location_zone || null,
-        location_code || null,
-        location_floor || null,
-        purchase_date,
-        purchase_price,
-        warranty_end,
-        notes,
-        photo,
-        resolved.brand,
-        resolved.brand_id,
-        stock_quantity,
-        numero_mag || null,
-        req.params.id,
-      );
-
-      // Si le serial contient un UID EMAG, synchroniser le champ uid
-      if (serial_number) {
-        const emagMatch = serial_number.match(/EMAG-\d{5}/i);
-        if (emagMatch) {
-          db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
-            emagMatch[0].toUpperCase(),
-            req.params.id,
-          );
+        // Si le serial contient un UID EMAG, synchroniser le champ uid
+        if (serial_number) {
+          const emagMatch = serial_number.match(/EMAG-\d{5}/i);
+          if (emagMatch) {
+            db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
+              emagMatch[0].toUpperCase(),
+              req.params.id,
+            );
+          }
         }
-      }
-      // S'assurer que le uid n'est jamais vide
-      const currentEquip = db.prepare('SELECT uid FROM equipment WHERE id = ?').get(req.params.id);
-      if (!currentEquip?.uid) {
-        const autoUid = getNextUid(db);
-        db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(autoUid, req.params.id);
-      }
+        // S'assurer que le uid n'est jamais vide
+        const currentEquip = db
+          .prepare('SELECT uid FROM equipment WHERE id = ?')
+          .get(req.params.id);
+        if (!currentEquip?.uid) {
+          const autoUid = getNextUid(db);
+          db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(autoUid, req.params.id);
+        }
 
-      // Propager la photo aux équipements ayant la même référence
-      if (photo !== undefined && reference) {
-        db.prepare(
-          'UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
-        ).run(photo, reference, req.params.id);
+        // Propager la photo aux équipements ayant la même référence
+        if (photo !== undefined && reference) {
+          db.prepare(
+            'UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
+          ).run(photo, reference, req.params.id);
+        }
+
+        // Propager la marque aux équipements ayant la même référence
+        if (resolved.brand && reference) {
+          db.prepare(
+            'UPDATE equipment SET brand = ?, brand_id = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
+          ).run(resolved.brand, resolved.brand_id ?? null, reference, req.params.id);
+        }
+
+        addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
+
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-
-      // Propager la marque aux équipements ayant la même référence
-      if (resolved.brand && reference) {
-        db.prepare(
-          'UPDATE equipment SET brand = ?, brand_id = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
-        ).run(resolved.brand, resolved.brand_id ?? null, reference, req.params.id);
-      }
-
-      addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
-
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // PATCH /api/equipment/:id/photo — Mettre à jour uniquement la photo
-  app.patch('/api/equipment/:id/photo', authenticateToken, (req, res) => {
-    try {
-      const { photo } = req.body;
-      const eq = db.prepare('SELECT id, reference FROM equipment WHERE id = ?').get(req.params.id);
-      if (!eq) return res.status(404).json({ success: false, error: 'Équipement introuvable' });
+  app.patch(
+    '/api/equipment/:id/photo',
+    authenticateToken,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const { photo } = req.body;
+        const eq = db
+          .prepare('SELECT id, reference FROM equipment WHERE id = ?')
+          .get(req.params.id);
+        if (!eq) return res.status(404).json({ success: false, error: 'Équipement introuvable' });
 
-      db.prepare('UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
-        photo || null,
-        req.params.id,
-      );
-
-      // Propager aux équipements de même référence
-      if (photo && eq.reference) {
         db.prepare(
-          'UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
-        ).run(photo, eq.reference, req.params.id);
-      }
+          'UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ).run(photo || null, req.params.id);
 
-      addToHistory('equipment', req.params.id, 'update', { photo }, req.user.id, req.user.name);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        // Propager aux équipements de même référence
+        if (photo && eq.reference) {
+          db.prepare(
+            'UPDATE equipment SET photo = ?, updated_at = CURRENT_TIMESTAMP WHERE reference = ? AND id != ?',
+          ).run(photo, eq.reference, req.params.id);
+        }
+
+        addToHistory('equipment', req.params.id, 'update', { photo }, req.user.id, req.user.name);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // DELETE /api/equipment/:id (admin)
-  app.delete('/api/equipment/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      // Supprimer les assignments et tickets associés
-      db.prepare('DELETE FROM equipment_assignments WHERE equipment_id = ?').run(req.params.id);
-      db.prepare('DELETE FROM sav_tickets WHERE equipment_id = ?').run(req.params.id);
-      db.prepare('DELETE FROM equipment WHERE id = ?').run(req.params.id);
+  app.delete(
+    '/api/equipment/:id',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        // Supprimer les assignments et tickets associés
+        db.prepare('DELETE FROM equipment_assignments WHERE equipment_id = ?').run(req.params.id);
+        db.prepare('DELETE FROM sav_tickets WHERE equipment_id = ?').run(req.params.id);
+        db.prepare('DELETE FROM equipment WHERE id = ?').run(req.params.id);
 
-      addToHistory('equipment', req.params.id, 'delete', {}, req.user.id, req.user.name);
+        addToHistory('equipment', req.params.id, 'delete', {}, req.user.id, req.user.name);
 
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ═══ POST /api/equipment/:id/serialize — Sérialisation : attribuer UID (qty=1) ou scinder qty > 1 en entités individuelles UID ═══
-  app.post('/api/equipment/:id/serialize', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const original = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
-      if (!original)
-        return res.status(404).json({ success: false, error: 'Équipement introuvable' });
+  app.post(
+    '/api/equipment/:id/serialize',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const original = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
+        if (!original)
+          return res.status(404).json({ success: false, error: 'Équipement introuvable' });
 
-      const qty = original.stock_quantity || 1;
+        const qty = original.stock_quantity || 1;
 
-      if (original.uid && qty <= 1)
-        return res.status(400).json({
-          success: false,
-          error: 'Cet équipement possède déjà un UID et sa quantité est de 1',
-        });
+        if (original.uid && qty <= 1)
+          return res.status(400).json({
+            success: false,
+            error: 'Cet équipement possède déjà un UID et sa quantité est de 1',
+          });
 
-      // Cas qty = 1 : attribution simple d'un UID sans duplication
-      if (qty <= 1) {
-        const uid = getNextUid(db);
-        db.prepare(
-          'UPDATE equipment SET uid = ?, stock_quantity = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        ).run(uid, original.id);
+        // Cas qty = 1 : attribution simple d'un UID sans duplication
+        if (qty <= 1) {
+          const uid = getNextUid(db);
+          db.prepare(
+            'UPDATE equipment SET uid = ?, stock_quantity = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          ).run(uid, original.id);
 
-        const updated = db
-          .prepare(
-            `
+          const updated = db
+            .prepare(
+              `
           SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
           FROM equipment e
           LEFT JOIN equipment_categories ec ON e.category_id = ec.id
           WHERE e.id = ?
         `,
+            )
+            .get(original.id);
+
+          addToHistory(
+            'equipment',
+            original.id,
+            'serialize',
+            {
+              originalName: original.name,
+              originalQty: 1,
+              createdItems: [uid],
+            },
+            req.user.id,
+            req.user.name,
+          );
+
+          return res.json({
+            success: true,
+            message: `${original.name} sérialisé — UID ${uid}`,
+            created: [{ id: original.id, uid, name: original.name }],
+            items: [updated],
+            deletedId: null,
+          });
+        }
+
+        // Cas qty > 1 : scinder en N entités individuelles
+        // Si la ligne porte déjà un numéro de série, le client DOIT fournir N numéros
+        // de série distincts (un par exemplaire) afin d'éviter la création de doublons
+        // synthétiques type "<SN>-001" qui ne correspondent à aucun matériel réel.
+        const rawSerials = Array.isArray(req.body?.serials) ? req.body.serials : null;
+        const providedSerials = rawSerials
+          ? rawSerials.map((s) => (s == null ? '' : String(s).trim())).filter((s) => s.length > 0)
+          : null;
+
+        if (original.serial_number) {
+          if (
+            !providedSerials ||
+            providedSerials.length !== qty ||
+            new Set(providedSerials).size !== qty
+          ) {
+            return res.status(400).json({
+              success: false,
+              error: `Cette ligne a déjà un numéro de série (${original.serial_number}). Le split en ${qty} exemplaires exige ${qty} numéros de série distincts et non vides (champ "serials").`,
+            });
+          }
+        } else if (providedSerials) {
+          // Pas de SN sur la ligne d'origine mais le client en fournit : valider quand même
+          if (providedSerials.length !== qty || new Set(providedSerials).size !== qty) {
+            return res.status(400).json({
+              success: false,
+              error: `Le tableau "serials" doit contenir ${qty} numéros de série distincts et non vides.`,
+            });
+          }
+        }
+
+        // Vérifier qu'aucun SN fourni n'entre en collision avec un équipement existant
+        // (autre que la ligne d'origine, qui sera supprimée).
+        if (providedSerials && providedSerials.length > 0) {
+          const placeholders = providedSerials.map(() => '?').join(',');
+          const collisions = db
+            .prepare(
+              `SELECT id, serial_number FROM equipment
+             WHERE serial_number IN (${placeholders}) AND id != ?`,
+            )
+            .all(...providedSerials, original.id);
+          if (collisions.length > 0) {
+            return res.status(409).json({
+              success: false,
+              error: `Numéro(s) de série déjà utilisé(s) en base : ${collisions.map((c) => c.serial_number).join(', ')}`,
+            });
+          }
+        }
+
+        const insertStmt = db.prepare(`
+        INSERT INTO equipment (name, reference, serial_number, category_id, brand, status, location, purchase_date, purchase_price, warranty_end, notes, photo, stock_quantity, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+      `);
+        const updateUidStmt = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
+
+        const created = [];
+
+        const run = db.transaction(() => {
+          for (let i = 1; i <= qty; i++) {
+            const name = original.name;
+            const serial = providedSerials ? providedSerials[i - 1] : null;
+
+            const result = insertStmt.run(
+              name,
+              original.reference,
+              serial,
+              original.category_id,
+              original.brand,
+              original.status || 'available',
+              original.location,
+              original.purchase_date,
+              original.purchase_price ? (original.purchase_price / qty).toFixed(2) : null,
+              original.warranty_end,
+              original.notes,
+              original.photo,
+              req.user.id,
+            );
+
+            const newId = result.lastInsertRowid;
+            const uid = getNextUid(db);
+            updateUidStmt.run(uid, newId);
+
+            created.push({ id: newId, uid, name });
+          }
+
+          // Réassigner les tickets SAV au premier exemplaire créé, puis supprimer l'original
+          const firstNewId = created[0]?.id;
+          if (firstNewId) {
+            db.prepare('UPDATE sav_tickets SET equipment_id = ? WHERE equipment_id = ?').run(
+              firstNewId,
+              original.id,
+            );
+          }
+          db.prepare('DELETE FROM equipment_assignments WHERE equipment_id = ?').run(original.id);
+          db.prepare('DELETE FROM equipment WHERE id = ?').run(original.id);
+        });
+
+        run();
+
+        // Récupérer les items complets pour le frontend
+        const createdIds = created.map((c) => c.id);
+        const fullItems = db
+          .prepare(
+            `SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
+         FROM equipment e
+         LEFT JOIN equipment_categories ec ON e.category_id = ec.id
+         WHERE e.id IN (${createdIds.map(() => '?').join(',')})`,
           )
-          .get(original.id);
+          .all(...createdIds);
 
         addToHistory(
           'equipment',
@@ -556,156 +755,26 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
           'serialize',
           {
             originalName: original.name,
-            originalQty: 1,
-            createdItems: [uid],
+            originalQty: qty,
+            createdItems: created.map((c) => c.uid),
           },
           req.user.id,
           req.user.name,
         );
 
-        return res.json({
+        res.json({
           success: true,
-          message: `${original.name} sérialisé — UID ${uid}`,
-          created: [{ id: original.id, uid, name: original.name }],
-          items: [updated],
-          deletedId: null,
+          message: `${original.name} sérialisé en ${qty} entités individuelles`,
+          created,
+          items: fullItems,
+          deletedId: original.id,
         });
+      } catch (error) {
+        logger.error('Erreur sérialisation:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur lors de la sérialisation' });
       }
-
-      // Cas qty > 1 : scinder en N entités individuelles
-      // Si la ligne porte déjà un numéro de série, le client DOIT fournir N numéros
-      // de série distincts (un par exemplaire) afin d'éviter la création de doublons
-      // synthétiques type "<SN>-001" qui ne correspondent à aucun matériel réel.
-      const rawSerials = Array.isArray(req.body?.serials) ? req.body.serials : null;
-      const providedSerials = rawSerials
-        ? rawSerials.map((s) => (s == null ? '' : String(s).trim())).filter((s) => s.length > 0)
-        : null;
-
-      if (original.serial_number) {
-        if (
-          !providedSerials ||
-          providedSerials.length !== qty ||
-          new Set(providedSerials).size !== qty
-        ) {
-          return res.status(400).json({
-            success: false,
-            error: `Cette ligne a déjà un numéro de série (${original.serial_number}). Le split en ${qty} exemplaires exige ${qty} numéros de série distincts et non vides (champ "serials").`,
-          });
-        }
-      } else if (providedSerials) {
-        // Pas de SN sur la ligne d'origine mais le client en fournit : valider quand même
-        if (providedSerials.length !== qty || new Set(providedSerials).size !== qty) {
-          return res.status(400).json({
-            success: false,
-            error: `Le tableau "serials" doit contenir ${qty} numéros de série distincts et non vides.`,
-          });
-        }
-      }
-
-      // Vérifier qu'aucun SN fourni n'entre en collision avec un équipement existant
-      // (autre que la ligne d'origine, qui sera supprimée).
-      if (providedSerials && providedSerials.length > 0) {
-        const placeholders = providedSerials.map(() => '?').join(',');
-        const collisions = db
-          .prepare(
-            `SELECT id, serial_number FROM equipment
-             WHERE serial_number IN (${placeholders}) AND id != ?`,
-          )
-          .all(...providedSerials, original.id);
-        if (collisions.length > 0) {
-          return res.status(409).json({
-            success: false,
-            error: `Numéro(s) de série déjà utilisé(s) en base : ${collisions.map((c) => c.serial_number).join(', ')}`,
-          });
-        }
-      }
-
-      const insertStmt = db.prepare(`
-        INSERT INTO equipment (name, reference, serial_number, category_id, brand, status, location, purchase_date, purchase_price, warranty_end, notes, photo, stock_quantity, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-      `);
-      const updateUidStmt = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
-
-      const created = [];
-
-      const run = db.transaction(() => {
-        for (let i = 1; i <= qty; i++) {
-          const name = original.name;
-          const serial = providedSerials ? providedSerials[i - 1] : null;
-
-          const result = insertStmt.run(
-            name,
-            original.reference,
-            serial,
-            original.category_id,
-            original.brand,
-            original.status || 'available',
-            original.location,
-            original.purchase_date,
-            original.purchase_price ? (original.purchase_price / qty).toFixed(2) : null,
-            original.warranty_end,
-            original.notes,
-            original.photo,
-            req.user.id,
-          );
-
-          const newId = result.lastInsertRowid;
-          const uid = getNextUid(db);
-          updateUidStmt.run(uid, newId);
-
-          created.push({ id: newId, uid, name });
-        }
-
-        // Réassigner les tickets SAV au premier exemplaire créé, puis supprimer l'original
-        const firstNewId = created[0]?.id;
-        if (firstNewId) {
-          db.prepare('UPDATE sav_tickets SET equipment_id = ? WHERE equipment_id = ?').run(
-            firstNewId,
-            original.id,
-          );
-        }
-        db.prepare('DELETE FROM equipment_assignments WHERE equipment_id = ?').run(original.id);
-        db.prepare('DELETE FROM equipment WHERE id = ?').run(original.id);
-      });
-
-      run();
-
-      // Récupérer les items complets pour le frontend
-      const createdIds = created.map((c) => c.id);
-      const fullItems = db
-        .prepare(
-          `SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color
-         FROM equipment e
-         LEFT JOIN equipment_categories ec ON e.category_id = ec.id
-         WHERE e.id IN (${createdIds.map(() => '?').join(',')})`,
-        )
-        .all(...createdIds);
-
-      addToHistory(
-        'equipment',
-        original.id,
-        'serialize',
-        {
-          originalName: original.name,
-          originalQty: qty,
-          createdItems: created.map((c) => c.uid),
-        },
-        req.user.id,
-        req.user.name,
-      );
-
-      res.json({
-        success: true,
-        message: `${original.name} sérialisé en ${qty} entités individuelles`,
-        created,
-        items: fullItems,
-        deletedId: original.id,
-      });
-    } catch (error) {
-      logger.error('Erreur sérialisation:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur lors de la sérialisation' });
-    }
-  });
+    },
+  );
 
   // POST /api/equipment/import-csv — Import CSV Locmat
   app.post(
@@ -1140,84 +1209,94 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
   });
 
   // POST /api/equipment-assignments
-  app.post('/api/equipment-assignments', authenticateToken, (req, res) => {
-    try {
-      const { equipment_id, assigned_to, start_date, end_date, affaire_id, notes } = req.body;
-      if (!equipment_id || !start_date)
-        return res
-          .status(400)
-          .json({ success: false, error: 'Équipement et date de début requis' });
+  app.post(
+    '/api/equipment-assignments',
+    authenticateToken,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const { equipment_id, assigned_to, start_date, end_date, affaire_id, notes } = req.body;
+        if (!equipment_id || !start_date)
+          return res
+            .status(400)
+            .json({ success: false, error: 'Équipement et date de début requis' });
 
-      // [AUDIT FIX MED-W4] Empêcher la double affectation active
-      const existing = db
-        .prepare(
-          "SELECT id, assigned_to, start_date FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'",
-        )
-        .get(equipment_id);
-      if (existing) {
-        return res.status(409).json({
-          error: 'Cet équipement est déjà affecté',
-          existing: {
-            id: existing.id,
-            assigned_to: existing.assigned_to,
-            start_date: existing.start_date,
-          },
-        });
-      }
+        // [AUDIT FIX MED-W4] Empêcher la double affectation active
+        const existing = db
+          .prepare(
+            "SELECT id, assigned_to, start_date FROM equipment_assignments WHERE equipment_id = ? AND status = 'active'",
+          )
+          .get(equipment_id);
+        if (existing) {
+          return res.status(409).json({
+            error: 'Cet équipement est déjà affecté',
+            existing: {
+              id: existing.id,
+              assigned_to: existing.assigned_to,
+              start_date: existing.start_date,
+            },
+          });
+        }
 
-      const result = db
-        .prepare(
-          `
+        const result = db
+          .prepare(
+            `
         INSERT INTO equipment_assignments (equipment_id, assigned_to, assigned_by, start_date, end_date, affaire_id, notes, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
       `,
-        )
-        .run(equipment_id, assigned_to, req.user.id, start_date, end_date, affaire_id, notes);
+          )
+          .run(equipment_id, assigned_to, req.user.id, start_date, end_date, affaire_id, notes);
 
-      // Mettre à jour le statut de l'équipement
-      db.prepare(
-        "UPDATE equipment SET status = 'in_use', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      ).run(equipment_id);
+        // Mettre à jour le statut de l'équipement
+        db.prepare(
+          "UPDATE equipment SET status = 'in_use', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        ).run(equipment_id);
 
-      res.json({ id: result.lastInsertRowid });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json({ id: result.lastInsertRowid });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // PUT /api/equipment-assignments/:id/return
-  app.put('/api/equipment-assignments/:id/return', authenticateToken, (req, res) => {
-    try {
-      const assignment = db
-        .prepare('SELECT * FROM equipment_assignments WHERE id = ?')
-        .get(req.params.id);
-      if (!assignment)
-        return res.status(404).json({ success: false, error: 'Assignation non trouvée' });
+  app.put(
+    '/api/equipment-assignments/:id/return',
+    authenticateToken,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const assignment = db
+          .prepare('SELECT * FROM equipment_assignments WHERE id = ?')
+          .get(req.params.id);
+        if (!assignment)
+          return res.status(404).json({ success: false, error: 'Assignation non trouvée' });
 
-      const returnDate = new Date().toISOString().slice(0, 10);
-      db.prepare(
-        "UPDATE equipment_assignments SET status = 'returned', end_date = ? WHERE id = ?",
-      ).run(returnDate, req.params.id);
-
-      // Vérifier s'il y a d'autres assignments actifs
-      const otherActive = db
-        .prepare(
-          "SELECT COUNT(*) as c FROM equipment_assignments WHERE equipment_id = ? AND status = 'active' AND id != ?",
-        )
-        .get(assignment.equipment_id, req.params.id);
-      if (otherActive.c === 0) {
+        const returnDate = new Date().toISOString().slice(0, 10);
         db.prepare(
-          "UPDATE equipment SET status = 'available', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        ).run(assignment.equipment_id);
-      }
+          "UPDATE equipment_assignments SET status = 'returned', end_date = ? WHERE id = ?",
+        ).run(returnDate, req.params.id);
 
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        // Vérifier s'il y a d'autres assignments actifs
+        const otherActive = db
+          .prepare(
+            "SELECT COUNT(*) as c FROM equipment_assignments WHERE equipment_id = ? AND status = 'active' AND id != ?",
+          )
+          .get(assignment.equipment_id, req.params.id);
+        if (otherActive.c === 0) {
+          db.prepare(
+            "UPDATE equipment SET status = 'available', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+          ).run(assignment.equipment_id);
+        }
+
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 }
 
 // ============ TICKETS SAV ============

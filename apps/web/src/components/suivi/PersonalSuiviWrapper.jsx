@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import { AlertCircle, LogOut } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { Button, Dialog } from '@/design-system';
 

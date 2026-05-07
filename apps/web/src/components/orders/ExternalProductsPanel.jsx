@@ -13,7 +13,6 @@ import {
   Package,
   Plus,
   RefreshCw,
-  Search,
   ShoppingCart,
   Star,
   Trash2,
@@ -21,11 +20,12 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, InlineAlert, ModalLayout, SearchBar, Select, Spinner, Tag } from '@/design-system';
+import { Button, InlineAlert, ModalLayout, SearchBar, Spinner, Tag } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import logger from '../../utils/logger';
 
 const fmt = (v) =>
   v != null
@@ -441,7 +441,9 @@ export function ExternalProductsPanel({ currentUser }) {
     try {
       const data = await api.compareExternalProduct(product.id);
       setCompareData(data);
-    } catch (_) {}
+    } catch (err) {
+      logger.warn('compareExternalProduct echec:', err?.message || err);
+    }
     setCompareLoading(false);
   };
 

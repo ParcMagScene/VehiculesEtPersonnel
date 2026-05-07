@@ -16,6 +16,7 @@ import multer from 'multer';
 import PDFDocument from 'pdfkit';
 
 import db from './database.js';
+import { addToHistory } from './db-helpers.js';
 import logger from './logger.js';
 import {
   applyConfirm,
@@ -182,6 +183,31 @@ export function setupSavRoutes(app, authenticateToken, requireAdmin) {
           filename,
           userId: req.user ? req.user.id : null,
         });
+
+        // ─── Audit trail global : trace de l'utilisateur qui a confirmé l'import ───
+        try {
+          addToHistory(
+            'sav_import',
+            String(importId),
+            'confirmed',
+            {
+              filename,
+              decisions: {
+                acceptNew: !!decisions.acceptNew,
+                acceptUpdates: !!decisions.acceptUpdates,
+                acceptClosures: !!decisions.acceptClosures,
+                collisionResolutionsCount: Object.keys(decisions.collisionResolutions || {}).length,
+              },
+              counts,
+              rowsTotal: preview?.summary?.total ?? null,
+            },
+            req.user ? req.user.id : null,
+            req.user ? req.user.email || req.user.name || null : null,
+          );
+        } catch (auditErr) {
+          // L'échec d'audit ne doit jamais bloquer la confirmation déjà commitée
+          logger.warn('SAV import audit trail skipped:', auditErr?.message);
+        }
 
         res.json({
           success: true,

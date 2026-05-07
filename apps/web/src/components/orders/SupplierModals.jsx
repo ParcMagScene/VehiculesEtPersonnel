@@ -13,7 +13,7 @@ import {
   Receipt,
   ShoppingCart,
 } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Button,
@@ -33,19 +33,12 @@ import {
   Tooltip,
 } from '@/design-system';
 
-import { STATUS as _STATUS } from '../../constants';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
 import AddressAutocomplete from '../AddressAutocomplete';
 import PhoneInput from '../PhoneInput';
-import {
-  DESTINATIONS,
-  DOC_TYPES,
-  ORDER_STATUS,
-  QUOTE_STATUS as _QUOTE_STATUS,
-  REQUEST_PRIORITY,
-} from './ordersConstants';
+import { DESTINATIONS, DOC_TYPES, ORDER_STATUS, REQUEST_PRIORITY } from './ordersConstants';
 
 // ═══ Modal fournisseur (création / édition) ═══
 export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
@@ -193,9 +186,164 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
   );
 });
 
+// ═══ Modal approbation demande : choix commande PAR LIGNE ═══
+export const ApproveRequestModal = React.memo(({ request, eligibleData, onConfirm, onClose }) => {
+  const sameSupplier = eligibleData?.same_supplier || [];
+  const otherSupplier = eligibleData?.other_supplier || [];
+  const requestLines =
+    Array.isArray(request?.lines) && request.lines.length > 0
+      ? request.lines
+      : [
+          {
+            id: `legacy-${request?.id}`,
+            article: request?.article,
+            ref_code: request?.ref_code,
+            quantity: request?.quantity || 1,
+            status: 'pending',
+          },
+        ];
+  const pendingLines = requestLines.filter(
+    (l) => l.status !== 'approved' && l.status !== 'rejected',
+  );
+  const defaultTarget = sameSupplier[0] ? String(sameSupplier[0].id) : 'new';
+
+  // Map line.id -> target ('new' | order_id string)
+  const [targets, setTargets] = useState(() => {
+    const m = {};
+    for (const l of pendingLines) m[l.id] = defaultTarget;
+    return m;
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const setTarget = (lineId, value) => {
+    setTargets((prev) => ({ ...prev, [lineId]: value }));
+  };
+
+  const applyToAll = (value) => {
+    setTargets(() => {
+      const m = {};
+      for (const l of pendingLines) m[l.id] = value;
+      return m;
+    });
+  };
+
+  const allAssigned = pendingLines.every((l) => targets[l.id]);
+
+  const handleConfirm = async () => {
+    if (!allAssigned) return;
+    setSubmitting(true);
+    try {
+      const assignments = pendingLines.map((l) => ({
+        line_id: typeof l.id === 'number' ? l.id : null,
+        target_order_id: targets[l.id],
+      }));
+      await onConfirm(assignments);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Options EntityCombobox (avec préfixe catégorie pour recherche).
+  const comboOptions = useMemo(() => {
+    const arr = [{ id: 'new', label: '➕ Nouvelle commande' }];
+    for (const o of sameSupplier) {
+      arr.push({
+        id: String(o.id),
+        label: `[Même fournisseur] ${o.reference} — ${o.supplier_name || '—'} (${o.items_count || 0} art.)`,
+      });
+    }
+    for (const o of otherSupplier) {
+      arr.push({
+        id: String(o.id),
+        label: `[Autre fournisseur] ${o.reference} — ${o.supplier_name || '—'} (${o.items_count || 0} art.)`,
+      });
+    }
+    return arr;
+  }, [sameSupplier, otherSupplier]);
+
+  return (
+    <Modal open={true} onClose={onClose} size="lg" className="approve-request-modal">
+      <ModalHeader icon={<CheckCircle size={20} />} onClose={onClose}>
+        Approuver et répartir la demande
+      </ModalHeader>
+      <ModalBody>
+        <div className="approve-request-summary">
+          <div>
+            <strong>Demandeur :</strong> {request?.requested_by_name || '—'}
+          </div>
+          <div>
+            <strong>Fournisseur demandé :</strong>{' '}
+            {eligibleData?.request_supplier || request?.supplier_name || '— non spécifié —'}
+          </div>
+          <div>
+            <strong>{pendingLines.length}</strong> référence{pendingLines.length > 1 ? 's' : ''} à
+            dispatcher
+          </div>
+        </div>
+
+        {pendingLines.length > 1 && (
+          <div className="approve-request-bulk">
+            <span>Tout assigner à :</span>
+            <div className="approve-request-bulk__combo">
+              <EntityCombobox
+                value=""
+                onChange={(val) => {
+                  if (val) applyToAll(val);
+                }}
+                options={comboOptions}
+                placeholder="🔍 Rechercher une commande…"
+                allowClear={false}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="approve-request-lines">
+          {pendingLines.map((line, idx) => (
+            <div key={line.id} className="approve-request-line">
+              <div className="approve-request-line__info">
+                <strong>
+                  #{idx + 1} — {line.article}
+                </strong>
+                <span className="approve-request-line__meta">
+                  Qté: {line.quantity || 1}
+                  {line.ref_code ? ` · Réf. ${line.ref_code}` : ''}
+                </span>
+              </div>
+              <div className="approve-request-line__target">
+                <EntityCombobox
+                  value={targets[line.id] || ''}
+                  onChange={(val) => setTarget(line.id, val || 'new')}
+                  options={comboOptions}
+                  placeholder="🔍 Rechercher une commande…"
+                  allowClear={false}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {comboOptions.length === 1 && (
+          <div className="approve-request-empty">
+            Aucune commande modifiable disponible. Une nouvelle commande sera créée pour chaque
+            ligne marquée « Nouvelle commande ».
+          </div>
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="ghost" onClick={onClose} disabled={submitting}>
+          Annuler
+        </Button>
+        <Button variant="primary" onClick={handleConfirm} disabled={submitting || !allAssigned}>
+          <Check size={16} /> Approuver et répartir
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+});
+
 // ═══ Modal sélection article depuis catalogues fournisseurs ═══
 export const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
-  const [articles, setArticles] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -205,6 +353,8 @@ export const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
   const [familyFilter, setFamilyFilter] = useState('');
   const [filterOptions, setFilterOptions] = useState({ suppliers: [], brands: [], families: [] });
   const [page, setPage] = useState(0);
+  // FIX CI : déclaration manquante (régression). Liste paginée des articles du catalogue.
+  const [articles, setArticles] = useState([]);
   const searchTimer = useRef(null);
   const LIMIT = 30;
 
@@ -427,35 +577,86 @@ export const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
 
 // ═══ Modal demande de matériel ═══
 export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, onClose }) => {
-  const [form, setForm] = useState({
-    article: request?.article || '',
+  const isEditing = !!request;
+  const [common, setCommon] = useState({
     supplier_id: request?.supplier_id ? String(request.supplier_id) : '',
     supplier_name: request?.supplier_name || '',
-    quantity: request?.quantity || 1,
     priority: request?.priority || 'normal',
     affaire_id: request?.affaire_id || '',
     destination: request?.destination || 'Stock',
     destination_other: request?.destination_other || '',
     notes: request?.notes || '',
-    ref_code: request?.ref_code || '',
   });
-  const isEditing = !!request;
-  const [showCatalogPicker, setShowCatalogPicker] = useState(false);
+  const [lines, setLines] = useState(() => {
+    // Préférer les lignes serveur si présentes (édition d'une demande multi-références).
+    if (Array.isArray(request?.lines) && request.lines.length > 0) {
+      return request.lines.map((l) => ({
+        article: l.article || '',
+        ref_code: l.ref_code || '',
+        quantity: l.quantity || 1,
+      }));
+    }
+    return [
+      {
+        article: request?.article || '',
+        ref_code: request?.ref_code || '',
+        quantity: request?.quantity || 1,
+      },
+    ];
+  });
+  const [pickerForLine, setPickerForLine] = useState(null); // index de la ligne active
+
+  const updateLine = (idx, patch) => {
+    setLines((prev) => prev.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
+  };
+
+  const addLine = () => {
+    setLines((prev) => [...prev, { article: '', ref_code: '', quantity: 1 }]);
+  };
+
+  const removeLine = (idx) => {
+    setLines((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
+  };
 
   const handleCatalogSelect = (item) => {
-    setForm((f) => ({
-      ...f,
+    if (pickerForLine === null) return;
+    const idx = pickerForLine;
+    updateLine(idx, {
       article: item.designation || item.name || '',
       ref_code: item.supplier_ref || item.reference || '',
-      supplier_name: item.supplier_name || item.brand || f.supplier_name,
-      supplier_id: item.supplier_id ? String(item.supplier_id) : f.supplier_id,
-    }));
-    setShowCatalogPicker(false);
+    });
+    // Si pas de fournisseur commun choisi, pré-remplir avec celui de l'article
+    setCommon((c) => {
+      if (c.supplier_id) return c;
+      if (!item.supplier_id && !item.supplier_name && !item.brand) return c;
+      return {
+        ...c,
+        supplier_id: item.supplier_id ? String(item.supplier_id) : c.supplier_id,
+        supplier_name: item.supplier_name || item.brand || c.supplier_name,
+      };
+    });
+    setPickerForLine(null);
   };
 
   const handleSupplierChange = (supplierId) => {
     const s = suppliers.find((su) => su.id === parseInt(supplierId));
-    setForm((f) => ({ ...f, supplier_id: supplierId, supplier_name: s ? s.name : '' }));
+    setCommon((c) => ({ ...c, supplier_id: supplierId, supplier_name: s ? s.name : '' }));
+  };
+
+  const validLines = lines.filter((l) => l.article.trim());
+  const canSave = validLines.length > 0;
+
+  const handleSave = () => {
+    if (!canSave) return;
+    const payload = {
+      ...common,
+      lines: validLines.map((l) => ({
+        article: l.article,
+        ref_code: l.ref_code,
+        quantity: l.quantity,
+      })),
+    };
+    onSave(payload);
   };
 
   return (
@@ -465,49 +666,10 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
       </ModalHeader>
       <ModalBody className="modal-body">
         <div className="form-grid">
-          <div className="form-field full-width">
-            <label>Article *</label>
-            <div className="article-input-group">
-              <Input
-                type="text"
-                value={form.article}
-                onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
-                placeholder="Nom de l'article"
-              />
-              <Tooltip content="Chercher dans les catalogues fournisseurs" position="bottom">
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="catalog-search-btn"
-                  onClick={() => setShowCatalogPicker(true)}
-                >
-                  <Layers size={14} /> Catalogue
-                </Button>
-              </Tooltip>
-            </div>
-          </div>
-          <div className="form-field">
-            <label>Réf. article</label>
-            <Input
-              type="text"
-              value={form.ref_code}
-              onChange={(e) => setForm((f) => ({ ...f, ref_code: e.target.value }))}
-              placeholder="Référence"
-            />
-          </div>
-          <div className="form-field">
-            <label>Quantité</label>
-            <Input
-              type="number"
-              min="1"
-              value={form.quantity}
-              onChange={(e) => setForm((f) => ({ ...f, quantity: parseInt(e.target.value) || 1 }))}
-            />
-          </div>
           <div className="form-field">
             <label>Fournisseur (optionnel)</label>
             <EntityCombobox
-              value={form.supplier_id}
+              value={common.supplier_id}
               onChange={(val) => handleSupplierChange(val)}
               options={suppliers}
               placeholder="— Non spécifié —"
@@ -516,8 +678,8 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
           <div className="form-field">
             <label>Priorité</label>
             <Select
-              value={form.priority}
-              onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
+              value={common.priority}
+              onChange={(e) => setCommon((c) => ({ ...c, priority: e.target.value }))}
             >
               {Object.entries(REQUEST_PRIORITY).map(([k, v]) => (
                 <option key={k} value={k}>
@@ -530,16 +692,16 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
             <label>Affaire (optionnel)</label>
             <Input
               type="text"
-              value={form.affaire_id}
-              onChange={(e) => setForm((f) => ({ ...f, affaire_id: e.target.value }))}
+              value={common.affaire_id}
+              onChange={(e) => setCommon((c) => ({ ...c, affaire_id: e.target.value }))}
               placeholder="ex: AF32844"
             />
           </div>
           <div className="form-field">
             <label>Destination</label>
             <Select
-              value={form.destination}
-              onChange={(e) => setForm((f) => ({ ...f, destination: e.target.value }))}
+              value={common.destination}
+              onChange={(e) => setCommon((c) => ({ ...c, destination: e.target.value }))}
             >
               {DESTINATIONS.map((d) => (
                 <option key={d} value={d}>
@@ -548,13 +710,13 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
               ))}
             </Select>
           </div>
-          {form.destination === 'Autre' && (
+          {common.destination === 'Autre' && (
             <div className="form-field">
               <label>Préciser la destination</label>
               <Input
                 type="text"
-                value={form.destination_other}
-                onChange={(e) => setForm((f) => ({ ...f, destination_other: e.target.value }))}
+                value={common.destination_other}
+                onChange={(e) => setCommon((c) => ({ ...c, destination_other: e.target.value }))}
                 placeholder="Destination..."
               />
             </div>
@@ -562,28 +724,99 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
           <div className="form-field full-width">
             <label>Notes / Commentaires</label>
             <Textarea
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              value={common.notes}
+              onChange={(e) => setCommon((c) => ({ ...c, notes: e.target.value }))}
               rows={2}
               placeholder="Informations supplémentaires..."
             />
           </div>
+        </div>
+
+        <div className="material-request-lines">
+          <div className="material-request-lines__head">
+            <strong>
+              Articles ({validLines.length}/{lines.length})
+            </strong>
+            <Button variant="secondary" size="sm" type="button" onClick={addLine}>
+              <Check size={14} /> Ajouter une référence
+            </Button>
+          </div>
+          {lines.map((line, idx) => (
+            <div key={idx} className="material-request-line">
+              <div className="material-request-line__row">
+                <div className="form-field" style={{ flex: 2 }}>
+                  <label>Article *</label>
+                  <div className="article-input-group">
+                    <Input
+                      type="text"
+                      value={line.article}
+                      onChange={(e) => updateLine(idx, { article: e.target.value })}
+                      placeholder="Nom de l'article"
+                    />
+                    <Tooltip content="Chercher dans les catalogues fournisseurs" position="bottom">
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        className="catalog-search-btn"
+                        onClick={() => setPickerForLine(idx)}
+                      >
+                        <Layers size={14} /> Catalogue
+                      </Button>
+                    </Tooltip>
+                  </div>
+                </div>
+                <div className="form-field" style={{ flex: 1 }}>
+                  <label>Réf. article</label>
+                  <Input
+                    type="text"
+                    value={line.ref_code}
+                    onChange={(e) => updateLine(idx, { ref_code: e.target.value })}
+                    placeholder="Référence"
+                  />
+                </div>
+                <div className="form-field" style={{ width: 110 }}>
+                  <label>Quantité</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={line.quantity}
+                    onChange={(e) => updateLine(idx, { quantity: parseInt(e.target.value) || 1 })}
+                  />
+                </div>
+                {lines.length > 1 && (
+                  <div className="form-field" style={{ width: 'auto', alignSelf: 'flex-end' }}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      onClick={() => removeLine(idx)}
+                      title="Retirer cette ligne"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </ModalBody>
       <ModalFooter>
         <Button variant="ghost" onClick={onClose}>
           Annuler
         </Button>
-        <Button variant="primary" onClick={() => onSave(form)} disabled={!form.article.trim()}>
-          <Check size={16} /> {isEditing ? 'Enregistrer' : 'Créer la demande'}
+        <Button variant="primary" onClick={handleSave} disabled={!canSave}>
+          <Check size={16} />{' '}
+          {isEditing
+            ? 'Enregistrer'
+            : validLines.length > 1
+              ? `Créer la demande (${validLines.length} références)`
+              : 'Créer la demande'}
         </Button>
       </ModalFooter>
 
-      {showCatalogPicker && (
-        <CatalogPickerModal
-          onSelect={handleCatalogSelect}
-          onClose={() => setShowCatalogPicker(false)}
-        />
+      {pickerForLine !== null && (
+        <CatalogPickerModal onSelect={handleCatalogSelect} onClose={() => setPickerForLine(null)} />
       )}
     </Modal>
   );

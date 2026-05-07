@@ -5,6 +5,8 @@
 // Parsing CSV côté client via PapaParse, diff calculé côté serveur (preview),
 // puis confirmation transactionnelle.
 // ═══════════════════════════════════════════════════════════════
+import './LocmatImportModal.css';
+
 import {
   AlertTriangle,
   Boxes,
@@ -24,13 +26,12 @@ import {
   Upload,
 } from 'lucide-react';
 import Papa from 'papaparse';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, EmptyState, InlineAlert, ModalLayout, Table } from '@/design-system';
 
 import { useToast } from '../../../hooks/useToast';
 import api from '../../../utils/api';
-import './LocmatImportModal.css';
 
 const TABS = [
   { key: 'newProducts', label: 'Nouvelles réfs', icon: Plus, color: 'success' },

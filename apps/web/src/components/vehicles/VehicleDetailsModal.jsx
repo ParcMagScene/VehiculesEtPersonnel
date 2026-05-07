@@ -36,6 +36,7 @@ const VehicleDetailsModal = ({
 }) => {
   const [selectedIntervention, setSelectedIntervention] = useState(null);
   const [mileageHistory, setMileageHistory] = useState([]);
+  const [periodicControls, setPeriodicControls] = useState([]);
 
   // Charger l'historique des relevés kilométriques
   useEffect(() => {
@@ -49,12 +50,27 @@ const VehicleDetailsModal = ({
               let parsed = {};
               try {
                 parsed = typeof h.changes === 'string' ? JSON.parse(h.changes) : h.changes || {};
-              } catch (e) {}
+              } catch {
+                /* JSON malformé : fallback {} (ignoré volontairement) */
+              }
               return { ...h, parsed };
             });
           setMileageHistory(kmEntries);
         })
         .catch(() => {});
+    }
+  }, [vehicle?.id]);
+
+  // Charger les contrôles périodiques (nouveau système equipment_controls)
+  useEffect(() => {
+    if (vehicle?.id && typeof api.getControlsForEntity === 'function') {
+      api
+        .getControlsForEntity('vehicle', vehicle.id)
+        .then((res) => {
+          const list = res?.data || res || [];
+          setPeriodicControls(Array.isArray(list) ? list : []);
+        })
+        .catch(() => setPeriodicControls([]));
     }
   }, [vehicle?.id]);
 
@@ -471,6 +487,68 @@ const VehicleDetailsModal = ({
             </div>
           )}
         </div>
+
+        {/* Section Contrôles périodiques (nouveau système — équipement_controls) */}
+        {periodicControls.length > 0 && (
+          <div className="deadlines-section">
+            <h3>
+              <CheckCircle size={18} /> Contrôles périodiques suivis
+            </h3>
+            <div className="deadlines-list">
+              {periodicControls.map((c) => {
+                const deadlineInfo = getDeadlineStatus(c.next_due_date);
+                const labelType = c.type_name || c.type_code || 'Contrôle';
+                const isMigrated =
+                  typeof c.notes === 'string' && c.notes.startsWith('[migrated:v1]');
+                return (
+                  <div key={c.id} className="deadline-item">
+                    <div className="deadline-header">
+                      <span className="deadline-type">
+                        {labelType}
+                        {isMigrated && (
+                          <span
+                            style={{
+                              marginLeft: 8,
+                              fontSize: '0.75em',
+                              color: '#888',
+                              fontWeight: 'normal',
+                            }}
+                            title="Importé depuis l'ancien système"
+                          >
+                            (importé)
+                          </span>
+                        )}
+                      </span>
+                      {deadlineInfo && (
+                        <span className={`deadline-badge ${deadlineInfo.className}`}>
+                          {deadlineInfo.label}
+                        </span>
+                      )}
+                    </div>
+                    <div className="deadline-dates">
+                      <div className="deadline-date-item">
+                        <span className="deadline-date-label">Dernier contrôle :</span>
+                        <span className="deadline-date-value">
+                          {formatDateSimple(c.last_done_date, 'Non renseigné')}
+                        </span>
+                      </div>
+                      <div className="deadline-date-item">
+                        <span className="deadline-date-label">Prochaine échéance :</span>
+                        <span className="deadline-date-value">
+                          {formatDateSimple(c.next_due_date, 'Non renseigné')}
+                        </span>
+                      </div>
+                      <div className="deadline-date-item">
+                        <span className="deadline-date-label">Statut :</span>
+                        <span className="deadline-date-value">{c.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Section Historique */}
         <div className="history-section">

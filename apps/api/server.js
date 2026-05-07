@@ -26,6 +26,7 @@ import express from 'express';
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -53,6 +54,7 @@ import {
   googleCalendarLimiter,
   sensitiveEndpointLimiter,
 } from './config/rateLimiter.js';
+import { setupControlesPeriodiquesRoutes } from './controlesPeriodiquesRoutes.js';
 import db, { checkpointDatabase, closeDatabase } from './database.js';
 import { setupDisplayRoutes } from './displayRoutes.js';
 import { initEmailTransporter } from './emailService.js';
@@ -63,13 +65,16 @@ import {
   setupEquipmentRoutes,
   setupSavTicketsRoutes,
 } from './equipmentRoutes.js';
+import { startEshopCatalogAutoSync, stopEshopCatalogAutoSync } from './eshopCatalogSync.js';
+import { setupEshopRoutes } from './eshopRoutes.js';
 import { setupGoogleRoutes } from './googleRoutes.js';
 import { setupInventoryRoutes } from './inventoryRoutes.js';
+import { setupLabelsRoutes } from './labelsRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
+import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
 import logger from './logger.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
 import { setupMessagingRoutes } from './messagingRoutes.js';
-import { setupSavRoutes } from './savRoutes.js';
 import { createAuthenticateToken } from './middleware/authenticate.js';
 import {
   requireAdmin,
@@ -78,11 +83,11 @@ import {
   requireMaintenanceAccessCompat as requireMaintenanceAccess,
   requireNotReadOnly,
 } from './middleware/authorize.js';
+import { csrfOriginCheck } from './middleware/csrfOriginCheck.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { httpLogger } from './middleware/httpLogger.js';
 import { xssSanitize } from './middleware/sanitize.js';
-import { csrfOriginCheck } from './middleware/csrfOriginCheck.js';
-import { logSecurityEvent } from './securityLog.js';
+import { initSentry, sentryErrorHandler, sentryRequestHandler } from './observability/sentry.js';
 import {
   setupMaterialRequestsRoutes,
   setupOrdersRoutes,
@@ -98,6 +103,7 @@ import {
   setupSkillsRoutes,
 } from './personnelRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
+import { stopPlanningRolloverCron } from './planningRoutes.js';
 import { setupProfileRoutes } from './profileRoutes.js';
 // ── Routes ──
 import {
@@ -107,9 +113,10 @@ import {
   setupGaragesRoutes,
   setupLocationsRoutes,
 } from './routes.js';
+import { setupSavRoutes } from './savRoutes.js';
+import { logSecurityEvent } from './securityLog.js';
+import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';
 import { setupSonosRoutes } from './sonosRoutes.js';
-import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
-import { setupLabelsRoutes } from './labelsRoutes.js';
 import {
   setupStockCategoriesRoutes,
   setupStockImportRoutes,
@@ -120,12 +127,8 @@ import {
 import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
-import { setupEshopRoutes } from './eshopRoutes.js';
-import { startEshopCatalogAutoSync } from './eshopCatalogSync.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
-import { setupControlesPeriodiquesRoutes } from './controlesPeriodiquesRoutes.js';
-import { startControlesScheduler } from './services/controlesScheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -166,6 +169,9 @@ if (_jwtSecretMissing) {
 }
 
 // ── Middlewares globaux (configs extraites) ──
+// [S2-4] Sentry init + requestHandler en tout début de stack (no-op si SENTRY_DSN absent)
+await initSentry();
+app.use(sentryRequestHandler());
 app.use(compression({ threshold: 1024 }));
 app.use(helmetConditional);
 app.use(corsMiddleware);
@@ -181,6 +187,33 @@ app.use(httpLogger);
 // Rate limiting
 app.use('/api/', generalLimiter);
 
+// ─────────────────────────────────────────────────────────────
+// S1-05 — Timeout global par requête (30s)
+// Évite les connexions zombies qui saturent l'event loop SQLite single-thread.
+// Exclusions : SSE, uploads, imports volumineux (long polling légitime).
+// ─────────────────────────────────────────────────────────────
+const REQ_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 30_000;
+app.use((req, res, next) => {
+  const p = req.path || '';
+  if (
+    p.startsWith('/api/messaging/stream') ||
+    p.startsWith('/api/sse') ||
+    p.startsWith('/api/uploads/') ||
+    p.startsWith('/api/imports/') ||
+    p.startsWith('/api/sav/import') ||
+    p.startsWith('/api/locmat/import')
+  ) {
+    return next();
+  }
+  req.setTimeout(REQ_TIMEOUT_MS, () => {
+    if (!res.headersSent) {
+      logger.warn(`⏱ Request timeout (${REQ_TIMEOUT_MS}ms): ${req.method} ${p}`);
+      res.status(408).json({ error: 'Request timeout' });
+    }
+  });
+  next();
+});
+
 // [PHASE 6] Health check — pas d'auth, utilisé par PM2/monitoring
 const startedAt = Date.now();
 app.get('/api/health', (req, res) => {
@@ -189,6 +222,26 @@ app.get('/api/health', (req, res) => {
     res.json({ ok: true, uptime: Math.floor((Date.now() - startedAt) / 1000), db: 'connected' });
   } catch (err) {
     res.status(503).json({ ok: false, db: 'error', error: err.message });
+  }
+});
+
+// Renvoie les IPv4 LAN du serveur (utilisé par l'écran "Accès mobile"
+// pour générer un QR code utilisable depuis un téléphone, même quand
+// l'admin consulte l'app via http://localhost).
+app.get('/api/network-info', (req, res) => {
+  try {
+    const ifaces = os.networkInterfaces();
+    const ips = [];
+    for (const name of Object.keys(ifaces)) {
+      for (const info of ifaces[name] || []) {
+        if (info.family === 'IPv4' && !info.internal) {
+          ips.push({ iface: name, address: info.address });
+        }
+      }
+    }
+    res.json({ success: true, ips });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -225,14 +278,12 @@ app.use('/api/auth/login-pin', authLimiter);
 // [SEC PHASE 2] Auth personnelle (PIN/password vérifié côté serveur) sur /suivi/personal-auth
 app.use('/api/suivi/personal-auth', authLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
-app.use('/api/auth/forgot-password', sensitiveEndpointLimiter);
-app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
-app.use('/api/auth/set-new-password', sensitiveEndpointLimiter);
-app.use('/api/auth/self-reset-password', sensitiveEndpointLimiter);
+// NOTE: les endpoints de réinitialisation de mot de passe ne sont volontairement
+// PAS rate-limités (demande utilisateur) — le contrôle d'accès se fait par OTP
+// 6 chiffres + expiration 15 min + email obligatoire d'un compte autorisé.
 // Les GET /api/access-requests/* sont protégés par authenticateToken+requireAdmin
 app.post('/api/access-requests', sensitiveEndpointLimiter);
 app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);
-app.use('/api/admin/reset-password', sensitiveEndpointLimiter);
 
 // Créer le middleware d'authentification avec le secret JWT
 const authenticateToken = createAuthenticateToken(JWT_SECRET);
@@ -478,6 +529,8 @@ if (isDev) {
 }
 
 // Middleware centralisé de gestion d'erreurs (doit être APRÈS toutes les routes)
+// [S2-4] Sentry errorHandler AVANT le notre pour capturer toutes les exceptions
+app.use(sentryErrorHandler());
 app.use(errorHandler);
 
 const SERVER_HOST = process.env.SERVER_HOST || '0.0.0.0';
@@ -488,6 +541,51 @@ const sslKeyPath = path.join(sslDir, 'privkey.pem');
 const sslCertPath = path.join(sslDir, 'fullchain.pem');
 const hasSSL = !isDev && fs.existsSync(sslKeyPath) && fs.existsSync(sslCertPath);
 
+// S1-02 — Initialisation des tâches de fond extraite, appelée dès qu'un
+// listener (HTTPS ou HTTP fallback) est opérationnel. Idempotente.
+// S3-1 — handles capturés pour cleanup SIGTERM/SIGINT.
+let backgroundJobsBooted = false;
+let cleanTempFilesTimer = null;
+let cleanExpiredSessionsTimer = null;
+function bootBackgroundJobs() {
+  if (backgroundJobsBooted) return;
+  backgroundJobsBooted = true;
+  initEmailTransporter(db);
+  cleanTempFiles();
+  cleanTempFilesTimer = setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
+  cleanExpiredSessions();
+  cleanExpiredSessionsTimer = setInterval(cleanExpiredSessions, 30 * 60 * 1000);
+  startEshopCatalogAutoSync();
+  startControlesScheduler(db);
+}
+
+function stopBackgroundJobs() {
+  if (cleanTempFilesTimer) {
+    clearInterval(cleanTempFilesTimer);
+    cleanTempFilesTimer = null;
+  }
+  if (cleanExpiredSessionsTimer) {
+    clearInterval(cleanExpiredSessionsTimer);
+    cleanExpiredSessionsTimer = null;
+  }
+  try {
+    stopEshopCatalogAutoSync();
+  } catch {
+    /* noop */
+  }
+  try {
+    stopControlesScheduler();
+  } catch {
+    /* noop */
+  }
+  try {
+    stopPlanningRolloverCron();
+  } catch {
+    /* noop */
+  }
+  backgroundJobsBooted = false;
+}
+
 if (hasSSL) {
   const sslOptions = {
     key: fs.readFileSync(sslKeyPath),
@@ -495,17 +593,45 @@ if (hasSSL) {
   };
   const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
   const httpsServer = https.createServer(sslOptions, app);
-  httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
+
+  // S1-02 — Démarrage HTTPS résilient : retry sur EADDRINUSE puis fallback HTTP-only
+  const MAX_HTTPS_ATTEMPTS = Number(process.env.HTTPS_MAX_RETRIES) || 3;
+  let httpsAttempts = 0;
+  let httpsListening = false;
+
+  function tryListenHttps() {
+    httpsServer.listen(HTTPS_PORT, '0.0.0.0');
+  }
+
+  httpsServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && httpsAttempts < MAX_HTTPS_ATTEMPTS) {
+      const delay = 2000 * 2 ** httpsAttempts;
+      httpsAttempts += 1;
+      logger.warn(
+        `⚠️ HTTPS :${HTTPS_PORT} occupé (tentative ${httpsAttempts}/${MAX_HTTPS_ATTEMPTS}) — retry dans ${delay}ms`,
+      );
+      setTimeout(tryListenHttps, delay);
+      return;
+    }
+    if (err.code === 'EADDRINUSE') {
+      logger.error(
+        `❌ HTTPS :${HTTPS_PORT} toujours occupé après ${MAX_HTTPS_ATTEMPTS} tentatives — bascule HTTP-only`,
+      );
+      // Démarre les jobs pour ne pas bloquer le reste de l'API si HTTP répond.
+      bootBackgroundJobs();
+      return;
+    }
+    logger.error('❌ Erreur serveur HTTPS:', err);
+  });
+
+  httpsServer.once('listening', () => {
+    httpsListening = true;
     logger.info(`🔒 Serveur HTTPS démarré sur https://0.0.0.0:${HTTPS_PORT}`);
     logger.info(`📡 Accessible sur https://${SERVER_HOST}:${HTTPS_PORT}`);
-    initEmailTransporter(db);
-    cleanTempFiles();
-    setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
-    cleanExpiredSessions();
-    setInterval(cleanExpiredSessions, 30 * 60 * 1000);
-    startEshopCatalogAutoSync();
-    startControlesScheduler(db);
+    bootBackgroundJobs();
   });
+
+  tryListenHttps();
 
   // HTTP → HTTPS redirect (port 3002 redirige vers HTTPS)
   const redirectApp = express();
@@ -513,23 +639,34 @@ if (hasSSL) {
     const host = req.headers.host?.replace(`:${PORT}`, HTTPS_PORT === 443 ? '' : `:${HTTPS_PORT}`);
     res.redirect(301, `https://${host}${req.url}`);
   });
-  redirectApp.listen(PORT, '0.0.0.0', () => {
+  const redirectServer = redirectApp.listen(PORT, '0.0.0.0', () => {
     logger.info(`🔀 HTTP :${PORT} → HTTPS :${HTTPS_PORT} (redirection)`);
+  });
+  // S1-02 — Si le port redirect est occupé, on log mais on ne tue pas le process.
+  redirectServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.warn(`⚠️ Port HTTP redirect :${PORT} occupé — redirection désactivée`);
+      // S'assurer que les jobs démarrent même si HTTPS aussi est occupé.
+      if (!httpsListening) bootBackgroundJobs();
+      return;
+    }
+    logger.error('❌ Erreur serveur HTTP redirect:', err);
   });
 } else {
   logger.warn('⚠️  Certificats SSL non trouvés dans ssl/ — démarrage en HTTP uniquement');
   logger.warn(`   Attendus : ${sslKeyPath}`);
   logger.warn(`              ${sslCertPath}`);
-  app.listen(PORT, '0.0.0.0', () => {
+  const httpServer = app.listen(PORT, '0.0.0.0', () => {
     logger.info(`🚀 Serveur HTTP démarré sur http://0.0.0.0:${PORT}`);
     logger.info(`📡 Accessible depuis le réseau sur http://${SERVER_HOST}:${PORT}`);
-    initEmailTransporter(db);
-    cleanTempFiles();
-    setInterval(cleanTempFiles, 6 * 60 * 60 * 1000);
-    cleanExpiredSessions();
-    setInterval(cleanExpiredSessions, 30 * 60 * 1000);
-    startEshopCatalogAutoSync();
-    startControlesScheduler(db);
+    bootBackgroundJobs();
+  });
+  httpServer.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`❌ Port HTTP :${PORT} occupé — abandon (process exit 1)`);
+      process.exit(1);
+    }
+    logger.error('❌ Erreur serveur HTTP:', err);
   });
 }
 
@@ -623,16 +760,34 @@ function cleanTempFiles() {
   }
 }
 
-// Gestion de l'arrêt propre du serveur
+// Gestion de l'arrêt propre du serveur (S3-1 : stop schedulers + DB).
+let shuttingDown = false;
 function gracefulShutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.info(`\n⚠️  Signal ${signal} reçu - Arrêt en cours...`);
+
+  // Stop tous les schedulers (intervals) avant le close DB.
+  try {
+    stopBackgroundJobs();
+  } catch (e) {
+    logger.error('stopBackgroundJobs:', e);
+  }
 
   // Faire un dernier checkpoint de la base de données
   logger.info('💾 Sauvegarde finale de la base de données...');
-  checkpointDatabase();
+  try {
+    checkpointDatabase();
+  } catch (e) {
+    logger.error('checkpointDatabase:', e);
+  }
 
-  // Fermer proprement la base de données
-  closeDatabase();
+  // Fermer proprement la base de données (clear aussi le scheduling WAL)
+  try {
+    closeDatabase();
+  } catch (e) {
+    logger.error('closeDatabase:', e);
+  }
 
   logger.info('✅ Arrêt propre terminé');
   process.exit(0);

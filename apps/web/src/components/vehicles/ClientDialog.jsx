@@ -165,7 +165,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
 
           const fetchSuggestions = async (query) => {
             if (!query || query.length < 3) {
-              datalist.innerHTML = '';
+              datalist.replaceChildren();
               predictionMap.clear();
               return;
             }
@@ -183,7 +183,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
                   language: 'fr',
                   includedRegionCodes: ['fr'],
                 });
-              datalist.innerHTML = '';
+              datalist.replaceChildren();
               predictionMap.clear();
               suggestions.slice(0, 8).forEach(({ placePrediction }) => {
                 const label =

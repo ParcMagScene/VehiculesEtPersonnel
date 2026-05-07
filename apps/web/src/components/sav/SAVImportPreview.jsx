@@ -16,7 +16,7 @@
  *  - télécharger le rapport PDF après confirmation
  */
 import { CheckCircle, Download, Upload, XCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { Button, InlineAlert, Spinner } from '@/design-system';
 

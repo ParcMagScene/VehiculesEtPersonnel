@@ -9,7 +9,6 @@ import {
   FileDown,
   LayoutList,
   Plus,
-  RefreshCw,
   Repeat,
   Settings,
   SkipForward,
@@ -21,11 +20,9 @@ import { Button, Tooltip } from '@/design-system';
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
-import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 import api from '../../utils/api';
 import { safeParseDate } from '../../utils/dateUtils';
 import { formatDateFr } from '../../utils/formatUtils';
-import AffaireBadge from '../AffaireBadge';
 import AddTaskModal from './AddTaskModal';
 import EventTaskModal from './EventTaskModal';
 import TaskEditModal from './TaskEditModal';
@@ -33,13 +30,9 @@ const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
 import {
   addDays,
-  DAYS_FR,
-  EVENT_TYPES,
-  extractAffaireNum,
   formatDateShort,
   getWeekDays,
   mapAffaireToSection,
-  mapEventToSection,
   normalizeSection,
   SECTIONS,
   todayStr,
@@ -85,7 +78,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   );
   const [collapsedPastEvents, setCollapsedPastEvents] = useState(true),
     [collapsedFutureEvents, setCollapsedFutureEvents] = useState(true);
-  const [eventStatuses, setEventStatuses] = useState(new Map());
+  const [_eventStatuses, setEventStatuses] = useState(new Map());
   const [icalCalendars, setIcalCalendars] = useState([]),
     [icalEvents, setIcalEvents] = useState([]);
   const [showIcalManager, setShowIcalManager] = useState(false),
@@ -705,7 +698,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     },
     [loadTasks, toast],
   );
-  const handleCycleDisplayEventStatus = useCallback(
+  const _handleCycleDisplayEventStatus = useCallback(
     async (ev) => {
       try {
         await api.cycleDisplayEventStatus(ev.id);
@@ -716,7 +709,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     },
     [loadTasks, toast],
   );
-  const handleCycleAffaireStatus = useCallback(
+  const _handleCycleAffaireStatus = useCallback(
     async (num) => {
       try {
         await api.cycleAffaireStatus(num);

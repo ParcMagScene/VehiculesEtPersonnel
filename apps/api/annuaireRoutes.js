@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { annuaireRefCache, cacheMiddleware, invalidateOnSuccess } from './cache.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { contactsImportSchema, validate } from './schemas/imports.js';
@@ -1075,17 +1076,28 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
 // LOOKUP TABLES (Référentiels)
 // ═══════════════════════════════════════════════════════════════
 export function setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin) {
-  const lookupTables = {
+  // S1-06 — Whitelist défensive figée. Toute interpolation `${table}` dans
+  // ce module DOIT provenir de cette map. Object.freeze garantit qu'on ne
+  // peut pas étendre la liste à l'exécution (protection régression future).
+  const lookupTables = Object.freeze({
     'legal-structures': 'annuaire_legal_structures',
     'service-types': 'annuaire_service_types',
     'activity-sectors': 'annuaire_activity_sectors',
     'contact-categories': 'annuaire_contact_categories',
-  };
+  });
+  const ALLOWED_REF_TABLES = Object.freeze(new Set(Object.values(lookupTables)));
+  // Garde-fou : appelé avant chaque prepare(`... ${table} ...`)
+  function assertRefTable(t) {
+    if (!ALLOWED_REF_TABLES.has(t)) {
+      throw new Error(`Annuaire: table non autoris\u00e9e: ${t}`);
+    }
+  }
 
   // GET all items from a lookup table
   for (const [slug, table] of Object.entries(lookupTables)) {
     app.get(`/api/annuaire/ref/${slug}`, authenticateToken, (req, res) => {
       try {
+        assertRefTable(table);
         const { active_only } = req.query;
         let query = `SELECT * FROM ${table}`;
         if (active_only === '1' || active_only === 'true') query += ' WHERE is_active = 1';
@@ -1098,66 +1110,100 @@ export function setupAnnuaireLookupsRoutes(app, authenticateToken, requireAdmin)
     });
 
     // POST — add item
-    app.post(`/api/annuaire/ref/${slug}`, authenticateToken, requireAdmin, (req, res) => {
-      try {
-        const { code, name, sort_order } = req.body;
-        if (!code || !name)
-          return res.status(400).json({ success: false, error: 'Code et nom requis' });
-        const result = db
-          .prepare(`INSERT INTO ${table} (code, name, sort_order) VALUES (?, ?, ?)`)
-          .run(code, name, sort_order || 0);
-        res
-          .status(201)
-          .json(db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(result.lastInsertRowid));
-      } catch (error) {
-        if (error.message?.includes('UNIQUE constraint'))
-          return res.status(409).json({ success: false, error: 'Ce code existe déjà' });
-        logger.error(`Annuaire ref ${slug} create:`, error);
-        res.status(500).json({ success: false, error: 'Erreur serveur' });
-      }
-    });
+    app.post(
+      `/api/annuaire/ref/${slug}`,
+      authenticateToken,
+      requireAdmin,
+      invalidateOnSuccess(annuaireRefCache),
+      (req, res) => {
+        try {
+          assertRefTable(table);
+          const { code, name, sort_order } = req.body;
+          if (!code || !name)
+            return res.status(400).json({ success: false, error: 'Code et nom requis' });
+          const result = db
+            .prepare(`INSERT INTO ${table} (code, name, sort_order) VALUES (?, ?, ?)`)
+            .run(code, name, sort_order || 0);
+          res
+            .status(201)
+            .json(db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(result.lastInsertRowid));
+        } catch (error) {
+          if (error.message?.includes('UNIQUE constraint'))
+            return res.status(409).json({ success: false, error: 'Ce code existe déjà' });
+          logger.error(`Annuaire ref ${slug} create:`, error);
+          res.status(500).json({ success: false, error: 'Erreur serveur' });
+        }
+      },
+    );
 
     // PUT — update item
-    app.put(`/api/annuaire/ref/${slug}/:id`, authenticateToken, requireAdmin, (req, res) => {
-      try {
-        const { code, name, sort_order, is_active } = req.body;
-        db.prepare(
-          `UPDATE ${table} SET code = ?, name = ?, sort_order = ?, is_active = ? WHERE id = ?`,
-        ).run(code, name, sort_order || 0, is_active !== undefined ? is_active : 1, req.params.id);
-        res.json(db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(req.params.id));
-      } catch (error) {
-        logger.error(`Annuaire ref ${slug} update:`, error);
-        res.status(500).json({ success: false, error: 'Erreur serveur' });
-      }
-    });
+    app.put(
+      `/api/annuaire/ref/${slug}/:id`,
+      authenticateToken,
+      requireAdmin,
+      invalidateOnSuccess(annuaireRefCache),
+      (req, res) => {
+        try {
+          assertRefTable(table);
+          const { code, name, sort_order, is_active } = req.body;
+          db.prepare(
+            `UPDATE ${table} SET code = ?, name = ?, sort_order = ?, is_active = ? WHERE id = ?`,
+          ).run(
+            code,
+            name,
+            sort_order || 0,
+            is_active !== undefined ? is_active : 1,
+            req.params.id,
+          );
+          res.json(db.prepare(`SELECT * FROM ${table} WHERE id = ?`).get(req.params.id));
+        } catch (error) {
+          logger.error(`Annuaire ref ${slug} update:`, error);
+          res.status(500).json({ success: false, error: 'Erreur serveur' });
+        }
+      },
+    );
 
     // DELETE
-    app.delete(`/api/annuaire/ref/${slug}/:id`, authenticateToken, requireAdmin, (req, res) => {
-      try {
-        db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(req.params.id);
-        res.json({ success: true });
-      } catch (error) {
-        logger.error(`Annuaire ref ${slug} delete:`, error);
-        res.status(500).json({ success: false, error: 'Erreur serveur' });
-      }
-    });
+    app.delete(
+      `/api/annuaire/ref/${slug}/:id`,
+      authenticateToken,
+      requireAdmin,
+      invalidateOnSuccess(annuaireRefCache),
+      (req, res) => {
+        try {
+          assertRefTable(table);
+          db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(req.params.id);
+          res.json({ success: true });
+        } catch (error) {
+          logger.error(`Annuaire ref ${slug} delete:`, error);
+          res.status(500).json({ success: false, error: 'Erreur serveur' });
+        }
+      },
+    );
   }
 
   // GET all lookups at once (for form dropdowns)
-  app.get('/api/annuaire/ref/all', authenticateToken, (req, res) => {
-    try {
-      const result = {};
-      for (const [slug, table] of Object.entries(lookupTables)) {
-        result[slug.replace(/-/g, '_')] = db
-          .prepare(`SELECT * FROM ${table} WHERE is_active = 1 ORDER BY sort_order ASC, name ASC`)
-          .all();
+  // [S2-3] Cache 10 min — invalidé sur mutations ref/*
+  app.get(
+    '/api/annuaire/ref/all',
+    authenticateToken,
+    cacheMiddleware(annuaireRefCache, () => 'all'),
+    (req, res) => {
+      try {
+        const result = {};
+        for (const [slug, table] of Object.entries(lookupTables)) {
+          assertRefTable(table);
+          result[slug.replace(/-/g, '_')] = db
+            .prepare(`SELECT * FROM ${table} WHERE is_active = 1 ORDER BY sort_order ASC, name ASC`)
+            .all();
+        }
+        res.json(result);
+      } catch (error) {
+        logger.error('Annuaire ref all:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
-      res.json(result);
-    } catch (error) {
-      logger.error('Annuaire ref all:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+    },
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════

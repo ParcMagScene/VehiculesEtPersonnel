@@ -665,7 +665,6 @@ function AppContent() {
   if (!isAuthenticated) {
     return (
       <div className="app">
-        <LoginForm onLogin={handleLogin} />
         <LoginForm onLogin={handleLogin} onLoginPin={handleLoginPin} />
       </div>
     );

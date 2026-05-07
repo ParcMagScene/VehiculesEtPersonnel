@@ -11,7 +11,6 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
-  BarChart2,
   Briefcase,
   Calendar,
   ChevronLeft,
@@ -22,7 +21,6 @@ import {
   PackagePlus,
   Paperclip,
   Plus,
-  TrendingUp,
 } from 'lucide-react';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -130,7 +128,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   // BL Import modal
   const [showBatchAnalysis, setShowBatchAnalysis] = useState(false);
   const [showMultiImport, setShowMultiImport] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(false);
+  const [showDashboard, _setShowDashboard] = useState(false);
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

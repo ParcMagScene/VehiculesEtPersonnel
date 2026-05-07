@@ -202,7 +202,7 @@ function MobileLogin({ onLogin }) {
         <div className="mobile-sheet-form">
           <p className="mobile-sheet-desc">
             {resetStep === 1
-              ? 'Entrez votre adresse email et votre nom complet. Un code de vérification vous sera envoyé par email.'
+              ? 'Entrez votre adresse email. Un code de vérification vous sera envoyé par email.'
               : 'Un code de vérification a été envoyé à votre adresse email. Saisissez-le ci-dessous avec votre nouveau mot de passe.'}
           </p>
 
@@ -250,17 +250,6 @@ function MobileLogin({ onLogin }) {
                     placeholder="email@exemple.com"
                     required
                     autoFocus
-                  />
-                </FormField>
-
-                <FormField className="form-group" label="Nom complet" htmlFor="reset-name">
-                  <Input
-                    id="reset-name"
-                    type="text"
-                    value={resetFormName}
-                    onChange={(e) => setResetFormName(e.target.value)}
-                    placeholder="Prénom Nom"
-                    required
                   />
                 </FormField>
               </>
@@ -345,7 +334,7 @@ function MobileLogin({ onLogin }) {
                 className="login-button"
                 disabled={
                   isLoading ||
-                  (resetStep === 1 && (!resetFormEmail || !resetFormName)) ||
+                  (resetStep === 1 && !resetFormEmail) ||
                   (resetStep === 2 &&
                     (resetOtp.length !== 6 || !resetFormPassword || !resetFormConfirm))
                 }

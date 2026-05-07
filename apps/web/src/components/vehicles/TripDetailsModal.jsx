@@ -90,7 +90,7 @@ const TripDetailsModal = ({
   const [allLocations, setAllLocations] = useState([]);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocationField, setEditingLocationField] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
+  const [_userLocation, setUserLocation] = useState(null);
 
   // Recharger le formulaire quand on change d'onglet en mode combiné
   useEffect(() => {
@@ -137,7 +137,7 @@ const TripDetailsModal = ({
   }, [activeTab, isCombinedMode]);
 
   // Fonctions pour gérer l'historique des lieux
-  const saveLocationToHistory = (address) => {
+  const _saveLocationToHistory = (address) => {
     if (!address) return;
     try {
       const history = JSON.parse(localStorage.getItem('locationHistory') || '[]');

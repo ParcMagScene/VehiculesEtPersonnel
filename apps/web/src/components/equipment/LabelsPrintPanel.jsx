@@ -3,7 +3,7 @@ import './LabelsPrintPanel.css';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, EmptyState, Input, SearchBar, Spinner } from '@/design-system';
+import { Button, EmptyState, SearchBar, Spinner } from '@/design-system';
 import { api } from '@/utils/api';
 
 const PAGE_SIZE = 50;

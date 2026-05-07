@@ -1,6 +1,6 @@
 import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
-import db, { addToHistory, getHistory } from './database.js';
 import { reservationsDao } from './dao/reservations.dao.js';
+import db, { addToHistory, getHistory } from './database.js';
 import { alertMaintenanceCreated, alertReservationCreated } from './emailService.js';
 import logger from './logger.js';
 import { validate } from './schemas/imports.js';
@@ -534,7 +534,7 @@ export function setupVehicleRoutes(
 
         // Sync eM@g -> Google (best effort). N'empêche pas la mise à jour locale.
         try {
-          const updatedReservation = db
+          const _updatedReservation = db
             .prepare(
               `
         SELECT r.*, v.name AS vehicle_name
@@ -650,7 +650,7 @@ export function setupVehicleRoutes(
 
   app.delete('/api/reservations/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-      const existing = db
+      const _existing = db
         .prepare('SELECT google_event_id FROM reservations WHERE id = ?')
         .get(req.params.id);
 

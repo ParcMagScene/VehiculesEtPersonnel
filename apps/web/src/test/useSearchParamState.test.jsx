@@ -72,8 +72,7 @@ describe('useSearchParamState — Sprint B/D nav', () => {
 
   it('supprime le param quand on remet la defaultValue (URL propre)', () => {
     const { result, rerender } = renderHook(
-      ({ search }) =>
-        useSearchParamState('view', DEFAULT_CALENDAR_VIEW, { allowed: CALENDAR_VIEWS }),
+      () => useSearchParamState('view', DEFAULT_CALENDAR_VIEW, { allowed: CALENDAR_VIEWS }),
       {
         wrapper: wrapper('/?view=month'),
         initialProps: { search: '?view=month' },

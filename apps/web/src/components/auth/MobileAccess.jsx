@@ -28,8 +28,11 @@ function MobileAccess() {
   const [posterCount, setPosterCount] = useState(1);
   const [posterFormat, setPosterFormat] = useState('A4');
 
-  // URL de l'interface mobile
-  const mobileUrl = `${window.location.origin}/#/mobile`;
+  // URL publique de l'interface mobile : on utilise toujours le domaine
+  // public (DuckDNS) pour que le QR fonctionne aussi bien depuis le LAN
+  // que depuis l'extérieur (4G/Wi-Fi invité). Configurable via VITE_PUBLIC_URL.
+  const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_URL || 'https://magsav.duckdns.org';
+  const mobileUrl = `${PUBLIC_BASE}/#/mobile`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(mobileUrl).then(() => {

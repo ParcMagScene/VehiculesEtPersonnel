@@ -104,12 +104,15 @@ export function registerStockMethods(ApiClient) {
     async deleteMaterialRequest(id) {
       return this.request(`/material-requests/${id}`, { method: 'DELETE', skipCamelCase: true });
     },
-    async validateMaterialRequest(id, action, rejection_reason = null) {
+    async validateMaterialRequest(id, action, rejection_reason = null, assignments = null) {
       return this.request(`/material-requests/${id}/validate`, {
         method: 'POST',
-        body: JSON.stringify({ action, rejection_reason }),
+        body: JSON.stringify({ action, rejection_reason, assignments }),
         skipCamelCase: true,
       });
+    },
+    async getEligibleOrdersForRequest(id) {
+      return this.request(`/material-requests/${id}/eligible-orders`, { skipCamelCase: true });
     },
     async batchValidateMaterialRequests(request_ids, action) {
       return this.request('/material-requests/batch-validate', {

@@ -5,7 +5,7 @@
 
 import './SonosPanel.css';
 
-import { Music, RefreshCw, Search, Settings, Wifi } from 'lucide-react';
+import { RefreshCw, Search, Settings, Wifi } from 'lucide-react';
 import { memo, useState } from 'react';
 
 import { Button, Checkbox, Input } from '@/design-system';

@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
+// [S2-1] Helper extrait dans un module pur — voir database/_helpers.js
+import { safeAddColumn as safeAddColumnImpl } from './database/_helpers.js';
 import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -55,29 +57,11 @@ db.pragma('mmap_size = 30000000');
 // [AUDIT FIX P1-12] Les clauses ON DELETE des FOREIGN KEY ne s'appliquent qu'aux nouvelles bases.
 // Pour les bases existantes, SQLite ne permet pas de modifier les FK via ALTER TABLE.
 function initializeDatabase() {
-  // [AUDIT FIX P0-5] Helper pour migrations ALTER TABLE idempotentes
-  // [SEC PHASE 2] Whitelist stricte des identifiants pour bloquer toute injection
-  // même si un appelant interne passait une chaîne non-littérale.
+  // [S2-1] Wrapper local qui fige `db` dans la closure pour rétro-compat
+  // de tous les appels `safeAddColumn(table, column, type, default)` ci-dessous.
+  // L'implémentation pure est dans database/_helpers.js (testable indépendamment).
   function safeAddColumn(table, column, type, defaultVal) {
-    const ID_RE = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
-    if (!ID_RE.test(table) || !ID_RE.test(column)) {
-      throw new Error(`safeAddColumn: identifiant invalide (table=${table}, column=${column})`);
-    }
-    // Type SQLite restreint aux mots-clés standards (incl. composites courants)
-    const TYPE_RE =
-      /^(INTEGER|TEXT|REAL|BLOB|NUMERIC|BOOLEAN|DATETIME|DATE)(\s+(NOT\s+NULL|UNIQUE))?$/i;
-    if (!TYPE_RE.test(String(type).trim())) {
-      throw new Error(`safeAddColumn: type invalide (${type})`);
-    }
-    const cols = db.pragma(`table_info(${table})`).map((c) => c.name);
-    if (!cols.includes(column)) {
-      // defaultVal reste interpolé mais cantonné aux migrations internes (pas d'input externe)
-      const defClause = defaultVal !== undefined ? ` DEFAULT ${defaultVal}` : '';
-      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${defClause}`);
-      logger.info(`  ✅ Migration: ${table}.${column} ajouté`);
-      return true;
-    }
-    return false;
+    return safeAddColumnImpl(db, table, column, type, defaultVal);
   }
 
   // Table des utilisateurs
@@ -3763,35 +3747,25 @@ initializeDatabase();
 import { runPostInitMigrations } from './migrations.js';
 runPostInitMigrations(db);
 
-// Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
+// ─────────────────────────────────────────────────────────────
+// [S2-1 step 2] WAL management extrait dans database/wal.js
+// On garde des wrappers locaux qui figent `db` pour rétro-compat
+// des appelants existants (server.js : checkpointDatabase(), closeDatabase()).
+// ─────────────────────────────────────────────────────────────
+import {
+  checkpointDatabase as checkpointDatabaseImpl,
+  closeDatabase as closeDatabaseImpl,
+  setupWALScheduling,
+} from './database/wal.js';
+
+const walScheduling = setupWALScheduling(db);
+
 export function checkpointDatabase() {
-  try {
-    db.pragma('wal_checkpoint(FULL)');
-    logger.info('✅ Checkpoint WAL effectué');
-  } catch (error) {
-    logger.error('❌ Erreur checkpoint WAL:', error);
-  }
+  return checkpointDatabaseImpl(db);
 }
 
-// Fonction pour fermer proprement la base de données
 export function closeDatabase() {
-  try {
-    clearInterval(checkpointTimer);
-    // Faire un checkpoint final avant de fermer
-    checkpointDatabase();
-    db.close();
-    logger.info('✅ Base de données fermée proprement');
-  } catch (error) {
-    logger.error('❌ Erreur fermeture DB:', error);
-  }
+  return closeDatabaseImpl(db, walScheduling);
 }
-
-// Checkpoint automatique toutes les 5 minutes
-const checkpointTimer = setInterval(
-  () => {
-    checkpointDatabase();
-  },
-  5 * 60 * 1000,
-);
 
 export default db;

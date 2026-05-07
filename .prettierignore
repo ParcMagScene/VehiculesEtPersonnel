@@ -1,6 +1,43 @@
-dist/
+# ─────────────────────────────────────────────────────────────
+# .prettierignore — racine du monorepo eM@g
+# Consolidé pour couvrir tous les workspaces (web + api).
+# Les .prettierignore par workspace restent valides (additifs).
+# ─────────────────────────────────────────────────────────────
+
+# Build & deps
 node_modules/
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/.vite/
+
+# Données / sauvegardes / DB
+backups/
+**/backups/
+**/*.db
+**/*.sqlite
+**/*.sqlite*
+apps/api/display-data/
+apps/api/logs/
+apps/api/_*
+
+# Public statique (assets binaires/livrés, jamais formatés)
 public/
-_archive/
+apps/web/public/
+**/public/
+
+# Documentation gérée séparément
+docs/
+prompts/
+**/_archive/
 *.md
+**/CHANGELOG.md
+
+# Lockfiles & generated
+package-lock.json
+**/package-lock.json
 *.json
+
+# TV CLIENT — JAMAIS TOUCHÉ (contrainte projet)
+apps/tv-client/

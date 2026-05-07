@@ -173,7 +173,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
             );
 
             if (!input) {
-              addressAutocompleteContainerRef.current.innerHTML = '';
+              addressAutocompleteContainerRef.current.replaceChildren();
               input = document.createElement('input');
               input.type = 'text';
               input.placeholder = 'Rechercher une adresse...';
@@ -196,7 +196,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
 
             const fetchSuggestions = async (query) => {
               if (!query || query.length < 3) {
-                datalist.innerHTML = '';
+                datalist.replaceChildren();
                 predictionMap.clear();
                 return;
               }
@@ -214,7 +214,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
                     language: 'fr',
                     includedRegionCodes: ['fr'],
                   });
-                datalist.innerHTML = '';
+                datalist.replaceChildren();
                 predictionMap.clear();
                 suggestions.slice(0, 8).forEach(({ placePrediction }) => {
                   const label =

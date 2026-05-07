@@ -153,8 +153,35 @@ const icalCache = new LRUCache({ maxSize: 50, ttl: 5 * 60_000, name: 'ical' });
 /** Cache pour la config (Google keys, etc.) : TTL 10 min */
 const configCache = new LRUCache({ maxSize: 50, ttl: 10 * 60_000, name: 'config' });
 
+// ─── [S2-3] Caches dédiés par endpoint chaud ───
+/** Tree des catégories d'équipement : peu de mutations → TTL 5 min */
+const equipmentTreeCache = new LRUCache({ maxSize: 5, ttl: 5 * 60_000, name: 'equipment-tree' });
+/** Liste équipement (filtres dans la clé) : TTL 60s */
+const equipmentListCache = new LRUCache({ maxSize: 100, ttl: 60_000, name: 'equipment-list' });
+/** Lookup tables annuaire : très peu de mutations → TTL 5 min */
+const annuaireRefCache = new LRUCache({ maxSize: 5, ttl: 5 * 60_000, name: 'annuaire-ref' });
+/** Planning personnel : TTL 30s */
+const personnelPlanningCache = new LRUCache({
+  maxSize: 200,
+  ttl: 30_000,
+  name: 'personnel-planning',
+});
+/** Liste personnel suivi (avec stats sheets) : TTL 60s */
+const suiviPersonnelCache = new LRUCache({ maxSize: 5, ttl: 60_000, name: 'suivi-personnel' });
+
 // ─── Registre global (pour le endpoint /api/cache/stats) ───
-const ALL_CACHES = [authCache, statsCache, listCache, icalCache, configCache];
+const ALL_CACHES = [
+  authCache,
+  statsCache,
+  listCache,
+  icalCache,
+  configCache,
+  equipmentTreeCache,
+  equipmentListCache,
+  annuaireRefCache,
+  personnelPlanningCache,
+  suiviPersonnelCache,
+];
 
 /**
  * Middleware Express de cache automatique
@@ -170,11 +197,20 @@ const ALL_CACHES = [authCache, statsCache, listCache, icalCache, configCache];
  */
 function cacheMiddleware(cache, keyFn, customTTL) {
   return (req, res, next) => {
+    // Bypass : méthode autre que GET, header no-cache, ou keyFn renvoie null/undefined
+    if (req.method !== 'GET') return next();
+    const cc = req.headers['cache-control'];
+    if (cc && /no-cache/i.test(cc)) return next();
+
     const key = keyFn(req);
+    if (key == null) return next();
+
     const cached = cache.get(key);
     if (cached !== null) {
+      res.set('X-Cache', 'HIT');
       return res.json(cached);
     }
+    res.set('X-Cache', 'MISS');
 
     // Intercepter res.json pour capturer la réponse
     const originalJson = res.json.bind(res);
@@ -200,6 +236,27 @@ function invalidateEntity(entity) {
 }
 
 /**
+ * [S2-3] Middleware Express : après une réponse 2xx, invalide les caches passés
+ * en paramètres. Évite d'oublier `cache.clear()` à la fin de chaque handler.
+ *
+ * Usage : app.post('/x', auth, invalidateOnSuccess(equipmentListCache), handler)
+ *
+ * @param {...LRUCache} caches  Instances à vider après succès
+ */
+function invalidateOnSuccess(...caches) {
+  return (req, res, next) => {
+    const originalJson = res.json.bind(res);
+    res.json = (data) => {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        for (const c of caches) c.clear();
+      }
+      return originalJson(data);
+    };
+    next();
+  };
+}
+
+/**
  * Factory pour créer un cache personnalisé
  * @param {Object} opts  Options du LRUCache
  * @returns {LRUCache}
@@ -220,14 +277,20 @@ function getAllCacheStats() {
 
 export {
   ALL_CACHES,
+  annuaireRefCache,
   authCache,
   cacheMiddleware,
   configCache,
   createCache,
+  equipmentListCache,
+  equipmentTreeCache,
   getAllCacheStats,
   icalCache,
   invalidateEntity,
+  invalidateOnSuccess,
   listCache,
   LRUCache,
+  personnelPlanningCache,
   statsCache,
+  suiviPersonnelCache,
 };

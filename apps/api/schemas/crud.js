@@ -70,8 +70,8 @@ export const equipmentSchema = z
 // ── Order Create ──
 export const orderSchema = z
   .object({
-    type: z.enum(['order', 'quote', 'devis']).optional().default('order'),
-    affaire_id: optInt,
+    type: z.enum(['purchase', 'sale', 'order', 'quote', 'devis']).optional().default('purchase'),
+    affaire_id: optStr(100),
     supplier_id: optInt,
     status: optStr(50),
     order_date: optDate,

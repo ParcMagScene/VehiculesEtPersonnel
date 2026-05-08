@@ -21,6 +21,41 @@ function isValidTime(str) {
   return typeof str === 'string' && TIME_RE.test(str);
 }
 
+// ─── Helpers planning_assignments (FIX 3) ─────────────────────────
+// Maintient la cohérence entre task_assignments.person_id (assignation
+// directe legacy) et planning_assignments (multi-affectation générique).
+// Toutes les vues consommatrices (suivi, affaires, banner) lisent depuis
+// planning_assignments → toute création/édition/suppression de tâche doit
+// y refléter l'évolution de person_id.
+
+const upsertTaskPersonAssignmentStmt = () =>
+  db.prepare(
+    `INSERT OR IGNORE INTO planning_assignments (id, entity_type, entity_id, person_id)
+     VALUES (lower(hex(randomblob(16))), 'task', ?, ?)`,
+  );
+
+const deleteTaskAssignmentsStmt = () =>
+  db.prepare(`DELETE FROM planning_assignments WHERE entity_type = 'task' AND entity_id = ?`);
+
+/**
+ * Sync planning_assignments pour une tâche : remplace toutes les lignes
+ * (entity_type='task', entity_id) par {person_id} si fourni, sinon vide.
+ * Idempotent. Sans effet si person_id est null/undefined.
+ */
+function syncTaskPersonAssignment(taskId, personId) {
+  if (!taskId) return;
+  // Politique : on ne supprime QUE si on a une nouvelle valeur (évite d'effacer
+  // des affectations multiples ajoutées via /api/planning/planning-assignments).
+  // Si personId nul → on ne touche pas (compatibilité backward).
+  if (personId == null) return;
+  upsertTaskPersonAssignmentStmt().run(taskId, personId);
+}
+
+function clearTaskAssignments(taskId) {
+  if (!taskId) return;
+  deleteTaskAssignmentsStmt().run(taskId);
+}
+
 export function setupTaskRoutes(app, authenticateToken) {
   // ═══════════════════════════════════════════════
   // PLANIFICATION — TÂCHES — CRUD
@@ -719,16 +754,20 @@ export function setupTaskRoutes(app, authenticateToken) {
 
             // Multi-affectations ou personne unique
             const multiAssign = assignmentsByEntity.get(`task:${t.id}`) || [];
-            const personStr =
+            // [FIX 6] Au-delà de 2 personnes, on empile sur plusieurs lignes
+            // pour que les noms ne soient plus tronqués (lisibilité fiche du jour).
+            const personNames =
               multiAssign.length > 0
-                ? multiAssign
-                    .map((a) =>
-                      `${a.first_name || ''} ${a.last_name ? a.last_name.charAt(0) + '.' : ''}`.trim(),
-                    )
-                    .join(', ')
+                ? multiAssign.map((a) =>
+                    `${a.first_name || ''} ${a.last_name ? a.last_name.charAt(0) + '.' : ''}`.trim(),
+                  )
                 : t.person_first_name || t.person_last_name
-                  ? `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim()
-                  : '';
+                  ? [
+                      `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim(),
+                    ]
+                  : [];
+            const personStacked = personNames.length >= 3;
+            const personStr = personStacked ? personNames.join('\n') : personNames.join(', ');
 
             // Détection doublons client/lieu vs titre (éviter affichage double pour les courses)
             const titleLower = titleStr.toLowerCase();
@@ -744,8 +783,15 @@ export function setupTaskRoutes(app, authenticateToken) {
             const showLocation = !showClient && displayLocation && !locationAlreadyInTitle;
 
             const rowY = doc.y;
+            // [FIX 6] hauteur dynamique si personnel empilé sur plusieurs lignes
+            let dynRowH = rowH;
+            if (personStacked && personStr) {
+              doc.font('Helvetica').fontSize(fsSmall);
+              const measured = doc.heightOfString(personStr, { width: 58 });
+              dynRowH = Math.max(rowH, Math.ceil(measured) + 4);
+            }
             if (i % 2 === 0) {
-              doc.rect(leftX, rowY, pageW, rowH).fillColor('#f8f9fa').fill();
+              doc.rect(leftX, rowY, pageW, dynRowH).fillColor('#f8f9fa').fill();
             }
             // Case à cocher
             const cbX = leftX + 3;
@@ -822,7 +868,11 @@ export function setupTaskRoutes(app, authenticateToken) {
                 .font('Helvetica')
                 .fontSize(fsSmall)
                 .fillColor('#555555')
-                .text(personStr, rightX, rowY + 2, { width: 58, lineBreak: false });
+                .text(personStr, rightX, rowY + 2, {
+                  width: 58,
+                  // [FIX 6] autorise le retour à la ligne quand personnel empilé
+                  lineBreak: personStacked,
+                });
             }
             // Client/Lieu ensuite (plus à gauche)
             if (showClient) {
@@ -847,12 +897,28 @@ export function setupTaskRoutes(app, authenticateToken) {
                 });
             }
             doc.fillColor('#000000');
-            doc.y = rowY + rowH;
+            doc.y = rowY + dynRowH;
           } else if (item.type === 'affaire' || item.type === 'affaire-rdv') {
             const a = item.data;
             const rowY = doc.y;
+            // [FIX 6] hauteur dynamique pour personnel empilé (≥3)
+            const affAssignNames = (assignmentsByEntity.get(`affaire:${a.id}`) || []).map((as) =>
+              `${as.first_name || ''} ${as.last_name ? as.last_name.charAt(0) + '.' : ''}`.trim(),
+            );
+            const affStacked = affAssignNames.length >= 3;
+            const affPersonStr = affStacked
+              ? affAssignNames.join('\n')
+              : affAssignNames.length > 0
+                ? affAssignNames.join(', ')
+                : (a.interlocuteur || '').slice(0, 18);
+            let dynRowH = rowH;
+            if (affStacked && affPersonStr) {
+              doc.font('Helvetica').fontSize(fsSmall);
+              const measured = doc.heightOfString(affPersonStr, { width: 52 });
+              dynRowH = Math.max(rowH, Math.ceil(measured) + 4);
+            }
             if (i % 2 === 0) {
-              doc.rect(leftX, rowY, pageW, rowH).fillColor('#f8f9fa').fill();
+              doc.rect(leftX, rowY, pageW, dynRowH).fillColor('#f8f9fa').fill();
             }
             // Badge N° affaire
             let contentX = leftX + 4;
@@ -862,15 +928,6 @@ export function setupTaskRoutes(app, authenticateToken) {
             }
             // Détail
             const detail = `${a.type || ''} - ${a.client || 'Sans client'}${a.adresse_livraison ? ' - ' + a.adresse_livraison.split('\n')[0].slice(0, 35) : ''}`;
-            const affAssign = assignmentsByEntity.get(`affaire:${a.id}`) || [];
-            const affPersonStr =
-              affAssign.length > 0
-                ? affAssign
-                    .map((as) =>
-                      `${as.first_name || ''} ${as.last_name ? as.last_name.charAt(0) + '.' : ''}`.trim(),
-                    )
-                    .join(', ')
-                : (a.interlocuteur || '').slice(0, 18);
             doc
               .font('Helvetica')
               .fontSize(fs)
@@ -886,12 +943,12 @@ export function setupTaskRoutes(app, authenticateToken) {
                 .fillColor('#555555')
                 .text(affPersonStr, leftX + pageW - 55, rowY + 2, {
                   width: 52,
-                  lineBreak: false,
+                  lineBreak: affStacked,
                   align: 'right',
                 });
             }
             doc.fillColor('#000000');
-            doc.y = rowY + rowH;
+            doc.y = rowY + dynRowH;
           } else if (item.type === 'event') {
             const ev = item.data;
             const typeLabel = EVENT_TYPE_LABELS[ev.type] || ev.type || 'Evenement';
@@ -1159,6 +1216,9 @@ export function setupTaskRoutes(app, authenticateToken) {
         req.user.id,
       );
 
+      // [FIX 3] Synchroniser planning_assignments si person_id fourni
+      syncTaskPersonAssignment(id, person_id);
+
       // Retourner avec les JOINs
       const created = db
         .prepare(
@@ -1234,6 +1294,10 @@ export function setupTaskRoutes(app, authenticateToken) {
               req.user.id,
             );
             createdIds.push(id);
+            // [FIX 3] Sync planning_assignments si person_id fourni
+            if (t.person_id) {
+              upsertTaskPersonAssignmentStmt().run(id, t.person_id);
+            }
           }
         });
 
@@ -1356,6 +1420,19 @@ export function setupTaskRoutes(app, authenticateToken) {
         req.params.id,
       );
 
+      // [FIX 3] Synchroniser planning_assignments si person_id a changé
+      // - Si person_id explicitement passé (même null) → on remplace l'assignation directe
+      // - Si non fourni → on ne touche pas
+      if (person_id !== undefined) {
+        // Retire l'ancienne assignation directe (le multi-affect via /planning-assignments reste)
+        if (existing.person_id && existing.person_id !== person_id) {
+          db.prepare(
+            `DELETE FROM planning_assignments WHERE entity_type='task' AND entity_id=? AND person_id=?`,
+          ).run(req.params.id, existing.person_id);
+        }
+        syncTaskPersonAssignment(req.params.id, person_id);
+      }
+
       // Retourner avec les JOINs
       const updated = db
         .prepare(
@@ -1456,6 +1533,10 @@ export function setupTaskRoutes(app, authenticateToken) {
       db.prepare(
         "UPDATE task_assignments SET deleted_at = datetime('now'), modified_by = ?, modified_at = datetime('now') WHERE id = ?",
       ).run(req.user.id, req.params.id);
+
+      // [FIX 3] Nettoyer toutes les multi-affectations associées
+      clearTaskAssignments(req.params.id);
+
       res.json({ success: true, message: 'Tâche supprimée' });
     } catch (error) {
       logger.error('DELETE /api/planning/tasks/:id error:', error);

@@ -505,6 +505,8 @@ export function runPostInitMigrations(db) {
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+    // [FIX 4] Index sur active pour accélérer SELECT * FROM recurring_tasks WHERE active=1
+    db.exec('CREATE INDEX IF NOT EXISTS idx_recurring_tasks_active ON recurring_tasks(active)');
     logger.info('✅ Table recurring_tasks vérifiée/créée');
   } catch (error) {
     logger.warn('⚠️ recurring_tasks:', error.message);

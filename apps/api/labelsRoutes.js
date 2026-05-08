@@ -347,5 +347,55 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // GET /api/labels/lightburn/single/:id — étiquette LightBurn unitaire (FIX 5)
+  // Pratique : depuis EquipmentDetailPanel, lien direct vers SVG sans POST body.
+  app.get('/api/labels/lightburn/single/:id', authenticateToken, async (req, res) => {
+    try {
+      const id = Number.parseInt(req.params.id, 10);
+      if (!Number.isFinite(id) || id <= 0) {
+        return res.status(400).json({ error: 'id équipement invalide' });
+      }
+      const eq = db
+        .prepare(
+          `SELECT e.id, e.uid, e.serial_number AS serial, e.numero_mag AS mag_number,
+                  e.name, e.reference
+             FROM equipment e
+            WHERE e.id = ?`,
+        )
+        .get(id);
+      if (!eq) return res.status(404).json({ error: 'Équipement introuvable' });
+
+      const qrUid = (eq.uid || eq.reference || '').toString().trim();
+      let mag = eq.mag_number || '';
+      let serial = (eq.serial || '').toString().trim();
+      if (!mag && serial) {
+        const det = detectMagFromSerial(serial);
+        if (det.mag) {
+          mag = det.mag;
+          serial = det.serial;
+        }
+      }
+      const item = {
+        reference: eq.reference || '',
+        uid: qrUid,
+        label: eq.name || eq.reference || '',
+        serial,
+        magNumber: mag,
+        qrPayload: qrUid ? buildEquipmentQrPayload(qrUid) : ' ',
+      };
+      const labelH = Number(req.query?.labelH) > 0 ? Number(req.query.labelH) : undefined;
+      const svg = buildLightburnLabelSvg(item, labelH ? { labelH } : {});
+      res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="lightburn-${id}-${qrUid || 'label'}.svg"`,
+      );
+      res.send(svg);
+    } catch (e) {
+      logger.error('GET /api/labels/lightburn/single/:id:', e.message);
+      res.status(500).json({ error: 'Erreur de génération LightBurn unitaire', detail: e.message });
+    }
+  });
+
   logger.info('  ✅ Routes Labels (étiquettes laser LightBurn) prêtes');
 }

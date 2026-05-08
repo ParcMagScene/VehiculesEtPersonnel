@@ -16,6 +16,13 @@ import {
 } from './schemas/auth.js';
 import { validate } from './schemas/imports.js';
 import { decryptPassword, encryptPassword } from './videoProxyService.js';
+// [FIX 1] Service backups (lecture seule).
+import {
+  getRecentLog as getBackupRecentLog,
+  getStatus as getBackupStatus,
+  listBackups as listBackupFiles,
+  readManifest as readBackupManifest,
+} from './services/backupService.js';
 
 export function setupAdminRoutes(
   app,
@@ -1116,5 +1123,20 @@ export function setupAdminRoutes(
       req,
     });
     res.json({ success: true, message: name ? `Cache '${name}' vidé` : 'Tous les caches vidés' });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // [FIX 1] Backups — endpoints lecture seule.
+  // Le déclenchement reste manuel via cron (scripts/backup/backup-orchestrator.sh).
+  // ─────────────────────────────────────────────────────────────────────
+  app.get('/api/admin/backups/status', authenticateToken, requireAdmin, (_req, res) => {
+    res.json({ success: true, status: getBackupStatus() });
+  });
+  app.get('/api/admin/backups/list', authenticateToken, requireAdmin, (_req, res) => {
+    res.json({ success: true, ...listBackupFiles(), manifest: readBackupManifest() });
+  });
+  app.get('/api/admin/backups/log', authenticateToken, requireAdmin, (req, res) => {
+    const lines = Math.max(1, Math.min(500, Number(req.query.lines) || 50));
+    res.json({ success: true, lines: getBackupRecentLog(lines) });
   });
 } // end setupAdminRoutes

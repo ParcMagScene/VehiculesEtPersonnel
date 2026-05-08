@@ -486,6 +486,40 @@ const EquipmentSlidePanel = ({
             </Button>
           </Tooltip>
         )}
+        {/* [FIX 5] Étiquette laser unitaire LightBurn — télécharge le SVG via API */}
+        {currentEq?.id && (
+          <Tooltip content="Étiquette laser LightBurn (SVG)">
+            <Button
+              variant="secondary"
+              className="eq-footer-icon-btn"
+              iconOnly
+              aria-label="Étiquette laser LightBurn"
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('token');
+                  const resp = await fetch(`/api/labels/lightburn/single/${currentEq.id}`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                  });
+                  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                  const blob = await resp.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `lightburn-${currentEq.id}-${currentEq.uid || currentEq.reference || 'label'}.svg`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (e) {
+                  // eslint-disable-next-line no-alert
+                  alert(`Erreur génération étiquette LightBurn : ${e.message}`);
+                }
+              }}
+            >
+              <Printer size={14} />
+            </Button>
+          </Tooltip>
+        )}
         {onPrintSheet && (
           <Tooltip content="Imprimer la fiche">
             <Button

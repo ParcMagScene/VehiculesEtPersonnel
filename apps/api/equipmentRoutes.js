@@ -580,6 +580,78 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
     },
   );
 
+  // [FIX 7] POST /api/equipment/:id/archive — soft-archive (admin)
+  // Préférable au DELETE physique pour préserver l'historique des affectations.
+  app.post(
+    '/api/equipment/:id/archive',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const exists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(req.params.id);
+        if (!exists)
+          return res.status(404).json({ success: false, error: 'Équipement introuvable' });
+        db.prepare(
+          "UPDATE equipment SET archived = 1, archived_at = datetime('now') WHERE id = ?",
+        ).run(req.params.id);
+        addToHistory('equipment', req.params.id, 'archive', {}, req.user.id, req.user.name);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
+
+  // [FIX 7] POST /api/equipment/:id/unarchive — restauration (admin)
+  app.post(
+    '/api/equipment/:id/unarchive',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const exists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(req.params.id);
+        if (!exists)
+          return res.status(404).json({ success: false, error: 'Équipement introuvable' });
+        db.prepare('UPDATE equipment SET archived = 0, archived_at = NULL WHERE id = ?').run(
+          req.params.id,
+        );
+        addToHistory('equipment', req.params.id, 'unarchive', {}, req.user.id, req.user.name);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
+
+  // [FIX 7] GET /api/equipment-archived — liste paginée des archivés
+  // (nom avec tiret pour éviter le conflit avec /api/equipment/:id)
+  app.get('/api/equipment-archived', authenticateToken, (req, res) => {
+    try {
+      const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);
+      const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+      const total = db
+        .prepare('SELECT COUNT(*) AS c FROM equipment WHERE COALESCE(archived,0)=1')
+        .get().c;
+      const items = db
+        .prepare(
+          `SELECT id, name, reference, serial_number, uid, brand, archived, archived_at
+             FROM equipment
+            WHERE COALESCE(archived,0)=1
+            ORDER BY COALESCE(archived_at, '') DESC, id DESC
+            LIMIT ? OFFSET ?`,
+        )
+        .all(limit, offset);
+      res.json({ success: true, total, limit, offset, items });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // ═══ POST /api/equipment/:id/serialize — Sérialisation : attribuer UID (qty=1) ou scinder qty > 1 en entités individuelles UID ═══
   app.post(
     '/api/equipment/:id/serialize',

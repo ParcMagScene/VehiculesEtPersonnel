@@ -26,7 +26,8 @@ import { getNextUid } from './services/uidCounter.js';
 // ─── Helpers DB (Modèle A) ───
 // Représentant equipment par reference (UPPER) — choisit en priorité une ligne
 // "catalogue" (sans serial_number), sinon la 1ère unité trouvée. Les lignes
-// `[archive]` issues de la migration sont ignorées.
+// `[archive]` issues de la migration sont ignorées (FIX 7 : flag archived prioritaire,
+// LIKE conservé en backup pour les bases pas encore migrées).
 function buildDbCatalogByCode() {
   const rows = db
     .prepare(
@@ -37,6 +38,7 @@ function buildDbCatalogByCode() {
               location, serial_number
        FROM equipment
        WHERE reference IS NOT NULL AND reference != ''
+         AND COALESCE(archived, 0) = 0
          AND (name IS NULL OR name NOT LIKE '%[archive]%')`,
     )
     .all();
@@ -248,6 +250,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
                   location_zone, location_code, location_floor, location_depot
            FROM equipment
            WHERE UPPER(reference) = UPPER(?)
+             AND COALESCE(archived, 0) = 0
              AND (name IS NULL OR name NOT LIKE '%[archive]%')
              AND (status IS NULL OR status != 'removed')
            ORDER BY
@@ -630,6 +633,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
                   location, location_zone, location_code, location_floor, location_depot
            FROM equipment
            WHERE UPPER(reference) = UPPER(?)
+             AND COALESCE(archived, 0) = 0
              AND (name IS NULL OR name NOT LIKE '%[archive]%')
              AND (status IS NULL OR status != 'removed')
            ORDER BY

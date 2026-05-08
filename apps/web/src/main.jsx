@@ -1,6 +1,7 @@
 import './theme.css';
 import './design/tokens.css';
 import './design/utilities.css';
+import './styles/grid-tokens.css';
 import './theme-palettes.css';
 import './theme-vscode.css';
 import './theme-density.css';

@@ -47,7 +47,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
   const [mode, setMode] = useState('semaine');
   const [semaine, setSemaine] = useState(getISOWeek(new Date()));
   const [mois, setMois] = useState(formatMonthISO(new Date()));
-  const [annee, setAnnee] = useState(String(new Date().getFullYear()));
+  const [annee, setAnnee] = useState(String(new Date().getFullYear())); // Aucune correction nécessaire, dépendances correctes dans useCallback(fetchSynthese)
   const [synthese, setSynthese] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

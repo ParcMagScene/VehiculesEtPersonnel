@@ -41,9 +41,24 @@ function Modal({
     previousFocus.current = document.activeElement;
     const orig = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+
+    // Debug overlay multiples
+    setTimeout(() => {
+      const overlays = document.querySelectorAll('.ui-modal-overlay');
+      if (overlays.length > 1) {
+        console.warn('[Modal] Plusieurs overlays détectés:', overlays.length, overlays);
+        overlays.forEach((el) => {
+          el.setAttribute('data-multi-overlay', 'true');
+        });
+      }
+    }, 100);
+
     return () => {
       document.body.style.overflow = orig;
       previousFocus.current?.focus?.();
+      // Nettoie l'attribut warning
+      const overlays = document.querySelectorAll('.ui-modal-overlay[data-multi-overlay]');
+      overlays.forEach((el) => el.removeAttribute('data-multi-overlay'));
     };
   }, [open]);
 
@@ -116,7 +131,26 @@ function Modal({
       ref={overlayRef}
       onMouseDown={handleOverlayClick}
       onClick={handleOverlayClick}
+      data-multi-overlay={undefined}
     >
+      {/* Warning visuel si plusieurs overlays */}
+      {typeof window !== 'undefined' && overlayRef.current && overlayRef.current.getAttribute('data-multi-overlay') === 'true' && (
+        <div style={{
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          zIndex: 9999,
+          background: '#f43f5e',
+          color: '#fff',
+          padding: '6px 12px',
+          borderRadius: 6,
+          fontWeight: 700,
+          fontSize: 14,
+          boxShadow: '0 2px 8px #0003',
+        }}>
+          ⚠️ Plusieurs overlays modaux actifs !
+        </div>
+      )}
       <div
         className={cls}
         role="dialog"

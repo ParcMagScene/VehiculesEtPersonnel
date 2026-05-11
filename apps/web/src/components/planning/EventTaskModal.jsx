@@ -13,7 +13,7 @@ import {
   Truck,
   Wrench,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
 
@@ -112,6 +112,14 @@ const TASK_STEPS = [
 const getVisibleSteps = () => TASK_STEPS;
 
 function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }) {
+    // Bloque le scroll du body quand le modal est ouvert
+    useEffect(() => {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }, []);
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -349,7 +357,6 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       onClose={onClose}
       size="lg"
       className="etm-modal no-drag-resize"
-      disableBackdropBlur
     >
       <ModalHeader icon={<Calendar size={18} />} onClose={onClose}>
         <span className="etm-header-title">Définir les tâches</span>

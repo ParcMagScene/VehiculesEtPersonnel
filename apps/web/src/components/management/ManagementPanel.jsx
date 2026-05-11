@@ -186,40 +186,48 @@ const ManagementPanel = ({
 
   // Les lieux utilisent maintenant LocationDialog avec PlaceAutocompleteElement
 
-  const tabs =
-    panelType === 'settings'
-      ? [
-          { id: 'account', label: 'Mon compte', icon: Lock, color: 'var(--theme-text-gray)' },
-          ...(currentUser?.isAdmin
-            ? [
-                { id: 'users', label: 'Utilisateurs', icon: Shield, color: STATUS_COLORS.danger },
-                { id: 'sync', label: 'Import/Export', icon: Cloud, color: ACCENT_COLORS.pink },
-                { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
-                { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
-                {
-                  id: 'depot-map',
-                  label: 'Plan Dépôt',
-                  icon: MapPin,
-                  color: STATUS_COLORS.success,
-                },
-              ]
-            : []),
-        ]
-      : [
-          { id: 'vehicles', label: 'Véhicules', icon: Truck, color: STATUS_COLORS.info },
-          { id: 'clients', label: 'Clients', icon: UserCircle2, color: ACCENT_COLORS.violet },
-          ...(currentUser?.isAdmin
-            ? [
-                { id: 'requests', label: 'Demandes', icon: Calendar, color: ACCENT_COLORS.orange },
-                {
-                  id: 'rental-reports',
-                  label: 'Rapports Locations',
-                  icon: Gauge,
-                  color: ACCENT_COLORS.cyan || '#06b6d4',
-                },
-              ]
-            : []),
-        ];
+  const tabs = React.useMemo(
+    () =>
+      panelType === 'settings'
+        ? [
+            { id: 'account', label: 'Mon compte', icon: Lock, color: 'var(--theme-text-gray)' },
+            ...(currentUser?.isAdmin
+              ? [
+                  { id: 'users', label: 'Utilisateurs', icon: Shield, color: STATUS_COLORS.danger },
+                  { id: 'sync', label: 'Import/Export', icon: Cloud, color: ACCENT_COLORS.pink },
+                  { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
+                  { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
+                  {
+                    id: 'depot-map',
+                    label: 'Plan Dépôt',
+                    icon: MapPin,
+                    color: STATUS_COLORS.success,
+                  },
+                ]
+              : []),
+          ]
+        : [
+            { id: 'vehicles', label: 'Véhicules', icon: Truck, color: STATUS_COLORS.info },
+            { id: 'clients', label: 'Clients', icon: UserCircle2, color: ACCENT_COLORS.violet },
+            ...(currentUser?.isAdmin
+              ? [
+                  {
+                    id: 'requests',
+                    label: 'Demandes',
+                    icon: Calendar,
+                    color: ACCENT_COLORS.orange,
+                  },
+                  {
+                    id: 'rental-reports',
+                    label: 'Rapports Locations',
+                    icon: Gauge,
+                    color: ACCENT_COLORS.cyan || '#06b6d4',
+                  },
+                ]
+              : []),
+          ],
+    [panelType, currentUser],
+  );
 
   useEffect(() => {
     const validTabIds = tabs.map((t) => t.id);

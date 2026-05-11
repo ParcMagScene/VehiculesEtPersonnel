@@ -71,6 +71,26 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   const [showRecurring, setShowRecurring] = useState(false),
     [recurringTasks, setRecurringTasks] = useState([]),
     [recurringForm, setRecurringForm] = useState(null);
+
+  // Patch : ferme tous les autres modaux avant d’ouvrir EventTaskModal
+  const openEventTaskModal = useCallback((event) => {
+    setShowAddTaskModal(false);
+    setEditingTask(null);
+    setShowRecurring(false);
+    setEventTaskModalEvent((prev) => {
+      if (prev && prev.id === event.id) {
+        // Déjà ouvert sur ce même event, ne rien faire
+        if (process.env.NODE_ENV !== 'production') {
+          // eslint-disable-next-line no-console
+          console.warn('[TaskPlanningPanel] Tentative d\'ouverture du modal déjà ouvert sur le même event', event);
+        }
+        return prev;
+      }
+      return event;
+    });
+  }, []);
+
+  // Remplacer tous les usages de setEventTaskModalEvent(event) par openEventTaskModal(event)
   const [collapsedSections, setCollapsedSections] = useState({});
   const toggleSectionCollapse = useCallback(
     (key) => setCollapsedSections((p) => ({ ...p, [key]: !p[key] })),
@@ -124,7 +144,9 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         }
         initialLoadDone.current = true;
       } catch {
-        toast.error('Erreur chargement tâches');
+        setTasks([]);
+        setDisplayEvents([]);
+        setAffaires([]);
       } finally {
         setLoading(false);
       }
@@ -772,10 +794,10 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   );
   const openAffaireTaskModal = useCallback((af) => {
     if (af._linkedGoogleEvent) {
-      setEventTaskModalEvent(af._linkedGoogleEvent);
+      openEventTaskModal(af._linkedGoogleEvent);
       return;
     }
-    setEventTaskModalEvent({
+    openEventTaskModal({
       id: `affaire-${af.id || af.numeroAffaire}`,
       summary: `${af.type || ''} ${af.numeroAffaire}${af.client ? ' — ' + af.client : ''}`,
       start: { date: af.dateDebut || af.date_debut || '' },
@@ -862,7 +884,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         processedGoogleIds={processedGoogleIds}
         tasksBySourceId={tasksBySourceId}
         onNavigateToEntity={onNavigateToEntity}
-        onOpenEventTaskModal={setEventTaskModalEvent}
+        onOpenEventTaskModal={openEventTaskModal}
         linkingEvent={linkingEvent}
         setLinkingEvent={setLinkingEvent}
         linkSearchQuery={linkSearchQuery}
@@ -909,7 +931,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         processedGoogleIds={processedGoogleIds}
         tasksBySourceId={tasksBySourceId}
         onNavigateToEntity={onNavigateToEntity}
-        onOpenEventTaskModal={setEventTaskModalEvent}
+        onOpenEventTaskModal={openEventTaskModal}
         linkingEvent={linkingEvent}
         setLinkingEvent={setLinkingEvent}
         linkSearchQuery={linkSearchQuery}

@@ -358,11 +358,14 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
   }, [depotId, activeFloor]);
 
   // Zoom/Pan handlers for editor canvas
-  const handleEditorWheel = useCallback((e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -EDITOR_ZOOM_STEP : EDITOR_ZOOM_STEP;
-    setEditorZoom((z) => Math.max(EDITOR_MIN_ZOOM, Math.min(EDITOR_MAX_ZOOM, z + delta)));
-  }, []);
+  const handleEditorWheel = useCallback(
+    (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -EDITOR_ZOOM_STEP : EDITOR_ZOOM_STEP;
+      setEditorZoom((z) => Math.max(EDITOR_MIN_ZOOM, Math.min(EDITOR_MAX_ZOOM, z + delta)));
+    },
+    [EDITOR_ZOOM_STEP, EDITOR_MIN_ZOOM, EDITOR_MAX_ZOOM],
+  );
 
   useEffect(() => {
     const el = canvasRef.current;

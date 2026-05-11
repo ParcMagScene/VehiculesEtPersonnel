@@ -169,7 +169,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
         setError('Erreur chargement personnel');
       }
     })();
-  }, []);
+  }, [currentUser, initialPersonId, selectedPerson]);
 
   // Charger la fiche quand personne ou date change
   useEffect(() => {

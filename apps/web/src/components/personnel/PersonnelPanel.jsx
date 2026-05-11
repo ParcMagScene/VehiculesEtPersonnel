@@ -292,7 +292,7 @@ const PersonnelPanel = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setPersons, setSkills, setPositions, setUsers, setError, setLoading]);
 
   useEffect(() => {
     loadData();

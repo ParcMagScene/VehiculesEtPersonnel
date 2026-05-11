@@ -137,7 +137,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
           .catch((e) => console.error('Erreur affectation tâche:', e));
       }
     },
-    [entries.length, sheet?.person_id],
+    [entries.length, sheet],
   );
 
   const handleEntryChange = useCallback((key, field, value) => {

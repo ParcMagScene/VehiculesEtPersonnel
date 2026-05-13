@@ -455,12 +455,16 @@ export function setupSavRoutes(app, authenticateToken, requireAdmin) {
       const ticket = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
       if (!ticket) return res.status(404).json({ success: false, error: 'Ticket introuvable' });
 
-      const allowed = ['status', 'notes', 'resolution', 'cost'];
+      // S1-07 — Whitelist figée des colonnes éditables d'un ticket SAV.
+      // L'itération `for (const key of SAV_TICKET_EDITABLE)` garantit que `key`
+      // ne provient JAMAIS du body utilisateur : aucune injection possible
+      // dans `${key} = ?`.
+      const SAV_TICKET_EDITABLE = Object.freeze(['status', 'notes', 'resolution', 'cost']);
       const sets = [];
       const params = [];
       const histInserts = [];
 
-      for (const key of allowed) {
+      for (const key of SAV_TICKET_EDITABLE) {
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           if (key === 'status' && !SAV_STATUS_VALUES.includes(req.body[key])) {
             return res.status(400).json({

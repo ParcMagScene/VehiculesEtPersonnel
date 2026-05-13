@@ -550,6 +550,23 @@ function OrdersPanel({ currentUser, isMobile }) {
     });
   };
 
+  // #7 Retirer une demande approuvée de sa/ses commande(s) liée(s).
+  const handleDetachRequest = (request) => {
+    confirm({
+      title: 'Retirer de la commande',
+      message: `Retirer la demande « ${request.article} » de la commande liée ? La demande repassera en attente et les lignes correspondantes seront supprimées de la commande.`,
+      onConfirm: async () => {
+        try {
+          await api.detachMaterialRequest(request.id);
+          toast.success('Demande retirée de la commande');
+          loadData();
+        } catch (error) {
+          toast.error('Erreur: ' + (error.message || 'Impossible de retirer la demande'));
+        }
+      },
+    });
+  };
+
   // ═══ Handlers Fournisseurs enrichis ═══
   const handleSupplierClick = async (supplier) => {
     try {
@@ -1078,6 +1095,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           isAdmin={currentUser?.isAdmin}
           onValidate={handleValidateRequest}
           onDelete={handleDeleteRequest}
+          onDetach={handleDetachRequest}
           onEdit={(r) => {
             setDialogRequest(null);
             handleEditRequest(r);

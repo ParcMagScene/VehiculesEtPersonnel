@@ -1556,11 +1556,13 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.id);
         if (!user?.is_admin) return res.status(403).json({ success: false, error: 'Non autorisé' });
       }
-      if (existing.status !== 'pending') {
-        return res
-          .status(400)
-          .json({ success: false, error: 'Demande déjà traitée — modification impossible' });
+      if (existing.status !== 'pending' && existing.status !== 'approved') {
+        return res.status(400).json({
+          success: false,
+          error: 'Demande déjà commandée ou rejetée — modification impossible',
+        });
       }
+      const isApproved = existing.status === 'approved';
       const {
         article,
         supplier_id,
@@ -1606,13 +1608,43 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         );
 
         if (normalisedLines) {
-          db.prepare('DELETE FROM material_request_lines WHERE request_id = ?').run(req.params.id);
-          const insertLine = db.prepare(
-            `INSERT INTO material_request_lines (request_id, article, ref_code, quantity)
-             VALUES (?, ?, ?, ?)`,
-          );
-          for (const l of normalisedLines) {
-            insertLine.run(req.params.id, l.article, l.ref_code, l.quantity);
+          // Sécurité : si la demande est déjà approuvée, on ne touche pas aux
+          // lignes liées à des order_items (préserve l'intégrité des commandes).
+          // Seules les lignes encore "pending" peuvent être modifiées.
+          if (isApproved) {
+            const linkedLines = db
+              .prepare(
+                `SELECT COUNT(*) AS c FROM material_request_lines
+                 WHERE request_id = ? AND status != 'pending'`,
+              )
+              .get(req.params.id).c;
+            if (linkedLines > 0) {
+              // Demande approuvée avec lignes liées : on ignore le replacement de
+              // lignes pour ne pas déranger la commande. Les méta sont quand même
+              // mises à jour ci-dessus.
+            } else {
+              db.prepare('DELETE FROM material_request_lines WHERE request_id = ?').run(
+                req.params.id,
+              );
+              const insertLine = db.prepare(
+                `INSERT INTO material_request_lines (request_id, article, ref_code, quantity)
+                 VALUES (?, ?, ?, ?)`,
+              );
+              for (const l of normalisedLines) {
+                insertLine.run(req.params.id, l.article, l.ref_code, l.quantity);
+              }
+            }
+          } else {
+            db.prepare('DELETE FROM material_request_lines WHERE request_id = ?').run(
+              req.params.id,
+            );
+            const insertLine = db.prepare(
+              `INSERT INTO material_request_lines (request_id, article, ref_code, quantity)
+               VALUES (?, ?, ?, ?)`,
+            );
+            for (const l of normalisedLines) {
+              insertLine.run(req.params.id, l.article, l.ref_code, l.quantity);
+            }
           }
         }
       });
@@ -1626,6 +1658,89 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         )
         .all(req.params.id);
       res.json(updated);
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // #7 Commandes : retirer une demande approuvée de sa/ses commande(s) liée(s).
+  // Repasse la demande en 'pending', supprime les order_items créés et nettoie
+  // les liens des lignes. Bloqué si l'une des commandes liées n'est plus
+  // modifiable (statut différent de draft/sent), pour ne pas casser une
+  // commande validée/expédiée/payée.
+  app.post('/api/material-requests/:id/detach', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const existing = db
+        .prepare('SELECT * FROM material_requests WHERE id = ?')
+        .get(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, error: 'Demande non trouvée' });
+      if (existing.status !== 'approved') {
+        return res.status(400).json({
+          success: false,
+          error: 'Seules les demandes approuvées peuvent être retirées d\u2019une commande',
+        });
+      }
+
+      const lines = db
+        .prepare(
+          `SELECT id, order_id, order_item_id, status FROM material_request_lines
+             WHERE request_id = ? AND order_id IS NOT NULL`,
+        )
+        .all(req.params.id);
+
+      if (lines.length === 0) {
+        return res
+          .status(400)
+          .json({ success: false, error: 'Aucune ligne liée à une commande à détacher' });
+      }
+
+      // Vérifie l'éligibilité de toutes les commandes cibles
+      const orderIds = [...new Set(lines.map((l) => l.order_id))];
+      const placeholders = orderIds.map(() => '?').join(',');
+      const linkedOrders = db
+        .prepare(`SELECT id, reference, status FROM orders WHERE id IN (${placeholders})`)
+        .all(...orderIds);
+      const blocking = linkedOrders.filter((o) => !['draft', 'sent'].includes(o.status));
+      if (blocking.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: `Impossible : commande(s) non modifiable(s) — ${blocking.map((o) => `${o.reference} (${o.status})`).join(', ')}`,
+        });
+      }
+
+      const detachTx = db.transaction(() => {
+        const deleteItem = db.prepare('DELETE FROM order_items WHERE id = ?');
+        const resetLine = db.prepare(
+          `UPDATE material_request_lines SET order_id = NULL, order_item_id = NULL, status = 'pending' WHERE id = ?`,
+        );
+        for (const l of lines) {
+          if (l.order_item_id) deleteItem.run(l.order_item_id);
+          resetLine.run(l.id);
+        }
+        db.prepare(
+          `UPDATE material_requests SET status = 'pending', order_id = NULL, approved_by = NULL, approved_by_name = NULL, approved_at = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        ).run(req.params.id);
+      });
+      detachTx();
+
+      addToHistory(
+        'material_request',
+        req.params.id,
+        'detach',
+        JSON.stringify({ orders: linkedOrders.map((o) => o.reference) }),
+        req.user.id,
+        req.user.name,
+      );
+
+      const updated = db.prepare('SELECT * FROM material_requests WHERE id = ?').get(req.params.id);
+      updated.lines = db
+        .prepare(
+          `SELECT id, request_id, article, ref_code, quantity, order_id, order_item_id, status
+             FROM material_request_lines WHERE request_id = ? ORDER BY id ASC`,
+        )
+        .all(req.params.id);
+      res.json({ success: true, request: updated, detached_orders: linkedOrders });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

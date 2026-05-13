@@ -1801,6 +1801,41 @@ function initializeDatabase() {
     logger.info('Info: Migration code_libre/postal_code/city:', error.message);
   }
 
+  // Migration Annuaire Personnel : champs RH/contact étendus.
+  // Les champs sensibles (social_security_number, iban, hr_notes) sont protégés
+  // côté API (lecture/écriture admin uniquement, voir personnelRoutes.js).
+  try {
+    const personsCols3 = db.prepare('PRAGMA table_info(persons)').all();
+    const have = new Set(personsCols3.map((c) => c.name));
+    const annuaireCols = [
+      ['address', 'TEXT'],
+      ['country', "TEXT DEFAULT 'France'"],
+      ['phone_personal', 'TEXT'],
+      ['personal_email', 'TEXT'],
+      ['birth_date', 'TEXT'],
+      ['emergency_contact_name', 'TEXT'],
+      ['emergency_contact_phone', 'TEXT'],
+      ['emergency_contact_relation', 'TEXT'],
+      ['linkedin_url', 'TEXT'],
+      // Sensibles — admin only.
+      ['social_security_number', 'TEXT'],
+      ['iban', 'TEXT'],
+      ['hr_notes', 'TEXT'],
+    ];
+    let added = 0;
+    for (const [col, def] of annuaireCols) {
+      if (!have.has(col)) {
+        db.prepare(`ALTER TABLE persons ADD COLUMN ${col} ${def}`).run();
+        added++;
+      }
+    }
+    if (added > 0) {
+      logger.info(`✅ ${added} colonnes Annuaire ajoutées à persons`);
+    }
+  } catch (error) {
+    logger.info('Info: Migration colonnes annuaire persons:', error.message);
+  }
+
   // ============================================================
   // Tables Catalogue Matériel + Flight-Cases + Modèles Camions
   // Intégration eM@g ↔ Catalogue ↔ Chargement 3D

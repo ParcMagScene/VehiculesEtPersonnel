@@ -40,6 +40,19 @@ export const personSchema = z
     contract_end: optDate,
     weekly_hours: optNum,
     position_id: optInt,
+    // ── Annuaire Personnel (étendu) ──
+    country: optStr(100),
+    phone_personal: optStr(30),
+    personal_email: optStr(255),
+    birth_date: optDate,
+    emergency_contact_name: optStr(255),
+    emergency_contact_phone: optStr(30),
+    emergency_contact_relation: optStr(100),
+    linkedin_url: optStr(500),
+    // Sensibles — admin only côté route.
+    social_security_number: optStr(30),
+    iban: optStr(40),
+    hr_notes: optStr(5000),
   })
   .passthrough();
 

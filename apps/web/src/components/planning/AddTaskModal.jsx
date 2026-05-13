@@ -14,6 +14,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
+import ReactDOM from 'react-dom';
 
 import { STATUS } from '../../constants';
 import { PLANNING_SECTIONS } from '../../constants/colors';
@@ -83,6 +84,12 @@ export default function AddTaskModal({
   const [client, setClient] = useState('');
   const [time, setTime] = useState('');
   const [period, setPeriod] = useState('AM');
+  // Date éditable de la tâche : initialisée depuis selectedDate (jour ouvert
+  // dans le planning) mais l'utilisateur peut choisir un autre jour avant
+  // de valider. Format ISO YYYY-MM-DD attendu par l'input type="date".
+  const [taskDate, setTaskDate] = useState(selectedDate || '');
+  // Toggle "Journée entière" : masque Heure+Période et envoie all_day=1.
+  const [allDay, setAllDay] = useState(false);
   const [affaireNum, setAffaireNum] = useState('');
   const [googleEventId, setGoogleEventId] = useState('');
   const [reservationId, setReservationId] = useState('');
@@ -123,6 +130,8 @@ export default function AddTaskModal({
       setClient('');
       setTime('');
       setPeriod('AM');
+      setTaskDate(selectedDate || '');
+      setAllDay(false);
       setAffaireNum('');
       setGoogleEventId('');
       setReservationId('');
@@ -259,9 +268,9 @@ export default function AddTaskModal({
           const newRez = await api.createReservation({
             id: `${Date.now()}.${Math.random()}`,
             vehicle_id: vehicleId,
-            start_date: selectedDate,
+            start_date: taskDate || selectedDate,
             start_period: period || 'AM',
-            end_date: selectedDate,
+            end_date: taskDate || selectedDate,
             end_period: period || 'PM',
             client_name: client || selectedAffaire?.client || '',
             driver_name: personId
@@ -293,9 +302,10 @@ export default function AddTaskModal({
           : 'manual';
 
       await api.createTask({
-        date: selectedDate,
-        period: period || 'AM',
-        time: time || null,
+        date: taskDate || selectedDate,
+        period: allDay ? 'AM' : period || 'AM',
+        all_day: allDay ? 1 : 0,
+        time: allDay ? null : time || null,
         section: effectiveSection,
         title: finalTitle,
         person_id: personId || null,
@@ -337,14 +347,17 @@ export default function AddTaskModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // --- PATCH PORTAL ---
+  // Définition des variables d'affichage conditionnel
 
   const showCourseType = section === COURSE_SECTION;
-  const showLocation = section === COURSE_SECTION;
+  const showLocation = section === COURSE_SECTION || VEHICLE_SECTIONS.has(section);
   const showVehicle = VEHICLE_SECTIONS.has(section);
 
-  return (
+  // On rend le modal dans #task-modal-root pour garantir l'isolation
+  return ReactDOM.createPortal(
     <Modal open onClose={onClose} size="lg" className="atm-modal no-drag-resize">
+      {/* ...tout le JSX du modal inchangé... */}
       <ModalHeader icon={<Plus size={18} />} onClose={onClose}>
         Nouvelle tâche
       </ModalHeader>
@@ -641,22 +654,56 @@ export default function AddTaskModal({
           </div>
         )}
 
-        {/* Heure + Période */}
+        {/* Date + Journée entière (ajouts 2026-05) :
+            - Date : permet de cibler un autre jour que celui ouvert dans le planning.
+            - Journée entière : masque Heure/Période et envoie all_day=1 au backend. */}
         <div className="atm-row">
           <div className="atm-field atm-field-half">
-            <label>
-              <Clock size={13} /> Heure
-            </label>
-            <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} />
+            <label>Date</label>
+            <input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
           </div>
-          <div className="atm-field atm-field-half">
-            <label>Période</label>
-            <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-              <option value="AM">AM (Matin)</option>
-              <option value="PM">PM (Après-midi)</option>
-            </Select>
+          <div
+            className="atm-field atm-field-half"
+            style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 6 }}
+          >
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={allDay}
+                onChange={(e) => setAllDay(e.target.checked)}
+                style={{ width: 16, height: 16 }}
+              />
+              <span>Journée entière</span>
+            </label>
           </div>
         </div>
+
+        {/* Heure + Période (masqués si journée entière) */}
+        {!allDay && (
+          <div className="atm-row">
+            <div className="atm-field atm-field-half">
+              <label>
+                <Clock size={13} /> Heure
+              </label>
+              <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} />
+            </div>
+            <div className="atm-field atm-field-half">
+              <label>Période</label>
+              <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                <option value="AM">AM (Matin)</option>
+                <option value="PM">PM (Après-midi)</option>
+              </Select>
+            </div>
+          </div>
+        )}
       </ModalBody>
 
       <ModalFooter className="atm-footer">
@@ -673,6 +720,7 @@ export default function AddTaskModal({
           )}
         </Button>
       </ModalFooter>
-    </Modal>
+    </Modal>,
+    document.getElementById('task-modal-root'),
   );
 }

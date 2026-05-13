@@ -60,6 +60,26 @@
   background: var(--surface-tertiary);
 }
 
+/* Flèches navigation : on force la visibilité des bordures et de l'icône
+   même si le composant Button du design system applique son propre style.
+   Spécificité accrue pour gagner contre les styles génériques de variant=secondary. */
+.task-planning-panel .tp-date-nav .tp-nav-arrow,
+.task-planning-panel .tp-date-nav button.tp-nav-arrow {
+  border: 1px solid var(--border-default) !important;
+  background: var(--surface-primary) !important;
+  color: var(--text-body) !important;
+  padding: 0;
+  min-width: 32px;
+}
+.task-planning-panel .tp-date-nav .tp-nav-arrow:hover,
+.task-planning-panel .tp-date-nav button.tp-nav-arrow:hover {
+  background: var(--surface-tertiary) !important;
+  color: var(--accent-primary, var(--text-body)) !important;
+}
+.task-planning-panel .tp-date-nav .tp-nav-arrow svg {
+  display: block;
+}
+
 .task-planning-panel .tp-date-nav .tp-current-date {
   font-weight: 600;
   font-size: var(--font-base);

@@ -48,24 +48,53 @@ export const loadGoogleMapsAPI = (apiKey) => {
       script.defer = true;
 
       script.onload = () => {
-        // Attendre que l'API soit complètement initialisée
-        const checkApiReady = () => {
-          if (window.google?.maps?.Map && window.google?.maps?.places) {
-            isLoaded = true;
-            isLoading = false;
-
-            // Résoudre toutes les promesses en attente
-            loadPromises.forEach(({ resolve: res }) => res());
-            loadPromises.length = 0;
-
-            resolve();
-          } else {
-            // Réessayer après un court délai
-            setTimeout(checkApiReady, 50);
-          }
+        // En mode `loading=async`, les sous-modules (Map, places, marker, …) ne
+        // sont PAS exposés sur `window.google.maps` tant que l'on n'a pas appelé
+        // `importLibrary`. Sans ça, `checkApiReady` ci-dessous boucle indéfiniment
+        // et le LocationDialog finit par afficher « Impossible de charger Google
+        // Maps ». On précharge donc les bibliothèques requises avant de résoudre.
+        const ensureLibraries = async () => {
+          if (!window.google?.maps?.importLibrary) return;
+          await Promise.all([
+            window.google.maps.importLibrary('maps'),
+            window.google.maps.importLibrary('places'),
+            window.google.maps.importLibrary('marker').catch(() => null),
+          ]);
         };
 
-        checkApiReady();
+        ensureLibraries()
+          .catch((err) => {
+            // On n'interrompt pas : checkApiReady détectera l'échec final.
+            console.warn('[googleMapsLoader] importLibrary partiel:', err?.message);
+          })
+          .finally(() => {
+            // Attendre que l'API soit complètement initialisée
+            const startedAt = Date.now();
+            const checkApiReady = () => {
+              if (window.google?.maps?.Map && window.google?.maps?.places) {
+                isLoaded = true;
+                isLoading = false;
+
+                // Résoudre toutes les promesses en attente
+                loadPromises.forEach(({ resolve: res }) => res());
+                loadPromises.length = 0;
+
+                resolve();
+              } else if (Date.now() - startedAt > 10000) {
+                isLoading = false;
+                const err = new Error(
+                  "Google Maps API: timeout d'initialisation (Map ou places indisponibles)",
+                );
+                loadPromises.forEach(({ reject: rej }) => rej(err));
+                loadPromises.length = 0;
+                reject(err);
+              } else {
+                setTimeout(checkApiReady, 50);
+              }
+            };
+
+            checkApiReady();
+          });
       };
 
       script.onerror = (error) => {

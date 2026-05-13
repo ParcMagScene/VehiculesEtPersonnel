@@ -57,6 +57,8 @@ const Header = ({
     total: 0,
   });
   const [pendingReservationRequests, setPendingReservationRequests] = useState([]);
+  // #8 Notifications onglets : compteur demandes matériel en attente (badge sur l'onglet Commandes)
+  const [pendingMaterialRequests, setPendingMaterialRequests] = useState(0);
 
   // [PERF Sprint 2] Fusion de deux setInterval(30s) en un seul, avec Promise.all
   // pour grouper les requêtes (compteur demandes interventions/réservations + compteur
@@ -65,15 +67,19 @@ const Header = ({
     const loadAdminBadges = async () => {
       if (!currentUser?.isAdmin) return;
       if (isApiCoolingDown()) return;
-      const [countsRes, accessRes] = await Promise.allSettled([
+      const [countsRes, accessRes, matStatsRes] = await Promise.allSettled([
         api.getPendingRequestsCount(),
         api.getPendingAccessRequestsCount(),
+        api.getMaterialRequestsStats(),
       ]);
       if (countsRes.status === 'fulfilled' && countsRes.value) {
         setPendingRequestsCounts(countsRes.value);
       }
       if (accessRes.status === 'fulfilled' && accessRes.value) {
         setPendingAccessRequests(accessRes.value.count || 0);
+      }
+      if (matStatsRes.status === 'fulfilled' && matStatsRes.value) {
+        setPendingMaterialRequests(Number(matStatsRes.value.pending) || 0);
       }
       // Erreurs silencieuses : valeurs initiales conservées (badges = 0)
     };
@@ -260,8 +266,16 @@ const Header = ({
                     orderedTabs.push(t);
                   }
                 });
+                // #8 Compteurs de notifications par onglet (admin uniquement)
+                const tabBadges = currentUser?.isAdmin
+                  ? {
+                      vehicles: pendingRequestsCounts.reservationRequests || 0,
+                      orders: pendingMaterialRequests || 0,
+                    }
+                  : {};
                 return orderedTabs.map((tab) => {
                   const Icon = tab.icon;
+                  const badgeCount = tabBadges[tab.id] || 0;
                   return (
                     <Button
                       variant="ghost"
@@ -273,6 +287,15 @@ const Header = ({
                     >
                       <Icon size={18} />
                       <span>{tab.label}</span>
+                      {badgeCount > 0 && (
+                        <span
+                          className="module-tab-badge"
+                          aria-label={`${badgeCount} demande(s) en attente`}
+                          title={`${badgeCount} demande(s) en attente`}
+                        >
+                          {badgeCount > 9 ? '9+' : badgeCount}
+                        </span>
+                      )}
                     </Button>
                   );
                 });

@@ -624,11 +624,12 @@ function FicheSuivi({ sheet, onSave, saving }) {
         .map((e) => e.task_assignment_id)
         .filter(Boolean),
     );
-    const availableTasks = planningTasks.filter(
-      (t) =>
-        (!t.period || t.period === period || t.period === 'FULL') &&
-        !existingIncompleteTaskIds.has(t.id),
-    );
+    // #2 Suivi AM/PM : on n'applique plus de filtre par période sur les tâches
+    // planning / événements Google. L'utilisateur choisit la section (AM ou PM)
+    // dans laquelle il veut importer la tâche en cliquant sur le bouton de la
+    // section correspondante. La période est forcée par le clic, pas par la
+    // période d'origine de la tâche.
+    const availableTasks = planningTasks.filter((t) => !existingIncompleteTaskIds.has(t.id));
     const recurringForPeriod = recurringTasks.filter((r) => r.period === period && r.active === 1);
 
     return (

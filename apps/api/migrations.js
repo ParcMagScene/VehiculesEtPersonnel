@@ -1255,6 +1255,37 @@ export function runPostInitMigrations(db) {
     }
   }
   logger.info(`✅ Perf Sprint 1 Index: ${perfIdxOk}/${perfSprint1Indexes.length} créés/vérifiés`);
+
+  // ═══ PERF Equipment — index ciblés sur le module Parc Matériel ═══
+  // Couvre les filtres GET /api/equipment, lookup by-uid, JOIN assignments/sav,
+  // et l'arbre des catégories.
+  const perfEquipmentIndexes = [
+    'CREATE INDEX IF NOT EXISTS idx_equipment_reference ON equipment(reference)',
+    'CREATE INDEX IF NOT EXISTS idx_equipment_serial ON equipment(serial_number)',
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_uid ON equipment(uid) WHERE uid IS NOT NULL',
+    'CREATE INDEX IF NOT EXISTS idx_equipment_location_zone ON equipment(location_zone)',
+    'CREATE INDEX IF NOT EXISTS idx_equipment_location_depot ON equipment(location_depot)',
+    'CREATE INDEX IF NOT EXISTS idx_equipment_brand_id ON equipment(brand_id)',
+    'CREATE INDEX IF NOT EXISTS idx_equipment_numero_mag ON equipment(numero_mag)',
+    'CREATE INDEX IF NOT EXISTS idx_ea_equipment_status ON equipment_assignments(equipment_id, status)',
+    'CREATE INDEX IF NOT EXISTS idx_ea_assigned_to ON equipment_assignments(assigned_to)',
+    'CREATE INDEX IF NOT EXISTS idx_sav_equipment ON sav_tickets(equipment_id)',
+    'CREATE INDEX IF NOT EXISTS idx_sav_status ON sav_tickets(status)',
+    'CREATE INDEX IF NOT EXISTS idx_sav_reported_by ON sav_tickets(reported_by)',
+    'CREATE INDEX IF NOT EXISTS idx_eqcat_parent_level ON equipment_categories(parent_id, level)',
+    'CREATE INDEX IF NOT EXISTS idx_eqlists_user_type ON equipment_lists(user_id, list_type)',
+  ];
+  let perfEqOk = 0;
+  for (const sql of perfEquipmentIndexes) {
+    try {
+      db.exec(sql);
+      perfEqOk++;
+    } catch (_) {
+      /* colonne/table absente ou index déjà existant — ignoré */
+    }
+  }
+  logger.info(`✅ Perf Equipment Index: ${perfEqOk}/${perfEquipmentIndexes.length} créés/vérifiés`);
+
   // ANALYZE après ajout d'index pour rafraîchir les stats du planner.
   try {
     db.exec('ANALYZE');

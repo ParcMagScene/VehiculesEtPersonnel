@@ -54,7 +54,12 @@ const TYPE_LABELS = {
   stagiaire: 'Stagiaire',
 };
 
-function SuiviPanel({ currentUser, initialPersonId }) {
+function SuiviPanel({
+  currentUser,
+  initialPersonId,
+  isPersonalMode = false,
+  onPersonalDataSaved = null,
+}) {
   const [activeTab, setActiveTab] = useState('fiches');
   const [personnel, setPersonnel] = useState([]);
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -169,7 +174,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
         setError('Erreur chargement personnel');
       }
     })();
-  }, []);
+  }, [currentUser, initialPersonId, selectedPerson]);
 
   // Charger la fiche quand personne ou date change
   useEffect(() => {
@@ -190,6 +195,8 @@ function SuiviPanel({ currentUser, initialPersonId }) {
     return () => {
       cancelled = true;
     };
+    // dépend uniquement de l'id (pas de l'objet entier) pour éviter les rechargements parasites
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPerson?.id, selectedDate]);
 
   const handleNavigateDay = useCallback(
@@ -222,6 +229,10 @@ function SuiviPanel({ currentUser, initialPersonId }) {
           const updated = await api.updateSuiviSheet(selectedPerson.id, selectedDate, payload);
           setSheet(updated);
         }
+        // Mode personnel : déclencher l'auto-logout après sauvegarde
+        if (isPersonalMode && onPersonalDataSaved) {
+          await onPersonalDataSaved();
+        }
       } catch (err) {
         setError('Erreur sauvegarde');
       } finally {
@@ -229,7 +240,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
         setSaving(false);
       }
     },
-    [selectedPerson, selectedDate],
+    [selectedPerson, selectedDate, isPersonalMode, onPersonalDataSaved],
   );
 
   // ─── Sélection multi-fiches pour impression ───

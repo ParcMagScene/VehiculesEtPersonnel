@@ -9,8 +9,22 @@ import { alertAssignmentCreated } from './emailService.js';
 import logger from './logger.js';
 import { personSchema } from './schemas/crud.js';
 import { personnelImportSchema, validate } from './schemas/imports.js';
+import { parsePagination, sendPaginated } from './utils/pagination.js';
 
 // ============ PERSONS (PERSONNEL) ============
+
+// Champs « annuaire » sensibles : visibles/modifiables par les admins uniquement.
+// Pour les non-admins : retirés des réponses GET et ignorés à l'écriture.
+const SENSITIVE_PERSON_FIELDS = ['social_security_number', 'iban', 'hr_notes'];
+
+const stripSensitive = (person) => {
+  if (!person) return person;
+  const out = { ...person };
+  for (const f of SENSITIVE_PERSON_FIELDS) delete out[f];
+  return out;
+};
+
+const isAdminUser = (user) => user?.role === 'admin';
 
 export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/persons — Liste tout le personnel (avec compétences)
@@ -59,10 +73,11 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         });
       }
 
-      const enriched = persons.map((p) => ({
-        ...p,
-        skills: skillsByPerson[p.id] || [],
-      }));
+      const admin = isAdminUser(req.user);
+      const enriched = persons.map((p) => {
+        const base = admin ? p : stripSensitive(p);
+        return { ...base, skills: skillsByPerson[p.id] || [] };
+      });
 
       res.json(enriched);
     } catch (error) {
@@ -106,7 +121,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         )
         .all(person.id);
 
-      res.json(person);
+      res.json(isAdminUser(req.user) ? person : stripSensitive(person));
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -123,11 +138,17 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
           .json({ success: false, error: 'first_name et last_name sont requis' });
       }
 
+      const admin = isAdminUser(req.user);
       const stmt = db.prepare(`
         INSERT INTO persons (first_name, last_name, email, phone, type, status,
           user_id, driver_id, license_types, certifications, contract_type, default_positions, notes, photo,
+          address, postal_code, city, country,
+          phone_personal, personal_email, birth_date,
+          emergency_contact_name, emergency_contact_phone, emergency_contact_relation,
+          linkedin_url,
+          social_security_number, iban, hr_notes,
           created_by, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const result = stmt.run(
@@ -145,6 +166,20 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         p.default_positions || '[]',
         p.notes || null,
         p.photo || null,
+        p.address || null,
+        p.postal_code || null,
+        p.city || null,
+        p.country || null,
+        p.phone_personal || null,
+        p.personal_email || null,
+        p.birth_date || null,
+        p.emergency_contact_name || null,
+        p.emergency_contact_phone || null,
+        p.emergency_contact_relation || null,
+        p.linkedin_url || null,
+        admin ? p.social_security_number || null : null,
+        admin ? p.iban || null : null,
+        admin ? p.hr_notes || null : null,
         req.user.id,
         req.user.id,
       );
@@ -166,7 +201,8 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       addToHistory('person', result.lastInsertRowid, 'created', p, req.user.id, req.user.name);
 
       // Renvoyer l'objet complet
-      const created = db.prepare('SELECT * FROM persons WHERE id = ?').get(result.lastInsertRowid);
+      let created = db.prepare('SELECT * FROM persons WHERE id = ?').get(result.lastInsertRowid);
+      if (!admin) created = stripSensitive(created);
       created.skills = db
         .prepare(
           `
@@ -191,6 +227,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       const existing = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
+      const admin = isAdminUser(req.user);
       const stmt = db.prepare(`
         UPDATE persons SET
           first_name = ?, last_name = ?, email = ?, phone = ?,
@@ -199,6 +236,11 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
           default_positions = ?,
           notes = ?, photo = ?,
           show_in_planning = ?,
+          address = ?, postal_code = ?, city = ?, country = ?,
+          phone_personal = ?, personal_email = ?, birth_date = ?,
+          emergency_contact_name = ?, emergency_contact_phone = ?, emergency_contact_relation = ?,
+          linkedin_url = ?,
+          social_security_number = ?, iban = ?, hr_notes = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
@@ -225,6 +267,22 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
             ? 1
             : 0
           : (existing.show_in_planning ?? 1),
+        p.address ?? existing.address,
+        p.postal_code ?? existing.postal_code,
+        p.city ?? existing.city,
+        p.country ?? existing.country,
+        p.phone_personal ?? existing.phone_personal,
+        p.personal_email ?? existing.personal_email,
+        p.birth_date ?? existing.birth_date,
+        p.emergency_contact_name ?? existing.emergency_contact_name,
+        p.emergency_contact_phone ?? existing.emergency_contact_phone,
+        p.emergency_contact_relation ?? existing.emergency_contact_relation,
+        p.linkedin_url ?? existing.linkedin_url,
+        admin
+          ? (p.social_security_number ?? existing.social_security_number)
+          : existing.social_security_number,
+        admin ? (p.iban ?? existing.iban) : existing.iban,
+        admin ? (p.hr_notes ?? existing.hr_notes) : existing.hr_notes,
         req.user.id,
         req.params.id,
       );
@@ -249,7 +307,8 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
       addToHistory('person', req.params.id, 'updated', p, req.user.id, req.user.name);
 
       // Renvoyer l'objet complet
-      const updated = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+      let updated = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+      if (!admin) updated = stripSensitive(updated);
       updated.skills = db
         .prepare(
           `
@@ -1133,7 +1192,9 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
         assignments: assignmentsByMission[m.id] || [],
       }));
 
-      res.json(enriched);
+      // [S2-2] Pagination retro-compat (slice apres enrichissement, donc total = enriched.length)
+      const p = parsePagination(req);
+      return sendPaginated(res, enriched, p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1380,8 +1441,10 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       }
       sql += ' ORDER BY m.start_date, p.last_name';
 
+      // [S2-2] Pagination retro-compat
+      const p = parsePagination(req);
       const assignments = db.prepare(sql).all(...params);
-      res.json(assignments);
+      return sendPaginated(res, assignments, p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

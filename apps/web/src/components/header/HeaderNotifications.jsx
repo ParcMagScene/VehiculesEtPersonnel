@@ -236,7 +236,7 @@ const HeaderNotifications = ({
       width: `${width}px`,
       maxHeight: `${Math.max(220, window.innerHeight - top - 12)}px`,
     });
-  }, [showNotificationsPopup, showRequestsPopup]);
+  }, []);
 
   useEffect(() => {
     if (!isAnyPopupOpen) return;

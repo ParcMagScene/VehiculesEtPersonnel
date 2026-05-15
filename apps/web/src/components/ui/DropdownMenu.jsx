@@ -84,6 +84,7 @@ export function DropdownMenu({ trigger, align = 'end', children, className = '' 
             ref={menuRef}
             className={`ui-dropdown-menu ${className}`}
             role="menu"
+            tabIndex={-1}
             style={{
               position: 'fixed',
               top: `${pos.top}px`,

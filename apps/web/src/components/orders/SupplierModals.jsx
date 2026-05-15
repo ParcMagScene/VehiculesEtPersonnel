@@ -188,8 +188,8 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
 
 // ═══ Modal approbation demande : choix commande PAR LIGNE ═══
 export const ApproveRequestModal = React.memo(({ request, eligibleData, onConfirm, onClose }) => {
-  const sameSupplier = eligibleData?.same_supplier || [];
-  const otherSupplier = eligibleData?.other_supplier || [];
+  const sameSupplier = useMemo(() => eligibleData?.same_supplier || [], [eligibleData]);
+  const otherSupplier = useMemo(() => eligibleData?.other_supplier || [], [eligibleData]);
   const requestLines =
     Array.isArray(request?.lines) && request.lines.length > 0
       ? request.lines
@@ -389,7 +389,7 @@ export const CatalogPickerModal = React.memo(({ onSelect, onClose }) => {
     } finally {
       setLoading(false);
     }
-  }, [search, supplierFilter, brandFilter, familyFilter, page]);
+  }, [search, supplierFilter, brandFilter, familyFilter, page, LIMIT]);
 
   useEffect(() => {
     loadArticles();

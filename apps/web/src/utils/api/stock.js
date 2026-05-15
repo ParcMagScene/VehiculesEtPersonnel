@@ -104,6 +104,12 @@ export function registerStockMethods(ApiClient) {
     async deleteMaterialRequest(id) {
       return this.request(`/material-requests/${id}`, { method: 'DELETE', skipCamelCase: true });
     },
+    async detachMaterialRequest(id) {
+      return this.request(`/material-requests/${id}/detach`, {
+        method: 'POST',
+        skipCamelCase: true,
+      });
+    },
     async validateMaterialRequest(id, action, rejection_reason = null, assignments = null) {
       return this.request(`/material-requests/${id}/validate`, {
         method: 'POST',

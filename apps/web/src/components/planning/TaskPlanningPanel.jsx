@@ -9,7 +9,6 @@ import {
   FileDown,
   LayoutList,
   Plus,
-  Repeat,
   Settings,
   SkipForward,
 } from 'lucide-react';
@@ -25,6 +24,7 @@ import { safeParseDate } from '../../utils/dateUtils';
 import { formatDateFr } from '../../utils/formatUtils';
 import AddTaskModal from './AddTaskModal';
 import EventTaskModal from './EventTaskModal';
+import { usePlanningModal } from './PlanningModalContext';
 import TaskEditModal from './TaskEditModal';
 const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
@@ -42,12 +42,22 @@ import { GoogleRdvRow, IcalEventRow, MultiAssignWidget, RdvRow } from './Plannin
 import { PlanningTaskRow } from './PlanningTaskRow';
 import { PlanningWeekView } from './PlanningWeekView';
 
-// ═══════════════════════════════════════════════════════════════
+// ==============================================================
 // TaskPlanningPanel — lean container (data + state + routing)
-// ═══════════════════════════════════════════════════════════════
-function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavigateToEntity }) {
+// ==============================================================
+function TaskPlanningPanel({
+  _currentUser,
+  refreshKey,
+  googleEvents = [],
+  onNavigateToEntity,
+  personId = null,
+  isPersonalMode = false,
+  _onPersonalDataSaved = null,
+}) {
+  const { modal, openModal, closeModal } = usePlanningModal();
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const [_editingTask, setEditingTask] = useState(null);
   const [tasks, setTasks] = useState([]),
     [persons, setPersons] = useState([]),
     [affaires, setAffaires] = useState([]);
@@ -65,12 +75,33 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   const [planningAssignments, setPlanningAssignments] = useState([]),
     [assigningEntity, setAssigningEntity] = useState(null);
   const [expandedRdv, setExpandedRdv] = useState(null),
-    [eventTaskModalEvent, setEventTaskModalEvent] = useState(null);
-  const [editingTask, setEditingTask] = useState(null),
-    [showAddTaskModal, setShowAddTaskModal] = useState(false);
+    [_eventTaskModalEvent, setEventTaskModalEvent] = useState(null);
+  // Les états modaux sont maintenant gérés par le contexte
   const [showRecurring, setShowRecurring] = useState(false),
     [recurringTasks, setRecurringTasks] = useState([]),
     [recurringForm, setRecurringForm] = useState(null);
+
+  // Patch : ferme tous les autres modaux avant d’ouvrir EventTaskModal
+  // Ouvre un modal de façon centralisée
+  const openEventTaskModal = useCallback(
+    (event) => {
+      openModal('event-task', { event });
+    },
+    [openModal],
+  );
+
+  const openAddTaskModal = useCallback(() => {
+    openModal('add-task', {});
+  }, [openModal]);
+
+  const openTaskEditModal = useCallback(
+    (task) => {
+      openModal('edit-task', { task });
+    },
+    [openModal],
+  );
+
+  // Remplacer tous les usages de setEventTaskModalEvent(event) par openEventTaskModal(event)
   const [collapsedSections, setCollapsedSections] = useState({});
   const toggleSectionCollapse = useCallback(
     (key) => setCollapsedSections((p) => ({ ...p, [key]: !p[key] })),
@@ -105,7 +136,16 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           api.getDisplayEvents(range),
           api.getPlanningAffaires(range),
         ]);
-        setTasks(data);
+        // Mode personnel : ne garder que les tâches de la personne authentifiée
+        const filteredTasks =
+          isPersonalMode && personId
+            ? (Array.isArray(data) ? data : []).filter(
+                (t) =>
+                  t.person_id === personId ||
+                  (Array.isArray(t.assigned_to) && t.assigned_to.includes(personId)),
+              )
+            : data;
+        setTasks(filteredTasks);
         setDisplayEvents(Array.isArray(events) ? events : []);
         setAffaires(Array.isArray(affairesData) ? affairesData : []);
         try {
@@ -118,18 +158,25 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             map.set(`${s.eventType}:${s.eventId}`, s.status),
           );
           setEventStatuses(map);
-          setPlanningAssignments(Array.isArray(assignments) ? assignments : []);
+          const allAssignments = Array.isArray(assignments) ? assignments : [];
+          setPlanningAssignments(
+            isPersonalMode && personId
+              ? allAssignments.filter((a) => a.personId === personId)
+              : allAssignments,
+          );
         } catch {
           /* ignore */
         }
         initialLoadDone.current = true;
       } catch {
-        toast.error('Erreur chargement tâches');
+        setTasks([]);
+        setDisplayEvents([]);
+        setAffaires([]);
       } finally {
         setLoading(false);
       }
     },
-    [selectedDate, viewMode, weekDays, toast],
+    [selectedDate, viewMode, weekDays, isPersonalMode, personId],
   );
 
   const loadPersons = useCallback(async () => {
@@ -320,15 +367,10 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
   };
 
   // ═══ Batch actions ═══
-  const handleGenerateRecurring = async () => {
-    try {
-      const r = await api.generateRecurringTasks(selectedDate);
-      toast.success(`${r.generated || 0} tâche(s) récurrente(s) générée(s)`);
-      loadTasks(true);
-    } catch {
-      toast.error('Erreur génération');
-    }
-  };
+  // handleGenerateRecurring : retiré côté UI (le bouton "Générer" a été supprimé
+  // de la barre d'action). La génération est désormais déclenchée par le scheduler
+  // backend (cron quotidien). L'API api.generateRecurringTasks reste disponible
+  // pour usage interne / scripts.
   const handleRollover = () =>
     confirm({
       title: 'Reporter les tâches',
@@ -770,20 +812,23 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
     },
     [loadTasks, toast],
   );
-  const openAffaireTaskModal = useCallback((af) => {
-    if (af._linkedGoogleEvent) {
-      setEventTaskModalEvent(af._linkedGoogleEvent);
-      return;
-    }
-    setEventTaskModalEvent({
-      id: `affaire-${af.id || af.numeroAffaire}`,
-      summary: `${af.type || ''} ${af.numeroAffaire}${af.client ? ' — ' + af.client : ''}`,
-      start: { date: af.dateDebut || af.date_debut || '' },
-      end: { date: af.dateFin || af.date_fin || '' },
-      location: af.adresseLivraison || '',
-      description: af.titre || af.description || '',
-    });
-  }, []);
+  const openAffaireTaskModal = useCallback(
+    (af) => {
+      if (af._linkedGoogleEvent) {
+        openEventTaskModal(af._linkedGoogleEvent);
+        return;
+      }
+      openEventTaskModal({
+        id: `affaire-${af.id || af.numeroAffaire}`,
+        summary: `${af.type || ''} ${af.numeroAffaire}${af.client ? ' — ' + af.client : ''}`,
+        start: { date: af.dateDebut || af.date_debut || '' },
+        end: { date: af.dateFin || af.date_fin || '' },
+        location: af.adresseLivraison || '',
+        description: af.titre || af.description || '',
+      });
+    },
+    [openEventTaskModal],
+  );
   const icalToGoogleLike = useCallback((ev) => {
     const s = ev.start || '',
       e = ev.end || '';
@@ -826,7 +871,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         onCycleStatus={cycleStatus}
         onDelete={handleDelete}
         onToggleVisible={handleToggleTaskVisible}
-        onEdit={setEditingTask}
+        onEdit={openTaskEditModal}
         onLinkTask={handleLinkTaskToAffaire}
         linkingTaskId={linkingTaskId}
         setLinkingTaskId={setLinkingTaskId}
@@ -836,7 +881,6 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         selectedDate={selectedDate}
         renderMultiAssign={renderMultiAssign}
       />
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     ),
     [
       affaireByNum,
@@ -844,6 +888,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       cycleStatus,
       handleDelete,
       handleToggleTaskVisible,
+      openTaskEditModal,
       handleLinkTaskToAffaire,
       linkingTaskId,
       linkTaskSearchQuery,
@@ -862,7 +907,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         processedGoogleIds={processedGoogleIds}
         tasksBySourceId={tasksBySourceId}
         onNavigateToEntity={onNavigateToEntity}
-        onOpenEventTaskModal={setEventTaskModalEvent}
+        onOpenEventTaskModal={openEventTaskModal}
         linkingEvent={linkingEvent}
         setLinkingEvent={setLinkingEvent}
         linkSearchQuery={linkSearchQuery}
@@ -877,6 +922,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       processedGoogleIds,
       tasksBySourceId,
       onNavigateToEntity,
+      openEventTaskModal,
       linkingEvent,
       linkSearchQuery,
       affaires,
@@ -909,7 +955,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         processedGoogleIds={processedGoogleIds}
         tasksBySourceId={tasksBySourceId}
         onNavigateToEntity={onNavigateToEntity}
-        onOpenEventTaskModal={setEventTaskModalEvent}
+        onOpenEventTaskModal={openEventTaskModal}
         linkingEvent={linkingEvent}
         setLinkingEvent={setLinkingEvent}
         linkSearchQuery={linkSearchQuery}
@@ -925,6 +971,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
       processedGoogleIds,
       tasksBySourceId,
       onNavigateToEntity,
+      openEventTaskModal,
       linkingEvent,
       linkSearchQuery,
       affaires,
@@ -964,8 +1011,13 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             </Tooltip>
           </div>
           <div className="tp-date-nav">
+            {/* Flèches navigation : variant=secondary pour avoir une bordure visible
+                cohérente avec les autres modules (cf. .date-nav dans PlanningPanel.css). */}
             <Button
-              variant="ghost"
+              variant="secondary"
+              className="tp-nav-arrow"
+              aria-label={viewMode === 'week' ? 'Semaine précédente' : 'Jour précédent'}
+              title={viewMode === 'week' ? 'Semaine précédente' : 'Jour précédent'}
               onClick={() => setSelectedDate((d) => addDays(d, viewMode === 'week' ? -7 : -1))}
             >
               <ChevronLeft size={16} />
@@ -983,7 +1035,10 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
               </span>
             </Tooltip>
             <Button
-              variant="ghost"
+              variant="secondary"
+              className="tp-nav-arrow"
+              aria-label={viewMode === 'week' ? 'Semaine suivante' : 'Jour suivant'}
+              title={viewMode === 'week' ? 'Semaine suivante' : 'Jour suivant'}
               onClick={() => setSelectedDate((d) => addDays(d, viewMode === 'week' ? 7 : 1))}
             >
               <ChevronRight size={16} />
@@ -1014,15 +1069,9 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
               <CheckCheck size={16} /> Effacer terminées
             </Button>
           </Tooltip>
-          <Tooltip content="Générer les tâches récurrentes pour ce jour" position="bottom">
-            <Button
-              variant="secondary"
-              className="btn-toolbar-action"
-              onClick={handleGenerateRecurring}
-            >
-              <Repeat size={16} /> Générer
-            </Button>
-          </Tooltip>
+          {/* Bouton "Générer" supprimé : la génération automatique des tâches récurrentes
+              s'effectue désormais via le scheduler backend (cron quotidien). Le bouton
+              "Récurrentes" ci-dessous reste pour gérer les modèles. */}
           <Tooltip content="Gérer les tâches récurrentes" position="bottom">
             <Button
               variant={showRecurring ? 'primary' : 'secondary'}
@@ -1042,11 +1091,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             </Button>
           </Tooltip>
           <Tooltip content="Ajouter une nouvelle tâche" position="bottom">
-            <Button
-              variant="primary"
-              className="btn-toolbar-action"
-              onClick={() => setShowAddTaskModal(true)}
-            >
+            <Button variant="primary" className="btn-toolbar-action" onClick={openAddTaskModal}>
               <Plus size={16} /> Nouvelle tâche
             </Button>
           </Tooltip>
@@ -1143,41 +1188,42 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           />
         </Suspense>
       )}
-      {eventTaskModalEvent && (
+      {/* Gestion centralisée des modals */}
+      {modal?.type === 'event-task' && (
         <EventTaskModal
-          event={eventTaskModalEvent}
+          event={modal.props.event}
           existingTasks={tasks.filter(
             (t) =>
               (t.sourceType === 'google_event' || t.sourceType === 'ical_event') &&
-              t.sourceId === eventTaskModalEvent.id,
+              t.sourceId === modal.props.event.id,
           )}
           onSave={(taskDate) => {
-            setEventTaskModalEvent(null);
+            closeModal();
             if (taskDate && taskDate !== selectedDate) setSelectedDate(taskDate);
             else loadTasks(true);
           }}
           onDelete={() => {
-            setEventTaskModalEvent(null);
+            closeModal();
             loadTasks(true);
           }}
-          onClose={() => setEventTaskModalEvent(null)}
+          onClose={closeModal}
         />
       )}
-      {editingTask && (
+      {modal?.type === 'edit-task' && (
         <TaskEditModal
-          task={editingTask}
+          task={modal.props.task}
           persons={persons}
           onSave={() => {
-            setEditingTask(null);
+            closeModal();
             loadTasks(true);
           }}
-          onClose={() => setEditingTask(null)}
+          onClose={closeModal}
         />
       )}
-      {showAddTaskModal && (
+      {modal?.type === 'add-task' && (
         <AddTaskModal
-          isOpen={showAddTaskModal}
-          onClose={() => setShowAddTaskModal(false)}
+          isOpen={true}
+          onClose={closeModal}
           selectedDate={selectedDate}
           persons={persons}
           affaires={affaires}
@@ -1185,7 +1231,10 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           icalEvents={icalEvents}
           vehicles={vehicles}
           reservations={reservations}
-          onTaskCreated={() => loadTasks(true)}
+          onTaskCreated={() => {
+            closeModal();
+            loadTasks(true);
+          }}
           loadVehiclesAndReservations={loadVehiclesAndReservations}
         />
       )}

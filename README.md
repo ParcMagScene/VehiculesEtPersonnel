@@ -1,3 +1,18 @@
+---
+
+### 🔒 Réinitialisation du mot de passe
+
+Depuis la version 2026-05, la réinitialisation de mot de passe ne nécessite plus d’email ni de code OTP :
+
+- Depuis l’écran de connexion (desktop ou mobile), cliquer sur « Mot de passe oublié ».
+- Saisir l’adresse email du compte et un nouveau mot de passe (min. 10 caractères, confirmation requise).
+- Si le compte existe, le mot de passe est réinitialisé immédiatement.
+- Aucun email n’est envoyé, aucune validation par code n’est requise.
+- L’action est auditée côté serveur.
+
+Pour les administrateurs :
+- La réinitialisation d’un utilisateur se fait depuis l’interface admin ou via l’API `/api/admin/reset-password`.
+
 # 🚛 eM@g — Gestion de Flotte, Personnel & Équipements
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

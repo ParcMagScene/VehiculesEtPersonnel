@@ -4,6 +4,7 @@ import {
   ClipboardList,
   Edit2,
   FileCheck,
+  MinusCircle,
   Package,
   Send,
   Trash2,
@@ -352,16 +353,17 @@ export const QuoteDetailDialog = React.memo(
 
 // ═══ Dialog Demande (double-clic) ═══
 export const RequestDetailDialog = React.memo(
-  ({ request, onClose, isAdmin, onValidate, onDelete, onEdit }) => {
+  ({ request, onClose, isAdmin, onValidate, onDelete, onEdit, onDetach }) => {
     const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
     const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
+    // #7 Une demande approuvée (avec lignes liées à une commande) peut être
+    // réouverte via « Retirer de la commande » (admin uniquement).
+    const hasLinkedOrder =
+      request.status === STATUS.APPROVED &&
+      Array.isArray(request.lines) &&
+      request.lines.some((l) => l.order_id);
     return (
-      <Modal
-        open
-        onClose={onClose}
-        size="lg\"
-        className="order-detail-dialog request-detail-dialog"
-      >
+      <Modal open onClose={onClose} size="lg" className="order-detail-dialog request-detail-dialog">
         <ModalHeader icon={<ClipboardList size={20} />} onClose={onClose}>
           <div className="order-detail-title">
             <span>{request.article}</span>
@@ -396,6 +398,19 @@ export const RequestDetailDialog = React.memo(
                   <X size={14} /> Refuser
                 </Button>
               </>
+            )}
+            {isAdmin && hasLinkedOrder && onDetach && (
+              <Button
+                variant="ghost"
+                className="action-btn warning"
+                onClick={() => {
+                  onDetach(request);
+                  onClose();
+                }}
+                title="Retirer cette demande de la commande liée (la demande repasse en attente)"
+              >
+                <MinusCircle size={14} /> Retirer de la commande
+              </Button>
             )}
             <Button variant="ghost" className="action-btn" onClick={() => onEdit(request)}>
               <Edit2 size={14} /> Modifier

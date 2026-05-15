@@ -17,7 +17,13 @@ import TaskPlanningPanel from './TaskPlanningPanel';
  * Wrapper pour TaskPlanningPanel avec gestion de l'authentification personnelle
  * Permet au compte équipe de voir le planning d'un personnel spécifique
  */
-function PersonalPlanningWrapper({ currentUser, personnel = [], googleEvents = [] }) {
+function PersonalPlanningWrapper({
+  currentUser,
+  personnel = [],
+  googleEvents = [],
+  refreshKey,
+  onNavigateToEntity,
+}) {
   const { authenticatedPerson, isPersonalAuthenticated, logoutPersonal } = usePersonalAuth();
   const { logoutAfterSave } = usePersonalAuthWithAutoLogout({
     inactivityTimeout: 5 * 60 * 1000, // 5 min
@@ -65,7 +71,16 @@ function PersonalPlanningWrapper({ currentUser, personnel = [], googleEvents = [
   // Si on est en authentification personnelle, afficher le TaskPlanningPanel filtré
   if (isPersonalAuthenticated && authenticatedPerson) {
     return (
-      <div style={{ position: 'relative' }}>
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: '1 1 0',
+          minHeight: 0,
+          height: '100%',
+        }}
+      >
         {/* Header de session personnelle */}
         <div
           style={{
@@ -136,11 +151,21 @@ function PersonalPlanningWrapper({ currentUser, personnel = [], googleEvents = [
 
   // Mode équipe normal avec accès personnalisé
   return (
-    <div>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: '1 1 0',
+        minHeight: 0,
+        height: '100%',
+      }}
+    >
       <TaskPlanningPanel
         currentUser={currentUser}
         isPersonalMode={false}
         googleEvents={googleEvents}
+        refreshKey={refreshKey}
+        onNavigateToEntity={onNavigateToEntity}
       />
 
       {/* Bouton "Accès Personnel" si compte équipe */}

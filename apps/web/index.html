@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -15,13 +15,22 @@
     <title>eM@g</title>
     <!-- VS Code Mode: Cascadia Code + Codicon icons -->
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.36/dist/codicon.css" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@vscode/codicons@0.0.36/dist/codicon.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap"
+    />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Google Maps sera chargé dynamiquement avec la clé API depuis le localStorage -->
   </head>
   <body>
     <div id="root"></div>
+    <!-- PATCH PORTALS : portails pour l'isolation des modals -->
+    <div id="modal-root"></div>
+    <div id="task-modal-root"></div>
     <script src="/sw-cleanup.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>

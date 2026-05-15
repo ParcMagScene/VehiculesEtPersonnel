@@ -19,6 +19,9 @@ import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
 
+// Constante module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
+const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
+
 function getISOWeek(d) {
   const date = new Date(d.getTime());
   date.setHours(0, 0, 0, 0);
@@ -47,7 +50,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
   const [mode, setMode] = useState('semaine');
   const [semaine, setSemaine] = useState(getISOWeek(new Date()));
   const [mois, setMois] = useState(formatMonthISO(new Date()));
-  const [annee, setAnnee] = useState(String(new Date().getFullYear()));
+  const [annee, setAnnee] = useState(String(new Date().getFullYear())); // Aucune correction nécessaire, dépendances correctes dans useCallback(fetchSynthese)
   const [synthese, setSynthese] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -156,7 +159,6 @@ function SynthesesPanel({ currentUser: _currentUser }) {
     );
   }, [synthese]);
 
-  const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
   const filteredPersons = useMemo(
     () =>
       onlyPermanents

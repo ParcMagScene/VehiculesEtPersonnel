@@ -6,12 +6,12 @@
 .ui-modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--theme-overlay);
+  background: rgba(30, 41, 59, 0.92); /* fond très opaque */
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal, 2000);
+  /* z-index: 3000 !important; supprimé, géré par le portail */
   padding: var(--space-4);
   animation: ui-modal-fade-in var(--duration-fast) var(--ease-out);
 }

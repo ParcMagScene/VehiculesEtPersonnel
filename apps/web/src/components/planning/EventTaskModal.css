@@ -3,17 +3,7 @@
    depuis un événement Google Calendar
    ═══════════════════════════════════════════════ */
 
-.etm-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-tooltip);
-  background: var(--surface-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  animation: etm-fade-in 0.15s ease;
-}
+/* .etm-overlay supprimé : on utilise l'overlay du design system Modal */
 
 @keyframes etm-fade-in {
   from {

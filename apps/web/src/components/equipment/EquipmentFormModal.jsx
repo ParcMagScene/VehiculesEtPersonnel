@@ -210,11 +210,11 @@ const EquipmentFormModal = ({
                 onClick={() => setShowPhotoPicker(!showPhotoPicker)}
               >
                 {currentPhotoUrl ? (
-                  <img src={currentPhotoUrl} alt="Photo de l'équipement" loading="lazy" />
+                  <img src={currentPhotoUrl} alt="Aperçu de l'équipement" loading="lazy" />
                 ) : genericImageUrl ? (
                   <img
                     src={genericImageUrl}
-                    alt="Image générique de la catégorie"
+                    alt="Visuel générique de la catégorie"
                     loading="lazy"
                     className="eq-generic-preview"
                   />

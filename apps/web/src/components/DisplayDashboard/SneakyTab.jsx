@@ -140,7 +140,7 @@ function SneakyTab({ _currentUser, refreshKey }) {
             </div>
             {status.path && (
               <div className="dtv-sneaky-current-preview">
-                <img src={`${status.path}?t=${Date.now()}`} alt="Photo furtive active" />
+                <img src={`${status.path}?t=${Date.now()}`} alt="Aperçu furtif actif" />
               </div>
             )}
             <Button variant="danger" size="sm" onClick={handleDisable}>

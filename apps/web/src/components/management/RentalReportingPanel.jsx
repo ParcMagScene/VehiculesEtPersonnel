@@ -47,7 +47,7 @@ const RentalReportingPanel = () => {
       }
     };
     load();
-  }, [dateRange.startDate, dateRange.endDate]);
+  }, [dateRange]);
 
   if (loading && !data) {
     return <div className="rental-reporting-loading">Chargement du reporting...</div>;

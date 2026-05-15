@@ -31,6 +31,7 @@ import logger from './logger.js';
 import { equipmentSchema } from './schemas/crud.js';
 import { equipmentImportSchema, validate } from './schemas/imports.js';
 import { getNextUid } from './services/uidCounter.js';
+import { parsePagination, sendPaginated } from './utils/pagination.js';
 import { safeContentDispositionName } from './utils/safeFilename.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -250,18 +251,25 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
         const equipment = db.prepare(sql).all(...params);
 
-        // Enrichir avec le dernier assignment actif — requête unique au lieu de N+1
-        const activeAssignments = db
-          .prepare(
-            `
+        // Enrichir avec le dernier assignment actif — requête unique au lieu de N+1.
+        // [PERF] Scopé aux IDs effectivement renvoyés (au lieu de charger tous les
+        // assignments actifs de la base) — bénéfique surtout en mode paginé.
+        let activeAssignments = [];
+        if (equipment.length > 0) {
+          const ids = equipment.map((e) => e.id);
+          const placeholders = ids.map(() => '?').join(',');
+          activeAssignments = db
+            .prepare(
+              `
         SELECT ea.*, p.first_name, p.last_name
         FROM equipment_assignments ea
         LEFT JOIN persons p ON ea.assigned_to = p.id
-        WHERE ea.status = 'active'
+        WHERE ea.status = 'active' AND ea.equipment_id IN (${placeholders})
         ORDER BY ea.start_date DESC
       `,
-          )
-          .all();
+            )
+            .all(...ids);
+        }
 
         const assignMap = {};
         for (const a of activeAssignments) {
@@ -1201,7 +1209,9 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       }
       sql += ' ORDER BY ea.start_date DESC';
 
-      res.json(db.prepare(sql).all(...params));
+      // [S2-2] Pagination retro-compat (?page= et/ou ?limit= sinon array legacy)
+      const p = parsePagination(req);
+      return sendPaginated(res, db.prepare(sql).all(...params), p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1339,7 +1349,9 @@ export function setupSavTicketsRoutes(
       }
       sql += ' ORDER BY st.created_at DESC';
 
-      res.json(db.prepare(sql).all(...params));
+      // [S2-2] Pagination retro-compat
+      const p = parsePagination(req);
+      return sendPaginated(res, db.prepare(sql).all(...params), p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

@@ -16,58 +16,61 @@ export function PersonalAuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(false);
 
   /**
-   * Authentifier un utilisateur personnel
-   * @param {number} personId - ID de la personne
-   * @param {string} pin - Code PIN (4 chiffres) optionnel
-   * @param {string} password - Mot de passe optionnel
-   */
-  const authenticatePersonal = useCallback(async (personId, { pin = '', password = '' } = {}) => {
-    if (!pin && !password) {
-      setAuthError('Code PIN ou mot de passe requis');
-      return false;
-    }
-
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      const response = await api.request('/api/suivi/personal-auth', 'POST', {
-        personId,
-        pin: pin || undefined,
-        password: password || undefined,
-      });
-
-      if (response.success) {
-        setAuthenticatedPerson(response.person);
-        // Auto-déconnexion après 10 minutes d'inactivité
-        const timeoutId = setTimeout(
-          () => {
-            logoutPersonal();
-          },
-          10 * 60 * 1000,
-        );
-
-        return { success: true, timeoutId };
-      } else {
-        setAuthError(response.error || 'Authentification échouée');
-        return false;
-      }
-    } catch (error) {
-      const errorMsg = error.response?.data?.error || error.message || 'Erreur serveur';
-      setAuthError(errorMsg);
-      return false;
-    } finally {
-      setAuthLoading(false);
-    }
-  }, []);
-
-  /**
    * Déconnecter l'utilisateur personnel
    */
   const logoutPersonal = useCallback(() => {
     setAuthenticatedPerson(null);
     setAuthError(null);
   }, []);
+
+  /**
+   * Authentifier un utilisateur personnel
+   * @param {number} personId - ID de la personne
+   * @param {string} pin - Code PIN (4 chiffres) optionnel
+   * @param {string} password - Mot de passe optionnel
+   */
+  const authenticatePersonal = useCallback(
+    async (personId, { pin = '', password = '' } = {}) => {
+      if (!pin && !password) {
+        setAuthError('Code PIN ou mot de passe requis');
+        return false;
+      }
+
+      setAuthLoading(true);
+      setAuthError(null);
+
+      try {
+        const response = await api.request('/api/suivi/personal-auth', 'POST', {
+          personId,
+          pin: pin || undefined,
+          password: password || undefined,
+        });
+
+        if (response.success) {
+          setAuthenticatedPerson(response.person);
+          // Auto-déconnexion après 10 minutes d'inactivité
+          const timeoutId = setTimeout(
+            () => {
+              logoutPersonal();
+            },
+            10 * 60 * 1000,
+          );
+
+          return { success: true, timeoutId };
+        } else {
+          setAuthError(response.error || 'Authentification échouée');
+          return false;
+        }
+      } catch (error) {
+        const errorMsg = error.response?.data?.error || error.message || 'Erreur serveur';
+        setAuthError(errorMsg);
+        return false;
+      } finally {
+        setAuthLoading(false);
+      }
+    },
+    [logoutPersonal],
+  );
 
   /**
    * Vérifier si un utilisateur personnel est authentifié

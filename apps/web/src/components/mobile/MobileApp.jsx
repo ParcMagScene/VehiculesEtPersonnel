@@ -109,12 +109,12 @@ function MobileApp({ onSwitchToDesktop }) {
     checkAuth();
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await api.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
     setCurrentScreen('home');
-  };
+  }, [setCurrentScreen]);
 
   // Charger les données coeur (utilisées par l'accueil/parc)
   const loadCoreParcData = useCallback(async () => {
@@ -134,7 +134,7 @@ function MobileApp({ onSwitchToDesktop }) {
         handleLogout();
       }
     }
-  }, []);
+  }, [handleLogout]);
 
   // Charger les référentiels à la demande (écrans planning/réservation/maintenance)
   const loadAuxiliaryParcData = useCallback(
@@ -177,7 +177,7 @@ function MobileApp({ onSwitchToDesktop }) {
         setAuxDataLoading(false);
       }
     },
-    [auxLoaded],
+    [auxLoaded, handleLogout],
   );
 
   // Refresh complet demandé par certains écrans

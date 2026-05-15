@@ -292,7 +292,7 @@ const PersonnelPanel = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setPersons, setSkills, setPositions, setUsers, setError, setLoading]);
 
   useEffect(() => {
     loadData();
@@ -757,6 +757,8 @@ const PersonsTab = ({
         },
       });
     },
+    // setPersons est stable (setter useState), pas besoin dans les deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [confirm, selectedPerson, toast],
   );
 
@@ -1071,6 +1073,7 @@ const PersonsTab = ({
           skills={skills}
           positions={positions}
           users={users}
+          currentUser={currentUser}
           onSave={handleSave}
           onClose={() => {
             setShowFormModal(false);
@@ -1103,8 +1106,10 @@ const PersonsTab = ({
 // Modal formulaire personnel (pattern Parc)
 // ═══════════════════════════════════════
 
-const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) => {
+const PersonFormModal = ({ person, skills, positions, users, currentUser, onSave, onClose }) => {
+  const isAdmin = !!currentUser?.isAdmin;
   const toast = useToast();
+  const [showAnnuaire, setShowAnnuaire] = useState(false);
   const [form, setForm] = useState(() => {
     let defaultPos = [];
     if (person) {
@@ -1130,6 +1135,23 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
         level: s.level || 'intermédiaire',
       })),
       defaultPositions: defaultPos,
+      // ── Annuaire étendu ──
+      address: person?.address || '',
+      postalCode: person?.postalCode || person?.postal_code || '',
+      city: person?.city || '',
+      country: person?.country || 'France',
+      phonePersonal: person?.phonePersonal || person?.phone_personal || '',
+      personalEmail: person?.personalEmail || person?.personal_email || '',
+      birthDate: person?.birthDate || person?.birth_date || '',
+      emergencyContactName: person?.emergencyContactName || person?.emergency_contact_name || '',
+      emergencyContactPhone: person?.emergencyContactPhone || person?.emergency_contact_phone || '',
+      emergencyContactRelation:
+        person?.emergencyContactRelation || person?.emergency_contact_relation || '',
+      linkedinUrl: person?.linkedinUrl || person?.linkedin_url || '',
+      // Sensibles — admin only.
+      socialSecurityNumber: person?.socialSecurityNumber || person?.social_security_number || '',
+      iban: person?.iban || '',
+      hrNotes: person?.hrNotes || person?.hr_notes || '',
     };
   });
 
@@ -1137,7 +1159,7 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
     e.preventDefault();
     if (!form.firstName.trim() || !form.lastName.trim())
       return toast.warning('Prénom et nom requis');
-    onSave({
+    const payload = {
       first_name: form.firstName,
       last_name: form.lastName,
       email: form.email || null,
@@ -1149,7 +1171,25 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
       notes: form.notes || null,
       default_positions: JSON.stringify(form.defaultPositions || []),
       skills: form.skills.map((s) => ({ skill_id: s.skillId, level: s.level })),
-    });
+      // Annuaire
+      address: form.address || null,
+      postal_code: form.postalCode || null,
+      city: form.city || null,
+      country: form.country || null,
+      phone_personal: form.phonePersonal || null,
+      personal_email: form.personalEmail || null,
+      birth_date: form.birthDate || null,
+      emergency_contact_name: form.emergencyContactName || null,
+      emergency_contact_phone: form.emergencyContactPhone || null,
+      emergency_contact_relation: form.emergencyContactRelation || null,
+      linkedin_url: form.linkedinUrl || null,
+    };
+    if (isAdmin) {
+      payload.social_security_number = form.socialSecurityNumber || null;
+      payload.iban = form.iban || null;
+      payload.hr_notes = form.hrNotes || null;
+    }
+    onSave(payload);
   };
 
   const toggleSkill = (skillId) => {
@@ -1290,6 +1330,151 @@ const PersonFormModal = ({ person, skills, positions, users, onSave, onClose }) 
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
           </div>
+
+          {/* Annuaire — coordonnées étendues + contact d'urgence (+ RH si admin) */}
+          <div className="eq-form-field eq-form-full">
+            <Button
+              variant="ghost"
+              type="button"
+              onClick={() => setShowAnnuaire((v) => !v)}
+              aria-expanded={showAnnuaire}
+            >
+              {showAnnuaire ? '▾' : '▸'} Annuaire — coordonnées & contact d'urgence
+              {isAdmin ? ' (+ RH)' : ''}
+            </Button>
+          </div>
+          {showAnnuaire && (
+            <>
+              <div className="eq-form-field eq-form-full">
+                <label>Adresse</label>
+                <Input
+                  type="text"
+                  maxLength={500}
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Code postal</label>
+                <Input
+                  type="text"
+                  maxLength={10}
+                  value={form.postalCode}
+                  onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Ville</label>
+                <Input
+                  type="text"
+                  maxLength={100}
+                  value={form.city}
+                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Pays</label>
+                <Input
+                  type="text"
+                  maxLength={100}
+                  value={form.country}
+                  onChange={(e) => setForm({ ...form, country: e.target.value })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Date de naissance</label>
+                <Input
+                  type="date"
+                  value={form.birthDate || ''}
+                  onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Téléphone personnel</label>
+                <PhoneInput
+                  value={form.phonePersonal}
+                  onChange={(val) => setForm({ ...form, phonePersonal: val })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Email personnel</label>
+                <Input
+                  type="email"
+                  maxLength={254}
+                  value={form.personalEmail}
+                  onChange={(e) => setForm({ ...form, personalEmail: e.target.value })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>LinkedIn</label>
+                <Input
+                  type="url"
+                  maxLength={500}
+                  placeholder="https://linkedin.com/in/…"
+                  value={form.linkedinUrl}
+                  onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Contact d'urgence — Nom</label>
+                <Input
+                  type="text"
+                  maxLength={255}
+                  value={form.emergencyContactName}
+                  onChange={(e) => setForm({ ...form, emergencyContactName: e.target.value })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Contact d'urgence — Téléphone</label>
+                <PhoneInput
+                  value={form.emergencyContactPhone}
+                  onChange={(val) => setForm({ ...form, emergencyContactPhone: val })}
+                />
+              </div>
+              <div className="eq-form-field">
+                <label>Contact d'urgence — Lien</label>
+                <Input
+                  type="text"
+                  maxLength={100}
+                  placeholder="Conjoint, parent, ami…"
+                  value={form.emergencyContactRelation}
+                  onChange={(e) => setForm({ ...form, emergencyContactRelation: e.target.value })}
+                />
+              </div>
+              {isAdmin && (
+                <>
+                  <div className="eq-form-field eq-form-full">
+                    <label>🔒 N° Sécurité sociale (admin)</label>
+                    <Input
+                      type="text"
+                      maxLength={30}
+                      autoComplete="off"
+                      value={form.socialSecurityNumber}
+                      onChange={(e) => setForm({ ...form, socialSecurityNumber: e.target.value })}
+                    />
+                  </div>
+                  <div className="eq-form-field eq-form-full">
+                    <label>🔒 IBAN (admin)</label>
+                    <Input
+                      type="text"
+                      maxLength={40}
+                      autoComplete="off"
+                      value={form.iban}
+                      onChange={(e) => setForm({ ...form, iban: e.target.value })}
+                    />
+                  </div>
+                  <div className="eq-form-field eq-form-full">
+                    <label>🔒 Notes RH (admin)</label>
+                    <Textarea
+                      rows={3}
+                      value={form.hrNotes}
+                      onChange={(e) => setForm({ ...form, hrNotes: e.target.value })}
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
           {/* Compétences */}
           <div className="eq-form-field eq-form-full">

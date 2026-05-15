@@ -107,6 +107,20 @@ jobs:
 
       - run: npm ci
 
+      # ─── L1 stabilisation : check syntaxique strict ────
+      # Bloque accolades non fermées, blocs incomplets, fragments orphelins
+      # avant même de lancer les tests.
+      - name: Vérification syntaxique backend (node --check)
+        run: npm run check:syntax
+
+      # ─── L2 stabilisation : smoke boot backend ─────────
+      # Vérifie que le backend démarre + répond /api/health.
+      - name: Smoke boot backend
+        env:
+          JWT_SECRET: smoke-test-secret-key-min-32-chars-long-xx
+          DISABLE_SCHEDULER: '1'
+        run: npm run smoke-boot
+
       - name: Tests unitaires backend avec couverture
         run: npm run test:coverage 2>&1 | tee /tmp/backend-coverage.txt
 

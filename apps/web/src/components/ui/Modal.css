@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* z-index: 3000 !important; supprimé, géré par le portail */
+  /* z-index posé inline par Modal.jsx via ModalManager (9000+10·i). */
   padding: var(--space-4);
   animation: ui-modal-fade-in var(--duration-fast) var(--ease-out);
 }

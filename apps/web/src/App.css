@@ -1953,7 +1953,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 10000;
+  /* Reste au-dessus de toute l'UI mais sous les modals (>= 9000 via ModalManager). */
+  z-index: 8500;
   padding: 0.5rem 1rem;
   background: var(--theme-primary, #2563eb);
   color: var(--theme-text-inverse, #fff);

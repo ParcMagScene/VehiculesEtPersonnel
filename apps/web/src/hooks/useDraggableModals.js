@@ -408,8 +408,6 @@ function scanAndEnhance(root = document.body) {
       (parent.matches(OVERLAY_SELECTORS) ||
         parent === document.body ||
         parent.id === 'portal-root' ||
-        parent.id === 'modal-root' ||
-        parent.id === 'task-modal-root' ||
         parent.id === 'emag-modal-root')
     ) {
       enhanceModal(modal);

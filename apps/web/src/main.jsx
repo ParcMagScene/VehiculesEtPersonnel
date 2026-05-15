@@ -32,7 +32,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     {/* [Sprint A] BrowserRouter posé à la racine — fondation non-cassante.
         App.jsx continue de gérer activeModule en state, mais peut désormais
         utiliser useSearchParams/useNavigate dans les sprints suivants. */}
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <ScrollToTopOnModuleChange />
       <App />
     </BrowserRouter>

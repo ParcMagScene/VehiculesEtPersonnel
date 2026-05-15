@@ -164,12 +164,40 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   }, []);
 
   // ─── Sonos now playing ───
+  // Anti-clignotement :
+  //  - on dédoublonne via comparaison shallow des champs significatifs pour éviter un setState
+  //    inutile (qui re-monterait l'<img> et causerait un flash visuel).
+  //  - en cas d'erreur transitoire, on conserve la dernière lecture connue plutôt que de
+  //    basculer sur l'état "idle/erreur" (ce qui faisait alterner playing ⇄ idle toutes les 10 s).
+  const sonosFailRef = useRef(0);
   const loadNowPlaying = useCallback(async () => {
     try {
       const data = await api.getSonosNowPlaying();
-      setNowPlaying(data);
+      sonosFailRef.current = 0;
+      setNowPlaying((prev) => {
+        if (!prev && !data) return prev;
+        if (
+          prev &&
+          data &&
+          prev.title === data.title &&
+          prev.artist === data.artist &&
+          prev.albumArtURI === data.albumArtURI &&
+          prev.playing === data.playing &&
+          prev.duration === data.duration &&
+          // tolérance 2s sur la position pour éviter un re-render à chaque tick
+          Math.abs((prev.position || 0) - (data.position || 0)) < 2
+        ) {
+          return prev;
+        }
+        return data;
+      });
     } catch {
-      setNowPlaying({ playing: false, error: 'Erreur de connexion' });
+      // 1ʳᵉ et 2ᵉ erreurs → on garde l'état précédent (réseau hoquet).
+      // Au-delà, on bascule en mode erreur explicite.
+      sonosFailRef.current += 1;
+      if (sonosFailRef.current >= 3) {
+        setNowPlaying({ playing: false, error: 'Erreur de connexion' });
+      }
     }
   }, []);
 

@@ -1,7 +1,7 @@
-import react from '@vitejs/plugin-react'
-import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
-import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
+import { defineConfig } from 'vite';
 
 // Plugin : redirection auto quand le navigateur demande un asset périmé (ancien hash)
 function staleAssetReload() {
@@ -16,7 +16,10 @@ function staleAssetReload() {
           if (!existsSync(filePath)) {
             if (req.url.endsWith('.js')) {
               // Forcer un rechargement complet de la page pour obtenir le nouveau index.html
-              res.writeHead(200, { 'Content-Type': 'application/javascript', 'Cache-Control': 'no-store' });
+              res.writeHead(200, {
+                'Content-Type': 'application/javascript',
+                'Cache-Control': 'no-store',
+              });
               res.end('window.location.reload();');
             } else {
               res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -28,7 +31,7 @@ function staleAssetReload() {
         next();
       });
     },
-  }
+  };
 }
 
 // Plugin : SPA fallback — sert index.html pour toute route sans extension (support F5)
@@ -68,7 +71,10 @@ function smartCacheHeaders() {
         res.setHeader = (name, value) => {
           if (name.toLowerCase() === 'cache-control') {
             // Assets avec hash → cache longue durée (le hash change à chaque build)
-            if (url.startsWith('/assets/') && /-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)) {
+            if (
+              url.startsWith('/assets/') &&
+              /-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)
+            ) {
               return origSetHeader(name, 'public, max-age=31536000, immutable');
             }
             // HTML et autres → pas de cache
@@ -79,7 +85,7 @@ function smartCacheHeaders() {
         next();
       });
     },
-  }
+  };
 }
 
 export default defineConfig(({ mode }) => ({
@@ -126,7 +132,7 @@ export default defineConfig(({ mode }) => ({
     pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
   },
   server: {
-    // MODE DEV — proxy vers le backend DEV sur port 3003
+    // MODE DEV — proxy vers le backend DEV sur port 3003 (HTTP)
     host: '0.0.0.0',
     port: 5174,
     open: true,
@@ -134,15 +140,17 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       '/api': {
         target: 'http://localhost:3003',
-        changeOrigin: true
+        changeOrigin: true,
       },
       '/tv-client': {
         target: 'http://localhost:3003',
-        changeOrigin: true      },
+        changeOrigin: true,
+      },
       '/catalogues': {
         target: 'http://localhost:3003',
-        changeOrigin: true      }
-    }
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     // MODE PROD — proxy vers le backend PROD (HTTPS :3443)
@@ -150,8 +158,8 @@ export default defineConfig(({ mode }) => ({
     port: 4173,
     allowedHosts: true,
     headers: {
-      'Pragma': 'no-cache',
-      'Expires': '0',
+      Pragma: 'no-cache',
+      Expires: '0',
       'Content-Security-Policy': [
         "default-src 'self'",
         "script-src 'self' https://accounts.google.com https://maps.googleapis.com",
@@ -171,25 +179,27 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'https://localhost:3443',
         changeOrigin: true,
-        secure: false
+        secure: false,
       },
       '/tv-client': {
         target: 'https://localhost:3443',
         changeOrigin: true,
-        secure: false      },
+        secure: false,
+      },
       '/catalogues': {
         target: 'https://localhost:3443',
         changeOrigin: true,
-        secure: false      }
-    }
+        secure: false,
+      },
+    },
   },
   optimizeDeps: {
-    include: ['pdfjs-dist']
+    include: ['pdfjs-dist'],
   },
   resolve: {
     alias: {
       '@': join(import.meta.dirname, 'src'),
-      'pdfjs-dist/build/pdf.worker.min.mjs': 'pdfjs-dist/build/pdf.worker.mjs'
-    }
-  }
-}))
+      'pdfjs-dist/build/pdf.worker.min.mjs': 'pdfjs-dist/build/pdf.worker.mjs',
+    },
+  },
+}));

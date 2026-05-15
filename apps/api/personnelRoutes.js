@@ -9,6 +9,7 @@ import { alertAssignmentCreated } from './emailService.js';
 import logger from './logger.js';
 import { personSchema } from './schemas/crud.js';
 import { personnelImportSchema, validate } from './schemas/imports.js';
+import { parsePagination, sendPaginated } from './utils/pagination.js';
 
 // ============ PERSONS (PERSONNEL) ============
 
@@ -1191,7 +1192,9 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
         assignments: assignmentsByMission[m.id] || [],
       }));
 
-      res.json(enriched);
+      // [S2-2] Pagination retro-compat (slice apres enrichissement, donc total = enriched.length)
+      const p = parsePagination(req);
+      return sendPaginated(res, enriched, p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1438,8 +1441,10 @@ export function setupAssignmentsRoutes(app, authenticateToken) {
       }
       sql += ' ORDER BY m.start_date, p.last_name';
 
+      // [S2-2] Pagination retro-compat
+      const p = parsePagination(req);
       const assignments = db.prepare(sql).all(...params);
-      res.json(assignments);
+      return sendPaginated(res, assignments, p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

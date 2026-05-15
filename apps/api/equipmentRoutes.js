@@ -31,6 +31,7 @@ import logger from './logger.js';
 import { equipmentSchema } from './schemas/crud.js';
 import { equipmentImportSchema, validate } from './schemas/imports.js';
 import { getNextUid } from './services/uidCounter.js';
+import { parsePagination, sendPaginated } from './utils/pagination.js';
 import { safeContentDispositionName } from './utils/safeFilename.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1208,7 +1209,9 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
       }
       sql += ' ORDER BY ea.start_date DESC';
 
-      res.json(db.prepare(sql).all(...params));
+      // [S2-2] Pagination retro-compat (?page= et/ou ?limit= sinon array legacy)
+      const p = parsePagination(req);
+      return sendPaginated(res, db.prepare(sql).all(...params), p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1346,7 +1349,9 @@ export function setupSavTicketsRoutes(
       }
       sql += ' ORDER BY st.created_at DESC';
 
-      res.json(db.prepare(sql).all(...params));
+      // [S2-2] Pagination retro-compat
+      const p = parsePagination(req);
+      return sendPaginated(res, db.prepare(sql).all(...params), p);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

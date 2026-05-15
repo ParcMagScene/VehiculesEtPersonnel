@@ -407,7 +407,6 @@ function scanAndEnhance(root = document.body) {
       parent &&
       (parent.matches(OVERLAY_SELECTORS) ||
         parent === document.body ||
-        parent.id === 'portal-root' ||
         parent.id === 'emag-modal-root')
     ) {
       enhanceModal(modal);

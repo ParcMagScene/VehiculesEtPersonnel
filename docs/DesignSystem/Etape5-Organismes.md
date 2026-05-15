@@ -83,11 +83,12 @@
 | full | 96vw + 90vh |
 
 ### Comportement
-- **Portal** : Rendu via `createPortal` dans `document.body`
+- **Portal** : Rendu via `createPortal` dans `#emag-modal-root` (portail unique géré par `apps/web/src/utils/modalManager.js`)
 - **Fermeture** : Click sur l'overlay (sur mouseDown) + touche Escape
-- **Scroll lock** : `body.overflow = 'hidden'` quand ouvert
+- **Scroll lock** : centralisé par le `ModalManager` (libéré uniquement à la fermeture du dernier modal de la pile)
 - **Restore focus** : Le focus revient sur l'élément précédemment actif à la fermeture
 - **Animation** : Overlay fade-in + container slide-up avec scale (spring easing)
+- **Z-index** : pile dynamique du `ModalManager` (`overlay = 9000 + i*10`, `dialog = 10000 + i*10`)
 
 ### Accessibilité
 - `role="dialog"` + `aria-modal="true"` sur le conteneur

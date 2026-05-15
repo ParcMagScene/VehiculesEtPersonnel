@@ -1,6 +1,7 @@
 import react from '@vitejs/plugin-react';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 
 // Plugin : redirection auto quand le navigateur demande un asset périmé (ancien hash)
@@ -89,7 +90,20 @@ function smartCacheHeaders() {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), staleAssetReload(), smartCacheHeaders(), spaFallback()],
+  plugins: [
+    react(),
+    staleAssetReload(),
+    smartCacheHeaders(),
+    spaFallback(),
+    // Génère dist/stats.html (treemap interactive) à chaque build
+    // Ouvrir dans le navigateur pour auditer la composition des chunks.
+    visualizer({
+      filename: 'dist/stats.html',
+      template: 'treemap',
+      gzipSize: true,
+      brotliSize: true,
+    }),
+  ],
   // Le dossier public est à la racine du monorepo
   publicDir: '../../public',
   test: {

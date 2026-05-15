@@ -29,7 +29,7 @@ import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import { getExpiredTechnicalControls, hasExpiredTechnicalControl } from '../../utils/vehicleUtils';
 import ChangePassword from '../auth/ChangePassword';
 import MobileAccess from '../auth/MobileAccess';
-import LocationsMapPanel from '../locations/LocationsMapPanel';
+const LocationsMapPanel = React.lazy(() => import('../locations/LocationsMapPanel'));
 import { formatPhoneDisplay } from '../PhoneInput';
 import ClientDialog from '../vehicles/ClientDialog';
 import DepotMap from '../vehicles/DepotMap';
@@ -1999,15 +1999,21 @@ const ManagementPanel = ({
 
       {/* Panneau cartographie des lieux */}
       {showMapPanel && (
-        <LocationsMapPanel
-          locations={getCurrentList()}
-          onClose={() => setShowMapPanel(false)}
-          onEditLocation={(loc) => {
-            setShowMapPanel(false);
-            setLocationToEdit(loc);
-            setShowLocationDialog(true);
-          }}
-        />
+        <Suspense
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement de la carte…</div>
+          }
+        >
+          <LocationsMapPanel
+            locations={getCurrentList()}
+            onClose={() => setShowMapPanel(false)}
+            onEditLocation={(loc) => {
+              setShowMapPanel(false);
+              setLocationToEdit(loc);
+              setShowLocationDialog(true);
+            }}
+          />
+        </Suspense>
       )}
 
       {ConfirmDialogRenderer}

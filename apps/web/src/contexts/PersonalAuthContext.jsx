@@ -16,6 +16,14 @@ export function PersonalAuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(false);
 
   /**
+   * Déconnecter l'utilisateur personnel
+   */
+  const logoutPersonal = useCallback(() => {
+    setAuthenticatedPerson(null);
+    setAuthError(null);
+  }, []);
+
+  /**
    * Authentifier un utilisateur personnel
    * @param {number} personId - ID de la personne
    * @param {string} pin - Code PIN (4 chiffres) optionnel
@@ -61,16 +69,8 @@ export function PersonalAuthProvider({ children }) {
         setAuthLoading(false);
       }
     },
-    [api, logoutPersonal],
+    [logoutPersonal],
   );
-
-  /**
-   * Déconnecter l'utilisateur personnel
-   */
-  const logoutPersonal = useCallback(() => {
-    setAuthenticatedPerson(null);
-    setAuthError(null);
-  }, []); // pas de dépendances nécessaires
 
   /**
    * Vérifier si un utilisateur personnel est authentifié

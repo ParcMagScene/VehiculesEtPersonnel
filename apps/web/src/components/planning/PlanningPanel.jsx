@@ -7,6 +7,7 @@ import { Button } from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import ErrorBoundary from '../ErrorBoundary';
 import { PlanningModalProvider } from './PlanningModalContext';
 
 const PersonnelPanel = lazy(() => import('../personnel/PersonnelPanel'));
@@ -109,48 +110,56 @@ function PlanningPanel({
         {/* Content */}
         <div className="panel-content">
           {activeSubTab === 'personnel' && (
-            <Suspense fallback={null}>
-              <PersonnelPanel
-                key={personnelRefreshKey}
-                currentUser={currentUser}
-                mode="planning"
-                view={view}
-                setView={setView}
-                currentDate={currentDate}
-                setCurrentDate={setCurrentDate}
-                googleEvents={googleEvents}
-                navigateToPersonId={navigateToPersonId}
-                onNavigateToPersonHandled={onNavigateToPersonHandled}
-                quickAssignmentSlot={quickAssignmentSlot}
-                onQuickAssignmentHandled={onQuickAssignmentHandled}
-                onOpenSuivi={handleOpenSuivi}
-              />
-            </Suspense>
+            <ErrorBoundary moduleName="Planning · Personnel">
+              <Suspense fallback={null}>
+                <PersonnelPanel
+                  key={personnelRefreshKey}
+                  currentUser={currentUser}
+                  mode="planning"
+                  view={view}
+                  setView={setView}
+                  currentDate={currentDate}
+                  setCurrentDate={setCurrentDate}
+                  googleEvents={googleEvents}
+                  navigateToPersonId={navigateToPersonId}
+                  onNavigateToPersonHandled={onNavigateToPersonHandled}
+                  quickAssignmentSlot={quickAssignmentSlot}
+                  onQuickAssignmentHandled={onQuickAssignmentHandled}
+                  onOpenSuivi={handleOpenSuivi}
+                />
+              </Suspense>
+            </ErrorBoundary>
           )}
           {activeSubTab === 'suivi' && (
-            <Suspense fallback={null}>
-              <PersonalSuiviWrapper
-                currentUser={currentUser}
-                personnel={personnel}
-                initialPersonId={suiviInitialPersonId}
-              />
-            </Suspense>
+            <ErrorBoundary moduleName="Planning · Suivi">
+              <Suspense fallback={null}>
+                <PersonalSuiviWrapper
+                  currentUser={currentUser}
+                  personnel={personnel}
+                  initialPersonId={suiviInitialPersonId}
+                />
+              </Suspense>
+            </ErrorBoundary>
           )}
           {activeSubTab === 'tasks' && (
-            <Suspense fallback={null}>
-              <PersonalPlanningWrapper
-                currentUser={currentUser}
-                personnel={personnel}
-                refreshKey={displayRefreshKey}
-                googleEvents={googleEvents}
-                onNavigateToEntity={onNavigateToEntity}
-              />
-            </Suspense>
+            <ErrorBoundary moduleName="Planning · Planification">
+              <Suspense fallback={null}>
+                <PersonalPlanningWrapper
+                  currentUser={currentUser}
+                  personnel={personnel}
+                  refreshKey={displayRefreshKey}
+                  googleEvents={googleEvents}
+                  onNavigateToEntity={onNavigateToEntity}
+                />
+              </Suspense>
+            </ErrorBoundary>
           )}
           {activeSubTab === 'dashboard' && (
-            <Suspense fallback={null}>
-              <DisplayDashboardPanel currentUser={currentUser} />
-            </Suspense>
+            <ErrorBoundary moduleName="Planning · Dashboard Écrans">
+              <Suspense fallback={null}>
+                <DisplayDashboardPanel currentUser={currentUser} />
+              </Suspense>
+            </ErrorBoundary>
           )}
         </div>
       </div>

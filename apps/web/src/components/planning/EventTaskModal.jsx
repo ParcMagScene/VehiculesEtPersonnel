@@ -14,7 +14,6 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import ReactDOM from 'react-dom';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
 
@@ -345,9 +344,8 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     }
   };
 
-  // --- PATCH PORTAL ---
-  // On rend le modal dans #task-modal-root pour garantir l'isolation
-  return ReactDOM.createPortal(
+  // ModalManager : <Modal> gère seul le portail #emag-modal-root et le z-index.
+  return (
     <Modal open onClose={onClose} size="lg" className="etm-modal no-drag-resize">
       <ModalHeader icon={<Calendar size={18} />} onClose={onClose}>
         <span className="etm-header-title">Définir les tâches</span>
@@ -507,8 +505,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
           </Button>
         </div>
       </ModalFooter>
-    </Modal>,
-    document.getElementById('task-modal-root'),
+    </Modal>
   );
 }
 

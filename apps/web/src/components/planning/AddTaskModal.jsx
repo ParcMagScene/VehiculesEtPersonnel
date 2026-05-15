@@ -12,7 +12,6 @@ import {
   User,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
 
@@ -357,10 +356,11 @@ export default function AddTaskModal({
   const showLocation = section === COURSE_SECTION || VEHICLE_SECTIONS.has(section);
   const showVehicle = VEHICLE_SECTIONS.has(section);
 
-  // On rend le modal dans #task-modal-root pour garantir l'isolation
-  return ReactDOM.createPortal(
+  // ModalManager : <Modal> portail seul vers #emag-modal-root, plus besoin
+  // de double-wrapper createPortal (cause de backdrops orphelins / overlays
+  // transparents). Cf. apps/web/src/utils/modalManager.js.
+  return (
     <Modal open onClose={onClose} size="lg" className="atm-modal no-drag-resize">
-      {/* ...tout le JSX du modal inchangé... */}
       <ModalHeader icon={<Plus size={18} />} onClose={onClose}>
         Nouvelle tâche
       </ModalHeader>
@@ -723,7 +723,6 @@ export default function AddTaskModal({
           )}
         </Button>
       </ModalFooter>
-    </Modal>,
-    document.getElementById('task-modal-root'),
+    </Modal>
   );
 }

@@ -33,6 +33,15 @@ import {
 import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapOffScreenIndicators from './MapOffScreenIndicators';
 
+// Constantes module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
+const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
+const DIR_OFFSETS = {
+  top: [0, -12],
+  right: [12, 0],
+  bottom: [0, 12],
+  left: [-12, 0],
+};
+
 const MIN_RADIUS = 500;
 const MAX_RADIUS = 100000;
 
@@ -115,14 +124,6 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
   const map = useMap();
   const [revision, setRevision] = useState(0);
   const [visibleLabelIds, setVisibleLabelIds] = useState(() => new Set());
-
-  const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
-  const DIR_OFFSETS = {
-    top: [0, -12],
-    right: [12, 0],
-    bottom: [0, 12],
-    left: [-12, 0],
-  };
 
   const sorted = useMemo(() => [...locations].sort((a, b) => b.lat - a.lat), [locations]);
   const allItems = useMemo(() => {

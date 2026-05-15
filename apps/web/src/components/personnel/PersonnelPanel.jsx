@@ -757,6 +757,8 @@ const PersonsTab = ({
         },
       });
     },
+    // setPersons est stable (setter useState), pas besoin dans les deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [confirm, selectedPerson, toast],
   );
 

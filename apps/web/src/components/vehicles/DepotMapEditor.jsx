@@ -544,8 +544,10 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
       setDragZoneStart({ ...zone.bbox });
       if (zone.clipPoints) setDragClipPointsStart(zone.clipPoints.map((p) => ({ ...p })));
       else setDragClipPointsStart(null);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // handleSubtractZoneClick volontairement omis pour éviter une boucle
+    // (la réf change à chaque rendu, sa logique est capturée par closure)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [getSvgPoint, pushHistory, spaceHeld, subtractMode, subtractSourceId],
   );
 
@@ -657,8 +659,10 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
           updateZoneSkew(selectedZoneId, skewKey, newVal);
         }
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // dragClipPointsStart volontairement omis : utilisé dans les branches translate seulement,
+    // sa présence déclencherait des recreations sur chaque pas de drag
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       dragMode,
       dragStart,

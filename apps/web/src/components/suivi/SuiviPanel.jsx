@@ -195,6 +195,8 @@ function SuiviPanel({
     return () => {
       cancelled = true;
     };
+    // dépend uniquement de l'id (pas de l'objet entier) pour éviter les rechargements parasites
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPerson?.id, selectedDate]);
 
   const handleNavigateDay = useCallback(

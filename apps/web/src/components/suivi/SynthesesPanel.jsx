@@ -19,6 +19,9 @@ import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
 
+// Constante module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
+const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
+
 function getISOWeek(d) {
   const date = new Date(d.getTime());
   date.setHours(0, 0, 0, 0);
@@ -156,7 +159,6 @@ function SynthesesPanel({ currentUser: _currentUser }) {
     );
   }, [synthese]);
 
-  const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
   const filteredPersons = useMemo(
     () =>
       onlyPermanents

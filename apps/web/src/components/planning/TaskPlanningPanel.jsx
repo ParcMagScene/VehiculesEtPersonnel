@@ -52,12 +52,12 @@ function TaskPlanningPanel({
   onNavigateToEntity,
   personId = null,
   isPersonalMode = false,
-  onPersonalDataSaved = null,
+  _onPersonalDataSaved = null,
 }) {
   const { modal, openModal, closeModal } = usePlanningModal();
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
-  const [editingTask, setEditingTask] = useState(null);
+  const [_editingTask, setEditingTask] = useState(null);
   const [tasks, setTasks] = useState([]),
     [persons, setPersons] = useState([]),
     [affaires, setAffaires] = useState([]);
@@ -75,7 +75,7 @@ function TaskPlanningPanel({
   const [planningAssignments, setPlanningAssignments] = useState([]),
     [assigningEntity, setAssigningEntity] = useState(null);
   const [expandedRdv, setExpandedRdv] = useState(null),
-    [eventTaskModalEvent, setEventTaskModalEvent] = useState(null);
+    [_eventTaskModalEvent, setEventTaskModalEvent] = useState(null);
   // Les états modaux sont maintenant gérés par le contexte
   const [showRecurring, setShowRecurring] = useState(false),
     [recurringTasks, setRecurringTasks] = useState([]),
@@ -176,7 +176,7 @@ function TaskPlanningPanel({
         setLoading(false);
       }
     },
-    [selectedDate, viewMode, weekDays, toast, isPersonalMode, personId],
+    [selectedDate, viewMode, weekDays, isPersonalMode, personId],
   );
 
   const loadPersons = useCallback(async () => {
@@ -812,20 +812,23 @@ function TaskPlanningPanel({
     },
     [loadTasks, toast],
   );
-  const openAffaireTaskModal = useCallback((af) => {
-    if (af._linkedGoogleEvent) {
-      openEventTaskModal(af._linkedGoogleEvent);
-      return;
-    }
-    openEventTaskModal({
-      id: `affaire-${af.id || af.numeroAffaire}`,
-      summary: `${af.type || ''} ${af.numeroAffaire}${af.client ? ' — ' + af.client : ''}`,
-      start: { date: af.dateDebut || af.date_debut || '' },
-      end: { date: af.dateFin || af.date_fin || '' },
-      location: af.adresseLivraison || '',
-      description: af.titre || af.description || '',
-    });
-  }, []);
+  const openAffaireTaskModal = useCallback(
+    (af) => {
+      if (af._linkedGoogleEvent) {
+        openEventTaskModal(af._linkedGoogleEvent);
+        return;
+      }
+      openEventTaskModal({
+        id: `affaire-${af.id || af.numeroAffaire}`,
+        summary: `${af.type || ''} ${af.numeroAffaire}${af.client ? ' — ' + af.client : ''}`,
+        start: { date: af.dateDebut || af.date_debut || '' },
+        end: { date: af.dateFin || af.date_fin || '' },
+        location: af.adresseLivraison || '',
+        description: af.titre || af.description || '',
+      });
+    },
+    [openEventTaskModal],
+  );
   const icalToGoogleLike = useCallback((ev) => {
     const s = ev.start || '',
       e = ev.end || '';
@@ -919,6 +922,7 @@ function TaskPlanningPanel({
       processedGoogleIds,
       tasksBySourceId,
       onNavigateToEntity,
+      openEventTaskModal,
       linkingEvent,
       linkSearchQuery,
       affaires,
@@ -967,6 +971,7 @@ function TaskPlanningPanel({
       processedGoogleIds,
       tasksBySourceId,
       onNavigateToEntity,
+      openEventTaskModal,
       linkingEvent,
       linkSearchQuery,
       affaires,

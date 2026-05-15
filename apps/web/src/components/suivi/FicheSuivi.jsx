@@ -74,6 +74,8 @@ function FicheSuivi({ sheet, onSave, saving }) {
       setNotes(sheet.notes || '');
       setDirty(false);
     }
+    // dépend uniquement de l'identité de la fiche, pas du contenu (évite réhydration en boucle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.id, sheet?.modified_at]);
 
   // Fetch unassigned planning tasks for this date

@@ -140,6 +140,9 @@ export default function AddTaskModal({
       setAffaireSearch('');
       setAffaireOpen(false);
     }
+    // selectedDate volontairement omis : on initialise la date uniquement
+    // à l'ouverture du modal, pas à chaque changement de date externe.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Close affaire dropdown on outside click

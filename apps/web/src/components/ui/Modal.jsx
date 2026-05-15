@@ -43,7 +43,7 @@ function Modal({
     document.body.style.overflow = 'hidden';
 
     // Debug overlay multiples
-    setTimeout(() => {
+    const overlayCheckTimer = setTimeout(() => {
       const overlays = document.querySelectorAll('.ui-modal-overlay');
       if (overlays.length > 1) {
         console.warn('[Modal] Plusieurs overlays détectés:', overlays.length, overlays);
@@ -54,6 +54,7 @@ function Modal({
     }, 100);
 
     return () => {
+      clearTimeout(overlayCheckTimer);
       document.body.style.overflow = orig;
       previousFocus.current?.focus?.();
       // Nettoie l'attribut warning

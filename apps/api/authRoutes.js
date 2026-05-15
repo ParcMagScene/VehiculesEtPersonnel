@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 
 import { AUDIT_ACTIONS, auditLog } from './auditLog.js';
 import { authCache } from './cache.js';
+import { isCaptchaEnabled, verifyCaptcha } from './captcha.js';
 import db from './database.js';
 import { getTransporter } from './emailService.js';
 import logger from './logger.js';
@@ -160,8 +161,11 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
   // connaissant l'email d'un compte peut réinitialiser son mot de passe.
   // Mitigations en place :
   //   - rate-limit strict (3 tentatives / 15 min / IP) configuré dans server.js
+  //   - CAPTCHA Cloudflare Turnstile si TURNSTILE_SECRET_KEY défini (mandat sécurité)
   //   - validation password policy (validatePassword)
-  //   - audit log systématique (PASSWORD_RESET_REQUEST + PASSWORD_RESET_COMPLETE)
+  //   - audit log systématique (PASSWORD_RESET_REQUEST + PASSWORD_RESET_COMPLETE
+  //     + PASSWORD_RESET_NOTIFICATION + CAPTCHA_FAILED)
+  //   - email de notification automatique au compte cible après reset réussi
   //   - invalidation de toutes les sessions actives de l'utilisateur cible
   //   - hash bcrypt du nouveau mot de passe
   // Si `newPassword` est absent du payload → fallback sur le flow OTP historique.
@@ -184,6 +188,26 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
 
       // ── BRANCHE A : reset DIRECT (newPassword fourni) ────────────────────
       if (typeof newPassword === 'string' && newPassword.length > 0) {
+        // [SECURITY] CAPTCHA obligatoire si activé via env
+        if (isCaptchaEnabled()) {
+          const captchaRes = await verifyCaptcha(req.body?.captchaToken, req.ip);
+          if (!captchaRes.ok) {
+            auditLog({
+              actorId: user.id,
+              actorEmail: user.email,
+              action: AUDIT_ACTIONS.CAPTCHA_FAILED,
+              targetType: 'user',
+              targetId: user.id,
+              details: { route: 'self-reset-password', reason: captchaRes.reason },
+              req,
+            });
+            return res.status(400).json({
+              success: false,
+              error: 'Vérification anti-robot échouée. Réessayez.',
+            });
+          }
+        }
+
         const pwError = validatePassword(newPassword);
         if (pwError) {
           auditLog({
@@ -217,13 +241,59 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
           action: AUDIT_ACTIONS.PASSWORD_RESET_COMPLETE,
           targetType: 'user',
           targetId: user.id,
-          details: { mode: 'direct_no_otp', sessions_invalidated: true },
+          details: {
+            mode: 'direct_no_otp',
+            sessions_invalidated: true,
+            captcha: isCaptchaEnabled() ? 'verified' : 'disabled',
+          },
           req,
         });
 
         logger.warn(
           `🔓 [CWE-640 ACCEPTÉ] Reset direct sans OTP pour user ${user.id} (${user.email}) depuis IP ${req.ip}`,
         );
+
+        // [SECURITY] Notification email post-reset (best-effort, non-bloquant)
+        // Permet au légitime propriétaire du compte de détecter un reset abusif.
+        try {
+          const { transporter, emailConfig } = getTransporter();
+          if (transporter && emailConfig?.enabled) {
+            const ipDisplay = req.ip || 'inconnue';
+            const uaDisplay = String(req.get?.('user-agent') || 'inconnu').slice(0, 200);
+            const whenDisplay = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
+            await transporter.sendMail({
+              from: `"${emailConfig.from_name || 'eM@g'}" <${emailConfig.smtp_user}>`,
+              to: user.email,
+              subject: "[eM@g] ⚠️ Votre mot de passe vient d'être réinitialisé",
+              html: `
+              <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
+                <h2 style="color: #dc2626;">⚠️ Réinitialisation de mot de passe</h2>
+                <p>Bonjour <strong>${user.name}</strong>,</p>
+                <p>Le mot de passe de votre compte <strong>${user.email}</strong> vient d'être réinitialisé.</p>
+                <table style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin: 16px 0; width: 100%;">
+                  <tr><td style="padding: 4px 8px;"><strong>Date</strong></td><td style="padding: 4px 8px;">${whenDisplay}</td></tr>
+                  <tr><td style="padding: 4px 8px;"><strong>Adresse IP</strong></td><td style="padding: 4px 8px;">${ipDisplay}</td></tr>
+                  <tr><td style="padding: 4px 8px;"><strong>Navigateur</strong></td><td style="padding: 4px 8px;">${uaDisplay}</td></tr>
+                </table>
+                <p style="margin-top: 16px;"><strong>Si vous êtes à l'origine de ce changement</strong>, aucune action n'est nécessaire.</p>
+                <p style="color: #b91c1c;"><strong>Si ce n'était pas vous</strong>, contactez immédiatement un administrateur — toutes vos sessions actives ont déjà été déconnectées.</p>
+                <p style="color: #666; font-size: 12px; margin-top: 24px;">Email automatique — ne pas répondre.</p>
+              </div>
+            `,
+            });
+            auditLog({
+              actorId: user.id,
+              actorEmail: user.email,
+              action: AUDIT_ACTIONS.PASSWORD_RESET_NOTIFICATION,
+              targetType: 'user',
+              targetId: user.id,
+              details: { sent: true },
+              req,
+            });
+          }
+        } catch (notifErr) {
+          logger.warn(`Notification post-reset non envoyée: ${notifErr.message}`);
+        }
 
         return res.json({
           success: true,

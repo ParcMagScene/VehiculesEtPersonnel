@@ -542,10 +542,12 @@ export class ApiClient {
     });
   }
 
-  async selfResetPassword(email, newPassword) {
+  async selfResetPassword(email, newPassword, captchaToken) {
+    const body = { email, newPassword };
+    if (captchaToken) body.captchaToken = captchaToken;
     return this.request('/auth/self-reset-password', {
       method: 'POST',
-      body: JSON.stringify({ email, newPassword }),
+      body: JSON.stringify(body),
     });
   }
 

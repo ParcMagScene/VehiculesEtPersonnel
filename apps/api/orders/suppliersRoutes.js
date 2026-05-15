@@ -1,5 +1,5 @@
 // [S2-1] Routes Fournisseurs - extrait de ordersRoutes.js (L44-178)
-import db, { addToHistory } from '../database.js';
+import db from '../database.js';
 import logger from '../logger.js';
 
 export function setupSuppliersRoutes(app, authenticateToken, requireAdmin) {

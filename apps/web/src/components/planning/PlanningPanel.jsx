@@ -10,8 +10,6 @@ import api from '../../utils/api';
 import { PlanningModalProvider } from './PlanningModalContext';
 
 const PersonnelPanel = lazy(() => import('../personnel/PersonnelPanel'));
-const SuiviPanel = lazy(() => import('../suivi/SuiviPanel'));
-const TaskPlanningPanel = lazy(() => import('./TaskPlanningPanel'));
 const DisplayDashboardPanel = lazy(() => import('../DisplayDashboard/DisplayDashboardPanel'));
 const PersonalSuiviWrapper = lazy(() => import('../suivi/PersonalSuiviWrapper'));
 const PersonalPlanningWrapper = lazy(() => import('./PersonalPlanningWrapper'));

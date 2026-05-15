@@ -210,9 +210,9 @@ function logAction(screenId, action, details, userId) {
   }
 }
 
+import { setupDisplayLegacyTvRoutes } from './display/legacyTvRoutes.js';
 import { optionalTvToken } from './middleware/tvAuth.js';
 import { getSonosNowPlaying } from './sonosRoutes.js';
-import { setupDisplayLegacyTvRoutes } from './display/legacyTvRoutes.js';
 
 // ════════════════════════════════════════════════════════════════
 export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
@@ -2319,7 +2319,6 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
     readJsonFile,
     isValidEventId,
   });
-
 
   logger.info(
     '✅ Routes Dashboard TV (apparence, messages, couleurs, icônes, Sonos, TV public, compat legacy) configurées',

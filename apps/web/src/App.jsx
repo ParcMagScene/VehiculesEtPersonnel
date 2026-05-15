@@ -27,8 +27,8 @@ import './styles/draggable-modals.css';
 import { Button } from '@/design-system';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { PersonalAuthProvider } from './contexts/PersonalAuthContext.jsx';
 import { NavigationProvider } from './contexts/NavigationContext';
+import { PersonalAuthProvider } from './contexts/PersonalAuthContext.jsx';
 import { LoadingOverlay } from './design-system';
 import { useAppData } from './hooks/useAppData';
 import { useDraggableModals } from './hooks/useDraggableModals';

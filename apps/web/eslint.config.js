@@ -3,9 +3,12 @@
 // Migré depuis .eslintrc.cjs. Comportement et règles strictement équivalents.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { fixupConfigRules, fixupPluginRules } from '@eslint/compat';
-import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
+import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import react from 'eslint-plugin-react';
@@ -13,8 +16,6 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import unusedImports from 'eslint-plugin-unused-imports';
 import globals from 'globals';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const compat = new FlatCompat({ baseDirectory: __dirname, recommendedConfig: js.configs.recommended });

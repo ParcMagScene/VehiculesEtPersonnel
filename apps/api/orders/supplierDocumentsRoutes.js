@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
 import db, { addToHistory } from '../database.js';
 import logger from '../logger.js';
 

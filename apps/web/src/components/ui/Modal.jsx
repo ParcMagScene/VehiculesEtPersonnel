@@ -134,23 +134,27 @@ function Modal({
       data-multi-overlay={undefined}
     >
       {/* Warning visuel si plusieurs overlays */}
-      {typeof window !== 'undefined' && overlayRef.current && overlayRef.current.getAttribute('data-multi-overlay') === 'true' && (
-        <div style={{
-          position: 'absolute',
-          top: 8,
-          left: 8,
-          zIndex: 9999,
-          background: '#f43f5e',
-          color: '#fff',
-          padding: '6px 12px',
-          borderRadius: 6,
-          fontWeight: 700,
-          fontSize: 14,
-          boxShadow: '0 2px 8px #0003',
-        }}>
-          ⚠️ Plusieurs overlays modaux actifs !
-        </div>
-      )}
+      {typeof window !== 'undefined' &&
+        overlayRef.current &&
+        overlayRef.current.getAttribute('data-multi-overlay') === 'true' && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 8,
+              left: 8,
+              zIndex: 9999,
+              background: '#f43f5e',
+              color: '#fff',
+              padding: '6px 12px',
+              borderRadius: 6,
+              fontWeight: 700,
+              fontSize: 14,
+              boxShadow: '0 2px 8px #0003',
+            }}
+          >
+            ⚠️ Plusieurs overlays modaux actifs !
+          </div>
+        )}
       <div
         className={cls}
         role="dialog"

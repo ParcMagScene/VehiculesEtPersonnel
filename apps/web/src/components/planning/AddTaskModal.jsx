@@ -12,9 +12,9 @@ import {
   User,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
-import ReactDOM from 'react-dom';
 
 import { STATUS } from '../../constants';
 import { PLANNING_SECTIONS } from '../../constants/colors';

@@ -2,7 +2,7 @@
 import { resolveBrand } from '../brandHelpers.js';
 import db, { addToHistory } from '../database.js';
 import logger from '../logger.js';
-import { QUOTE_TRANSITIONS, generateReference, validateStatusTransition } from './_helpers.js';
+import { generateReference, QUOTE_TRANSITIONS, validateStatusTransition } from './_helpers.js';
 
 export function setupQuotesRoutes(app, authenticateToken, requireAdmin) {
   function generateQuoteReference() {

@@ -1,7 +1,7 @@
 import './AnnuairePanel.css';
 
 import { Edit2, ExternalLink, Map, MapPin, Plus, Trash2 } from 'lucide-react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 
 import { Button, SearchBar, Spinner, Table, Tooltip } from '@/design-system';
 
@@ -10,8 +10,9 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
-import LocationsMapPanel from '../locations/LocationsMapPanel';
 import LocationDialog from '../vehicles/LocationDialog';
+
+const LocationsMapPanel = lazy(() => import('../locations/LocationsMapPanel'));
 
 const LOCATION_TYPES = [
   'Salle de spectacle',
@@ -284,15 +285,21 @@ function LocationsTab({ currentUser }) {
       )}
 
       {showMapPanel && (
-        <LocationsMapPanel
-          locations={allLocations}
-          onClose={() => setShowMapPanel(false)}
-          onEditLocation={(loc) => {
-            setShowMapPanel(false);
-            setEditingLocation(loc);
-            setShowDialog(true);
-          }}
-        />
+        <Suspense
+          fallback={
+            <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement de la carte…</div>
+          }
+        >
+          <LocationsMapPanel
+            locations={allLocations}
+            onClose={() => setShowMapPanel(false)}
+            onEditLocation={(loc) => {
+              setShowMapPanel(false);
+              setEditingLocation(loc);
+              setShowDialog(true);
+            }}
+          />
+        </Suspense>
       )}
 
       {ConfirmDialogRenderer}

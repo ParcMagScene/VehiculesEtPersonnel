@@ -278,9 +278,12 @@ app.use('/api/auth/login-pin', authLimiter);
 // [SEC PHASE 2] Auth personnelle (PIN/password vérifié côté serveur) sur /suivi/personal-auth
 app.use('/api/suivi/personal-auth', authLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
-// NOTE: les endpoints de réinitialisation de mot de passe ne sont volontairement
-// PAS rate-limités (demande utilisateur) — le contrôle d'accès se fait par OTP
-// 6 chiffres + expiration 15 min + email obligatoire d'un compte autorisé.
+// [CWE-640 MITIGATION] Le reset-password accepte un flow direct (email+newPassword
+// sans OTP) — acceptation de risque utilisateur. On compense par un rate-limit
+// agressif (3 tentatives / 15 min / IP) pour ralentir une attaque par énumération.
+app.use('/api/auth/self-reset-password', authLimiter);
+// NOTE: les autres endpoints de réinitialisation (verify-reset-otp, set-new-password)
+// restent sans rate-limit dédié — protégés par OTP 6 chiffres + expiration 15 min.
 // Les GET /api/access-requests/* sont protégés par authenticateToken+requireAdmin
 app.post('/api/access-requests', sensitiveEndpointLimiter);
 app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);

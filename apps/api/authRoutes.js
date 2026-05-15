@@ -152,12 +152,22 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
     }
   });
 
-  // Réinitialisation du mot de passe (self-service) — envoi OTP par email
-  // Étape 1: email + nom → génère OTP envoyé par email
-  // Étape 2: /api/auth/verify-reset-otp avec OTP + newPassword
+  // Réinitialisation du mot de passe (self-service)
+  //
+  // ⚠️ ACCEPTATION DE RISQUE EXPLICITE (CWE-640 / OWASP A07)
+  // Sur demande utilisateur, ce endpoint accepte un reset DIRECT email + newPassword
+  // sans facteur de vérification (pas d'OTP, pas de magic link). Toute personne
+  // connaissant l'email d'un compte peut réinitialiser son mot de passe.
+  // Mitigations en place :
+  //   - rate-limit strict (3 tentatives / 15 min / IP) configuré dans server.js
+  //   - validation password policy (validatePassword)
+  //   - audit log systématique (PASSWORD_RESET_REQUEST + PASSWORD_RESET_COMPLETE)
+  //   - invalidation de toutes les sessions actives de l'utilisateur cible
+  //   - hash bcrypt du nouveau mot de passe
+  // Si `newPassword` est absent du payload → fallback sur le flow OTP historique.
   app.post('/api/auth/self-reset-password', validate(selfResetPasswordSchema), async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email, newPassword } = req.body;
 
       if (!email) {
         return res.status(400).json({ success: false, error: 'Email requis' });
@@ -172,6 +182,56 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         });
       }
 
+      // ── BRANCHE A : reset DIRECT (newPassword fourni) ────────────────────
+      if (typeof newPassword === 'string' && newPassword.length > 0) {
+        const pwError = validatePassword(newPassword);
+        if (pwError) {
+          auditLog({
+            actorId: user.id,
+            actorEmail: user.email,
+            action: AUDIT_ACTIONS.PASSWORD_RESET_REQUEST,
+            targetType: 'user',
+            targetId: user.id,
+            details: { mode: 'direct', outcome: 'weak_password' },
+            req,
+          });
+          return res.status(400).json({ success: false, error: pwError });
+        }
+
+        const hashed = await bcrypt.hash(newPassword, 12);
+        db.prepare(
+          'UPDATE users SET password = ?, password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?',
+        ).run(hashed, user.id);
+        // Invalider toutes les sessions actives (force re-login partout)
+        db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
+        // Invalider le cache d'auth pour cet utilisateur
+        try {
+          authCache?.del?.(`user:${user.id}`);
+        } catch (_) {
+          // cache best-effort
+        }
+
+        auditLog({
+          actorId: user.id,
+          actorEmail: user.email,
+          action: AUDIT_ACTIONS.PASSWORD_RESET_COMPLETE,
+          targetType: 'user',
+          targetId: user.id,
+          details: { mode: 'direct_no_otp', sessions_invalidated: true },
+          req,
+        });
+
+        logger.warn(
+          `🔓 [CWE-640 ACCEPTÉ] Reset direct sans OTP pour user ${user.id} (${user.email}) depuis IP ${req.ip}`,
+        );
+
+        return res.json({
+          success: true,
+          message: 'Mot de passe réinitialisé. Connectez-vous avec votre nouveau mot de passe.',
+        });
+      }
+
+      // ── BRANCHE B : flow OTP historique (newPassword absent) ──────────────
       // [SECURITY] OTP obligatoire — générer et envoyer par email
       const otp = String(crypto.randomInt(100000, 999999));
       const otpHash = crypto.createHash('sha256').update(otp).digest('hex');

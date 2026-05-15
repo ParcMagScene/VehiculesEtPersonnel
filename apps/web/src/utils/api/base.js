@@ -542,20 +542,11 @@ export class ApiClient {
     });
   }
 
-  async selfResetPassword(email, name) {
+  async selfResetPassword(email, newPassword) {
     return this.request('/auth/self-reset-password', {
       method: 'POST',
-      body: JSON.stringify({ email, name }),
+      body: JSON.stringify({ email, newPassword }),
     });
-  }
-
-  async setNewPassword(email, resetToken, newPassword) {
-    const data = await this.request('/auth/set-new-password', {
-      method: 'POST',
-      body: JSON.stringify({ email, resetToken, newPassword }),
-    });
-    this.setAuth(data.user);
-    return data;
   }
 
   async uploadAvatar(file, userId = null) {

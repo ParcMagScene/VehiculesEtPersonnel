@@ -28,8 +28,7 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetError, setResetError] = useState('');
-  const [resetStep, setResetStep] = useState(1);
-  const [resetOtp, setResetOtp] = useState('');
+  // Suppression du step OTP : reset direct
   const [emailStatus, setEmailStatus] = useState(null);
   const [_emailCheckName, setEmailCheckName] = useState('');
   const userSelectorRef = useRef(null);
@@ -159,28 +158,19 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
     e.preventDefault();
     setResetError('');
     setLoading(true);
-
     try {
-      if (resetStep === 1) {
-        await api.selfResetPassword(resetFormEmail, resetFormName);
-        setResetStep(2);
-        setResetError('');
-      } else {
-        if (newPassword !== newPasswordConfirm) {
-          setResetError('Les mots de passe ne correspondent pas');
-          return;
-        }
-        if (newPassword.length < 10) {
-          setResetError('Le mot de passe doit contenir au moins 10 caracteres');
-          return;
-        }
-        await api.setNewPassword(resetFormEmail, resetOtp, newPassword);
-        setShowResetPassword(false);
-        setResetStep(1);
-        setResetOtp('');
-        setResetError('');
-        setError('Mot de passe reinitialise — connectez-vous avec votre nouveau mot de passe.');
+      if (newPassword !== newPasswordConfirm) {
+        setResetError('Les mots de passe ne correspondent pas');
+        return;
       }
+      if (newPassword.length < 10) {
+        setResetError('Le mot de passe doit contenir au moins 10 caracteres');
+        return;
+      }
+      await api.selfResetPassword(resetFormEmail, newPassword);
+      setShowResetPassword(false);
+      setResetError('');
+      setError('Mot de passe reinitialise — connectez-vous avec votre nouveau mot de passe.');
     } catch (err) {
       setResetError(err.message);
     } finally {
@@ -468,108 +458,73 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-header login-reset-header">
-                <h3>Reinitialiser le mot de passe</h3>
+                <h3>Réinitialiser le mot de passe</h3>
               </div>
               <div className="modal-body">
                 <p className="login-modal-text">
-                  {resetStep === 1
-                    ? 'Entrez votre adresse email. Un code de vérification vous sera envoyé par email.'
-                    : 'Saisissez le code recu par email avec votre nouveau mot de passe.'}
+                  Entrez votre adresse email et un nouveau mot de passe. Si le compte existe, il
+                  sera réinitialisé immédiatement.
                 </p>
-
                 <form onSubmit={handleSelfResetPassword}>
-                  {resetStep === 1 ? (
-                    <>
-                      <FormField
-                        className="form-group login-form-field-spacing-last"
-                        label="Adresse email"
-                        htmlFor="reset-email"
-                      >
-                        <Input
-                          id="reset-email"
-                          type="email"
-                          value={resetFormEmail}
-                          onChange={(e) => setResetFormEmail(e.target.value)}
-                          placeholder="email@exemple.com"
-                          required
-                          autoFocus
-                          className="login-reset-input"
-                        />
-                      </FormField>
-                    </>
-                  ) : (
-                    <>
-                      <FormField
-                        className="form-group login-form-field-spacing"
-                        label="Code de verification (6 chiffres)"
-                        htmlFor="reset-otp"
-                      >
-                        <Input
-                          id="reset-otp"
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]{6}"
-                          maxLength={6}
-                          value={resetOtp}
-                          onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
-                          placeholder="000000"
-                          required
-                          autoFocus
-                          className="login-reset-input"
-                          autoComplete="one-time-code"
-                        />
-                      </FormField>
-
-                      <FormField
-                        className="form-group login-form-field-spacing"
-                        label="Nouveau mot de passe"
-                        htmlFor="new-password"
-                      >
-                        <Input
-                          id="new-password"
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Entrez votre nouveau mot de passe"
-                          minLength={10}
-                          required
-                          className="login-reset-input"
-                          autoComplete="new-password"
-                        />
-                      </FormField>
-
-                      <FormField
-                        className="form-group login-form-field-spacing-last"
-                        label="Confirmer le mot de passe"
-                        htmlFor="confirm-password"
-                      >
-                        <Input
-                          id="confirm-password"
-                          type="password"
-                          value={newPasswordConfirm}
-                          onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                          placeholder="Confirmez votre nouveau mot de passe"
-                          minLength={10}
-                          required
-                          className="login-reset-input"
-                          autoComplete="new-password"
-                        />
-                      </FormField>
-                    </>
-                  )}
-
+                  <FormField
+                    className="form-group login-form-field-spacing-last"
+                    label="Adresse email"
+                    htmlFor="reset-email"
+                  >
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      value={resetFormEmail}
+                      onChange={(e) => setResetFormEmail(e.target.value)}
+                      placeholder="email@exemple.com"
+                      required
+                      autoFocus
+                      className="login-reset-input"
+                    />
+                  </FormField>
+                  <FormField
+                    className="form-group login-form-field-spacing"
+                    label="Nouveau mot de passe"
+                    htmlFor="new-password"
+                  >
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Entrez votre nouveau mot de passe"
+                      minLength={10}
+                      required
+                      className="login-reset-input"
+                      autoComplete="new-password"
+                    />
+                  </FormField>
+                  <FormField
+                    className="form-group login-form-field-spacing-last"
+                    label="Confirmer le mot de passe"
+                    htmlFor="confirm-password"
+                  >
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={newPasswordConfirm}
+                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                      placeholder="Confirmez votre nouveau mot de passe"
+                      minLength={10}
+                      required
+                      className="login-reset-input"
+                      autoComplete="new-password"
+                    />
+                  </FormField>
                   {resetError && (
                     <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>
                   )}
-
                   <div className="modal-actions login-modal-actions">
                     <Button
                       variant="ghost"
                       type="button"
                       onClick={() => {
                         setShowResetPassword(false);
-                        setResetStep(1);
-                        setResetOtp('');
                         setResetError('');
                       }}
                       disabled={loading}
@@ -581,20 +536,12 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                       type="submit"
                       disabled={
                         loading ||
-                        (resetStep === 1 && !resetFormEmail) ||
-                        (resetStep === 2 &&
-                          (resetOtp.length !== 6 ||
-                            newPassword.length < 10 ||
-                            newPasswordConfirm !== newPassword))
+                        !resetFormEmail ||
+                        newPassword.length < 10 ||
+                        newPasswordConfirm !== newPassword
                       }
                     >
-                      {loading
-                        ? resetStep === 1
-                          ? 'Envoi...'
-                          : 'Reinitialisation...'
-                        : resetStep === 1
-                          ? 'Envoyer le code'
-                          : 'Reinitialiser'}
+                      {loading ? 'Réinitialisation...' : 'Réinitialiser'}
                     </Button>
                   </div>
                 </form>

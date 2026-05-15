@@ -1,4 +1,4 @@
-import { createContext, useCallback,useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 
 // Contexte centralisé pour la gestion des modals de planning
 const PlanningModalContext = createContext();

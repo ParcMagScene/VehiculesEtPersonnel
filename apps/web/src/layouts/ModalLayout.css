@@ -1,3 +1,25 @@
+/* PATCH PORTALS : isolation des portails modaux */
+#modal-root,
+#task-modal-root {
+  position: fixed;
+  z-index: 1200;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+#modal-root > *,
+#task-modal-root > * {
+  pointer-events: auto;
+}
+
+/* Pour garantir que chaque portail est au-dessus du contenu principal mais sous les overlays critiques */
+body > #modal-root,
+body > #task-modal-root {
+  /* rien, mais permet de cibler si besoin */
+}
 /* ═══════════════════════════════════════
    ModalLayout — Surcharge légère
    ═══════════════════════════════════════

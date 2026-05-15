@@ -13,7 +13,8 @@ import {
   Truck,
   Wrench,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import ReactDOM from 'react-dom';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
 
@@ -112,14 +113,7 @@ const TASK_STEPS = [
 const getVisibleSteps = () => TASK_STEPS;
 
 function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }) {
-  // Bloque le scroll du body quand le modal est ouvert
-  useEffect(() => {
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, []);
+  // Suppression du scroll lock manuel : géré par l'isolation des portails
   const toast = useToast();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -351,7 +345,9 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     }
   };
 
-  return (
+  // --- PATCH PORTAL ---
+  // On rend le modal dans #task-modal-root pour garantir l'isolation
+  return ReactDOM.createPortal(
     <Modal open onClose={onClose} size="lg" className="etm-modal no-drag-resize">
       <ModalHeader icon={<Calendar size={18} />} onClose={onClose}>
         <span className="etm-header-title">Définir les tâches</span>
@@ -511,7 +507,8 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
           </Button>
         </div>
       </ModalFooter>
-    </Modal>
+    </Modal>,
+    document.getElementById('task-modal-root'),
   );
 }
 

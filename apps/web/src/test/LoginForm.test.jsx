@@ -58,9 +58,7 @@ describe('LoginForm', () => {
     expect(form).toBeTruthy();
     await user.click(container.querySelector('button[type="submit"]'));
 
-    await waitFor(() =>
-      expect(onLogin).toHaveBeenCalledWith('jean@test.fr', 'monpass1234'),
-    );
+    await waitFor(() => expect(onLogin).toHaveBeenCalledWith('jean@test.fr', 'monpass1234'));
   });
 
   it('charge la liste des utilisateurs publics au montage', async () => {

@@ -96,7 +96,7 @@ describe('EventDetailsModal', () => {
     expect(screen.getByText('(Sans titre)')).toBeInTheDocument();
   });
 
-  it("affiche le lien Google Calendar si event.htmlLink est fourni", () => {
+  it('affiche le lien Google Calendar si event.htmlLink est fourni', () => {
     render(
       <EventDetailsModal
         {...baseProps}

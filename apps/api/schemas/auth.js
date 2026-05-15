@@ -30,6 +30,7 @@ export const selfResetPasswordSchema = z.object({
   email,
   name: name.optional(),
   newPassword: password.optional(),
+  captchaToken: z.string().min(1).optional(),
 });
 
 // ── Check reset (OTP) ──

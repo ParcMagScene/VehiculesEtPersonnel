@@ -78,6 +78,8 @@ export const AUDIT_ACTIONS = {
   PASSWORD_CHANGE: 'auth.password.change',
   PASSWORD_RESET_REQUEST: 'auth.password.reset_request',
   PASSWORD_RESET_COMPLETE: 'auth.password.reset_complete',
+  PASSWORD_RESET_NOTIFICATION: 'auth.password.reset_notification',
+  CAPTCHA_FAILED: 'auth.captcha.failed',
 
   // Admin — Users
   USER_CREATE: 'admin.user.create',

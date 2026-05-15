@@ -24,8 +24,8 @@ import { safeParseDate } from '../../utils/dateUtils';
 import { formatDateFr } from '../../utils/formatUtils';
 import AddTaskModal from './AddTaskModal';
 import EventTaskModal from './EventTaskModal';
-import TaskEditModal from './TaskEditModal';
 import { usePlanningModal } from './PlanningModalContext';
+import TaskEditModal from './TaskEditModal';
 const TaskPDFExportModal = lazy(() => import('./TaskPDFExportModal'));
 
 import {
@@ -45,7 +45,15 @@ import { PlanningWeekView } from './PlanningWeekView';
 // ==============================================================
 // TaskPlanningPanel — lean container (data + state + routing)
 // ==============================================================
-function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavigateToEntity }) {
+function TaskPlanningPanel({
+  _currentUser,
+  refreshKey,
+  googleEvents = [],
+  onNavigateToEntity,
+  personId = null,
+  isPersonalMode = false,
+  onPersonalDataSaved = null,
+}) {
   const { modal, openModal, closeModal } = usePlanningModal();
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
@@ -128,7 +136,16 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
           api.getDisplayEvents(range),
           api.getPlanningAffaires(range),
         ]);
-        setTasks(data);
+        // Mode personnel : ne garder que les tâches de la personne authentifiée
+        const filteredTasks =
+          isPersonalMode && personId
+            ? (Array.isArray(data) ? data : []).filter(
+                (t) =>
+                  t.person_id === personId ||
+                  (Array.isArray(t.assigned_to) && t.assigned_to.includes(personId)),
+              )
+            : data;
+        setTasks(filteredTasks);
         setDisplayEvents(Array.isArray(events) ? events : []);
         setAffaires(Array.isArray(affairesData) ? affairesData : []);
         try {
@@ -141,7 +158,12 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
             map.set(`${s.eventType}:${s.eventId}`, s.status),
           );
           setEventStatuses(map);
-          setPlanningAssignments(Array.isArray(assignments) ? assignments : []);
+          const allAssignments = Array.isArray(assignments) ? assignments : [];
+          setPlanningAssignments(
+            isPersonalMode && personId
+              ? allAssignments.filter((a) => a.personId === personId)
+              : allAssignments,
+          );
         } catch {
           /* ignore */
         }
@@ -154,7 +176,7 @@ function TaskPlanningPanel({ _currentUser, refreshKey, googleEvents = [], onNavi
         setLoading(false);
       }
     },
-    [selectedDate, viewMode, weekDays, toast],
+    [selectedDate, viewMode, weekDays, toast, isPersonalMode, personId],
   );
 
   const loadPersons = useCallback(async () => {

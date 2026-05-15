@@ -54,7 +54,12 @@ const TYPE_LABELS = {
   stagiaire: 'Stagiaire',
 };
 
-function SuiviPanel({ currentUser, initialPersonId }) {
+function SuiviPanel({
+  currentUser,
+  initialPersonId,
+  isPersonalMode = false,
+  onPersonalDataSaved = null,
+}) {
   const [activeTab, setActiveTab] = useState('fiches');
   const [personnel, setPersonnel] = useState([]);
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -222,6 +227,10 @@ function SuiviPanel({ currentUser, initialPersonId }) {
           const updated = await api.updateSuiviSheet(selectedPerson.id, selectedDate, payload);
           setSheet(updated);
         }
+        // Mode personnel : déclencher l'auto-logout après sauvegarde
+        if (isPersonalMode && onPersonalDataSaved) {
+          await onPersonalDataSaved();
+        }
       } catch (err) {
         setError('Erreur sauvegarde');
       } finally {
@@ -229,7 +238,7 @@ function SuiviPanel({ currentUser, initialPersonId }) {
         setSaving(false);
       }
     },
-    [selectedPerson, selectedDate],
+    [selectedPerson, selectedDate, isPersonalMode, onPersonalDataSaved],
   );
 
   // ─── Sélection multi-fiches pour impression ───

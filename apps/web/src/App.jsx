@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import Header from './components/Header';
+import { PlanningModalProvider } from './components/planning/PlanningModalContext';
 const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
 const VehicleSlidePanel = lazy(() =>
   import('./components/vehicles/VehicleDetailPanel').then((m) => ({
@@ -26,6 +27,7 @@ import './styles/draggable-modals.css';
 import { Button } from '@/design-system';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { PersonalAuthProvider } from './contexts/PersonalAuthContext.jsx';
 import { NavigationProvider } from './contexts/NavigationContext';
 import { LoadingOverlay } from './design-system';
 import { useAppData } from './hooks/useAppData';
@@ -928,22 +930,26 @@ function AppContent() {
 
               {activeModule === 'planning' && (
                 <ErrorBoundary moduleName="Planning">
-                  <Suspense fallback={<LoadingOverlay label="Chargement du module Planning..." />}>
-                    <PlanningPanel
-                      currentUser={currentUser}
-                      googleEvents={allGoogleEvents}
-                      onNavigateToEntity={handleNavigateToEntity}
-                      personnelRefreshKey={personnelRefreshKey}
-                      view={view}
-                      setView={setView}
-                      currentDate={currentDate}
-                      setCurrentDate={setCurrentDate}
-                      navigateToPersonId={navigateToPersonId}
-                      onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
-                      quickAssignmentSlot={quickAssignmentSlot}
-                      onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
-                    />
-                  </Suspense>
+                  <PlanningModalProvider>
+                    <Suspense
+                      fallback={<LoadingOverlay label="Chargement du module Planning..." />}
+                    >
+                      <PlanningPanel
+                        currentUser={currentUser}
+                        googleEvents={allGoogleEvents}
+                        onNavigateToEntity={handleNavigateToEntity}
+                        personnelRefreshKey={personnelRefreshKey}
+                        view={view}
+                        setView={setView}
+                        currentDate={currentDate}
+                        setCurrentDate={setCurrentDate}
+                        navigateToPersonId={navigateToPersonId}
+                        onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
+                        quickAssignmentSlot={quickAssignmentSlot}
+                        onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
+                      />
+                    </Suspense>
+                  </PlanningModalProvider>
                 </ErrorBoundary>
               )}
 
@@ -1239,7 +1245,9 @@ function App() {
 
   return (
     <AuthProvider>
-      <AppContent />
+      <PersonalAuthProvider>
+        <AppContent />
+      </PersonalAuthProvider>
     </AuthProvider>
   );
 }

@@ -17,7 +17,13 @@ import TaskPlanningPanel from './TaskPlanningPanel';
  * Wrapper pour TaskPlanningPanel avec gestion de l'authentification personnelle
  * Permet au compte équipe de voir le planning d'un personnel spécifique
  */
-function PersonalPlanningWrapper({ currentUser, personnel = [], googleEvents = [] }) {
+function PersonalPlanningWrapper({
+  currentUser,
+  personnel = [],
+  googleEvents = [],
+  refreshKey,
+  onNavigateToEntity,
+}) {
   const { authenticatedPerson, isPersonalAuthenticated, logoutPersonal } = usePersonalAuth();
   const { logoutAfterSave } = usePersonalAuthWithAutoLogout({
     inactivityTimeout: 5 * 60 * 1000, // 5 min
@@ -141,6 +147,8 @@ function PersonalPlanningWrapper({ currentUser, personnel = [], googleEvents = [
         currentUser={currentUser}
         isPersonalMode={false}
         googleEvents={googleEvents}
+        refreshKey={refreshKey}
+        onNavigateToEntity={onNavigateToEntity}
       />
 
       {/* Bouton "Accès Personnel" si compte équipe */}

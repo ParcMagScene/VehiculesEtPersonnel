@@ -17,7 +17,7 @@ import SuiviPanel from './SuiviPanel';
  * Wrapper pour SuiviPanel avec gestion de l'authentification personnelle
  * Permet au compte équipe de voir les données d'un personnel spécifique
  */
-function PersonalSuiviWrapper({ currentUser, personnel = [] }) {
+function PersonalSuiviWrapper({ currentUser, personnel = [], initialPersonId = null }) {
   const { authenticatedPerson, isPersonalAuthenticated, logoutPersonal } = usePersonalAuth();
   const { logoutAfterSave } = usePersonalAuthWithAutoLogout({
     inactivityTimeout: 5 * 60 * 1000, // 5 min
@@ -135,7 +135,11 @@ function PersonalSuiviWrapper({ currentUser, personnel = [] }) {
   // Mode équipe normal avec accès personnalisé
   return (
     <div>
-      <SuiviPanel currentUser={currentUser} initialPersonId={null} isPersonalMode={false} />
+      <SuiviPanel
+        currentUser={currentUser}
+        initialPersonId={initialPersonId}
+        isPersonalMode={false}
+      />
 
       {/* Bouton "Accès Personnel" si compte équipe */}
       {currentUser?.isTeam && (

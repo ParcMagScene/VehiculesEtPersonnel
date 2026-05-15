@@ -71,7 +71,16 @@ function PersonalPlanningWrapper({
   // Si on est en authentification personnelle, afficher le TaskPlanningPanel filtré
   if (isPersonalAuthenticated && authenticatedPerson) {
     return (
-      <div style={{ position: 'relative' }}>
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          flex: '1 1 0',
+          minHeight: 0,
+          height: '100%',
+        }}
+      >
         {/* Header de session personnelle */}
         <div
           style={{
@@ -142,7 +151,15 @@ function PersonalPlanningWrapper({
 
   // Mode équipe normal avec accès personnalisé
   return (
-    <div>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: '1 1 0',
+        minHeight: 0,
+        height: '100%',
+      }}
+    >
       <TaskPlanningPanel
         currentUser={currentUser}
         isPersonalMode={false}

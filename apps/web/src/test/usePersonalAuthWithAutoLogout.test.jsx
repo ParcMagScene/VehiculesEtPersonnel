@@ -1,10 +1,7 @@
 import { act, render, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  PersonalAuthProvider,
-  usePersonalAuth,
-} from '../contexts/PersonalAuthContext.jsx';
+import { PersonalAuthProvider, usePersonalAuth } from '../contexts/PersonalAuthContext.jsx';
 import { usePersonalAuthWithAutoLogout } from '../hooks/usePersonalAuthWithAutoLogout.js';
 
 vi.mock('../utils/api/index.js', () => ({
@@ -38,7 +35,7 @@ describe('usePersonalAuthWithAutoLogout', () => {
     expect(typeof result.current.autoLogout.logoutAfterSave).toBe('function');
   });
 
-  it("déconnecte automatiquement après inactivityTimeout", async () => {
+  it('déconnecte automatiquement après inactivityTimeout', async () => {
     api.request.mockResolvedValueOnce({ success: true, person: { id: 1, name: 'A' } });
     const { result } = renderHook(
       () => useTestSetup({ inactivityTimeout: 1000, sessionTimeout: 999_999 }),
@@ -56,7 +53,7 @@ describe('usePersonalAuthWithAutoLogout', () => {
     expect(result.current.auth.isPersonalAuthenticated).toBe(false);
   });
 
-  it("déconnecte après sessionTimeout même avec activité", async () => {
+  it('déconnecte après sessionTimeout même avec activité', async () => {
     api.request.mockResolvedValueOnce({ success: true, person: { id: 1, name: 'A' } });
     const { result } = renderHook(
       () => useTestSetup({ inactivityTimeout: 10_000, sessionTimeout: 2000 }),

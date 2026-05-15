@@ -1,10 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  PersonalAuthProvider,
-  usePersonalAuth,
-} from '../contexts/PersonalAuthContext.jsx';
+import { PersonalAuthProvider, usePersonalAuth } from '../contexts/PersonalAuthContext.jsx';
 
 // Mock global du module api (singleton) — utilisé par PersonalAuthContext
 vi.mock('../utils/api/index.js', () => ({
@@ -25,13 +22,11 @@ describe('usePersonalAuth (PersonalAuthContext)', () => {
   it('lève une erreur si utilisé hors du provider', () => {
     // Suppression du log d'erreur React attendu
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    expect(() => renderHook(() => usePersonalAuth())).toThrow(
-      /usePersonalAuth doit être utilisé/i,
-    );
+    expect(() => renderHook(() => usePersonalAuth())).toThrow(/usePersonalAuth doit être utilisé/i);
     errorSpy.mockRestore();
   });
 
-  it("expose un état initial non authentifié", () => {
+  it('expose un état initial non authentifié', () => {
     const { result } = renderHook(() => usePersonalAuth(), { wrapper });
     expect(result.current.isPersonalAuthenticated).toBe(false);
     expect(result.current.authenticatedPerson).toBeNull();

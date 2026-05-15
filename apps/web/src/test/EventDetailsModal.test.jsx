@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import EventDetailsModal from '../components/planning/EventDetailsModal';
 
@@ -60,18 +60,19 @@ const baseProps = {
 };
 
 beforeEach(() => {
-  // #modal-root pour ReactDOM.createPortal
-  if (!document.getElementById('modal-root')) {
+  // #emag-modal-root : portail unique géré par le ModalManager.
+  // Auto-créé par getModalRoot() si absent, mais on le pré-crée pour
+  // éviter une création asynchrone pendant les assertions.
+  if (!document.getElementById('emag-modal-root')) {
     const root = document.createElement('div');
-    root.id = 'modal-root';
+    root.id = 'emag-modal-root';
     document.body.appendChild(root);
   }
 });
 
-afterEach(() => {
-  const root = document.getElementById('modal-root');
-  if (root) root.innerHTML = '';
-});
+// NB : on NE vide PAS le portail manuellement → la cleanup auto de RTL
+// (configurée par @testing-library) démonte les arbres React proprement.
+// Vider innerHTML ici provoquerait NotFoundError côté React.
 
 describe('EventDetailsModal', () => {
   it('ne rend rien quand isOpen est false', () => {

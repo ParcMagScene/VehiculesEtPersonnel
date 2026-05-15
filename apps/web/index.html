@@ -28,7 +28,16 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- PATCH PORTALS : portails pour l'isolation des modals -->
+    <!--
+      ModalManager (eM@g) : portail unique pour TOUS les modaux.
+      Géré par apps/web/src/utils/modalManager.js. Ne JAMAIS rendre directement
+      dedans : utiliser <Modal>/<ModalLayout> du design-system.
+    -->
+    <div id="emag-modal-root"></div>
+    <!--
+      Conservés pour rétro-compatibilité (composants legacy non migrés).
+      Voir docs : tous les nouveaux modaux DOIVENT cibler #emag-modal-root.
+    -->
     <div id="modal-root"></div>
     <div id="task-modal-root"></div>
     <script src="/sw-cleanup.js"></script>

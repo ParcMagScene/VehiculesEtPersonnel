@@ -22,7 +22,6 @@ import {
   X,
 } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
 
 import { Button, Input, ModalLayout, SectionHeader, Tooltip } from '@/design-system';
 
@@ -454,8 +453,9 @@ function EventDetailsModal({
       ? formatDate(event.end.date)
       : '';
 
-  // Rendu via portail dans #modal-root pour garantir l'isolation z-index/stacking
-  return ReactDOM.createPortal(
+  // ModalManager : <ModalLayout> -> <Modal> gère seul le portail unique
+  // #emag-modal-root et le z-index. Plus de double-portail.
+  return (
     <>
       <ModalLayout
         open
@@ -1197,8 +1197,7 @@ function EventDetailsModal({
       )}
 
       {ConfirmDialogRenderer}
-    </>,
-    document.getElementById('modal-root'),
+    </>
   );
 }
 

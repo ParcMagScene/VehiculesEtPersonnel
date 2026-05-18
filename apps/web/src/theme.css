@@ -267,15 +267,19 @@
   --weight-semibold: 600;
   --weight-bold: 700;
 
-  /* ─── [AUDIT] Z-Index Scale ─── */
+  /* ─── [AUDIT] Z-Index Scale ───
+     IMPORTANT : pour les modaux & drawers BLOQUANTS, ne PAS utiliser ces
+     tokens — le z-index est piloté dynamiquement par modalManager.js (backdrop
+     >=9000, dialog >=10000, incrémenté par pile). Les tokens ci-dessous sont
+     pour la couche "app" (header sticky, dropdowns locaux, tooltips). */
   --z-base: 1;
-  --z-dropdown: 100;
-  --z-sticky: 200;
-  --z-overlay: 1000;
-  --z-modal: 2000;
-  --z-popover: 3000;
-  --z-toast: 5000;
-  --z-tooltip: 9999;
+  --z-dropdown: 100; /* select/combobox/dropdown locaux à un conteneur */
+  --z-sticky: 200; /* en-têtes de tableau, sticky locaux */
+  --z-overlay: 1000; /* header de l'app (sticky), panneaux non-bloquants */
+  --z-modal: 2000; /* RESERVE — préférer <Modal> qui passe par ModalManager */
+  --z-popover: 3000; /* popovers ancrés non-bloquants (hors ModalManager) */
+  --z-toast: 5000; /* notifications toast */
+  --z-tooltip: 9999; /* tooltips (toujours au-dessus, sauf modals bloquants) */
 
   /* ─── [AUDIT] Breakpoints (conventions, pas de var en @media) ───
      xs:  480px   — mobile petit

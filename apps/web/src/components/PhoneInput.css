@@ -79,7 +79,10 @@
   position: absolute;
   top: 100%;
   left: 0;
-  z-index: var(--z-overlay);
+  /* Dropdown local au champ : --z-dropdown (100) est la sémantique correcte.
+     --z-overlay (1000) était un mésusage hérité — sans effet pratique car
+     un dropdown vit dans le stacking context de son parent positionné. */
+  z-index: var(--z-dropdown);
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-md);

@@ -485,21 +485,6 @@
 }
 
 /* Popup des notifications — positionnée en popover sous le header */
-.notifications-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--theme-overlay);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: var(--z-overlay);
-  padding-top: 100px;
-  animation: fadeIn 0.2s ease-out;
-}
-
 .notifications-popover-backdrop {
   position: fixed;
   inset: 0;

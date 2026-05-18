@@ -5,19 +5,21 @@
 .user-menu-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-overlay);
+  /* Au-dessus du header sticky (var(--z-overlay)=1000) mais sous les modals
+     bloquants (ModalManager: backdrop >=9000). Portalis\u00e9 sur #emag-modal-root. */
+  z-index: 8000;
 }
 
 .user-menu-dropdown {
-  position: absolute;
-  top: 50px;
-  right: 0;
+  /* La position fixed + top/right est appliqu\u00e9e inline depuis HeaderActions.jsx
+     (calcul\u00e9 d'apr\u00e8s le rect de l'avatar) car le menu est portalis\u00e9 hors du
+     stacking context du header sticky. */
   background: var(--theme-bg-card, white);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 20px var(--shadow-xl);
   overflow: hidden;
   min-width: 200px;
-  z-index: var(--z-overlay);
+  z-index: 8001;
   border: 1px solid var(--theme-border, var(--theme-border-medium));
 }
 

@@ -504,12 +504,14 @@
   position: fixed;
   inset: 0;
   background: transparent;
-  z-index: 1300;
+  /* Au-dessus du header sticky (var(--z-overlay)=1000) mais sous les modals
+     bloquants (ModalManager: backdrop >=9000). */
+  z-index: 8000;
 }
 
 .notifications-popup.notifications-popover {
   position: fixed;
-  z-index: 1301;
+  z-index: 8001;
   border-radius: var(--radius-lg);
   margin: 0;
   width: min(480px, calc(100vw - 16px));

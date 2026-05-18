@@ -12,11 +12,13 @@ import {
   UserCog,
   XCircle,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { Avatar, Button, Tooltip } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
+import { getModalRoot } from '../../utils/modalManager';
 import ProfileEditModal from '../auth/ProfileEditModal';
 
 const HeaderActions = ({
@@ -42,6 +44,39 @@ const HeaderActions = ({
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const avatarTriggerRef = useRef(null);
+  const [userMenuPos, setUserMenuPos] = useState({ top: 0, right: 0 });
+
+  // Recalcule la position fixed du menu utilisateur à partir du rect de l'avatar.
+  // Nécessaire depuis que le menu est portalisé sur #emag-modal-root (il sort du
+  // stacking context du header sticky).
+  const updateUserMenuPos = useCallback(() => {
+    const trigger = avatarTriggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    setUserMenuPos({
+      top: rect.bottom + 8,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!showUserMenu) return undefined;
+    updateUserMenuPos();
+    const onScroll = () => updateUserMenuPos();
+    const onResize = () => updateUserMenuPos();
+    const onKey = (e) => {
+      if (e.key === 'Escape') setShowUserMenu(false);
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onScroll, true);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onScroll, true);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [showUserMenu, updateUserMenuPos]);
 
   return (
     <>
@@ -199,6 +234,7 @@ const HeaderActions = ({
           {currentUser && (
             <div className="u-relative">
               <Button
+                ref={avatarTriggerRef}
                 variant="ghost"
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 title={currentUser.name}
@@ -225,78 +261,87 @@ const HeaderActions = ({
                 <Avatar name={currentUser.name} avatar={currentUser.avatar} size={36} />
               </Button>
 
-              {showUserMenu && (
-                <>
-                  <div className="user-menu-overlay" onMouseDown={() => setShowUserMenu(false)} />
-                  <div className="user-menu-dropdown">
-                    <div className="user-menu-header">
-                      <Avatar name={currentUser.name} avatar={currentUser.avatar} size="md" />
-                      <div>
-                        <div className="user-menu-name">{currentUser.name}</div>
-                        <div className="user-menu-role">
-                          {currentUser.isAdmin ? 'Administrateur' : 'Utilisateur'}
+              {showUserMenu &&
+                createPortal(
+                  <>
+                    <div className="user-menu-overlay" onMouseDown={() => setShowUserMenu(false)} />
+                    <div
+                      className="user-menu-dropdown"
+                      style={{
+                        position: 'fixed',
+                        top: userMenuPos.top,
+                        right: userMenuPos.right,
+                      }}
+                    >
+                      <div className="user-menu-header">
+                        <Avatar name={currentUser.name} avatar={currentUser.avatar} size="md" />
+                        <div>
+                          <div className="user-menu-name">{currentUser.name}</div>
+                          <div className="user-menu-role">
+                            {currentUser.isAdmin ? 'Administrateur' : 'Utilisateur'}
+                          </div>
                         </div>
                       </div>
+
+                      <Button
+                        variant="ghost"
+                        className="user-menu-btn"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          setShowProfileModal(true);
+                        }}
+                      >
+                        <UserCog size={16} />
+                        Mon profil
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        className="user-menu-btn"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          if (onOpenPreferences) onOpenPreferences();
+                        }}
+                      >
+                        <Settings size={16} />
+                        Préférences
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        className="user-menu-btn"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          onLogout();
+                        }}
+                      >
+                        <LayoutGrid size={16} />
+                        Changer d'utilisateur
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        className="user-menu-btn danger"
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          onLogout();
+                        }}
+                      >
+                        <XCircle size={16} />
+                        Se déconnecter
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        className="user-menu-cancel"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Annuler
+                      </Button>
                     </div>
-
-                    <Button
-                      variant="ghost"
-                      className="user-menu-btn"
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        setShowProfileModal(true);
-                      }}
-                    >
-                      <UserCog size={16} />
-                      Mon profil
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      className="user-menu-btn"
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        if (onOpenPreferences) onOpenPreferences();
-                      }}
-                    >
-                      <Settings size={16} />
-                      Préférences
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      className="user-menu-btn"
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        onLogout();
-                      }}
-                    >
-                      <LayoutGrid size={16} />
-                      Changer d'utilisateur
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      className="user-menu-btn danger"
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        onLogout();
-                      }}
-                    >
-                      <XCircle size={16} />
-                      Se déconnecter
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      className="user-menu-cancel"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      Annuler
-                    </Button>
-                  </div>
-                </>
-              )}
+                  </>,
+                  getModalRoot(),
+                )}
             </div>
           )}
         </div>

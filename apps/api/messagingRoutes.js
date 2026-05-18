@@ -340,7 +340,7 @@ export function setupMessagingRoutes(app, authenticateToken) {
         }
       }
 
-      res.json({ id: convId, success: true });
+      res.status(201).json({ id: convId, success: true });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

@@ -213,7 +213,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         )
         .all(created.id);
 
-      res.json(created);
+      res.status(201).json(created);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -626,7 +626,7 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
         .run(name, category || 'autre', description || null);
 
       const created = db.prepare('SELECT * FROM skills WHERE id = ?').get(result.lastInsertRowid);
-      res.json(created);
+      res.status(201).json(created);
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
         return res.status(409).json({ success: false, error: 'Cette compétence existe déjà' });
@@ -702,7 +702,7 @@ export function setupSkillsRoutes(app, authenticateToken, requireAdmin) {
       const created = db
         .prepare('SELECT * FROM positions WHERE id = ?')
         .get(result.lastInsertRowid);
-      res.json(created);
+      res.status(201).json(created);
     } catch (error) {
       if (error.message.includes('UNIQUE constraint')) {
         return res.status(409).json({ success: false, error: 'Ce poste existe déjà' });
@@ -908,7 +908,7 @@ export function setupAvailabilitiesRoutes(app, authenticateToken, requireAdmin) 
         const created = db
           .prepare('SELECT * FROM availabilities WHERE id = ?')
           .get(result.lastInsertRowid);
-        res.json(created);
+        res.status(201).json(created);
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1303,7 +1303,7 @@ export function setupMissionsRoutes(app, authenticateToken, requireAdmin) {
           .prepare('SELECT * FROM missions WHERE id = ?')
           .get(result.lastInsertRowid);
         created.assignments = [];
-        res.json(created);
+        res.status(201).json(created);
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });

@@ -85,7 +85,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         req,
       });
 
-      res.json({ id: result.lastInsertRowid, email, name, isAdmin: isAdmin === 1 });
+      res.status(201).json({ id: result.lastInsertRowid, email, name, isAdmin: isAdmin === 1 });
     } catch (error) {
       logger.error(error);
       res.status(400).json({ success: false, error: "Erreur lors de l'inscription" });

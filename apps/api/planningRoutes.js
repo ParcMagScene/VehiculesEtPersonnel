@@ -710,7 +710,7 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
           req.user.id,
         );
         const created = db.prepare('SELECT * FROM recurring_tasks WHERE id = ?').get(id);
-        res.json(created);
+        res.status(201).json(created);
       } catch (error) {
         logger.error('POST /api/planning/recurring-tasks error:', error);
         res.status(500).json({ success: false, error: 'Erreur serveur' });
@@ -879,7 +879,7 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
           color || '#3b82f6',
         );
         const created = db.prepare('SELECT * FROM ical_calendars WHERE id = ?').get(id);
-        res.json(created);
+        res.status(201).json(created);
       } catch (error) {
         logger.error('POST ical-calendars error:', error);
         res.status(500).json({ success: false, error: 'Erreur serveur' });

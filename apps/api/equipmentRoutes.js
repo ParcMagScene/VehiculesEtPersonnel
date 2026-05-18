@@ -115,7 +115,9 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
         );
 
       equipmentTreeCache.clear();
-      res.json({ id: result.lastInsertRowid, name, icon, color, description, parent_id, level });
+      res
+        .status(201)
+        .json({ id: result.lastInsertRowid, name, icon, color, description, parent_id, level });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -433,7 +435,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         const created = db
           .prepare('SELECT * FROM equipment WHERE id = ?')
           .get(result.lastInsertRowid);
-        res.json(created);
+        res.status(201).json(created);
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1274,7 +1276,7 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
           "UPDATE equipment SET status = 'in_use', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         ).run(equipment_id);
 
-        res.json({ id: result.lastInsertRowid });
+        res.status(201).json({ id: result.lastInsertRowid });
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1492,7 +1494,7 @@ export function setupSavTicketsRoutes(
         logger.warn('Alerte email SAV:', emailErr.message);
       }
 
-      res.json({ id: result.lastInsertRowid });
+      res.status(201).json({ id: result.lastInsertRowid });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1537,7 +1539,7 @@ export function setupSavTicketsRoutes(
         logger.warn('Alerte email SAV:', emailErr.message);
       }
 
-      res.json({ id: result.lastInsertRowid });
+      res.status(201).json({ id: result.lastInsertRowid });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

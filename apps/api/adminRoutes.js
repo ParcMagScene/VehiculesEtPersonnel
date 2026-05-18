@@ -401,7 +401,7 @@ export function setupAdminRoutes(
         req,
       });
 
-      res.json({ id: result.lastInsertRowid, email, status: 'pending' });
+      res.status(201).json({ id: result.lastInsertRowid, email, status: 'pending' });
     } catch (error) {
       logger.error('Erreur ajout email:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur' });

@@ -192,7 +192,7 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
           b.notes || null,
           req.user?.id || null,
         );
-      res.json({ success: true, data: getControlById(db, r.lastInsertRowid) });
+      res.status(201).json({ success: true, data: getControlById(db, r.lastInsertRowid) });
     }),
   );
 

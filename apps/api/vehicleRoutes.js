@@ -742,7 +742,7 @@ export function setupVehicleRoutes(
           req.user.id,
         );
 
-        res.json({ success: true, id: request.id });
+        res.status(201).json({ success: true, id: request.id });
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1041,7 +1041,7 @@ export function setupVehicleRoutes(
       }
 
       invalidateEntity('maintenances');
-      res.json({ success: true, id: maintenance.id });
+      res.status(201).json({ success: true, id: maintenance.id });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

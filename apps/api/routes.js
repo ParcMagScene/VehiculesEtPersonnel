@@ -179,7 +179,7 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
         type: location.type || 'Salle de spectacle',
       };
 
-      res.json(createdLocation);
+      res.status(201).json(createdLocation);
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -292,7 +292,7 @@ export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
 
       addToHistory('garage', result.lastInsertRowid, 'created', garage, req.user.id, req.user.name);
 
-      res.json({ success: true, id: result.lastInsertRowid });
+      res.status(201).json({ success: true, id: result.lastInsertRowid });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

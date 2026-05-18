@@ -612,7 +612,7 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
         .prepare('INSERT INTO affaire_links (parent_affaire_id, child_affaire_id) VALUES (?, ?)')
         .run(parentId, childAffaireId);
       logger.info(`🔗 Affaire ${parent.numero_affaire} liée → ${child.numero_affaire}`);
-      res.json({ success: true, linkId: result.lastInsertRowid });
+      res.status(201).json({ success: true, linkId: result.lastInsertRowid });
     } catch (error) {
       logger.error('Erreur POST /api/affaires/:id/links:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

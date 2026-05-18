@@ -19,6 +19,7 @@ import React from 'react';
 import { Button, ProgressBar, StatusBadge, Table, Tag, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { formatCurrency, formatDateSimple as formatDate } from '../../utils/formatUtils';
 import AffaireBadge from '../AffaireBadge';
 import { formatPhoneDisplay } from '../PhoneInput';
@@ -33,13 +34,14 @@ import {
 // ═══ Volet latéral Commande (clic simple) ═══
 export const OrderSlidePanel = React.memo(
   ({ order, onClose, onOpenDialog, onEdit, onDelete, onStatusChange }) => {
+    const { isOpen, handleClose } = useSlidePanelClose(order, onClose);
     if (!order) return <div className="orders-slide-panel" />;
     const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
     const items = order.items || [];
     return (
-      <div className="orders-slide-panel open">
+      <div className={`orders-slide-panel ${isOpen ? 'open' : ''}`}>
         <div className="slide-panel-header">
-          <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer">
+          <Button variant="ghost" className="back-btn" onClick={handleClose} aria-label="Fermer">
             <X size={18} />
           </Button>
           <h3>{order.reference}</h3>
@@ -149,7 +151,7 @@ export const OrderSlidePanel = React.memo(
             <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
               <Trash2 size={14} /> Supprimer
             </Button>
-            <Button variant="ghost" className="action-btn" onClick={onClose}>
+            <Button variant="ghost" className="action-btn" onClick={handleClose}>
               <X size={14} /> Fermer
             </Button>
           </div>
@@ -162,13 +164,14 @@ export const OrderSlidePanel = React.memo(
 // ═══ Volet latéral Devis (clic simple) ═══
 export const QuoteSlidePanel = React.memo(
   ({ quote, onClose, onOpenDialog, onEdit, onDelete, onConvert }) => {
+    const { isOpen, handleClose } = useSlidePanelClose(quote, onClose);
     if (!quote) return <div className="orders-slide-panel" />;
     const status = QUOTE_STATUS[quote.status] || QUOTE_STATUS.draft;
     const items = quote.items || [];
     return (
-      <div className="orders-slide-panel open">
+      <div className={`orders-slide-panel ${isOpen ? 'open' : ''}`}>
         <div className="slide-panel-header">
-          <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer">
+          <Button variant="ghost" className="back-btn" onClick={handleClose} aria-label="Fermer">
             <X size={18} />
           </Button>
           <h3>{quote.reference}</h3>
@@ -272,13 +275,14 @@ export const QuoteSlidePanel = React.memo(
 // ═══ Volet latéral Demande (clic simple) ═══
 export const RequestSlidePanel = React.memo(
   ({ request, onClose, onOpenDialog, isAdmin, onValidate, onEdit }) => {
+    const { isOpen, handleClose } = useSlidePanelClose(request, onClose);
     if (!request) return <div className="orders-slide-panel" />;
     const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
     const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
     return (
-      <div className="orders-slide-panel open">
+      <div className={`orders-slide-panel ${isOpen ? 'open' : ''}`}>
         <div className="slide-panel-header">
-          <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer">
+          <Button variant="ghost" className="back-btn" onClick={handleClose} aria-label="Fermer">
             <X size={18} />
           </Button>
           <h3>{request.article}</h3>
@@ -374,11 +378,12 @@ export const RequestSlidePanel = React.memo(
 
 // ═══ Volet latéral Fournisseur (clic simple) ═══
 export const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder }) => {
+  const { isOpen, handleClose } = useSlidePanelClose(supplier, onClose);
   if (!supplier) return <div className="orders-slide-panel" />;
   return (
-    <div className="orders-slide-panel open">
+    <div className={`orders-slide-panel ${isOpen ? 'open' : ''}`}>
       <div className="slide-panel-header">
-        <Button variant="ghost" className="back-btn" onClick={onClose} aria-label="Fermer">
+        <Button variant="ghost" className="back-btn" onClick={handleClose} aria-label="Fermer">
           <X size={18} />
         </Button>
         <h3>

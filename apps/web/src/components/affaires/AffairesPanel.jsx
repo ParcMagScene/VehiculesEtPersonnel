@@ -37,6 +37,7 @@ import {
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import { AFFAIRE_STATUS_MAP } from '../../utils/affaireWorkflow';
 import api from '../../utils/api';
@@ -313,6 +314,10 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     };
     loadAll();
   }, [loadDbAffaires, loadGoogleAffaires, loadAttachmentsIndex, loadPersonnelCounts, loadAllTasks]);
+
+  // Refresh automatique quand une mutation cross-module invalide les affaires
+  // (ex. création/modif/suppression de réservation publiée via refreshBus depuis useAppData).
+  useRefreshSubscription('affaires', loadDbAffaires);
 
   // [2.7] Deep link depuis Google Calendar badge → sélectionne/filtre l'affaire
   useEffect(() => {

@@ -25,6 +25,7 @@ import { Accordion, Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, PLANNING_SECTIONS, STATUS_COLORS } from '../../constants/colors';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import api from '../../utils/api';
@@ -213,6 +214,9 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       if (sonosInterval.current) clearInterval(sonosInterval.current);
     };
   }, [loadTasks, loadNowPlaying, loadSidebarConfig, loadAffaires, refreshKey]);
+
+  // Refresh auto sur invalidation cross-module (cf. refreshBus.publish('affaires')).
+  useRefreshSubscription('affaires', loadAffaires);
 
   // ─── Toggle visibilité d'une tâche (afficher/masquer sur l'écran TV) ───
   const handleToggleVisible = useCallback(

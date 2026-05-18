@@ -261,6 +261,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       }
 
       setReservations((prev) => [...prev, ...newReservations]);
+      if (newReservations.length > 0) refreshBus.publish('affaires');
       return true;
     },
     [checkOverlap, vehicles, currentUser, toast],
@@ -315,6 +316,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         logger.log('✅ Envoi API - Objet final:', finalReservation);
         await api.updateReservation(id, finalReservation);
         setReservations((prev) => prev.map((r) => (r.id === id ? finalReservation : r)));
+        refreshBus.publish('affaires');
         return true;
       } catch (error) {
         console.error('❌ Erreur mise à jour réservation:', error);
@@ -338,6 +340,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         const result = await api.deleteReservation(id);
         logger.log('✅ Suppression API réussie:', result);
         setReservations((prev) => prev.filter((r) => r.id !== id));
+        refreshBus.publish('affaires');
         logger.log('✅ État local mis à jour');
       } catch (error) {
         console.error('❌ Erreur suppression réservation:', error);

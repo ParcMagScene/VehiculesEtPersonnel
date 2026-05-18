@@ -26,6 +26,7 @@ import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import api from '../../utils/api';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
@@ -69,6 +70,9 @@ function MobileAffaires({ onBack }) {
   useEffect(() => {
     loadAffaires();
   }, [loadAffaires]);
+
+  // Refresh auto sur invalidation cross-module (cf. refreshBus.publish('affaires')).
+  useRefreshSubscription('affaires', loadAffaires);
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadAffaires);
 

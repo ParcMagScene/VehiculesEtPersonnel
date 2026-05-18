@@ -21,11 +21,12 @@ import {
   X,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useModalDialogClose } from '../../hooks/useModalDialogClose';
 import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { safeDate } from '../../utils/formatUtils';
 import { resolveGenericImage } from '../../utils/genericImages';
@@ -506,27 +507,7 @@ const EquipmentDetailDialog = ({
   onSerialize,
   onOpenDepotMap,
 }) => {
-  const [isClosing, setIsClosing] = useState(false);
-
-  const handleClose = useCallback(() => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-    }, 200);
-  }, [onClose]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'Escape') handleClose();
-    };
-    if (eq) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsClosing(false);
-      window.addEventListener('keydown', handler);
-      return () => window.removeEventListener('keydown', handler);
-    }
-  }, [eq, handleClose]);
+  const { isClosing, handleClose } = useModalDialogClose(eq, onClose);
 
   if (!eq) return null;
 

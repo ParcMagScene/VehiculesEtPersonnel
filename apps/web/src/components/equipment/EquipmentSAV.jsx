@@ -13,7 +13,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Button,
@@ -26,6 +26,7 @@ import {
   Tooltip,
 } from '@/design-system';
 
+import { useModalDialogClose } from '../../hooks/useModalDialogClose';
 import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { useToast } from '../../hooks/useToast';
 import { safeDate } from '../../utils/formatUtils';
@@ -1074,27 +1075,7 @@ const SavDetailDialog = ({
   onDelete,
   _onOpenEquipmentDialog,
 }) => {
-  const [isClosing, setIsClosing] = useState(false);
-
-  const handleClose = useCallback(() => {
-    setIsClosing(true);
-    setTimeout(() => {
-      onClose();
-      setIsClosing(false);
-    }, 200);
-  }, [onClose]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'Escape') handleClose();
-    };
-    if (ticket) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsClosing(false);
-      window.addEventListener('keydown', handler);
-      return () => window.removeEventListener('keydown', handler);
-    }
-  }, [ticket, handleClose]);
+  const { isClosing, handleClose } = useModalDialogClose(ticket, onClose);
 
   if (!ticket) return null;
 

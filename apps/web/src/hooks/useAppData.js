@@ -7,6 +7,20 @@ import api from '../utils/api';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import { saveToIndexedDB, STORES } from '../utils/indexedDB';
 import logger from '../utils/logger';
+import { refreshBus } from '../utils/refresh-bus';
+
+// Maintenance qui impacte le véhicule côté BE :
+//  - mileage renseigné -> UPDATE vehicles.kilometrage
+//  - technical_inspection completed -> UPDATE vehicles.controles_techniques (nouvelle deadline)
+// Voir apps/api/vehicleRoutes.js POST/PUT /api/maintenances.
+function maintenanceImpactsVehicle(maintenance) {
+  if (!maintenance || maintenance._deleted) return false;
+  const mileage = parseInt(maintenance.mileage, 10);
+  if (Number.isFinite(mileage) && mileage > 0) return true;
+  if (maintenance.type === 'technical_inspection' && maintenance.status === 'completed')
+    return true;
+  return false;
+}
 
 /**
  * Hook centralisant les données métier (véhicules, réservations, maintenances, etc.)
@@ -344,6 +358,28 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
     }
   }, [toast]);
 
+  // Rechargement véhicules (utilisé par le bus refreshBus pour les invalidations cross-module,
+  // ex. après une maintenance qui met à jour kilometrage / controles_techniques côté BE).
+  const loadVehicles = useCallback(async () => {
+    try {
+      const data = await api.getVehicles();
+      setVehicles((data || []).sort((a, b) => (a.order || 0) - (b.order || 0)));
+    } catch (error) {
+      console.error('Erreur lors du rechargement des véhicules:', error);
+    }
+  }, []);
+
+  // Abonnement au bus d'invalidation cross-module.
+  useEffect(() => {
+    if (!isAuthenticated || isAuthLoading) return undefined;
+    const unsubVehicles = refreshBus.subscribe('vehicles', loadVehicles);
+    const unsubMaintenances = refreshBus.subscribe('maintenances', loadMaintenances);
+    return () => {
+      unsubVehicles();
+      unsubMaintenances();
+    };
+  }, [isAuthenticated, isAuthLoading, loadVehicles, loadMaintenances]);
+
   const handleMaintenanceSave = useCallback(
     async (maintenance) => {
       try {
@@ -362,6 +398,10 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
           await api.createMaintenance(maintenance);
           const maintenancesData = await api.getMaintenances();
           setMaintenances(maintenancesData);
+        }
+
+        if (maintenanceImpactsVehicle(maintenance)) {
+          refreshBus.publish('vehicles');
         }
       } catch (error) {
         console.error('❌ Erreur gestion maintenance:', error);
@@ -414,6 +454,10 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         );
         const maintenancesData = await api.getMaintenances();
         setMaintenances(maintenancesData);
+
+        if (maintenanceImpactsVehicle(updatedIntervention)) {
+          refreshBus.publish('vehicles');
+        }
       } catch (error) {
         console.error('❌ Erreur mise à jour intervention:', error);
         toast.error(`Erreur mise à jour intervention: ${error.message}`);
@@ -466,6 +510,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       handleUpdateIntervention,
       handleDeleteIntervention,
       loadMaintenances,
+      loadVehicles,
     }),
     [
       vehicles,
@@ -486,6 +531,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       handleUpdateIntervention,
       handleDeleteIntervention,
       loadMaintenances,
+      loadVehicles,
     ],
   );
 }

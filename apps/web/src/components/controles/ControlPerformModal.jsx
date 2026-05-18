@@ -43,7 +43,7 @@ export default function ControlPerformModal({ control, onClose, onDone }) {
   };
 
   return (
-    <Modal isOpen onClose={onClose} size="md">
+    <Modal open onClose={onClose} size="md">
       <ModalHeader>
         <CheckCircle2 size={18} style={{ marginRight: 8 }} />
         Effectuer le contrôle — {control?.type_name}

@@ -224,12 +224,12 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   }, [emagLocations]);
 
   const filteredEmagLocations = useMemo(() => {
-    const q = String(form?.locationAddress || '').trim().toLowerCase();
+    const q = String(form?.locationAddress || '')
+      .trim()
+      .toLowerCase();
     if (!q) return emagLocationOptions;
     return emagLocationOptions.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.address.toLowerCase().includes(q),
+      (s) => s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emagLocationOptions, form?.locationAddress]);

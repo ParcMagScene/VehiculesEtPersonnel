@@ -316,12 +316,11 @@ export default function AddressAutocomplete({
       {useCustomDropdown && dropdownOpen && suggestions.length > 0 && (
         <div className="address-autocomplete-dropdown" role="listbox">
           {savedCount > 0 && (
-            <div className="address-autocomplete-section-header">
-              ★ Lieux enregistrés
-            </div>
+            <div className="address-autocomplete-section-header">★ Lieux enregistrés</div>
           )}
           {suggestions.map((item, idx) => {
-            const isFirstPlace = item.kind === 'place' && idx > 0 && suggestions[idx - 1].kind === 'saved';
+            const isFirstPlace =
+              item.kind === 'place' && idx > 0 && suggestions[idx - 1].kind === 'saved';
             return (
               <div key={`${item.kind}-${item.value}`}>
                 {isFirstPlace && (
@@ -352,9 +351,7 @@ export default function AddressAutocomplete({
             );
           })}
           {placeCount === 0 && savedCount > 0 && (value || '').length >= 3 && !placesReady && (
-            <div className="address-autocomplete-hint">
-              Suggestions Google indisponibles
-            </div>
+            <div className="address-autocomplete-hint">Suggestions Google indisponibles</div>
           )}
         </div>
       )}

@@ -1617,44 +1617,51 @@ export function setupSavTicketsRoutes(
 
   // DELETE /api/sav-tickets/duplicates — Supprimer les doublons existants (garder le plus ancien)
   // NOTE: route spécifique AVANT la route paramétrique /:id
-  app.delete('/api/sav-tickets/duplicates', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      // Doublons = même title (N° intervention + nom article)
-      const dupes = db
-        .prepare(
-          `
+  app.delete(
+    '/api/sav-tickets/duplicates',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        // Doublons = même title (N° intervention + nom article)
+        const dupes = db
+          .prepare(
+            `
         SELECT id FROM sav_tickets WHERE id NOT IN (
           SELECT MIN(id) FROM sav_tickets GROUP BY LOWER(TRIM(title))
         )
       `,
-        )
-        .all();
-      if (dupes.length === 0) {
-        return res.json({ removed: 0, message: 'Aucun doublon trouvé' });
+          )
+          .all();
+        if (dupes.length === 0) {
+          return res.json({ removed: 0, message: 'Aucun doublon trouvé' });
+        }
+        const ids = dupes.map((d) => d.id);
+        const placeholders = ids.map(() => '?').join(',');
+        db.prepare(`DELETE FROM sav_tickets WHERE id IN (${placeholders})`).run(...ids);
+        addToHistory(
+          'sav_tickets',
+          null,
+          'remove_duplicates',
+          { removed: ids.length },
+          req.user.id,
+          req.user.name,
+        );
+        res.json({ removed: ids.length, message: `${ids.length} doublon(s) supprimé(s)` });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-      const ids = dupes.map((d) => d.id);
-      const placeholders = ids.map(() => '?').join(',');
-      db.prepare(`DELETE FROM sav_tickets WHERE id IN (${placeholders})`).run(...ids);
-      addToHistory(
-        'sav_tickets',
-        null,
-        'remove_duplicates',
-        { removed: ids.length },
-        req.user.id,
-        req.user.name,
-      );
-      res.json({ removed: ids.length, message: `${ids.length} doublon(s) supprimé(s)` });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // DELETE /api/sav-tickets/:id
   app.delete(
     '/api/sav-tickets/:id',
     authenticateToken,
     requireEquipmentMaintenanceAccess,
+    invalidateOnSuccess(equipmentListCache),
     (req, res) => {
       try {
         const ticket = db
@@ -1691,24 +1698,30 @@ export function setupSavTicketsRoutes(
   });
 
   // PUT /api/sav-tickets/:id/link — Lier manuellement un ticket à un équipement
-  app.put('/api/sav-tickets/:id/link', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const { equipment_id } = req.body;
-      if (!equipment_id)
-        return res.status(400).json({ success: false, error: 'equipment_id requis' });
+  app.put(
+    '/api/sav-tickets/:id/link',
+    authenticateToken,
+    requireAdmin,
+    invalidateOnSuccess(equipmentListCache),
+    (req, res) => {
+      try {
+        const { equipment_id } = req.body;
+        if (!equipment_id)
+          return res.status(400).json({ success: false, error: 'equipment_id requis' });
 
-      const ticket = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
-      if (!ticket) return res.status(404).json({ success: false, error: 'Ticket non trouvé' });
+        const ticket = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
+        if (!ticket) return res.status(404).json({ success: false, error: 'Ticket non trouvé' });
 
-      db.prepare(
-        'UPDATE sav_tickets SET equipment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      ).run(equipment_id, req.params.id);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        db.prepare(
+          'UPDATE sav_tickets SET equipment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ).run(equipment_id, req.params.id);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ── Helper PDF : dessiner un tableau SAV sur un document PDFKit ──
   const drawSavPdfTable = (doc, rows, title, subtitle) => {

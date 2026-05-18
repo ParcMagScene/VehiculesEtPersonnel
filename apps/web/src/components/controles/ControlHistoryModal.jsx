@@ -30,7 +30,7 @@ export default function ControlHistoryModal({ control, onClose }) {
   }, [control.id]);
 
   return (
-    <Modal isOpen onClose={onClose} size="lg">
+    <Modal open onClose={onClose} size="lg">
       <ModalHeader>
         <History size={18} style={{ marginRight: 8 }} />
         Historique — {control?.type_name}

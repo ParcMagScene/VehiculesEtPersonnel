@@ -92,7 +92,7 @@ export default function ControlEditorModal({
   };
 
   return (
-    <Modal isOpen onClose={onClose} size="md">
+    <Modal open onClose={onClose} size="md">
       <ModalHeader>
         <Pencil size={18} style={{ marginRight: 8 }} />
         {isEdit ? 'Modifier le contrôle' : 'Nouveau contrôle planifié'}

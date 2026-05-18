@@ -322,6 +322,66 @@
   border-color: #4285f460;
 }
 
+/* ═══ Lieux enregistrés (dropdown surligné) ═══ */
+.tem-field-location {
+  position: relative;
+}
+.tem-location-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--interactive-primary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 4px 0;
+  font-weight: 500;
+  align-self: flex-start;
+}
+.tem-location-toggle:hover {
+  text-decoration: underline;
+}
+.tem-location-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: var(--z-tooltip);
+  margin-top: 2px;
+  padding: 4px;
+}
+.tem-location-option {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.82rem;
+  color: var(--text-body);
+  line-height: 1.4;
+  border-radius: var(--radius-sm);
+}
+.tem-location-option:hover {
+  background: var(--surface-hover);
+}
+.tem-location-option strong {
+  font-weight: 700;
+  color: var(--interactive-primary);
+}
+.tem-location-addr {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
 /* Footer */
 .tem-footer {
   display: flex;

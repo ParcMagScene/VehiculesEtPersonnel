@@ -791,7 +791,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       {showValidationPanel && (
         <LeaveValidationPanel
           onClose={() => setShowValidationPanel(false)}
-          onUpdated={() => loadData()}
+          onRefresh={() => loadData()}
         />
       )}
 

@@ -49,6 +49,7 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
+import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { AFFAIRE_TYPE_SECTIONS, AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import {
   AFFAIRE_STATUS_MAP,
@@ -2780,56 +2781,36 @@ const AffaireSlidePanel = ({
   currentUser,
 }) => {
   const [missions, setMissions] = useState([]);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
   const [showDisplayDialog, setShowDisplayDialog] = useState(false);
   const [hasBLImports, setHasBLImports] = useState(false);
   const panelRef = useRef(null);
+  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(affaire, onClose);
 
+  // Fetch missions et BL imports quand une affaire est sélectionnée
   useEffect(() => {
-    if (affaire) {
-      // Phase 1 : rend le panneau dans le DOM (width: 0)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsVisible(true);
-      setIsClosing(false);
-      // Phase 2 : après une frame, ajoute la classe 'open' pour déclencher la transition
-      const raf = requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setIsOpen(true);
-        });
+    if (!affaire) return undefined;
+    let cancelled = false;
+    api
+      .request('/missions')
+      .then((data) => {
+        if (!cancelled) setMissions(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setMissions([]);
       });
-      api
-        .request('/missions')
-        .then((data) => {
-          setMissions(Array.isArray(data) ? data : []);
-        })
-        .catch(() => setMissions([]));
-      // Check if BL/BP already imported
-      api
-        .getBLImports({ affaire_id: affaire.numeroAffaire })
-        .then((data) => {
-          setHasBLImports(Array.isArray(data) && data.length > 0);
-        })
-        .catch(() => setHasBLImports(false));
-      return () => cancelAnimationFrame(raf);
-    } else {
-      setIsOpen(false);
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setIsClosing(false);
-      }, 350);
-      return () => clearTimeout(timer);
-    }
+    api
+      .getBLImports({ affaire_id: affaire.numeroAffaire })
+      .then((data) => {
+        if (!cancelled) setHasBLImports(Array.isArray(data) && data.length > 0);
+      })
+      .catch(() => {
+        if (!cancelled) setHasBLImports(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [affaire]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    setIsClosing(true);
-    setTimeout(() => onClose(), 350);
-  }, [onClose]);
 
   // Fermer au clic extérieur
   useEffect(() => {

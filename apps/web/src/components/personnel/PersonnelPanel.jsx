@@ -3208,7 +3208,7 @@ const PlanningTab = ({
       {showLeaveApproval && (
         <LeaveValidationPanel
           onClose={() => setShowLeaveApproval(false)}
-          onUpdated={() => loadPlanning()}
+          onRefresh={() => loadPlanning()}
         />
       )}
 

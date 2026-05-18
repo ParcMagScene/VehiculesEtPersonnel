@@ -47,6 +47,7 @@ import {
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
@@ -454,36 +455,8 @@ const StockSlidePanel = ({
   _depotZones,
   _allDepotZones,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
   const panelRef = useRef(null);
-
-  useEffect(() => {
-    if (item) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsVisible(true);
-      setIsClosing(false);
-      const raf = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsOpen(true));
-      });
-      return () => cancelAnimationFrame(raf);
-    } else {
-      setIsOpen(false);
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setIsClosing(false);
-      }, 350);
-      return () => clearTimeout(timer);
-    }
-  }, [item]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    setIsClosing(true);
-    setTimeout(() => onClose(), 350);
-  }, [onClose]);
+  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(item, onClose);
 
   useEffect(() => {
     const handler = (e) => {

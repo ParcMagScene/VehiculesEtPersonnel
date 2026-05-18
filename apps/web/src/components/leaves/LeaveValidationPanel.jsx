@@ -135,7 +135,7 @@ const AdminSignaturePad = ({ onSign, _value }) => {
 // PANNEAU PRINCIPAL
 // ═══════════════════════════════════════
 
-const LeaveValidationPanel = ({ onClose, onUpdated }) => {
+const LeaveValidationPanel = ({ onClose, onRefresh }) => {
   const [tab, setTab] = useState('pending');
   const [requests, setRequests] = useState([]);
   const [conflicts, setConflicts] = useState([]);
@@ -226,7 +226,7 @@ const LeaveValidationPanel = ({ onClose, onUpdated }) => {
       setModifiedEndDate('');
       setAdminSignature(null);
       loadData();
-      if (onUpdated) onUpdated();
+      if (onRefresh) onRefresh();
     } catch (err) {
       setError(err.error || err.message || 'Erreur lors du traitement');
     } finally {

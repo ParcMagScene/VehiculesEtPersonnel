@@ -26,6 +26,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Tooltip } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { safeDate } from '../../utils/formatUtils';
 import { resolveGenericImage } from '../../utils/genericImages';
 import {
@@ -390,36 +391,8 @@ const EquipmentSlidePanel = ({
   isAdmin,
   onOpenDepotMap,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
   const panelRef = useRef(null);
-
-  useEffect(() => {
-    if (eq) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsVisible(true);
-      setIsClosing(false);
-      const raf = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsOpen(true));
-      });
-      return () => cancelAnimationFrame(raf);
-    } else {
-      setIsOpen(false);
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setIsClosing(false);
-      }, 350);
-      return () => clearTimeout(timer);
-    }
-  }, [eq]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    setIsClosing(true);
-    setTimeout(() => onClose(), 350);
-  }, [onClose]);
+  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(eq, onClose);
 
   useEffect(() => {
     const handler = (e) => {
@@ -527,7 +500,6 @@ const EquipmentDetailDialog = ({
   onEdit,
   onDelete,
   onCreateTicket,
-  _onRefresh,
   onOpenTicketDialog,
   onPrintLabel,
   onPrintSheet,

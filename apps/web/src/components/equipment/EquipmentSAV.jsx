@@ -26,6 +26,7 @@ import {
   Tooltip,
 } from '@/design-system';
 
+import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { useToast } from '../../hooks/useToast';
 import { safeDate } from '../../utils/formatUtils';
 import { cleanName, SAV_PRIORITY, SAV_STATUS, SAV_TYPES } from './equipmentConstants';
@@ -948,36 +949,8 @@ const SavSlidePanel = ({
   onOpenDialog,
   onOpenEquipmentDialog,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
   const panelRef = useRef(null);
-
-  useEffect(() => {
-    if (ticket) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsVisible(true);
-      setIsClosing(false);
-      const raf = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsOpen(true));
-      });
-      return () => cancelAnimationFrame(raf);
-    } else {
-      setIsOpen(false);
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setIsClosing(false);
-      }, 350);
-      return () => clearTimeout(timer);
-    }
-  }, [ticket]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    setIsClosing(true);
-    setTimeout(() => onClose(), 350);
-  }, [onClose]);
+  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(ticket, onClose);
 
   if (!isVisible && !ticket) return null;
 

@@ -14,12 +14,13 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Avatar, Button, SectionHeader, Tag, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 
@@ -337,36 +338,8 @@ const PersonnelSlidePanel = ({
   onEdit,
   onRequestLeave,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
   const panelRef = useRef(null);
-
-  useEffect(() => {
-    if (person) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsVisible(true);
-      setIsClosing(false);
-      const raf = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsOpen(true));
-      });
-      return () => cancelAnimationFrame(raf);
-    } else {
-      setIsOpen(false);
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setIsClosing(false);
-      }, 350);
-      return () => clearTimeout(timer);
-    }
-  }, [person]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    setIsClosing(true);
-    setTimeout(() => onClose(), 350);
-  }, [onClose]);
+  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(person, onClose);
 
   // Clic extérieur
   useEffect(() => {

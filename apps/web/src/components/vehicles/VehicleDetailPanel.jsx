@@ -1,11 +1,12 @@
 import './VehicleDetailPanel.css';
 
 import { AlertTriangle, Calendar, ExternalLink, Gauge, User, Wrench, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button, Tag } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
+import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
@@ -325,36 +326,8 @@ const VehicleSlidePanel = ({
   onOpenDialog,
   onAction,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
   const panelRef = useRef(null);
-
-  useEffect(() => {
-    if (vehicle) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsVisible(true);
-      setIsClosing(false);
-      const raf = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsOpen(true));
-      });
-      return () => cancelAnimationFrame(raf);
-    } else {
-      setIsOpen(false);
-      setIsClosing(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        setIsClosing(false);
-      }, 350);
-      return () => clearTimeout(timer);
-    }
-  }, [vehicle]);
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    setIsClosing(true);
-    setTimeout(() => onClose(), 300);
-  }, [onClose]);
+  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(vehicle, onClose, 300);
 
   // Clic extérieur
   useEffect(() => {

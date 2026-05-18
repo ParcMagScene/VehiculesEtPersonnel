@@ -90,7 +90,7 @@ export default function AddressAutocomplete({
 
       if (!placesReady || !query || query.length < 3 || as !== 'input') {
         predictionByLabelRef.current.clear();
-        setSuggestions(local);
+        setSuggestions(local.map((value) => ({ value, kind: 'saved' })));
         return;
       }
 
@@ -120,15 +120,17 @@ export default function AddressAutocomplete({
         predictionByLabelRef.current = nextMap;
 
         // Priorité aux lieux enregistrés en DB, puis Google Places.
-        const merged = [...local];
+        const savedSet = new Set(local);
+        const merged = local.map((value) => ({ value, kind: 'saved' }));
         for (const label of nextLabels) {
-          if (!merged.includes(label)) merged.push(label);
+          if (savedSet.has(label)) continue;
+          merged.push({ value: label, kind: 'place' });
           if (merged.length >= 12) break;
         }
         setSuggestions(merged);
       } catch (error) {
         console.warn('Autocomplete suggestions indisponibles:', error?.message || error);
-        setSuggestions(local);
+        setSuggestions(local.map((value) => ({ value, kind: 'saved' })));
       }
     },
     [as, country, getPredictionLabel, getPrioritySuggestions, placesReady],
@@ -236,7 +238,11 @@ export default function AddressAutocomplete({
       {as === 'input' && !list && suggestions.length > 0 && (
         <datalist id={datalistIdRef.current}>
           {suggestions.map((item) => (
-            <option key={item} value={item} />
+            <option
+              key={item.value}
+              value={item.value}
+              label={item.kind === 'saved' ? '★ Lieu enregistré' : 'Suggestion Google'}
+            />
           ))}
         </datalist>
       )}

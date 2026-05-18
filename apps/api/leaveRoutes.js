@@ -304,7 +304,14 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // DELETE /api/leaves/holidays/:id — Supprimer un jour férié custom (admin)
   app.delete('/api/leaves/holidays/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      db.prepare('DELETE FROM public_holidays WHERE id = ? AND is_custom = 1').run(req.params.id);
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const result = db
+        .prepare('DELETE FROM public_holidays WHERE id = ? AND is_custom = 1')
+        .run(req.params.id);
+      if (result.changes === 0)
+        return res
+          .status(404)
+          .json({ success: false, error: 'Jour férié personnalisé non trouvé' });
       res.json({ success: true });
     } catch (error) {
       logger.error(error);

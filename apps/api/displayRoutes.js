@@ -367,13 +367,19 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // PATCH /api/display/screens/:id/heartbeat — Heartbeat écran
   app.patch('/api/display/screens/:id/heartbeat', authenticateToken, (req, res) => {
     try {
-      db.prepare(
-        `
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      // Un 404 permet à l'écran client de comprendre qu'il doit se ré-enregistrer.
+      const result = db
+        .prepare(
+          `
         UPDATE display_screens
         SET status = 'online', last_heartbeat = datetime('now')
         WHERE id = ?
       `,
-      ).run(req.params.id);
+        )
+        .run(req.params.id);
+      if (result.changes === 0)
+        return res.status(404).json({ success: false, error: 'Écran non trouvé' });
       res.json({ success: true });
     } catch (error) {
       logger.error('Display screen heartbeat:', error);

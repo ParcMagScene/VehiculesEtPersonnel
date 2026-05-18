@@ -188,6 +188,10 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
 
   app.put('/api/locations/:id', authenticateToken, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const exists = db.prepare('SELECT id FROM locations WHERE id = ?').get(req.params.id);
+      if (!exists) return res.status(404).json({ success: false, error: 'Lieu non trouvé' });
+
       const location = normalizeLocationPayload(req.body);
       const existing = findExistingLocationDuplicate(location, Number(req.params.id));
       if (existing) {
@@ -234,8 +238,10 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
 
   app.delete('/api/locations/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const stmt = db.prepare('DELETE FROM locations WHERE id = ?');
-      stmt.run(req.params.id);
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const result = db.prepare('DELETE FROM locations WHERE id = ?').run(req.params.id);
+      if (result.changes === 0)
+        return res.status(404).json({ success: false, error: 'Lieu non trouvé' });
 
       listCache.invalidate('locations');
       addToHistory('location', req.params.id, 'deleted', null, req.user.id, req.user.name);
@@ -295,6 +301,10 @@ export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
 
   app.put('/api/garages/:id', authenticateToken, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const exists = db.prepare('SELECT id FROM garages WHERE id = ?').get(req.params.id);
+      if (!exists) return res.status(404).json({ success: false, error: 'Garage non trouvé' });
+
       const garage = req.body;
       const stmt = db.prepare(`
         UPDATE garages 
@@ -315,8 +325,10 @@ export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
 
   app.delete('/api/garages/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const stmt = db.prepare('DELETE FROM garages WHERE id = ?');
-      stmt.run(req.params.id);
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const result = db.prepare('DELETE FROM garages WHERE id = ?').run(req.params.id);
+      if (result.changes === 0)
+        return res.status(404).json({ success: false, error: 'Garage non trouvé' });
 
       addToHistory('garage', req.params.id, 'deleted', null, req.user.id, req.user.name);
 
@@ -556,6 +568,11 @@ export function setupConfigRoutes(app, authenticateToken, requireAdmin) {
 
   app.put('/api/trip-details/:id', authenticateToken, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const exists = db.prepare('SELECT id FROM trip_details WHERE id = ?').get(req.params.id);
+      if (!exists)
+        return res.status(404).json({ success: false, error: 'Détail de trajet non trouvé' });
+
       const detail = req.body;
       const stmt = db.prepare(`
         UPDATE trip_details SET

@@ -302,8 +302,10 @@ export function setupVehicleRoutes(
 
   app.delete('/api/vehicles/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      const stmt = db.prepare('DELETE FROM vehicles WHERE id = ?');
-      stmt.run(req.params.id);
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const result = db.prepare('DELETE FROM vehicles WHERE id = ?').run(req.params.id);
+      if (result.changes === 0)
+        return res.status(404).json({ success: false, error: 'Véhicule non trouvé' });
 
       addToHistory('vehicle', req.params.id, 'deleted', null, req.user.id, req.user.name);
       invalidateEntity('vehicles');
@@ -650,9 +652,12 @@ export function setupVehicleRoutes(
 
   app.delete('/api/reservations/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
-      const _existing = db
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db
         .prepare('SELECT google_event_id FROM reservations WHERE id = ?')
         .get(req.params.id);
+      if (!existing)
+        return res.status(404).json({ success: false, error: 'Réservation non trouvée' });
 
       const stmt = db.prepare('DELETE FROM reservations WHERE id = ?');
       stmt.run(req.params.id);
@@ -841,6 +846,15 @@ export function setupVehicleRoutes(
       if (!user || !user.is_admin) {
         return res.status(403).json({ success: false, error: 'Accès réservé aux administrateurs' });
       }
+
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db
+        .prepare('SELECT id FROM reservation_requests WHERE id = ?')
+        .get(req.params.id);
+      if (!existing)
+        return res
+          .status(404)
+          .json({ success: false, error: 'Demande de réservation non trouvée' });
 
       const updateStmt = db.prepare(`
       UPDATE reservation_requests 
@@ -1231,8 +1245,10 @@ export function setupVehicleRoutes(
 
   app.delete('/api/maintenances/:id', authenticateToken, requireMaintenanceAccess, (req, res) => {
     try {
-      const stmt = db.prepare('DELETE FROM maintenances WHERE id = ?');
-      stmt.run(req.params.id);
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const result = db.prepare('DELETE FROM maintenances WHERE id = ?').run(req.params.id);
+      if (result.changes === 0)
+        return res.status(404).json({ success: false, error: 'Maintenance non trouvée' });
 
       addToHistory('maintenance', req.params.id, 'deleted', null, req.user.id, req.user.name);
       invalidateEntity('maintenances');

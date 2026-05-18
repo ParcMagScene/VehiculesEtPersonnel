@@ -327,6 +327,10 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
   // PUT /api/annuaire/clients/:id — Modifier
   app.put('/api/annuaire/clients/:id', authenticateToken, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db.prepare('SELECT id FROM clients WHERE id = ?').get(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, error: 'Client non trouvé' });
+
       const {
         name,
         code_libre,
@@ -397,6 +401,10 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
   // DELETE /api/annuaire/clients/:id
   app.delete('/api/annuaire/clients/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db.prepare('SELECT id FROM clients WHERE id = ?').get(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, error: 'Client non trouvé' });
+
       // Check for linked contacts
       const contactCount = db
         .prepare('SELECT COUNT(*) as c FROM annuaire_contacts WHERE client_id = ?')
@@ -559,6 +567,11 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
 
   app.put('/api/annuaire/suppliers/:id', authenticateToken, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(req.params.id);
+      if (!existing)
+        return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
+
       const {
         name,
         code_libre,
@@ -630,6 +643,11 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
 
   app.delete('/api/annuaire/suppliers/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(req.params.id);
+      if (!existing)
+        return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
+
       const orderCount = db
         .prepare('SELECT COUNT(*) as c FROM orders WHERE supplier_id = ?')
         .get(req.params.id);
@@ -784,6 +802,11 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
 
   app.put('/api/annuaire/prestataires/:id', authenticateToken, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db.prepare('SELECT id FROM prestataires WHERE id = ?').get(req.params.id);
+      if (!existing)
+        return res.status(404).json({ success: false, error: 'Prestataire non trouvé' });
+
       const {
         name,
         code_libre,
@@ -851,6 +874,11 @@ export function setupAnnuairePrestatairesRoutes(app, authenticateToken, requireA
 
   app.delete('/api/annuaire/prestataires/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db.prepare('SELECT id FROM prestataires WHERE id = ?').get(req.params.id);
+      if (!existing)
+        return res.status(404).json({ success: false, error: 'Prestataire non trouvé' });
+
       const contactCount = db
         .prepare('SELECT COUNT(*) as c FROM annuaire_contacts WHERE prestataire_id = ?')
         .get(req.params.id);
@@ -1001,6 +1029,12 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
 
   app.put('/api/annuaire/contacts/:id', authenticateToken, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const existing = db
+        .prepare('SELECT id FROM annuaire_contacts WHERE id = ?')
+        .get(req.params.id);
+      if (!existing) return res.status(404).json({ success: false, error: 'Contact non trouvé' });
+
       const {
         client_id,
         supplier_id,
@@ -1063,7 +1097,10 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
 
   app.delete('/api/annuaire/contacts/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
-      db.prepare('DELETE FROM annuaire_contacts WHERE id = ?').run(req.params.id);
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const result = db.prepare('DELETE FROM annuaire_contacts WHERE id = ?').run(req.params.id);
+      if (result.changes === 0)
+        return res.status(404).json({ success: false, error: 'Contact non trouvé' });
       res.json({ success: true });
     } catch (error) {
       logger.error('Annuaire contact delete:', error);

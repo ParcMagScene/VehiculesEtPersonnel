@@ -623,7 +623,10 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
   app.delete('/api/affaires/:id/links/:linkId', authenticateToken, (req, res) => {
     try {
       const { linkId } = req.params;
-      db.prepare('DELETE FROM affaire_links WHERE id = ?').run(linkId);
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const result = db.prepare('DELETE FROM affaire_links WHERE id = ?').run(linkId);
+      if (result.changes === 0)
+        return res.status(404).json({ success: false, error: 'Lien d’affaire non trouvé' });
       res.json({ success: true });
     } catch (error) {
       logger.error('Erreur DELETE affaire link:', error);

@@ -80,6 +80,10 @@ export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin)
   // Supprimer une catégorie
   app.delete('/api/stock/categories/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const exists = db.prepare('SELECT id FROM stock_categories WHERE id = ?').get(req.params.id);
+      if (!exists) return res.status(404).json({ success: false, error: 'Catégorie non trouvée' });
+
       const itemCount = db
         .prepare('SELECT COUNT(*) as count FROM stock_items WHERE category_id = ?')
         .get(req.params.id);

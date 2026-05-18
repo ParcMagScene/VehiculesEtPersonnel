@@ -125,6 +125,12 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
   // PUT /api/equipment-categories/:id (admin)
   app.put('/api/equipment-categories/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const exists = db
+        .prepare('SELECT id FROM equipment_categories WHERE id = ?')
+        .get(req.params.id);
+      if (!exists) return res.status(404).json({ success: false, error: 'Catégorie non trouvée' });
+
       const { name, icon, color, description, parent_id, level } = req.body;
       db.prepare(
         'UPDATE equipment_categories SET name = ?, icon = ?, color = ?, description = ?, parent_id = ?, level = ? WHERE id = ?',
@@ -140,6 +146,12 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
   // DELETE /api/equipment-categories/:id (admin)
   app.delete('/api/equipment-categories/:id', authenticateToken, requireAdmin, (req, res) => {
     try {
+      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+      const exists = db
+        .prepare('SELECT id FROM equipment_categories WHERE id = ?')
+        .get(req.params.id);
+      if (!exists) return res.status(404).json({ success: false, error: 'Catégorie non trouvée' });
+
       // Vérifier qu'aucun équipement n'utilise cette catégorie
       const count = db
         .prepare('SELECT COUNT(*) as c FROM equipment WHERE category_id = ?')

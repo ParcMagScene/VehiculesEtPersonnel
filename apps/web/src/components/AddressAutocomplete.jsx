@@ -29,6 +29,7 @@ export default function AddressAutocomplete({
   prioritySuggestions = [],
 }) {
   const inputRef = useRef(null);
+  const wrapperRef = useRef(null);
   const requestTimerRef = useRef(null);
   const predictionByLabelRef = useRef(new Map());
   const datalistIdRef = useRef(
@@ -37,6 +38,11 @@ export default function AddressAutocomplete({
 
   const [placesReady, setPlacesReady] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(-1);
+
+  // Le dropdown custom n'est utilisé que pour <input> sans `list` externe.
+  const useCustomDropdown = as === 'input' && !list;
 
   const getPrioritySuggestions = useCallback(
     (query) => {
@@ -152,6 +158,24 @@ export default function AddressAutocomplete({
     };
   }, []);
 
+  // Fermer le dropdown au clic extérieur.
+  useEffect(() => {
+    if (!dropdownOpen) return undefined;
+    const handle = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+        setHighlightIndex(-1);
+      }
+    };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [dropdownOpen]);
+
+  // Reset highlight quand la liste change.
+  useEffect(() => {
+    setHighlightIndex(-1);
+  }, [suggestions]);
+
   const tryEmitPlaceDetails = useCallback(
     async (label) => {
       if (!onPlaceSelect) return;
@@ -194,6 +218,8 @@ export default function AddressAutocomplete({
     const nextValue = e.target.value;
     onChange(nextValue);
 
+    if (useCustomDropdown) setDropdownOpen(true);
+
     if (requestTimerRef.current) clearTimeout(requestTimerRef.current);
     requestTimerRef.current = setTimeout(() => {
       fetchSuggestions(nextValue);
@@ -205,6 +231,53 @@ export default function AddressAutocomplete({
     }
   };
 
+  const selectSuggestion = useCallback(
+    async (item) => {
+      if (!item) return;
+      onChange(item.value);
+      setDropdownOpen(false);
+      setHighlightIndex(-1);
+      if (item.kind === 'place' && predictionByLabelRef.current.has(item.value)) {
+        await tryEmitPlaceDetails(item.value);
+      }
+    },
+    [onChange, tryEmitPlaceDetails],
+  );
+
+  const handleKeyDown = (e) => {
+    if (!useCustomDropdown) return;
+    if (e.key === 'ArrowDown') {
+      if (!dropdownOpen) {
+        setDropdownOpen(true);
+        fetchSuggestions(value || '');
+        return;
+      }
+      if (suggestions.length === 0) return;
+      e.preventDefault();
+      setHighlightIndex((idx) => (idx + 1) % suggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      if (!dropdownOpen || suggestions.length === 0) return;
+      e.preventDefault();
+      setHighlightIndex((idx) => (idx <= 0 ? suggestions.length - 1 : idx - 1));
+    } else if (e.key === 'Enter') {
+      if (dropdownOpen && highlightIndex >= 0 && suggestions[highlightIndex]) {
+        e.preventDefault();
+        selectSuggestion(suggestions[highlightIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      if (dropdownOpen) {
+        setDropdownOpen(false);
+        setHighlightIndex(-1);
+      }
+    }
+  };
+
+  const handleFocus = () => {
+    if (!useCustomDropdown) return;
+    if (suggestions.length === 0) fetchSuggestions(value || '');
+    setDropdownOpen(true);
+  };
+
   const Tag = as === 'textarea' ? 'textarea' : 'input';
   const tagProps = {
     ref: inputRef,
@@ -213,6 +286,8 @@ export default function AddressAutocomplete({
     type: as === 'input' ? 'text' : undefined,
     value: value || '',
     onChange: handleChange,
+    onKeyDown: handleKeyDown,
+    onFocus: handleFocus,
     placeholder,
     required,
     disabled,
@@ -227,15 +302,63 @@ export default function AddressAutocomplete({
   if (list) {
     // eslint-disable-next-line react-hooks/refs
     tagProps.list = list;
-  } else if (as === 'input') {
+  } else if (as === 'input' && !useCustomDropdown) {
     // eslint-disable-next-line react-hooks/refs
     tagProps.list = datalistIdRef.current;
   }
 
+  const savedCount = suggestions.filter((s) => s.kind === 'saved').length;
+  const placeCount = suggestions.length - savedCount;
+
   return (
-    <div className="address-autocomplete-wrapper">
+    <div className="address-autocomplete-wrapper" ref={wrapperRef}>
       <Tag {...tagProps} />
-      {as === 'input' && !list && suggestions.length > 0 && (
+      {useCustomDropdown && dropdownOpen && suggestions.length > 0 && (
+        <div className="address-autocomplete-dropdown" role="listbox">
+          {savedCount > 0 && (
+            <div className="address-autocomplete-section-header">
+              ★ Lieux enregistrés
+            </div>
+          )}
+          {suggestions.map((item, idx) => {
+            const isFirstPlace = item.kind === 'place' && idx > 0 && suggestions[idx - 1].kind === 'saved';
+            return (
+              <div key={`${item.kind}-${item.value}`}>
+                {isFirstPlace && (
+                  <div className="address-autocomplete-section-header address-autocomplete-section-header--place">
+                    Suggestions Google
+                  </div>
+                )}
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={idx === highlightIndex}
+                  className={`address-autocomplete-option address-autocomplete-option--${item.kind} ${
+                    idx === highlightIndex ? 'is-highlighted' : ''
+                  }`}
+                  onMouseDown={(e) => {
+                    // mousedown avant blur de l'input pour ne pas perdre la s\u00e9lection
+                    e.preventDefault();
+                    selectSuggestion(item);
+                  }}
+                  onMouseEnter={() => setHighlightIndex(idx)}
+                >
+                  <span className="address-autocomplete-option-icon" aria-hidden="true">
+                    {item.kind === 'saved' ? '★' : '📍'}
+                  </span>
+                  <span className="address-autocomplete-option-label">{item.value}</span>
+                </button>
+              </div>
+            );
+          })}
+          {placeCount === 0 && savedCount > 0 && (value || '').length >= 3 && !placesReady && (
+            <div className="address-autocomplete-hint">
+              Suggestions Google indisponibles
+            </div>
+          )}
+        </div>
+      )}
+      {!useCustomDropdown && as === 'input' && !list && suggestions.length > 0 && (
         <datalist id={datalistIdRef.current}>
           {suggestions.map((item) => (
             <option

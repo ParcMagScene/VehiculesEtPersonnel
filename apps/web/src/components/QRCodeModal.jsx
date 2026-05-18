@@ -232,12 +232,6 @@ function QRCodeModal({ onClose }) {
     );
   };
 
-  const _handleOverlayClick = (e) => {
-    if (e.target.classList.contains('qr-modal-overlay')) {
-      onClose();
-    }
-  };
-
   return (
     <ModalLayout
       open

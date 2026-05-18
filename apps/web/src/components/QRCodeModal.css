@@ -1,28 +1,3 @@
-.qr-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--theme-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-popover);
-  backdrop-filter: blur(4px);
-  isolation: isolate;
-  animation: qrOverlayFadeIn 0.2s ease-out;
-}
-
-@keyframes qrOverlayFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 .qr-modal {
   background: var(--theme-bg-page);
   border-radius: var(--radius-xl);
@@ -220,10 +195,6 @@
 
 /* Styles d'impression */
 @media print {
-  .qr-modal-overlay {
-    background: var(--theme-bg-card);
-  }
-
   .qr-modal {
     box-shadow: none;
     max-width: 100%;

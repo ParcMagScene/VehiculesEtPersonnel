@@ -14,6 +14,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { Button, Textarea } from '@/design-system';
 
@@ -22,6 +23,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
+import { getModalRoot } from '../../utils/modalManager';
 
 // ─── Shared internal card for reservation requests (used in both popups) ───
 const ReservationRequestCard = ({
@@ -282,17 +284,20 @@ const HeaderNotifications = ({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return (
+  // Portail unique #emag-modal-root : empêche le header (sticky + backdrop-filter
+  // = stacking context) de couper le popover et garantit qu'un modal bloquant
+  // (z-index 9000+ via ModalManager) passe automatiquement par-dessus.
+  const portalTarget = isAnyPopupOpen ? getModalRoot() : null;
+
+  const popoverContent = isAnyPopupOpen ? (
     <>
-      {isAnyPopupOpen && (
-        <div
-          className="notifications-popover-backdrop"
-          onMouseDown={() => {
-            setShowNotificationsPopup(false);
-            setShowRequestsPopup(false);
-          }}
-        />
-      )}
+      <div
+        className="notifications-popover-backdrop"
+        onMouseDown={() => {
+          setShowNotificationsPopup(false);
+          setShowRequestsPopup(false);
+        }}
+      />
 
       {/* Popup des notifications */}
       {showNotificationsPopup && (
@@ -789,7 +794,12 @@ const HeaderNotifications = ({
           </div>
         </div>
       )}
+    </>
+  ) : null;
 
+  return (
+    <>
+      {portalTarget && popoverContent && createPortal(popoverContent, portalTarget)}
       {ConfirmDialogRenderer}
     </>
   );

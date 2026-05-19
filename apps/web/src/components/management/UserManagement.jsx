@@ -34,6 +34,7 @@ import {
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
@@ -76,6 +77,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Réaction immédiate aux mutations de personnel publiées par d'autres vues
+  useRefreshSubscription('persons', () => loadData(true));
 
   const loadData = async (silent = false) => {
     try {

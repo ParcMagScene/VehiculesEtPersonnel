@@ -94,9 +94,9 @@ Les modules cochés ✅ au §3.1 respectent le pattern cible :
 | **Suivi** (4 composants)      | Toute mutation faite dans un onglet (Suivi/Fiche/Incidents) ne se reflète pas dans les 3 autres. | Aucun publish ni subscribe `suivi`.                                  | **P0**   |
 | **Contrôles** (5 composants)  | Création/édition/réalisation/suppression d'un contrôle ne rafraîchit pas le dashboard ni la liste équipement si on n'est pas dans la modale source. | Aucun publish ni subscribe `controls`.                               | **P0**   |
 | **Rental reporting**          | Période sélectionnée correctement rafraîchie, mais création de location en parallèle n'invalide pas. | Aucun subscribe sur `orders`/`reservations`.                         | **P1**   |
-| UserManagement                | Publie `persons` mais ne se ré-abonne pas → ses 3 tableaux internes (users/roles/perms) s'auto-rafraîchissent via callbacks `onSaved` mais pas si mutation externe. | Architecture mixte cohérente, faible risque. | P3       |
-| AnnuairePanel (pagination)    | Risque théorique : reset de la page après refresh-bus.                                       | Pagination locale non protégée.                                      | P2       |
-| LogsTab (Display)             | Pagination locale (offset). Pas d'abonnement. Faible criticité (logs).                       | Module config.                                                       | P3       |
+| UserManagement                | **Patché** : `useRefreshSubscription('persons', () => loadData(true))` ajouté — réaction immédiate aux mutations cross-vues (en plus du polling 30s). | ✅ Fix.                                                              | OK       |
+| AnnuairePanel (pagination)    | Vérifié : pagination préservée via `dataVersion` bump (page non touchée par bus).             | ✅ Pas de fix requis.                                                | OK       |
+| LogsTab (Display)             | Vérifié : `refreshKey` prop externe déclenche re-fetch sans toucher à `page`.                  | ✅ Pas de fix requis.                                                | OK       |
 
 ---
 
@@ -148,6 +148,12 @@ Les modules cochés ✅ au §3.1 respectent le pattern cible :
 | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | [components/management/RentalReportingPanel.jsx](../../apps/web/src/components/management/RentalReportingPanel.jsx) | `useRefreshSubscription(['orders','reservations'], load)` — KPI à jour.     |
 
+### 6.4 Module **Management** (P3 traité)
+
+| Fichier                                                                                                            | Modification                                                                |
+| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| [components/management/UserManagement.jsx](../../apps/web/src/components/management/UserManagement.jsx)             | `useRefreshSubscription('persons', () => loadData(true))` — latence quasi-nulle au lieu de 30 s. |
+
 ### 6.4 Conventions
 
 - Format normalisé : `refreshBus.publish('<key>')` **après** que l'appel API ait résolu sans erreur.
@@ -163,9 +169,9 @@ Les modules cochés ✅ au §3.1 respectent le pattern cible :
 | Display tabs (Logs/Messages/Playlists/Media/Screens/Sonos) — bus | P2       | Panneaux de configuration faible concurrence ; le clic « rafraîchir » manuel reste acceptable.          |
 | VideoPanel — bus                                    | P2       | Idem ; mutations rares et faites depuis le même panneau.                                                |
 | Messaging — alignement bus                          | P2       | Polling 30 s déjà en place pour l'inbox.                                                                |
-| UserManagement — subscribe `persons`                | P3       | Mutations toujours initiées depuis le même panneau, callbacks `onSaved` couvrent 100 % des cas pratiques. |
-| AnnuairePanel — préservation page après bus         | P2       | À valider manuellement avant correction (peut déjà fonctionner via clé de filtre).                      |
-| LogsTab — pagination cohérente après mutation       | P3       | Logs : criticité faible.                                                                                |
+| ~~UserManagement — subscribe `persons`~~            | **✅ livré** | Cf. §6.4.                                                                                              |
+| ~~AnnuairePanel — préservation page après bus~~     | **✅ vérifié** | Pattern `dataVersion` bump conservait déjà la page.                                                    |
+| ~~LogsTab — pagination cohérente après mutation~~   | **✅ vérifié** | Pattern `refreshKey` externe conservait déjà la page.                                                  |
 | Hook générique `useListResource(key, fetcher)`      | P3       | Refactor opportuniste, sans valeur immédiate.                                                           |
 
 ---

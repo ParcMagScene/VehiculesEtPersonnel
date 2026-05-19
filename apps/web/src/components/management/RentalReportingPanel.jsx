@@ -1,16 +1,14 @@
 import './RentalReportingPanel.css';
 
 import { format } from 'date-fns';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { Input, SectionHeader, Select } from '@/design-system';
 
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
+import { useListResource } from '../../hooks/useListResource';
 import api from '../../utils/api';
 
 const RentalReportingPanel = () => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState('month'); // month, quarter, year, custom
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -35,25 +33,10 @@ const RentalReportingPanel = () => {
     return { startDate: start, endDate: end };
   }, [period, customStart, customEnd]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await api.getRentalReporting(dateRange);
-      setData(result);
-    } catch {
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange]);
+  const fetchReporting = useCallback(() => api.getRentalReporting(dateRange), [dateRange]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Reporting réactif aux mutations de commandes/réservations effectuées ailleurs
-  useRefreshSubscription('orders', load);
-  useRefreshSubscription('reservations', load);
+  // Reporting réactif aux mutations de commandes/réservations effectuées ailleurs.
+  const { data, loading } = useListResource(['orders', 'reservations'], fetchReporting);
 
   if (loading && !data) {
     return <div className="rental-reporting-loading">Chargement du reporting...</div>;

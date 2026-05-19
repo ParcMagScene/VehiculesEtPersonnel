@@ -24,7 +24,7 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
   const [resetFormEmail, setResetFormEmail] = useState('');
   const [loginMode, setLoginMode] = useState('password');
   const [pin, setPin] = useState('');
-  const [resetFormName, setResetFormName] = useState('');
+  const [_resetFormName, setResetFormName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetError, setResetError] = useState('');

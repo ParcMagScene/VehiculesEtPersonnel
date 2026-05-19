@@ -21,7 +21,7 @@ function MobileLogin({ onLogin }) {
   const [showAccessRequest, setShowAccessRequest] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetFormEmail, setResetFormEmail] = useState('');
-  const [resetFormName, setResetFormName] = useState('');
+  const [_resetFormName, setResetFormName] = useState('');
   const [resetFormPassword, setResetFormPassword] = useState('');
   const [resetFormConfirm, setResetFormConfirm] = useState('');
   const [resetError, setResetError] = useState('');

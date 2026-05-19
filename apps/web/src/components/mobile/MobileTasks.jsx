@@ -1,5 +1,5 @@
-import './MobileTasks.css';
 import './MobileModuleWrapper.css';
+import './MobileTasks.css';
 
 import {
   ArrowLeft,
@@ -18,8 +18,8 @@ import { Accordion, Button, ProgressBar } from '@/design-system';
 
 import { ROLES, STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import useSwipeAction from '../../hooks/useSwipeAction';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';

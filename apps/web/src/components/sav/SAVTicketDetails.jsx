@@ -38,7 +38,7 @@ const histThStyle = {
 };
 const histTdStyle = { padding: '4px 8px', borderBottom: '1px solid #f1f5f9' };
 
-export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
+export default function SAVTicketDetails({ ticketId, onClose, onSaved }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,7 +89,7 @@ export default function SAVTicketDetails({ ticketId, onClose, onUpdated }) {
       const resp = await api.patchSavTicket(ticketId, payload);
       if (!resp.success) throw new Error(resp.error || 'Erreur enregistrement');
       await reload();
-      if (onUpdated) onUpdated();
+      if (onSaved) onSaved();
     } catch (e) {
       setError(e.message);
     } finally {

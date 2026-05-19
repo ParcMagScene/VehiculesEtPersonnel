@@ -113,7 +113,7 @@ export default function SAVManagerModal({ onClose, onImportDone, defaultTab = 'i
           <SAVTicketDetails
             ticketId={selectedTicket}
             onClose={() => setSelectedTicket(null)}
-            onUpdated={() => setRefreshKey((k) => k + 1)}
+            onSaved={() => setRefreshKey((k) => k + 1)}
           />
         </ModalLayout>
       )}

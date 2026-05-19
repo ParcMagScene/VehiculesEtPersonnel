@@ -48,6 +48,7 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useAnnotateBP } from '../../hooks/useAnnotateBP';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { AFFAIRE_TYPE_SECTIONS, AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
@@ -2965,12 +2966,14 @@ const AffaireDetailDialog = ({
   const [showBLImport, setShowBLImport] = useState(false);
   const [showDisplayDialog, setShowDisplayDialog] = useState(false);
   const [hasBLImports, setHasBLImports] = useState(false);
+  const { confirm: confirmDirty, ConfirmDialogRenderer: DirtyConfirmRenderer } = useConfirmDialog();
 
   // ═══ Mode édition ═══
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const affaireIdRef = useRef(null);
+  const { resetDirty, guardClose } = useDirtyForm(editForm || {}, { confirmer: confirmDirty });
 
   const startEditing = useCallback(() => {
     // Pré-remplir nom : valeur existante, sinon event_name, sinon client
@@ -2995,10 +2998,22 @@ const AffaireDetailDialog = ({
     setIsEditing(true);
   }, [affaire]);
 
-  const cancelEditing = useCallback(() => {
+  // Reset snapshot de dirty dès que l'édition démarre (editForm vient d'être rempli)
+  useEffect(() => {
+    if (isEditing && editForm) {
+      resetDirty();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing]);
+
+  const cancelEditingRaw = useCallback(() => {
     setIsEditing(false);
     setEditForm(null);
   }, []);
+
+  const cancelEditing = useCallback(() => {
+    guardClose(cancelEditingRaw)();
+  }, [guardClose, cancelEditingRaw]);
 
   const saveEditing = useCallback(async () => {
     if (!editForm || isSaving) return;
@@ -3050,6 +3065,7 @@ const AffaireDetailDialog = ({
       };
       setIsEditing(false);
       setEditForm(null);
+      resetDirty();
       if (onDataChanged) onDataChanged(updatedAffaire);
     } catch (err) {
       console.error('Erreur sauvegarde affaire:', err);
@@ -3057,7 +3073,7 @@ const AffaireDetailDialog = ({
     } finally {
       setIsSaving(false);
     }
-  }, [editForm, isSaving, affaire, onDataChanged]);
+  }, [editForm, isSaving, affaire, onDataChanged, resetDirty]);
 
   const refreshMissions = useCallback(() => {
     if (!affaire) return;
@@ -3120,139 +3136,144 @@ const AffaireDetailDialog = ({
   const typeInfo = getTypeInfo(isEditing && editForm ? editForm.type : affaire.type);
 
   return (
-    <div
-      className={`affaire-dialog-overlay${isClosing ? ' closing' : ''}`}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
-    >
-      <div className="affaire-dialog">
-        <div className="dialog-header">
-          <div className="dialog-title-row">
-            <span className="dialog-numero">
-              {isEditing && editForm ? editForm.numeroAffaire : affaire.numeroAffaire}
-            </span>
-            <span className="dialog-type" style={{ background: typeInfo.color }}>
-              {typeInfo.label}
-            </span>
-            {!isEditing && (affaire.nom || affaire.client) && (
-              <span className="dialog-client">{capitalizeText(affaire.nom || affaire.client)}</span>
-            )}
-            {isEditing && (editForm?.nom || editForm?.client) && (
-              <span className="dialog-client">
-                {capitalizeText(editForm.nom || editForm.client)}
+    <>
+      <div
+        className={`affaire-dialog-overlay${isClosing ? ' closing' : ''}`}
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) handleClose();
+        }}
+      >
+        <div className="affaire-dialog">
+          <div className="dialog-header">
+            <div className="dialog-title-row">
+              <span className="dialog-numero">
+                {isEditing && editForm ? editForm.numeroAffaire : affaire.numeroAffaire}
               </span>
-            )}
-          </div>
-          <div className="dialog-header-actions">
-            {isEditing ? (
-              <>
-                <Tooltip content="Annuler les modifications" position="bottom">
-                  <Button variant="ghost" className="dialog-cancel-btn" onClick={cancelEditing}>
-                    <X size={15} /> Annuler
-                  </Button>
-                </Tooltip>
-                <Tooltip content="Enregistrer les modifications" position="bottom">
+              <span className="dialog-type" style={{ background: typeInfo.color }}>
+                {typeInfo.label}
+              </span>
+              {!isEditing && (affaire.nom || affaire.client) && (
+                <span className="dialog-client">
+                  {capitalizeText(affaire.nom || affaire.client)}
+                </span>
+              )}
+              {isEditing && (editForm?.nom || editForm?.client) && (
+                <span className="dialog-client">
+                  {capitalizeText(editForm.nom || editForm.client)}
+                </span>
+              )}
+            </div>
+            <div className="dialog-header-actions">
+              {isEditing ? (
+                <>
+                  <Tooltip content="Annuler les modifications" position="bottom">
+                    <Button variant="ghost" className="dialog-cancel-btn" onClick={cancelEditing}>
+                      <X size={15} /> Annuler
+                    </Button>
+                  </Tooltip>
+                  <Tooltip content="Enregistrer les modifications" position="bottom">
+                    <Button
+                      variant="ghost"
+                      className="dialog-save-btn"
+                      onClick={saveEditing}
+                      disabled={isSaving}
+                    >
+                      <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                    </Button>
+                  </Tooltip>
+                </>
+              ) : (
+                <>
+                  <Tooltip content="Modifier les informations de l'affaire" position="bottom">
+                    <Button variant="ghost" className="dialog-edit-btn" onClick={startEditing}>
+                      <Edit3 size={15} /> Modifier
+                    </Button>
+                  </Tooltip>
                   <Button
                     variant="ghost"
-                    className="dialog-save-btn"
-                    onClick={saveEditing}
-                    disabled={isSaving}
+                    className="dialog-bl-btn"
+                    onClick={() => setShowBLImport(true)}
+                    title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
                   >
-                    <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                    {hasBLImports ? (
+                      <>
+                        <RefreshCw size={15} /> MAJ BL
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={15} /> Import BL
+                      </>
+                    )}
                   </Button>
-                </Tooltip>
-              </>
-            ) : (
-              <>
-                <Tooltip content="Modifier les informations de l'affaire" position="bottom">
-                  <Button variant="ghost" className="dialog-edit-btn" onClick={startEditing}>
-                    <Edit3 size={15} /> Modifier
-                  </Button>
-                </Tooltip>
-                <Button
-                  variant="ghost"
-                  className="dialog-bl-btn"
-                  onClick={() => setShowBLImport(true)}
-                  title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
-                >
-                  {hasBLImports ? (
-                    <>
-                      <RefreshCw size={15} /> MAJ BL
-                    </>
-                  ) : (
-                    <>
-                      <FileText size={15} /> Import BL
-                    </>
-                  )}
+                </>
+              )}
+              <Tooltip content={isEditing ? 'Annuler' : 'Fermer'}>
+                <Button variant="ghost" className="dialog-close" onClick={handleClose}>
+                  <X size={20} />
                 </Button>
-              </>
-            )}
-            <Tooltip content={isEditing ? 'Annuler' : 'Fermer'}>
-              <Button variant="ghost" className="dialog-close" onClick={handleClose}>
-                <X size={20} />
-              </Button>
-            </Tooltip>
+              </Tooltip>
+            </div>
+          </div>
+          <div className="dialog-body">
+            <AffaireDetailContent
+              affaire={affaire}
+              reservations={reservations}
+              missions={missions}
+              googleEventIds={googleEventIds}
+              editable={!isEditing}
+              onDataChanged={handleDataChanged}
+              onNavigateToEntity={onNavigateToEntity}
+              isEditing={isEditing}
+              editForm={editForm}
+              setEditForm={setEditForm}
+              currentUser={currentUser}
+            />
           </div>
         </div>
-        <div className="dialog-body">
-          <AffaireDetailContent
-            affaire={affaire}
-            reservations={reservations}
-            missions={missions}
-            googleEventIds={googleEventIds}
-            editable={!isEditing}
-            onDataChanged={handleDataChanged}
-            onNavigateToEntity={onNavigateToEntity}
-            isEditing={isEditing}
-            editForm={editForm}
-            setEditForm={setEditForm}
-            currentUser={currentUser}
-          />
-        </div>
-      </div>
 
-      {showBLImport && (
-        <Suspense fallback={null}>
-          {['Location', 'Prestation'].includes(affaire.type) ? (
-            <BLImportLocPrestaModal
-              onClose={() => setShowBLImport(false)}
-              onImported={() => {
-                setShowBLImport(false);
-                setHasBLImports(true);
+        {showBLImport && (
+          <Suspense fallback={null}>
+            {['Location', 'Prestation'].includes(affaire.type) ? (
+              <BLImportLocPrestaModal
+                onClose={() => setShowBLImport(false)}
+                onImported={() => {
+                  setShowBLImport(false);
+                  setHasBLImports(true);
+                  handleDataChanged();
+                }}
+                defaultAffaireId={affaire.numeroAffaire}
+                defaultAffaireType={affaire.type}
+              />
+            ) : (
+              <BLImportModal
+                onClose={() => setShowBLImport(false)}
+                onImported={() => {
+                  setShowBLImport(false);
+                  setHasBLImports(true);
+                  handleDataChanged();
+                }}
+                defaultAffaireId={affaire.numeroAffaire}
+                defaultAffaireType={affaire.type}
+              />
+            )}
+          </Suspense>
+        )}
+        {showDisplayDialog && (
+          <Suspense fallback={null}>
+            <DynamicDisplayDialog
+              defaultDate={null}
+              defaultAffaireId={affaire.numeroAffaire}
+              onSave={() => {
+                setShowDisplayDialog(false);
                 handleDataChanged();
               }}
-              defaultAffaireId={affaire.numeroAffaire}
-              defaultAffaireType={affaire.type}
+              onClose={() => setShowDisplayDialog(false)}
             />
-          ) : (
-            <BLImportModal
-              onClose={() => setShowBLImport(false)}
-              onImported={() => {
-                setShowBLImport(false);
-                setHasBLImports(true);
-                handleDataChanged();
-              }}
-              defaultAffaireId={affaire.numeroAffaire}
-              defaultAffaireType={affaire.type}
-            />
-          )}
-        </Suspense>
-      )}
-      {showDisplayDialog && (
-        <Suspense fallback={null}>
-          <DynamicDisplayDialog
-            defaultDate={null}
-            defaultAffaireId={affaire.numeroAffaire}
-            onSave={() => {
-              setShowDisplayDialog(false);
-              handleDataChanged();
-            }}
-            onClose={() => setShowDisplayDialog(false)}
-          />
-        </Suspense>
-      )}
-    </div>
+          </Suspense>
+        )}
+      </div>
+      {DirtyConfirmRenderer}
+    </>
   );
 };
 

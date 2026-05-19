@@ -26,6 +26,8 @@ import {
   Tooltip,
 } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useModalDialogClose } from '../../hooks/useModalDialogClose';
 import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { useToast } from '../../hooks/useToast';
@@ -317,6 +319,7 @@ const SavTicketFormModal = ({
   onClose,
 }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [form, setForm] = useState({
     equipment_id: ticket?.equipmentId || ticket?.equipment_id || preselectedEquipment?.id || '',
     assigned_to: ticket?.assignedTo || ticket?.assigned_to || '',
@@ -328,6 +331,8 @@ const SavTicketFormModal = ({
     resolution: ticket?.resolution || '',
     cost: ticket?.cost || '',
   });
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   // Recherche globale
   const [searchQuery, setSearchQuery] = useState('');
@@ -422,6 +427,7 @@ const SavTicketFormModal = ({
     e.preventDefault();
     if (!form.equipment_id || !form.title.trim())
       return toast.warning('Équipement et titre requis');
+    resetDirty();
     onSave({
       ...form,
       equipment_id: parseInt(form.equipment_id),
@@ -431,298 +437,304 @@ const SavTicketFormModal = ({
   };
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={ticket ? '✏️ Modifier le ticket' : '🔧 Nouveau ticket SAV'}
-      size="lg"
-      className="eq-modal"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" form="sav-ticket-form">
-            {ticket ? 'Enregistrer' : 'Créer'}
-          </Button>
-        </>
-      }
-    >
-      <form id="sav-ticket-form" onSubmit={handleSubmit} className="eq-modal-body">
-        <div className="eq-form-grid">
-          <div className="eq-form-field eq-form-full">
-            <label>Équipement *</label>
-            {preselectedEquipment && !ticket ? (
-              <div className="eq-form-locked-value">
-                {preselectedEquipment.category_icon || preselectedEquipment.categoryIcon || '📦'}{' '}
-                {cleanName(preselectedEquipment.name)}{' '}
-                {preselectedEquipment.reference ? `(${preselectedEquipment.reference})` : ''}
-              </div>
-            ) : (
-              <>
-                <div className="sav-search-global" ref={searchRef}>
-                  <div className="sav-search-input-wrap">
-                    <Search size={16} className="sav-search-icon" />
-                    <input
-                      type="text"
-                      className="sav-search-input"
-                      placeholder="Rechercher par nom, référence, N° série ou UID…"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setSearchFocused(true);
-                      }}
-                      onFocus={() => setSearchFocused(true)}
-                    />
-                    {searchQuery && (
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        iconOnly
-                        className="sav-search-clear"
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSearchFocused(false);
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={ticket ? '✏️ Modifier le ticket' : '🔧 Nouveau ticket SAV'}
+        size="lg"
+        className="eq-modal"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" form="sav-ticket-form">
+              {ticket ? 'Enregistrer' : 'Créer'}
+            </Button>
+          </>
+        }
+      >
+        <form id="sav-ticket-form" onSubmit={handleSubmit} className="eq-modal-body">
+          <div className="eq-form-grid">
+            <div className="eq-form-field eq-form-full">
+              <label>Équipement *</label>
+              {preselectedEquipment && !ticket ? (
+                <div className="eq-form-locked-value">
+                  {preselectedEquipment.category_icon || preselectedEquipment.categoryIcon || '📦'}{' '}
+                  {cleanName(preselectedEquipment.name)}{' '}
+                  {preselectedEquipment.reference ? `(${preselectedEquipment.reference})` : ''}
+                </div>
+              ) : (
+                <>
+                  <div className="sav-search-global" ref={searchRef}>
+                    <div className="sav-search-input-wrap">
+                      <Search size={16} className="sav-search-icon" />
+                      <input
+                        type="text"
+                        className="sav-search-input"
+                        placeholder="Rechercher par nom, référence, N° série ou UID…"
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setSearchFocused(true);
                         }}
-                        aria-label="Effacer la recherche"
-                      >
-                        <X size={14} />
-                      </Button>
+                        onFocus={() => setSearchFocused(true)}
+                      />
+                      {searchQuery && (
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          iconOnly
+                          className="sav-search-clear"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setSearchFocused(false);
+                          }}
+                          aria-label="Effacer la recherche"
+                        >
+                          <X size={14} />
+                        </Button>
+                      )}
+                    </div>
+                    {searchFocused && searchQuery.length >= 2 && (
+                      <div className="sav-search-dropdown">
+                        {searchResults.length === 0 ? (
+                          <div className="sav-search-empty">Aucun résultat</div>
+                        ) : (
+                          searchResults.map((eq) => (
+                            <Button
+                              key={eq.id}
+                              variant="ghost"
+                              size="sm"
+                              className={`sav-search-item${String(form.equipment_id) === String(eq.id) ? ' selected' : ''}`}
+                              onClick={() => {
+                                setForm((f) => ({ ...f, equipment_id: eq.id }));
+                                setSearchQuery('');
+                                setSearchFocused(false);
+                                // Synchroniser la cascade
+                                const hier = getCategoryHierarchy(eq, allCategories);
+                                setSelFamille(hier?.family?.id ? String(hier.family.id) : '');
+                                setSelSousFamille(
+                                  hier?.subfamily?.id ? String(hier.subfamily.id) : '',
+                                );
+                                setSelType(hier?.category?.id ? String(hier.category.id) : '');
+                              }}
+                            >
+                              <span className="sav-search-item-name">
+                                {eq.categoryIcon || '📦'} {cleanName(eq.name)}
+                              </span>
+                              <span className="sav-search-item-meta">
+                                {eq.reference && (
+                                  <span className="sav-search-ref">{eq.reference}</span>
+                                )}
+                                {(eq.serialNumber || eq.serial_number) && (
+                                  <span className="sav-search-serial">
+                                    S/N: {eq.serialNumber || eq.serial_number}
+                                  </span>
+                                )}
+                                {eq.uid && <span className="sav-search-uid">{eq.uid}</span>}
+                              </span>
+                            </Button>
+                          ))
+                        )}
+                      </div>
                     )}
                   </div>
-                  {searchFocused && searchQuery.length >= 2 && (
-                    <div className="sav-search-dropdown">
-                      {searchResults.length === 0 ? (
-                        <div className="sav-search-empty">Aucun résultat</div>
-                      ) : (
-                        searchResults.map((eq) => (
-                          <Button
-                            key={eq.id}
-                            variant="ghost"
-                            size="sm"
-                            className={`sav-search-item${String(form.equipment_id) === String(eq.id) ? ' selected' : ''}`}
-                            onClick={() => {
-                              setForm((f) => ({ ...f, equipment_id: eq.id }));
-                              setSearchQuery('');
-                              setSearchFocused(false);
-                              // Synchroniser la cascade
-                              const hier = getCategoryHierarchy(eq, allCategories);
-                              setSelFamille(hier?.family?.id ? String(hier.family.id) : '');
-                              setSelSousFamille(
-                                hier?.subfamily?.id ? String(hier.subfamily.id) : '',
-                              );
-                              setSelType(hier?.category?.id ? String(hier.category.id) : '');
-                            }}
-                          >
-                            <span className="sav-search-item-name">
-                              {eq.categoryIcon || '📦'} {cleanName(eq.name)}
-                            </span>
-                            <span className="sav-search-item-meta">
-                              {eq.reference && (
-                                <span className="sav-search-ref">{eq.reference}</span>
-                              )}
-                              {(eq.serialNumber || eq.serial_number) && (
-                                <span className="sav-search-serial">
-                                  S/N: {eq.serialNumber || eq.serial_number}
-                                </span>
-                              )}
-                              {eq.uid && <span className="sav-search-uid">{eq.uid}</span>}
-                            </span>
-                          </Button>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="sav-search-separator">
-                  <span>ou parcourir par catégorie</span>
-                </div>
-                <div className="eq-form-cascade">
+                  <div className="sav-search-separator">
+                    <span>ou parcourir par catégorie</span>
+                  </div>
+                  <div className="eq-form-cascade">
+                    <Select
+                      value={selFamille}
+                      onChange={(e) => {
+                        setSelFamille(e.target.value);
+                        setSelSousFamille('');
+                        setSelType('');
+                        setForm((f) => ({ ...f, equipment_id: '' }));
+                      }}
+                    >
+                      <option value="">— Famille —</option>
+                      {familles.map((f) => (
+                        <option key={f.id} value={f.id}>
+                          {f.icon || '📁'} {f.name}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select
+                      value={selSousFamille}
+                      onChange={(e) => {
+                        setSelSousFamille(e.target.value);
+                        setSelType('');
+                        setForm((f) => ({ ...f, equipment_id: '' }));
+                      }}
+                      disabled={!selFamille}
+                    >
+                      <option value="">— Catégorie —</option>
+                      {filteredSousFamilles.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.icon || '📂'} {s.name}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select
+                      value={selType}
+                      onChange={(e) => {
+                        setSelType(e.target.value);
+                        setForm((f) => ({ ...f, equipment_id: '' }));
+                      }}
+                      disabled={!selSousFamille}
+                    >
+                      <option value="">— Type —</option>
+                      {filteredTypes.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.icon || '📄'} {t.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                   <Select
-                    value={selFamille}
-                    onChange={(e) => {
-                      setSelFamille(e.target.value);
-                      setSelSousFamille('');
-                      setSelType('');
-                      setForm((f) => ({ ...f, equipment_id: '' }));
-                    }}
+                    value={form.equipment_id}
+                    onChange={(e) => setForm({ ...form, equipment_id: e.target.value })}
+                    required
                   >
-                    <option value="">— Famille —</option>
-                    {familles.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.icon || '📁'} {f.name}
+                    <option value="">— Sélectionner l'équipement —</option>
+                    {filteredEquipment.map((eq) => (
+                      <option key={eq.id} value={eq.id}>
+                        {eq.categoryIcon || '📦'} {cleanName(eq.name)}{' '}
+                        {eq.reference ? `(${eq.reference})` : ''}{' '}
+                        {eq.serialNumber || eq.serial_number
+                          ? `[S/N: ${eq.serialNumber || eq.serial_number}]`
+                          : ''}
                       </option>
                     ))}
                   </Select>
-                  <Select
-                    value={selSousFamille}
-                    onChange={(e) => {
-                      setSelSousFamille(e.target.value);
-                      setSelType('');
-                      setForm((f) => ({ ...f, equipment_id: '' }));
-                    }}
-                    disabled={!selFamille}
-                  >
-                    <option value="">— Catégorie —</option>
-                    {filteredSousFamilles.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.icon || '📂'} {s.name}
-                      </option>
-                    ))}
-                  </Select>
-                  <Select
-                    value={selType}
-                    onChange={(e) => {
-                      setSelType(e.target.value);
-                      setForm((f) => ({ ...f, equipment_id: '' }));
-                    }}
-                    disabled={!selSousFamille}
-                  >
-                    <option value="">— Type —</option>
-                    {filteredTypes.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.icon || '📄'} {t.name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <Select
-                  value={form.equipment_id}
-                  onChange={(e) => setForm({ ...form, equipment_id: e.target.value })}
-                  required
-                >
-                  <option value="">— Sélectionner l'équipement —</option>
-                  {filteredEquipment.map((eq) => (
-                    <option key={eq.id} value={eq.id}>
-                      {eq.categoryIcon || '📦'} {cleanName(eq.name)}{' '}
-                      {eq.reference ? `(${eq.reference})` : ''}{' '}
-                      {eq.serialNumber || eq.serial_number
-                        ? `[S/N: ${eq.serialNumber || eq.serial_number}]`
-                        : ''}
-                    </option>
-                  ))}
-                </Select>
-                {(() => {
-                  const sel = form.equipment_id
-                    ? equipment.find((e) => e.id === Number(form.equipment_id))
-                    : null;
-                  if (!sel) return null;
-                  return (
-                    <div className="eq-form-cascade-info">
-                      {sel.reference && (
-                        <span>
-                          🏷️ Réf : <strong>{sel.reference}</strong>
-                        </span>
-                      )}
-                      {(sel.serialNumber || sel.serial_number) && (
-                        <span>
-                          🔢 S/N : <strong>{sel.serialNumber || sel.serial_number}</strong>
-                        </span>
-                      )}
-                    </div>
-                  );
-                })()}
-              </>
-            )}
-          </div>
-          <div className="eq-form-field eq-form-full">
-            <label>Panne *</label>
-            <Input
-              type="text"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Ex: Batterie ne charge plus"
-              autoFocus
-            />
-          </div>
-          <div className="eq-form-field">
-            <label>Type</label>
-            <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-              {Object.entries(SAV_TYPES).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="eq-form-field">
-            <label>Priorité</label>
-            <Select
-              value={form.priority}
-              onChange={(e) => setForm({ ...form, priority: e.target.value })}
-            >
-              {Object.entries(SAV_PRIORITY).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-          {ticket && (
+                  {(() => {
+                    const sel = form.equipment_id
+                      ? equipment.find((e) => e.id === Number(form.equipment_id))
+                      : null;
+                    if (!sel) return null;
+                    return (
+                      <div className="eq-form-cascade-info">
+                        {sel.reference && (
+                          <span>
+                            🏷️ Réf : <strong>{sel.reference}</strong>
+                          </span>
+                        )}
+                        {(sel.serialNumber || sel.serial_number) && (
+                          <span>
+                            🔢 S/N : <strong>{sel.serialNumber || sel.serial_number}</strong>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+            <div className="eq-form-field eq-form-full">
+              <label>Panne *</label>
+              <Input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Ex: Batterie ne charge plus"
+                autoFocus
+              />
+            </div>
             <div className="eq-form-field">
-              <label>Statut</label>
+              <label>Type</label>
               <Select
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value })}
               >
-                {Object.entries(SAV_STATUS).map(([k, v]) => (
+                {Object.entries(SAV_TYPES).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="eq-form-field">
+              <label>Priorité</label>
+              <Select
+                value={form.priority}
+                onChange={(e) => setForm({ ...form, priority: e.target.value })}
+              >
+                {Object.entries(SAV_PRIORITY).map(([k, v]) => (
                   <option key={k} value={k}>
                     {v.label}
                   </option>
                 ))}
               </Select>
             </div>
-          )}
-          <div className="eq-form-field">
-            <label>Technicien assigné</label>
-            <Select
-              value={form.assigned_to}
-              onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
-            >
-              <option value="">— Non assigné —</option>
-              {persons
-                .filter((p) => ['permanent', 'apprenti', 'stagiaire'].includes(p.type))
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.firstName} {p.lastName}
-                  </option>
-                ))}
-            </Select>
-          </div>
-          <div className="eq-form-field eq-form-full">
-            <label>Description</label>
-            <Textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={3}
-              placeholder="Détails du problème, circonstances..."
-            />
-          </div>
-          {ticket && (
-            <>
-              <div className="eq-form-field eq-form-full">
-                <label>Résolution</label>
-                <Textarea
-                  value={form.resolution}
-                  onChange={(e) => setForm({ ...form, resolution: e.target.value })}
-                  rows={2}
-                  placeholder="Action corrective, pièces changées..."
-                />
-              </div>
+            {ticket && (
               <div className="eq-form-field">
-                <label>Coût (€)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.cost}
-                  onChange={(e) => setForm({ ...form, cost: e.target.value })}
-                />
+                <label>Statut</label>
+                <Select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                >
+                  {Object.entries(SAV_STATUS).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v.label}
+                    </option>
+                  ))}
+                </Select>
               </div>
-            </>
-          )}
-        </div>
-      </form>
-    </ModalLayout>
+            )}
+            <div className="eq-form-field">
+              <label>Technicien assigné</label>
+              <Select
+                value={form.assigned_to}
+                onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
+              >
+                <option value="">— Non assigné —</option>
+                {persons
+                  .filter((p) => ['permanent', 'apprenti', 'stagiaire'].includes(p.type))
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.firstName} {p.lastName}
+                    </option>
+                  ))}
+              </Select>
+            </div>
+            <div className="eq-form-field eq-form-full">
+              <label>Description</label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                rows={3}
+                placeholder="Détails du problème, circonstances..."
+              />
+            </div>
+            {ticket && (
+              <>
+                <div className="eq-form-field eq-form-full">
+                  <label>Résolution</label>
+                  <Textarea
+                    value={form.resolution}
+                    onChange={(e) => setForm({ ...form, resolution: e.target.value })}
+                    rows={2}
+                    placeholder="Action corrective, pièces changées..."
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Coût (€)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.cost}
+                    onChange={(e) => setForm({ ...form, cost: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </form>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 };
 

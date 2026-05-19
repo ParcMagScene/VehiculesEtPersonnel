@@ -39,10 +39,10 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
+import { fetchAffaires } from '../../utils/affairesLoader';
 import { AFFAIRE_STATUS_MAP } from '../../utils/affaireWorkflow';
 import api from '../../utils/api';
 import { capitalizeText } from '../../utils/dateUtils';
-import { loadFromIndexedDB, saveToIndexedDB, STORES } from '../../utils/indexedDB';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import AffaireDashboard from './AffaireDashboard';
@@ -132,43 +132,23 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   const [showMultiImport, setShowMultiImport] = useState(false);
   const [showDashboard, _setShowDashboard] = useState(false);
 
-  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
   // Timeline / frise chronologique
   const timelineRef = useRef(null);
   const listRef = useRef(null);
   const [cursorRatio, setCursorRatio] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Charger les affaires depuis l'API (DB serveur + auto-détection réservations)
-  // Sprint 1 audit state : remplit le store IDB 'affaires' (offline fallback)
-  // et fait un fallback IDB silencieux si l'API échoue.
+  // Charger les affaires depuis l'API (DB serveur + auto-détection réservations).
+  // Sprint 2 audit state : délègue à fetchAffaires (cache IDB + fallback offline
+  // factorisés avec MobileAffaires/DashboardTasksSidebar). Signature préservée :
+  // lève toujours en cas d'erreur dure (sans cache disponible) pour que les
+  // appelants (refresh manuel après upload, etc.) puissent réagir.
   const loadDbAffaires = useCallback(async () => {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const data = await api.getAffaires();
-        const list = Array.isArray(data) ? data : [];
-        setDbAffaires(list);
-        saveToIndexedDB(STORES.affaires, list);
-        return;
-      } catch (err) {
-        if (attempt === 1) {
-          console.error('Erreur chargement affaires DB:', err);
-          // Fallback IDB : on sert la dernière version connue plutôt qu'une liste vide.
-          try {
-            const cached = await loadFromIndexedDB(STORES.affaires);
-            if (Array.isArray(cached) && cached.length > 0) {
-              setDbAffaires(cached);
-              return;
-            }
-          } catch (idbErr) {
-            console.warn('Fallback IDB affaires indisponible:', idbErr);
-          }
-          setDbAffaires([]);
-          throw err;
-        }
-        await wait(250);
-      }
+    const { affaires, error } = await fetchAffaires();
+    setDbAffaires(affaires);
+    if (error && affaires.length === 0) {
+      console.error('Erreur chargement affaires DB:', error);
+      throw error;
     }
   }, []);
 

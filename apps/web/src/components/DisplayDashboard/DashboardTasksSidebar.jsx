@@ -25,7 +25,7 @@ import { Accordion, Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, PLANNING_SECTIONS, STATUS_COLORS } from '../../constants/colors';
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
+import { useAffairesList } from '../../hooks/useAffairesList';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import api from '../../utils/api';
@@ -119,8 +119,9 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [filterDirty, setFilterDirty] = useState(false);
 
-  // Affaires cache (pour résoudre la couleur du type d'affaire)
-  const [affairesMap, setAffairesMap] = useState({});
+  // Affaires : source unique via useAffairesList (cache IDB + subscribe bus auto).
+  // Expose une map indexée par numeroAffaire.toUpperCase() pour le lookup.
+  const { affairesMap } = useAffairesList();
 
   // Sonos state
   const [nowPlaying, setNowPlaying] = useState(null);
@@ -145,20 +146,6 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     try {
       const data = await api.getDisplaySidebarConfig();
       setVisibleSections(data.sections); // null = all
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  // ─── Chargement des affaires (pour résoudre les types) ───
-  const loadAffaires = useCallback(async () => {
-    try {
-      const data = await api.getAffaires();
-      const map = {};
-      (Array.isArray(data) ? data : []).forEach((a) => {
-        if (a.numeroAffaire) map[a.numeroAffaire.toUpperCase()] = a;
-      });
-      setAffairesMap(map);
     } catch {
       /* ignore */
     }
@@ -206,17 +193,15 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     loadTasks();
     loadNowPlaying();
     loadSidebarConfig();
-    loadAffaires();
     const taskTimer = setInterval(loadTasks, 60000);
     sonosInterval.current = setInterval(loadNowPlaying, 10000);
     return () => {
       clearInterval(taskTimer);
       if (sonosInterval.current) clearInterval(sonosInterval.current);
     };
-  }, [loadTasks, loadNowPlaying, loadSidebarConfig, loadAffaires, refreshKey]);
+  }, [loadTasks, loadNowPlaying, loadSidebarConfig, refreshKey]);
 
-  // Refresh auto sur invalidation cross-module (cf. refreshBus.publish('affaires')).
-  useRefreshSubscription('affaires', loadAffaires);
+  // Refresh affaires : géré automatiquement par useAffairesList (bus 'affaires' + 'reservations').
 
   // ─── Toggle visibilité d'une tâche (afficher/masquer sur l'écran TV) ───
   const handleToggleVisible = useCallback(

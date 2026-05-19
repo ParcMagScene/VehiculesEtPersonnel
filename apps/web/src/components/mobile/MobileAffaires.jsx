@@ -20,13 +20,13 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useAffairesList } from '../../hooks/useAffairesList';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import api from '../../utils/api';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
@@ -42,8 +42,8 @@ const getAffaireStatus = (a, todayStr) => {
 };
 
 function MobileAffaires({ onBack }) {
-  const [affaires, setAffaires] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Sprint 2 : source unique via useAffairesList (cache IDB + subscribe bus auto).
+  const { affaires, loading, reload: loadAffaires } = useAffairesList();
   const [selectedAffaire, setSelectedAffaire] = useState(null);
   const [detailData, setDetailData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -54,25 +54,7 @@ function MobileAffaires({ onBack }) {
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-  // Charger toutes les affaires
-  const loadAffaires = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await api.getAffaires();
-      setAffaires(data);
-    } catch (err) {
-      console.error('Erreur chargement affaires:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadAffaires();
-  }, [loadAffaires]);
-
-  // Refresh auto sur invalidation cross-module (cf. refreshBus.publish('affaires')).
-  useRefreshSubscription('affaires', loadAffaires);
+  // Refresh auto sur invalidation cross-module : géré par useAffairesList.
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadAffaires);
 

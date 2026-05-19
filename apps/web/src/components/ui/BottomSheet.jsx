@@ -13,10 +13,22 @@
  */
 import './BottomSheet.css';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
+import { getModalRoot, pop, push, zIndexFor } from '../../utils/modalManager';
+
+/**
+ * BottomSheet — Panneau mobile glissant depuis le bas.
+ *
+ * Intégré au ModalManager (#emag-modal-root, pile + scroll-lock centralisés,
+ * z-index dynamique) afin de partager le même socle que <Modal> et <Drawer>.
+ * Migration audit modals/overlays 2026-05-19 : supprime le scroll-lock manuel
+ * et les z-index CSS qui pouvaient inverser backdrop/panel.
+ */
 export default function BottomSheet({ open, onClose, title, children, className = '' }) {
   const panelRef = useRef(null);
+  const [stackToken, setStackToken] = useState(null);
 
   // Fermer avec Escape
   const handleKeyDown = useCallback(
@@ -27,24 +39,38 @@ export default function BottomSheet({ open, onClose, title, children, className 
   );
 
   useEffect(() => {
-    if (open) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
+    if (!open) return undefined;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, handleKeyDown]);
+
+  // Inscription dans le ModalManager : pile partagée avec <Modal>/<Drawer>,
+  // scroll-lock unique libéré seulement quand toutes les couches sont fermées.
+  useEffect(() => {
+    if (!open) return undefined;
+    const token = push();
+    setStackToken(token);
+    return () => {
+      pop(token);
+      setStackToken(null);
+    };
+  }, [open]);
 
   if (!open) return null;
 
-  return (
+  // Z-index pilotés par le ModalManager (overlay 9000+i*10, dialog 10000+i*10).
+  const z = stackToken ? zIndexFor(stackToken) : { overlay: 9000, dialog: 10000 };
+
+  const portalTarget = getModalRoot();
+  if (!portalTarget) return null;
+
+  return createPortal(
     <>
       <div
         className={`ui-bottomsheet-backdrop ${open ? 'ui-bottomsheet-backdrop--visible' : ''}`}
         onClick={onClose}
         aria-hidden="true"
+        style={{ zIndex: z.overlay }}
       />
       <div
         ref={panelRef}
@@ -52,6 +78,7 @@ export default function BottomSheet({ open, onClose, title, children, className 
         role="dialog"
         aria-modal="true"
         aria-label={title || 'Bottom sheet'}
+        style={{ zIndex: z.dialog }}
       >
         <div className="ui-bottomsheet-handle" />
         {title && (
@@ -61,6 +88,7 @@ export default function BottomSheet({ open, onClose, title, children, className 
         )}
         <div className="ui-bottomsheet-body">{children}</div>
       </div>
-    </>
+    </>,
+    portalTarget,
   );
 }
